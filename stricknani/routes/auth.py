@@ -2,12 +2,13 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Response, status
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request, Response, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.config import config
 from stricknani.database import get_db
+from stricknani.main import templates
 from stricknani.models import User
 from stricknani.utils.auth import (
     authenticate_user,

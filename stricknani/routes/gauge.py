@@ -2,12 +2,27 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Form
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 
+from stricknani.main import templates
+from stricknani.models import User
+from stricknani.routes.auth import get_current_user
 from stricknani.utils.gauge import calculate_gauge
 
 router = APIRouter(prefix="/gauge", tags=["gauge"])
+
+
+@router.get("/", response_class=HTMLResponse)
+async def gauge_calculator_page(
+    request: Request,
+    current_user: User | None = Depends(get_current_user),
+) -> HTMLResponse:
+    """Show gauge calculator page."""
+    return templates.TemplateResponse(
+        "gauge/calculator.html",
+        {"request": request, "current_user": current_user},
+    )
 
 
 @router.post("/calculate")
