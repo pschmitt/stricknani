@@ -2,7 +2,15 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Response, status
+from fastapi import (
+    APIRouter,
+    Cookie,
+    Depends,
+    Form,
+    HTTPException,
+    Response,
+    status,
+)
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 

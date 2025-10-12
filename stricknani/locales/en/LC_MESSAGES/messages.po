@@ -1,0 +1,233 @@
+# English translations for Stricknani
+# Copyright (C) 2025 Philipp Schmitt
+# This file is distributed under the same license as the Stricknani project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Stricknani 0.1.0\n"
+"Report-Msgid-Bugs-To: philipp@schmitt.co\n"
+"POT-Creation-Date: 2025-10-12 19:00+0000\n"
+"PO-Revision-Date: 2025-10-12 19:00+0000\n"
+"Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
+"Language: en\n"
+"Language-Team: en <philipp@schmitt.co>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+# Navigation and General
+msgid "Stricknani"
+msgstr "Stricknani"
+
+msgid "Projects"
+msgstr "Projects"
+
+msgid "Gauge Calculator"
+msgstr "Gauge Calculator"
+
+msgid "Logout"
+msgstr "Logout"
+
+msgid "Login"
+msgstr "Login"
+
+# Login/Signup page
+msgid "Welcome to Stricknani"
+msgstr "Welcome to Stricknani"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Password"
+msgstr "Password"
+
+msgid "Don't have an account? Sign up"
+msgstr "Don't have an account? Sign up"
+
+msgid "Sign Up"
+msgstr "Sign Up"
+
+msgid "At least 8 characters"
+msgstr "At least 8 characters"
+
+msgid "Already have an account? Login"
+msgstr "Already have an account? Login"
+
+# Projects list
+msgid "My Projects"
+msgstr "My Projects"
+
+msgid "+ New Project"
+msgstr "+ New Project"
+
+msgid "Category"
+msgstr "Category"
+
+msgid "All Categories"
+msgstr "All Categories"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "No projects yet"
+msgstr "No projects yet"
+
+msgid "Create Your First Project"
+msgstr "Create Your First Project"
+
+msgid "Created"
+msgstr "Created"
+
+msgid "View Details"
+msgstr "View Details"
+
+# Project detail
+msgid "← Back to Projects"
+msgstr "← Back to Projects"
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Yarn"
+msgstr "Yarn"
+
+msgid "Not specified"
+msgstr "Not specified"
+
+msgid "Needles"
+msgstr "Needles"
+
+msgid "Gauge"
+msgstr "Gauge"
+
+msgid "Last Updated"
+msgstr "Last Updated"
+
+msgid "Instructions"
+msgstr "Instructions"
+
+msgid "Notes"
+msgstr "Notes"
+
+# Project form
+msgid "← Back"
+msgstr "← Back"
+
+msgid "New Project"
+msgstr "New Project"
+
+msgid "Edit Project"
+msgstr "Edit Project"
+
+msgid "Project Name"
+msgstr "Project Name"
+
+msgid "Select a category"
+msgstr "Select a category"
+
+msgid "Gauge Stitches (per 10cm)"
+msgstr "Gauge Stitches (per 10cm)"
+
+msgid "Gauge Rows (per 10cm)"
+msgstr "Gauge Rows (per 10cm)"
+
+msgid "Supports Markdown formatting"
+msgstr "Supports Markdown formatting"
+
+msgid "💡 Tip:"
+msgstr "💡 Tip:"
+
+msgid "Need help calculating your gauge? Use our"
+msgstr "Need help calculating your gauge? Use our"
+
+msgid "Create Project"
+msgstr "Create Project"
+
+msgid "Update Project"
+msgstr "Update Project"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+# Gauge calculator
+msgid "🧮 Gauge Calculator"
+msgstr "🧮 Gauge Calculator"
+
+msgid "Calculate how many stitches and rows you need based on your gauge and the pattern's gauge."
+msgstr "Calculate how many stitches and rows you need based on your gauge and the pattern's gauge."
+
+msgid "Pattern Gauge (per 10cm)"
+msgstr "Pattern Gauge (per 10cm)"
+
+msgid "Stitches"
+msgstr "Stitches"
+
+msgid "Rows"
+msgstr "Rows"
+
+msgid "Your Gauge (per 10cm)"
+msgstr "Your Gauge (per 10cm)"
+
+msgid "Target Dimensions"
+msgstr "Target Dimensions"
+
+msgid "Width (cm)"
+msgstr "Width (cm)"
+
+msgid "Height (cm)"
+msgstr "Height (cm)"
+
+msgid "(optional)"
+msgstr "(optional)"
+
+msgid "Calculate"
+msgstr "Calculate"
+
+msgid "How to use this calculator"
+msgstr "How to use this calculator"
+
+msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
+msgstr "Enter the gauge from your pattern (stitches and rows per 10cm)"
+
+msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
+msgstr "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
+
+msgid "Enter the target dimensions you want to achieve"
+msgstr "Enter the target dimensions you want to achieve"
+
+msgid "Click Calculate to see how many stitches and rows you need"
+msgstr "Click Calculate to see how many stitches and rows you need"
+
+msgid "✅ Calculation Results"
+msgstr "✅ Calculation Results"
+
+msgid "Adjusted Stitches"
+msgstr "Adjusted Stitches"
+
+msgid "Adjusted Rows"
+msgstr "Adjusted Rows"
+
+# Project categories
+msgid "Pullover"
+msgstr "Pullover"
+
+msgid "Jacke"
+msgstr "Jacket"
+
+msgid "Schal"
+msgstr "Scarf"
+
+msgid "Mütze"
+msgstr "Hat"
+
+msgid "Stirnband"
+msgstr "Headband"
+
+# Footer
+msgid "GPL-3.0-only"
+msgstr "GPL-3.0-only"

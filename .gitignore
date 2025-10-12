@@ -59,3 +59,5 @@ dmypy.json
 
 # Ruff
 .ruff_cache/
+# Compiled translations
+*.mo

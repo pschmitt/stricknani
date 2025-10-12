@@ -1,0 +1,233 @@
+# German translations for Stricknani
+# Copyright (C) 2025 Philipp Schmitt
+# This file is distributed under the same license as the Stricknani project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Stricknani 0.1.0\n"
+"Report-Msgid-Bugs-To: philipp@schmitt.co\n"
+"POT-Creation-Date: 2025-10-12 19:00+0000\n"
+"PO-Revision-Date: 2025-10-12 19:00+0000\n"
+"Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
+"Language: de\n"
+"Language-Team: de <philipp@schmitt.co>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+# Navigation and General
+msgid "Stricknani"
+msgstr "Stricknani"
+
+msgid "Projects"
+msgstr "Projekte"
+
+msgid "Gauge Calculator"
+msgstr "Maschenrechner"
+
+msgid "Logout"
+msgstr "Abmelden"
+
+msgid "Login"
+msgstr "Anmelden"
+
+# Login/Signup page
+msgid "Welcome to Stricknani"
+msgstr "Willkommen bei Stricknani"
+
+msgid "Email"
+msgstr "E-Mail"
+
+msgid "Password"
+msgstr "Passwort"
+
+msgid "Don't have an account? Sign up"
+msgstr "Noch kein Konto? Registrieren"
+
+msgid "Sign Up"
+msgstr "Registrieren"
+
+msgid "At least 8 characters"
+msgstr "Mindestens 8 Zeichen"
+
+msgid "Already have an account? Login"
+msgstr "Schon ein Konto? Anmelden"
+
+# Projects list
+msgid "My Projects"
+msgstr "Meine Projekte"
+
+msgid "+ New Project"
+msgstr "+ Neues Projekt"
+
+msgid "Category"
+msgstr "Kategorie"
+
+msgid "All Categories"
+msgstr "Alle Kategorien"
+
+msgid "Search"
+msgstr "Suchen"
+
+msgid "No projects yet"
+msgstr "Noch keine Projekte"
+
+msgid "Create Your First Project"
+msgstr "Erstelle dein erstes Projekt"
+
+msgid "Created"
+msgstr "Erstellt"
+
+msgid "View Details"
+msgstr "Details anzeigen"
+
+# Project detail
+msgid "← Back to Projects"
+msgstr "← Zurück zu Projekten"
+
+msgid "Edit"
+msgstr "Bearbeiten"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "Yarn"
+msgstr "Wolle"
+
+msgid "Not specified"
+msgstr "Nicht angegeben"
+
+msgid "Needles"
+msgstr "Nadeln"
+
+msgid "Gauge"
+msgstr "Maschenprobe"
+
+msgid "Last Updated"
+msgstr "Zuletzt aktualisiert"
+
+msgid "Instructions"
+msgstr "Anleitung"
+
+msgid "Notes"
+msgstr "Notizen"
+
+# Project form
+msgid "← Back"
+msgstr "← Zurück"
+
+msgid "New Project"
+msgstr "Neues Projekt"
+
+msgid "Edit Project"
+msgstr "Projekt bearbeiten"
+
+msgid "Project Name"
+msgstr "Projektname"
+
+msgid "Select a category"
+msgstr "Kategorie wählen"
+
+msgid "Gauge Stitches (per 10cm)"
+msgstr "Maschenprobe Maschen (pro 10cm)"
+
+msgid "Gauge Rows (per 10cm)"
+msgstr "Maschenprobe Reihen (pro 10cm)"
+
+msgid "Supports Markdown formatting"
+msgstr "Unterstützt Markdown-Formatierung"
+
+msgid "💡 Tip:"
+msgstr "💡 Tipp:"
+
+msgid "Need help calculating your gauge? Use our"
+msgstr "Brauchst du Hilfe beim Berechnen der Maschenprobe? Nutze unseren"
+
+msgid "Create Project"
+msgstr "Projekt erstellen"
+
+msgid "Update Project"
+msgstr "Projekt aktualisieren"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+# Gauge calculator
+msgid "🧮 Gauge Calculator"
+msgstr "🧮 Maschenrechner"
+
+msgid "Calculate how many stitches and rows you need based on your gauge and the pattern's gauge."
+msgstr "Berechne wie viele Maschen und Reihen du basierend auf deiner Maschenprobe und der Anleitung benötigst."
+
+msgid "Pattern Gauge (per 10cm)"
+msgstr "Anleitung Maschenprobe (pro 10cm)"
+
+msgid "Stitches"
+msgstr "Maschen"
+
+msgid "Rows"
+msgstr "Reihen"
+
+msgid "Your Gauge (per 10cm)"
+msgstr "Deine Maschenprobe (pro 10cm)"
+
+msgid "Target Dimensions"
+msgstr "Zielmaße"
+
+msgid "Width (cm)"
+msgstr "Breite (cm)"
+
+msgid "Height (cm)"
+msgstr "Höhe (cm)"
+
+msgid "(optional)"
+msgstr "(optional)"
+
+msgid "Calculate"
+msgstr "Berechnen"
+
+msgid "How to use this calculator"
+msgstr "So verwendest du den Rechner"
+
+msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
+msgstr "Gib die Maschenprobe aus deiner Anleitung ein (Maschen und Reihen pro 10cm)"
+
+msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
+msgstr "Gib deine tatsächliche Maschenprobe von deinem Probemuster ein (Maschen und Reihen pro 10cm)"
+
+msgid "Enter the target dimensions you want to achieve"
+msgstr "Gib die gewünschten Zielmaße ein"
+
+msgid "Click Calculate to see how many stitches and rows you need"
+msgstr "Klicke auf Berechnen, um zu sehen wie viele Maschen und Reihen du benötigst"
+
+msgid "✅ Calculation Results"
+msgstr "✅ Berechnungsergebnis"
+
+msgid "Adjusted Stitches"
+msgstr "Angepasste Maschen"
+
+msgid "Adjusted Rows"
+msgstr "Angepasste Reihen"
+
+# Project categories
+msgid "Pullover"
+msgstr "Pullover"
+
+msgid "Jacke"
+msgstr "Jacke"
+
+msgid "Schal"
+msgstr "Schal"
+
+msgid "Mütze"
+msgstr "Mütze"
+
+msgid "Stirnband"
+msgstr "Stirnband"
+
+# Footer
+msgid "GPL-3.0-only"
+msgstr "GPL-3.0-only"

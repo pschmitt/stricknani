@@ -7,7 +7,7 @@ license = { text = "GPL-3.0-only" }
 authors = [
     { name = "Philipp Schmitt", email = "philipp@schmitt.co" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
@@ -22,6 +22,7 @@ dependencies = [
     "markdown>=3.7",
     "bleach>=6.1.0",
     "aiosqlite>=0.20.0",
+    "babel>=2.14.0",
 ]
 
 [project.optional-dependencies]
@@ -34,6 +35,9 @@ dev = [
     "types-bleach>=6.1.0.20240331",
     "types-markdown>=3.7.0.20240822",
 ]
+
+[project.scripts]
+stricknani = "stricknani.scripts.run:main"
 
 [build-system]
 requires = ["hatchling"]

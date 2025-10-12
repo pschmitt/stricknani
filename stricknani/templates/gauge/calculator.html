@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Gauge Calculator - Stricknani{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h2 class="text-3xl font-bold text-gray-900 mb-6">🧮 Gauge Calculator</h2>
+    
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <p class="text-gray-600 mb-6">
+            Calculate how many stitches and rows you need based on your gauge and the pattern's gauge.
+        </p>
+        
+        <form 
+            hx-post="/gauge/calculate" 
+            hx-target="#result" 
+            hx-swap="innerHTML"
+            class="space-y-6"
+        >
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Pattern Gauge -->
+                <div class="md:col-span-2">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Pattern Gauge (per 10cm)</h3>
+                </div>
+                
+                <div>
+                    <label for="pattern_gauge_stitches" class="block text-sm font-medium text-gray-700 mb-1">
+                        Stitches <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        id="pattern_gauge_stitches" 
+                        name="pattern_gauge_stitches" 
+                        required
+                        min="1"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="20"
+                    >
+                </div>
+                
+                <div>
+                    <label for="pattern_gauge_rows" class="block text-sm font-medium text-gray-700 mb-1">
+                        Rows <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        id="pattern_gauge_rows" 
+                        name="pattern_gauge_rows" 
+                        required
+                        min="1"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="28"
+                    >
+                </div>
+                
+                <!-- Your Gauge -->
+                <div class="md:col-span-2 mt-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Your Gauge (per 10cm)</h3>
+                </div>
+                
+                <div>
+                    <label for="user_gauge_stitches" class="block text-sm font-medium text-gray-700 mb-1">
+                        Stitches <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        id="user_gauge_stitches" 
+                        name="user_gauge_stitches" 
+                        required
+                        min="1"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="22"
+                    >
+                </div>
+                
+                <div>
+                    <label for="user_gauge_rows" class="block text-sm font-medium text-gray-700 mb-1">
+                        Rows <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        id="user_gauge_rows" 
+                        name="user_gauge_rows" 
+                        required
+                        min="1"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="30"
+                    >
+                </div>
+                
+                <!-- Target Dimensions -->
+                <div class="md:col-span-2 mt-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Target Dimensions</h3>
+                </div>
+                
+                <div>
+                    <label for="target_width_cm" class="block text-sm font-medium text-gray-700 mb-1">
+                        Width (cm)
+                    </label>
+                    <input 
+                        type="number" 
+                        id="target_width_cm" 
+                        name="target_width_cm"
+                        min="0.1"
+                        step="0.1"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="50"
+                    >
+                </div>
+                
+                <div>
+                    <label for="target_height_cm" class="block text-sm font-medium text-gray-700 mb-1">
+                        Height (cm) <span class="text-gray-400">(optional)</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        id="target_height_cm" 
+                        name="target_height_cm"
+                        min="0"
+                        step="0.1"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="60"
+                    >
+                </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="mt-6">
+                <button 
+                    type="submit"
+                    class="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium"
+                >
+                    Calculate
+                </button>
+            </div>
+        </form>
+        
+        <!-- Results -->
+        <div id="result" class="mt-8"></div>
+    </div>
+    
+    <!-- Help Section -->
+    <div class="mt-6 bg-blue-50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">How to use this calculator</h3>
+        <ol class="list-decimal list-inside space-y-2 text-gray-700">
+            <li>Enter the gauge from your pattern (stitches and rows per 10cm)</li>
+            <li>Enter your actual gauge from your swatch (stitches and rows per 10cm)</li>
+            <li>Enter the target dimensions you want to achieve</li>
+            <li>Click Calculate to see how many stitches and rows you need</li>
+        </ol>
+    </div>
+</div>
+
+<template id="result-template">
+    <div class="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+        <h3 class="text-xl font-bold text-green-900 mb-4">✅ Calculation Results</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white p-4 rounded-md">
+                <p class="text-sm font-medium text-gray-500 mb-1">Adjusted Stitches</p>
+                <p class="text-3xl font-bold text-blue-600" id="adjusted_stitches"></p>
+            </div>
+            <div class="bg-white p-4 rounded-md">
+                <p class="text-sm font-medium text-gray-500 mb-1">Adjusted Rows</p>
+                <p class="text-3xl font-bold text-blue-600" id="adjusted_rows"></p>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+document.body.addEventListener('htmx:afterRequest', function(event) {
+    if (event.detail.target.id === 'result') {
+        try {
+            const data = JSON.parse(event.detail.xhr.responseText);
+            const resultHtml = `
+                <div class="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-green-900 mb-4">✅ Calculation Results</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-md">
+                            <p class="text-sm font-medium text-gray-500 mb-1">Adjusted Stitches</p>
+                            <p class="text-3xl font-bold text-blue-600">${data.adjusted_stitches}</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-md">
+                            <p class="text-sm font-medium text-gray-500 mb-1">Adjusted Rows</p>
+                            <p class="text-3xl font-bold text-blue-600">${data.adjusted_rows || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-600">
+                        <p>For a piece ${data.target_width_cm}cm wide${data.target_height_cm > 0 ? ' and ' + data.target_height_cm + 'cm tall' : ''}</p>
+                    </div>
+                </div>
+            `;
+            event.detail.target.innerHTML = resultHtml;
+        } catch (e) {
+            console.error('Error parsing gauge calculation result:', e);
+        }
+    }
+});
+</script>
+{% endblock %}
