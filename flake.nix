@@ -54,9 +54,9 @@
             name = "ghcr.io/pschmitt/stricknani";
             tag = "latest";
             config = {
-              Cmd = [ "${self.packages.${system}.stricknani}/bin/uvicorn" "stricknani.main:app" "--host" "0.0.0.0" "--port" "7874" ];
+              Cmd = [ "${self.packages.${system}.stricknani}/bin/uvicorn" "stricknani.main:app" "--host" "0.0.0.0" "--port" "7674" ];
               ExposedPorts = {
-                "7874/tcp" = {};
+                "7674/tcp" = {};
               };
             };
           };
