@@ -1,11 +1,14 @@
 """Seed demo data for development."""
 
 import asyncio
+import shutil
+from pathlib import Path
 
 from sqlalchemy import select
 
+from stricknani.config import config
 from stricknani.database import AsyncSessionLocal, init_db
-from stricknani.models import Project, ProjectCategory
+from stricknani.models import Image, ImageType, Project, ProjectCategory, Step
 from stricknani.utils.auth import create_user, get_user_by_email
 
 
@@ -21,6 +24,9 @@ async def seed_demo_data() -> None:
         else:
             print("Demo user already exists")
 
+        # Demo assets directory
+        demo_assets_dir = Path(__file__).parent.parent.parent / "demo_assets"
+
         # Create some demo projects
         demo_projects = [
             {
@@ -32,6 +38,25 @@ async def seed_demo_data() -> None:
                 "gauge_rows": 28,
                 "instructions": "# Baby Blanket Pattern\n\n1. Cast on 120 stitches\n2. Knit in garter stitch for 100 rows\n3. Bind off",  # noqa: E501
                 "comment": "Started this for my nephew!",
+                "title_images": ["demo_image_1.jpg"],
+                "steps": [
+                    {
+                        "title": "Cast On",
+                        "description": (
+                            "Cast on 120 stitches using the "
+                            "long-tail cast-on method."
+                        ),
+                        "images": ["demo_image_4.jpg"],
+                    },
+                    {
+                        "title": "Knit Garter Stitch",
+                        "description": (
+                            "Knit every row for 100 rows. "
+                            "This creates the garter stitch pattern."
+                        ),
+                        "images": ["demo_image_5.jpg"],
+                    },
+                ],
             },
             {
                 "name": "Winter Scarf",
@@ -41,6 +66,17 @@ async def seed_demo_data() -> None:
                 "gauge_stitches": 18,
                 "gauge_rows": 24,
                 "instructions": "# Scarf Pattern\n\n- Cast on 40 stitches\n- Work in 2x2 rib\n- Continue until 150cm",  # noqa: E501
+                "title_images": ["demo_image_2.jpg"],
+                "steps": [
+                    {
+                        "title": "Start Ribbing",
+                        "description": (
+                            "Work in 2x2 rib pattern: "
+                            "K2, P2 repeat across row."
+                        ),
+                        "images": ["demo_image_6.jpg"],
+                    },
+                ],
             },
             {
                 "name": "Spring Pullover",
@@ -50,10 +86,16 @@ async def seed_demo_data() -> None:
                 "gauge_stitches": 24,
                 "gauge_rows": 32,
                 "comment": "Following a pattern from my favorite knitting book",
+                "title_images": ["demo_image_3.jpg"],
+                "steps": [],
             },
         ]
 
         for project_data in demo_projects:
+            # Extract image and step data
+            title_images = project_data.pop("title_images", [])
+            steps_data = project_data.pop("steps", [])
+
             # Check if project already exists
             result = await db.execute(
                 select(Project).where(
@@ -66,6 +108,71 @@ async def seed_demo_data() -> None:
             if not existing:
                 project = Project(**project_data, owner_id=demo_user.id)
                 db.add(project)
+                await db.flush()  # Get project ID
+
+                # Copy and add title images
+                for img_filename in title_images:
+                    src_path = demo_assets_dir / img_filename
+                    if src_path.exists():
+                        # Create project media directory
+                        project_media_dir = (
+                            config.MEDIA_ROOT / "projects" / str(project.id)
+                        )
+                        project_media_dir.mkdir(parents=True, exist_ok=True)
+
+                        # Copy image
+                        dst_path = project_media_dir / img_filename
+                        shutil.copy2(src_path, dst_path)
+
+                        # Create image record
+                        image = Image(
+                            filename=img_filename,
+                            original_filename=img_filename,
+                            image_type=ImageType.PHOTO.value,
+                            alt_text=f"{project.name} title image",
+                            is_title_image=True,
+                            project_id=project.id,
+                        )
+                        db.add(image)
+
+                # Add steps
+                for step_number, step_data in enumerate(steps_data, 1):
+                    step_images = step_data.pop("images", [])
+                    step = Step(
+                        title=step_data["title"],
+                        description=step_data.get("description"),
+                        step_number=step_number,
+                        project_id=project.id,
+                    )
+                    db.add(step)
+                    await db.flush()  # Get step ID
+
+                    # Copy and add step images
+                    for img_filename in step_images:
+                        src_path = demo_assets_dir / img_filename
+                        if src_path.exists():
+                            # Use same project media directory
+                            project_media_dir = (
+                                config.MEDIA_ROOT / "projects" / str(project.id)
+                            )
+                            project_media_dir.mkdir(parents=True, exist_ok=True)
+
+                            # Copy image
+                            dst_path = project_media_dir / img_filename
+                            shutil.copy2(src_path, dst_path)
+
+                            # Create image record
+                            image = Image(
+                                filename=img_filename,
+                                original_filename=img_filename,
+                                image_type=ImageType.PHOTO.value,
+                                alt_text=f"{project.name} {step.title}",
+                                is_title_image=False,
+                                project_id=project.id,
+                                step_id=step.id,
+                            )
+                            db.add(image)
+
                 print(f"Created project: {project_data['name']}")
             else:
                 print(f"Project already exists: {project_data['name']}")
