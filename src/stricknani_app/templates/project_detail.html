@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} · Project Studio{% endblock %}
+{% block content %}
+<section class="grid">
+  <article class="card card--full">
+    <header class="card__header">
+      <div>
+        <h1>{{ project.name }}</h1>
+        <p>{{ project.summary }}</p>
+      </div>
+      <span class="status status--{{ project.status }}">{{ project.status|replace('_',' ')|title }}</span>
+    </header>
+    <div class="card__body">
+      <div class="kanban">
+        {% for status in statuses %}
+        <div class="kanban__column">
+          <h3>{{ status.value|replace('_',' ')|title }}</h3>
+          <ul>
+            {% for task in tasks_by_status[status] %}
+            <li>
+              <div class="task">
+                <div>
+                  <strong>{{ task.title }}</strong>
+                  {% if task.notes %}<p>{{ task.notes }}</p>{% endif %}
+                </div>
+                <form method="post" action="/projects/{{ project.id }}/tasks/{{ task.id }}/status">
+                  <select name="status" onchange="this.form.submit()">
+                    {% for option in statuses %}
+                    <option value="{{ option.value }}" {% if option == task.status %}selected{% endif %}>
+                      {{ option.value|replace('_',' ')|title }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </form>
+              </div>
+            </li>
+            {% else %}
+            <li class="muted">No tasks in this lane yet.</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </article>
+</section>
+
+<section class="grid">
+  <article class="card">
+    <h2>Create task</h2>
+    <form method="post" action="/projects/{{ project.id }}/tasks" class="form-grid">
+      <label>
+        Title
+        <input type="text" name="title" required />
+      </label>
+      <label>
+        Notes
+        <textarea name="notes" rows="2"></textarea>
+      </label>
+      <label>
+        Status
+        <select name="status">
+          {% for option in statuses %}
+          <option value="{{ option.value }}">{{ option.value|replace('_',' ')|title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="button" type="submit">Add task</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h2>Share an update</h2>
+    <form method="post" action="/projects/{{ project.id }}/updates" class="form-grid">
+      <label>
+        Headline
+        <input type="text" name="headline" required />
+      </label>
+      <label>
+        Story
+        <textarea name="content" rows="4" required></textarea>
+      </label>
+      <button class="button" type="submit">Publish update</button>
+    </form>
+    <div class="divider"></div>
+    <h3>Timeline</h3>
+    <ul class="timeline">
+      {% for update in project.updates|sort(attribute='created_at', reverse=True) %}
+      <li>
+        <strong>{{ update.headline }}</strong>
+        <span>{{ update.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        <p>{{ update.content }}</p>
+      </li>
+      {% else %}
+      <li class="muted">No updates yet.</li>
+      {% endfor %}
+    </ul>
+  </article>
+</section>
+
+<section class="grid">
+  <article class="card card--full">
+    <h2>Project gallery</h2>
+    <form method="post" action="/projects/{{ project.id }}/photos" enctype="multipart/form-data" class="form-grid">
+      <label>
+        Title
+        <input type="text" name="title" />
+      </label>
+      <label>
+        Image
+        <input type="file" name="file" accept="image/*" required />
+      </label>
+      <button class="button" type="submit">Upload photo</button>
+    </form>
+    <div class="gallery">
+      {% for photo in project.photos %}
+      <figure>
+        <img src="/static/uploads/{{ photo.filename }}" alt="{{ photo.title or 'Project photo' }}" />
+        {% if photo.title %}<figcaption>{{ photo.title }}</figcaption>{% endif %}
+      </figure>
+      {% else %}
+      <p class="muted">No photos yet. Upload your first snapshot.</p>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in · Project Studio</title>
+    <link rel="stylesheet" href="/static/css/main.css" />
+  </head>
+  <body class="auth">
+    <div class="auth__panel">
+      <h1>Welcome back</h1>
+      <p class="muted">Sign in to access your studio.</p>
+      <form method="post" action="/auth/login" class="form-grid">
+        <label>
+          Username
+          <input type="text" name="username" required />
+        </label>
+        <label>
+          Password
+          <input type="password" name="password" required />
+        </label>
+        <button class="button" type="submit">Sign in</button>
+      </form>
+      <p class="muted">
+        New here?
+        <a href="/auth/register">Create an account</a>
+      </p>
+    </div>
+  </body>
+</html>

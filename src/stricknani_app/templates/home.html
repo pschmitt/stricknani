@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Project Studio{% endblock %}
+{% block content %}
+<section class="grid">
+  <article class="card">
+    <h2>Capture a new category</h2>
+    <form method="post" action="/categories" class="form-grid">
+      <label>
+        Name
+        <input type="text" name="name" required />
+      </label>
+      <label>
+        Description
+        <textarea name="description" rows="2"></textarea>
+      </label>
+      <button class="button" type="submit">Add category</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h2>Launch a project</h2>
+    <form method="post" action="/projects" class="form-grid">
+      <label>
+        Name
+        <input type="text" name="name" required />
+      </label>
+      <label>
+        Summary
+        <textarea name="summary" rows="3" required></textarea>
+      </label>
+      <label>
+        Category
+        <select name="category_id">
+          <option value="">No category</option>
+          {% for category in categories %}
+          <option value="{{ category.id }}">{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Status
+        <select name="status">
+          {% for status in ['ideation','active','hold','complete'] %}
+          <option value="{{ status }}">{{ status|replace('_',' ')|title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="button" type="submit">Create project</button>
+    </form>
+  </article>
+</section>
+
+<section class="grid">
+  <article class="card card--full">
+    <header class="card__header">
+      <h2>Categories</h2>
+    </header>
+    <div class="tag-list">
+      {% for category in categories %}
+      <div class="tag">
+        <h3>{{ category.name }}</h3>
+        <p>{{ category.description or 'No description yet.' }}</p>
+      </div>
+      {% else %}
+      <p class="muted">No categories yet. Create one to get started.</p>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="grid">
+  {% for summary in project_summary %}
+  <article class="card card--full">
+    <header class="card__header">
+      <div>
+        <h2>
+          <a href="/projects/{{ summary.project.id }}">{{ summary.project.name }}</a>
+        </h2>
+        <p>{{ summary.project.summary }}</p>
+      </div>
+      <span class="status status--{{ summary.project.status }}">{{ summary.project.status|replace('_',' ')|title }}</span>
+    </header>
+    <div class="card__body">
+      <div class="status-grid">
+        {% for state, label in [('todo','To-do'),('in_progress','In progress'),('blocked','Blocked'),('done','Done')] %}
+        <div class="status-grid__item">
+          <strong>{{ label }}</strong>
+          <span>{{ summary.status_counts[state] if state in summary.status_counts else 0 }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% if summary.latest_update %}
+      <div class="update">
+        <h3>{{ summary.latest_update.headline }}</h3>
+        <p>{{ summary.latest_update.content }}</p>
+      </div>
+      {% else %}
+      <p class="muted">No updates yet. Capture a milestone on the project page.</p>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <article class="card card--full">
+    <p class="muted">No projects yet. Launch one using the form above.</p>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

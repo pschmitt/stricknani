@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Validation error · Project Studio{% endblock %}
+{% block content %}
+<article class="card card--full">
+  <h1>We hit a snag</h1>
+  <p class="muted">Something about your request did not look right.</p>
+  <ul class="error-list">
+    {% for error in errors %}
+    <li>{{ error['loc']|join(' › ') }} – {{ error['msg'] }}</li>
+    {% endfor %}
+  </ul>
+  <a class="button" href="/">Back to dashboard</a>
+</article>
+{% endblock %}

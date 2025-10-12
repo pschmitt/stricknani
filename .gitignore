@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+.env
+.venv/
+uv.lock
+.DS_Store
+.idea/
+.vscode/
+htmlcov/
+.coverage
+node_modules/

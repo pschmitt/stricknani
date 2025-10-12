@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Project Studio{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/main.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <div class="navbar__brand">Project Studio</div>
+      <nav class="navbar__actions">
+        <span class="navbar__user">👤 {{ user.username }}</span>
+        <a class="button button--ghost" href="/auth/logout">Logout</a>
+      </nav>
+    </header>
+    <main class="container">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
