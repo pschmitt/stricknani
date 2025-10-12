@@ -47,10 +47,10 @@ templates = Jinja2Templates(directory=str(templates_path))
 
 def get_language(request: Request) -> str:
     """Get language from request.
-    
+
     Args:
         request: FastAPI request object
-        
+
     Returns:
         Language code
     """
@@ -58,13 +58,13 @@ def get_language(request: Request) -> str:
     lang_cookie = request.cookies.get("language")
     if lang_cookie and lang_cookie in config.SUPPORTED_LANGUAGES:
         return lang_cookie
-    
+
     # Check Accept-Language header
     accept_language = request.headers.get("accept-language", "")
     for lang in config.SUPPORTED_LANGUAGES:
         if lang in accept_language.lower():
             return lang
-    
+
     # Default language
     return config.DEFAULT_LANGUAGE
 
@@ -73,26 +73,26 @@ def render_template(
     template_name: str, request: Request, context: dict | None = None
 ) -> HTMLResponse:
     """Render a template with i18n support.
-    
+
     Args:
         template_name: Name of the template file
         request: FastAPI request object
         context: Additional context variables
-        
+
     Returns:
         HTMLResponse with rendered template
     """
     if context is None:
         context = {}
-    
+
     # Get language and install translations
     language = get_language(request)
     install_i18n(templates.env, language)
-    
+
     # Add request and language to context
     context["request"] = request
     context["current_language"] = language
-    
+
     return templates.TemplateResponse(template_name, context)
 
 

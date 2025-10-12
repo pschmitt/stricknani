@@ -31,7 +31,7 @@ async def list_projects(
     """List all projects for the current user."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    
+
     query = select(Project).where(Project.owner_id == current_user.id)
 
     if category:
@@ -60,7 +60,7 @@ async def list_projects(
             "projects/_list_partial.html",
             {"request": request, "projects": projects_data},
         )
-    
+
     projects_data = [
         {
             "id": p.id,
@@ -70,7 +70,7 @@ async def list_projects(
         }
         for p in projects
     ]
-    
+
     return render_template(
         "projects/list.html",
         request,
@@ -90,7 +90,7 @@ async def new_project_form(
     """Show new project form."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    
+
     return render_template(
         "projects/form.html",
         request,
@@ -112,7 +112,7 @@ async def get_project(
     """Get a specific project."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    
+
     result = await db.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
 
@@ -139,7 +139,7 @@ async def get_project(
         "created_at": project.created_at.isoformat(),
         "updated_at": project.updated_at.isoformat(),
     }
-    
+
     return render_template(
         "projects/detail.html",
         request,
@@ -157,7 +157,7 @@ async def edit_project_form(
     """Show edit project form."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    
+
     result = await db.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
 
@@ -170,7 +170,7 @@ async def edit_project_form(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
-    
+
     return render_template(
         "projects/form.html",
         request,
