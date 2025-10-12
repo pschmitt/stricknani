@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.database import get_db
-from stricknani.main import templates
+from stricknani.main import render_template, templates
 from stricknani.models import Project, ProjectCategory, User
 from stricknani.routes.auth import get_current_user, require_auth
 
@@ -71,10 +71,10 @@ async def list_projects(
         for p in projects
     ]
     
-    return templates.TemplateResponse(
+    return render_template(
         "projects/list.html",
+        request,
         {
-            "request": request,
             "current_user": current_user,
             "projects": projects_data,
             "categories": get_categories(),
@@ -91,10 +91,10 @@ async def new_project_form(
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     
-    return templates.TemplateResponse(
+    return render_template(
         "projects/form.html",
+        request,
         {
-            "request": request,
             "current_user": current_user,
             "project": None,
             "categories": get_categories(),
@@ -140,9 +140,10 @@ async def get_project(
         "updated_at": project.updated_at.isoformat(),
     }
     
-    return templates.TemplateResponse(
+    return render_template(
         "projects/detail.html",
-        {"request": request, "current_user": current_user, "project": project_data},
+        request,
+        {"current_user": current_user, "project": project_data},
     )
 
 
@@ -170,10 +171,10 @@ async def edit_project_form(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
     
-    return templates.TemplateResponse(
+    return render_template(
         "projects/form.html",
+        request,
         {
-            "request": request,
             "current_user": current_user,
             "project": project,
             "categories": get_categories(),

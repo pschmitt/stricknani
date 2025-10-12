@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="flex justify-between items-center mb-6">
-    <h2 class="text-3xl font-bold text-gray-900">My Projects</h2>
+    <h2 class="text-3xl font-bold text-gray-900">{{ _('My Projects') }}</h2>
     <a 
         href="/projects/new"
         class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors inline-flex items-center"
@@ -16,7 +16,7 @@
 <!-- Filters -->
 <div class="mb-6 flex gap-4">
     <div>
-        <label for="category-filter" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+        <label for="category-filter" class="block text-sm font-medium text-gray-700 mb-1">{{ _('Category') }}</label>
         <select 
             id="category-filter" 
             class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -26,7 +26,7 @@
             hx-include="[name='search']"
             name="category"
         >
-            <option value="">All Categories</option>
+            <option value="">{{ _('All Categories') }}</option>
             {% for category in categories %}
             <option value="{{ category }}">{{ category }}</option>
             {% endfor %}
@@ -34,7 +34,7 @@
     </div>
     
     <div class="flex-grow">
-        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">{{ _('Search') }}</label>
         <input 
             type="text" 
             id="search" 

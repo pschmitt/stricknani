@@ -22,6 +22,7 @@ dependencies = [
     "markdown>=3.7",
     "bleach>=6.1.0",
     "aiosqlite>=0.20.0",
+    "babel>=2.14.0",
 ]
 
 [project.optional-dependencies]

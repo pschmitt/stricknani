@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from stricknani.main import templates
+from stricknani.main import render_template
 from stricknani.models import User
 from stricknani.routes.auth import get_current_user
 from stricknani.utils.gauge import calculate_gauge
@@ -19,9 +19,10 @@ async def gauge_calculator_page(
     current_user: User | None = Depends(get_current_user),
 ) -> HTMLResponse:
     """Show gauge calculator page."""
-    return templates.TemplateResponse(
+    return render_template(
         "gauge/calculator.html",
-        {"request": request, "current_user": current_user},
+        request,
+        {"current_user": current_user},
     )
 
 

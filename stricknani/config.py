@@ -33,6 +33,10 @@ class Config:
         os.getenv("FEATURE_SIGNUP_ENABLED", "true").lower() == "true"
     )
 
+    # Internationalization
+    DEFAULT_LANGUAGE: str = os.getenv("DEFAULT_LANGUAGE", "de")
+    SUPPORTED_LANGUAGES: list[str] = ["en", "de"]
+
     # Auth
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 1 week
     ALGORITHM: str = "HS256"
