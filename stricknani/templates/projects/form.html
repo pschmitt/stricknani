@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Edit' if project else 'New' }} Project - Stricknani{% endblock %}
+{% block title %}{{ _('Edit') if project else _('New') }} {{ _('Project') }} - Stricknani{% endblock %}
 
 {% block content %}
 <div class="mb-6">
     <a href="{{ '/projects/' + project.id|string if project else '/projects' }}" class="text-blue-600 hover:text-blue-800 inline-flex items-center">
-        <span class="mr-2">←</span> Back
+        <span class="mr-2">←</span> {{ _('← Back') }}
     </a>
 </div>
 
-<div class="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-8">
-    <h2 class="text-3xl font-bold text-gray-900 mb-6">{{ 'Edit Project' if project else 'New Project' }}</h2>
+<div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
+    <h2 class="text-3xl font-bold text-gray-900 mb-6">{{ _('Edit Project') if project else _('New Project') }}</h2>
     
-    <form action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post" class="space-y-6">
+    <form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post" class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Name -->
             <div class="md:col-span-2">
                 <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-                    Project Name <span class="text-red-500">*</span>
+                    {{ _('Project Name') }} <span class="text-red-500">*</span>
                 </label>
                 <input 
                     type="text" 
@@ -33,7 +33,7 @@
             <!-- Category -->
             <div>
                 <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
-                    Category <span class="text-red-500">*</span>
+                    {{ _('Category') }} <span class="text-red-500">*</span>
                 </label>
                 <select 
                     id="category" 
@@ -41,16 +41,16 @@
                     required
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                    <option value="">Select a category</option>
+                    <option value="">{{ _('Select a category') }}</option>
                     {% for category in categories %}
-                    <option value="{{ category }}" {% if project and project.category == category %}selected{% endif %}>{{ category }}</option>
+                    <option value="{{ category }}" {% if project and project.category == category %}selected{% endif %}>{{ _(category) }}</option>
                     {% endfor %}
                 </select>
             </div>
             
             <!-- Yarn -->
             <div>
-                <label for="yarn" class="block text-sm font-medium text-gray-700 mb-1">Yarn</label>
+                <label for="yarn" class="block text-sm font-medium text-gray-700 mb-1">{{ _('Yarn') }}</label>
                 <input 
                     type="text" 
                     id="yarn" 
@@ -63,7 +63,7 @@
             
             <!-- Needles -->
             <div class="md:col-span-2">
-                <label for="needles" class="block text-sm font-medium text-gray-700 mb-1">Needles</label>
+                <label for="needles" class="block text-sm font-medium text-gray-700 mb-1">{{ _('Needles') }}</label>
                 <input 
                     type="text" 
                     id="needles" 
@@ -76,7 +76,7 @@
             
             <!-- Gauge -->
             <div>
-                <label for="gauge_stitches" class="block text-sm font-medium text-gray-700 mb-1">Gauge Stitches (per 10cm)</label>
+                <label for="gauge_stitches" class="block text-sm font-medium text-gray-700 mb-1">{{ _('Gauge Stitches (per 10cm)') }}</label>
                 <input 
                     type="number" 
                     id="gauge_stitches" 
@@ -89,7 +89,7 @@
             </div>
             
             <div>
-                <label for="gauge_rows" class="block text-sm font-medium text-gray-700 mb-1">Gauge Rows (per 10cm)</label>
+                <label for="gauge_rows" class="block text-sm font-medium text-gray-700 mb-1">{{ _('Gauge Rows (per 10cm)') }}</label>
                 <input 
                     type="number" 
                     id="gauge_rows" 
@@ -103,7 +103,7 @@
             
             <!-- Instructions -->
             <div class="md:col-span-2">
-                <label for="instructions" class="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
+                <label for="instructions" class="block text-sm font-medium text-gray-700 mb-1">{{ _('Instructions') }}</label>
                 <textarea 
                     id="instructions" 
                     name="instructions"
@@ -111,12 +111,12 @@
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter your knitting instructions here..."
                 >{{ project.instructions if project else '' }}</textarea>
-                <p class="text-xs text-gray-500 mt-1">Supports Markdown formatting</p>
+                <p class="text-xs text-gray-500 mt-1">{{ _('Supports Markdown formatting') }}</p>
             </div>
             
             <!-- Comment -->
             <div class="md:col-span-2">
-                <label for="comment" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label for="comment" class="block text-sm font-medium text-gray-700 mb-1">{{ _('Notes') }}</label>
                 <textarea 
                     id="comment" 
                     name="comment"
@@ -127,13 +127,76 @@
             </div>
         </div>
         
+        <!-- Title Images Section (only for edit mode) -->
+        {% if project %}
+        <div class="border-t pt-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">{{ _('Title Images') }}</h3>
+            <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                {% for image in project.images if image.is_title_image %}
+                <div class="relative" data-image-id="{{ image.id }}">
+                    <img src="{{ image.thumbnail_url }}" alt="{{ image.alt_text }}" class="w-full h-32 object-cover rounded">
+                    <button type="button" onclick="deleteImage({{ image.id }})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors" id="titleImageDropZone">
+                <input type="file" id="titleImageInput" accept="image/*" multiple class="hidden">
+                <label for="titleImageInput" class="cursor-pointer">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-600">{{ _('Drag and drop images here or click to upload') }}</p>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Steps Section (only for edit mode) -->
+        <div class="border-t pt-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">{{ _('Steps') }}</h3>
+            <div id="stepsContainer" class="space-y-4">
+                {% for step in project.steps %}
+                <div class="step-item border rounded-lg p-4 bg-gray-50" data-step-id="{{ step.id }}" data-step-number="{{ step.step_number }}">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-lg font-medium">{{ _('Step') }} <span class="step-number">{{ step.step_number }}</span></h4>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="moveStepUp(this)" class="px-2 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded">{{ _('Move Up') }}</button>
+                            <button type="button" onclick="moveStepDown(this)" class="px-2 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded">{{ _('Move Down') }}</button>
+                            <button type="button" onclick="removeStep(this)" class="px-2 py-1 text-sm bg-red-600 text-white hover:bg-red-700 rounded">{{ _('Remove Step') }}</button>
+                        </div>
+                    </div>
+                    <input type="text" class="step-title w-full px-3 py-2 border border-gray-300 rounded-md mb-2" placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
+                    <textarea class="step-description w-full px-3 py-2 border border-gray-300 rounded-md mb-2" rows="3" placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
+                    <div class="step-images grid grid-cols-3 gap-2 mb-2">
+                        {% for image in step.images %}
+                        <div class="relative" data-image-id="{{ image.id }}">
+                            <img src="{{ image.thumbnail_url }}" alt="{{ image.alt_text }}" class="w-full h-20 object-cover rounded">
+                            <button type="button" onclick="deleteImage({{ image.id }})" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <input type="file" class="step-image-input hidden" accept="image/*" multiple data-step-id="{{ step.id }}">
+                    <button type="button" onclick="this.previousElementSibling.click()" class="px-3 py-1 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded">{{ _('Add Image to Step') }}</button>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" onclick="addStep()" class="mt-4 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md">{{ _('Add Step') }}</button>
+        </div>
+        {% endif %}
+        
         <!-- Gauge Calculator Link -->
         <div class="bg-blue-50 p-4 rounded-md">
             <p class="text-sm text-blue-800 mb-2">
-                <strong>💡 Tip:</strong> Need help calculating your gauge? Use our 
-                <a href="/gauge" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Gauge Calculator</a>
+                <strong>{{ _('💡 Tip:') }}</strong> {{ _('Need help calculating your gauge? Use our') }} 
+                <a href="/gauge" target="_blank" class="text-blue-600 hover:text-blue-800 underline">{{ _('Gauge Calculator') }}</a>
             </p>
         </div>
+        
+        <!-- Hidden field for steps data -->
+        <input type="hidden" id="stepsData" name="steps_data">
         
         <!-- Submit Buttons -->
         <div class="flex gap-4">
@@ -141,15 +204,202 @@
                 type="submit"
                 class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium"
             >
-                {{ 'Update Project' if project else 'Create Project' }}
+                {{ _('Update Project') if project else _('Create Project') }}
             </button>
             <a 
                 href="{{ '/projects/' + project.id|string if project else '/projects' }}"
                 class="px-6 py-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors font-medium text-gray-700 text-center"
             >
-                Cancel
+                {{ _('Cancel') }}
             </a>
         </div>
     </form>
 </div>
+
+{% if project %}
+<script>
+const projectId = {{ project.id }};
+
+// Handle title image upload
+const titleImageInput = document.getElementById('titleImageInput');
+const titleImageDropZone = document.getElementById('titleImageDropZone');
+
+titleImageInput.addEventListener('change', async (e) => {
+    const files = e.target.files;
+    for (let file of files) {
+        await uploadTitleImage(file);
+    }
+});
+
+titleImageDropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    titleImageDropZone.classList.add('border-blue-500');
+});
+
+titleImageDropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    titleImageDropZone.classList.remove('border-blue-500');
+});
+
+titleImageDropZone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    titleImageDropZone.classList.remove('border-blue-500');
+    
+    const files = e.dataTransfer.files;
+    for (let file of files) {
+        if (file.type.startsWith('image/')) {
+            await uploadTitleImage(file);
+        }
+    }
+});
+
+async function uploadTitleImage(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('alt_text', file.name);
+    
+    const response = await fetch(`/projects/${projectId}/images/title`, {
+        method: 'POST',
+        body: formData
+    });
+    
+    if (response.ok) {
+        const data = await response.json();
+        addTitleImageToGallery(data);
+    }
+}
+
+function addTitleImageToGallery(imageData) {
+    const container = document.getElementById('titleImagesContainer');
+    const div = document.createElement('div');
+    div.className = 'relative';
+    div.setAttribute('data-image-id', imageData.id);
+    div.innerHTML = `
+        <img src="${imageData.thumbnail_url}" alt="${imageData.alt_text}" class="w-full h-32 object-cover rounded">
+        <button type="button" onclick="deleteImage(${imageData.id})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    `;
+    container.appendChild(div);
+}
+
+async function deleteImage(imageId) {
+    if (!confirm('{{ _("Delete") }}?')) return;
+    
+    const response = await fetch(`/projects/${projectId}/images/${imageId}`, {
+        method: 'DELETE'
+    });
+    
+    if (response.ok) {
+        document.querySelector(`[data-image-id="${imageId}"]`).remove();
+    }
+}
+
+// Handle step images
+document.addEventListener('change', async (e) => {
+    if (e.target.classList.contains('step-image-input')) {
+        const stepId = e.target.getAttribute('data-step-id');
+        const files = e.target.files;
+        const stepItem = e.target.closest('.step-item');
+        const imagesContainer = stepItem.querySelector('.step-images');
+        
+        for (let file of files) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('alt_text', file.name);
+            
+            const response = await fetch(`/projects/${projectId}/steps/${stepId}/images`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const div = document.createElement('div');
+                div.className = 'relative';
+                div.setAttribute('data-image-id', data.id);
+                div.innerHTML = `
+                    <img src="${data.thumbnail_url}" alt="${data.alt_text}" class="w-full h-20 object-cover rounded">
+                    <button type="button" onclick="deleteImage(${data.id})" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                `;
+                imagesContainer.appendChild(div);
+            }
+        }
+    }
+});
+
+// Step management
+function addStep() {
+    const container = document.getElementById('stepsContainer');
+    const stepNumber = container.children.length + 1;
+    const div = document.createElement('div');
+    div.className = 'step-item border rounded-lg p-4 bg-gray-50';
+    div.setAttribute('data-step-number', stepNumber);
+    div.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+            <h4 class="text-lg font-medium">{{ _('Step') }} <span class="step-number">${stepNumber}</span></h4>
+            <div class="flex gap-2">
+                <button type="button" onclick="moveStepUp(this)" class="px-2 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded">{{ _('Move Up') }}</button>
+                <button type="button" onclick="moveStepDown(this)" class="px-2 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded">{{ _('Move Down') }}</button>
+                <button type="button" onclick="removeStep(this)" class="px-2 py-1 text-sm bg-red-600 text-white hover:bg-red-700 rounded">{{ _('Remove Step') }}</button>
+            </div>
+        </div>
+        <input type="text" class="step-title w-full px-3 py-2 border border-gray-300 rounded-md mb-2" placeholder="{{ _('Step Title') }}">
+        <textarea class="step-description w-full px-3 py-2 border border-gray-300 rounded-md mb-2" rows="3" placeholder="{{ _('Step Description') }}"></textarea>
+        <div class="step-images grid grid-cols-3 gap-2 mb-2"></div>
+    `;
+    container.appendChild(div);
+}
+
+function removeStep(button) {
+    button.closest('.step-item').remove();
+    updateStepNumbers();
+}
+
+function moveStepUp(button) {
+    const item = button.closest('.step-item');
+    const prev = item.previousElementSibling;
+    if (prev) {
+        item.parentNode.insertBefore(item, prev);
+        updateStepNumbers();
+    }
+}
+
+function moveStepDown(button) {
+    const item = button.closest('.step-item');
+    const next = item.nextElementSibling;
+    if (next) {
+        item.parentNode.insertBefore(next, item);
+        updateStepNumbers();
+    }
+}
+
+function updateStepNumbers() {
+    document.querySelectorAll('.step-item').forEach((item, index) => {
+        const number = index + 1;
+        item.setAttribute('data-step-number', number);
+        item.querySelector('.step-number').textContent = number;
+    });
+}
+
+// Form submission
+document.getElementById('projectForm').addEventListener('submit', (e) => {
+    const steps = [];
+    document.querySelectorAll('.step-item').forEach((item, index) => {
+        steps.push({
+            id: item.getAttribute('data-step-id') || null,
+            title: item.querySelector('.step-title').value,
+            description: item.querySelector('.step-description').value,
+            step_number: index + 1
+        });
+    });
+    document.getElementById('stepsData').value = JSON.stringify(steps);
+});
+</script>
+{% endif %}
 {% endblock %}

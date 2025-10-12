@@ -231,3 +231,53 @@ msgstr "Headband"
 # Footer
 msgid "GPL-3.0-only"
 msgstr "GPL-3.0-only"
+
+# Asset Management
+msgid "Title Images"
+msgstr "Title Images"
+
+msgid "Add Title Image"
+msgstr "Add Title Image"
+
+msgid "Drag and drop images here or click to upload"
+msgstr "Drag and drop images here or click to upload"
+
+msgid "Upload Image"
+msgstr "Upload Image"
+
+msgid "Steps"
+msgstr "Steps"
+
+msgid "Add Step"
+msgstr "Add Step"
+
+msgid "Step"
+msgstr "Step"
+
+msgid "Step Title"
+msgstr "Step Title"
+
+msgid "Step Description"
+msgstr "Step Description"
+
+msgid "Add Image to Step"
+msgstr "Add Image to Step"
+
+msgid "Remove Step"
+msgstr "Remove Step"
+
+msgid "Move Up"
+msgstr "Move Up"
+
+msgid "Move Down"
+msgstr "Move Down"
+
+msgid "Language"
+msgstr "Language"
+
+msgid "English"
+msgstr "English"
+
+msgid "German"
+msgstr "German"
+

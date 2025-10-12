@@ -231,3 +231,53 @@ msgstr "Stirnband"
 # Footer
 msgid "GPL-3.0-only"
 msgstr "GPL-3.0-only"
+
+# Asset Management
+msgid "Title Images"
+msgstr "Titelbilder"
+
+msgid "Add Title Image"
+msgstr "Titelbild hinzufügen"
+
+msgid "Drag and drop images here or click to upload"
+msgstr "Bilder hier ablegen oder zum Hochladen klicken"
+
+msgid "Upload Image"
+msgstr "Bild hochladen"
+
+msgid "Steps"
+msgstr "Schritte"
+
+msgid "Add Step"
+msgstr "Schritt hinzufügen"
+
+msgid "Step"
+msgstr "Schritt"
+
+msgid "Step Title"
+msgstr "Schritt-Titel"
+
+msgid "Step Description"
+msgstr "Schritt-Beschreibung"
+
+msgid "Add Image to Step"
+msgstr "Bild zu Schritt hinzufügen"
+
+msgid "Remove Step"
+msgstr "Schritt entfernen"
+
+msgid "Move Up"
+msgstr "Nach oben"
+
+msgid "Move Down"
+msgstr "Nach unten"
+
+msgid "Language"
+msgstr "Sprache"
+
+msgid "English"
+msgstr "Englisch"
+
+msgid "German"
+msgstr "Deutsch"
+

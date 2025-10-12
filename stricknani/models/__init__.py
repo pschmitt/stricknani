@@ -83,6 +83,33 @@ class Project(Base):
     images: Mapped[list["Image"]] = relationship(
         "Image", back_populates="project", cascade="all, delete-orphan"
     )
+    steps: Mapped[list["Step"]] = relationship(
+        "Step",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="Step.step_number",
+    )
+
+
+class Step(Base):
+    """Step model for project instructions."""
+
+    __tablename__ = "steps"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    step_number: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    # Foreign key
+    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id"))
+
+    # Relationships
+    project: Mapped["Project"] = relationship("Project", back_populates="steps")
+    images: Mapped[list["Image"]] = relationship(
+        "Image", back_populates="step", cascade="all, delete-orphan"
+    )
 
 
 class Image(Base):
@@ -95,10 +122,15 @@ class Image(Base):
     original_filename: Mapped[str] = mapped_column(String(255))
     image_type: Mapped[str] = mapped_column(String(20))
     alt_text: Mapped[str] = mapped_column(String(255))
+    is_title_image: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    # Foreign key
+    # Foreign keys
     project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id"))
+    step_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("steps.id"), nullable=True
+    )
 
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="images")
+    step: Mapped["Step | None"] = relationship("Step", back_populates="images")

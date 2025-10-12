@@ -27,6 +27,13 @@
                 <div class="flex items-center">
                     {% if current_user %}
                     <div class="flex items-center space-x-4">
+                        <!-- Language Selector -->
+                        <form action="/auth/set-language" method="post" class="inline">
+                            <select name="language" onchange="this.form.submit()" class="text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 {{ _('English') }}</option>
+                                <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 {{ _('German') }}</option>
+                            </select>
+                        </form>
                         <span class="text-sm text-gray-700">{{ current_user.email }}</span>
                         <form action="/auth/logout" method="post">
                             <button type="submit" class="text-sm text-gray-700 hover:text-red-600 px-3 py-2 rounded-md font-medium">
@@ -35,9 +42,18 @@
                         </form>
                     </div>
                     {% else %}
-                    <a href="/login" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                        {{ _('Login') }}
-                    </a>
+                    <div class="flex items-center space-x-4">
+                        <!-- Language Selector -->
+                        <form action="/auth/set-language" method="post" class="inline">
+                            <select name="language" onchange="this.form.submit()" class="text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 {{ _('English') }}</option>
+                                <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 {{ _('German') }}</option>
+                            </select>
+                        </form>
+                        <a href="/login" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                            {{ _('Login') }}
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </div>

@@ -136,3 +136,27 @@ async def logout() -> Response:
 async def me(current_user: User = Depends(require_auth)) -> dict[str, str]:
     """Get current user info."""
     return {"email": current_user.email, "id": str(current_user.id)}
+
+
+@router.post("/set-language")
+async def set_language(
+    language: Annotated[str, Form()],
+) -> Response:
+    """Set the user's language preference."""
+    if language not in config.SUPPORTED_LANGUAGES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid language",
+        )
+
+    # Redirect back to the referer or home page
+    response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(
+        key="language",
+        value=language,
+        httponly=False,
+        secure=not config.DEBUG,
+        samesite="lax",
+        max_age=31536000,  # 1 year
+    )
+    return response
