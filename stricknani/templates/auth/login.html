@@ -41,6 +41,7 @@
                 </button>
             </form>
             
+            {% if signup_enabled %}
             <div class="text-center">
                 <button 
                     onclick="document.getElementById('login-form').classList.add('hidden'); document.getElementById('signup-form').classList.remove('hidden')"
@@ -49,8 +50,10 @@
                     Don't have an account? Sign up
                 </button>
             </div>
+            {% endif %}
         </div>
         
+        {% if signup_enabled %}
         <!-- Signup Form -->
         <div id="signup-form" class="space-y-6 hidden">
             <h3 class="text-xl font-semibold text-gray-800">Sign Up</h3>
@@ -96,6 +99,7 @@
                 </button>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

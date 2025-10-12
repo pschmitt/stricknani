@@ -9,10 +9,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.database import get_db
 from stricknani.main import templates
-from stricknani.models import Project, User
+from stricknani.models import Project, ProjectCategory, User
 from stricknani.routes.auth import get_current_user, require_auth
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+
+def get_categories() -> list[str]:
+    """Get list of project categories."""
+    return [cat.value for cat in ProjectCategory]
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -68,7 +73,12 @@ async def list_projects(
     
     return templates.TemplateResponse(
         "projects/list.html",
-        {"request": request, "current_user": current_user, "projects": projects_data},
+        {
+            "request": request,
+            "current_user": current_user,
+            "projects": projects_data,
+            "categories": get_categories(),
+        },
     )
 
 
@@ -83,7 +93,12 @@ async def new_project_form(
     
     return templates.TemplateResponse(
         "projects/form.html",
-        {"request": request, "current_user": current_user, "project": None},
+        {
+            "request": request,
+            "current_user": current_user,
+            "project": None,
+            "categories": get_categories(),
+        },
     )
 
 
@@ -157,7 +172,12 @@ async def edit_project_form(
     
     return templates.TemplateResponse(
         "projects/form.html",
-        {"request": request, "current_user": current_user, "project": project},
+        {
+            "request": request,
+            "current_user": current_user,
+            "project": project,
+            "categories": get_categories(),
+        },
     )
 
 

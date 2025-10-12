@@ -27,11 +27,9 @@
             name="category"
         >
             <option value="">All Categories</option>
-            <option value="Pullover">Pullover</option>
-            <option value="Jacke">Jacke</option>
-            <option value="Schal">Schal</option>
-            <option value="Mütze">Mütze</option>
-            <option value="Stirnband">Stirnband</option>
+            {% for category in categories %}
+            <option value="{{ category }}">{{ category }}</option>
+            {% endfor %}
         </select>
     </div>
     

@@ -58,6 +58,9 @@
               ExposedPorts = {
                 "7674/tcp" = {};
               };
+              Env = [
+                "BIND_HOST=0.0.0.0"
+              ];
             };
           };
         };

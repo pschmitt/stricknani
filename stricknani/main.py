@@ -64,7 +64,12 @@ app.include_router(gauge.router)
 async def login_page(request: Request) -> HTMLResponse:
     """Show login page."""
     return templates.TemplateResponse(
-        "auth/login.html", {"request": request, "current_user": None}
+        "auth/login.html",
+        {
+            "request": request,
+            "current_user": None,
+            "signup_enabled": config.FEATURE_SIGNUP_ENABLED,
+        },
     )
 
 

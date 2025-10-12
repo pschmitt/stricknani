@@ -42,11 +42,9 @@
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                     <option value="">Select a category</option>
-                    <option value="Pullover" {% if project and project.category == 'Pullover' %}selected{% endif %}>Pullover</option>
-                    <option value="Jacke" {% if project and project.category == 'Jacke' %}selected{% endif %}>Jacke</option>
-                    <option value="Schal" {% if project and project.category == 'Schal' %}selected{% endif %}>Schal</option>
-                    <option value="Mütze" {% if project and project.category == 'Mütze' %}selected{% endif %}>Mütze</option>
-                    <option value="Stirnband" {% if project and project.category == 'Stirnband' %}selected{% endif %}>Stirnband</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}" {% if project and project.category == category %}selected{% endif %}>{{ category }}</option>
+                    {% endfor %}
                 </select>
             </div>
             

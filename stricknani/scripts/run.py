@@ -10,8 +10,8 @@ def main() -> None:
     # Get port from environment or use default
     import os
 
-    port = int(os.getenv("PORT", "7674"))
-    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("BIND_PORT", "7674"))
+    host = os.getenv("BIND_HOST", "127.0.0.1")
 
     # Run the application
     uvicorn.run(
