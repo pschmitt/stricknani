@@ -16,7 +16,7 @@ dependencies = [
     "alembic>=1.13.3",
     "python-multipart>=0.0.9",
     "python-jose[cryptography]>=3.3.0",
-    "passlib[bcrypt]>=1.7.4",
+    "bcrypt>=4.0.0",
     "python-dotenv>=1.0.1",
     "pillow>=10.4.0",
     "markdown>=3.7",
@@ -76,7 +76,6 @@ strict_equality = true
 
 [[tool.mypy.overrides]]
 module = [
-    "passlib.*",
     "jose.*",
 ]
 ignore_missing_imports = true

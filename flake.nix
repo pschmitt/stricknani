@@ -35,7 +35,7 @@
               alembic
               python-multipart
               python-jose
-              passlib
+              bcrypt
               python-dotenv
               pillow
               markdown
@@ -77,7 +77,7 @@
             alembic
             python-multipart
             python-jose
-            passlib
+            bcrypt
             python-dotenv
             pillow
             markdown
