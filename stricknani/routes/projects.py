@@ -30,6 +30,7 @@ from stricknani.utils.files import (
     get_thumbnail_url,
     save_uploaded_file,
 )
+from stricknani.utils.markdown import render_markdown
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -178,7 +179,7 @@ async def get_project(
         steps_data.append({
             "id": step.id,
             "title": step.title,
-            "description": step.description,
+            "description": render_markdown(step.description) if step.description else "",
             "step_number": step.step_number,
             "images": step_images,
         })
@@ -191,8 +192,8 @@ async def get_project(
         "needles": project.needles,
         "gauge_stitches": project.gauge_stitches,
         "gauge_rows": project.gauge_rows,
-        "instructions": project.instructions,
-        "comment": project.comment,
+        "instructions": render_markdown(project.instructions) if project.instructions else None,
+        "comment": render_markdown(project.comment) if project.comment else None,
         "created_at": project.created_at.isoformat(),
         "updated_at": project.updated_at.isoformat(),
         "title_images": title_images,
