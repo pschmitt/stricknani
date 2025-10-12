@@ -27,11 +27,12 @@ def get_translations(language: str) -> Translations:
     
     translations_path = LOCALES_DIR / language / "LC_MESSAGES"
     
-    if translations_path.exists():
-        return Translations.load(str(LOCALES_DIR), [language])
+    if translations_path.exists() and (translations_path / "messages.mo").exists():
+        return Translations.load(dirname=str(LOCALES_DIR), locales=[language], domain="messages")
     
     # Return null translations if file doesn't exist
-    return Translations.load(str(LOCALES_DIR), [])
+    from babel.support import NullTranslations
+    return NullTranslations()
 
 
 def gettext(message: str, language: str | None = None) -> str:
@@ -81,4 +82,8 @@ def install_i18n(env: Environment, language: str | None = None) -> None:
         language = config.DEFAULT_LANGUAGE
     
     translations = get_translations(language)
-    env.install_gettext_translations(translations)  # type: ignore
+    
+    # Add gettext functions to Jinja2 globals
+    env.globals["_"] = translations.gettext
+    env.globals["gettext"] = translations.gettext
+    env.globals["ngettext"] = translations.ngettext
