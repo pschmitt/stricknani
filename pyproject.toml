@@ -7,7 +7,7 @@ license = { text = "GPL-3.0-only" }
 authors = [
     { name = "Philipp Schmitt", email = "philipp@schmitt.co" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
