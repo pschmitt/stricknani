@@ -5,11 +5,14 @@ from enum import Enum
 
 from sqlalchemy import (
     Boolean,
+    Column,
     DateTime,
     ForeignKey,
     Integer,
     String,
+    Table,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -47,11 +50,30 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    profile_image: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Relationships
     projects: Mapped[list["Project"]] = relationship(
         "Project", back_populates="owner", cascade="all, delete-orphan"
     )
+    favorite_projects: Mapped[list["Project"]] = relationship(
+        "Project",
+        secondary=lambda: user_favorites,
+        back_populates="favorited_by",
+    )
+
+
+user_favorites = Table(
+    "user_favorites",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "project_id",
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    UniqueConstraint("user_id", "project_id", name="uq_user_favorite"),
+)
 
 
 class Project(Base):
@@ -66,7 +88,6 @@ class Project(Base):
     needles: Mapped[str | None] = mapped_column(String(255), nullable=True)
     gauge_stitches: Mapped[int | None] = mapped_column(Integer, nullable=True)
     gauge_rows: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, index=True
@@ -88,6 +109,11 @@ class Project(Base):
         back_populates="project",
         cascade="all, delete-orphan",
         order_by="Step.step_number",
+    )
+    favorited_by: Mapped[list["User"]] = relationship(
+        "User",
+        secondary=lambda: user_favorites,
+        back_populates="favorite_projects",
     )
 
 

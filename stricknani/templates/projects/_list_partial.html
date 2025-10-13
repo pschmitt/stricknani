@@ -1,33 +1,37 @@
 {% if projects %}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for project in projects %}
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+        <div class="bg-white/80 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow dark:bg-slate-900/70 dark:shadow-slate-900/20" data-project-card>
             <div class="p-6">
                 <div class="flex justify-between items-start mb-3">
-                    <h3 class="text-xl font-semibold text-gray-900">{{ project.name }}</h3>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {{ project.category }}
+                    <h3 class="text-xl font-semibold text-slate-900 dark:text-slate-100">{{ project.name }}</h3>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-400/20 dark:text-blue-300">
+                        {{ _(project.category) }}
                     </span>
                 </div>
-                <p class="text-sm text-gray-500 mb-4">
-                    Created {{ project.created_at[:10] }}
+                <p class="text-sm text-slate-500 mb-4 dark:text-slate-300">
+                    {{ _('Created') }} {{ project.created_at[:10] }}
                 </p>
                 <div class="flex gap-2">
-                    <a 
+                    <a
                         href="/projects/{{ project.id }}"
-                        class="flex-1 text-center bg-blue-50 text-blue-700 px-3 py-2 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
+                        class="flex-1 text-center bg-blue-50 text-blue-700 px-3 py-2 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2 dark:bg-blue-400/10 dark:text-blue-300 dark:hover:bg-blue-400/20"
                     >
-                        View Details
+                        <span class="mdi mdi-eye-outline"></span>
+                        {{ _('View Details') }}
                     </a>
-                    <button 
+                    {% with project_id=project.id, is_favorite=project.is_favorite, variant='card' %}
+                        {% include "projects/_favorite_toggle.html" %}
+                    {% endwith %}
+                    <button
                         hx-delete="/projects/{{ project.id }}"
-                        hx-confirm="Are you sure you want to delete this project?"
-                        hx-target="closest .bg-white"
+                        hx-confirm="{{ _('Are you sure you want to delete this project?') }}"
+                        hx-target="closest [data-project-card]"
                         hx-swap="outerHTML swap:1s"
-                        class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors text-sm"
-                        title="Delete project"
+                        class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors text-sm flex items-center justify-center gap-1 dark:text-red-400 dark:hover:bg-red-400/10"
+                        title="{{ _('Delete project') }}"
                     >
-                        🗑️
+                        <span class="mdi mdi-delete-outline"></span>
                     </button>
                 </div>
             </div>
@@ -35,13 +39,14 @@
         {% endfor %}
     </div>
 {% else %}
-    <div class="text-center py-12 bg-white rounded-lg shadow">
-        <p class="text-gray-500 text-lg mb-4">No projects yet</p>
-        <a 
+    <div class="text-center py-12 bg-white/80 rounded-lg shadow dark:bg-slate-900/70 dark:shadow-slate-900/20">
+        <p class="text-slate-500 text-lg mb-4 dark:text-slate-300">{{ _('No projects yet') }}</p>
+        <a
             href="/projects/new"
-            class="inline-block bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
+            class="inline-block bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors inline-flex items-center gap-2 dark:hover:bg-blue-500"
         >
-            Create Your First Project
+            <span class="mdi mdi-plus-circle-multiple-outline text-lg"></span>
+            {{ _('Create Your First Project') }}
         </a>
     </div>
 {% endif %}

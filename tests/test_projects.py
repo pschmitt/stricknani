@@ -1,0 +1,162 @@
+import json
+from io import BytesIO
+
+import pytest
+from httpx import AsyncClient
+from PIL import Image as PILImage
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from stricknani.config import config
+from stricknani.models import Image, ProjectCategory, Step
+
+
+async def _fetch_steps(session_factory: async_sessionmaker[AsyncSession], project_id: int) -> list[Step]:
+    async with session_factory() as session:
+        result = await session.execute(
+            select(Step).where(Step.project_id == project_id).order_by(Step.step_number)
+        )
+        return list(result.scalars())
+
+
+async def _fetch_images(session_factory: async_sessionmaker[AsyncSession], project_id: int) -> list[Image]:
+    async with session_factory() as session:
+        result = await session.execute(select(Image).where(Image.project_id == project_id))
+        return list(result.scalars())
+
+
+@pytest.mark.asyncio
+async def test_update_project_manages_steps(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int]
+) -> None:
+    client, session_factory, _user_id, project_id, existing_step_id = test_client
+
+    # Add a new step and update the existing one
+    payload = json.dumps(
+        [
+            {
+                "id": existing_step_id,
+                "title": "Updated Step",
+                "description": "Revised instructions",
+                "step_number": 1,
+            },
+            {
+                "title": "Blocking",
+                "description": "Wet block the project overnight",
+                "step_number": 2,
+            },
+        ]
+    )
+
+    response = await client.post(
+        f"/projects/{project_id}",
+        data={
+            "name": "Sample Project",
+            "category": ProjectCategory.SCHAL.value,
+            "steps_data": payload,
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+
+    steps = await _fetch_steps(session_factory, project_id)
+    assert len(steps) == 2
+    assert steps[0].id == existing_step_id
+    assert steps[0].title == "Updated Step"
+    assert steps[1].title == "Blocking"
+
+    # Remove the original step to verify deletion logic
+    prune_payload = json.dumps(
+        [
+            {
+                "title": "Finishing",
+                "description": "Sew in the ends",
+                "step_number": 1,
+            }
+        ]
+    )
+
+    response = await client.post(
+        f"/projects/{project_id}",
+        data={
+            "name": "Sample Project",
+            "category": ProjectCategory.SCHAL.value,
+            "steps_data": prune_payload,
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+
+    steps = await _fetch_steps(session_factory, project_id)
+    assert len(steps) == 1
+    assert steps[0].title == "Finishing"
+
+
+def _generate_image_bytes(color: str = "blue") -> BytesIO:
+    stream = BytesIO()
+    image = PILImage.new("RGB", (32, 32), color=color)
+    image.save(stream, format="PNG")
+    stream.seek(0)
+    return stream
+
+
+@pytest.mark.asyncio
+async def test_upload_title_image_creates_image_record(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int]
+) -> None:
+    client, session_factory, _user_id, project_id, _step_id = test_client
+
+    image_stream = _generate_image_bytes("green")
+
+    response = await client.post(
+        f"/projects/{project_id}/images/title",
+        files={"file": ("title.png", image_stream, "image/png")},
+        data={"alt_text": "Cover"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["alt_text"] == "Cover"
+
+    images = await _fetch_images(session_factory, project_id)
+    assert len(images) == 1
+    assert images[0].is_title_image
+
+    media_path = config.MEDIA_ROOT / "projects" / str(project_id) / images[0].filename
+    thumb_path = config.MEDIA_ROOT / "thumbnails" / "projects" / str(project_id)
+
+    assert media_path.exists()
+    assert thumb_path.exists()
+    assert any(thumb_path.iterdir())
+
+
+@pytest.mark.asyncio
+async def test_upload_step_image_creates_image_record(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int]
+) -> None:
+    client, session_factory, _user_id, project_id, step_id = test_client
+
+    image_stream = _generate_image_bytes("purple")
+
+    response = await client.post(
+        f"/projects/{project_id}/steps/{step_id}/images",
+        files={"file": ("step.png", image_stream, "image/png")},
+        data={"alt_text": "Step detail"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["alt_text"] == "Step detail"
+
+    images = await _fetch_images(session_factory, project_id)
+    assert len(images) == 1
+    assert images[0].step_id == step_id
+
+    media_path = config.MEDIA_ROOT / "projects" / str(project_id) / images[0].filename
+    thumb_path = config.MEDIA_ROOT / "thumbnails" / "projects" / str(project_id)
+
+    assert media_path.exists()
+    assert thumb_path.exists()
+    assert any(thumb_path.iterdir())

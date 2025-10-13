@@ -10,18 +10,27 @@ from fastapi import (
     Form,
     HTTPException,
     Request,
+    Response,
     UploadFile,
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from sqlalchemy import delete, select
+from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from stricknani.config import config
 from stricknani.database import get_db
-from stricknani.main import render_template, templates
-from stricknani.models import Image, ImageType, Project, ProjectCategory, Step, User
+from stricknani.main import get_language, render_template, templates
+from stricknani.models import (
+    Image,
+    ImageType,
+    Project,
+    ProjectCategory,
+    Step,
+    User,
+    user_favorites,
+)
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
     create_thumbnail,
@@ -31,6 +40,7 @@ from stricknani.utils.files import (
     save_uploaded_file,
 )
 from stricknani.utils.markdown import render_markdown
+from stricknani.utils.i18n import install_i18n
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -38,6 +48,26 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 def get_categories() -> list[str]:
     """Get list of project categories."""
     return [cat.value for cat in ProjectCategory]
+
+
+def _render_favorite_toggle(
+    request: Request,
+    project_id: int,
+    is_favorite: bool,
+    variant: str,
+) -> HTMLResponse:
+    language = get_language(request)
+    install_i18n(templates.env, language)
+    return templates.TemplateResponse(
+        "projects/_favorite_toggle.html",
+        {
+            "request": request,
+            "project_id": project_id,
+            "is_favorite": is_favorite,
+            "variant": variant,
+            "current_language": language,
+        },
+    )
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -65,6 +95,13 @@ async def list_projects(
     result = await db.execute(query)
     projects = result.scalars().all()
 
+    favorite_rows = await db.execute(
+        select(user_favorites.c.project_id).where(
+            user_favorites.c.user_id == current_user.id
+        )
+    )
+    favorite_ids = {row[0] for row in favorite_rows}
+
     # If this is an HTMX request, only return the projects list
     if request.headers.get("HX-Request"):
         projects_data = [
@@ -73,12 +110,19 @@ async def list_projects(
                 "name": p.name,
                 "category": p.category,
                 "created_at": p.created_at.isoformat(),
+                "is_favorite": p.id in favorite_ids,
             }
             for p in projects
         ]
+        language = get_language(request)
+        install_i18n(templates.env, language)
         return templates.TemplateResponse(
             "projects/_list_partial.html",
-            {"request": request, "projects": projects_data},
+            {
+                "request": request,
+                "projects": projects_data,
+                "current_language": language,
+            },
         )
 
     projects_data = [
@@ -87,6 +131,7 @@ async def list_projects(
             "name": p.name,
             "category": p.category,
             "created_at": p.created_at.isoformat(),
+            "is_favorite": p.id in favorite_ids,
         }
         for p in projects
     ]
@@ -165,7 +210,7 @@ async def get_project(
     ]
 
     # Prepare steps with images
-    steps_data = []
+    base_steps: list[dict[str, object]] = []
     for step in sorted(project.steps, key=lambda s: s.step_number):
         step_images = [
             {
@@ -176,14 +221,23 @@ async def get_project(
             }
             for img in step.images
         ]
-        steps_data.append({
-            "id": step.id,
-            "title": step.title,
-            "description": render_markdown(step.description) if step.description else "",
-            "step_number": step.step_number,
-            "images": step_images,
-        })
+        base_steps.append(
+            {
+                "id": step.id,
+                "title": step.title,
+                "description": step.description or "",
+                "step_number": step.step_number,
+                "images": step_images,
+            }
+        )
 
+    favorite_lookup = await db.execute(
+        select(user_favorites.c.project_id).where(
+            user_favorites.c.user_id == current_user.id,
+            user_favorites.c.project_id == project.id,
+        )
+    )
+    is_favorite = favorite_lookup.first() is not None
     project_data = {
         "id": project.id,
         "name": project.name,
@@ -192,12 +246,21 @@ async def get_project(
         "needles": project.needles,
         "gauge_stitches": project.gauge_stitches,
         "gauge_rows": project.gauge_rows,
-        "instructions": render_markdown(project.instructions) if project.instructions else None,
-        "comment": render_markdown(project.comment) if project.comment else None,
+        "comment": project.comment or "",
+        "comment_html": render_markdown(project.comment) if project.comment else None,
         "created_at": project.created_at.isoformat(),
         "updated_at": project.updated_at.isoformat(),
         "title_images": title_images,
-        "steps": steps_data,
+        "steps": [
+            {
+                **step,
+                "description_html": render_markdown(step["description"])
+                if step["description"]
+                else "",
+            }
+            for step in base_steps
+        ],
+        "is_favorite": is_favorite,
     }
 
     return render_template(
@@ -238,12 +301,57 @@ async def edit_project_form(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
+    title_images = [
+        {
+            "id": img.id,
+            "url": get_file_url(img.filename, project.id),
+            "thumbnail_url": get_thumbnail_url(img.filename, project.id),
+            "alt_text": img.alt_text,
+        }
+        for img in project.images
+        if img.is_title_image
+    ]
+
+    steps_data = []
+    for step in sorted(project.steps, key=lambda s: s.step_number):
+        step_images = [
+            {
+                "id": img.id,
+                "url": get_file_url(img.filename, project.id),
+                "thumbnail_url": get_thumbnail_url(img.filename, project.id),
+                "alt_text": img.alt_text,
+            }
+            for img in step.images
+        ]
+        steps_data.append(
+            {
+                "id": step.id,
+                "title": step.title,
+                "description": step.description or "",
+                "step_number": step.step_number,
+                "images": step_images,
+            }
+        )
+
+    project_data = {
+        "id": project.id,
+        "name": project.name,
+        "category": project.category,
+        "yarn": project.yarn,
+        "needles": project.needles,
+        "gauge_stitches": project.gauge_stitches,
+        "gauge_rows": project.gauge_rows,
+        "comment": project.comment or "",
+        "title_images": title_images,
+        "steps": steps_data,
+    }
+
     return render_template(
         "projects/form.html",
         request,
         {
             "current_user": current_user,
-            "project": project,
+            "project": project_data,
             "categories": get_categories(),
         },
     )
@@ -257,7 +365,6 @@ async def create_project(
     needles: Annotated[str | None, Form()] = None,
     gauge_stitches: Annotated[int | None, Form()] = None,
     gauge_rows: Annotated[int | None, Form()] = None,
-    instructions: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
@@ -271,7 +378,6 @@ async def create_project(
         needles=needles,
         gauge_stitches=gauge_stitches,
         gauge_rows=gauge_rows,
-        instructions=instructions,
         comment=comment,
         owner_id=current_user.id,
     )
@@ -307,7 +413,6 @@ async def update_project(
     needles: Annotated[str | None, Form()] = None,
     gauge_stitches: Annotated[int | None, Form()] = None,
     gauge_rows: Annotated[int | None, Form()] = None,
-    instructions: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
@@ -337,7 +442,6 @@ async def update_project(
     project.needles = needles
     project.gauge_stitches = gauge_stitches
     project.gauge_rows = gauge_rows
-    project.instructions = instructions
     project.comment = comment
 
     # Update steps
@@ -414,6 +518,89 @@ async def delete_project(
 
 # Image upload endpoints
 
+
+@router.post("/{project_id}/favorite", response_class=HTMLResponse)
+async def favorite_project(
+    request: Request,
+    project_id: int,
+    variant: str = "detail",
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> Response:
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+        )
+
+    if project.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    favorite_exists = await db.execute(
+        select(user_favorites.c.project_id).where(
+            user_favorites.c.user_id == current_user.id,
+            user_favorites.c.project_id == project_id,
+        )
+    )
+
+    if not favorite_exists.first():
+        await db.execute(
+            insert(user_favorites).values(
+                user_id=current_user.id, project_id=project_id
+            )
+        )
+        await db.commit()
+
+    if request.headers.get("HX-Request"):
+        return _render_favorite_toggle(request, project_id, True, variant)
+
+    return RedirectResponse(
+        url=f"/projects/{project_id}", status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+@router.delete("/{project_id}/favorite", response_class=HTMLResponse)
+async def unfavorite_project(
+    request: Request,
+    project_id: int,
+    variant: str = "detail",
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> Response:
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+        )
+
+    if project.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    await db.execute(
+        delete(user_favorites).where(
+            user_favorites.c.user_id == current_user.id,
+            user_favorites.c.project_id == project_id,
+        )
+    )
+    await db.commit()
+
+    if request.headers.get("HX-Request"):
+        if variant == "profile":
+            return HTMLResponse(content="")
+        return _render_favorite_toggle(request, project_id, False, variant)
+
+    return RedirectResponse(
+        url=f"/projects/{project_id}", status_code=status.HTTP_303_SEE_OTHER
+    )
+
 @router.post("/{project_id}/images/title")
 async def upload_title_image(
     project_id: int,
@@ -468,15 +655,18 @@ async def upload_step_image(
     current_user: User = Depends(require_auth),
 ) -> JSONResponse:
     """Upload an image for a step."""
-    # Verify project ownership and step belongs to project
+    # Verify project ownership and that the step belongs to the project
     result = await db.execute(
-        select(Step)
-        .join(Project)
-        .where(Step.id == step_id, Project.id == project_id)
+        select(Project.owner_id)
+        .join(Step, Step.project_id == Project.id)
+        .where(Project.id == project_id, Step.id == step_id)
     )
-    step = result.scalar_one_or_none()
+    owner_id = result.scalar_one_or_none()
 
-    if not step or step.project.owner_id != current_user.id:
+    if owner_id is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     # Save file

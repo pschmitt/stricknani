@@ -1,0 +1,31 @@
+{% set action = 'delete' if is_favorite else 'post' %}
+{% set icon = 'mdi-star-off-outline' if is_favorite else 'mdi-star-plus-outline' %}
+{% set label = _('Remove from favorites') if is_favorite else _('Add to favorites') %}
+{% set message = _('Removed from favorites') if is_favorite else _('Added to favorites') %}
+{% if variant == 'card' %}
+<button
+    type="button"
+    hx-{{ action }}="/projects/{{ project_id }}/favorite?variant={{ variant }}"
+    hx-target="this"
+    hx-swap="outerHTML"
+    hx-on::after-request="if (event.detail.successful) { showToast('{{ message }}', '{{ 'info' if is_favorite else 'success' }}'); }"
+    class="inline-flex items-center justify-center gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm font-medium text-yellow-700 transition hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:border-yellow-500/40 dark:bg-yellow-400/10 dark:text-yellow-200 dark:hover:bg-yellow-400/20"
+    aria-pressed="{{ 'true' if is_favorite else 'false' }}"
+>
+    <span class="mdi {{ icon }}"></span>
+    {{ label }}
+</button>
+{% else %}
+<button
+    type="button"
+    hx-{{ action }}="/projects/{{ project_id }}/favorite?variant={{ variant }}"
+    hx-target="closest [data-favorite-toggle]"
+    hx-swap="innerHTML"
+    hx-on::after-request="if (event.detail.successful) { showToast('{{ message }}', '{{ 'info' if is_favorite else 'success' }}'); }"
+    class="inline-flex items-center gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-4 py-2 text-sm font-medium text-yellow-700 transition hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:border-yellow-500/40 dark:bg-yellow-400/10 dark:text-yellow-200 dark:hover:bg-yellow-400/20"
+    aria-pressed="{{ 'true' if is_favorite else 'false' }}"
+>
+    <span class="mdi {{ icon }}"></span>
+    {{ label }}
+</button>
+{% endif %}

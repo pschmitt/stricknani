@@ -36,7 +36,6 @@ async def seed_demo_data() -> None:
                 "needles": "4.0mm",
                 "gauge_stitches": 22,
                 "gauge_rows": 28,
-                "instructions": "# Baby Blanket Pattern\n\n1. Cast on 120 stitches\n2. Knit in garter stitch for 100 rows\n3. Bind off",  # noqa: E501
                 "comment": "Started this for my nephew!",
                 "title_images": ["demo_image_1.jpg"],
                 "steps": [
@@ -65,7 +64,6 @@ async def seed_demo_data() -> None:
                 "needles": "5.0mm",
                 "gauge_stitches": 18,
                 "gauge_rows": 24,
-                "instructions": "# Scarf Pattern\n\n- Cast on 40 stitches\n- Work in 2x2 rib\n- Continue until 150cm",  # noqa: E501
                 "title_images": ["demo_image_2.jpg"],
                 "steps": [
                     {

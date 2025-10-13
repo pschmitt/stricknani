@@ -31,14 +31,14 @@ def generate_unique_filename(original_filename: str) -> str:
 
 async def save_uploaded_file(
     upload_file: UploadFile,
-    project_id: int,
+    entity_id: int,
     subdir: str = "projects"
 ) -> tuple[str, str]:
     """Save an uploaded file to media directory.
 
     Args:
         upload_file: FastAPI UploadFile object
-        project_id: ID of the project
+        entity_id: ID of the entity directory
         subdir: Subdirectory under media root (e.g., 'projects')
 
     Returns:
@@ -50,8 +50,8 @@ async def save_uploaded_file(
     # Generate unique filename
     filename = generate_unique_filename(upload_file.filename)
 
-    # Create directory structure: media/projects/{project_id}/
-    project_dir = config.MEDIA_ROOT / subdir / str(project_id)
+    # Create directory structure: media/<subdir>/{entity_id}/
+    project_dir = config.MEDIA_ROOT / subdir / str(entity_id)
     project_dir.mkdir(parents=True, exist_ok=True)
 
     # Save file
@@ -64,15 +64,17 @@ async def save_uploaded_file(
 
 async def create_thumbnail(
     source_path: Path,
-    project_id: int,
-    max_size: tuple[int, int] = (300, 300)
+    entity_id: int,
+    max_size: tuple[int, int] = (300, 300),
+    subdir: str = "projects",
 ) -> str:
     """Create a thumbnail from an image.
 
     Args:
         source_path: Path to source image
-        project_id: ID of the project
+        entity_id: ID of the entity directory
         max_size: Maximum thumbnail size (width, height)
+        subdir: Subdirectory under media/thumbnails root
 
     Returns:
         Filename of the thumbnail
@@ -94,7 +96,7 @@ async def create_thumbnail(
         thumbnail_name = f"thumb_{source_path.stem}.jpg"
 
         # Create directory structure
-        thumb_dir = config.MEDIA_ROOT / "thumbnails" / str(project_id)
+        thumb_dir = config.MEDIA_ROOT / "thumbnails" / subdir / str(entity_id)
         thumb_dir.mkdir(parents=True, exist_ok=True)
 
         # Save thumbnail
@@ -104,48 +106,52 @@ async def create_thumbnail(
         return thumbnail_name
 
 
-def delete_file(filename: str, project_id: int, subdir: str = "projects") -> None:
+def delete_file(filename: str, entity_id: int, subdir: str = "projects") -> None:
     """Delete a file from media directory.
 
     Args:
         filename: Filename to delete
-        project_id: ID of the project
+        entity_id: ID of the entity directory
         subdir: Subdirectory under media root
     """
-    file_path = config.MEDIA_ROOT / subdir / str(project_id) / filename
+    file_path = config.MEDIA_ROOT / subdir / str(entity_id) / filename
     if file_path.exists():
         file_path.unlink()
 
     # Also try to delete thumbnail
     thumb_name = f"thumb_{Path(filename).stem}.jpg"
-    thumb_path = config.MEDIA_ROOT / "thumbnails" / str(project_id) / thumb_name
+    thumb_path = (
+        config.MEDIA_ROOT / "thumbnails" / subdir / str(entity_id) / thumb_name
+    )
     if thumb_path.exists():
         thumb_path.unlink()
 
 
-def get_file_url(filename: str, project_id: int, subdir: str = "projects") -> str:
+def get_file_url(filename: str, entity_id: int, subdir: str = "projects") -> str:
     """Get the URL for a media file.
 
     Args:
         filename: Filename
-        project_id: ID of the project
+        entity_id: ID of the entity directory
         subdir: Subdirectory under media root
 
     Returns:
         URL path to the file
     """
-    return f"/media/{subdir}/{project_id}/{filename}"
+    return f"/media/{subdir}/{entity_id}/{filename}"
 
 
-def get_thumbnail_url(filename: str, project_id: int) -> str:
+def get_thumbnail_url(
+    filename: str, entity_id: int, subdir: str = "projects"
+) -> str:
     """Get the URL for a thumbnail.
 
     Args:
         filename: Original filename
-        project_id: ID of the project
+        entity_id: ID of the entity directory
 
     Returns:
         URL path to the thumbnail
     """
     thumbnail_name = f"thumb_{Path(filename).stem}.jpg"
-    return f"/media/thumbnails/{project_id}/{thumbnail_name}"
+    return f"/media/thumbnails/{subdir}/{entity_id}/{thumbnail_name}"

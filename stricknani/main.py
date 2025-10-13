@@ -1,5 +1,6 @@
 """Main FastAPI application."""
 
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -11,6 +12,8 @@ from fastapi.templating import Jinja2Templates
 
 from stricknani.config import config
 from stricknani.database import init_db
+from stricknani.logging_config import configure_logging
+from stricknani.utils.files import get_file_url, get_thumbnail_url
 from stricknani.utils.i18n import install_i18n
 
 
@@ -19,10 +22,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Application lifespan manager."""
     # Startup
     await init_db()
-    config.ensure_media_dirs()
     yield
     # Shutdown
     pass
+
+
+configure_logging(debug=config.DEBUG)
+config.ensure_media_dirs()
 
 
 app = FastAPI(
@@ -43,6 +49,22 @@ app.mount("/media", StaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
 # Setup templates
 templates_path = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(templates_path))
+
+
+access_logger = logging.getLogger("uvicorn.access")
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log incoming requests similar to the access log."""
+
+    response = await call_next(request)
+    client_host = "-"
+    if request.client is not None:
+        client_host = request.client.host or "-"
+
+    access_logger.info('%s - "%s %s" %s', client_host, request.method, request.url.path, response.status_code)
+    return response
 
 
 def get_language(request: Request) -> str:
@@ -93,6 +115,19 @@ def render_template(
     context["request"] = request
     context["current_language"] = language
 
+    current_user = context.get("current_user")
+    avatar_url = None
+    avatar_thumb = None
+    if current_user is not None:
+        profile_image = getattr(current_user, "profile_image", None)
+        user_id = getattr(current_user, "id", None)
+        if profile_image and user_id:
+            avatar_url = get_file_url(profile_image, user_id, subdir="users")
+            avatar_thumb = get_thumbnail_url(profile_image, user_id, subdir="users")
+
+    context.setdefault("current_user_avatar_url", avatar_url)
+    context.setdefault("current_user_avatar_thumbnail", avatar_thumb)
+
     return templates.TemplateResponse(template_name, context)
 
 
@@ -104,11 +139,12 @@ async def healthz() -> dict[str, str]:
 
 
 # Import routes
-from stricknani.routes import auth, gauge, projects  # noqa: E402
+from stricknani.routes import auth, gauge, projects, user  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(gauge.router)
+app.include_router(user.router)
 
 
 # Login page
