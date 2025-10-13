@@ -1,7 +1,6 @@
 """Authentication routes."""
 
 from typing import Annotated
-
 from urllib.parse import urlparse
 
 from fastapi import (
@@ -218,7 +217,9 @@ async def set_theme(request: Request) -> Response:
     if "application/json" in content_type or request.headers.get("HX-Request"):
         response: Response = JSONResponse({"status": "ok", "theme": theme})
     else:
-        response = RedirectResponse(url=redirect_target, status_code=status.HTTP_303_SEE_OTHER)
+        response = RedirectResponse(
+            url=redirect_target, status_code=status.HTTP_303_SEE_OTHER
+        )
 
     if theme == "system":
         response.delete_cookie(

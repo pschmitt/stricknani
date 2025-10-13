@@ -42,8 +42,8 @@ from stricknani.utils.files import (
     get_thumbnail_url,
     save_uploaded_file,
 )
-from stricknani.utils.markdown import render_markdown
 from stricknani.utils.i18n import install_i18n
+from stricknani.utils.markdown import render_markdown
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -190,7 +190,9 @@ async def list_projects(
     if search:
         query = query.where(Project.name.ilike(f"%{search}%"))
 
-    query = query.options(selectinload(Project.images)).order_by(Project.created_at.desc())
+    query = query.options(selectinload(Project.images)).order_by(
+        Project.created_at.desc()
+    )
 
     result = await db.execute(query)
     projects = result.scalars().unique().all()
@@ -211,9 +213,16 @@ async def list_projects(
         image_url: str | None = None
         image_alt = project.name
         if title_image is not None:
-            image_path = config.MEDIA_ROOT / "projects" / str(project.id) / title_image.filename
+            image_path = (
+                config.MEDIA_ROOT
+                / "projects"
+                / str(project.id)
+                / title_image.filename
+            )
             if image_path.exists():
-                image_url = get_file_url(title_image.filename, project.id, subdir="projects")
+                image_url = get_file_url(
+                    title_image.filename, project.id, subdir="projects"
+                )
 
             thumb_name = f"thumb_{Path(title_image.filename).stem}.jpg"
             thumb_path = (
@@ -751,7 +760,9 @@ async def _render_categories_page(
     error: str | None = None,
 ) -> HTMLResponse:
     categories_result = await db.execute(
-        select(Category).where(Category.user_id == current_user.id).order_by(Category.name)
+        select(Category)
+        .where(Category.user_id == current_user.id)
+        .order_by(Category.name)
     )
     categories = list(categories_result.scalars())
 

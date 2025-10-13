@@ -9,13 +9,12 @@ import time
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
-from alembic import command
 from alembic.config import Config as AlembicConfig
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from alembic import command
 from stricknani.config import config
-
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +117,9 @@ def _acquire_lock(lock_path: Path) -> int:
             return os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
         except FileExistsError:
             if time.monotonic() > deadline:
-                raise TimeoutError("Timed out waiting for migration lock")
+                raise TimeoutError(
+                    "Timed out waiting for migration lock"
+                ) from None
             time.sleep(_LOCK_RETRY_INTERVAL)
 
 

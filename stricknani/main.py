@@ -63,7 +63,13 @@ async def log_requests(request: Request, call_next):
     if request.client is not None:
         client_host = request.client.host or "-"
 
-    access_logger.info('%s - "%s %s" %s', client_host, request.method, request.url.path, response.status_code)
+    access_logger.info(
+        '%s - "%s %s" %s',
+        client_host,
+        request.method,
+        request.url.path,
+        response.status_code,
+    )
     return response
 
 

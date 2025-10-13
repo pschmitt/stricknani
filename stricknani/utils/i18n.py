@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from pathlib import Path
+
 from babel.messages.mofile import write_mo
 from babel.messages.pofile import read_po
 from babel.support import Translations

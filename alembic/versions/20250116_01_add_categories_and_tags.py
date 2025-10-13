@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "20250116_01"
@@ -21,6 +21,7 @@ depends_on: tuple[str, ...] | None = None
 
 
 def upgrade() -> None:
+    # Create categories table with unique constraint inline
     op.create_table(
         "categories",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -33,9 +34,7 @@ def upgrade() -> None:
         ),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
-    )
-    op.create_unique_constraint(
-        "uq_categories_user_name", "categories", ["user_id", "name"]
+        sa.UniqueConstraint("user_id", "name", name="uq_categories_user_name"),
     )
 
     op.add_column("projects", sa.Column("tags", sa.Text(), nullable=True))
@@ -67,5 +66,4 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_column("projects", "tags")
-    op.drop_constraint("uq_categories_user_name", "categories", type_="unique")
     op.drop_table("categories")

@@ -6,7 +6,6 @@ import logging
 import os
 from typing import Final
 
-
 _DEFAULT_FORMAT: Final[str] = "%(asctime)s %(levelname)s %(name)s: %(message)s"
 _DEFAULT_DATEFMT: Final[str] = "%Y-%m-%d %H:%M:%S"
 

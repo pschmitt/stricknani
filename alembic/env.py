@@ -6,9 +6,9 @@ import logging
 from logging.config import fileConfig
 from pathlib import Path
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from alembic import context
 from stricknani.config import config as app_config
 from stricknani.models import Base
 

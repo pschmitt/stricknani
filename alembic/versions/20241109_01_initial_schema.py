@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "20241109_01"
+revision = "20241109_01_initial_schema"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -19,7 +19,12 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("email", sa.String(length=255), nullable=False),
         sa.Column("hashed_password", sa.String(length=255), nullable=False),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column(
+            "is_active",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.text("1"),
+        ),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("profile_image", sa.String(length=255), nullable=True),
     )
@@ -63,7 +68,12 @@ def upgrade() -> None:
         sa.Column("original_filename", sa.String(length=255), nullable=False),
         sa.Column("image_type", sa.String(length=20), nullable=False),
         sa.Column("alt_text", sa.String(length=255), nullable=False),
-        sa.Column("is_title_image", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+        sa.Column(
+            "is_title_image",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.text("0"),
+        ),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("project_id", sa.Integer(), nullable=False),
         sa.Column("step_id", sa.Integer(), nullable=True),

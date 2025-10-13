@@ -29,7 +29,6 @@ from stricknani.utils.files import (
     save_uploaded_file,
 )
 
-
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/user", tags=["user"])
@@ -93,7 +92,9 @@ async def upload_profile_image(
     try:
         filename, _ = await save_uploaded_file(file, user.id, subdir="users")
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
 
     file_path = config.MEDIA_ROOT / "users" / str(user.id) / filename
     try:

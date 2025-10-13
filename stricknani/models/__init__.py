@@ -1,8 +1,8 @@
 """Database models for Stricknani."""
 
+import json
 from datetime import datetime
 from enum import Enum
-import json
 
 from sqlalchemy import (
     Boolean,
@@ -148,7 +148,9 @@ class Category(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE")
+    )
 
     owner: Mapped["User"] = relationship("User", back_populates="categories")
 
