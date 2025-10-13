@@ -1,7 +1,7 @@
 """Internationalization utilities."""
 
+from collections.abc import Callable
 from pathlib import Path
-
 from babel.messages.mofile import write_mo
 from babel.messages.pofile import read_po
 from babel.support import Translations
@@ -99,7 +99,40 @@ def install_i18n(env: Environment, language: str | None = None) -> None:
 
     translations = get_translations(language)
 
-    # Add gettext functions to Jinja2 globals
-    env.globals["_"] = translations.gettext
-    env.globals["gettext"] = translations.gettext
-    env.globals["ngettext"] = translations.ngettext
+    def _wrap_gettext(func: Callable[..., str]) -> Callable[..., str]:
+        def _translator(message: str, *args, **kwargs) -> str:
+            text = func(message)
+            if kwargs:
+                try:
+                    return text % kwargs
+                except (TypeError, ValueError):
+                    pass
+            if args:
+                try:
+                    return text % args
+                except (TypeError, ValueError):
+                    pass
+            return text
+
+        return _translator
+
+    def _wrap_ngettext(func: Callable[..., str]) -> Callable[..., str]:
+        def _translator(singular: str, plural: str, n: int, *args, **kwargs) -> str:
+            text = func(singular, plural, n)
+            if kwargs:
+                try:
+                    return text % kwargs
+                except (TypeError, ValueError):
+                    pass
+            if args:
+                try:
+                    return text % args
+                except (TypeError, ValueError):
+                    pass
+            return text
+
+        return _translator
+
+    env.globals["_"] = _wrap_gettext(translations.gettext)
+    env.globals["gettext"] = env.globals["_"]
+    env.globals["ngettext"] = _wrap_ngettext(translations.ngettext)

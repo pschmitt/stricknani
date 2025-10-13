@@ -69,6 +69,8 @@ async def preference_center(
             "favorites": favorites,
             "profile_image_url": profile_image_url,
             "profile_thumbnail_url": profile_thumbnail_url,
+            "supported_languages": config.SUPPORTED_LANGUAGES,
+            "current_theme": request.cookies.get("theme", "system"),
         },
     )
 

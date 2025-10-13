@@ -8,7 +8,6 @@ from typing import Final
 
 
 _DEFAULT_FORMAT: Final[str] = "%(asctime)s %(levelname)s %(name)s: %(message)s"
-_ACCESS_FORMAT: Final[str] = '%(client_addr)s - "%(request_line)s" %(status_code)s'
 _DEFAULT_DATEFMT: Final[str] = "%Y-%m-%d %H:%M:%S"
 
 
@@ -35,15 +34,8 @@ def _configure_app_logger(level: int) -> None:
     app_logger.setLevel(level)
     app_logger.propagate = False
 
-
-def _configure_access_logger(level: int) -> None:
-    access_logger = logging.getLogger("uvicorn.access")
-    if not access_logger.handlers:
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter(_ACCESS_FORMAT, None))
-        access_logger.addHandler(handler)
+    access_logger = logging.getLogger("stricknani.access")
     access_logger.setLevel(level)
-    access_logger.propagate = False
 
 
 def configure_logging(*, debug: bool = False) -> None:
@@ -54,6 +46,3 @@ def configure_logging(*, debug: bool = False) -> None:
     level = _resolve_level(env_level or default_level)
 
     _configure_app_logger(level)
-    # Access logs should always be at least INFO to match uvicorn defaults.
-    access_level = max(level, logging.INFO)
-    _configure_access_logger(access_level)

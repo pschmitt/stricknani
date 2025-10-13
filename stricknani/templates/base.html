@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ current_language }}">
+<html lang="{{ current_language }}" class="{% if theme_preference == 'dark' %}dark{% endif %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,8 @@
         href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css"
     >
     <script>
-        const storedTheme = localStorage.getItem("theme") || "system";
+        const cookieTheme = {{ theme_preference|default('system')|tojson }};
+        const storedTheme = localStorage.getItem("theme") || cookieTheme || "system";
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
         const resolveTheme = (preference) => {
             if (preference === "dark" || preference === "light") {
@@ -24,6 +25,25 @@
             root.classList.toggle("dark", resolved === "dark");
             root.dataset.themePreference = preference;
             root.style.colorScheme = resolved;
+
+            const syncBody = () => {
+                if (!document.body) {
+                    return false;
+                }
+                document.body.classList.toggle("dark", resolved === "dark");
+                document.body.dataset.themePreference = preference;
+                return true;
+            };
+
+            if (!syncBody()) {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        syncBody();
+                    },
+                    { once: true },
+                );
+            }
         };
         applyTheme(storedTheme);
         const handleSystemChange = () => {
@@ -40,6 +60,23 @@
         } else if (typeof prefersDark.addListener === "function") {
             prefersDark.addListener(handleSystemChange);
         }
+        const persistTheme = (preference) => {
+            if (!window.fetch) {
+                return;
+            }
+            try {
+                fetch("/auth/set-theme", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ theme: preference }),
+                    credentials: "same-origin",
+                    keepalive: true,
+                }).catch(() => {});
+            } catch (_error) {
+                /* ignore network issues when persisting optional preference */
+            }
+        };
+
         window.__setThemePreference = (preference) => {
             const normalized = ["light", "dark", "system"].includes(preference)
                 ? preference
@@ -49,6 +86,7 @@
             document.dispatchEvent(
                 new CustomEvent("themechange", { detail: { preference: normalized } }),
             );
+            persistTheme(normalized);
         };
         window.tailwind = window.tailwind || {};
         window.tailwind.config = {
@@ -69,7 +107,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
-    <nav class="bg-white/80 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-slate-900/80">
+    <nav class="relative z-40 bg-white/80 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-slate-900/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center space-x-8">
@@ -110,7 +148,7 @@
                             <span class="mdi mdi-chevron-down text-lg" aria-hidden="true"></span>
                         </button>
                         <div
-                            class="absolute right-0 mt-2 w-72 origin-top-right scale-95 transform rounded-lg border border-slate-200 bg-white/95 p-0 opacity-0 shadow-xl transition-all duration-150 ease-out focus:outline-none pointer-events-none dark:border-slate-700 dark:bg-slate-900/95"
+                            class="absolute right-0 mt-2 w-72 origin-top-right scale-95 transform rounded-lg border border-slate-200 bg-white/95 p-0 opacity-0 shadow-xl transition-all duration-150 ease-out focus:outline-none pointer-events-none dark:border-slate-700 dark:bg-slate-900/95 z-50"
                             data-user-menu-panel
                             role="menu"
                             aria-hidden="true"
@@ -136,16 +174,17 @@
                                         <span class="mdi mdi-brightness-6"></span>
                                         {{ _('Theme') }}
                                     </p>
+                                    {% set nav_theme_choice = theme_preference or 'system' %}
                                     <div class="mt-3 grid grid-cols-3 gap-2" role="group" aria-label="{{ _('Choose theme') }}" data-theme-toggle>
-                                        <button type="button" class="flex flex-col items-center gap-1 rounded-md border border-slate-200 px-2 py-2 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="light" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300">
+                                        <button type="button" class="flex flex-col items-center gap-1 rounded-md border border-slate-200 px-2 py-2 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="light" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300" aria-pressed="{{ 'true' if nav_theme_choice == 'light' else 'false' }}">
                                             <span class="mdi mdi-white-balance-sunny text-lg"></span>
                                             {{ _('Light') }}
                                         </button>
-                                        <button type="button" class="flex flex-col items-center gap-1 rounded-md border border-slate-200 px-2 py-2 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="system" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300">
+                                        <button type="button" class="flex flex-col items-center gap-1 rounded-md border border-slate-200 px-2 py-2 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="system" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300" aria-pressed="{{ 'true' if nav_theme_choice == 'system' else 'false' }}">
                                             <span class="mdi mdi-monitor text-lg"></span>
                                             {{ _('System') }}
                                         </button>
-                                        <button type="button" class="flex flex-col items-center gap-1 rounded-md border border-slate-200 px-2 py-2 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="dark" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300">
+                                        <button type="button" class="flex flex-col items-center gap-1 rounded-md border border-slate-200 px-2 py-2 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="dark" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300" aria-pressed="{{ 'true' if nav_theme_choice == 'dark' else 'false' }}">
                                             <span class="mdi mdi-weather-night text-lg"></span>
                                             {{ _('Dark') }}
                                         </button>
@@ -503,50 +542,6 @@
                     .map((cls) => cls.trim())
                     .filter(Boolean);
 
-            const previewRoot = document.querySelector("[data-theme-preview]");
-            const previewIcon = previewRoot?.querySelector("[data-theme-preview-icon]");
-            const previewTitle = previewRoot?.querySelector("[data-theme-preview-title]");
-            const previewDescription = previewRoot?.querySelector(
-                "[data-theme-preview-description]",
-            );
-            const previewContent = previewRoot
-                ? {
-                      light: {
-                          icon: previewRoot.dataset.themeLightIcon || "",
-                          title: previewRoot.dataset.themeLightTitle || "",
-                          description:
-                              previewRoot.dataset.themeLightDescription || "",
-                      },
-                      dark: {
-                          icon: previewRoot.dataset.themeDarkIcon || "",
-                          title: previewRoot.dataset.themeDarkTitle || "",
-                          description:
-                              previewRoot.dataset.themeDarkDescription || "",
-                      },
-                  }
-                : null;
-
-            const applyThemePreview = (preference) => {
-                if (!previewRoot || !previewContent) {
-                    return;
-                }
-
-                const resolved = resolveTheme(preference);
-                const content = previewContent[resolved] || previewContent.dark;
-
-                if (content.icon && previewIcon) {
-                    previewIcon.className = content.icon;
-                }
-
-                if (previewTitle && content.title) {
-                    previewTitle.textContent = content.title;
-                }
-
-                if (previewDescription && content.description) {
-                    previewDescription.textContent = content.description;
-                }
-            };
-
             const syncPreferenceButtons = (preference) => {
                 document.querySelectorAll("[data-theme-option]").forEach((button) => {
                     const isActive = button.dataset.themeOption === preference;
@@ -571,14 +566,13 @@
             };
 
             const root = document.documentElement;
-            const initialPreference =
+            const getPreference = () =>
                 root.dataset.themePreference || localStorage.getItem("theme") || "system";
-            syncPreferenceButtons(initialPreference);
-            applyThemePreview(initialPreference);
+
+            syncPreferenceButtons(getPreference());
 
             document.addEventListener("themechange", (event) => {
                 syncPreferenceButtons(event.detail.preference);
-                applyThemePreview(event.detail.preference);
             });
 
             document.querySelectorAll("[data-theme-option]").forEach((button) => {

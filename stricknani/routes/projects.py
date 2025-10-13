@@ -1,6 +1,8 @@
 """Project routes."""
 
 import json
+import re
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import (
@@ -15,7 +17,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -23,6 +25,7 @@ from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.main import get_language, render_template, templates
 from stricknani.models import (
+    Category,
     Image,
     ImageType,
     Project,
@@ -45,9 +48,106 @@ from stricknani.utils.i18n import install_i18n
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
-def get_categories() -> list[str]:
-    """Get list of project categories."""
+def _parse_optional_int(field_name: str, value: str | None) -> int | None:
+    """Parse optional integer fields coming from forms."""
+
+    if value is None:
+        return None
+
+    cleaned = str(value).strip()
+    if not cleaned:
+        return None
+
+    try:
+        return int(cleaned)
+    except ValueError as exc:  # pragma: no cover - guarded validation
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid value for {field_name}",
+        ) from exc
+
+
+def _normalize_tags(raw_tags: str | None) -> list[str]:
+    """Convert raw tag input into a list of unique tags."""
+
+    if not raw_tags:
+        return []
+
+    candidates = re.split(r"[,#\s]+", raw_tags)
+    seen: set[str] = set()
+    tags: list[str] = []
+    for candidate in candidates:
+        cleaned = candidate.strip()
+        if not cleaned:
+            continue
+        key = cleaned.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        tags.append(cleaned)
+    return tags
+
+
+def _serialize_tags(tags: list[str]) -> str | None:
+    """Serialize tags list for storage."""
+
+    if not tags:
+        return None
+    return json.dumps(tags)
+
+
+def _deserialize_tags(raw: str | None) -> list[str]:
+    """Deserialize stored tags string into a list."""
+
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except (ValueError, TypeError):
+        data = None
+
+    if isinstance(data, list):
+        return [str(item).strip() for item in data if str(item).strip()]
+
+    return [segment.strip() for segment in raw.split(",") if segment.strip()]
+
+
+async def _get_user_categories(db: AsyncSession, user_id: int) -> list[str]:
+    """Return all categories for a user, or defaults if none exist."""
+
+    result = await db.execute(
+        select(Category).where(Category.user_id == user_id).order_by(Category.name)
+    )
+    categories = [category.name for category in result.scalars()]
+    if categories:
+        return categories
     return [cat.value for cat in ProjectCategory]
+
+
+async def _ensure_category(db: AsyncSession, user_id: int, name: str) -> str:
+    """Ensure category exists for the user and return the sanitized label."""
+
+    cleaned = name.strip()
+    if not cleaned:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Category is required",
+        )
+
+    result = await db.execute(
+        select(Category).where(
+            Category.user_id == user_id,
+            func.lower(Category.name) == cleaned.lower(),
+        )
+    )
+    category = result.scalar_one_or_none()
+    if category is None:
+        category = Category(name=cleaned, user_id=user_id)
+        db.add(category)
+        await db.flush()
+        return category.name
+
+    return category.name
 
 
 def _render_favorite_toggle(
@@ -90,10 +190,10 @@ async def list_projects(
     if search:
         query = query.where(Project.name.ilike(f"%{search}%"))
 
-    query = query.order_by(Project.created_at.desc())
+    query = query.options(selectinload(Project.images)).order_by(Project.created_at.desc())
 
     result = await db.execute(query)
-    projects = result.scalars().all()
+    projects = result.scalars().unique().all()
 
     favorite_rows = await db.execute(
         select(user_favorites.c.project_id).where(
@@ -102,18 +202,49 @@ async def list_projects(
     )
     favorite_ids = {row[0] for row in favorite_rows}
 
+    def _serialize_project(project: Project) -> dict[str, object]:
+        title_image = next((img for img in project.images if img.is_title_image), None)
+        if title_image is None and project.images:
+            title_image = project.images[0]
+
+        thumbnail_url: str | None = None
+        image_url: str | None = None
+        image_alt = project.name
+        if title_image is not None:
+            image_path = config.MEDIA_ROOT / "projects" / str(project.id) / title_image.filename
+            if image_path.exists():
+                image_url = get_file_url(title_image.filename, project.id, subdir="projects")
+
+            thumb_name = f"thumb_{Path(title_image.filename).stem}.jpg"
+            thumb_path = (
+                config.MEDIA_ROOT
+                / "thumbnails"
+                / "projects"
+                / str(project.id)
+                / thumb_name
+            )
+            if thumb_path.exists():
+                thumbnail_url = get_thumbnail_url(
+                    title_image.filename, project.id, subdir="projects"
+                )
+            if title_image.alt_text:
+                image_alt = title_image.alt_text
+
+        return {
+            "id": project.id,
+            "name": project.name,
+            "category": project.category,
+            "created_at": project.created_at.isoformat(),
+            "is_favorite": project.id in favorite_ids,
+            "thumbnail_url": thumbnail_url,
+            "image_url": image_url,
+            "image_alt": image_alt,
+            "tags": project.tag_list(),
+        }
+
     # If this is an HTMX request, only return the projects list
     if request.headers.get("HX-Request"):
-        projects_data = [
-            {
-                "id": p.id,
-                "name": p.name,
-                "category": p.category,
-                "created_at": p.created_at.isoformat(),
-                "is_favorite": p.id in favorite_ids,
-            }
-            for p in projects
-        ]
+        projects_data = [_serialize_project(p) for p in projects]
         language = get_language(request)
         install_i18n(templates.env, language)
         return templates.TemplateResponse(
@@ -125,16 +256,9 @@ async def list_projects(
             },
         )
 
-    projects_data = [
-        {
-            "id": p.id,
-            "name": p.name,
-            "category": p.category,
-            "created_at": p.created_at.isoformat(),
-            "is_favorite": p.id in favorite_ids,
-        }
-        for p in projects
-    ]
+    projects_data = [_serialize_project(p) for p in projects]
+
+    categories = await _get_user_categories(db, current_user.id)
 
     return render_template(
         "projects/list.html",
@@ -142,7 +266,7 @@ async def list_projects(
         {
             "current_user": current_user,
             "projects": projects_data,
-            "categories": get_categories(),
+            "categories": categories,
         },
     )
 
@@ -151,10 +275,13 @@ async def list_projects(
 async def new_project_form(
     request: Request,
     current_user: User | None = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> HTMLResponse:
     """Show new project form."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    categories = await _get_user_categories(db, current_user.id)
 
     return render_template(
         "projects/form.html",
@@ -162,7 +289,7 @@ async def new_project_form(
         {
             "current_user": current_user,
             "project": None,
-            "categories": get_categories(),
+            "categories": categories,
         },
     )
 
@@ -261,6 +388,7 @@ async def get_project(
             for step in base_steps
         ],
         "is_favorite": is_favorite,
+        "tags": project.tag_list(),
     }
 
     return render_template(
@@ -344,7 +472,10 @@ async def edit_project_form(
         "comment": project.comment or "",
         "title_images": title_images,
         "steps": steps_data,
+        "tags": project.tag_list(),
     }
+
+    categories = await _get_user_categories(db, current_user.id)
 
     return render_template(
         "projects/form.html",
@@ -352,7 +483,7 @@ async def edit_project_form(
         {
             "current_user": current_user,
             "project": project_data,
-            "categories": get_categories(),
+            "categories": categories,
         },
     )
 
@@ -363,23 +494,30 @@ async def create_project(
     category: Annotated[str, Form()],
     yarn: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
-    gauge_stitches: Annotated[int | None, Form()] = None,
-    gauge_rows: Annotated[int | None, Form()] = None,
+    gauge_stitches: Annotated[str | None, Form()] = None,
+    gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
+    tags: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
     """Create a new project."""
+    gauge_stitches_value = _parse_optional_int("gauge_stitches", gauge_stitches)
+    gauge_rows_value = _parse_optional_int("gauge_rows", gauge_rows)
+    normalized_category = await _ensure_category(db, current_user.id, category)
+    normalized_tags = _normalize_tags(tags)
+
     project = Project(
-        name=name,
-        category=category,
-        yarn=yarn,
-        needles=needles,
-        gauge_stitches=gauge_stitches,
-        gauge_rows=gauge_rows,
-        comment=comment,
+        name=name.strip(),
+        category=normalized_category,
+        yarn=yarn.strip() if yarn else None,
+        needles=needles.strip() if needles else None,
+        gauge_stitches=gauge_stitches_value,
+        gauge_rows=gauge_rows_value,
+        comment=comment.strip() if comment else None,
         owner_id=current_user.id,
+        tags=_serialize_tags(normalized_tags),
     )
     db.add(project)
     await db.flush()  # Get project ID
@@ -411,9 +549,10 @@ async def update_project(
     category: Annotated[str, Form()],
     yarn: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
-    gauge_stitches: Annotated[int | None, Form()] = None,
-    gauge_rows: Annotated[int | None, Form()] = None,
+    gauge_stitches: Annotated[str | None, Form()] = None,
+    gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
+    tags: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
@@ -436,13 +575,14 @@ async def update_project(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    project.name = name
-    project.category = category
-    project.yarn = yarn
-    project.needles = needles
-    project.gauge_stitches = gauge_stitches
-    project.gauge_rows = gauge_rows
-    project.comment = comment
+    project.name = name.strip()
+    project.category = await _ensure_category(db, current_user.id, category)
+    project.yarn = yarn.strip() if yarn else None
+    project.needles = needles.strip() if needles else None
+    project.gauge_stitches = _parse_optional_int("gauge_stitches", gauge_stitches)
+    project.gauge_rows = _parse_optional_int("gauge_rows", gauge_rows)
+    project.comment = comment.strip() if comment else None
+    project.tags = _serialize_tags(_normalize_tags(tags))
 
     # Update steps
     if steps_data:
@@ -600,6 +740,173 @@ async def unfavorite_project(
     return RedirectResponse(
         url=f"/projects/{project_id}", status_code=status.HTTP_303_SEE_OTHER
     )
+
+
+async def _render_categories_page(
+    request: Request,
+    db: AsyncSession,
+    current_user: User,
+    *,
+    message: str | None = None,
+    error: str | None = None,
+) -> HTMLResponse:
+    categories_result = await db.execute(
+        select(Category).where(Category.user_id == current_user.id).order_by(Category.name)
+    )
+    categories = list(categories_result.scalars())
+
+    counts_result = await db.execute(
+        select(Project.category, func.count())
+        .where(Project.owner_id == current_user.id)
+        .group_by(Project.category)
+    )
+    counts = {row[0]: row[1] for row in counts_result}
+
+    category_rows = [
+        {
+            "id": category.id,
+            "name": category.name,
+            "project_count": counts.get(category.name, 0),
+        }
+        for category in categories
+    ]
+
+    return render_template(
+        "projects/categories.html",
+        request,
+        {
+            "current_user": current_user,
+            "categories": category_rows,
+            "message": message,
+            "error": error,
+        },
+    )
+
+
+@router.get("/categories", response_class=HTMLResponse)
+async def manage_categories(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> HTMLResponse:
+    return await _render_categories_page(request, db, current_user)
+
+
+@router.post("/categories")
+async def create_category(
+    request: Request,
+    name: Annotated[str, Form()],
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> HTMLResponse:
+    cleaned = name.strip()
+    if not cleaned:
+        return await _render_categories_page(
+            request, db, current_user, error="Category name cannot be empty."
+        )
+
+    existing = await db.execute(
+        select(Category).where(
+            Category.user_id == current_user.id,
+            func.lower(Category.name) == cleaned.lower(),
+        )
+    )
+    if existing.scalar_one_or_none():
+        return await _render_categories_page(
+            request, db, current_user, error="Category already exists."
+        )
+
+    db.add(Category(name=cleaned, user_id=current_user.id))
+    await db.commit()
+
+    return await _render_categories_page(
+        request, db, current_user, message="Category created."
+    )
+
+
+@router.post("/categories/{category_id}")
+async def rename_category(
+    request: Request,
+    category_id: int,
+    name: Annotated[str, Form()],
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> HTMLResponse:
+    category = await db.get(Category, category_id)
+    if category is None or category.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    cleaned = name.strip()
+    if not cleaned:
+        return await _render_categories_page(
+            request, db, current_user, error="Category name cannot be empty."
+        )
+
+    conflict = await db.execute(
+        select(Category).where(
+            Category.user_id == current_user.id,
+            func.lower(Category.name) == cleaned.lower(),
+            Category.id != category_id,
+        )
+    )
+    if conflict.scalar_one_or_none():
+        return await _render_categories_page(
+            request,
+            db,
+            current_user,
+            error="Another category already uses that name.",
+        )
+
+    old_name = category.name
+    category.name = cleaned
+    await db.flush()
+
+    await db.execute(
+        update(Project)
+        .where(Project.owner_id == current_user.id, Project.category == old_name)
+        .values(category=cleaned)
+    )
+    await db.commit()
+
+    return await _render_categories_page(
+        request, db, current_user, message="Category updated."
+    )
+
+
+@router.post("/categories/{category_id}/delete")
+async def delete_category(
+    request: Request,
+    category_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> HTMLResponse:
+    category = await db.get(Category, category_id)
+    if category is None or category.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    in_use = await db.execute(
+        select(func.count())
+        .select_from(Project)
+        .where(
+            Project.owner_id == current_user.id,
+            Project.category == category.name,
+        )
+    )
+    if in_use.scalar_one() > 0:
+        return await _render_categories_page(
+            request,
+            db,
+            current_user,
+            error="Cannot delete a category that is still assigned to projects.",
+        )
+
+    await db.delete(category)
+    await db.commit()
+
+    return await _render_categories_page(
+        request, db, current_user, message="Category deleted."
+    )
+
 
 @router.post("/{project_id}/images/title")
 async def upload_title_image(

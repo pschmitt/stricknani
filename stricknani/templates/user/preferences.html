@@ -14,8 +14,8 @@
         </p>
     </header>
 
-    <div class="grid gap-6 xl:grid-cols-3">
-        <article class="rounded-xl border border-slate-200 bg-white/80 p-6 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900/70">
+    <div class="grid gap-6 lg:grid-cols-3">
+        <article class="rounded-xl border border-slate-200 bg-white/80 p-6 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900/70 lg:row-span-2">
             <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <span class="mdi mdi-account-circle-outline text-blue-600 dark:text-blue-400"></span>
                 {{ _('Profile image') }}
@@ -54,7 +54,7 @@
                 </button>
             </form>
         </article>
-        <article class="rounded-xl border border-slate-200 bg-white/80 p-6 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900/70 xl:col-span-2">
+        <article class="rounded-xl border border-slate-200 bg-white/80 p-6 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900/70 lg:col-span-2">
             <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <span class="mdi mdi-theme-light-dark text-blue-600 dark:text-blue-400"></span>
                 {{ _('Theme') }}
@@ -62,6 +62,7 @@
             <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
                 {{ _('Choose whether Stricknani follows your device setting or sticks to light or dark mode.') }}
             </p>
+            {% set theme_choice = current_theme or 'system' %}
             <div class="mt-6 grid gap-3 sm:grid-cols-3">
                 <button
                     type="button"
@@ -69,7 +70,7 @@
                     data-theme-active-class="border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-slate-700 dark:text-blue-100"
                     data-theme-inactive-class="border-transparent bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
                     class="flex flex-col items-center gap-2 rounded-lg border border-transparent bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition hover:border-blue-400 hover:bg-slate-200 focus:outline-none dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-                    aria-pressed="false"
+                    aria-pressed="{{ 'true' if theme_choice == 'light' else 'false' }}"
                 >
                     <span class="mdi mdi-white-balance-sunny text-2xl text-amber-500"></span>
                     {{ _('Light') }}
@@ -80,7 +81,7 @@
                     data-theme-active-class="border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-slate-700 dark:text-blue-100"
                     data-theme-inactive-class="border-transparent bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
                     class="flex flex-col items-center gap-2 rounded-lg border border-transparent bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition hover:border-blue-400 hover:bg-slate-200 focus:outline-none dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-                    aria-pressed="false"
+                    aria-pressed="{{ 'true' if theme_choice == 'dark' else 'false' }}"
                 >
                     <span class="mdi mdi-weather-night text-2xl text-blue-400"></span>
                     {{ _('Dark') }}
@@ -91,7 +92,7 @@
                     data-theme-active-class="border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-slate-700 dark:text-blue-100"
                     data-theme-inactive-class="border-transparent bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
                     class="flex flex-col items-center gap-2 rounded-lg border border-transparent bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition hover:border-blue-400 hover:bg-slate-200 focus:outline-none dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-                    aria-pressed="false"
+                    aria-pressed="{{ 'true' if theme_choice == 'system' else 'false' }}"
                 >
                     <span class="mdi mdi-monitor text-2xl text-emerald-500"></span>
                     {{ _('System') }}
@@ -101,35 +102,44 @@
                 {{ _('Your selection is stored locally in this browser.') }}
             </p>
         </article>
+        <article class="rounded-xl border border-slate-200 bg-white/80 p-6 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900/70 lg:col-span-2">
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <span class="mdi mdi-translate text-blue-600 dark:text-blue-400"></span>
+                {{ _('Language') }}
+            </h2>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                {{ _('Pick the language Stricknani should use across the interface.') }}
+            </p>
+            {% set language_options = {
+                'en': {'label': _('English'), 'icon': '🇬🇧'},
+                'de': {'label': _('German'), 'icon': '🇩🇪'}
+            } %}
+            <form action="/auth/set-language" method="post" class="mt-6 space-y-4">
+                <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                <div class="grid gap-3 sm:grid-cols-2">
+                    {% for code in supported_languages %}
+                    {% set option = language_options.get(code, {'label': code|upper, 'icon': '🌐'}) %}
+                    {% set is_active = code == current_language %}
+                    <label class="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900 {{ 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-slate-800/70 dark:text-blue-100' if is_active else 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:bg-blue-500/10' }}">
+                        <input
+                            type="radio"
+                            name="language"
+                            value="{{ code }}"
+                            class="sr-only"
+                            {% if is_active %}checked{% endif %}
+                            onchange="this.form.submit()"
+                        >
+                        <span class="text-2xl" aria-hidden="true">{{ option.icon }}</span>
+                        <span>{{ option.label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    {{ _('We reload the page right away so translations take effect.') }}
+                </p>
+            </form>
+        </article>
     </div>
-
-    <article class="rounded-xl border border-slate-200 bg-white/80 p-6 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900/70">
-        <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <span class="mdi mdi-theme-light-dark text-blue-600 dark:text-blue-400"></span>
-            {{ _('Preview') }}
-        </h2>
-        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
-            {{ _('This preview updates to reflect your current theme choice.') }}
-        </p>
-        <div
-            class="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-100 p-6 text-center text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
-            data-theme-preview
-            data-theme-light-icon="mdi mdi-white-balance-sunny text-4xl text-amber-500"
-            data-theme-light-title="{{ _('Hello from light mode!') }}"
-            data-theme-light-description="{{ _('Sunlit surfaces keep details crisp and colorful.') }}"
-            data-theme-dark-icon="mdi mdi-weather-night text-4xl text-blue-400"
-            data-theme-dark-title="{{ _('Hello from dark mode!') }}"
-            data-theme-dark-description="{{ _('If you switch back to light mode, this preview will lighten up automatically.') }}"
-        >
-            <span class="mdi mdi-weather-night text-4xl text-blue-400" data-theme-preview-icon></span>
-            <p class="mt-4 font-medium" data-theme-preview-title>
-                {{ _('Hello from dark mode!') }}
-            </p>
-            <p class="text-sm text-slate-600 dark:text-slate-300" data-theme-preview-description>
-                {{ _('If you switch back to light mode, this preview will lighten up automatically.') }}
-            </p>
-        </div>
-    </article>
 
     <article class="rounded-xl border border-slate-200 bg-white/80 p-6 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900/70">
         <div class="flex items-center justify-between gap-4">

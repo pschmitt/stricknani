@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
+import json
 
 from sqlalchemy import (
     Boolean,
@@ -61,6 +62,9 @@ class User(Base):
         secondary=lambda: user_favorites,
         back_populates="favorited_by",
     )
+    categories: Mapped[list["Category"]] = relationship(
+        "Category", back_populates="owner", cascade="all, delete-orphan"
+    )
 
 
 user_favorites = Table(
@@ -89,6 +93,7 @@ class Project(Base):
     gauge_stitches: Mapped[int | None] = mapped_column(Integer, nullable=True)
     gauge_rows: Mapped[int | None] = mapped_column(Integer, nullable=True)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, index=True
     )
@@ -115,6 +120,37 @@ class Project(Base):
         secondary=lambda: user_favorites,
         back_populates="favorite_projects",
     )
+
+    def tag_list(self) -> list[str]:
+        """Return tags as a list."""
+
+        if not self.tags:
+            return []
+
+        try:
+            data = json.loads(self.tags)
+        except (ValueError, TypeError):
+            data = None
+
+        if isinstance(data, list):
+            return [str(tag).strip() for tag in data if str(tag).strip()]
+
+        return [segment.strip() for segment in self.tags.split(",") if segment.strip()]
+
+
+class Category(Base):
+    """User-defined project categories."""
+
+    __tablename__ = "categories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+
+    owner: Mapped["User"] = relationship("User", back_populates="categories")
 
 
 class Step(Base):

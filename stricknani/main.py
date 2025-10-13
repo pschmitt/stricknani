@@ -51,7 +51,7 @@ templates_path = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(templates_path))
 
 
-access_logger = logging.getLogger("uvicorn.access")
+access_logger = logging.getLogger("stricknani.access")
 
 
 @app.middleware("http")
@@ -114,6 +114,10 @@ def render_template(
     # Add request and language to context
     context["request"] = request
     context["current_language"] = language
+
+    theme_preference = request.cookies.get("theme", "system")
+    context.setdefault("current_theme", theme_preference)
+    context.setdefault("theme_preference", theme_preference)
 
     current_user = context.get("current_user")
     avatar_url = None
