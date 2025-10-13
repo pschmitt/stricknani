@@ -1,24 +1,129 @@
 <!DOCTYPE html>
-<html lang="{{ current_language }}">
+<html lang="{{ current_language }}" class="{% if theme_preference == 'dark' %}dark{% endif %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ _('Stricknani') }}{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css"
+    >
+    <script>
+        const cookieTheme = {{ theme_preference|default('system')|tojson }};
+        const storedTheme = localStorage.getItem("theme") || cookieTheme || "system";
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+        const resolveTheme = (preference) => {
+            if (preference === "dark" || preference === "light") {
+                return preference;
+            }
+            return prefersDark.matches ? "dark" : "light";
+        };
+        const applyTheme = (preference) => {
+            const resolved = resolveTheme(preference);
+            const root = document.documentElement;
+            root.classList.toggle("dark", resolved === "dark");
+            root.dataset.themePreference = preference;
+            root.style.colorScheme = resolved;
+
+            const syncBody = () => {
+                if (!document.body) {
+                    return false;
+                }
+                document.body.classList.toggle("dark", resolved === "dark");
+                document.body.dataset.themePreference = preference;
+                return true;
+            };
+
+            if (!syncBody()) {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        syncBody();
+                    },
+                    { once: true },
+                );
+            }
+        };
+        applyTheme(storedTheme);
+        const handleSystemChange = () => {
+            const activePreference = localStorage.getItem("theme") || "system";
+            if (activePreference === "system") {
+                applyTheme("system");
+                document.dispatchEvent(
+                    new CustomEvent("themechange", { detail: { preference: "system" } }),
+                );
+            }
+        };
+        if (typeof prefersDark.addEventListener === "function") {
+            prefersDark.addEventListener("change", handleSystemChange);
+        } else if (typeof prefersDark.addListener === "function") {
+            prefersDark.addListener(handleSystemChange);
+        }
+        const persistTheme = (preference) => {
+            if (!window.fetch) {
+                return;
+            }
+            try {
+                fetch("/auth/set-theme", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ theme: preference }),
+                    credentials: "same-origin",
+                    keepalive: true,
+                }).catch(() => {});
+            } catch (_error) {
+                /* ignore network issues when persisting optional preference */
+            }
+        };
+
+        window.__setThemePreference = (preference) => {
+            const normalized = ["light", "dark", "system"].includes(preference)
+                ? preference
+                : "system";
+            localStorage.setItem("theme", normalized);
+            applyTheme(normalized);
+            document.dispatchEvent(
+                new CustomEvent("themechange", { detail: { preference: normalized } }),
+            );
+            persistTheme(normalized);
+        };
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            primary: "#2563eb",
+                            foreground: "#1d4ed8",
+                        },
+                    },
+                },
+            },
+        };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-    <nav class="bg-white shadow-sm">
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
+    <nav class="relative z-40 bg-white/80 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-slate-900/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center space-x-8">
-                    <a href="/" class="text-xl font-bold text-gray-900 hover:text-blue-600">🧶 {{ _('Stricknani') }}</a>
+                    <a href="/" class="text-xl font-bold text-slate-900 hover:text-blue-600 dark:text-slate-100 dark:hover:text-blue-400 inline-flex items-center gap-2">
+                        <img src="/static/favicon.svg" alt="" class="h-6 w-6" />
+                        <span class="mdi mdi-yarn text-blue-500 dark:text-blue-300"></span>
+                        {{ _('Stricknani') }}
+                    </a>
                     {% if current_user %}
                     <div class="hidden md:flex space-x-4">
-                        <a href="/projects" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                        <a href="/projects" class="text-slate-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 dark:text-slate-200 dark:hover:text-blue-400">
+                            <span class="mdi mdi-folder-outline"></span>
                             {{ _('Projects') }}
                         </a>
-                        <a href="/gauge" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                        <a href="/gauge" class="text-slate-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 dark:text-slate-200 dark:hover:text-blue-400">
+                            <span class="mdi mdi-ruler"></span>
                             {{ _('Gauge Calculator') }}
                         </a>
                     </div>
@@ -26,18 +131,105 @@
                 </div>
                 <div class="flex items-center">
                     {% if current_user %}
-                    <div class="flex items-center space-x-4">
-                        <span class="text-sm text-gray-700">{{ current_user.email }}</span>
-                        <form action="/auth/logout" method="post">
-                            <button type="submit" class="text-sm text-gray-700 hover:text-red-600 px-3 py-2 rounded-md font-medium">
-                                {{ _('Logout') }}
-                            </button>
-                        </form>
+                    <div class="relative" data-user-menu>
+                        <button
+                            type="button"
+                            class="flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-2.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-blue-400 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:text-blue-300"
+                            data-user-menu-trigger
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                        >
+                            <span class="sr-only">{{ _('Open user menu') }}</span>
+                            {% if current_user_avatar_thumbnail %}
+                            <img src="{{ current_user_avatar_thumbnail }}" alt="{{ _('Profile image for %(email)s') % {'email': current_user.email} }}" class="h-9 w-9 rounded-full object-cover" />
+                            {% else %}
+                            <span class="mdi mdi-account-circle text-2xl"></span>
+                            {% endif %}
+                            <span class="mdi mdi-chevron-down text-lg" aria-hidden="true"></span>
+                        </button>
+                        <div
+                            class="absolute right-0 mt-2 w-72 origin-top-right scale-95 transform rounded-lg border border-slate-200 bg-white/95 p-0 opacity-0 shadow-xl transition-all duration-150 ease-out focus:outline-none pointer-events-none dark:border-slate-700 dark:bg-slate-900/95 z-50"
+                            data-user-menu-panel
+                            role="menu"
+                            aria-hidden="true"
+                        >
+                            <div class="flex items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+                                <div class="h-12 w-12 overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-slate-600 dark:bg-slate-800">
+                                    {% if current_user_avatar_thumbnail %}
+                                    <img src="{{ current_user_avatar_thumbnail }}" alt="{{ _('Profile image for %(email)s') % {'email': current_user.email} }}" class="h-full w-full object-cover" />
+                                    {% else %}
+                                    <div class="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-500">
+                                        <span class="mdi mdi-account"></span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ current_user.email }}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ _('Signed in') }}</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4 border-b border-slate-200 px-4 py-4 dark:border-slate-700">
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                        <span class="mdi mdi-brightness-6"></span>
+                                        {{ _('Theme') }}
+                                    </p>
+                                    {% set nav_theme_choice = theme_preference or 'system' %}
+                                    <div class="mt-3 grid grid-cols-3 gap-2" role="group" aria-label="{{ _('Choose theme') }}" data-theme-toggle>
+                                        <button type="button" class="flex flex-col items-center gap-1 rounded-md border border-slate-200 px-2 py-2 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="light" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300" aria-pressed="{{ 'true' if nav_theme_choice == 'light' else 'false' }}">
+                                            <span class="mdi mdi-white-balance-sunny text-lg"></span>
+                                            {{ _('Light') }}
+                                        </button>
+                                        <button type="button" class="flex flex-col items-center gap-1 rounded-md border border-slate-200 px-2 py-2 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="system" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300" aria-pressed="{{ 'true' if nav_theme_choice == 'system' else 'false' }}">
+                                            <span class="mdi mdi-monitor text-lg"></span>
+                                            {{ _('System') }}
+                                        </button>
+                                        <button type="button" class="flex flex-col items-center gap-1 rounded-md border border-slate-200 px-2 py-2 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="dark" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300" aria-pressed="{{ 'true' if nav_theme_choice == 'dark' else 'false' }}">
+                                            <span class="mdi mdi-weather-night text-lg"></span>
+                                            {{ _('Dark') }}
+                                        </button>
+                                    </div>
+                                </div>
+                                <form action="/auth/set-language" method="post" class="space-y-2">
+                                    <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                                    <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                        <span class="mdi mdi-translate"></span>
+                                        {{ _('Language') }}
+                                    </label>
+                                    <select name="language" onchange="this.form.submit()" class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100">
+                                        <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 {{ _('English') }}</option>
+                                        <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 {{ _('German') }}</option>
+                                    </select>
+                                </form>
+                            </div>
+                            <div class="space-y-2 px-4 py-4" role="group">
+                                <a href="/user/preferences" class="flex w-full items-center gap-2 rounded-md border border-transparent px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-200" role="menuitem">
+                                    <span class="mdi mdi-account-cog-outline text-lg"></span>
+                                    {{ _('Settings') }}
+                                </a>
+                                <form action="/auth/logout" method="post">
+                                    <button type="submit" class="flex w-full items-center gap-2 rounded-md border border-transparent px-3 py-2 text-sm font-medium text-red-600 transition hover:border-red-400 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:border-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-200" role="menuitem">
+                                        <span class="mdi mdi-logout text-lg"></span>
+                                        {{ _('Logout') }}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                     {% else %}
-                    <a href="/login" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                        {{ _('Login') }}
-                    </a>
+                    <div class="flex items-center space-x-4">
+                        <form action="/auth/set-language" method="post" class="inline">
+                            <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                            <select name="language" onchange="this.form.submit()" class="text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
+                                <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 {{ _('English') }}</option>
+                                <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 {{ _('German') }}</option>
+                            </select>
+                        </form>
+                        <a href="/login" class="text-slate-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 dark:text-slate-200 dark:hover:text-blue-400">
+                            <span class="mdi mdi-login"></span>
+                            {{ _('Login') }}
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -48,8 +240,405 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="mt-8 py-4 text-center text-sm text-gray-500 bg-white border-t">
-        {{ _('Stricknani') }} v0.1.0 | {{ _('GPL-3.0-only') }}
+    <div
+        id="toastContainer"
+        class="fixed inset-x-4 top-4 z-[10000] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-4 sm:w-80"
+        aria-live="polite"
+        aria-atomic="true"
+    ></div>
+
+    <div
+        id="imageLightbox"
+        class="fixed inset-0 z-[9999] hidden flex-col items-center justify-center bg-black/90 p-4 text-white backdrop-blur-sm"
+        role="dialog"
+        aria-modal="true"
+        aria-label="{{ _('Image viewer') }}"
+    >
+        <button
+            type="button"
+            class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
+            data-lightbox-close
+            aria-label="{{ _('Close image viewer') }}"
+        >
+            <span class="mdi mdi-close"></span>
+        </button>
+        <button
+            type="button"
+            class="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20"
+            data-lightbox-prev
+            aria-label="{{ _('Previous image') }}"
+        >
+            <span class="mdi mdi-chevron-left text-3xl"></span>
+        </button>
+        <div class="flex max-h-full w-full max-w-4xl flex-col items-center justify-center">
+            <img src="" alt="" class="max-h-[75vh] max-w-full rounded-lg object-contain shadow-lg" data-lightbox-image>
+            <p class="mt-4 text-center text-sm text-white/80" data-lightbox-caption></p>
+        </div>
+        <button
+            type="button"
+            class="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20"
+            data-lightbox-next
+            aria-label="{{ _('Next image') }}"
+        >
+            <span class="mdi mdi-chevron-right text-3xl"></span>
+        </button>
+    </div>
+
+    <footer class="mt-8 py-4 text-center text-sm text-slate-500 bg-white/70 border-t border-slate-200 dark:bg-slate-900/80 dark:text-slate-400 dark:border-slate-700">
+        <span class="mdi mdi-yarn mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0 | {{ _('GPL-3.0-only') }}
     </footer>
+    <script>
+        const toastVariants = {
+            success: "bg-emerald-500/90 text-white",
+            error: "bg-red-600/90 text-white",
+            info: "bg-slate-900/90 text-white",
+        };
+
+        const toastContainer = document.getElementById("toastContainer");
+
+        window.showToast = (message, variant = "info") => {
+            if (!toastContainer || !message) {
+                return;
+            }
+
+            const toast = document.createElement("div");
+            toast.className = `rounded-lg px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition hover:translate-y-1 ${
+                toastVariants[variant] || toastVariants.info
+            }`;
+            toast.setAttribute("role", "status");
+            toast.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <span class="mdi ${
+                        variant === "success"
+                            ? "mdi-check-circle"
+                            : variant === "error"
+                              ? "mdi-alert-circle"
+                              : "mdi-information"
+                    } text-lg"></span>
+                    <p class="text-sm leading-snug">${message}</p>
+                    <button type="button" class="ml-auto text-white/80 transition hover:text-white" aria-label="{{ _('Dismiss message') }}">
+                        <span class="mdi mdi-close"></span>
+                    </button>
+                </div>
+            `;
+
+            const closeButton = toast.querySelector("button");
+            closeButton?.addEventListener("click", () => {
+                toast.classList.add("opacity-0", "translate-y-2");
+                setTimeout(() => toast.remove(), 200);
+            });
+
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                if (!toast.isConnected) {
+                    return;
+                }
+                toast.classList.add("opacity-0", "translate-y-2");
+                setTimeout(() => toast.remove(), 200);
+            }, 5000);
+        };
+
+        const extractErrorMessage = async (response, fallback) => {
+            const defaultMessage = fallback || "{{ _('Something went wrong. Please try again.') }}";
+            if (!response) {
+                return defaultMessage;
+            }
+
+            const isFetchResponse = typeof response.clone === "function";
+            const contentType = isFetchResponse
+                ? response.headers?.get("content-type") || ""
+                : typeof response.getResponseHeader === "function"
+                  ? response.getResponseHeader("content-type") || ""
+                  : "";
+
+            try {
+                if (contentType.includes("application/json")) {
+                    if (isFetchResponse) {
+                        const data = await response.clone().json();
+                        if (typeof data?.detail === "string" && data.detail.trim()) {
+                            return data.detail;
+                        }
+                        if (typeof data?.message === "string" && data.message.trim()) {
+                            return data.message;
+                        }
+                    } else if (response.responseText) {
+                        const data = JSON.parse(response.responseText);
+                        if (typeof data?.detail === "string" && data.detail.trim()) {
+                            return data.detail;
+                        }
+                        if (typeof data?.message === "string" && data.message.trim()) {
+                            return data.message;
+                        }
+                    }
+                } else if (isFetchResponse) {
+                    const text = await response.clone().text();
+                    if (text.trim()) {
+                        return text.trim();
+                    }
+                } else if (response.responseText) {
+                    const text = response.responseText;
+                    if (text && text.trim()) {
+                        return text.trim();
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to parse error response", error);
+            }
+
+            return defaultMessage;
+        };
+
+        const initLightbox = () => {
+            const lightbox = document.getElementById("imageLightbox");
+            if (!lightbox) {
+                return;
+            }
+
+            const image = lightbox.querySelector("[data-lightbox-image]");
+            const caption = lightbox.querySelector("[data-lightbox-caption]");
+            const closeButton = lightbox.querySelector("[data-lightbox-close]");
+            const prevButton = lightbox.querySelector("[data-lightbox-prev]");
+            const nextButton = lightbox.querySelector("[data-lightbox-next]");
+
+            let currentIndex = 0;
+            let currentItems = [];
+            let touchStartX = null;
+
+            const updateNavigationState = () => {
+                const hasMultiple = currentItems.length > 1;
+                prevButton.classList.toggle("hidden", !hasMultiple);
+                nextButton.classList.toggle("hidden", !hasMultiple);
+            };
+
+            const render = () => {
+                const active = currentItems[currentIndex];
+                if (!active) {
+                    return;
+                }
+                image.src = active.src;
+                image.alt = active.alt;
+                caption.textContent = active.alt || "";
+                updateNavigationState();
+            };
+
+            const close = () => {
+                lightbox.classList.add("hidden");
+                document.body.classList.remove("overflow-hidden");
+                document.removeEventListener("keydown", handleKeydown);
+            };
+
+            const show = (group, index) => {
+                currentItems = Array.from(
+                    document.querySelectorAll(`[data-lightbox-group="${group}"]`),
+                ).map((el) => ({
+                    src: el.getAttribute("data-lightbox-src") || el.currentSrc || el.src,
+                    alt: el.getAttribute("data-lightbox-alt") || el.alt || "",
+                    element: el,
+                    group,
+                }));
+
+                if (!currentItems.length) {
+                    return;
+                }
+
+                currentIndex = Math.max(0, Math.min(index, currentItems.length - 1));
+
+                lightbox.classList.remove("hidden");
+                document.body.classList.add("overflow-hidden");
+                render();
+                document.addEventListener("keydown", handleKeydown);
+            };
+
+            const showNext = () => {
+                if (!currentItems.length) {
+                    return;
+                }
+                currentIndex = (currentIndex + 1) % currentItems.length;
+                render();
+            };
+
+            const showPrev = () => {
+                if (!currentItems.length) {
+                    return;
+                }
+                currentIndex = (currentIndex - 1 + currentItems.length) % currentItems.length;
+                render();
+            };
+
+            const handleKeydown = (event) => {
+                if (lightbox.classList.contains("hidden")) {
+                    return;
+                }
+                if (event.key === "Escape") {
+                    close();
+                } else if (event.key === "ArrowRight") {
+                    showNext();
+                } else if (event.key === "ArrowLeft") {
+                    showPrev();
+                }
+            };
+
+            document.addEventListener("click", (event) => {
+                const trigger = event.target.closest("[data-lightbox-group]");
+                if (!trigger) {
+                    return;
+                }
+                event.preventDefault();
+                const group = trigger.getAttribute("data-lightbox-group");
+                const elements = Array.from(
+                    document.querySelectorAll(`[data-lightbox-group="${group}"]`),
+                );
+                const index = Math.max(0, elements.indexOf(trigger));
+                show(group, index);
+            });
+
+            lightbox.addEventListener("click", (event) => {
+                if (event.target === lightbox) {
+                    close();
+                }
+            });
+
+            closeButton.addEventListener("click", () => close());
+            nextButton.addEventListener("click", () => showNext());
+            prevButton.addEventListener("click", () => showPrev());
+
+            lightbox.addEventListener("pointerdown", (event) => {
+                if (event.pointerType === "touch" || event.pointerType === "pen") {
+                    touchStartX = event.clientX;
+                }
+            });
+
+            lightbox.addEventListener("pointerup", (event) => {
+                if (touchStartX === null) {
+                    return;
+                }
+                const deltaX = event.clientX - touchStartX;
+                if (Math.abs(deltaX) > 50) {
+                    if (deltaX < 0) {
+                        showNext();
+                    } else {
+                        showPrev();
+                    }
+                }
+                touchStartX = null;
+            });
+
+            lightbox.addEventListener("pointercancel", () => {
+                touchStartX = null;
+            });
+
+            window.addEventListener("resize", () => {
+                if (!lightbox.classList.contains("hidden")) {
+                    render();
+                }
+            });
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const parseClasses = (value) =>
+                (value || "")
+                    .split(/\s+/)
+                    .map((cls) => cls.trim())
+                    .filter(Boolean);
+
+            const syncPreferenceButtons = (preference) => {
+                document.querySelectorAll("[data-theme-option]").forEach((button) => {
+                    const isActive = button.dataset.themeOption === preference;
+                    const activeClasses = parseClasses(
+                        button.dataset.themeActiveClass ||
+                            "ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300",
+                    );
+                    const inactiveClasses = parseClasses(
+                        button.dataset.themeInactiveClass || "",
+                    );
+
+                    if (isActive) {
+                        inactiveClasses.forEach((cls) => button.classList.remove(cls));
+                        activeClasses.forEach((cls) => button.classList.add(cls));
+                    } else {
+                        activeClasses.forEach((cls) => button.classList.remove(cls));
+                        inactiveClasses.forEach((cls) => button.classList.add(cls));
+                    }
+
+                    button.setAttribute("aria-pressed", String(isActive));
+                });
+            };
+
+            const root = document.documentElement;
+            const getPreference = () =>
+                root.dataset.themePreference || localStorage.getItem("theme") || "system";
+
+            syncPreferenceButtons(getPreference());
+
+            document.addEventListener("themechange", (event) => {
+                syncPreferenceButtons(event.detail.preference);
+            });
+
+            document.querySelectorAll("[data-theme-option]").forEach((button) => {
+                button.addEventListener("click", () => {
+                    window.__setThemePreference(button.dataset.themeOption);
+                });
+            });
+
+            const menuRoot = document.querySelector("[data-user-menu]");
+            if (menuRoot) {
+                const trigger = menuRoot.querySelector("[data-user-menu-trigger]");
+                const panel = menuRoot.querySelector("[data-user-menu-panel]");
+
+                if (trigger && panel) {
+                    const openMenu = () => {
+                        panel.classList.remove("opacity-0", "scale-95", "pointer-events-none");
+                        panel.classList.add("opacity-100", "scale-100", "pointer-events-auto");
+                        panel.setAttribute("aria-hidden", "false");
+                        trigger.setAttribute("aria-expanded", "true");
+                    };
+
+                    const closeMenu = () => {
+                        panel.classList.add("opacity-0", "scale-95", "pointer-events-none");
+                        panel.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
+                        panel.setAttribute("aria-hidden", "true");
+                        trigger.setAttribute("aria-expanded", "false");
+                    };
+
+                    const toggleMenu = () => {
+                        const isHidden = panel.getAttribute("aria-hidden") !== "false";
+                        if (isHidden) {
+                            openMenu();
+                        } else {
+                            closeMenu();
+                        }
+                    };
+
+                    closeMenu();
+
+                    trigger.addEventListener("click", (event) => {
+                        event.stopPropagation();
+                        toggleMenu();
+                    });
+
+                    document.addEventListener("click", (event) => {
+                        if (!menuRoot.contains(event.target)) {
+                            closeMenu();
+                        }
+                    });
+
+                    document.addEventListener("keydown", (event) => {
+                        if (event.key === "Escape") {
+                            closeMenu();
+                        }
+                    });
+                }
+            }
+
+            initLightbox();
+        });
+
+        document.body.addEventListener("htmx:responseError", async (event) => {
+            const fallback = "{{ _('Something went wrong. Please try again.') }}";
+            const message = await extractErrorMessage(event.detail.xhr, fallback);
+            showToast(message, "error");
+        });
+    </script>
 </body>
 </html>

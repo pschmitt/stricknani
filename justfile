@@ -10,7 +10,7 @@ setup:
 
 # Run dev server with reload
 run:
-    uv run uvicorn stricknani.main:app --reload --host 0.0.0.0 --port {{dev_port}}
+    uv run uvicorn stricknani.main:app --reload --host 0.0.0.0 --port {{dev_port}} --log-level debug --access-log
 
 # Run linters
 lint:

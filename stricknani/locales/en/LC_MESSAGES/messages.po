@@ -27,8 +27,17 @@ msgstr "Projects"
 msgid "Gauge Calculator"
 msgstr "Gauge Calculator"
 
+msgid "Preferences"
+msgstr "Preferences"
+
 msgid "Logout"
 msgstr "Logout"
+
+msgid "Open user menu"
+msgstr "Open user menu"
+
+msgid "Settings"
+msgstr "Settings"
 
 msgid "Login"
 msgstr "Login"
@@ -54,6 +63,109 @@ msgstr "At least 8 characters"
 
 msgid "Already have an account? Login"
 msgstr "Already have an account? Login"
+
+# User preferences
+msgid "User Preferences"
+msgstr "User Preferences"
+
+msgid "Control how Stricknani looks and feels for your account."
+msgstr "Control how Stricknani looks and feels for your account."
+
+msgid "Theme"
+msgstr "Theme"
+
+msgid "Choose theme"
+msgstr "Choose theme"
+
+msgid "Choose whether Stricknani follows your device setting or sticks to light or dark mode."
+msgstr "Choose whether Stricknani follows your device setting or sticks to light or dark mode."
+
+msgid "Light"
+msgstr "Light"
+
+msgid "Dark"
+msgstr "Dark"
+
+msgid "System"
+msgstr "System"
+
+msgid "Signed in"
+msgstr "Signed in"
+
+msgid "Your selection is stored locally in this browser."
+msgstr "Your selection is stored locally in this browser."
+
+msgid "Profile image"
+msgstr "Profile image"
+
+msgid "Upload a friendly face so it is easier to recognize your projects at a glance."
+msgstr "Upload a friendly face so it is easier to recognize your projects at a glance."
+
+msgid "Profile image updated successfully!"
+msgstr "Profile image updated successfully!"
+
+msgid "Select an image"
+msgstr "Select an image"
+
+msgid "Upload"
+msgstr "Upload"
+
+msgid "Tap to preview your current profile image."
+msgstr "Tap to preview your current profile image."
+
+msgid "No profile image uploaded yet."
+msgstr "No profile image uploaded yet."
+
+msgid "Favorite projects"
+msgstr "Favorite projects"
+
+msgid "Quick access to the projects you reach for most often."
+msgstr "Quick access to the projects you reach for most often."
+
+msgid "View project"
+msgstr "View project"
+
+msgid "Removed from favorites"
+msgstr "Removed from favorites"
+
+msgid "Last updated on %(date)s"
+msgstr "Last updated on %(date)s"
+
+msgid "You have not favorited any projects yet."
+msgstr "You have not favorited any projects yet."
+
+msgid "Visit a project to add it to your favorites list."
+msgstr "Visit a project to add it to your favorites list."
+
+msgid "Profile image for %(email)s"
+msgstr "Profile image for %(email)s"
+
+msgid "Add to favorites"
+msgstr "Add to favorites"
+
+msgid "Remove from favorites"
+msgstr "Remove from favorites"
+
+msgid "Added to favorites"
+msgstr "Added to favorites"
+
+msgid "Preview"
+msgstr "Preview"
+
+msgid "This preview updates to reflect your current theme choice."
+msgstr "This preview updates to reflect your current theme choice."
+
+msgid "Hello from dark mode!"
+msgstr "Hello from dark mode!"
+
+msgid "Hello from light mode!"
+msgstr "Hello from light mode!"
+
+msgid "Sunlit surfaces keep details crisp and colorful."
+msgstr "Sunlit surfaces keep details crisp and colorful."
+
+msgid "If you switch back to light mode, this preview will lighten up automatically."
+msgstr "If you switch back to light mode, this preview will lighten up automatically."
 
 # Projects list
 msgid "My Projects"
@@ -84,8 +196,8 @@ msgid "View Details"
 msgstr "View Details"
 
 # Project detail
-msgid "← Back to Projects"
-msgstr "← Back to Projects"
+msgid "Back to Projects"
+msgstr "Back to Projects"
 
 msgid "Edit"
 msgstr "Edit"
@@ -115,8 +227,8 @@ msgid "Notes"
 msgstr "Notes"
 
 # Project form
-msgid "← Back"
-msgstr "← Back"
+msgid "Back"
+msgstr "Back"
 
 msgid "New Project"
 msgstr "New Project"
@@ -139,8 +251,8 @@ msgstr "Gauge Rows (per 10cm)"
 msgid "Supports Markdown formatting"
 msgstr "Supports Markdown formatting"
 
-msgid "💡 Tip:"
-msgstr "💡 Tip:"
+msgid "Tip:"
+msgstr "Tip:"
 
 msgid "Need help calculating your gauge? Use our"
 msgstr "Need help calculating your gauge? Use our"
@@ -154,9 +266,11 @@ msgstr "Update Project"
 msgid "Cancel"
 msgstr "Cancel"
 
-# Gauge calculator
-msgid "🧮 Gauge Calculator"
-msgstr "🧮 Gauge Calculator"
+msgid "Delete project"
+msgstr "Delete project"
+
+msgid "Image upload failed. Please try again."
+msgstr "Image upload failed. Please try again."
 
 msgid "Calculate how many stitches and rows you need based on your gauge and the pattern's gauge."
 msgstr "Calculate how many stitches and rows you need based on your gauge and the pattern's gauge."
@@ -182,8 +296,8 @@ msgstr "Width (cm)"
 msgid "Height (cm)"
 msgstr "Height (cm)"
 
-msgid "(optional)"
-msgstr "(optional)"
+msgid "optional"
+msgstr "optional"
 
 msgid "Calculate"
 msgstr "Calculate"
@@ -203,14 +317,29 @@ msgstr "Enter the target dimensions you want to achieve"
 msgid "Click Calculate to see how many stitches and rows you need"
 msgstr "Click Calculate to see how many stitches and rows you need"
 
-msgid "✅ Calculation Results"
-msgstr "✅ Calculation Results"
+msgid "Calculation Results"
+msgstr "Calculation Results"
 
 msgid "Adjusted Stitches"
 msgstr "Adjusted Stitches"
 
 msgid "Adjusted Rows"
 msgstr "Adjusted Rows"
+
+msgid "N/A"
+msgstr "N/A"
+
+msgid "For a piece"
+msgstr "For a piece"
+
+msgid "wide"
+msgstr "wide"
+
+msgid "and"
+msgstr "and"
+
+msgid "tall"
+msgstr "tall"
 
 # Project categories
 msgid "Pullover"
@@ -231,3 +360,90 @@ msgstr "Headband"
 # Footer
 msgid "GPL-3.0-only"
 msgstr "GPL-3.0-only"
+
+# Asset Management
+msgid "Title Images"
+msgstr "Title Images"
+
+msgid "Add Title Image"
+msgstr "Add Title Image"
+
+msgid "Drag and drop images here or click to upload"
+msgstr "Drag and drop images here or click to upload"
+
+msgid "Save the project before adding images to this step."
+msgstr "Save the project before adding images to this step."
+
+msgid "Only image files are supported."
+msgstr "Only image files are supported."
+
+msgid "Network error while uploading image."
+msgstr "Network error while uploading image."
+
+msgid "Failed to delete the image. Please try again."
+msgstr "Failed to delete the image. Please try again."
+
+msgid "Network error while deleting image."
+msgstr "Network error while deleting image."
+
+msgid "Uploading…"
+msgstr "Uploading…"
+
+msgid "Upload Image"
+msgstr "Upload Image"
+
+# Notifications and lightbox
+msgid "Image viewer"
+msgstr "Image viewer"
+
+msgid "Close image viewer"
+msgstr "Close image viewer"
+
+msgid "Previous image"
+msgstr "Previous image"
+
+msgid "Next image"
+msgstr "Next image"
+
+msgid "Dismiss message"
+msgstr "Dismiss message"
+
+msgid "Something went wrong. Please try again."
+msgstr "Something went wrong. Please try again."
+
+msgid "Steps"
+msgstr "Steps"
+
+msgid "Add Step"
+msgstr "Add Step"
+
+msgid "Step"
+msgstr "Step"
+
+msgid "Step Title"
+msgstr "Step Title"
+
+msgid "Step Description"
+msgstr "Step Description"
+
+msgid "Add Image to Step"
+msgstr "Add Image to Step"
+
+msgid "Remove Step"
+msgstr "Remove Step"
+
+msgid "Move Up"
+msgstr "Move Up"
+
+msgid "Move Down"
+msgstr "Move Down"
+
+msgid "Language"
+msgstr "Language"
+
+msgid "English"
+msgstr "English"
+
+msgid "German"
+msgstr "German"
+

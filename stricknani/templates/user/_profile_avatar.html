@@ -1,0 +1,34 @@
+<div class="flex items-center gap-4" data-profile-avatar>
+    <div class="relative h-24 w-24 rounded-full overflow-hidden bg-slate-200 shadow-inner ring-2 ring-white dark:bg-slate-800 dark:ring-slate-700">
+        {% if profile_thumbnail_url %}
+        <img
+            src="{{ profile_thumbnail_url }}"
+            alt="{{ _('Profile image for %(email)s') % {'email': current_user.email} }}"
+            class="h-full w-full object-cover cursor-zoom-in"
+            data-lightbox-group="profile-avatar"
+            data-lightbox-src="{{ profile_image_url }}"
+            data-lightbox-alt="{{ _('Profile image for %(email)s') % {'email': current_user.email} }}"
+        >
+        {% else %}
+        <div class="flex h-full w-full items-center justify-center text-slate-500 dark:text-slate-300">
+            <span class="mdi mdi-account-circle text-5xl"></span>
+        </div>
+        {% endif %}
+    </div>
+    <div class="space-y-1">
+        <p class="text-sm font-medium text-slate-700 dark:text-slate-200">
+            {{ current_user.email }}
+        </p>
+        {% if profile_image_url %}
+        <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <span class="mdi mdi-image-multiple-outline"></span>
+            {{ _('Tap to preview your current profile image.') }}
+        </p>
+        {% else %}
+        <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <span class="mdi mdi-account-outline"></span>
+            {{ _('No profile image uploaded yet.') }}
+        </p>
+        {% endif %}
+    </div>
+</div>

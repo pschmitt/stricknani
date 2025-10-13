@@ -1,6 +1,7 @@
 """Authentication routes."""
 
 from typing import Annotated
+from urllib.parse import urlparse
 
 from fastapi import (
     APIRouter,
@@ -8,10 +9,11 @@ from fastapi import (
     Depends,
     Form,
     HTTPException,
+    Request,
     Response,
     status,
 )
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.config import config
@@ -89,8 +91,8 @@ async def signup(
         key="session_token",
         value=access_token,
         httponly=True,
-        secure=not config.DEBUG,
-        samesite="lax",
+        secure=config.SESSION_COOKIE_SECURE,
+        samesite=config.COOKIE_SAMESITE,
     )
     return response
 
@@ -118,8 +120,8 @@ async def login(
         key="session_token",
         value=access_token,
         httponly=True,
-        secure=not config.DEBUG,
-        samesite="lax",
+        secure=config.SESSION_COOKIE_SECURE,
+        samesite=config.COOKIE_SAMESITE,
     )
     return response
 
@@ -128,7 +130,12 @@ async def login(
 async def logout() -> Response:
     """User logout."""
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-    response.delete_cookie(key="session_token")
+    response.delete_cookie(
+        key="session_token",
+        secure=config.SESSION_COOKIE_SECURE,
+        httponly=True,
+        samesite=config.COOKIE_SAMESITE,
+    )
     return response
 
 
@@ -136,3 +143,128 @@ async def logout() -> Response:
 async def me(current_user: User = Depends(require_auth)) -> dict[str, str]:
     """Get current user info."""
     return {"email": current_user.email, "id": str(current_user.id)}
+
+
+@router.post("/set-language")
+async def set_language(
+    request: Request,
+    language: Annotated[str, Form()],
+    next_url: Annotated[str | None, Form()] = None,
+) -> Response:
+    """Set the user's language preference."""
+    if language not in config.SUPPORTED_LANGUAGES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid language",
+        )
+
+    # Determine redirect target preference: explicit next, referer, projects list
+    redirect_target = (
+        _resolve_safe_redirect(request, next_url)
+        or _resolve_safe_redirect(request, request.headers.get("referer"))
+        or "/projects"
+    )
+
+    response = RedirectResponse(
+        url=redirect_target,
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+    response.set_cookie(
+        key="language",
+        value=language,
+        httponly=False,
+        secure=config.LANGUAGE_COOKIE_SECURE,
+        samesite=config.COOKIE_SAMESITE,
+        max_age=31536000,  # 1 year
+    )
+    return response
+
+
+@router.post("/set-theme")
+async def set_theme(request: Request) -> Response:
+    """Persist the user's theme preference via cookie."""
+
+    content_type = request.headers.get("content-type", "")
+
+    theme: str | None = None
+    next_url: str | None = None
+    payload: dict[str, str] | None = None
+
+    if "application/json" in content_type:
+        try:
+            payload = await request.json()
+        except ValueError:
+            payload = {}
+        theme = payload.get("theme") if isinstance(payload, dict) else None
+        next_url = payload.get("next") if isinstance(payload, dict) else None
+    else:
+        form = await request.form()
+        theme = form.get("theme")
+        next_url = form.get("next")
+
+    if theme not in {"light", "dark", "system"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid theme",
+        )
+
+    redirect_target = (
+        _resolve_safe_redirect(request, next_url)
+        or _resolve_safe_redirect(request, request.headers.get("referer"))
+        or "/projects"
+    )
+
+    if "application/json" in content_type or request.headers.get("HX-Request"):
+        response: Response = JSONResponse({"status": "ok", "theme": theme})
+    else:
+        response = RedirectResponse(
+            url=redirect_target, status_code=status.HTTP_303_SEE_OTHER
+        )
+
+    if theme == "system":
+        response.delete_cookie(
+            key="theme",
+            secure=config.THEME_COOKIE_SECURE,
+            samesite=config.COOKIE_SAMESITE,
+        )
+        return response
+
+    response.set_cookie(
+        key="theme",
+        value=theme,
+        httponly=False,
+        secure=config.THEME_COOKIE_SECURE,
+        samesite=config.COOKIE_SAMESITE,
+        max_age=31536000,
+    )
+
+    return response
+
+
+def _resolve_safe_redirect(request: Request, target: str | None) -> str | None:
+    """Resolve a safe redirect target limited to the current host."""
+
+    if not target:
+        return None
+
+    parsed = urlparse(target)
+
+    if not parsed.scheme and not parsed.netloc and not parsed.path:
+        return None
+
+    # Reject absolute URLs that point to a different host
+    if parsed.netloc and parsed.netloc != request.url.netloc:
+        return None
+
+    path = parsed.path or "/"
+
+    if not path.startswith("/"):
+        return None
+
+    if parsed.query:
+        path = f"{path}?{parsed.query}"
+
+    if parsed.fragment:
+        path = f"{path}#{parsed.fragment}"
+
+    return path

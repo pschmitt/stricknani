@@ -3,13 +3,14 @@
 from collections.abc import AsyncGenerator
 
 import pytest
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from stricknani.config import config
+from stricknani.database import get_db
+from stricknani.main import app
 from stricknani.models import Base
+from stricknani.routes import auth
 from stricknani.utils.auth import (
     authenticate_user,
     create_user,
@@ -86,3 +87,43 @@ async def test_authenticate_user(db_session: AsyncSession) -> None:
     # Test failed authentication with non-existent user
     user = await authenticate_user(db_session, "nonexistent@example.com", password)
     assert user is None
+
+
+@pytest.mark.asyncio
+async def test_login_cookie_not_secure_by_default(monkeypatch) -> None:
+    """The session cookie should omit the Secure flag when disabled in config."""
+
+    class DummyUser:
+        def __init__(self) -> None:
+            self.email = "tester@example.com"
+
+    async def fake_auth(_db, _email, _password):
+        return DummyUser()
+
+    def fake_token(data, expires_delta=None):  # type: ignore[unused-argument]
+        return "dummy-token"
+
+    async def override_db():
+        yield None
+
+    monkeypatch.setattr(config, "SESSION_COOKIE_SECURE", False)
+    monkeypatch.setattr(config, "COOKIE_SAMESITE", "lax")
+    monkeypatch.setattr(auth, "authenticate_user", fake_auth)
+    monkeypatch.setattr(auth, "create_access_token", fake_token)
+
+    app.dependency_overrides[get_db] = override_db
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/auth/login",
+            data={"email": "tester@example.com", "password": "password"},
+            follow_redirects=False,
+        )
+
+    app.dependency_overrides.pop(get_db, None)
+
+    assert response.status_code == 303
+    cookie_header = response.headers.get("set-cookie", "")
+    assert "session_token=" in cookie_header
+    assert "Secure" not in cookie_header

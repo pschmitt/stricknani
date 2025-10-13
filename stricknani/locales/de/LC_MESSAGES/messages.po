@@ -27,8 +27,17 @@ msgstr "Projekte"
 msgid "Gauge Calculator"
 msgstr "Maschenrechner"
 
+msgid "Preferences"
+msgstr "Einstellungen"
+
 msgid "Logout"
 msgstr "Abmelden"
+
+msgid "Open user menu"
+msgstr "Benutzermenü öffnen"
+
+msgid "Settings"
+msgstr "Einstellungen"
 
 msgid "Login"
 msgstr "Anmelden"
@@ -54,6 +63,109 @@ msgstr "Mindestens 8 Zeichen"
 
 msgid "Already have an account? Login"
 msgstr "Schon ein Konto? Anmelden"
+
+# User preferences
+msgid "User Preferences"
+msgstr "Benutzereinstellungen"
+
+msgid "Control how Stricknani looks and feels for your account."
+msgstr "Bestimme, wie Stricknani für dein Konto aussieht und sich anfühlt."
+
+msgid "Theme"
+msgstr "Design"
+
+msgid "Choose theme"
+msgstr "Thema wählen"
+
+msgid "Choose whether Stricknani follows your device setting or sticks to light or dark mode."
+msgstr "Wähle, ob Stricknani deiner Geräteeinstellung folgt oder dauerhaft im hellen bzw. dunklen Modus bleibt."
+
+msgid "Light"
+msgstr "Hell"
+
+msgid "Dark"
+msgstr "Dunkel"
+
+msgid "System"
+msgstr "System"
+
+msgid "Signed in"
+msgstr "Angemeldet"
+
+msgid "Your selection is stored locally in this browser."
+msgstr "Deine Auswahl wird lokal in diesem Browser gespeichert."
+
+msgid "Profile image"
+msgstr "Profilbild"
+
+msgid "Upload a friendly face so it is easier to recognize your projects at a glance."
+msgstr "Lade ein freundliches Gesicht hoch, damit du deine Projekte auf einen Blick wiedererkennst."
+
+msgid "Profile image updated successfully!"
+msgstr "Profilbild erfolgreich aktualisiert!"
+
+msgid "Select an image"
+msgstr "Bild auswählen"
+
+msgid "Upload"
+msgstr "Hochladen"
+
+msgid "Tap to preview your current profile image."
+msgstr "Tippe, um dein aktuelles Profilbild zu vergrößern."
+
+msgid "No profile image uploaded yet."
+msgstr "Noch kein Profilbild hochgeladen."
+
+msgid "Favorite projects"
+msgstr "Favorisierte Projekte"
+
+msgid "Quick access to the projects you reach for most often."
+msgstr "Schneller Zugriff auf die Projekte, die du am häufigsten brauchst."
+
+msgid "View project"
+msgstr "Projekt ansehen"
+
+msgid "Removed from favorites"
+msgstr "Aus Favoriten entfernt"
+
+msgid "Last updated on %(date)s"
+msgstr "Zuletzt aktualisiert am %(date)s"
+
+msgid "You have not favorited any projects yet."
+msgstr "Du hast noch keine Projekte als Favorit markiert."
+
+msgid "Visit a project to add it to your favorites list."
+msgstr "Besuche ein Projekt, um es deiner Favoritenliste hinzuzufügen."
+
+msgid "Profile image for %(email)s"
+msgstr "Profilbild für %(email)s"
+
+msgid "Add to favorites"
+msgstr "Zu Favoriten hinzufügen"
+
+msgid "Remove from favorites"
+msgstr "Aus Favoriten entfernen"
+
+msgid "Added to favorites"
+msgstr "Zu Favoriten hinzugefügt"
+
+msgid "Preview"
+msgstr "Vorschau"
+
+msgid "This preview updates to reflect your current theme choice."
+msgstr "Diese Vorschau passt sich deiner aktuellen Design-Auswahl an."
+
+msgid "Hello from dark mode!"
+msgstr "Hallo aus dem Dunkelmodus!"
+
+msgid "Hello from light mode!"
+msgstr "Hallo aus dem hellen Design!"
+
+msgid "Sunlit surfaces keep details crisp and colorful."
+msgstr "Helle Flächen lassen alle Details klar und farbenfroh wirken."
+
+msgid "If you switch back to light mode, this preview will lighten up automatically."
+msgstr "Wenn du zurück in den hellen Modus wechselst, wird diese Vorschau automatisch heller."
 
 # Projects list
 msgid "My Projects"
@@ -84,8 +196,8 @@ msgid "View Details"
 msgstr "Details anzeigen"
 
 # Project detail
-msgid "← Back to Projects"
-msgstr "← Zurück zu Projekten"
+msgid "Back to Projects"
+msgstr "Zurück zu Projekten"
 
 msgid "Edit"
 msgstr "Bearbeiten"
@@ -115,8 +227,8 @@ msgid "Notes"
 msgstr "Notizen"
 
 # Project form
-msgid "← Back"
-msgstr "← Zurück"
+msgid "Back"
+msgstr "Zurück"
 
 msgid "New Project"
 msgstr "Neues Projekt"
@@ -139,8 +251,8 @@ msgstr "Maschenprobe Reihen (pro 10cm)"
 msgid "Supports Markdown formatting"
 msgstr "Unterstützt Markdown-Formatierung"
 
-msgid "💡 Tip:"
-msgstr "💡 Tipp:"
+msgid "Tip:"
+msgstr "Tipp:"
 
 msgid "Need help calculating your gauge? Use our"
 msgstr "Brauchst du Hilfe beim Berechnen der Maschenprobe? Nutze unseren"
@@ -154,9 +266,11 @@ msgstr "Projekt aktualisieren"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-# Gauge calculator
-msgid "🧮 Gauge Calculator"
-msgstr "🧮 Maschenrechner"
+msgid "Delete project"
+msgstr "Projekt löschen"
+
+msgid "Image upload failed. Please try again."
+msgstr "Bild-Upload fehlgeschlagen. Bitte versuche es erneut."
 
 msgid "Calculate how many stitches and rows you need based on your gauge and the pattern's gauge."
 msgstr "Berechne wie viele Maschen und Reihen du basierend auf deiner Maschenprobe und der Anleitung benötigst."
@@ -182,8 +296,8 @@ msgstr "Breite (cm)"
 msgid "Height (cm)"
 msgstr "Höhe (cm)"
 
-msgid "(optional)"
-msgstr "(optional)"
+msgid "optional"
+msgstr "optional"
 
 msgid "Calculate"
 msgstr "Berechnen"
@@ -203,14 +317,29 @@ msgstr "Gib die gewünschten Zielmaße ein"
 msgid "Click Calculate to see how many stitches and rows you need"
 msgstr "Klicke auf Berechnen, um zu sehen wie viele Maschen und Reihen du benötigst"
 
-msgid "✅ Calculation Results"
-msgstr "✅ Berechnungsergebnis"
+msgid "Calculation Results"
+msgstr "Berechnungsergebnisse"
 
 msgid "Adjusted Stitches"
 msgstr "Angepasste Maschen"
 
 msgid "Adjusted Rows"
 msgstr "Angepasste Reihen"
+
+msgid "N/A"
+msgstr "k. A."
+
+msgid "For a piece"
+msgstr "Für ein Stück"
+
+msgid "wide"
+msgstr "breit"
+
+msgid "and"
+msgstr "und"
+
+msgid "tall"
+msgstr "hoch"
 
 # Project categories
 msgid "Pullover"
@@ -231,3 +360,90 @@ msgstr "Stirnband"
 # Footer
 msgid "GPL-3.0-only"
 msgstr "GPL-3.0-only"
+
+# Asset Management
+msgid "Title Images"
+msgstr "Titelbilder"
+
+msgid "Add Title Image"
+msgstr "Titelbild hinzufügen"
+
+msgid "Drag and drop images here or click to upload"
+msgstr "Bilder hier ablegen oder zum Hochladen klicken"
+
+msgid "Save the project before adding images to this step."
+msgstr "Speichere das Projekt, bevor du Bilder zu diesem Schritt hinzufügst."
+
+msgid "Only image files are supported."
+msgstr "Es werden nur Bilddateien unterstützt."
+
+msgid "Network error while uploading image."
+msgstr "Netzwerkfehler beim Hochladen des Bildes."
+
+msgid "Failed to delete the image. Please try again."
+msgstr "Bild konnte nicht gelöscht werden. Bitte versuche es erneut."
+
+msgid "Network error while deleting image."
+msgstr "Netzwerkfehler beim Löschen des Bildes."
+
+msgid "Uploading…"
+msgstr "Wird hochgeladen …"
+
+msgid "Upload Image"
+msgstr "Bild hochladen"
+
+# Notifications and lightbox
+msgid "Image viewer"
+msgstr "Bildanzeige"
+
+msgid "Close image viewer"
+msgstr "Bildanzeige schließen"
+
+msgid "Previous image"
+msgstr "Vorheriges Bild"
+
+msgid "Next image"
+msgstr "Nächstes Bild"
+
+msgid "Dismiss message"
+msgstr "Nachricht schließen"
+
+msgid "Something went wrong. Please try again."
+msgstr "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+
+msgid "Steps"
+msgstr "Schritte"
+
+msgid "Add Step"
+msgstr "Schritt hinzufügen"
+
+msgid "Step"
+msgstr "Schritt"
+
+msgid "Step Title"
+msgstr "Schritt-Titel"
+
+msgid "Step Description"
+msgstr "Schritt-Beschreibung"
+
+msgid "Add Image to Step"
+msgstr "Bild zu Schritt hinzufügen"
+
+msgid "Remove Step"
+msgstr "Schritt entfernen"
+
+msgid "Move Up"
+msgstr "Nach oben"
+
+msgid "Move Down"
+msgstr "Nach unten"
+
+msgid "Language"
+msgstr "Sprache"
+
+msgid "English"
+msgstr "Englisch"
+
+msgid "German"
+msgstr "Deutsch"
+

@@ -27,6 +27,16 @@ class Config:
     ALLOWED_HOSTS: list[str] = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(
         ","
     )
+    SESSION_COOKIE_SECURE: bool = (
+        os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    )
+    LANGUAGE_COOKIE_SECURE: bool = (
+        os.getenv("LANGUAGE_COOKIE_SECURE", "false").lower() == "true"
+    )
+    THEME_COOKIE_SECURE: bool = (
+        os.getenv("THEME_COOKIE_SECURE", "false").lower() == "true"
+    )
+    COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE", "lax")
 
     # Features
     FEATURE_SIGNUP_ENABLED: bool = (
@@ -46,7 +56,10 @@ class Config:
         """Ensure media directories exist."""
         cls.MEDIA_ROOT.mkdir(exist_ok=True)
         (cls.MEDIA_ROOT / "projects").mkdir(exist_ok=True)
+        (cls.MEDIA_ROOT / "users").mkdir(exist_ok=True)
         (cls.MEDIA_ROOT / "thumbnails").mkdir(exist_ok=True)
+        (cls.MEDIA_ROOT / "thumbnails" / "projects").mkdir(parents=True, exist_ok=True)
+        (cls.MEDIA_ROOT / "thumbnails" / "users").mkdir(parents=True, exist_ok=True)
 
 
 config = Config()

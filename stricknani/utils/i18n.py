@@ -1,7 +1,10 @@
 """Internationalization utilities."""
 
+from collections.abc import Callable
 from pathlib import Path
 
+from babel.messages.mofile import write_mo
+from babel.messages.pofile import read_po
 from babel.support import Translations
 from jinja2 import Environment
 
@@ -24,8 +27,22 @@ def get_translations(language: str) -> Translations:
         language = config.DEFAULT_LANGUAGE
 
     translations_path = LOCALES_DIR / language / "LC_MESSAGES"
+    po_path = translations_path / "messages.po"
+    mo_path = translations_path / "messages.mo"
 
-    if translations_path.exists() and (translations_path / "messages.mo").exists():
+    if po_path.exists():
+        should_compile = not mo_path.exists()
+        if not should_compile:
+            should_compile = po_path.stat().st_mtime > mo_path.stat().st_mtime
+
+        if should_compile:
+            translations_path.mkdir(parents=True, exist_ok=True)
+            with po_path.open("r", encoding="utf-8") as po_file:
+                catalog = read_po(po_file)
+            with mo_path.open("wb") as mo_file:
+                write_mo(mo_file, catalog)
+
+    if mo_path.exists():
         return Translations.load(
             dirname=str(LOCALES_DIR), locales=[language], domain="messages"
         )
@@ -83,7 +100,40 @@ def install_i18n(env: Environment, language: str | None = None) -> None:
 
     translations = get_translations(language)
 
-    # Add gettext functions to Jinja2 globals
-    env.globals["_"] = translations.gettext
-    env.globals["gettext"] = translations.gettext
-    env.globals["ngettext"] = translations.ngettext
+    def _wrap_gettext(func: Callable[..., str]) -> Callable[..., str]:
+        def _translator(message: str, *args, **kwargs) -> str:
+            text = func(message)
+            if kwargs:
+                try:
+                    return text % kwargs
+                except (TypeError, ValueError):
+                    pass
+            if args:
+                try:
+                    return text % args
+                except (TypeError, ValueError):
+                    pass
+            return text
+
+        return _translator
+
+    def _wrap_ngettext(func: Callable[..., str]) -> Callable[..., str]:
+        def _translator(singular: str, plural: str, n: int, *args, **kwargs) -> str:
+            text = func(singular, plural, n)
+            if kwargs:
+                try:
+                    return text % kwargs
+                except (TypeError, ValueError):
+                    pass
+            if args:
+                try:
+                    return text % args
+                except (TypeError, ValueError):
+                    pass
+            return text
+
+        return _translator
+
+    env.globals["_"] = _wrap_gettext(translations.gettext)
+    env.globals["gettext"] = env.globals["_"]
+    env.globals["ngettext"] = _wrap_ngettext(translations.ngettext)
