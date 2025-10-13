@@ -249,7 +249,7 @@
 
     <div
         id="imageLightbox"
-        class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/90 p-4 text-white backdrop-blur-sm"
+        class="fixed inset-0 z-[9999] hidden flex-col items-center justify-center bg-black/90 p-4 text-white backdrop-blur-sm"
         role="dialog"
         aria-modal="true"
         aria-label="{{ _('Image viewer') }}"
@@ -270,8 +270,8 @@
         >
             <span class="mdi mdi-chevron-left text-3xl"></span>
         </button>
-        <div class="max-h-full w-full max-w-4xl">
-            <img src="" alt="" class="mx-auto max-h-[75vh] w-full rounded-lg object-contain shadow-lg" data-lightbox-image>
+        <div class="flex max-h-full w-full max-w-4xl flex-col items-center justify-center">
+            <img src="" alt="" class="max-h-[75vh] max-w-full rounded-lg object-contain shadow-lg" data-lightbox-image>
             <p class="mt-4 text-center text-sm text-white/80" data-lightbox-caption></p>
         </div>
         <button

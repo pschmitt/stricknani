@@ -646,7 +646,11 @@ async def delete_project(
     current_user: User = Depends(require_auth),
 ) -> dict[str, str]:
     """Delete a project."""
-    result = await db.execute(select(Project).where(Project.id == project_id))
+    result = await db.execute(
+        select(Project)
+        .where(Project.id == project_id)
+        .options(selectinload(Project.images), selectinload(Project.steps))
+    )
     project = result.scalar_one_or_none()
 
     if not project:
@@ -658,6 +662,16 @@ async def delete_project(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
+
+    # Delete all project assets before deleting the database record
+    import shutil
+    project_media_dir = config.MEDIA_ROOT / "projects" / str(project_id)
+    project_thumb_dir = config.MEDIA_ROOT / "thumbnails" / str(project_id)
+
+    if project_media_dir.exists():
+        shutil.rmtree(project_media_dir)
+    if project_thumb_dir.exists():
+        shutil.rmtree(project_thumb_dir)
 
     await db.delete(project)
     await db.commit()
