@@ -158,6 +158,12 @@ async def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/health")
+async def health() -> dict[str, str]:
+    """Health check endpoint (alias)."""
+    return {"status": "ok"}
+
+
 # Import routes
 from stricknani.routes import auth, gauge, projects, user, yarn  # noqa: E402
 
