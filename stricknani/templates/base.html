@@ -253,39 +253,46 @@
 
     <div
         id="imageLightbox"
-        class="fixed inset-0 z-[9999] hidden flex-col items-center justify-center bg-black/90 p-4 text-white backdrop-blur-sm"
+        class="fixed inset-0 z-[9999] hidden bg-black/90 text-white backdrop-blur-sm"
         role="dialog"
         aria-modal="true"
         aria-label="{{ _('Image viewer') }}"
     >
-        <button
-            type="button"
-            class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
-            data-lightbox-close
-            aria-label="{{ _('Close image viewer') }}"
-        >
-            <span class="mdi mdi-close"></span>
-        </button>
-        <button
-            type="button"
-            class="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20"
-            data-lightbox-prev
-            aria-label="{{ _('Previous image') }}"
-        >
-            <span class="mdi mdi-chevron-left text-3xl"></span>
-        </button>
-        <div class="flex max-h-full w-full max-w-4xl flex-col items-center justify-center">
-            <img src="" alt="" class="max-h-[75vh] max-w-full rounded-lg object-contain shadow-lg" data-lightbox-image>
-            <p class="mt-4 text-center text-sm text-white/80" data-lightbox-caption></p>
+        <div class="flex h-full w-full">
+            <div class="relative flex flex-1 flex-col items-center justify-center p-4">
+                <button
+                    type="button"
+                    class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20 z-10"
+                    data-lightbox-close
+                    aria-label="{{ _('Close image viewer') }}"
+                >
+                    <span class="mdi mdi-close"></span>
+                </button>
+                <button
+                    type="button"
+                    class="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20 z-10"
+                    data-lightbox-prev
+                    aria-label="{{ _('Previous image') }}"
+                >
+                    <span class="mdi mdi-chevron-left text-3xl"></span>
+                </button>
+                <div class="flex max-h-full w-full max-w-4xl flex-col items-center justify-center">
+                    <img src="" alt="" class="max-h-[75vh] max-w-full rounded-lg object-contain shadow-lg" data-lightbox-image>
+                    <p class="mt-4 text-center text-sm text-white/80" data-lightbox-caption></p>
+                </div>
+                <button
+                    type="button"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20 z-10"
+                    data-lightbox-next
+                    aria-label="{{ _('Next image') }}"
+                >
+                    <span class="mdi mdi-chevron-right text-3xl"></span>
+                </button>
+            </div>
+            <div class="hidden w-32 flex-col gap-2 overflow-y-auto border-l border-white/10 bg-black/40 p-2 md:flex" data-lightbox-thumbnails>
+                <!-- Thumbnails injected here -->
+            </div>
         </div>
-        <button
-            type="button"
-            class="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20"
-            data-lightbox-next
-            aria-label="{{ _('Next image') }}"
-        >
-            <span class="mdi mdi-chevron-right text-3xl"></span>
-        </button>
     </div>
 
     <footer class="mt-8 py-4 text-center text-sm text-slate-500 bg-white/70 border-t border-slate-200 dark:bg-slate-900/80 dark:text-slate-400 dark:border-slate-700">
@@ -404,6 +411,7 @@
             const closeButton = lightbox.querySelector("[data-lightbox-close]");
             const prevButton = lightbox.querySelector("[data-lightbox-prev]");
             const nextButton = lightbox.querySelector("[data-lightbox-next]");
+            const thumbnailsContainer = lightbox.querySelector("[data-lightbox-thumbnails]");
 
             let currentIndex = 0;
             let currentItems = [];
@@ -411,8 +419,46 @@
 
             const updateNavigationState = () => {
                 const hasMultiple = currentItems.length > 1;
-                prevButton.classList.toggle("hidden", !hasMultiple);
-                nextButton.classList.toggle("hidden", !hasMultiple);
+                if (hasMultiple) {
+                    prevButton.classList.remove("opacity-50", "pointer-events-none");
+                    nextButton.classList.remove("opacity-50", "pointer-events-none");
+                } else {
+                    prevButton.classList.add("opacity-50", "pointer-events-none");
+                    nextButton.classList.add("opacity-50", "pointer-events-none");
+                }
+                thumbnailsContainer.classList.toggle("md:flex", hasMultiple);
+            };
+
+            const renderThumbnails = () => {
+                thumbnailsContainer.innerHTML = "";
+                currentItems.forEach((item, index) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = `relative aspect-square w-full overflow-hidden rounded border-2 transition ${
+                        index === currentIndex
+                            ? "border-blue-500 opacity-100"
+                            : "border-transparent opacity-60 hover:opacity-100"
+                    }`;
+                    btn.innerHTML = `<img src="${item.src}" alt="" class="h-full w-full object-cover">`;
+                    btn.onclick = () => {
+                        currentIndex = index;
+                        render();
+                    };
+                    thumbnailsContainer.appendChild(btn);
+                });
+            };
+
+            const updateActiveThumbnail = () => {
+                Array.from(thumbnailsContainer.children).forEach((btn, index) => {
+                    if (index === currentIndex) {
+                        btn.classList.remove("border-transparent", "opacity-60");
+                        btn.classList.add("border-blue-500", "opacity-100");
+                        btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    } else {
+                        btn.classList.remove("border-blue-500", "opacity-100");
+                        btn.classList.add("border-transparent", "opacity-60");
+                    }
+                });
             };
 
             const render = () => {
@@ -424,6 +470,7 @@
                 image.alt = active.alt;
                 caption.textContent = active.alt || "";
                 updateNavigationState();
+                updateActiveThumbnail();
             };
 
             const close = () => {
@@ -433,22 +480,41 @@
                 document.removeEventListener("keydown", handleKeydown);
             };
 
-            const show = (group, index) => {
-                currentItems = Array.from(
+            const show = (group, trigger) => {
+                const allElements = Array.from(
                     document.querySelectorAll(`[data-lightbox-group="${group}"]`),
-                ).map((el) => ({
-                    src: el.getAttribute("data-lightbox-src") || el.currentSrc || el.src,
-                    alt: el.getAttribute("data-lightbox-alt") || el.alt || "",
-                    element: el,
-                    group,
-                }));
+                );
+
+                const uniqueItems = [];
+                const seenSrcs = new Set();
+
+                allElements.forEach((el) => {
+                    const src = el.getAttribute("data-lightbox-src") || el.currentSrc || el.src;
+                    if (!seenSrcs.has(src)) {
+                        seenSrcs.add(src);
+                        uniqueItems.push({
+                            src: src,
+                            alt: el.getAttribute("data-lightbox-alt") || el.alt || "",
+                            element: el,
+                            group,
+                        });
+                    }
+                });
+
+                currentItems = uniqueItems;
 
                 if (!currentItems.length) {
                     return;
                 }
 
-                currentIndex = Math.max(0, Math.min(index, currentItems.length - 1));
+                const triggerSrc = trigger.getAttribute("data-lightbox-src") || trigger.currentSrc || trigger.src;
+                let index = currentItems.findIndex((item) => item.src === triggerSrc);
+                if (index === -1) {
+                    index = 0;
+                }
+                currentIndex = index;
 
+                renderThumbnails();
                 lightbox.classList.remove("hidden");
                 lightbox.classList.add("flex");
                 document.body.classList.add("overflow-hidden");
@@ -478,9 +544,9 @@
                 }
                 if (event.key === "Escape") {
                     close();
-                } else if (event.key === "ArrowRight") {
+                } else if (event.key === "ArrowRight" || event.key === "ArrowDown") {
                     showNext();
-                } else if (event.key === "ArrowLeft") {
+                } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
                     showPrev();
                 }
             };
@@ -492,11 +558,7 @@
                 }
                 event.preventDefault();
                 const group = trigger.getAttribute("data-lightbox-group");
-                const elements = Array.from(
-                    document.querySelectorAll(`[data-lightbox-group="${group}"]`),
-                );
-                const index = Math.max(0, elements.indexOf(trigger));
-                show(group, index);
+                show(group, trigger);
             });
 
             lightbox.addEventListener("click", (event) => {

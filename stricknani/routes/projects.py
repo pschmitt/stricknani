@@ -235,26 +235,14 @@ async def list_projects(
     favorite_ids = {row[0] for row in favorite_rows}
 
     def _serialize_project(project: Project) -> dict[str, object]:
-        title_image = next((img for img in project.images if img.is_title_image), None)
-        if title_image is None and project.images:
-            title_image = project.images[0]
+        # Get all title images (or first image if no title image set)
+        candidates = [img for img in project.images if img.is_title_image]
+        if not candidates and project.images:
+            candidates = [project.images[0]]
 
-        thumbnail_url: str | None = None
-        image_url: str | None = None
-        image_alt = project.name
-        if title_image is not None:
-            image_path = (
-                config.MEDIA_ROOT
-                / "projects"
-                / str(project.id)
-                / title_image.filename
-            )
-            if image_path.exists():
-                image_url = get_file_url(
-                    title_image.filename, project.id, subdir="projects"
-                )
-
-            thumb_name = f"thumb_{Path(title_image.filename).stem}.jpg"
+        preview_images = []
+        for img in candidates[:3]:
+            thumb_name = f"thumb_{Path(img.filename).stem}.jpg"
             thumb_path = (
                 config.MEDIA_ROOT
                 / "thumbnails"
@@ -262,12 +250,22 @@ async def list_projects(
                 / str(project.id)
                 / thumb_name
             )
+            
+            url = None
             if thumb_path.exists():
-                thumbnail_url = get_thumbnail_url(
-                    title_image.filename, project.id, subdir="projects"
-                )
-            if title_image.alt_text:
-                image_alt = title_image.alt_text
+                url = get_thumbnail_url(img.filename, project.id, subdir="projects")
+            elif (config.MEDIA_ROOT / "projects" / str(project.id) / img.filename).exists():
+                url = get_file_url(img.filename, project.id, subdir="projects")
+            
+            if url:
+                preview_images.append({
+                    "url": url,
+                    "alt": img.alt_text or project.name
+                })
+
+        # Backwards compatibility for templates expecting single image
+        thumbnail_url = preview_images[0]["url"] if preview_images else None
+        image_alt = preview_images[0]["alt"] if preview_images else project.name
 
         return {
             "id": project.id,
@@ -276,8 +274,8 @@ async def list_projects(
             "created_at": project.created_at.isoformat(),
             "is_favorite": project.id in favorite_ids,
             "thumbnail_url": thumbnail_url,
-            "image_url": image_url,
             "image_alt": image_alt,
+            "preview_images": preview_images,
             "tags": project.tag_list(),
         }
 
