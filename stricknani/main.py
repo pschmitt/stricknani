@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from stricknani.config import config
 from stricknani.database import init_db
 from stricknani.logging_config import configure_logging
+from stricknani.utils.auth import ensure_initial_admin
 from stricknani.utils.files import get_file_url, get_thumbnail_url
 from stricknani.utils.i18n import install_i18n
 
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Application lifespan manager."""
     # Startup
     await init_db()
+    await ensure_initial_admin()
     yield
     # Shutdown
     pass

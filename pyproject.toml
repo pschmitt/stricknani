@@ -38,13 +38,21 @@ dev = [
 
 [project.scripts]
 stricknani = "stricknani.scripts.run:main"
+stricknani-admin = "stricknani.scripts.admin:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatchling.build.targets.wheel]
-packages = ["stricknani"]
+packages = [
+    "stricknani",
+    "stricknani.routes",
+    "stricknani.utils",
+    "stricknani.scripts",
+    "stricknani.alembic",
+    "stricknani.alembic.versions",
+]
 include = [
     "stricknani/**",
 ]

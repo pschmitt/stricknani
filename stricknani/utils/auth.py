@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.config import config
+from stricknani.database import AsyncSessionLocal
 from stricknani.models import User
 
 
@@ -78,3 +79,30 @@ async def create_user(db: AsyncSession, email: str, password: str) -> User:
     await db.commit()
     await db.refresh(user)
     return user
+
+
+async def ensure_initial_admin() -> None:
+    """Create an initial admin user if configured."""
+    email = config.INITIAL_ADMIN_EMAIL
+    password = config.INITIAL_ADMIN_PASSWORD
+    if not email or not password:
+        return
+
+    async with AsyncSessionLocal() as session:
+        # If any user exists, do nothing to avoid clobbering existing installs
+        existing_any = await session.execute(select(User.id).limit(1))
+        if existing_any.scalar_one_or_none() is not None:
+            return
+
+        existing = await get_user_by_email(session, email)
+        if existing:
+            if not existing.is_active:
+                existing.is_active = True
+                await session.commit()
+            return
+
+        hashed_password = get_password_hash(password)
+        user = User(email=email, hashed_password=hashed_password, is_active=True)
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)

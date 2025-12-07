@@ -47,6 +47,16 @@ push-image:
 demo-data:
     uv run python -m stricknani.scripts.seed_demo
 
+admin-create email password='':
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -z "{{password}}" ]]
+    then
+      uv run stricknani-admin --email "{{email}}"
+    else
+      uv run stricknani-admin --email "{{email}}" --password "{{password}}"
+    fi
+
 # Database migrations
 migrate-create name:
     uv run alembic revision --autogenerate -m "{{name}}"

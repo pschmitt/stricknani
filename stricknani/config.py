@@ -51,6 +51,12 @@ class Config:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 1 week
     ALGORITHM: str = "HS256"
 
+    # Initial admin bootstrap
+    INITIAL_ADMIN_EMAIL: str | None = os.getenv(
+        "INITIAL_ADMIN_EMAIL", os.getenv("INITIAL_ADMIN_USERNAME")
+    )
+    INITIAL_ADMIN_PASSWORD: str | None = os.getenv("INITIAL_ADMIN_PASSWORD")
+
     @classmethod
     def ensure_media_dirs(cls) -> None:
         """Ensure media directories exist."""
