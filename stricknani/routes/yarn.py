@@ -301,6 +301,7 @@ async def edit_yarn(
         {
             "current_user": current_user,
             "yarn": yarn,
+            "photos": _serialize_photos(yarn),
         },
     )
 
