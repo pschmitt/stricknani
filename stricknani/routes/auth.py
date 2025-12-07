@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.config import config
 from stricknani.database import get_db
+from stricknani.main import render_template
 from stricknani.models import User
 from stricknani.utils.auth import (
     authenticate_user,
@@ -99,6 +100,7 @@ async def signup(
 
 @router.post("/login")
 async def login(
+    request: Request,
     email: Annotated[str, Form()],
     password: Annotated[str, Form()],
     db: AsyncSession = Depends(get_db),
@@ -106,9 +108,16 @@ async def login(
     """User login."""
     user = await authenticate_user(db, email, password)
     if not user:
-        raise HTTPException(
+        return render_template(
+            "auth/login.html",
+            request,
+            {
+                "current_user": None,
+                "signup_enabled": config.FEATURE_SIGNUP_ENABLED,
+                "login_error": True,
+                "login_email": email,
+            },
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
         )
 
     # Create access token

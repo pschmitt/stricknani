@@ -98,7 +98,10 @@ def get_language(request: Request) -> str:
 
 
 def render_template(
-    template_name: str, request: Request, context: dict | None = None
+    template_name: str,
+    request: Request,
+    context: dict | None = None,
+    status_code: int = 200,
 ) -> HTMLResponse:
     """Render a template with i18n support.
 
@@ -106,6 +109,7 @@ def render_template(
         template_name: Name of the template file
         request: FastAPI request object
         context: Additional context variables
+        status_code: HTTP status code for the response
 
     Returns:
         HTMLResponse with rendered template
@@ -138,7 +142,11 @@ def render_template(
     context.setdefault("current_user_avatar_url", avatar_url)
     context.setdefault("current_user_avatar_thumbnail", avatar_thumb)
 
-    return templates.TemplateResponse(template_name, context)
+    return templates.TemplateResponse(
+        template_name,
+        context,
+        status_code=status_code,
+    )
 
 
 # Health check endpoint
