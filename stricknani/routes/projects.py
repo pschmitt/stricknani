@@ -32,6 +32,7 @@ from stricknani.models import (
     ProjectCategory,
     Step,
     User,
+    Yarn,
     user_favorites,
 )
 from stricknani.routes.auth import get_current_user, require_auth
@@ -122,6 +123,35 @@ async def _get_user_categories(db: AsyncSession, user_id: int) -> list[str]:
     if categories:
         return categories
     return [cat.value for cat in ProjectCategory]
+
+
+async def _get_user_yarns(db: AsyncSession, user_id: int) -> list[Yarn]:
+    """Return all yarns for a user ordered by name."""
+
+    result = await db.execute(
+        select(Yarn)
+        .where(Yarn.owner_id == user_id)
+        .order_by(Yarn.name)
+        .options(selectinload(Yarn.photos))
+    )
+    return result.scalars().all()
+
+
+async def _load_owned_yarns(
+    db: AsyncSession, user_id: int, yarn_ids: list[int]
+) -> list[Yarn]:
+    """Load yarns that belong to the user from provided IDs."""
+
+    if not yarn_ids:
+        return []
+
+    result = await db.execute(
+        select(Yarn).where(
+            Yarn.owner_id == user_id,
+            Yarn.id.in_(yarn_ids),
+        )
+    )
+    return result.scalars().all()
 
 
 async def _ensure_category(db: AsyncSession, user_id: int, name: str) -> str:
@@ -291,6 +321,7 @@ async def new_project_form(
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     categories = await _get_user_categories(db, current_user.id)
+    yarn_options = await _get_user_yarns(db, current_user.id)
 
     return render_template(
         "projects/form.html",
@@ -299,6 +330,7 @@ async def new_project_form(
             "current_user": current_user,
             "project": None,
             "categories": categories,
+            "yarns": yarn_options,
         },
     )
 
@@ -320,6 +352,7 @@ async def get_project(
         .options(
             selectinload(Project.images),
             selectinload(Project.steps).selectinload(Step.images),
+            selectinload(Project.yarns),
         )
     )
     project = result.scalar_one_or_none()
@@ -398,6 +431,15 @@ async def get_project(
         ],
         "is_favorite": is_favorite,
         "tags": project.tag_list(),
+        "linked_yarns": [
+            {
+                "id": yarn.id,
+                "name": yarn.name,
+                "brand": yarn.brand,
+                "colorway": yarn.colorway,
+            }
+            for yarn in project.yarns
+        ],
     }
 
     return render_template(
@@ -424,6 +466,7 @@ async def edit_project_form(
         .options(
             selectinload(Project.images),
             selectinload(Project.steps).selectinload(Step.images),
+            selectinload(Project.yarns),
         )
     )
     project = result.scalar_one_or_none()
@@ -482,9 +525,11 @@ async def edit_project_form(
         "title_images": title_images,
         "steps": steps_data,
         "tags": project.tag_list(),
+        "yarn_ids": [y.id for y in project.yarns],
     }
 
     categories = await _get_user_categories(db, current_user.id)
+    yarn_options = await _get_user_yarns(db, current_user.id)
 
     return render_template(
         "projects/form.html",
@@ -493,6 +538,7 @@ async def edit_project_form(
             "current_user": current_user,
             "project": project_data,
             "categories": categories,
+            "yarns": yarn_options,
         },
     )
 
@@ -501,13 +547,13 @@ async def edit_project_form(
 async def create_project(
     name: Annotated[str, Form()],
     category: Annotated[str, Form()],
-    yarn: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
     gauge_stitches: Annotated[str | None, Form()] = None,
     gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
+    yarn_ids: Annotated[list[int], Form()] = [],
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
@@ -520,7 +566,6 @@ async def create_project(
     project = Project(
         name=name.strip(),
         category=normalized_category,
-        yarn=yarn.strip() if yarn else None,
         needles=needles.strip() if needles else None,
         gauge_stitches=gauge_stitches_value,
         gauge_rows=gauge_rows_value,
@@ -528,6 +573,8 @@ async def create_project(
         owner_id=current_user.id,
         tags=_serialize_tags(normalized_tags),
     )
+    project.yarns = await _load_owned_yarns(db, current_user.id, yarn_ids)
+    project.yarn = project.yarns[0].name if project.yarns else None
     db.add(project)
     await db.flush()  # Get project ID
 
@@ -556,13 +603,13 @@ async def update_project(
     project_id: int,
     name: Annotated[str, Form()],
     category: Annotated[str, Form()],
-    yarn: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
     gauge_stitches: Annotated[str | None, Form()] = None,
     gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
+    yarn_ids: Annotated[list[int], Form()] = [],
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
@@ -570,7 +617,7 @@ async def update_project(
     result = await db.execute(
         select(Project)
         .where(Project.id == project_id)
-        .options(selectinload(Project.steps))
+        .options(selectinload(Project.steps), selectinload(Project.yarns))
     )
     project = result.scalar_one_or_none()
 
@@ -586,7 +633,9 @@ async def update_project(
 
     project.name = name.strip()
     project.category = await _ensure_category(db, current_user.id, category)
-    project.yarn = yarn.strip() if yarn else None
+    selected_yarns = await _load_owned_yarns(db, current_user.id, yarn_ids)
+    project.yarns = selected_yarns
+    project.yarn = selected_yarns[0].name if selected_yarns else None
     project.needles = needles.strip() if needles else None
     project.gauge_stitches = _parse_optional_int("gauge_stitches", gauge_stitches)
     project.gauge_rows = _parse_optional_int("gauge_rows", gauge_rows)

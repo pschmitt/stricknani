@@ -62,6 +62,9 @@ class User(Base):
         secondary=lambda: user_favorites,
         back_populates="favorited_by",
     )
+    yarns: Mapped[list["Yarn"]] = relationship(
+        "Yarn", back_populates="owner", cascade="all, delete-orphan"
+    )
     categories: Mapped[list["Category"]] = relationship(
         "Category", back_populates="owner", cascade="all, delete-orphan"
     )
@@ -120,6 +123,11 @@ class Project(Base):
         secondary=lambda: user_favorites,
         back_populates="favorite_projects",
     )
+    yarns: Mapped[list["Yarn"]] = relationship(
+        "Yarn",
+        secondary=lambda: project_yarns,
+        back_populates="projects",
+    )
 
     def tag_list(self) -> list[str]:
         """Return tags as a list."""
@@ -153,6 +161,46 @@ class Category(Base):
     )
 
     owner: Mapped["User"] = relationship("User", back_populates="categories")
+
+
+class Yarn(Base):
+    """Yarn stash entry."""
+
+    __tablename__ = "yarns"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    brand: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    colorway: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    fiber_content: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    weight_category: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    weight_grams: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    length_meters: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, index=True, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    owner_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+
+    owner: Mapped["User"] = relationship("User", back_populates="yarns")
+    photos: Mapped[list["YarnImage"]] = relationship(
+        "YarnImage",
+        back_populates="yarn",
+        cascade="all, delete-orphan",
+        order_by=lambda: YarnImage.created_at.desc(),
+    )
+    projects: Mapped[list["Project"]] = relationship(
+        "Project",
+        secondary=lambda: project_yarns,
+        back_populates="yarns",
+    )
 
 
 class Step(Base):
@@ -198,3 +246,38 @@ class Image(Base):
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="images")
     step: Mapped["Step | None"] = relationship("Step", back_populates="images")
+
+
+class YarnImage(Base):
+    """Images attached to yarn stash entries."""
+
+    __tablename__ = "yarn_images"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    alt_text: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    yarn_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("yarns.id", ondelete="CASCADE"), index=True
+    )
+
+    yarn: Mapped["Yarn"] = relationship("Yarn", back_populates="photos")
+
+
+project_yarns = Table(
+    "project_yarns",
+    Base.metadata,
+    Column(
+        "project_id",
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "yarn_id",
+        ForeignKey("yarns.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    UniqueConstraint("project_id", "yarn_id", name="uq_project_yarn"),
+)

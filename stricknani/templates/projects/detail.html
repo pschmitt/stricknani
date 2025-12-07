@@ -76,8 +76,20 @@
         <!-- Project Details -->
         <div class="space-y-4">
             <div>
-                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1 dark:text-slate-300">{{ _('Yarn') }}</h3>
-                <p class="text-slate-900 dark:text-slate-100">{{ project.yarn or _('Not specified') }}</p>
+                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1 dark:text-slate-300">{{ _('Linked stash yarns') }}</h3>
+                {% if project.linked_yarns %}
+                <div class="flex flex-wrap gap-2">
+                    {% for yarn in project.linked_yarns %}
+                    <a href="/yarn/{{ yarn.id }}" class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                        <span class="mdi mdi-needle text-sm"></span>
+                        <span>{{ yarn.name }}</span>
+                        {% if yarn.colorway %}<span class="text-slate-500 dark:text-slate-400">· {{ yarn.colorway }}</span>{% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-slate-500 text-sm dark:text-slate-400">{{ _('No linked stash yarns yet.') }}</p>
+                {% endif %}
             </div>
 
             <div>
