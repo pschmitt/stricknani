@@ -45,6 +45,10 @@ build-backend = "hatchling.build"
 
 [tool.hatchling.build.targets.wheel]
 packages = ["stricknani"]
+include = [
+    "alembic.ini",
+    "alembic/**",
+]
 
 [tool.ruff]
 line-length = 88
