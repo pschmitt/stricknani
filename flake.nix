@@ -49,6 +49,7 @@
               description = "A self-hosted web app for managing knitting projects";
               license = pkgs.lib.licenses.gpl3Only;
               maintainers = [ "Philipp Schmitt" ];
+              mainProgram = "stricknani";
             };
           };
 
