@@ -46,8 +46,12 @@ build-backend = "hatchling.build"
 [tool.hatchling.build.targets.wheel]
 packages = ["stricknani"]
 include = [
-    "alembic.ini",
-    "alembic/**",
+    "stricknani/**",
+]
+
+[tool.hatch.build]
+include = [
+    "stricknani/**",
 ]
 
 [tool.ruff]

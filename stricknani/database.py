@@ -67,9 +67,9 @@ async def init_db() -> None:
 
     def _run_upgrade() -> None:
         sync_url = _to_sync_url(config.DATABASE_URL)
-        alembic_cfg = AlembicConfig(
-            str(Path(__file__).resolve().parent.parent / "alembic.ini")
-        )
+        base_path = Path(__file__).resolve().parent
+        alembic_cfg = AlembicConfig(str(base_path / "alembic.ini"))
+        alembic_cfg.set_main_option("script_location", str(base_path / "alembic"))
         alembic_cfg.set_main_option("sqlalchemy.url", sync_url)
 
         lock_fd: int | None = None
