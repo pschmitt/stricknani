@@ -41,6 +41,8 @@
               markdown
               bleach
               aiosqlite
+              babel
+              httpx
             ];
 
             meta = {
@@ -86,6 +88,7 @@
             markdown
             bleach
             aiosqlite
+            babel
             pytest
             pytest-asyncio
             httpx
