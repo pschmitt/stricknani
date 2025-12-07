@@ -12,6 +12,24 @@
                     {{ _('Yarn details') }}
                 </p>
                 <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">{{ yarn.name }}</h1>
+                <div class="flex flex-wrap gap-2 text-xs">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        <span class="mdi mdi-calendar-plus"></span>
+                        {{ _('Added') }} {{ metadata.created }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        <span class="mdi mdi-update"></span>
+                        {{ _('Updated') }} {{ metadata.updated }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
+                        <span class="mdi mdi-image-multiple-outline"></span>
+                        {{ metadata.photo_count }} {{ _('photos') }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+                        <span class="mdi mdi-folder-multiple-outline"></span>
+                        {{ metadata.project_count }} {{ _('projects linked') }}
+                    </span>
+                </div>
                 {% if yarn.description %}
                 <p class="text-slate-700 dark:text-slate-200">{{ yarn.description }}</p>
                 {% endif %}
@@ -29,15 +47,23 @@
                 </div>
             </div>
             <div class="space-y-3">
-                <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-inner dark:border-slate-800 dark:bg-slate-950">
-                    {% if preview_url %}
-                    <img src="{{ preview_url }}" alt="{{ _('Preview photo for %(name)s', name=yarn.name) }}" class="h-60 w-full object-cover">
-                    {% elif yarn.photos %}
-                    <img src="{{ '/media/yarns/' ~ yarn.id ~ '/' ~ yarn.photos[0].filename }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}" class="h-60 w-full object-cover">
+                <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-inner dark:border-slate-800 dark:bg-slate-950 flex aspect-[4/3] items-center justify-center">
+                    {% if photos %}
+                        {% set hero = photos[0] %}
+                        <img
+                            src="{{ hero.thumbnail_url }}"
+                            alt="{{ hero.alt_text or yarn.name }}"
+                            class="h-full w-full object-contain object-center cursor-zoom-in bg-white p-2 block"
+                            data-lightbox-group="yarn-{{ yarn.id }}"
+                            data-lightbox-src="{{ hero.full_url }}"
+                            data-lightbox-alt="{{ hero.alt_text or yarn.name }}"
+                        >
+                    {% elif preview_url %}
+                        <img src="{{ preview_url }}" alt="{{ _('Preview photo for %(name)s', name=yarn.name) }}" class="h-60 w-full object-cover">
                     {% else %}
-                    <div class="flex h-60 items-center justify-center text-blue-400 dark:text-blue-300">
-                        <span class="mdi mdi-yarn text-5xl"></span>
-                    </div>
+                        <div class="flex h-60 items-center justify-center text-blue-400 dark:text-blue-300">
+                            <span class="mdi mdi-yarn text-5xl"></span>
+                        </div>
                     {% endif %}
                 </div>
                 <div class="rounded-lg border border-slate-200 bg-white p-4 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -133,8 +159,15 @@
         {% if photos %}
         <div class="mt-4 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
             {% for photo in photos %}
-            <div class="group relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                <img src="{{ photo.thumbnail_url }}" alt="{{ photo.alt_text or yarn.name }}" class="h-44 w-full object-cover transition duration-200 group-hover:scale-105">
+            <div class="group relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <img
+                    src="{{ photo.thumbnail_url }}"
+                    alt="{{ photo.alt_text or yarn.name }}"
+                    class="h-full w-full object-contain object-center bg-white p-2 transition duration-200 group-hover:scale-105 cursor-zoom-in block"
+                    data-lightbox-group="yarn-{{ yarn.id }}"
+                    data-lightbox-src="{{ photo.full_url }}"
+                    data-lightbox-alt="{{ photo.alt_text or yarn.name }}"
+                >
                 <form action="/yarn/{{ yarn.id }}/photos/{{ photo.id }}/delete" method="post" class="absolute right-2 top-2">
                     <button type="submit" class="rounded-full bg-white/90 p-2 text-rose-600 shadow-sm transition hover:bg-rose-50 dark:bg-slate-900/90 dark:text-rose-200" title="{{ _('Delete photo') }}">
                         <span class="mdi mdi-trash-can-outline"></span>

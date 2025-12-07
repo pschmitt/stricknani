@@ -272,6 +272,12 @@ async def yarn_detail(
                 }
                 for project in yarn.projects
             ],
+            "metadata": {
+                "created": yarn.created_at.strftime("%Y-%m-%d"),
+                "updated": yarn.updated_at.strftime("%Y-%m-%d"),
+                "photo_count": len(yarn.photos),
+                "project_count": len(yarn.projects),
+            },
         },
     )
 

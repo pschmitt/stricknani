@@ -428,6 +428,7 @@
 
             const close = () => {
                 lightbox.classList.add("hidden");
+                lightbox.classList.remove("flex");
                 document.body.classList.remove("overflow-hidden");
                 document.removeEventListener("keydown", handleKeydown);
             };
@@ -449,6 +450,7 @@
                 currentIndex = Math.max(0, Math.min(index, currentItems.length - 1));
 
                 lightbox.classList.remove("hidden");
+                lightbox.classList.add("flex");
                 document.body.classList.add("overflow-hidden");
                 render();
                 document.addEventListener("keydown", handleKeydown);
