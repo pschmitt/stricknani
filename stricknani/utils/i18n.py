@@ -29,18 +29,38 @@ def get_translations(language: str) -> Translations:
     translations_path = LOCALES_DIR / language / "LC_MESSAGES"
     po_path = translations_path / "messages.po"
     mo_path = translations_path / "messages.mo"
+    cache_path = (
+        config.MEDIA_ROOT / "locales" / language / "LC_MESSAGES" / "messages.mo"
+    )
 
     if po_path.exists():
-        should_compile = not mo_path.exists()
-        if not should_compile:
+        should_compile = not mo_path.exists() and not cache_path.exists()
+        if not should_compile and cache_path.exists() and po_path.exists():
+            should_compile = po_path.stat().st_mtime > cache_path.stat().st_mtime
+        elif not should_compile and mo_path.exists():
             should_compile = po_path.stat().st_mtime > mo_path.stat().st_mtime
 
         if should_compile:
-            translations_path.mkdir(parents=True, exist_ok=True)
-            with po_path.open("r", encoding="utf-8") as po_file:
-                catalog = read_po(po_file)
-            with mo_path.open("wb") as mo_file:
-                write_mo(mo_file, catalog)
+            try:
+                target_path = mo_path
+                translations_path.mkdir(parents=True, exist_ok=True)
+                with po_path.open("r", encoding="utf-8") as po_file:
+                    catalog = read_po(po_file)
+                with target_path.open("wb") as mo_file:
+                    write_mo(mo_file, catalog)
+            except OSError:
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
+                with po_path.open("r", encoding="utf-8") as po_file:
+                    catalog = read_po(po_file)
+                with cache_path.open("wb") as mo_file:
+                    write_mo(mo_file, catalog)
+
+    if cache_path.exists():
+        return Translations.load(
+            dirname=str(cache_path.parent.parent.parent),
+            locales=[language],
+            domain="messages",
+        )
 
     if mo_path.exists():
         return Translations.load(
