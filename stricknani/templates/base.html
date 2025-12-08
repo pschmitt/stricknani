@@ -10,60 +10,82 @@
         href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css"
     >
     <script>
+        // Initialize theme preference
         const cookieTheme = {{ theme_preference|default('system')|tojson }};
-        const storedTheme = localStorage.getItem("theme") || cookieTheme || "system";
+        let storedTheme = cookieTheme;
+        try {
+            const local = localStorage.getItem("theme");
+            if (local) storedTheme = local;
+        } catch (e) {
+            console.warn("LocalStorage access denied", e);
+        }
+
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+
         const resolveTheme = (preference) => {
             if (preference === "dark" || preference === "light") {
                 return preference;
             }
             return prefersDark.matches ? "dark" : "light";
         };
+
         const applyTheme = (preference) => {
             const resolved = resolveTheme(preference);
             const root = document.documentElement;
-            root.classList.toggle("dark", resolved === "dark");
+            
+            // Apply to HTML element (Tailwind source of truth)
+            if (resolved === "dark") {
+                root.classList.add("dark");
+            } else {
+                root.classList.remove("dark");
+            }
+            
             root.dataset.themePreference = preference;
             root.style.colorScheme = resolved;
 
-            const syncBody = () => {
-                if (!document.body) {
-                    return false;
+            // Sync body class if available
+            if (document.body) {
+                if (resolved === "dark") {
+                    document.body.classList.add("dark");
+                } else {
+                    document.body.classList.remove("dark");
                 }
-                document.body.classList.toggle("dark", resolved === "dark");
                 document.body.dataset.themePreference = preference;
-                return true;
-            };
-
-            if (!syncBody()) {
-                document.addEventListener(
-                    "DOMContentLoaded",
-                    () => {
-                        syncBody();
-                    },
-                    { once: true },
-                );
             }
         };
+
+        // Apply immediately
         applyTheme(storedTheme);
+
+        // Ensure body is synced when loaded
+        document.addEventListener("DOMContentLoaded", () => {
+            applyTheme(storedTheme);
+        });
+
+        // Handle system preference changes
         const handleSystemChange = () => {
-            const activePreference = localStorage.getItem("theme") || "system";
-            if (activePreference === "system") {
+            let current = "system";
+            try {
+                current = localStorage.getItem("theme") || "system";
+            } catch (e) {}
+            
+            if (current === "system") {
                 applyTheme("system");
                 document.dispatchEvent(
                     new CustomEvent("themechange", { detail: { preference: "system" } }),
                 );
             }
         };
-        if (typeof prefersDark.addEventListener === "function") {
+
+        if (prefersDark.addEventListener) {
             prefersDark.addEventListener("change", handleSystemChange);
-        } else if (typeof prefersDark.addListener === "function") {
+        } else if (prefersDark.addListener) {
             prefersDark.addListener(handleSystemChange);
         }
+
+        // Persist preference to server
         const persistTheme = (preference) => {
-            if (!window.fetch) {
-                return;
-            }
+            if (!window.fetch) return;
             try {
                 fetch("/auth/set-theme", {
                     method: "POST",
@@ -72,20 +94,29 @@
                     credentials: "same-origin",
                     keepalive: true,
                 }).catch(() => {});
-            } catch (_error) {
-                /* ignore network issues when persisting optional preference */
-            }
+            } catch (e) {}
         };
 
+        // Public API for theme switching
         window.__setThemePreference = (preference) => {
             const normalized = ["light", "dark", "system"].includes(preference)
                 ? preference
                 : "system";
-            localStorage.setItem("theme", normalized);
+            
+            storedTheme = normalized; // Update local state
+            
+            try {
+                localStorage.setItem("theme", normalized);
+            } catch (e) {
+                console.warn("Failed to save theme preference", e);
+            }
+            
             applyTheme(normalized);
+            
             document.dispatchEvent(
                 new CustomEvent("themechange", { detail: { preference: normalized } }),
             );
+            
             persistTheme(normalized);
         };
         window.tailwind = window.tailwind || {};

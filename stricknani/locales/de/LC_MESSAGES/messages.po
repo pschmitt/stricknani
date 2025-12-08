@@ -577,3 +577,15 @@ msgstr "Faser"
 
 msgid "Open main menu"
 msgstr "Hauptmenü öffnen"
+
+msgid "Back to Yarn Stash"
+msgstr "Zurück zum Wollvorrat"
+
+msgid "Details"
+msgstr "Details"
+
+msgid "yarns linked"
+msgstr "Garne verknüpft"
+
+msgid "Linked stash yarns"
+msgstr "Verknüpfte Garne"

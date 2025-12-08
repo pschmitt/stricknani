@@ -170,13 +170,15 @@ async def new_yarn(
 
 
 async def _handle_photo_uploads(
-    files: list[UploadFile],
+    files: list[UploadFile | str],
     yarn: Yarn,
     db: AsyncSession,
 ) -> None:
     """Persist uploaded photos for a yarn."""
 
     for upload in files:
+        if isinstance(upload, str):
+            continue
         if not upload.filename:
             continue
         saved_name, original = await save_uploaded_file(
@@ -207,7 +209,7 @@ async def create_yarn(
     weight_grams: Annotated[str | None, Form()] = None,
     length_meters: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
-    photos: Annotated[list[UploadFile] | None, File()] = None,
+    photos: Annotated[list[UploadFile | str] | None, File()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -319,7 +321,7 @@ async def update_yarn(
     weight_grams: Annotated[str | None, Form()] = None,
     length_meters: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
-    new_photos: Annotated[list[UploadFile] | None, File()] = None,
+    new_photos: Annotated[list[UploadFile | str] | None, File()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:

@@ -13,6 +13,7 @@ This document contains instructions for AI agents working on the Stricknani code
 ### 2. Linting & Code Quality
 *   **Mandatory**: `ruff check` must pass.
 *   **Recommended**: `mypy` (strict mode) should pass.
+*   **Mandatory**: Trim trailing whitespace from all code, configuration, and documentation files.
 *   Run `just lint` to verify.
 
 ### 3. Testing

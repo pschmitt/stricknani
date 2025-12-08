@@ -74,11 +74,9 @@
                             data-lightbox-src="{{ photo.full_url }}"
                             data-lightbox-alt="{{ photo.alt_text }}"
                         >
-                        <form action="/yarn/{{ yarn.id }}/photos/{{ photo.id }}/delete" method="post" class="absolute top-2 right-2" onsubmit="return confirm('{{ _('Delete photo?') }}');">
-                            <button type="submit" class="bg-white/90 text-red-600 rounded-full p-1.5 hover:bg-red-50 shadow-sm transition-colors dark:bg-slate-900/90 dark:text-red-400 dark:hover:bg-red-900/50" title="{{ _('Delete photo') }}">
-                                <span class="mdi mdi-trash-can-outline"></span>
-                            </button>
-                        </form>
+                        <button type="submit" form="delete-photo-{{ photo.id }}" class="absolute top-2 right-2 bg-white/90 text-red-600 rounded-full p-1.5 hover:bg-red-50 shadow-sm transition-colors dark:bg-slate-900/90 dark:text-red-400 dark:hover:bg-red-900/50" title="{{ _('Delete photo') }}">
+                            <span class="mdi mdi-trash-can-outline"></span>
+                        </button>
                     </div>
                     {% endfor %}
                 </div>
@@ -100,6 +98,13 @@
         </div>
     </form>
 </div>
+
+{% if photos %}
+    {% for photo in photos %}
+    <form id="delete-photo-{{ photo.id }}" action="/yarn/{{ yarn.id }}/photos/{{ photo.id }}/delete" method="post" onsubmit="return confirm('{{ _('Delete photo?') }}');"></form>
+    {% endfor %}
+{% endif %}
+
 <script>
 function previewImages(input) {
     const container = document.getElementById('image-preview-container');
