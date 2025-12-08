@@ -15,7 +15,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, func, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -444,6 +444,7 @@ async def toggle_favorite(
 @router.post("/{yarn_id}/delete", response_class=Response)
 async def delete_yarn(
     yarn_id: int,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -457,6 +458,25 @@ async def delete_yarn(
         delete_file(photo.filename, yarn.id, subdir="yarns")
     await db.delete(yarn)
     await db.commit()
+
+    if request.headers.get("HX-Request"):
+        # Check if any yarns remain
+        result = await db.execute(
+            select(func.count(Yarn.id)).where(Yarn.owner_id == current_user.id)
+        )
+        count = result.scalar() or 0
+
+        if count == 0:
+            response = render_template(
+                "yarn/_empty_state.html",
+                request,
+                {"current_user": current_user},
+            )
+            response.headers["HX-Retarget"] = "#yarn-content"
+            response.headers["HX-Reswap"] = "innerHTML"
+            return response
+
+        return Response(status_code=status.HTTP_200_OK)
 
     return RedirectResponse(url="/yarn", status_code=status.HTTP_303_SEE_OTHER)
 
