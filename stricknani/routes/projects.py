@@ -114,15 +114,19 @@ def _deserialize_tags(raw: str | None) -> list[str]:
 
 
 async def _get_user_categories(db: AsyncSession, user_id: int) -> list[str]:
-    """Return all categories for a user, or defaults if none exist."""
+    """Return all categories for a user including defaults."""
 
+    # Get user defined categories
     result = await db.execute(
         select(Category).where(Category.user_id == user_id).order_by(Category.name)
     )
-    categories = [category.name for category in result.scalars()]
-    if categories:
-        return categories
-    return [cat.value for cat in ProjectCategory]
+    user_categories = {category.name for category in result.scalars()}
+
+    # Add defaults
+    defaults = {cat.value for cat in ProjectCategory}
+
+    # Combine and sort
+    return sorted(user_categories | defaults)
 
 
 async def _get_user_yarns(db: AsyncSession, user_id: int) -> list[Yarn]:
@@ -331,6 +335,174 @@ async def new_project_form(
             "categories": categories,
             "yarns": yarn_options,
         },
+    )
+
+
+async def _render_categories_page(
+    request: Request,
+    db: AsyncSession,
+    current_user: User,
+    *,
+    message: str | None = None,
+    error: str | None = None,
+) -> HTMLResponse:
+    categories_result = await db.execute(
+        select(Category)
+        .where(Category.user_id == current_user.id)
+        .order_by(Category.name)
+    )
+    categories = list(categories_result.scalars())
+
+    counts_result = await db.execute(
+        select(Project.category, func.count())
+        .where(Project.owner_id == current_user.id)
+        .group_by(Project.category)
+    )
+    counts = {row[0]: row[1] for row in counts_result}
+
+    category_rows = [
+        {
+            "id": category.id,
+            "name": category.name,
+            "project_count": counts.get(category.name, 0),
+        }
+        for category in categories
+    ]
+
+    return render_template(
+        "projects/categories.html",
+        request,
+        {
+            "current_user": current_user,
+            "categories": category_rows,
+            "message": message,
+            "error": error,
+        },
+    )
+
+
+@router.get("/categories", response_class=HTMLResponse)
+async def manage_categories(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> HTMLResponse:
+    return await _render_categories_page(request, db, current_user)
+
+
+@router.post("/categories")
+async def create_category(
+    request: Request,
+    name: Annotated[str, Form()],
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> HTMLResponse:
+    cleaned = name.strip()
+    if not cleaned:
+        return await _render_categories_page(
+            request, db, current_user, error="Category name cannot be empty."
+        )
+
+    existing = await db.execute(
+        select(Category).where(
+            Category.user_id == current_user.id,
+            func.lower(Category.name) == cleaned.lower(),
+        )
+    )
+    if existing.scalar_one_or_none():
+        return await _render_categories_page(
+            request, db, current_user, error="Category already exists."
+        )
+
+    db.add(Category(name=cleaned, user_id=current_user.id))
+    await db.commit()
+
+    return await _render_categories_page(
+        request, db, current_user, message="Category created."
+    )
+
+
+@router.post("/categories/{category_id}")
+async def rename_category(
+    request: Request,
+    category_id: int,
+    name: Annotated[str, Form()],
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> HTMLResponse:
+    category = await db.get(Category, category_id)
+    if category is None or category.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    cleaned = name.strip()
+    if not cleaned:
+        return await _render_categories_page(
+            request, db, current_user, error="Category name cannot be empty."
+        )
+
+    conflict = await db.execute(
+        select(Category).where(
+            Category.user_id == current_user.id,
+            func.lower(Category.name) == cleaned.lower(),
+            Category.id != category_id,
+        )
+    )
+    if conflict.scalar_one_or_none():
+        return await _render_categories_page(
+            request,
+            db,
+            current_user,
+            error="Another category already uses that name.",
+        )
+
+    old_name = category.name
+    category.name = cleaned
+    await db.flush()
+
+    await db.execute(
+        update(Project)
+        .where(Project.owner_id == current_user.id, Project.category == old_name)
+        .values(category=cleaned)
+    )
+    await db.commit()
+
+    return await _render_categories_page(
+        request, db, current_user, message="Category updated."
+    )
+
+
+@router.post("/categories/{category_id}/delete")
+async def delete_category(
+    request: Request,
+    category_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> HTMLResponse:
+    category = await db.get(Category, category_id)
+    if category is None or category.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    in_use = await db.execute(
+        select(func.count())
+        .select_from(Project)
+        .where(
+            Project.owner_id == current_user.id,
+            Project.category == category.name,
+        )
+    )
+    if in_use.scalar_one() > 0:
+        return await _render_categories_page(
+            request,
+            db,
+            current_user,
+            error="Cannot delete a category that is still assigned to projects.",
+        )
+
+    await db.delete(category)
+    await db.commit()
+
+    return await _render_categories_page(
+        request, db, current_user, message="Category deleted."
     )
 
 
@@ -833,172 +1005,7 @@ async def unfavorite_project(
     )
 
 
-async def _render_categories_page(
-    request: Request,
-    db: AsyncSession,
-    current_user: User,
-    *,
-    message: str | None = None,
-    error: str | None = None,
-) -> HTMLResponse:
-    categories_result = await db.execute(
-        select(Category)
-        .where(Category.user_id == current_user.id)
-        .order_by(Category.name)
-    )
-    categories = list(categories_result.scalars())
 
-    counts_result = await db.execute(
-        select(Project.category, func.count())
-        .where(Project.owner_id == current_user.id)
-        .group_by(Project.category)
-    )
-    counts = {row[0]: row[1] for row in counts_result}
-
-    category_rows = [
-        {
-            "id": category.id,
-            "name": category.name,
-            "project_count": counts.get(category.name, 0),
-        }
-        for category in categories
-    ]
-
-    return render_template(
-        "projects/categories.html",
-        request,
-        {
-            "current_user": current_user,
-            "categories": category_rows,
-            "message": message,
-            "error": error,
-        },
-    )
-
-
-@router.get("/categories", response_class=HTMLResponse)
-async def manage_categories(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
-) -> HTMLResponse:
-    return await _render_categories_page(request, db, current_user)
-
-
-@router.post("/categories")
-async def create_category(
-    request: Request,
-    name: Annotated[str, Form()],
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
-) -> HTMLResponse:
-    cleaned = name.strip()
-    if not cleaned:
-        return await _render_categories_page(
-            request, db, current_user, error="Category name cannot be empty."
-        )
-
-    existing = await db.execute(
-        select(Category).where(
-            Category.user_id == current_user.id,
-            func.lower(Category.name) == cleaned.lower(),
-        )
-    )
-    if existing.scalar_one_or_none():
-        return await _render_categories_page(
-            request, db, current_user, error="Category already exists."
-        )
-
-    db.add(Category(name=cleaned, user_id=current_user.id))
-    await db.commit()
-
-    return await _render_categories_page(
-        request, db, current_user, message="Category created."
-    )
-
-
-@router.post("/categories/{category_id}")
-async def rename_category(
-    request: Request,
-    category_id: int,
-    name: Annotated[str, Form()],
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
-) -> HTMLResponse:
-    category = await db.get(Category, category_id)
-    if category is None or category.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    cleaned = name.strip()
-    if not cleaned:
-        return await _render_categories_page(
-            request, db, current_user, error="Category name cannot be empty."
-        )
-
-    conflict = await db.execute(
-        select(Category).where(
-            Category.user_id == current_user.id,
-            func.lower(Category.name) == cleaned.lower(),
-            Category.id != category_id,
-        )
-    )
-    if conflict.scalar_one_or_none():
-        return await _render_categories_page(
-            request,
-            db,
-            current_user,
-            error="Another category already uses that name.",
-        )
-
-    old_name = category.name
-    category.name = cleaned
-    await db.flush()
-
-    await db.execute(
-        update(Project)
-        .where(Project.owner_id == current_user.id, Project.category == old_name)
-        .values(category=cleaned)
-    )
-    await db.commit()
-
-    return await _render_categories_page(
-        request, db, current_user, message="Category updated."
-    )
-
-
-@router.post("/categories/{category_id}/delete")
-async def delete_category(
-    request: Request,
-    category_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
-) -> HTMLResponse:
-    category = await db.get(Category, category_id)
-    if category is None or category.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    in_use = await db.execute(
-        select(func.count())
-        .select_from(Project)
-        .where(
-            Project.owner_id == current_user.id,
-            Project.category == category.name,
-        )
-    )
-    if in_use.scalar_one() > 0:
-        return await _render_categories_page(
-            request,
-            db,
-            current_user,
-            error="Cannot delete a category that is still assigned to projects.",
-        )
-
-    await db.delete(category)
-    await db.commit()
-
-    return await _render_categories_page(
-        request, db, current_user, message="Category deleted."
-    )
 
 
 @router.post("/{project_id}/images/title")

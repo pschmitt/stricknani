@@ -48,15 +48,16 @@
                     </a>
                     {% if current_user %}
                     <div class="hidden md:flex space-x-4">
-                        <a href="/projects" class="text-slate-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 dark:text-slate-200 dark:hover:text-blue-400">
+                        {% set current_path = request.url.path %}
+                        <a href="/projects" class="px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 {% if current_path.startswith('/projects') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-400{% endif %}">
                             <span class="mdi mdi-folder-outline"></span>
                             {{ _('Projects') }}
                         </a>
-                        <a href="/yarn" class="text-slate-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 dark:text-slate-200 dark:hover:text-blue-400">
+                        <a href="/yarn" class="px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 {% if current_path.startswith('/yarn') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-400{% endif %}">
                             <span class="mdi mdi-needle"></span>
                             {{ _('Yarn') }}
                         </a>
-                        <a href="/gauge" class="text-slate-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 dark:text-slate-200 dark:hover:text-blue-400">
+                        <a href="/gauge" class="px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 {% if current_path.startswith('/gauge') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-400{% endif %}">
                             <span class="mdi mdi-ruler"></span>
                             {{ _('Gauge Calculator') }}
                         </a>
@@ -151,13 +152,14 @@
         {% if current_user %}
         <div class="md:hidden hidden" id="mobile-menu">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur">
-                <a href="/projects" class="text-slate-700 hover:text-blue-600 hover:bg-slate-50 block px-3 py-2 rounded-md text-base font-medium dark:text-slate-200 dark:hover:text-blue-400 dark:hover:bg-slate-800">
+                {% set current_path = request.url.path %}
+                <a href="/projects" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/projects') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 hover:bg-slate-50 dark:text-slate-200 dark:hover:text-blue-400 dark:hover:bg-slate-800{% endif %}">
                     <span class="mdi mdi-folder-outline mr-2"></span>{{ _('Projects') }}
                 </a>
-                <a href="/yarn" class="text-slate-700 hover:text-blue-600 hover:bg-slate-50 block px-3 py-2 rounded-md text-base font-medium dark:text-slate-200 dark:hover:text-blue-400 dark:hover:bg-slate-800">
+                <a href="/yarn" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/yarn') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 hover:bg-slate-50 dark:text-slate-200 dark:hover:text-blue-400 dark:hover:bg-slate-800{% endif %}">
                     <span class="mdi mdi-needle mr-2"></span>{{ _('Yarn') }}
                 </a>
-                <a href="/gauge" class="text-slate-700 hover:text-blue-600 hover:bg-slate-50 block px-3 py-2 rounded-md text-base font-medium dark:text-slate-200 dark:hover:text-blue-400 dark:hover:bg-slate-800">
+                <a href="/gauge" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/gauge') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 hover:bg-slate-50 dark:text-slate-200 dark:hover:text-blue-400 dark:hover:bg-slate-800{% endif %}">
                     <span class="mdi mdi-ruler mr-2"></span>{{ _('Gauge Calculator') }}
                 </a>
             </div>
