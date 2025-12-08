@@ -6,8 +6,14 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         python = pkgs.python313;
@@ -28,21 +34,22 @@
             ];
 
             propagatedBuildInputs = with python.pkgs; [
-              fastapi
-              uvicorn
-              jinja2
-              sqlalchemy
-              alembic
-              python-multipart
-              python-jose
-              bcrypt
-              python-dotenv
-              pillow
-              markdown
-              bleach
               aiosqlite
+              alembic
               babel
+              bcrypt
+              bleach
+              fastapi
               httpx
+              jinja2
+              markdown
+              pillow
+              python-dotenv
+              python-jose
+              python-multipart
+              rich
+              sqlalchemy
+              uvicorn
             ];
 
             meta = {
@@ -59,7 +66,7 @@
             config = {
               Cmd = [ "${self.packages.${system}.stricknani}/bin/stricknani" ];
               ExposedPorts = {
-                "7674/tcp" = {};
+                "7674/tcp" = { };
               };
               Env = [
                 "BIND_HOST=0.0.0.0"
@@ -69,31 +76,35 @@
         };
 
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            python
-            uv
-            just
-            ruff
-            mypy
-          ] ++ (with python.pkgs; [
-            fastapi
-            uvicorn
-            jinja2
-            sqlalchemy
-            alembic
-            python-multipart
-            python-jose
-            bcrypt
-            python-dotenv
-            pillow
-            markdown
-            bleach
-            aiosqlite
-            babel
-            pytest
-            pytest-asyncio
-            httpx
-          ]);
+          buildInputs =
+            with pkgs;
+            [
+              python
+              uv
+              just
+              ruff
+              mypy
+            ]
+            ++ (with python.pkgs; [
+              aiosqlite
+              alembic
+              babel
+              bcrypt
+              bleach
+              fastapi
+              httpx
+              jinja2
+              markdown
+              pillow
+              pytest
+              pytest-asyncio
+              python-dotenv
+              python-jose
+              python-multipart
+              rich
+              sqlalchemy
+              uvicorn
+            ]);
 
           shellHook = ''
             echo "Stricknani development environment"
