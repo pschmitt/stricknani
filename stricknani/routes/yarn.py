@@ -383,6 +383,7 @@ async def update_yarn(
 async def toggle_favorite(
     yarn_id: int,
     request: Request,
+    variant: str = "card",
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -425,10 +426,13 @@ async def toggle_favorite(
 
     # Return partial for HTMX
     if request.headers.get("HX-Request"):
+        if variant == "profile" and not is_favorite:
+            return HTMLResponse(content="")
+
         return render_template(
             "yarn/_favorite_toggle.html",
             request,
-            {"yarn_id": yarn_id, "is_favorite": is_favorite, "variant": "card"},
+            {"yarn_id": yarn_id, "is_favorite": is_favorite, "variant": variant},
         )
 
     return RedirectResponse(

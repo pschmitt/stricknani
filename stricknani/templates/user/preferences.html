@@ -236,7 +236,7 @@
                         </a>
                         <button
                             type="button"
-                            hx-post="/yarn/{{ yarn.id }}/favorite"
+                            hx-post="/yarn/{{ yarn.id }}/favorite?variant=profile"
                             hx-target="closest [data-favorite-yarn-item]"
                             hx-swap="outerHTML"
                             hx-on::after-request="if (event.detail.successful) { showToast('{{ _('Removed from favorites') }}', 'info'); }"
