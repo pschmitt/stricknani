@@ -31,6 +31,7 @@ from stricknani.utils.files import (
     get_thumbnail_url,
     save_uploaded_file,
 )
+from stricknani.utils.markdown import render_markdown
 
 router = APIRouter(prefix="/yarn", tags=["yarn"])
 
@@ -292,6 +293,10 @@ async def yarn_detail(
         {
             "current_user": current_user,
             "yarn": yarn,
+            "description_html": render_markdown(yarn.description)
+            if yarn.description
+            else None,
+            "notes_html": render_markdown(yarn.notes) if yarn.notes else None,
             "preview_url": _resolve_preview(yarn),
             "photos": _serialize_photos(yarn),
             "linked_projects": [

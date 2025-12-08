@@ -29,6 +29,16 @@
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        .markdown-inline-image {
+            max-width: 250px;
+            width: 100%;
+            cursor: zoom-in;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
 </head>
 <body class="min-h-screen flex flex-col">
     <nav class="relative z-40 bg-slate-900/80 shadow-sm backdrop-blur">
@@ -178,11 +188,9 @@
         aria-atomic="true"
     ></div>
 
-    <div
+    <dialog
         id="imageLightbox"
-        class="fixed inset-0 z-[9999] hidden bg-black/90 text-white backdrop-blur-sm"
-        role="dialog"
-        aria-modal="true"
+        class="fixed inset-0 z-[9999] h-screen w-screen max-w-none max-h-none m-0 p-0 border-0 bg-black/90 text-white backdrop-blur-sm backdrop:bg-transparent"
         aria-label="{{ _('Image viewer') }}"
     >
         <div class="flex h-full w-full">
@@ -404,8 +412,7 @@
             };
 
             const close = () => {
-                lightbox.classList.add("hidden");
-                lightbox.classList.remove("flex");
+                lightbox.close();
                 document.body.classList.remove("overflow-hidden");
                 document.removeEventListener("keydown", handleKeydown);
             };
@@ -445,8 +452,9 @@
                 currentIndex = index;
 
                 renderThumbnails();
-                lightbox.classList.remove("hidden");
-                lightbox.classList.add("flex");
+                lightbox.showModal();
+                // Ensure flex display for content layout
+                lightbox.style.display = "flex";
                 document.body.classList.add("overflow-hidden");
                 render();
                 document.addEventListener("keydown", handleKeydown);
@@ -469,10 +477,11 @@
             };
 
             const handleKeydown = (event) => {
-                if (lightbox.classList.contains("hidden")) {
+                if (!lightbox.open) {
                     return;
                 }
                 if (event.key === "Escape") {
+                    event.preventDefault(); // Prevent default escape behavior to handle cleanup
                     close();
                 } else if (event.key === "ArrowRight" || event.key === "ArrowDown") {
                     showNext();
@@ -495,6 +504,13 @@
                 if (event.target === lightbox) {
                     close();
                 }
+            });
+
+            // Handle native close event (e.g. via Escape if not prevented)
+            lightbox.addEventListener("close", () => {
+                document.body.classList.remove("overflow-hidden");
+                document.removeEventListener("keydown", handleKeydown);
+                lightbox.style.display = ""; // Reset display style
             });
 
             closeButton.addEventListener("click", () => close());

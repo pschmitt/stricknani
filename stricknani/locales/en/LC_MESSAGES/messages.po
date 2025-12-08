@@ -362,8 +362,11 @@ msgid "GPL-3.0-only"
 msgstr "GPL-3.0-only"
 
 # Asset Management
-msgid "Title Images"
-msgstr "Title Images"
+msgid "Gallery"
+msgstr "Gallery"
+
+msgid "Assets"
+msgstr "Assets"
 
 msgid "Add Title Image"
 msgstr "Add Title Image"

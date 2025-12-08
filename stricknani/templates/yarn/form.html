@@ -3,6 +3,16 @@
 {% block title %}{{ yarn.name if yarn else _('Add Yarn') }} - {{ _('Yarn') }}{% endblock %}
 
 {% block content %}
+<dialog id="previewDialog" class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-2xl">
+    <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="text-lg font-semibold">{{ _('Preview') }}</h3>
+        <button onclick="document.getElementById('previewDialog').close()" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            <span class="mdi mdi-close text-xl"></span>
+        </button>
+    </div>
+    <div id="previewContent" class="p-6 prose max-w-none dark:prose-invert overflow-y-auto max-h-[70vh]"></div>
+</dialog>
+
 <div class="max-w-3xl mx-auto space-y-6">
     <div class="flex items-center justify-between">
         <div>
@@ -52,11 +62,23 @@
                 <input type="number" id="length_meters" name="length_meters" min="0" value="{{ yarn.length_meters if yarn and yarn.length_meters is not none else '' }}" class="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
             </div>
             <div class="md:col-span-2">
-                <label for="description" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Description') }} <span class="text-slate-400 text-xs">{{ _('Optional') }}</span></label>
+                <div class="flex items-center justify-between mb-1">
+                    <label for="description" class="block text-sm font-medium text-slate-700 dark:text-slate-200">{{ _('Description') }} <span class="text-slate-400 text-xs">{{ _('Optional') }}</span></label>
+                    <button type="button" onclick="previewMarkdown('description')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300">
+                        <span class="mdi mdi-eye"></span>
+                        {{ _('Preview') }}
+                    </button>
+                </div>
                 <textarea id="description" name="description" rows="3" class="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">{{ yarn.description if yarn else '' }}</textarea>
             </div>
             <div class="md:col-span-2">
-                <label for="notes" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Notes') }} <span class="text-slate-400 text-xs">{{ _('Optional') }}</span></label>
+                <div class="flex items-center justify-between mb-1">
+                    <label for="notes" class="block text-sm font-medium text-slate-700 dark:text-slate-200">{{ _('Notes') }} <span class="text-slate-400 text-xs">{{ _('Optional') }}</span></label>
+                    <button type="button" onclick="previewMarkdown('notes')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300">
+                        <span class="mdi mdi-eye"></span>
+                        {{ _('Preview') }}
+                    </button>
+                </div>
                 <textarea id="notes" name="notes" rows="3" class="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">{{ yarn.notes if yarn else '' }}</textarea>
             </div>
             <div class="md:col-span-2">
@@ -106,6 +128,37 @@
 {% endif %}
 
 <script>
+async function previewMarkdown(source) {
+    const textarea = typeof source === 'string' ? document.getElementById(source) : source;
+    if (!textarea) return;
+
+    const content = textarea.value;
+    if (!content.trim()) {
+        window.showToast?.('{{ _("Nothing to preview") }}', 'info');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('content', content);
+
+    try {
+        const response = await fetch('/utils/preview/markdown', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            const html = await response.text();
+            const dialog = document.getElementById('previewDialog');
+            const contentDiv = document.getElementById('previewContent');
+            contentDiv.innerHTML = html;
+            dialog.showModal();
+        }
+    } catch (error) {
+        console.error('Preview failed', error);
+    }
+}
+
 function previewImages(input) {
     const container = document.getElementById('image-preview-container');
     container.innerHTML = '';

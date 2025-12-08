@@ -4,8 +4,9 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -16,6 +17,7 @@ from stricknani.logging_config import configure_logging
 from stricknani.utils.auth import ensure_initial_admin
 from stricknani.utils.files import get_file_url, get_thumbnail_url
 from stricknani.utils.i18n import install_i18n
+from stricknani.utils.markdown import render_markdown
 
 
 @asynccontextmanager
@@ -148,15 +150,20 @@ def render_template(
 
 
 # Health check endpoint
+@app.post("/utils/preview/markdown", response_class=HTMLResponse)
+async def preview_markdown(
+    request: Request,
+    content: Annotated[str, Form()] = "",
+) -> HTMLResponse:
+    """Render markdown content for preview."""
+    if not content:
+        return HTMLResponse("")
+    return HTMLResponse(render_markdown(content))
+
+
 @app.get("/healthz")
 async def healthz() -> dict[str, str]:
     """Health check endpoint."""
-    return {"status": "ok"}
-
-
-@app.get("/health")
-async def health() -> dict[str, str]:
-    """Health check endpoint (alias)."""
     return {"status": "ok"}
 
 

@@ -264,14 +264,9 @@ async def list_projects(
                 url = get_file_url(img.filename, project.id, subdir="projects")
 
             if url:
-                step_label = None
-                if img.step:
-                    step_label = f"Step {img.step.step_number}"
-
                 preview_images.append({
                     "url": url,
                     "alt": img.alt_text or project.name,
-                    "step_label": step_label,
                 })
 
         # Backwards compatibility for templates expecting single image
@@ -572,6 +567,7 @@ async def get_project(
                 "url": get_file_url(img.filename, project.id),
                 "thumbnail_url": get_thumbnail_url(img.filename, project.id),
                 "alt_text": img.alt_text,
+                "step_info": f"Step {step.step_number}: {step.title}",
             }
             for img in step.images
         ]
@@ -601,14 +597,18 @@ async def get_project(
         "gauge_stitches": project.gauge_stitches,
         "gauge_rows": project.gauge_rows,
         "comment": project.comment or "",
-        "comment_html": render_markdown(project.comment) if project.comment else None,
+        "comment_html": render_markdown(project.comment, f"project-{project.id}")
+        if project.comment
+        else None,
         "created_at": project.created_at.isoformat(),
         "updated_at": project.updated_at.isoformat(),
         "title_images": title_images,
         "steps": [
             {
                 **step,
-                "description_html": render_markdown(step["description"])
+                "description_html": render_markdown(
+                    step["description"], f"project-{project.id}"
+                )
                 if step["description"]
                 else "",
             }
@@ -685,6 +685,7 @@ async def edit_project_form(
                 "url": get_file_url(img.filename, project.id),
                 "thumbnail_url": get_thumbnail_url(img.filename, project.id),
                 "alt_text": img.alt_text,
+                "step_info": f"Step {step.step_number}: {step.title}",
             }
             for img in step.images
         ]

@@ -69,7 +69,10 @@
     <!-- Title Images Carousel -->
     {% if project.title_images %}
     <div class="mb-8">
-        <h3 class="text-xl font-semibold text-slate-900 mb-4 dark:text-slate-100">{{ _('Title Images') }}</h3>
+        <h3 class="text-xl font-semibold text-slate-900 mb-4 dark:text-slate-100 flex items-center gap-2">
+            <span class="mdi mdi-image-multiple"></span>
+            {{ _('Gallery') }}
+        </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for image in project.title_images %}
             <div class="relative group flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -178,6 +181,10 @@
                 </div>
                 {% endif %}
                 {% if step.images %}
+                <h5 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-2 dark:text-slate-300 flex items-center gap-2">
+                    <span class="mdi mdi-image-multiple"></span>
+                    {{ _('Assets') }}
+                </h5>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {% for image in step.images %}
                     <div class="relative group flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -187,7 +194,7 @@
                             class="h-full w-full cursor-zoom-in object-contain object-center p-2 shadow dark:shadow-slate-900/30 block"
                             data-lightbox-group="project-{{ project.id }}"
                             data-lightbox-src="{{ image.url }}"
-                            data-lightbox-alt="{{ image.alt_text }}"
+                            data-lightbox-alt="{{ image.alt_text }} ({{ image.step_info }})"
                         >
                         <div class="absolute inset-0 rounded-lg bg-black/0 transition-opacity pointer-events-none group-hover:bg-black/10"></div>
                     </div>

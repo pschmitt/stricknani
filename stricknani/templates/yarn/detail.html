@@ -166,7 +166,11 @@
             <div>
                 <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-2 dark:text-slate-300">{{ _('Description') }}</h3>
                 <div class="prose max-w-none text-slate-700 dark:text-slate-200">
-                    {{ yarn.description }}
+                    {% if description_html %}
+                        {{ description_html | safe }}
+                    {% else %}
+                        {{ yarn.description }}
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -175,7 +179,11 @@
             <div>
                 <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-2 dark:text-slate-300">{{ _('Notes') }}</h3>
                 <div class="prose max-w-none bg-slate-100 p-4 rounded-md dark:bg-slate-800 dark:text-slate-100">
-                    {{ yarn.notes }}
+                    {% if notes_html %}
+                        {{ notes_html | safe }}
+                    {% else %}
+                        {{ yarn.notes }}
+                    {% endif %}
                 </div>
             </div>
             {% endif %}

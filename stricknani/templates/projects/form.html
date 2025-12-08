@@ -3,6 +3,16 @@
 {% block title %}{{ _('Edit') if project else _('New') }} {{ _('Project') }} - Stricknani{% endblock %}
 
 {% block content %}
+<dialog id="previewDialog" class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-2xl">
+    <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="text-lg font-semibold">{{ _('Preview') }}</h3>
+        <button onclick="document.getElementById('previewDialog').close()" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            <span class="mdi mdi-close text-xl"></span>
+        </button>
+    </div>
+    <div id="previewContent" class="p-6 prose max-w-none dark:prose-invert overflow-y-auto max-h-[70vh]"></div>
+</dialog>
+
 <div class="mb-6">
     <a href="{{ '/projects/' + project.id|string if project else '/projects' }}" class="text-blue-600 hover:text-blue-800 inline-flex items-center gap-2 dark:text-blue-400 dark:hover:text-blue-300">
         <span class="mdi mdi-arrow-left"></span>
@@ -135,7 +145,13 @@
 
             <!-- Comment -->
             <div class="md:col-span-2">
-                <label for="comment" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Notes') }}</label>
+                <div class="flex items-center justify-between mb-1">
+                    <label for="comment" class="block text-sm font-medium text-slate-700 dark:text-slate-200">{{ _('Notes') }}</label>
+                    <button type="button" onclick="previewMarkdown('comment')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300">
+                        <span class="mdi mdi-eye"></span>
+                        {{ _('Preview') }}
+                    </button>
+                </div>
                 <textarea
                     id="comment"
                     name="comment"
@@ -174,7 +190,13 @@
                             </button>
                         </div>
                     </div>
-                    <input type="text" class="step-title w-full px-3 py-2 border border-gray-300 rounded-md mb-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
+                    <div class="flex items-center justify-between mb-2">
+                        <input type="text" class="step-title w-full px-3 py-2 border border-gray-300 rounded-md dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 mr-2" placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
+                        <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300 whitespace-nowrap">
+                            <span class="mdi mdi-eye"></span>
+                            {{ _('Preview') }}
+                        </button>
+                    </div>
                     <textarea class="step-description w-full px-3 py-2 border border-gray-300 rounded-md mb-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" rows="3" placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
                     <p class="text-xs text-slate-500 mb-2 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>
                     <div class="step-images grid grid-cols-3 gap-2 mb-2">
@@ -187,6 +209,8 @@
                                 data-lightbox-group="step-{{ step.id }}"
                                 data-lightbox-src="{{ image.url }}"
                                 data-lightbox-alt="{{ image.alt_text }}"
+                                draggable="true"
+                                ondragstart="handleImageDragStart(event)"
                             >
                             <button type="button" onclick="deleteImage({{ image.id }})" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -216,7 +240,7 @@
         <div class="border-t pt-6 border-slate-200 dark:border-slate-700">
             <h3 class="text-xl font-semibold text-slate-900 mb-4 dark:text-slate-100 flex items-center gap-2">
                 <span class="mdi mdi-image-multiple"></span>
-                {{ _('Title Images') }}
+                {{ _('Gallery') }}
             </h3>
             <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                 {% for image in project.title_images %}
@@ -228,6 +252,8 @@
                         data-lightbox-group="title-{{ project.id }}"
                         data-lightbox-src="{{ image.url }}"
                         data-lightbox-alt="{{ image.alt_text }}"
+                        draggable="true"
+                        ondragstart="handleImageDragStart(event)"
                     >
                     <button type="button" onclick="deleteImage({{ image.id }})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -292,13 +318,159 @@ function autoResize(el) {
     el.style.height = el.scrollHeight + 'px';
 }
 
+async function previewMarkdown(source) {
+    const textarea = typeof source === 'string' ? document.getElementById(source) : source;
+    if (!textarea) return;
+
+    const content = textarea.value;
+    if (!content.trim()) {
+        window.showToast?.('{{ _("Nothing to preview") }}', 'info');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('content', content);
+
+    try {
+        const response = await fetch('/utils/preview/markdown', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            const html = await response.text();
+            const dialog = document.getElementById('previewDialog');
+            const contentDiv = document.getElementById('previewContent');
+            contentDiv.innerHTML = html;
+            dialog.showModal();
+        }
+    } catch (error) {
+        console.error('Preview failed', error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('textarea').forEach(el => {
         el.style.overflowY = 'hidden';
         autoResize(el);
         el.addEventListener('input', () => autoResize(el));
+        
+        // Enable drag and drop for images
+        if (projectId) {
+            setupTextareaDrop(el);
+        }
     });
 });
+
+function setupTextareaDrop(textarea) {
+    textarea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        textarea.classList.add('border-blue-500', 'ring-2', 'ring-blue-500');
+    });
+
+    textarea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        textarea.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500');
+    });
+
+    textarea.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        textarea.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500');
+
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            if (imageFiles.length === 0) return;
+
+            // Determine context (step or project)
+            const stepItem = textarea.closest('.step-item');
+            const stepId = stepItem ? stepItem.getAttribute('data-step-id') : null;
+            
+            // If it's a step textarea but we don't have a step ID yet, we can't upload
+            if (stepItem && !stepId) {
+                window.showToast?.('{{ _("Save the project to create this step before uploading images.") }}', 'info');
+                return;
+            }
+
+            for (const file of imageFiles) {
+                await uploadAndInsertImage(file, textarea, stepId);
+            }
+            return;
+        }
+
+        // Handle text drop (e.g. from existing images)
+        const text = e.dataTransfer.getData('text/plain');
+        if (text) {
+            insertAtCursor(textarea, text);
+        }
+    });
+}
+
+function handleImageDragStart(event) {
+    const img = event.target;
+    const src = img.getAttribute('data-lightbox-src') || img.src;
+    const alt = img.getAttribute('data-lightbox-alt') || img.alt;
+    const markdown = `![${alt}](${src})`;
+    event.dataTransfer.setData('text/plain', markdown);
+    event.dataTransfer.effectAllowed = 'copy';
+}
+
+async function uploadAndInsertImage(file, textarea, stepId) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('alt_text', file.name);
+
+    const url = stepId 
+        ? `/projects/${projectId}/steps/${stepId}/images`
+        : `/projects/${projectId}/images/title`; // Fallback to title images for now, or need a generic endpoint
+
+    // For project notes, we ideally want a generic "content image" endpoint.
+    // Using title image endpoint sets is_title_image=True which shows up in the carousel.
+    // We should probably add a generic endpoint. For now, let's use the title endpoint but maybe we can filter it out later?
+    // Or better, let's just use the title endpoint and accept it shows in the gallery.
+    
+    try {
+        window.showToast?.('{{ _("Uploading image...") }}', 'info');
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const markdown = `![${data.alt_text}](${data.url})`;
+            insertAtCursor(textarea, markdown);
+            window.showToast?.('{{ _("Image uploaded!") }}', 'success');
+            
+            // If it's a step image, also add to the gallery preview
+            if (stepId) {
+                const stepItem = document.querySelector(`.step-item[data-step-id="${stepId}"]`);
+                if (stepItem) {
+                    addStepImagePreview(stepItem, data);
+                }
+            } else {
+                // It's a project image (title image endpoint used)
+                addTitleImageToGallery(data);
+            }
+        } else {
+            window.showToast?.('{{ _("Upload failed") }}', 'error');
+        }
+    } catch (error) {
+        console.error('Upload failed', error);
+        window.showToast?.('{{ _("Upload failed") }}', 'error');
+    }
+}
+
+function insertAtCursor(textarea, text) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const before = textarea.value.substring(0, start);
+    const after = textarea.value.substring(end);
+    textarea.value = before + text + after;
+    textarea.selectionStart = textarea.selectionEnd = start + text.length;
+    textarea.focus();
+    autoResize(textarea);
+}
 </script>
 
 {% if project %}
@@ -515,7 +687,7 @@ function addTitleImageToGallery(imageData) {
     div.className = 'relative';
     div.setAttribute('data-image-id', imageData.id);
     div.innerHTML = `
-        <img src="${imageData.thumbnail_url}" alt="${imageData.alt_text}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" data-lightbox-group="title-${projectId}" data-lightbox-src="${imageData.url}" data-lightbox-alt="${imageData.alt_text}">
+        <img src="${imageData.thumbnail_url}" alt="${imageData.alt_text}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" data-lightbox-group="title-${projectId}" data-lightbox-src="${imageData.url}" data-lightbox-alt="${imageData.alt_text}" draggable="true" ondragstart="handleImageDragStart(event)">
         <button type="button" onclick="deleteImage(${imageData.id})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
@@ -625,7 +797,7 @@ function addStepImagePreview(stepItem, imageData) {
     div.className = 'relative';
     div.setAttribute('data-image-id', imageData.id);
     div.innerHTML = `
-        <img src="${imageData.thumbnail_url}" alt="${imageData.alt_text}" class="h-20 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" data-lightbox-group="${group}" data-lightbox-src="${imageData.url}" data-lightbox-alt="${imageData.alt_text}">
+        <img src="${imageData.thumbnail_url}" alt="${imageData.alt_text}" class="h-20 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" data-lightbox-group="${group}" data-lightbox-src="${imageData.url}" data-lightbox-alt="${imageData.alt_text}" draggable="true" ondragstart="handleImageDragStart(event)">
         <button type="button" onclick="deleteImage(${imageData.id})" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
@@ -660,6 +832,12 @@ function addStep() {
             </div>
         </div>
         <input type="text" class="step-title mb-2 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="{{ _('Step Title') }}">
+        <div class="flex items-center justify-end mb-1">
+            <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300">
+                <span class="mdi mdi-eye"></span>
+                {{ _('Preview') }}
+            </button>
+        </div>
         <textarea class="step-description mb-2 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" rows="3" placeholder="{{ _('Step Description') }}"></textarea>
         <p class="mb-2 text-xs text-slate-500 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>
         <div class="step-images mb-2 grid grid-cols-3 gap-2"></div>
@@ -680,6 +858,7 @@ function addStep() {
     if (newTextarea) {
         newTextarea.style.overflowY = 'hidden';
         newTextarea.addEventListener('input', () => autoResize(newTextarea));
+        // Note: We can't enable drag-and-drop for new steps until they are saved and have an ID
     }
 }
 
