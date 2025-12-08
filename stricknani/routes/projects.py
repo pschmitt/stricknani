@@ -686,12 +686,13 @@ async def update_project(
     )
 
 
-@router.delete("/{project_id}")
+@router.delete("/{project_id}", response_class=Response)
 async def delete_project(
     project_id: int,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
-) -> dict[str, str]:
+) -> Response:
     """Delete a project."""
     result = await db.execute(
         select(Project)
@@ -724,7 +725,26 @@ async def delete_project(
     await db.delete(project)
     await db.commit()
 
-    return {"message": "Project deleted"}
+    if request.headers.get("HX-Request"):
+        # Check if any projects remain
+        result = await db.execute(
+            select(func.count(Project.id)).where(Project.owner_id == current_user.id)
+        )
+        count = result.scalar() or 0
+
+        if count == 0:
+            response = render_template(
+                "projects/_empty_state.html",
+                request,
+                {"current_user": current_user},
+            )
+            response.headers["HX-Retarget"] = "#projects-list"
+            response.headers["HX-Reswap"] = "innerHTML"
+            return response
+
+        return Response(status_code=status.HTTP_200_OK)
+
+    return RedirectResponse(url="/projects", status_code=status.HTTP_303_SEE_OTHER)
 
 
 # Image upload endpoints
