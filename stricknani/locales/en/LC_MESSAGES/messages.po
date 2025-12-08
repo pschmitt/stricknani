@@ -95,14 +95,14 @@ msgstr "Signed in"
 msgid "Your selection is stored locally in this browser."
 msgstr "Your selection is stored locally in this browser."
 
-msgid "Profile image"
-msgstr "Profile image"
+msgid "Profile picture"
+msgstr "Profile picture"
 
 msgid "Upload a friendly face so it is easier to recognize your projects at a glance."
 msgstr "Upload a friendly face so it is easier to recognize your projects at a glance."
 
-msgid "Profile image updated successfully!"
-msgstr "Profile image updated successfully!"
+msgid "Profile picture updated successfully!"
+msgstr "Profile picture updated successfully!"
 
 msgid "Select an image"
 msgstr "Select an image"
@@ -110,11 +110,11 @@ msgstr "Select an image"
 msgid "Upload"
 msgstr "Upload"
 
-msgid "Tap to preview your current profile image."
-msgstr "Tap to preview your current profile image."
+msgid "Tap to preview your current profile picture."
+msgstr "Tap to preview your current profile picture."
 
-msgid "No profile image uploaded yet."
-msgstr "No profile image uploaded yet."
+msgid "No profile picture uploaded yet."
+msgstr "No profile picture uploaded yet."
 
 msgid "Favorite projects"
 msgstr "Favorite projects"
@@ -137,8 +137,8 @@ msgstr "You have not favorited any projects yet."
 msgid "Visit a project to add it to your favorites list."
 msgstr "Visit a project to add it to your favorites list."
 
-msgid "Profile image for %(email)s"
-msgstr "Profile image for %(email)s"
+msgid "Profile picture for %(email)s"
+msgstr "Profile picture for %(email)s"
 
 msgid "Add to favorites"
 msgstr "Add to favorites"

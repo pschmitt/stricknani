@@ -74,6 +74,8 @@ async def seed_demo_data() -> None:
 
         for yarn_data in demo_yarns:
             photos = yarn_data.pop("photos", [])
+            if not isinstance(photos, list):
+                photos = []
 
             # Check if yarn already exists
             result = await db.execute(
@@ -102,13 +104,13 @@ async def seed_demo_data() -> None:
                         shutil.copy2(src_path, dst_path)
 
                         # Create image record
-                        image = YarnImage(
+                        yarn_image = YarnImage(
                             filename=img_filename,
                             original_filename=img_filename,
                             alt_text=f"{yarn.name} photo",
                             yarn_id=yarn.id,
                         )
-                        db.add(image)
+                        db.add(yarn_image)
 
                 print(f"Created yarn: {yarn_data['name']}")
             else:
@@ -177,7 +179,11 @@ async def seed_demo_data() -> None:
         for project_data in demo_projects:
             # Extract image and step data
             title_images = project_data.pop("title_images", [])
+            if not isinstance(title_images, list):
+                title_images = []
             steps_data = project_data.pop("steps", [])
+            if not isinstance(steps_data, list):
+                steps_data = []
 
             # Check if project already exists
             result = await db.execute(
@@ -208,7 +214,7 @@ async def seed_demo_data() -> None:
                         shutil.copy2(src_path, dst_path)
 
                         # Create image record
-                        image = Image(
+                        project_image = Image(
                             filename=img_filename,
                             original_filename=img_filename,
                             image_type=ImageType.PHOTO.value,
@@ -216,11 +222,15 @@ async def seed_demo_data() -> None:
                             is_title_image=True,
                             project_id=project.id,
                         )
-                        db.add(image)
+                        db.add(project_image)
 
                 # Add steps
                 for step_number, step_data in enumerate(steps_data, 1):
+                    if not isinstance(step_data, dict):
+                        continue
                     step_images = step_data.pop("images", [])
+                    if not isinstance(step_images, list):
+                        step_images = []
                     step = Step(
                         title=step_data["title"],
                         description=step_data.get("description"),
@@ -245,7 +255,7 @@ async def seed_demo_data() -> None:
                             shutil.copy2(src_path, dst_path)
 
                             # Create image record
-                            image = Image(
+                            step_image = Image(
                                 filename=img_filename,
                                 original_filename=img_filename,
                                 image_type=ImageType.PHOTO.value,
@@ -254,7 +264,7 @@ async def seed_demo_data() -> None:
                                 project_id=project.id,
                                 step_id=step.id,
                             )
-                            db.add(image)
+                            db.add(step_image)
 
                 print(f"Created project: {project_data['name']}")
             else:

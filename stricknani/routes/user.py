@@ -34,13 +34,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/user", tags=["user"])
 
 
-@router.get("/preferences", response_class=HTMLResponse)
-async def preference_center(
+@router.get("/profile", response_class=HTMLResponse)
+async def profile_view(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> HTMLResponse:
-    """Render the user preferences page."""
+    """Render the user profile page."""
 
     favorites_result = await db.execute(
         select(Project)
@@ -69,7 +69,7 @@ async def preference_center(
         )
 
     return render_template(
-        "user/preferences.html",
+        "user/profile.html",
         request,
         {
             "current_user": current_user,
@@ -146,5 +146,5 @@ async def upload_profile_image(
         )
 
     return RedirectResponse(
-        url="/user/preferences", status_code=status.HTTP_303_SEE_OTHER
+        url="/user/profile", status_code=status.HTTP_303_SEE_OTHER
     )

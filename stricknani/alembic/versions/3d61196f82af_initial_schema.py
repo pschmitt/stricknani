@@ -1,21 +1,20 @@
 """Initial schema
 
 Revision ID: 3d61196f82af
-Revises: 
+Revises:
 Create Date: 2025-12-08 15:25:47.662810
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '3d61196f82af'
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -56,10 +55,14 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_projects_created_at'), 'projects', ['created_at'], unique=False)
+    op.create_index(
+        op.f('ix_projects_created_at'), 'projects', ['created_at'], unique=False
+    )
     op.create_index(op.f('ix_projects_id'), 'projects', ['id'], unique=False)
     op.create_index(op.f('ix_projects_name'), 'projects', ['name'], unique=False)
-    op.create_index(op.f('ix_projects_owner_id'), 'projects', ['owner_id'], unique=False)
+    op.create_index(
+        op.f('ix_projects_owner_id'), 'projects', ['owner_id'], unique=False
+    )
     op.create_table('yarns',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
@@ -126,7 +129,9 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_yarn_images_id'), 'yarn_images', ['id'], unique=False)
-    op.create_index(op.f('ix_yarn_images_yarn_id'), 'yarn_images', ['yarn_id'], unique=False)
+    op.create_index(
+        op.f('ix_yarn_images_yarn_id'), 'yarn_images', ['yarn_id'], unique=False
+    )
     op.create_table('images',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('filename', sa.String(length=255), nullable=False),

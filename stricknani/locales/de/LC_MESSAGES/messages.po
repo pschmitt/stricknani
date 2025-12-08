@@ -95,13 +95,13 @@ msgstr "Angemeldet"
 msgid "Your selection is stored locally in this browser."
 msgstr "Deine Auswahl wird lokal in diesem Browser gespeichert."
 
-msgid "Profile image"
+msgid "Profile picture"
 msgstr "Profilbild"
 
 msgid "Upload a friendly face so it is easier to recognize your projects at a glance."
 msgstr "Lade ein freundliches Gesicht hoch, damit du deine Projekte auf einen Blick wiedererkennst."
 
-msgid "Profile image updated successfully!"
+msgid "Profile picture updated successfully!"
 msgstr "Profilbild erfolgreich aktualisiert!"
 
 msgid "Select an image"
@@ -110,10 +110,10 @@ msgstr "Bild auswählen"
 msgid "Upload"
 msgstr "Hochladen"
 
-msgid "Tap to preview your current profile image."
+msgid "Tap to preview your current profile picture."
 msgstr "Tippe, um dein aktuelles Profilbild zu vergrößern."
 
-msgid "No profile image uploaded yet."
+msgid "No profile picture uploaded yet."
 msgstr "Noch kein Profilbild hochgeladen."
 
 msgid "Favorite projects"
@@ -137,7 +137,7 @@ msgstr "Du hast noch keine Projekte als Favorit markiert."
 msgid "Visit a project to add it to your favorites list."
 msgstr "Besuche ein Projekt, um es deiner Favoritenliste hinzuzufügen."
 
-msgid "Profile image for %(email)s"
+msgid "Profile picture for %(email)s"
 msgstr "Profilbild für %(email)s"
 
 msgid "Add to favorites"
@@ -589,3 +589,30 @@ msgstr "Garne verknüpft"
 
 msgid "Linked stash yarns"
 msgstr "Verknüpfte Garne"
+
+msgid "User Profile"
+msgstr "Benutzerprofil"
+
+msgid "Profile"
+msgstr "Profil"
+
+msgid "Manage your account settings and preferences."
+msgstr "Verwalte deine Kontoeinstellungen und Präferenzen."
+
+msgid "Tap picture to change."
+msgstr "Tippe auf das Bild zum Ändern."
+
+msgid "Change profile picture"
+msgstr "Profilbild ändern"
+
+msgid "Crop Profile Picture"
+msgstr "Profilbild zuschneiden"
+
+msgid "Save & Upload"
+msgstr "Speichern & Hochladen"
+
+msgid "Uploading..."
+msgstr "Wird hochgeladen..."
+
+msgid "Failed to upload image."
+msgstr "Bild konnte nicht hochgeladen werden."

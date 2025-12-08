@@ -1,16 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('User Preferences') }} - Stricknani{% endblock %}
+{% block title %}{{ _('User Profile') }} - Stricknani{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
+<style>
+    .cropper-view-box,
+    .cropper-face {
+        border-radius: 50%;
+    }
+    /* The following styles are to make the image round in the preview */
+    .cropper-view-box {
+        outline: 0;
+        box-shadow: 0 0 0 1px #39f;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <section class="space-y-6">
     <header class="border-b border-slate-200 pb-4 dark:border-slate-700">
         <h1 class="text-3xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <span class="mdi mdi-account-cog-outline text-blue-600 dark:text-blue-400"></span>
-            {{ _('User Preferences') }}
+            <span class="mdi mdi-account-details-outline text-blue-600 dark:text-blue-400"></span>
+            {{ _('User Profile') }}
         </h1>
         <p class="mt-2 text-slate-600 dark:text-slate-300 max-w-2xl">
-            {{ _('Control how Stricknani looks and feels for your account.') }}
+            {{ _('Manage your account settings and preferences.') }}
         </p>
     </header>
 
@@ -18,7 +34,7 @@
         <article class="rounded-xl border border-slate-200 bg-white/80 p-6 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900/70 lg:row-span-2">
             <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <span class="mdi mdi-account-circle-outline text-blue-600 dark:text-blue-400"></span>
-                {{ _('Profile image') }}
+                {{ _('Profile picture') }}
             </h2>
             <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
                 {{ _('Upload a friendly face so it is easier to recognize your projects at a glance.') }}
@@ -26,32 +42,13 @@
             <div class="mt-6" id="profile-avatar-container">
                 {% include "user/_profile_avatar.html" %}
             </div>
-            <form
-                class="mt-4 space-y-3"
-                hx-post="/user/profile-image"
-                hx-target="#profile-avatar-container [data-profile-avatar]"
-                hx-swap="outerHTML"
-                hx-encoding="multipart/form-data"
-                hx-on::after-request="if (event.detail.successful) { showToast('{{ _('Profile image updated successfully!') }}', 'success'); this.reset(); }"
-            >
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200" for="profile-image">
-                    {{ _('Select an image') }}
-                </label>
+            <form class="hidden">
                 <input
                     id="profile-image"
                     name="file"
                     type="file"
                     accept="image/*"
-                    class="block w-full text-sm text-slate-600 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-blue-700 hover:file:bg-blue-100 focus:outline-none dark:text-slate-200 dark:file:bg-blue-400/10 dark:file:text-blue-200 dark:hover:file:bg-blue-400/20"
-                    required
                 >
-                <button
-                    type="submit"
-                    class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:bg-blue-500"
-                >
-                    <span class="mdi mdi-upload"></span>
-                    {{ _('Upload') }}
-                </button>
             </form>
         </article>
         <article class="rounded-xl border border-slate-200 bg-white/80 p-6 shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900/70 lg:col-span-2">
@@ -265,4 +262,149 @@
         {% endif %}
     </article>
 </section>
+
+<!-- Crop Modal -->
+<div id="crop-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-slate-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
+        <div class="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle dark:bg-slate-800">
+            <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4 dark:bg-slate-800">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 w-full text-center sm:ml-4 sm:mt-0 sm:text-left">
+                        <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-slate-100" id="modal-title">
+                            {{ _('Crop Profile Picture') }}
+                        </h3>
+                        <div class="mt-4">
+                            <div class="relative h-96 w-full rounded-lg bg-slate-100 dark:bg-slate-900">
+                                <img id="crop-image" src="" alt="Image to crop" class="max-h-full max-w-full">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 dark:bg-slate-800/50">
+                <button
+                    type="button"
+                    id="crop-save"
+                    class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm dark:focus:ring-offset-slate-800"
+                >
+                    {{ _('Save & Upload') }}
+                </button>
+                <button
+                    type="button"
+                    id="crop-cancel"
+                    class="mt-3 inline-flex w-full justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-base font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 dark:focus:ring-offset-slate-800"
+                >
+                    {{ _('Cancel') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let cropper;
+        const input = document.getElementById('profile-image');
+        const modal = document.getElementById('crop-modal');
+        const image = document.getElementById('crop-image');
+        const saveBtn = document.getElementById('crop-save');
+        const cancelBtn = document.getElementById('crop-cancel');
+
+        input.addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    image.src = e.target.result;
+                    modal.classList.remove('hidden');
+                    
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    cropper = new Cropper(image, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 1,
+                        restore: false,
+                        guides: false,
+                        center: false,
+                        highlight: false,
+                        cropBoxMovable: false,
+                        cropBoxResizable: false,
+                        toggleDragModeOnDblclick: false,
+                        zoomable: true,
+                        zoomOnTouch: true,
+                        zoomOnWheel: true,
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        cancelBtn.addEventListener('click', function() {
+            modal.classList.add('hidden');
+            input.value = '';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
+        saveBtn.addEventListener('click', function() {
+            if (!cropper) return;
+            
+            const canvas = cropper.getCroppedCanvas({
+                width: 400,
+                height: 400,
+            });
+
+            canvas.toBlob(function(blob) {
+                const formData = new FormData();
+                formData.append('file', blob, 'avatar.png');
+
+                // Show loading state
+                const originalText = saveBtn.textContent;
+                saveBtn.textContent = '{{ _("Uploading...") }}';
+                saveBtn.disabled = true;
+
+                fetch('/user/profile-image', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'HX-Request': 'true'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Upload failed');
+                    return response.text();
+                })
+                .then(html => {
+                    const container = document.querySelector('#profile-avatar-container [data-profile-avatar]');
+                    if (container) {
+                        container.outerHTML = html;
+                    }
+                    modal.classList.add('hidden');
+                    input.value = '';
+                    if (cropper) {
+                        cropper.destroy();
+                        cropper = null;
+                    }
+                    showToast('{{ _("Profile picture updated successfully!") }}', 'success');
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('{{ _("Failed to upload image.") }}', 'error');
+                })
+                .finally(() => {
+                    saveBtn.textContent = originalText;
+                    saveBtn.disabled = false;
+                });
+            }, 'image/png');
+        });
+    });
+</script>
 {% endblock %}
