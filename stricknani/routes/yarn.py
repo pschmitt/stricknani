@@ -14,7 +14,7 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -103,7 +103,20 @@ def _serialize_yarn_cards(yarns: Iterable[Yarn]) -> list[dict[str, object]]:
 
     return [
         {
-            "yarn": yarn,
+            "yarn": {
+                "id": yarn.id,
+                "name": yarn.name,
+                "brand": yarn.brand,
+                "colorway": yarn.colorway,
+                "fiber_content": yarn.fiber_content,
+                "weight_category": yarn.weight_category,
+                "weight_grams": yarn.weight_grams,
+                "length_meters": yarn.length_meters,
+                "description": yarn.description,
+                "notes": yarn.notes,
+                "created_at": yarn.created_at.isoformat() if yarn.created_at else None,
+                "updated_at": yarn.updated_at.isoformat() if yarn.updated_at else None,
+            },
             "preview_url": _resolve_preview(yarn),
         }
         for yarn in yarns
@@ -116,7 +129,7 @@ async def list_yarns(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_current_user),
     search: str | None = None,
-) -> HTMLResponse:
+) -> Response:
     """List yarn stash for the current user."""
 
     if not current_user:
@@ -140,6 +153,9 @@ async def list_yarns(
 
     result = await db.execute(query)
     yarns = result.scalars().unique().all()
+
+    if request.headers.get("accept") == "application/json":
+        return JSONResponse(_serialize_yarn_cards(yarns))
 
     return render_template(
         "yarn/list.html",

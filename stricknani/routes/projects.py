@@ -207,7 +207,7 @@ async def list_projects(
     current_user: User | None = Depends(get_current_user),
     category: str | None = None,
     search: str | None = None,
-) -> HTMLResponse:
+) -> Response:
     """List all projects for the current user."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
@@ -292,6 +292,9 @@ async def list_projects(
         )
 
     projects_data = [_serialize_project(p) for p in projects]
+
+    if request.headers.get("accept") == "application/json":
+        return JSONResponse(projects_data)
 
     categories = await _get_user_categories(db, current_user.id)
 

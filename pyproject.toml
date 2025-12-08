@@ -38,7 +38,7 @@ dev = [
 
 [project.scripts]
 stricknani = "stricknani.scripts.run:main"
-stricknani-admin = "stricknani.scripts.admin:main"
+stricknani-cli = "stricknani.scripts.cli:main"
 
 [build-system]
 requires = ["hatchling"]
