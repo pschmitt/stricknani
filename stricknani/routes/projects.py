@@ -607,7 +607,9 @@ async def get_project(
             {
                 **step,
                 "description_html": render_markdown(
-                    step["description"], f"project-{project.id}"
+                    str(step["description"]),
+                    f"project-{project.id}",
+                    step_info=f"Step {step['step_number']}: {step['title']}",
                 )
                 if step["description"]
                 else "",
