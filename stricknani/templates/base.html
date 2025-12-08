@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ current_language }}" class="h-full bg-white text-slate-900 antialiased transition-colors duration-200 dark:bg-slate-900 dark:text-slate-100 {% if theme_preference == 'dark' %}dark{% endif %}">
+<html lang="{{ current_language }}" class="h-full bg-slate-900 text-slate-100 antialiased transition-colors duration-200 dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,107 +28,6 @@
         };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        // Initialize theme preference
-        const cookieTheme = {{ theme_preference|default('system')|tojson }};
-        let storedTheme = cookieTheme;
-        try {
-            const local = localStorage.getItem("theme");
-            if (local) storedTheme = local;
-        } catch (e) {
-            console.warn("LocalStorage access denied", e);
-        }
-
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
-
-        const resolveTheme = (preference) => {
-            if (preference === "dark" || preference === "light") {
-                return preference;
-            }
-            return prefersDark.matches ? "dark" : "light";
-        };
-
-        const applyTheme = (preference) => {
-            const resolved = resolveTheme(preference);
-            const root = document.documentElement;
-
-            // Apply to HTML element (Tailwind source of truth)
-            if (resolved === "dark") {
-                root.classList.add("dark");
-            } else {
-                root.classList.remove("dark");
-            }
-
-            root.dataset.themePreference = preference;
-            root.style.colorScheme = resolved;
-        };
-
-        // Apply immediately
-        applyTheme(storedTheme);
-
-        // Ensure body is synced when loaded
-        document.addEventListener("DOMContentLoaded", () => {
-            applyTheme(storedTheme);
-        });
-
-        // Handle system preference changes
-        const handleSystemChange = () => {
-            let current = "system";
-            try {
-                current = localStorage.getItem("theme") || "system";
-            } catch (e) {}
-
-            if (current === "system") {
-                applyTheme("system");
-                document.dispatchEvent(
-                    new CustomEvent("themechange", { detail: { preference: "system" } }),
-                );
-            }
-        };
-
-        if (prefersDark.addEventListener) {
-            prefersDark.addEventListener("change", handleSystemChange);
-        } else if (prefersDark.addListener) {
-            prefersDark.addListener(handleSystemChange);
-        }
-
-        // Persist preference to server
-        const persistTheme = (preference) => {
-            if (!window.fetch) return;
-            try {
-                fetch("/auth/set-theme", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ theme: preference }),
-                    credentials: "same-origin",
-                    keepalive: true,
-                }).catch(() => {});
-            } catch (e) {}
-        };
-
-        // Public API for theme switching
-        window.__setThemePreference = (preference) => {
-            const normalized = ["light", "dark", "system"].includes(preference)
-                ? preference
-                : "system";
-
-            storedTheme = normalized; // Update local state
-
-            try {
-                localStorage.setItem("theme", normalized);
-            } catch (e) {
-                console.warn("Failed to save theme preference", e);
-            }
-
-            applyTheme(normalized);
-
-            document.dispatchEvent(
-                new CustomEvent("themechange", { detail: { preference: normalized } }),
-            );
-
-            persistTheme(normalized);
-        };
-    </script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -204,27 +103,6 @@
                                 </div>
                             </div>
                             <div class="space-y-4 border-b border-slate-200 px-4 py-4 dark:border-slate-700">
-                                <div>
-                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <span class="mdi mdi-brightness-6"></span>
-                                        {{ _('Theme') }}
-                                    </p>
-                                    {% set nav_theme_choice = theme_preference or 'system' %}
-                                    <div class="mt-3 grid grid-cols-3 gap-2" role="group" aria-label="{{ _('Choose theme') }}" data-theme-toggle>
-                                        <button type="button" class="flex items-center justify-center gap-1.5 rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="light" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300" aria-pressed="{{ 'true' if nav_theme_choice == 'light' else 'false' }}">
-                                            <span class="mdi mdi-white-balance-sunny text-base"></span>
-                                            {{ _('Light') }}
-                                        </button>
-                                        <button type="button" class="flex items-center justify-center gap-1.5 rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="dark" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300" aria-pressed="{{ 'true' if nav_theme_choice == 'dark' else 'false' }}">
-                                            <span class="mdi mdi-weather-night text-base"></span>
-                                            {{ _('Dark') }}
-                                        </button>
-                                        <button type="button" class="flex items-center justify-center gap-1.5 rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-blue-300" data-theme-option="system" data-theme-active-class="ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300" data-theme-inactive-class="border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300" aria-pressed="{{ 'true' if nav_theme_choice == 'system' else 'false' }}">
-                                            <span class="mdi mdi-monitor text-base"></span>
-                                            {{ _('System') }}
-                                        </button>
-                                    </div>
-                                </div>
                                 <form action="/auth/set-language" method="post" class="space-y-2">
                                     <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
                                     <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -654,51 +532,6 @@
         };
 
         document.addEventListener("DOMContentLoaded", () => {
-            const parseClasses = (value) =>
-                (value || "")
-                    .split(/\s+/)
-                    .map((cls) => cls.trim())
-                    .filter(Boolean);
-
-            const syncPreferenceButtons = (preference) => {
-                document.querySelectorAll("[data-theme-option]").forEach((button) => {
-                    const isActive = button.dataset.themeOption === preference;
-                    const activeClasses = parseClasses(
-                        button.dataset.themeActiveClass ||
-                            "ring ring-blue-500 ring-offset-2 border-blue-400 text-blue-600 dark:border-blue-500 dark:text-blue-300",
-                    );
-                    const inactiveClasses = parseClasses(
-                        button.dataset.themeInactiveClass || "",
-                    );
-
-                    if (isActive) {
-                        inactiveClasses.forEach((cls) => button.classList.remove(cls));
-                        activeClasses.forEach((cls) => button.classList.add(cls));
-                    } else {
-                        activeClasses.forEach((cls) => button.classList.remove(cls));
-                        inactiveClasses.forEach((cls) => button.classList.add(cls));
-                    }
-
-                    button.setAttribute("aria-pressed", String(isActive));
-                });
-            };
-
-            const root = document.documentElement;
-            const getPreference = () =>
-                root.dataset.themePreference || localStorage.getItem("theme") || "system";
-
-            syncPreferenceButtons(getPreference());
-
-            document.addEventListener("themechange", (event) => {
-                syncPreferenceButtons(event.detail.preference);
-            });
-
-            document.querySelectorAll("[data-theme-option]").forEach((button) => {
-                button.addEventListener("click", () => {
-                    window.__setThemePreference(button.dataset.themeOption);
-                });
-            });
-
             const menuRoot = document.querySelector("[data-user-menu]");
             if (menuRoot) {
                 const trigger = menuRoot.querySelector("[data-user-menu-trigger]");

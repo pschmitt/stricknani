@@ -127,10 +127,6 @@ def render_template(
     context["request"] = request
     context["current_language"] = language
 
-    theme_preference = request.cookies.get("theme", "system")
-    context.setdefault("current_theme", theme_preference)
-    context.setdefault("theme_preference", theme_preference)
-
     current_user = context.get("current_user")
     avatar_url = None
     avatar_thumb = None

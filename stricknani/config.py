@@ -33,9 +33,6 @@ class Config:
     LANGUAGE_COOKIE_SECURE: bool = (
         os.getenv("LANGUAGE_COOKIE_SECURE", "false").lower() == "true"
     )
-    THEME_COOKIE_SECURE: bool = (
-        os.getenv("THEME_COOKIE_SECURE", "false").lower() == "true"
-    )
     COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE", "lax")
 
     # Features

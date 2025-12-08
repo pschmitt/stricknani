@@ -189,67 +189,6 @@ async def set_language(
     return response
 
 
-@router.post("/set-theme")
-async def set_theme(request: Request) -> Response:
-    """Persist the user's theme preference via cookie."""
-
-    content_type = request.headers.get("content-type", "")
-
-    theme: str | None = None
-    next_url: str | None = None
-    payload: dict[str, str] | None = None
-
-    if "application/json" in content_type:
-        try:
-            payload = await request.json()
-        except ValueError:
-            payload = {}
-        theme = payload.get("theme") if isinstance(payload, dict) else None
-        next_url = payload.get("next") if isinstance(payload, dict) else None
-    else:
-        form = await request.form()
-        theme = form.get("theme")
-        next_url = form.get("next")
-
-    if theme not in {"light", "dark", "system"}:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid theme",
-        )
-
-    redirect_target = (
-        _resolve_safe_redirect(request, next_url)
-        or _resolve_safe_redirect(request, request.headers.get("referer"))
-        or "/projects"
-    )
-
-    if "application/json" in content_type or request.headers.get("HX-Request"):
-        response: Response = JSONResponse({"status": "ok", "theme": theme})
-    else:
-        response = RedirectResponse(
-            url=redirect_target, status_code=status.HTTP_303_SEE_OTHER
-        )
-
-    if theme == "system":
-        response.delete_cookie(
-            key="theme",
-            secure=config.THEME_COOKIE_SECURE,
-            samesite=config.COOKIE_SAMESITE,
-        )
-        return response
-
-    response.set_cookie(
-        key="theme",
-        value=theme,
-        httponly=False,
-        secure=config.THEME_COOKIE_SECURE,
-        samesite=config.COOKIE_SAMESITE,
-        max_age=31536000,
-    )
-
-    return response
-
-
 def _resolve_safe_redirect(request: Request, target: str | None) -> str | None:
     """Resolve a safe redirect target limited to the current host."""
 
