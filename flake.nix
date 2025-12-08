@@ -17,6 +17,25 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         python = pkgs.python313;
+
+        pythonDeps = with python.pkgs; [
+          aiosqlite
+          alembic
+          babel
+          bcrypt
+          bleach
+          fastapi
+          httpx
+          jinja2
+          markdown
+          pillow
+          python-dotenv
+          python-jose
+          python-multipart
+          rich
+          sqlalchemy
+          uvicorn
+        ];
       in
       {
         packages = {
@@ -33,24 +52,7 @@
               hatchling
             ];
 
-            propagatedBuildInputs = with python.pkgs; [
-              aiosqlite
-              alembic
-              babel
-              bcrypt
-              bleach
-              fastapi
-              httpx
-              jinja2
-              markdown
-              pillow
-              python-dotenv
-              python-jose
-              python-multipart
-              rich
-              sqlalchemy
-              uvicorn
-            ];
+            propagatedBuildInputs = pythonDeps;
 
             meta = {
               description = "A self-hosted web app for managing knitting projects";
@@ -85,26 +87,7 @@
               ruff
               mypy
             ]
-            ++ (with python.pkgs; [
-              aiosqlite
-              alembic
-              babel
-              bcrypt
-              bleach
-              fastapi
-              httpx
-              jinja2
-              markdown
-              pillow
-              pytest
-              pytest-asyncio
-              python-dotenv
-              python-jose
-              python-multipart
-              rich
-              sqlalchemy
-              uvicorn
-            ]);
+            ++ pythonDeps;
 
           shellHook = ''
             echo "Stricknani development environment"
