@@ -42,8 +42,7 @@ async def seed_demo_data() -> None:
                     {
                         "title": "Cast On",
                         "description": (
-                            "Cast on 120 stitches using the "
-                            "long-tail cast-on method."
+                            "Cast on 120 stitches using the long-tail cast-on method."
                         ),
                         "images": ["demo_image_4.jpg"],
                     },
@@ -69,8 +68,7 @@ async def seed_demo_data() -> None:
                     {
                         "title": "Start Ribbing",
                         "description": (
-                            "Work in 2x2 rib pattern: "
-                            "K2, P2 repeat across row."
+                            "Work in 2x2 rib pattern: K2, P2 repeat across row."
                         ),
                         "images": ["demo_image_6.jpg"],
                     },

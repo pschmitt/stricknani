@@ -59,9 +59,7 @@ async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
     return result.scalar_one_or_none()
 
 
-async def authenticate_user(
-    db: AsyncSession, email: str, password: str
-) -> User | None:
+async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     """Authenticate user."""
     user = await get_user_by_email(db, email)
     if not user:

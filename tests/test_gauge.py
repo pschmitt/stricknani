@@ -1,6 +1,5 @@
 """Test gauge calculator."""
 
-
 from stricknani.utils.gauge import calculate_gauge
 
 

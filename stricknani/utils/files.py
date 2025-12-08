@@ -30,9 +30,7 @@ def generate_unique_filename(original_filename: str) -> str:
 
 
 async def save_uploaded_file(
-    upload_file: UploadFile,
-    entity_id: int,
-    subdir: str = "projects"
+    upload_file: UploadFile, entity_id: int, subdir: str = "projects"
 ) -> tuple[str, str]:
     """Save an uploaded file to media directory.
 
@@ -82,11 +80,11 @@ async def create_thumbnail(
     # Open and resize image
     with Image.open(source_path) as img:
         # Convert RGBA to RGB if necessary
-        if img.mode in ('RGBA', 'LA', 'P'):
-            background = Image.new('RGB', img.size, (255, 255, 255))
-            if img.mode == 'P':
-                img = img.convert('RGBA')
-            background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+        if img.mode in ("RGBA", "LA", "P"):
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            background.paste(img, mask=img.split()[-1] if img.mode == "RGBA" else None)
             img = background
 
         # Resize maintaining aspect ratio
@@ -120,9 +118,7 @@ def delete_file(filename: str, entity_id: int, subdir: str = "projects") -> None
 
     # Also try to delete thumbnail
     thumb_name = f"thumb_{Path(filename).stem}.jpg"
-    thumb_path = (
-        config.MEDIA_ROOT / "thumbnails" / subdir / str(entity_id) / thumb_name
-    )
+    thumb_path = config.MEDIA_ROOT / "thumbnails" / subdir / str(entity_id) / thumb_name
     if thumb_path.exists():
         thumb_path.unlink()
 
@@ -141,9 +137,7 @@ def get_file_url(filename: str, entity_id: int, subdir: str = "projects") -> str
     return f"/media/{subdir}/{entity_id}/{filename}"
 
 
-def get_thumbnail_url(
-    filename: str, entity_id: int, subdir: str = "projects"
-) -> str:
+def get_thumbnail_url(filename: str, entity_id: int, subdir: str = "projects") -> str:
     """Get the URL for a thumbnail.
 
     Args:

@@ -250,18 +250,17 @@ async def list_projects(
                 / str(project.id)
                 / thumb_name
             )
-            
+
             url = None
             if thumb_path.exists():
                 url = get_thumbnail_url(img.filename, project.id, subdir="projects")
-            elif (config.MEDIA_ROOT / "projects" / str(project.id) / img.filename).exists():
+            elif (
+                config.MEDIA_ROOT / "projects" / str(project.id) / img.filename
+            ).exists():
                 url = get_file_url(img.filename, project.id, subdir="projects")
-            
+
             if url:
-                preview_images.append({
-                    "url": url,
-                    "alt": img.alt_text or project.name
-                })
+                preview_images.append({"url": url, "alt": img.alt_text or project.name})
 
         # Backwards compatibility for templates expecting single image
         thumbnail_url = preview_images[0]["url"] if preview_images else None
@@ -373,7 +372,8 @@ async def get_project(
             "thumbnail_url": get_thumbnail_url(img.filename, project.id),
             "alt_text": img.alt_text,
         }
-        for img in project.images if img.is_title_image
+        for img in project.images
+        if img.is_title_image
     ]
 
     # Prepare steps with images
@@ -645,26 +645,20 @@ async def update_project(
         steps_list = json.loads(steps_data)
         existing_step_ids = {step.id for step in project.steps}
         new_step_ids = {
-            step_data.get("id")
-            for step_data in steps_list
-            if step_data.get("id")
+            step_data.get("id") for step_data in steps_list if step_data.get("id")
         }
 
         # Delete removed steps
         steps_to_delete = existing_step_ids - new_step_ids
         if steps_to_delete:
-            await db.execute(
-                delete(Step).where(Step.id.in_(steps_to_delete))
-            )
+            await db.execute(delete(Step).where(Step.id.in_(steps_to_delete)))
 
         # Update or create steps
         for step_data in steps_list:
             step_id = step_data.get("id")
             if step_id and step_id in existing_step_ids:
                 # Update existing step
-                step_result = await db.execute(
-                    select(Step).where(Step.id == step_id)
-                )
+                step_result = await db.execute(select(Step).where(Step.id == step_id))
                 step = step_result.scalar_one()
                 step.title = step_data.get("title", "")
                 step.description = step_data.get("description")
@@ -712,6 +706,7 @@ async def delete_project(
 
     # Delete all project assets before deleting the database record
     import shutil
+
     project_media_dir = config.MEDIA_ROOT / "projects" / str(project_id)
     project_thumb_dir = config.MEDIA_ROOT / "thumbnails" / str(project_id)
 
@@ -1016,12 +1011,14 @@ async def upload_title_image(
     await db.commit()
     await db.refresh(image)
 
-    return JSONResponse({
-        "id": image.id,
-        "url": get_file_url(filename, project_id),
-        "thumbnail_url": get_thumbnail_url(filename, project_id),
-        "alt_text": image.alt_text,
-    })
+    return JSONResponse(
+        {
+            "id": image.id,
+            "url": get_file_url(filename, project_id),
+            "thumbnail_url": get_thumbnail_url(filename, project_id),
+            "alt_text": image.alt_text,
+        }
+    )
 
 
 @router.post("/{project_id}/steps/{step_id}/images")
@@ -1069,12 +1066,14 @@ async def upload_step_image(
     await db.commit()
     await db.refresh(image)
 
-    return JSONResponse({
-        "id": image.id,
-        "url": get_file_url(filename, project_id),
-        "thumbnail_url": get_thumbnail_url(filename, project_id),
-        "alt_text": image.alt_text,
-    })
+    return JSONResponse(
+        {
+            "id": image.id,
+            "url": get_file_url(filename, project_id),
+            "thumbnail_url": get_thumbnail_url(filename, project_id),
+            "alt_text": image.alt_text,
+        }
+    )
 
 
 @router.delete("/{project_id}/images/{image_id}")

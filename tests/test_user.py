@@ -1,6 +1,6 @@
-import pytest
 from io import BytesIO
 
+import pytest
 from PIL import Image as PILImage
 
 from stricknani.config import config

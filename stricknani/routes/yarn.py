@@ -54,9 +54,7 @@ def _parse_optional_int(field_name: str, value: str | None) -> int | None:
         ) from exc
 
 
-async def _fetch_yarn(
-    db: AsyncSession, yarn_id: int, owner_id: int
-) -> Yarn | None:
+async def _fetch_yarn(db: AsyncSession, yarn_id: int, owner_id: int) -> Yarn | None:
     """Fetch a yarn entry for the owner with photos eagerly loaded."""
 
     result = await db.execute(

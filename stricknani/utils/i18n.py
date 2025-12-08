@@ -69,6 +69,7 @@ def get_translations(language: str) -> Translations:
 
     # Return null translations if file doesn't exist
     from babel.support import NullTranslations
+
     return NullTranslations()
 
 

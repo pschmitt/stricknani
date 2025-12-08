@@ -1,7 +1,6 @@
 """Main entry point for Stricknani application."""
 
 
-
 def main() -> None:
     """Run the Stricknani application with uvicorn."""
     # Get port from environment or use default

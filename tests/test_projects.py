@@ -11,7 +11,9 @@ from stricknani.config import config
 from stricknani.models import Image, ProjectCategory, Step
 
 
-async def _fetch_steps(session_factory: async_sessionmaker[AsyncSession], project_id: int) -> list[Step]:
+async def _fetch_steps(
+    session_factory: async_sessionmaker[AsyncSession], project_id: int
+) -> list[Step]:
     async with session_factory() as session:
         result = await session.execute(
             select(Step).where(Step.project_id == project_id).order_by(Step.step_number)
@@ -19,15 +21,19 @@ async def _fetch_steps(session_factory: async_sessionmaker[AsyncSession], projec
         return list(result.scalars())
 
 
-async def _fetch_images(session_factory: async_sessionmaker[AsyncSession], project_id: int) -> list[Image]:
+async def _fetch_images(
+    session_factory: async_sessionmaker[AsyncSession], project_id: int
+) -> list[Image]:
     async with session_factory() as session:
-        result = await session.execute(select(Image).where(Image.project_id == project_id))
+        result = await session.execute(
+            select(Image).where(Image.project_id == project_id)
+        )
         return list(result.scalars())
 
 
 @pytest.mark.asyncio
 async def test_update_project_manages_steps(
-    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int]
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
 ) -> None:
     client, session_factory, _user_id, project_id, existing_step_id = test_client
 
@@ -104,7 +110,7 @@ def _generate_image_bytes(color: str = "blue") -> BytesIO:
 
 @pytest.mark.asyncio
 async def test_upload_title_image_creates_image_record(
-    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int]
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
 ) -> None:
     client, session_factory, _user_id, project_id, _step_id = test_client
 
@@ -134,7 +140,7 @@ async def test_upload_title_image_creates_image_record(
 
 @pytest.mark.asyncio
 async def test_upload_step_image_creates_image_record(
-    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int]
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
 ) -> None:
     client, session_factory, _user_id, project_id, step_id = test_client
 
