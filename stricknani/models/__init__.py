@@ -62,6 +62,11 @@ class User(Base):
         secondary=lambda: user_favorites,
         back_populates="favorited_by",
     )
+    favorite_yarns: Mapped[list["Yarn"]] = relationship(
+        "Yarn",
+        secondary=lambda: user_favorite_yarns,
+        back_populates="favorited_by",
+    )
     yarns: Mapped[list["Yarn"]] = relationship(
         "Yarn", back_populates="owner", cascade="all, delete-orphan"
     )
@@ -80,6 +85,19 @@ user_favorites = Table(
         primary_key=True,
     ),
     UniqueConstraint("user_id", "project_id", name="uq_user_favorite"),
+)
+
+
+user_favorite_yarns = Table(
+    "user_favorite_yarns",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "yarn_id",
+        ForeignKey("yarns.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    UniqueConstraint("user_id", "yarn_id", name="uq_user_favorite_yarn"),
 )
 
 
@@ -200,6 +218,11 @@ class Yarn(Base):
         "Project",
         secondary=lambda: project_yarns,
         back_populates="yarns",
+    )
+    favorited_by: Mapped[list["User"]] = relationship(
+        "User",
+        secondary=lambda: user_favorite_yarns,
+        back_populates="favorite_yarns",
     )
 
 

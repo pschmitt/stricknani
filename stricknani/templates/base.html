@@ -10,6 +10,24 @@
         href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css"
     >
     <script>
+        // Configure Tailwind before loading the script
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            primary: "#2563eb",
+                            foreground: "#1d4ed8",
+                        },
+                    },
+                },
+            },
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
         // Initialize theme preference
         const cookieTheme = {{ theme_preference|default('system')|tojson }};
         let storedTheme = cookieTheme;
@@ -119,22 +137,7 @@
 
             persistTheme(normalized);
         };
-        window.tailwind = window.tailwind || {};
-        window.tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            primary: "#2563eb",
-                            foreground: "#1d4ed8",
-                        },
-                    },
-                },
-            },
-        };
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">

@@ -15,14 +15,14 @@ from fastapi import (
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.main import render_template
-from stricknani.models import User, Yarn, YarnImage
+from stricknani.models import User, Yarn, YarnImage, user_favorite_yarns
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
     create_thumbnail,
@@ -98,8 +98,15 @@ def _serialize_photos(yarn: Yarn) -> list[dict[str, object]]:
     return payload
 
 
-def _serialize_yarn_cards(yarns: Iterable[Yarn]) -> list[dict[str, object]]:
+def _serialize_yarn_cards(
+    yarns: Iterable[Yarn],
+    current_user: User | None = None,
+) -> list[dict[str, object]]:
     """Prepare yarn entries for list rendering with preview URLs."""
+
+    favorites = set()
+    if current_user:
+        favorites = {y.id for y in current_user.favorite_yarns}
 
     return [
         {
@@ -116,6 +123,7 @@ def _serialize_yarn_cards(yarns: Iterable[Yarn]) -> list[dict[str, object]]:
                 "notes": yarn.notes,
                 "created_at": yarn.created_at.isoformat() if yarn.created_at else None,
                 "updated_at": yarn.updated_at.isoformat() if yarn.updated_at else None,
+                "is_favorite": yarn.id in favorites,
             },
             "preview_url": _resolve_preview(yarn),
         }
@@ -134,6 +142,9 @@ async def list_yarns(
 
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    # Eager load favorites for the current user
+    await db.refresh(current_user, ["favorite_yarns"])
 
     query = (
         select(Yarn)
@@ -155,14 +166,14 @@ async def list_yarns(
     yarns = result.scalars().unique().all()
 
     if request.headers.get("accept") == "application/json":
-        return JSONResponse(_serialize_yarn_cards(yarns))
+        return JSONResponse(_serialize_yarn_cards(yarns, current_user))
 
     return render_template(
         "yarn/list.html",
         request,
         {
             "current_user": current_user,
-            "yarns": _serialize_yarn_cards(yarns),
+            "yarns": _serialize_yarn_cards(yarns, current_user),
             "search": search or "",
         },
     )
@@ -364,6 +375,64 @@ async def update_yarn(
 
     return RedirectResponse(
         url=f"/yarn/{yarn.id}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.post("/{yarn_id}/favorite", response_class=Response)
+async def toggle_favorite(
+    yarn_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> Response:
+    """Toggle favorite status for a yarn."""
+
+    # Check if yarn exists
+    result = await db.execute(select(Yarn).where(Yarn.id == yarn_id))
+    yarn = result.scalar_one_or_none()
+    if not yarn:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    # Check if already favorited
+    stmt = select(user_favorite_yarns).where(
+        user_favorite_yarns.c.user_id == current_user.id,
+        user_favorite_yarns.c.yarn_id == yarn_id,
+    )
+    result = await db.execute(stmt)
+    existing = result.first()
+
+    is_favorite = False
+    if existing:
+        # Remove favorite
+        await db.execute(
+            delete(user_favorite_yarns).where(
+                user_favorite_yarns.c.user_id == current_user.id,
+                user_favorite_yarns.c.yarn_id == yarn_id,
+            )
+        )
+    else:
+        # Add favorite
+        await db.execute(
+            insert(user_favorite_yarns).values(
+                user_id=current_user.id,
+                yarn_id=yarn_id,
+            )
+        )
+        is_favorite = True
+
+    await db.commit()
+
+    # Return partial for HTMX
+    if request.headers.get("HX-Request"):
+        return render_template(
+            "yarn/_favorite_toggle.html",
+            request,
+            {"yarn_id": yarn_id, "is_favorite": is_favorite, "variant": "card"},
+        )
+
+    return RedirectResponse(
+        url=request.headers.get("referer") or "/yarn",
         status_code=status.HTTP_303_SEE_OTHER,
     )
 

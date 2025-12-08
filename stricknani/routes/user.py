@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.main import render_template
-from stricknani.models import Project, User, user_favorites
+from stricknani.models import Project, User, Yarn, user_favorite_yarns, user_favorites
 from stricknani.routes.auth import require_auth
 from stricknani.utils.files import (
     create_thumbnail,
@@ -50,6 +50,14 @@ async def preference_center(
     )
     favorites = favorites_result.scalars().all()
 
+    favorite_yarns_result = await db.execute(
+        select(Yarn)
+        .join(user_favorite_yarns, user_favorite_yarns.c.yarn_id == Yarn.id)
+        .where(user_favorite_yarns.c.user_id == current_user.id)
+        .order_by(Yarn.created_at.desc())
+    )
+    favorite_yarns = favorite_yarns_result.scalars().all()
+
     profile_image_url = None
     profile_thumbnail_url = None
     if current_user.profile_image:
@@ -66,6 +74,7 @@ async def preference_center(
         {
             "current_user": current_user,
             "favorites": favorites,
+            "favorite_yarns": favorite_yarns,
             "profile_image_url": profile_image_url,
             "profile_thumbnail_url": profile_thumbnail_url,
             "supported_languages": config.SUPPORTED_LANGUAGES,

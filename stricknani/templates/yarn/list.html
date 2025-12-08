@@ -4,28 +4,26 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto space-y-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <p class="text-sm font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                <span class="mdi mdi-yarn"></span>
-                {{ _('Yarn Stash') }}
-            </p>
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ _('Organize your yarn collection') }}</h1>
-            <p class="text-sm text-slate-600 dark:text-slate-300">{{ _("Keep track of what you've bought, colorways, and quick notes so you always know what you have on hand.") }}</p>
-        </div>
-        <div class="flex items-center gap-2">
-            <form method="get" class="flex items-center gap-2">
-                <input type="text" name="search" value="{{ search }}" placeholder="{{ _('Search yarn...') }}" class="w-48 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                <button type="submit" class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:border-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:text-blue-300">
-                    <span class="mdi mdi-magnify"></span>
-                    {{ _('Search') }}
-                </button>
-            </form>
-            <a href="/yarn/new" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
-                <span class="mdi mdi-plus"></span>
-                {{ _('Add Yarn') }}
-            </a>
-        </div>
+    <div>
+        <p class="text-sm font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300 flex items-center gap-2">
+            <span class="mdi mdi-yarn"></span>
+            {{ _('Yarn Stash') }}
+        </p>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ _('Organize your yarn collection') }}</h1>
+        <p class="text-sm text-slate-600 dark:text-slate-300">{{ _("Keep track of what you've bought, colorways, and quick notes so you always know what you have on hand.") }}</p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-4">
+        <form method="get" class="flex-grow relative">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500 dark:text-slate-400">
+                <span class="mdi mdi-magnify"></span>
+            </div>
+            <input type="text" name="search" value="{{ search }}" placeholder="{{ _('Search yarn...') }}" class="w-full rounded-md border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+        </form>
+        <a href="/yarn/new" class="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 whitespace-nowrap">
+            <span class="mdi mdi-plus"></span>
+            {{ _('Add Yarn') }}
+        </a>
     </div>
 
     {% if not yarns %}
@@ -43,27 +41,36 @@
         </div>
     </div>
     {% else %}
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {% for card in yarns %}
         {% set yarn = card.yarn %}
-        <a href="/yarn/{{ yarn.id }}" class="group block rounded-xl border border-slate-200 bg-white/80 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/80">
-            <div class="aspect-video w-full overflow-hidden rounded-t-xl bg-gradient-to-br from-blue-50 via-white to-slate-50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950">
+        <div class="bg-white/80 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow dark:bg-slate-900/70 dark:shadow-slate-900/20" data-yarn-card>
+            <a href="/yarn/{{ yarn.id }}" class="relative block aspect-[4/3] bg-slate-100 transition-transform hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-800/70">
                 {% if card.preview_url %}
-                <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}" class="h-full w-full object-cover transition duration-200 group-hover:scale-105">
+                <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}" class="h-full w-full object-cover">
                 {% else %}
-                <div class="flex h-full w-full items-center justify-center text-blue-400 dark:text-blue-300">
-                    <span class="mdi mdi-yarn text-5xl"></span>
+                <div class="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
+                    <span class="mdi mdi-yarn text-5xl" aria-hidden="true"></span>
+                    <span class="sr-only">{{ _('Open yarn details') }}</span>
                 </div>
                 {% endif %}
-            </div>
-            <div class="space-y-2 p-4">
-                <div class="flex items-center justify-between gap-2">
-                    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-300">{{ yarn.name }}</h2>
+                <span class="sr-only">{{ _('Open yarn details for %(name)s') % {'name': yarn.name} }}</span>
+            </a>
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                        <a href="/yarn/{{ yarn.id }}" class="hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">
+                            {{ yarn.name }}
+                        </a>
+                    </h3>
                     {% if yarn.brand %}
-                    <span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">{{ yarn.brand }}</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {{ yarn.brand }}
+                    </span>
                     {% endif %}
                 </div>
-                <div class="grid grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-200">
+                
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-200 mb-4">
                     {% if yarn.colorway %}
                     <div class="flex items-center gap-1.5">
                         <span class="mdi mdi-palette"></span>
@@ -89,9 +96,29 @@
                     </div>
                     {% endif %}
                 </div>
-                <p class="line-clamp-2 text-sm text-slate-600 dark:text-slate-300">{{ yarn.description or _('No description yet.') }}</p>
+
+                <p class="line-clamp-2 text-sm text-slate-500 mb-4 dark:text-slate-300">{{ yarn.description or _('No description yet.') }}</p>
+                
+                <div class="flex gap-2">
+                    {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='card' %}
+                        {% include "yarn/_favorite_toggle.html" %}
+                    {% endwith %}
+                    <button
+                        hx-post="/yarn/{{ yarn.id }}/delete"
+                        hx-confirm="{{ _('Delete this yarn? This will remove its photos too.') }}"
+                        hx-target="closest [data-yarn-card]"
+                        hx-swap="outerHTML swap:1s"
+                        hx-on::after-request="if (event.detail.successful) { showToast('{{ _('Yarn deleted') }}', 'success'); }"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/70 text-slate-500 text-xl transition hover:border-red-300 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-red-400 dark:hover:text-red-300 dark:focus:ring-offset-slate-900"
+                        aria-label="{{ _('Delete yarn') }}"
+                        title="{{ _('Delete yarn') }}"
+                    >
+                        <span class="mdi mdi-delete-outline" aria-hidden="true"></span>
+                        <span class="sr-only">{{ _('Delete yarn') }}</span>
+                    </button>
+                </div>
             </div>
-        </a>
+        </div>
         {% endfor %}
     </div>
     {% endif %}
