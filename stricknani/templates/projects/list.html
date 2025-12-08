@@ -178,6 +178,14 @@
                         {% with project_id=project.id, is_favorite=project.is_favorite, variant='card' %}
                             {% include "projects/_favorite_toggle.html" %}
                         {% endwith %}
+                        <a
+                            href="/projects/{{ project.id }}/edit"
+                            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-900/60 text-slate-300 text-xl transition hover:border-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                            aria-label="{{ _('Edit project') }}"
+                            title="{{ _('Edit project') }}"
+                        >
+                            <span class="mdi mdi-pencil-outline" aria-hidden="true"></span>
+                        </a>
                         <button
                             hx-delete="/projects/{{ project.id }}"
                             hx-confirm="{{ _('Are you sure you want to delete this project?') }}"

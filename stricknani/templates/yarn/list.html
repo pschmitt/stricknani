@@ -62,9 +62,9 @@
                         </a>
                     </h3>
                     {% if yarn.brand %}
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-200">
+                    <a href="/yarn?search={{ yarn.brand }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">
                         {{ yarn.brand }}
-                    </span>
+                    </a>
                     {% endif %}
                 </div>
                 
@@ -118,6 +118,14 @@
                     {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='card' %}
                         {% include "yarn/_favorite_toggle.html" %}
                     {% endwith %}
+                    <a
+                        href="/yarn/{{ yarn.id }}/edit"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-900/60 text-slate-300 text-xl transition hover:border-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                        aria-label="{{ _('Edit yarn') }}"
+                        title="{{ _('Edit yarn') }}"
+                    >
+                        <span class="mdi mdi-pencil-outline" aria-hidden="true"></span>
+                    </a>
                     <button
                         hx-post="/yarn/{{ yarn.id }}/delete"
                         hx-confirm="{{ _('Delete this yarn? This will remove its photos too.') }}"
