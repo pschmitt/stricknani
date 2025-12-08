@@ -9,6 +9,7 @@ import json
 import sys
 
 import httpx
+from rich import print_json
 from sqlalchemy import select
 
 from stricknani.database import AsyncSessionLocal, init_db
@@ -87,7 +88,7 @@ async def api_request(url: str, endpoint: str, email: str, password: str) -> Non
 
         if resp.status_code == 200:
             try:
-                print(json.dumps(resp.json(), indent=2))
+                print_json(data=resp.json())
             except json.JSONDecodeError:
                 print(resp.text)
         else:
