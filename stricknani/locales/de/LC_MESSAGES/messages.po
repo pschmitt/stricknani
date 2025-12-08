@@ -574,3 +574,6 @@ msgstr "Noch keine Fotos. Füge ein Foto vom Strang oder der Maschenprobe hinzu,
 
 msgid "Fiber"
 msgstr "Faser"
+
+msgid "Open main menu"
+msgstr "Hauptmenü öffnen"
