@@ -286,6 +286,21 @@
     </form>
 </div>
 
+<script>
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('textarea').forEach(el => {
+        el.style.overflowY = 'hidden';
+        autoResize(el);
+        el.addEventListener('input', () => autoResize(el));
+    });
+});
+</script>
+
 {% if project %}
 <script>
 const projectId = {{ project.id }};
@@ -660,6 +675,12 @@ function addStep() {
     `;
     container.appendChild(div);
     initStepImageUploaders();
+
+    const newTextarea = div.querySelector('textarea');
+    if (newTextarea) {
+        newTextarea.style.overflowY = 'hidden';
+        newTextarea.addEventListener('input', () => autoResize(newTextarea));
+    }
 }
 
 function removeStep(button) {
