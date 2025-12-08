@@ -31,33 +31,33 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body class="min-h-screen flex flex-col">
-    <nav class="relative z-40 bg-white/80 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-slate-900/80">
+    <nav class="relative z-40 bg-slate-900/80 shadow-sm backdrop-blur">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center space-x-2 md:space-x-8">
                     {% if current_user %}
-                    <button type="button" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-slate-700 hover:text-blue-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 dark:text-slate-200 dark:hover:text-blue-400 dark:hover:bg-slate-800" aria-controls="mobile-menu" aria-expanded="false" id="mobile-menu-button">
+                    <button type="button" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-slate-200 hover:text-blue-400 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-controls="mobile-menu" aria-expanded="false" id="mobile-menu-button">
                         <span class="sr-only">{{ _('Open main menu') }}</span>
                         <span class="mdi mdi-menu text-2xl"></span>
                     </button>
                     {% endif %}
-                    <a href="/" class="text-xl font-bold text-slate-900 hover:text-blue-600 dark:text-slate-100 dark:hover:text-blue-400 inline-flex items-center gap-2">
+                    <a href="/" class="text-xl font-bold text-slate-100 hover:text-blue-400 inline-flex items-center gap-2">
                         <img src="/static/favicon.svg" alt="" class="h-6 w-6" />
-                        <span class="mdi mdi-yarn text-blue-500 dark:text-blue-300"></span>
+                        <span class="mdi mdi-yarn text-blue-300"></span>
                         {{ _('Stricknani') }}
                     </a>
                     {% if current_user %}
                     <div class="hidden md:flex space-x-4">
                         {% set current_path = request.url.path %}
-                        <a href="/projects" class="px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 {% if current_path.startswith('/projects') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-400{% endif %}">
+                        <a href="/projects" class="px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 {% if current_path.startswith('/projects') %}bg-blue-600 text-white{% else %}text-slate-200 hover:text-blue-400{% endif %}">
                             <span class="mdi mdi-folder-outline"></span>
                             {{ _('Projects') }}
                         </a>
-                        <a href="/yarn" class="px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 {% if current_path.startswith('/yarn') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-400{% endif %}">
+                        <a href="/yarn" class="px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 {% if current_path.startswith('/yarn') %}bg-blue-600 text-white{% else %}text-slate-200 hover:text-blue-400{% endif %}">
                             <span class="mdi mdi-needle"></span>
                             {{ _('Yarn') }}
                         </a>
-                        <a href="/gauge" class="px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 {% if current_path.startswith('/gauge') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-400{% endif %}">
+                        <a href="/gauge" class="px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 {% if current_path.startswith('/gauge') %}bg-blue-600 text-white{% else %}text-slate-200 hover:text-blue-400{% endif %}">
                             <span class="mdi mdi-ruler"></span>
                             {{ _('Gauge Calculator') }}
                         </a>
@@ -69,7 +69,7 @@
                     <div class="relative" data-user-menu>
                         <button
                             type="button"
-                            class="flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-2.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-blue-400 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:text-blue-300"
+                            class="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1.5 text-sm font-medium text-slate-200 shadow-sm transition hover:border-blue-400 hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                             data-user-menu-trigger
                             aria-haspopup="true"
                             aria-expanded="false"
@@ -83,46 +83,46 @@
                             <span class="mdi mdi-chevron-down text-lg" aria-hidden="true"></span>
                         </button>
                         <div
-                            class="absolute right-0 mt-2 w-72 origin-top-right scale-95 transform rounded-lg border border-slate-200 bg-white/95 p-0 opacity-0 shadow-xl transition-all duration-150 ease-out focus:outline-none pointer-events-none dark:border-slate-700 dark:bg-slate-900/95 z-50"
+                            class="absolute right-0 mt-2 w-72 origin-top-right scale-95 transform rounded-lg border border-slate-700 bg-slate-900/95 p-0 opacity-0 shadow-xl transition-all duration-150 ease-out focus:outline-none pointer-events-none z-50"
                             data-user-menu-panel
                             role="menu"
                             aria-hidden="true"
                         >
-                            <div class="flex items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
-                                <div class="h-12 w-12 overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-slate-600 dark:bg-slate-800">
+                            <div class="flex items-center gap-3 border-b border-slate-700 px-4 py-3">
+                                <div class="h-12 w-12 overflow-hidden rounded-full border border-slate-600 bg-slate-800">
                                     {% if current_user_avatar_thumbnail %}
                                     <img src="{{ current_user_avatar_thumbnail }}" alt="{{ _('Profile picture for %(email)s') % {'email': current_user.email} }}" class="h-full w-full object-cover" />
                                     {% else %}
-                                    <div class="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-500">
+                                    <div class="flex h-full w-full items-center justify-center text-slate-500">
                                         <span class="mdi mdi-account"></span>
                                     </div>
                                     {% endif %}
                                 </div>
                                 <div>
-                                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ current_user.email }}</p>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ _('Signed in') }}</p>
+                                    <p class="text-sm font-semibold text-slate-100">{{ current_user.email }}</p>
+                                    <p class="text-xs text-slate-400">{{ _('Signed in') }}</p>
                                 </div>
                             </div>
-                            <div class="space-y-4 border-b border-slate-200 px-4 py-4 dark:border-slate-700">
+                            <div class="space-y-4 border-b border-slate-700 px-4 py-4">
                                 <form action="/auth/set-language" method="post" class="space-y-2">
                                     <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                    <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                    <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
                                         <span class="mdi mdi-translate"></span>
                                         {{ _('Language') }}
                                     </label>
-                                    <select name="language" onchange="this.form.submit()" class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100">
+                                    <select name="language" onchange="this.form.submit()" class="w-full rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 {{ _('English') }}</option>
                                         <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 {{ _('German') }}</option>
                                     </select>
                                 </form>
                             </div>
                             <div class="space-y-2 px-4 py-4" role="group">
-                                <a href="/user/profile" class="flex w-full items-center gap-2 rounded-md border border-transparent px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-200" role="menuitem">
+                                <a href="/user/profile" class="flex w-full items-center gap-2 rounded-md border border-transparent px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-blue-500 hover:bg-blue-500/20 hover:text-blue-200" role="menuitem">
                                     <span class="mdi mdi-account-details-outline text-lg"></span>
                                     {{ _('Profile') }}
                                 </a>
                                 <form action="/auth/logout" method="post">
-                                    <button type="submit" class="flex w-full items-center gap-2 rounded-md border border-transparent px-3 py-2 text-sm font-medium text-red-600 transition hover:border-red-400 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:border-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-200" role="menuitem">
+                                    <button type="submit" class="flex w-full items-center gap-2 rounded-md border border-transparent px-3 py-2 text-sm font-medium text-red-400 transition hover:border-red-500 hover:bg-red-500/20 hover:text-red-200" role="menuitem">
                                         <span class="mdi mdi-logout text-lg"></span>
                                         {{ _('Logout') }}
                                     </button>
@@ -134,12 +134,12 @@
                     <div class="flex items-center space-x-4">
                         <form action="/auth/set-language" method="post" class="inline">
                             <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                            <select name="language" onchange="this.form.submit()" class="text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
+                            <select name="language" onchange="this.form.submit()" class="text-sm border-slate-700 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-slate-900 text-slate-100">
                                 <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 {{ _('English') }}</option>
                                 <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 {{ _('German') }}</option>
                             </select>
                         </form>
-                        <a href="/login" class="text-slate-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2 dark:text-slate-200 dark:hover:text-blue-400">
+                        <a href="/login" class="text-slate-200 hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2">
                             <span class="mdi mdi-login"></span>
                             {{ _('Login') }}
                         </a>
@@ -151,15 +151,15 @@
 
         {% if current_user %}
         <div class="md:hidden hidden" id="mobile-menu">
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-slate-700 bg-slate-900/95 backdrop-blur">
                 {% set current_path = request.url.path %}
-                <a href="/projects" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/projects') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 hover:bg-slate-50 dark:text-slate-200 dark:hover:text-blue-400 dark:hover:bg-slate-800{% endif %}">
+                <a href="/projects" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/projects') %}bg-blue-600 text-white{% else %}text-slate-200 hover:text-blue-400 hover:bg-slate-800{% endif %}">
                     <span class="mdi mdi-folder-outline mr-2"></span>{{ _('Projects') }}
                 </a>
-                <a href="/yarn" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/yarn') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 hover:bg-slate-50 dark:text-slate-200 dark:hover:text-blue-400 dark:hover:bg-slate-800{% endif %}">
+                <a href="/yarn" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/yarn') %}bg-blue-600 text-white{% else %}text-slate-200 hover:text-blue-400 hover:bg-slate-800{% endif %}">
                     <span class="mdi mdi-needle mr-2"></span>{{ _('Yarn') }}
                 </a>
-                <a href="/gauge" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/gauge') %}bg-blue-600 text-white dark:bg-blue-600{% else %}text-slate-700 hover:text-blue-600 hover:bg-slate-50 dark:text-slate-200 dark:hover:text-blue-400 dark:hover:bg-slate-800{% endif %}">
+                <a href="/gauge" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/gauge') %}bg-blue-600 text-white{% else %}text-slate-200 hover:text-blue-400 hover:bg-slate-800{% endif %}">
                     <span class="mdi mdi-ruler mr-2"></span>{{ _('Gauge Calculator') }}
                 </a>
             </div>
@@ -222,9 +222,9 @@
         </div>
     </div>
 
-    <footer class="mt-8 py-4 text-center text-sm text-slate-500 bg-white/70 border-t border-slate-200 dark:bg-slate-900/80 dark:text-slate-400 dark:border-slate-700">
+    <footer class="mt-8 py-4 text-center text-sm text-slate-400 bg-slate-900/80 border-t border-slate-700">
         <span class="mdi mdi-yarn mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0 | {{ _('GPL-3.0-only') }}
-        <a href="https://github.com/pschmitt/stricknani" target="_blank" rel="noopener noreferrer" class="ml-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" aria-label="GitHub">
+        <a href="https://github.com/pschmitt/stricknani" target="_blank" rel="noopener noreferrer" class="ml-2 text-slate-400 hover:text-slate-200" aria-label="GitHub">
             <span class="mdi mdi-github text-lg align-middle"></span>
         </a>
     </footer>
