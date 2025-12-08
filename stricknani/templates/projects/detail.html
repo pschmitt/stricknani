@@ -26,10 +26,12 @@
                     <span class="mdi mdi-update"></span>
                     {{ _('Updated') }} {{ project.updated_at[:10] }}
                 </span>
+                {% if project.linked_yarns|length > 0 %}
                 <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
                     <span class="mdi mdi-folder-multiple-outline"></span>
                     {{ project.linked_yarns|length }} {{ _('yarns linked') }}
                 </span>
+                {% endif %}
             </div>
             {% if project.tags %}
             <div class="mt-3 flex flex-wrap gap-2">
