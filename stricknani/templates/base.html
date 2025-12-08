@@ -181,6 +181,13 @@
         {% block content %}{% endblock %}
     </main>
 
+    <footer class="mt-8 py-4 text-center text-sm text-slate-400 bg-slate-900/80 border-t border-slate-700">
+        <span class="mdi mdi-yarn mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0 | {{ _('GPL-3.0-only') }}
+        <a href="https://github.com/pschmitt/stricknani" target="_blank" rel="noopener noreferrer" class="ml-2 text-slate-400 hover:text-slate-200" aria-label="GitHub">
+            <span class="mdi mdi-github text-lg align-middle"></span>
+        </a>
+    </footer>
+
     <div
         id="toastContainer"
         class="fixed inset-x-4 top-4 z-[10000] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-4 sm:w-80"
@@ -190,7 +197,7 @@
 
     <dialog
         id="imageLightbox"
-        class="fixed inset-0 z-[9999] h-screen w-screen max-w-none max-h-none m-0 p-0 border-0 bg-black/90 text-white backdrop-blur-sm backdrop:bg-transparent"
+        class="fixed inset-0 z-[9999] h-screen w-screen max-w-none max-h-none m-0 p-0 border-0 bg-slate-950 text-white backdrop:bg-transparent"
         aria-label="{{ _('Image viewer') }}"
     >
         <div class="flex h-full w-full">
@@ -224,18 +231,9 @@
                     <span class="mdi mdi-chevron-right text-3xl"></span>
                 </button>
             </div>
-            <div class="hidden w-32 flex-col gap-2 overflow-y-auto border-l border-white/10 bg-black/40 p-2 md:flex" data-lightbox-thumbnails>
-                <!-- Thumbnails injected here -->
-            </div>
         </div>
     </div>
 
-    <footer class="mt-8 py-4 text-center text-sm text-slate-400 bg-slate-900/80 border-t border-slate-700">
-        <span class="mdi mdi-yarn mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0 | {{ _('GPL-3.0-only') }}
-        <a href="https://github.com/pschmitt/stricknani" target="_blank" rel="noopener noreferrer" class="ml-2 text-slate-400 hover:text-slate-200" aria-label="GitHub">
-            <span class="mdi mdi-github text-lg align-middle"></span>
-        </a>
-    </footer>
     <script>
         const toastVariants = {
             success: "bg-emerald-500/90 text-white",
@@ -349,7 +347,6 @@
             const closeButton = lightbox.querySelector("[data-lightbox-close]");
             const prevButton = lightbox.querySelector("[data-lightbox-prev]");
             const nextButton = lightbox.querySelector("[data-lightbox-next]");
-            const thumbnailsContainer = lightbox.querySelector("[data-lightbox-thumbnails]");
 
             let currentIndex = 0;
             let currentItems = [];
@@ -364,39 +361,6 @@
                     prevButton.classList.add("opacity-50", "pointer-events-none");
                     nextButton.classList.add("opacity-50", "pointer-events-none");
                 }
-                thumbnailsContainer.classList.toggle("md:flex", hasMultiple);
-            };
-
-            const renderThumbnails = () => {
-                thumbnailsContainer.innerHTML = "";
-                currentItems.forEach((item, index) => {
-                    const btn = document.createElement("button");
-                    btn.type = "button";
-                    btn.className = `relative aspect-square w-full overflow-hidden rounded border-2 transition ${
-                        index === currentIndex
-                            ? "border-blue-500 opacity-100"
-                            : "border-transparent opacity-60 hover:opacity-100"
-                    }`;
-                    btn.innerHTML = `<img src="${item.src}" alt="" class="h-full w-full object-cover">`;
-                    btn.onclick = () => {
-                        currentIndex = index;
-                        render();
-                    };
-                    thumbnailsContainer.appendChild(btn);
-                });
-            };
-
-            const updateActiveThumbnail = () => {
-                Array.from(thumbnailsContainer.children).forEach((btn, index) => {
-                    if (index === currentIndex) {
-                        btn.classList.remove("border-transparent", "opacity-60");
-                        btn.classList.add("border-blue-500", "opacity-100");
-                        btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                    } else {
-                        btn.classList.remove("border-blue-500", "opacity-100");
-                        btn.classList.add("border-transparent", "opacity-60");
-                    }
-                });
             };
 
             const render = () => {
@@ -408,7 +372,6 @@
                 image.alt = active.alt;
                 caption.textContent = active.alt || "";
                 updateNavigationState();
-                updateActiveThumbnail();
             };
 
             const close = () => {
@@ -451,7 +414,6 @@
                 }
                 currentIndex = index;
 
-                renderThumbnails();
                 lightbox.showModal();
                 // Ensure flex display for content layout
                 lightbox.style.display = "flex";
