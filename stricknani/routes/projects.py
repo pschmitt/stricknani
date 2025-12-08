@@ -224,9 +224,9 @@ async def list_projects(
     if search:
         query = query.where(Project.name.ilike(f"%{search}%"))
 
-    query = query.options(selectinload(Project.images)).order_by(
-        Project.created_at.desc()
-    )
+    query = query.options(
+        selectinload(Project.images).selectinload(Image.step)
+    ).order_by(Project.created_at.desc())
 
     result = await db.execute(query)
     projects = result.scalars().unique().all()
@@ -263,7 +263,15 @@ async def list_projects(
                 url = get_file_url(img.filename, project.id, subdir="projects")
 
             if url:
-                preview_images.append({"url": url, "alt": img.alt_text or project.name})
+                step_label = None
+                if img.step:
+                    step_label = f"Step {img.step.step_number}"
+
+                preview_images.append({
+                    "url": url,
+                    "alt": img.alt_text or project.name,
+                    "step_label": step_label,
+                })
 
         # Backwards compatibility for templates expecting single image
         thumbnail_url = preview_images[0]["url"] if preview_images else None
@@ -309,6 +317,8 @@ async def list_projects(
             "current_user": current_user,
             "projects": projects_data,
             "categories": categories,
+            "selected_category": category,
+            "search": search,
         },
     )
 

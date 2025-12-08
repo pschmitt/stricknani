@@ -37,7 +37,7 @@
         >
             <option value="">{{ _('All Categories') }}</option>
                     {% for category in categories %}
-                    <option value="{{ category }}">{{ _(category) }}</option>
+                    <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>{{ _(category) }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -48,6 +48,7 @@
             type="text"
             id="search"
             name="search"
+            value="{{ search or '' }}"
             placeholder="Search projects..."
             class="w-full px-3 py-2 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-900 text-slate-100"
             hx-get="/projects"
@@ -70,22 +71,64 @@
                 >
                     {% if project.preview_images %}
                         {% if project.preview_images|length == 1 %}
-                        <img
-                            src="{{ project.preview_images[0].url }}"
-                            alt="{{ project.preview_images[0].alt }}"
-                            class="h-full w-full object-cover"
-                            loading="lazy"
-                        >
+                        <div class="relative h-full w-full">
+                            <img
+                                src="{{ project.preview_images[0].url }}"
+                                alt="{{ project.preview_images[0].alt }}"
+                                class="h-full w-full object-cover"
+                                loading="lazy"
+                            >
+                            {% if project.preview_images[0].step_label %}
+                            <span class="absolute bottom-2 right-2 rounded bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                                {{ project.preview_images[0].step_label }}
+                            </span>
+                            {% endif %}
+                        </div>
                         {% elif project.preview_images|length == 2 %}
                         <div class="grid grid-cols-2 h-full w-full gap-0.5">
-                            <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}" class="h-full w-full object-cover">
-                            <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}" class="h-full w-full object-cover">
+                            <div class="relative h-full w-full">
+                                <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}" class="h-full w-full object-cover">
+                                {% if project.preview_images[0].step_label %}
+                                <span class="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+                                    {{ project.preview_images[0].step_label }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="relative h-full w-full">
+                                <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}" class="h-full w-full object-cover">
+                                {% if project.preview_images[1].step_label %}
+                                <span class="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+                                    {{ project.preview_images[1].step_label }}
+                                </span>
+                                {% endif %}
+                            </div>
                         </div>
                         {% else %}
                         <div class="grid grid-cols-3 grid-rows-2 h-full w-full gap-0.5">
-                            <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}" class="col-span-2 row-span-2 h-full w-full object-cover">
-                            <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}" class="col-span-1 row-span-1 h-full w-full object-cover">
-                            <img src="{{ project.preview_images[2].url }}" alt="{{ project.preview_images[2].alt }}" class="col-span-1 row-span-1 h-full w-full object-cover">
+                            <div class="relative col-span-2 row-span-2 h-full w-full">
+                                <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}" class="h-full w-full object-cover">
+                                {% if project.preview_images[0].step_label %}
+                                <span class="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+                                    {{ project.preview_images[0].step_label }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="relative col-span-1 row-span-1 h-full w-full">
+                                <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}" class="h-full w-full object-cover">
+                                {% if project.preview_images[1].step_label %}
+                                <span class="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+                                    {{ project.preview_images[1].step_label }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="relative col-span-1 row-span-1 h-full w-full">
+                                <img src="{{ project.preview_images[2].url }}" alt="{{ project.preview_images[2].alt }}" class="h-full w-full object-cover">
+                                {% if project.preview_images[2].step_label %}
+                                <span class="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+                                    {{ project.preview_images[2].step_label }}
+                                </span>
+                                {% endif %}
+                            </div>
                         </div>
                         {% endif %}
                     {% else %}

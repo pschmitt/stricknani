@@ -587,8 +587,8 @@ msgstr "Details"
 msgid "yarns linked"
 msgstr "Garne verknüpft"
 
-msgid "Linked stash yarns"
-msgstr "Verknüpfte Garne"
+msgid "Yarns"
+msgstr "Garne"
 
 msgid "User Profile"
 msgstr "Benutzerprofil"

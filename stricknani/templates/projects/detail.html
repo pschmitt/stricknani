@@ -14,9 +14,9 @@
     <div class="flex justify-between items-start mb-6">
         <div>
             <h2 class="text-3xl font-bold text-slate-900 mb-2 dark:text-slate-100">{{ project.name }}</h2>
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-400/20 dark:text-blue-300">
+            <a href="/projects?category={{ project.category }}" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors dark:bg-blue-400/20 dark:text-blue-300 dark:hover:bg-blue-400/30">
                 {{ _(project.category) }}
-            </span>
+            </a>
             <div class="mt-3 flex flex-wrap gap-2 text-xs">
                 <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                     <span class="mdi mdi-calendar-plus"></span>
@@ -90,7 +90,10 @@
         <!-- Project Details -->
         <div class="space-y-4">
             <div>
-                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1 dark:text-slate-300">{{ _('Linked stash yarns') }}</h3>
+                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1 dark:text-slate-300 flex items-center gap-2">
+                    <span class="mdi mdi-sheep"></span>
+                    {{ _('Yarns') }}
+                </h3>
                 {% if project.linked_yarns %}
                 <div class="flex flex-wrap gap-2">
                     {% for yarn in project.linked_yarns %}
@@ -107,20 +110,29 @@
             </div>
 
             <div>
-                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1 dark:text-slate-300">{{ _('Needles') }}</h3>
+                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1 dark:text-slate-300 flex items-center gap-2">
+                    <span class="mdi mdi-needle"></span>
+                    {{ _('Needles') }}
+                </h3>
                 <p class="text-slate-900 dark:text-slate-100">{{ project.needles or _('Not specified') }}</p>
             </div>
 
             {% if project.gauge_stitches and project.gauge_rows %}
             <div>
-                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1 dark:text-slate-300">{{ _('Gauge') }}</h3>
+                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1 dark:text-slate-300 flex items-center gap-2">
+                    <span class="mdi mdi-ruler-square"></span>
+                    {{ _('Gauge') }}
+                </h3>
                 <p class="text-slate-900 dark:text-slate-100">{{ project.gauge_stitches }} {{ _('Stitches') }} × {{ project.gauge_rows }} {{ _('Rows') }} per 10cm</p>
             </div>
             {% endif %}
 
             {% if project.tags %}
             <div>
-                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1 dark:text-slate-300">{{ _('Tags') }}</h3>
+                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1 dark:text-slate-300 flex items-center gap-2">
+                    <span class="mdi mdi-tag-multiple"></span>
+                    {{ _('Tags') }}
+                </h3>
                 <div class="flex flex-wrap gap-2">
                     {% for tag in project.tags %}
                     <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">#{{ tag }}</span>
@@ -135,7 +147,10 @@
         <div class="space-y-4">
             {% if project.comment_html %}
             <div>
-                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-2 dark:text-slate-300">{{ _('Notes') }}</h3>
+                <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-2 dark:text-slate-300 flex items-center gap-2">
+                    <span class="mdi mdi-notebook-outline"></span>
+                    {{ _('Notes') }}
+                </h3>
                 <div class="prose max-w-none bg-slate-100 p-4 rounded-md dark:bg-slate-800 dark:text-slate-100">
                     {{ project.comment_html | safe }}
                 </div>
@@ -147,7 +162,10 @@
     <!-- Steps Section -->
     {% if project.steps %}
     <div class="mt-8 border-t pt-8 border-slate-200 dark:border-slate-700">
-        <h3 class="text-2xl font-semibold text-slate-900 mb-6 dark:text-slate-100">{{ _('Steps') }}</h3>
+        <h3 class="text-2xl font-semibold text-slate-900 mb-6 dark:text-slate-100 flex items-center gap-2">
+            <span class="mdi mdi-format-list-bulleted-square text-blue-600 dark:text-blue-400"></span>
+            {{ _('Steps') }}
+        </h3>
         <div class="space-y-6">
             {% for step in project.steps %}
             <div class="border rounded-lg p-6 bg-slate-100 border-slate-200 dark:bg-slate-900/60 dark:border-slate-700">
