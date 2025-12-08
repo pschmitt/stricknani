@@ -447,3 +447,130 @@ msgstr "Englisch"
 msgid "German"
 msgstr "Deutsch"
 
+
+# Yarn
+msgid "Add Yarn"
+msgstr "Wolle hinzufügen"
+
+msgid "New yarn entry"
+msgstr "Neuer Wolleintrag"
+
+msgid "Add yarn to your stash"
+msgstr "Wolle zum Vorrat hinzufügen"
+
+msgid "Give it a name, jot a note, and add optional details so you remember what you have."
+msgstr "Gib ihr einen Namen, notiere etwas und füge optionale Details hinzu, damit du weißt, was du hast."
+
+msgid "Brand"
+msgstr "Marke"
+
+msgid "Colorway"
+msgstr "Farbpartie"
+
+msgid "Fiber content"
+msgstr "Faseranteil"
+
+msgid "Weight category"
+msgstr "Garnstärke"
+
+msgid "Weight (grams)"
+msgstr "Gewicht (Gramm)"
+
+msgid "Length (meters)"
+msgstr "Lauflänge (Meter)"
+
+msgid "Description"
+msgstr "Beschreibung"
+
+msgid "Photos"
+msgstr "Fotos"
+
+msgid "Optional, you can add multiple"
+msgstr "Optional, du kannst mehrere hinzufügen"
+
+msgid "Delete photo?"
+msgstr "Foto löschen?"
+
+msgid "Delete photo"
+msgstr "Foto löschen"
+
+msgid "Supported: JPG, PNG, GIF. Thumbnails are generated automatically."
+msgstr "Unterstützt: JPG, PNG, GIF. Vorschaubilder werden automatisch erstellt."
+
+msgid "Save"
+msgstr "Speichern"
+
+msgid "Yarn Stash"
+msgstr "Wollvorrat"
+
+msgid "Organize your yarn collection"
+msgstr "Organisiere deine Wollsammlung"
+
+msgid "Keep track of what you've bought, colorways, and quick notes so you always know what you have on hand."
+msgstr "Behalte den Überblick über deine Einkäufe, Farbpartien und Notizen, damit du immer weißt, was du vorrätig hast."
+
+msgid "Search yarn..."
+msgstr "Wolle suchen..."
+
+msgid "Start your stash"
+msgstr "Beginne deinen Vorrat"
+
+msgid "Track skeins, colorways, and notes so you know what you can use next."
+msgstr "Erfasse Stränge, Farbpartien und Notizen, damit du weißt, was du als nächstes verwenden kannst."
+
+msgid "Add your first yarn"
+msgstr "Füge deine erste Wolle hinzu"
+
+msgid "Photo for %(name)s"
+msgstr "Foto für %(name)s"
+
+msgid "No description yet."
+msgstr "Noch keine Beschreibung."
+
+msgid "Yarn details"
+msgstr "Wolle Details"
+
+msgid "Added"
+msgstr "Hinzugefügt"
+
+msgid "Updated"
+msgstr "Aktualisiert"
+
+msgid "photos"
+msgstr "Fotos"
+
+msgid "projects linked"
+msgstr "Projekte verknüpft"
+
+msgid "Delete this yarn? This will remove its photos too."
+msgstr "Diese Wolle löschen? Dies wird auch die Fotos entfernen."
+
+msgid "Preview photo for %(name)s"
+msgstr "Vorschaufoto für %(name)s"
+
+msgid "Weight"
+msgstr "Gewicht"
+
+msgid "Grams"
+msgstr "Gramm"
+
+msgid "Length"
+msgstr "Länge"
+
+msgid "Linked projects"
+msgstr "Verknüpfte Projekte"
+
+msgid "No projects linked yet."
+msgstr "Noch keine Projekte verknüpft."
+
+msgid "Show off your skeins and swatches"
+msgstr "Zeige deine Stränge und Maschenproben"
+
+msgid "Add photos"
+msgstr "Fotos hinzufügen"
+
+msgid "No photos yet. Add a skein or swatch photo to recognize this yarn quickly."
+msgstr "Noch keine Fotos. Füge ein Foto vom Strang oder der Maschenprobe hinzu, um die Wolle schnell wiederzuerkennen."
+
+msgid "Fiber"
+msgstr "Faser"
