@@ -1,7 +1,7 @@
 """Database models for Stricknani."""
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 
 from sqlalchemy import (
@@ -50,7 +50,9 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
     profile_image: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Relationships
@@ -75,7 +77,7 @@ class User(Base):
     )
 
 
-user_favorites = Table(
+user_favorites: Table = Table(
     "user_favorites",
     Base.metadata,
     Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
@@ -88,7 +90,7 @@ user_favorites = Table(
 )
 
 
-user_favorite_yarns = Table(
+user_favorite_yarns: Table = Table(
     "user_favorite_yarns",
     Base.metadata,
     Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
@@ -116,10 +118,12 @@ class Project(Base):
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, index=True
+        DateTime, default=lambda: datetime.now(UTC), index=True
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     # Foreign key
@@ -172,7 +176,7 @@ class Category(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
+        DateTime, default=lambda: datetime.now(UTC), nullable=False
     )
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE")
@@ -197,10 +201,13 @@ class Yarn(Base):
     length_meters: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, index=True, nullable=False
+        DateTime, default=lambda: datetime.now(UTC), index=True, nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
     )
 
     owner_id: Mapped[int] = mapped_column(
@@ -235,7 +242,9 @@ class Step(Base):
     title: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     step_number: Mapped[int] = mapped_column(Integer)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
 
     # Foreign key
     project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id"))
@@ -258,7 +267,9 @@ class Image(Base):
     image_type: Mapped[str] = mapped_column(String(20))
     alt_text: Mapped[str] = mapped_column(String(255))
     is_title_image: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
 
     # Foreign keys
     project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id"))
@@ -280,7 +291,9 @@ class YarnImage(Base):
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
     alt_text: Mapped[str] = mapped_column(String(255), nullable=False, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
 
     yarn_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("yarns.id", ondelete="CASCADE"), index=True
@@ -289,7 +302,7 @@ class YarnImage(Base):
     yarn: Mapped["Yarn"] = relationship("Yarn", back_populates="photos")
 
 
-project_yarns = Table(
+project_yarns: Table = Table(
     "project_yarns",
     Base.metadata,
     Column(

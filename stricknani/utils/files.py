@@ -1,7 +1,7 @@
 """File management utilities."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import UploadFile
@@ -23,7 +23,7 @@ def generate_unique_filename(original_filename: str) -> str:
     ext = Path(original_filename).suffix.lower()
 
     # Generate unique name with timestamp and short UUID
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     short_uuid = str(uuid.uuid4())[:8]
 
     return f"{timestamp}_{short_uuid}{ext}"

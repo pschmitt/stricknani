@@ -28,7 +28,7 @@ from stricknani.utils.auth import (
     get_user_by_email,
 )
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router: APIRouter = APIRouter(prefix="/auth", tags=["auth"])
 
 
 async def get_current_user(

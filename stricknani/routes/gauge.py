@@ -10,7 +10,7 @@ from stricknani.models import User
 from stricknani.routes.auth import get_current_user
 from stricknani.utils.gauge import calculate_gauge
 
-router = APIRouter(prefix="/gauge", tags=["gauge"])
+router: APIRouter = APIRouter(prefix="/gauge", tags=["gauge"])
 
 
 @router.get("/", response_class=HTMLResponse)

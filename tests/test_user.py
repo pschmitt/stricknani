@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import Any
 
 import pytest
 from PIL import Image as PILImage
@@ -16,7 +17,7 @@ def _generate_avatar_bytes(color: str = "orange") -> BytesIO:
 
 
 @pytest.mark.asyncio
-async def test_upload_profile_image_updates_avatar(test_client):
+async def test_upload_profile_image_updates_avatar(test_client: Any) -> None:
     client, session_factory, user_id, _project_id, _step_id = test_client
 
     response = await client.post(

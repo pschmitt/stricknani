@@ -1,6 +1,7 @@
 """Test authentication utilities."""
 
 from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -90,20 +91,20 @@ async def test_authenticate_user(db_session: AsyncSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_login_cookie_not_secure_by_default(monkeypatch) -> None:
+async def test_login_cookie_not_secure_by_default(monkeypatch: Any) -> None:
     """The session cookie should omit the Secure flag when disabled in config."""
 
     class DummyUser:
         def __init__(self) -> None:
             self.email = "tester@example.com"
 
-    async def fake_auth(_db, _email, _password):
+    async def fake_auth(_db: Any, _email: str, _password: str) -> DummyUser:
         return DummyUser()
 
-    def fake_token(data, expires_delta=None):  # type: ignore[unused-argument]
+    def fake_token(data: dict[str, Any], expires_delta: Any = None) -> str:
         return "dummy-token"
 
-    async def override_db():
+    async def override_db() -> AsyncGenerator[None]:
         yield None
 
     monkeypatch.setattr(config, "SESSION_COOKIE_SECURE", False)

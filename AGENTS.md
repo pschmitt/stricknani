@@ -12,18 +12,20 @@ This document contains instructions for AI agents working on the Stricknani code
 
 ### 2. Linting & Code Quality
 *   **Mandatory**: `ruff check` must pass.
-*   **Recommended**: `mypy` (strict mode) should pass.
+*   **Mandatory**: `mypy` (strict mode) must pass.
 *   **Mandatory**: Trim trailing whitespace from all code, configuration, and documentation files.
 *   Run `just lint` to verify.
 
 ### 3. Testing
 *   **Mandatory**: Run `pytest` to ensure no regressions.
+*   **Mandatory**: Add new tests when adding new features.
 *   Run `just test` to verify.
 
 ### 4. Build & Deployment
 *   **Mandatory**: Ensure the Docker container builds successfully.
 *   **Mandatory**: Ensure Nix flake checks pass (`nix flake check`).
 *   Run `just check` to run all verifications (lint, test, build checks).
+*   **Note**: `just lint` and `just test` must always pass.
 
 ---
 

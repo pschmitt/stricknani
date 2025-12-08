@@ -2,10 +2,11 @@
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from babel.messages.mofile import write_mo
 from babel.messages.pofile import read_po
-from babel.support import Translations
+from babel.support import NullTranslations, Translations
 from jinja2 import Environment
 
 from stricknani.config import config
@@ -14,7 +15,7 @@ from stricknani.config import config
 LOCALES_DIR = Path(__file__).parent.parent / "locales"
 
 
-def get_translations(language: str) -> Translations:
+def get_translations(language: str) -> Translations | NullTranslations:
     """Get translations for a specific language.
 
     Args:
@@ -68,8 +69,6 @@ def get_translations(language: str) -> Translations:
         )
 
     # Return null translations if file doesn't exist
-    from babel.support import NullTranslations
-
     return NullTranslations()
 
 
@@ -122,7 +121,7 @@ def install_i18n(env: Environment, language: str | None = None) -> None:
     translations = get_translations(language)
 
     def _wrap_gettext(func: Callable[..., str]) -> Callable[..., str]:
-        def _translator(message: str, *args, **kwargs) -> str:
+        def _translator(message: str, *args: Any, **kwargs: Any) -> str:
             text = func(message)
             if kwargs:
                 try:
@@ -139,7 +138,9 @@ def install_i18n(env: Environment, language: str | None = None) -> None:
         return _translator
 
     def _wrap_ngettext(func: Callable[..., str]) -> Callable[..., str]:
-        def _translator(singular: str, plural: str, n: int, *args, **kwargs) -> str:
+        def _translator(
+            singular: str, plural: str, n: int, *args: Any, **kwargs: Any
+        ) -> str:
             text = func(singular, plural, n)
             if kwargs:
                 try:

@@ -33,7 +33,7 @@ from stricknani.utils.files import (
 )
 from stricknani.utils.markdown import render_markdown
 
-router = APIRouter(prefix="/yarn", tags=["yarn"])
+router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
 
 
 def _parse_optional_int(field_name: str, value: str | None) -> int | None:
@@ -277,7 +277,7 @@ async def yarn_detail(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_current_user),
-) -> HTMLResponse:
+) -> Response:
     """Show yarn details."""
 
     if not current_user:

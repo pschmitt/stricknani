@@ -1,12 +1,12 @@
 """Main FastAPI application."""
 
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -59,7 +59,9 @@ access_logger = logging.getLogger("stricknani.access")
 
 
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def log_requests(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     """Log incoming requests similar to the access log."""
 
     response = await call_next(request)
@@ -104,7 +106,7 @@ def get_language(request: Request) -> str:
 def render_template(
     template_name: str,
     request: Request,
-    context: dict | None = None,
+    context: dict[str, Any] | None = None,
     status_code: int = 200,
 ) -> HTMLResponse:
     """Render a template with i18n support.
@@ -143,8 +145,9 @@ def render_template(
     context.setdefault("current_user_avatar_thumbnail", avatar_thumb)
 
     return templates.TemplateResponse(
-        template_name,
-        context,
+        request=request,
+        name=template_name,
+        context=context,
         status_code=status_code,
     )
 

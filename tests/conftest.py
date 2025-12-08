@@ -1,3 +1,6 @@
+from collections.abc import AsyncGenerator
+from typing import Any
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -12,13 +15,15 @@ from stricknani.utils.auth import get_password_hash
 
 @pytest.fixture
 async def test_client(
-    tmp_path,
-) -> tuple[
-    AsyncClient,
-    async_sessionmaker[AsyncSession],
-    int,
-    int,
-    int,
+    tmp_path: Any,
+) -> AsyncGenerator[
+    tuple[
+        AsyncClient,
+        async_sessionmaker[AsyncSession],
+        int,
+        int,
+        int,
+    ],
 ]:
     engine = create_async_engine("sqlite+aiosqlite:///:memory:?cache=shared")
     async with engine.begin() as conn:
@@ -57,7 +62,7 @@ async def test_client(
     config.MEDIA_ROOT = tmp_path / "media"
     config.ensure_media_dirs()
 
-    async def override_get_db():
+    async def override_get_db() -> AsyncGenerator[AsyncSession]:
         async with session_factory() as session:
             yield session
 

@@ -31,7 +31,7 @@ from stricknani.utils.files import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/user", tags=["user"])
+router: APIRouter = APIRouter(prefix="/user", tags=["user"])
 
 
 @router.get("/profile", response_class=HTMLResponse)

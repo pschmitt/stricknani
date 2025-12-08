@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Literal, cast
 
 from dotenv import load_dotenv
 
@@ -33,7 +34,9 @@ class Config:
     LANGUAGE_COOKIE_SECURE: bool = (
         os.getenv("LANGUAGE_COOKIE_SECURE", "false").lower() == "true"
     )
-    COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE", "lax")
+    COOKIE_SAMESITE: Literal["lax", "strict", "none"] = cast(
+        Literal["lax", "strict", "none"], os.getenv("COOKIE_SAMESITE", "lax")
+    )
 
     # Features
     FEATURE_SIGNUP_ENABLED: bool = (

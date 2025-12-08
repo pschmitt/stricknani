@@ -2,6 +2,7 @@
 
 import json
 import re
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Annotated
 
@@ -46,7 +47,7 @@ from stricknani.utils.files import (
 from stricknani.utils.i18n import install_i18n
 from stricknani.utils.markdown import render_markdown
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+router: APIRouter = APIRouter(prefix="/projects", tags=["projects"])
 
 
 def _parse_optional_int(field_name: str, value: str | None) -> int | None:
@@ -129,7 +130,7 @@ async def _get_user_categories(db: AsyncSession, user_id: int) -> list[str]:
     return sorted(user_categories | defaults)
 
 
-async def _get_user_yarns(db: AsyncSession, user_id: int) -> list[Yarn]:
+async def _get_user_yarns(db: AsyncSession, user_id: int) -> Sequence[Yarn]:
     """Return all yarns for a user ordered by name."""
 
     result = await db.execute(
@@ -143,7 +144,7 @@ async def _get_user_yarns(db: AsyncSession, user_id: int) -> list[Yarn]:
 
 async def _load_owned_yarns(
     db: AsyncSession, user_id: int, yarn_ids: list[int]
-) -> list[Yarn]:
+) -> Sequence[Yarn]:
     """Load yarns that belong to the user from provided IDs."""
 
     if not yarn_ids:
@@ -326,7 +327,7 @@ async def new_project_form(
     request: Request,
     current_user: User | None = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> HTMLResponse:
+) -> Response:
     """Show new project form."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
@@ -520,7 +521,7 @@ async def get_project(
     project_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_current_user),
-) -> HTMLResponse:
+) -> Response:
     """Get a specific project."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
@@ -642,7 +643,7 @@ async def edit_project_form(
     project_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_current_user),
-) -> HTMLResponse:
+) -> Response:
     """Show edit project form."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
@@ -763,7 +764,7 @@ async def create_project(
         owner_id=current_user.id,
         tags=_serialize_tags(normalized_tags),
     )
-    project.yarns = await _load_owned_yarns(db, current_user.id, yarn_ids)
+    project.yarns = list(await _load_owned_yarns(db, current_user.id, yarn_ids))
     project.yarn = project.yarns[0].name if project.yarns else None
     db.add(project)
     await db.flush()  # Get project ID
@@ -825,7 +826,7 @@ async def update_project(
 
     project.name = name.strip()
     project.category = await _ensure_category(db, current_user.id, category)
-    selected_yarns = await _load_owned_yarns(db, current_user.id, yarn_ids)
+    selected_yarns = list(await _load_owned_yarns(db, current_user.id, yarn_ids))
     project.yarns = selected_yarns
     project.yarn = selected_yarns[0].name if selected_yarns else None
     project.needles = needles.strip() if needles else None
