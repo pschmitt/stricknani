@@ -68,10 +68,10 @@
             <form action="/auth/login" method="post" class="space-y-4">
                 <div>
                     <label for="login-email" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Email') }}</label>
-                    <input 
-                        type="email" 
-                        id="login-email" 
-                        name="email" 
+                    <input
+                        type="email"
+                        id="login-email"
+                        name="email"
                         required
                         autocomplete="username"
                         aria-invalid="{{ 'true' if login_error else 'false' }}"
@@ -82,10 +82,10 @@
                 </div>
                 <div>
                     <label for="login-password" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Password') }}</label>
-                    <input 
-                        type="password" 
-                        id="login-password" 
-                        name="password" 
+                    <input
+                        type="password"
+                        id="login-password"
+                        name="password"
                         required
                         autocomplete="current-password"
                         aria-invalid="{{ 'true' if login_error else 'false' }}"
@@ -93,7 +93,7 @@
                         placeholder="••••••••"
                     >
                 </div>
-                <button 
+                <button
                     type="submit"
                     class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors dark:focus:ring-offset-slate-900 flex items-center justify-center gap-2"
                 >
@@ -101,10 +101,10 @@
                     {{ _('Login') }}
                 </button>
             </form>
-            
+
             {% if signup_enabled %}
             <div class="text-center">
-                <button 
+                <button
                     onclick="document.getElementById('login-form').classList.add('hidden'); document.getElementById('signup-form').classList.remove('hidden')"
                     class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 justify-center"
                 >
@@ -114,7 +114,7 @@
             </div>
             {% endif %}
         </div>
-        
+
         {% if signup_enabled %}
         <!-- Signup Form -->
         <div id="signup-form" class="space-y-6 hidden">
@@ -125,10 +125,10 @@
             <form action="/auth/signup" method="post" class="space-y-4">
                 <div>
                     <label for="signup-email" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Email') }}</label>
-                    <input 
-                        type="email" 
-                        id="signup-email" 
-                        name="email" 
+                    <input
+                        type="email"
+                        id="signup-email"
+                        name="email"
                         required
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                         placeholder="your@email.com"
@@ -136,10 +136,10 @@
                 </div>
                 <div>
                     <label for="signup-password" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Password') }}</label>
-                    <input 
-                        type="password" 
-                        id="signup-password" 
-                        name="password" 
+                    <input
+                        type="password"
+                        id="signup-password"
+                        name="password"
                         required
                         minlength="8"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
@@ -147,7 +147,7 @@
                     >
                     <p class="text-xs text-slate-500 mt-1 dark:text-slate-400">{{ _('At least 8 characters') }}</p>
                 </div>
-                <button 
+                <button
                     type="submit"
                     class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors dark:focus:ring-offset-slate-900 flex items-center justify-center gap-2"
                 >
@@ -155,9 +155,9 @@
                     {{ _('Sign Up') }}
                 </button>
             </form>
-            
+
             <div class="text-center">
-                <button 
+                <button
                     onclick="document.getElementById('signup-form').classList.add('hidden'); document.getElementById('login-form').classList.remove('hidden')"
                     class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 justify-center"
                 >

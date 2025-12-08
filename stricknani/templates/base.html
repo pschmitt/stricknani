@@ -32,14 +32,14 @@
         const applyTheme = (preference) => {
             const resolved = resolveTheme(preference);
             const root = document.documentElement;
-            
+
             // Apply to HTML element (Tailwind source of truth)
             if (resolved === "dark") {
                 root.classList.add("dark");
             } else {
                 root.classList.remove("dark");
             }
-            
+
             root.dataset.themePreference = preference;
             root.style.colorScheme = resolved;
 
@@ -68,7 +68,7 @@
             try {
                 current = localStorage.getItem("theme") || "system";
             } catch (e) {}
-            
+
             if (current === "system") {
                 applyTheme("system");
                 document.dispatchEvent(
@@ -102,21 +102,21 @@
             const normalized = ["light", "dark", "system"].includes(preference)
                 ? preference
                 : "system";
-            
+
             storedTheme = normalized; // Update local state
-            
+
             try {
                 localStorage.setItem("theme", normalized);
             } catch (e) {
                 console.warn("Failed to save theme preference", e);
             }
-            
+
             applyTheme(normalized);
-            
+
             document.dispatchEvent(
                 new CustomEvent("themechange", { detail: { preference: normalized } }),
             );
-            
+
             persistTheme(normalized);
         };
         window.tailwind = window.tailwind || {};
@@ -275,7 +275,7 @@
                 </div>
             </div>
         </div>
-        
+
         {% if current_user %}
         <div class="md:hidden hidden" id="mobile-menu">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur">

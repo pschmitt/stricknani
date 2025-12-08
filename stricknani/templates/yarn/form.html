@@ -61,14 +61,14 @@
             </div>
             <div class="md:col-span-2">
                 <label for="photos" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Photos') }} <span class="text-slate-400 text-xs">{{ _('Optional, you can add multiple') }}</span></label>
-                
+
                 {% if photos %}
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     {% for photo in photos %}
                     <div class="relative group aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
-                        <img 
-                            src="{{ photo.thumbnail_url }}" 
-                            alt="{{ photo.alt_text }}" 
+                        <img
+                            src="{{ photo.thumbnail_url }}"
+                            alt="{{ photo.alt_text }}"
                             class="h-full w-full object-cover cursor-zoom-in"
                             data-lightbox-group="yarn-{{ yarn.id }}"
                             data-lightbox-src="{{ photo.full_url }}"
@@ -109,7 +109,7 @@
 function previewImages(input) {
     const container = document.getElementById('image-preview-container');
     container.innerHTML = '';
-    
+
     if (input.files && input.files.length > 0) {
         container.classList.remove('hidden');
         Array.from(input.files).forEach(file => {
