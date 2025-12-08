@@ -509,6 +509,7 @@ All tests passing:
 Run `just demo-data` to create:
 - Demo user: `demo@stricknani.local` / `demo`
 - 3 sample projects (Baby Blanket, Winter Scarf, Spring Pullover)
+- 3 sample yarns (Merino Soft, Sock Delight, Chunky Monkey)
 
 ## Technical Decisions
 

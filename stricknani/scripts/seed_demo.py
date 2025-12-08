@@ -8,7 +8,15 @@ from sqlalchemy import select
 
 from stricknani.config import config
 from stricknani.database import AsyncSessionLocal, init_db
-from stricknani.models import Image, ImageType, Project, ProjectCategory, Step
+from stricknani.models import (
+    Image,
+    ImageType,
+    Project,
+    ProjectCategory,
+    Step,
+    Yarn,
+    YarnImage,
+)
 from stricknani.utils.auth import create_user, get_user_by_email
 
 
@@ -26,6 +34,85 @@ async def seed_demo_data() -> None:
 
         # Demo assets directory
         demo_assets_dir = Path(__file__).parent.parent.parent / "demo_assets"
+
+        # Create some demo yarns
+        demo_yarns = [
+            {
+                "name": "Merino Soft",
+                "brand": "CozyKnits",
+                "colorway": "Ocean Blue",
+                "fiber_content": "100% Merino Wool",
+                "weight_category": "DK",
+                "weight_grams": 100,
+                "length_meters": 220,
+                "notes": "Super soft, perfect for baby clothes.",
+                "photos": ["demo_image_1.jpg"],
+            },
+            {
+                "name": "Sock Delight",
+                "brand": "HappyFeet",
+                "colorway": "Rainbow",
+                "fiber_content": "75% Wool, 25% Nylon",
+                "weight_category": "Fingering",
+                "weight_grams": 100,
+                "length_meters": 400,
+                "notes": "Self-striping yarn.",
+                "photos": ["demo_image_2.jpg"],
+            },
+            {
+                "name": "Chunky Monkey",
+                "brand": "BigYarns",
+                "colorway": "Charcoal",
+                "fiber_content": "50% Wool, 50% Acrylic",
+                "weight_category": "Bulky",
+                "weight_grams": 200,
+                "length_meters": 150,
+                "notes": "Great for quick hats and scarves.",
+                "photos": ["demo_image_3.jpg"],
+            },
+        ]
+
+        for yarn_data in demo_yarns:
+            photos = yarn_data.pop("photos", [])
+
+            # Check if yarn already exists
+            result = await db.execute(
+                select(Yarn).where(
+                    Yarn.name == yarn_data["name"],
+                    Yarn.owner_id == demo_user.id,
+                )
+            )
+            existing = result.scalar_one_or_none()
+
+            if not existing:
+                yarn = Yarn(**yarn_data, owner_id=demo_user.id)
+                db.add(yarn)
+                await db.flush()  # Get yarn ID
+
+                # Copy and add photos
+                for img_filename in photos:
+                    src_path = demo_assets_dir / img_filename
+                    if src_path.exists():
+                        # Create yarn media directory
+                        yarn_media_dir = config.MEDIA_ROOT / "yarns" / str(yarn.id)
+                        yarn_media_dir.mkdir(parents=True, exist_ok=True)
+
+                        # Copy image
+                        dst_path = yarn_media_dir / img_filename
+                        shutil.copy2(src_path, dst_path)
+
+                        # Create image record
+                        image = YarnImage(
+                            filename=img_filename,
+                            original_filename=img_filename,
+                            alt_text=f"{yarn.name} photo",
+                            yarn_id=yarn.id,
+                        )
+                        db.add(image)
+
+                print(f"Created yarn: {yarn_data['name']}")
+            else:
+                print(f"Yarn already exists: {yarn_data['name']}")
 
         # Create some demo projects
         demo_projects = [
