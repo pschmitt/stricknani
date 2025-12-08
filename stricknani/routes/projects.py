@@ -225,7 +225,8 @@ async def list_projects(
         query = query.where(Project.name.ilike(f"%{search}%"))
 
     query = query.options(
-        selectinload(Project.images).selectinload(Image.step)
+        selectinload(Project.images).selectinload(Image.step),
+        selectinload(Project.yarns),
     ).order_by(Project.created_at.desc())
 
     result = await db.execute(query)
@@ -282,6 +283,8 @@ async def list_projects(
             "name": project.name,
             "category": project.category,
             "created_at": project.created_at.isoformat(),
+            "updated_at": project.updated_at.isoformat(),
+            "yarn_count": len(project.yarns),
             "is_favorite": project.id in favorite_ids,
             "thumbnail_url": thumbnail_url,
             "image_alt": image_alt,

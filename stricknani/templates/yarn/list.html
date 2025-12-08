@@ -95,6 +95,23 @@
                     {% endif %}
                 </div>
 
+                <div class="mt-3 flex flex-wrap gap-2 text-xs mb-4">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        <span class="mdi mdi-calendar-plus"></span>
+                        {{ yarn.created_at[:10] }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        <span class="mdi mdi-update"></span>
+                        {{ yarn.updated_at[:10] }}
+                    </span>
+                    {% if yarn.project_count > 0 %}
+                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+                        <span class="mdi mdi-folder-multiple-outline"></span>
+                        {{ yarn.project_count }}
+                    </span>
+                    {% endif %}
+                </div>
+
                 <p class="line-clamp-2 text-sm text-slate-300 mb-4">{{ yarn.description or _('No description yet.') }}</p>
                 
                 <div class="flex gap-2">

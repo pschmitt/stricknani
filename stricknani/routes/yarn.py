@@ -123,6 +123,7 @@ def _serialize_yarn_cards(
                 "notes": yarn.notes,
                 "created_at": yarn.created_at.isoformat() if yarn.created_at else None,
                 "updated_at": yarn.updated_at.isoformat() if yarn.updated_at else None,
+                "project_count": len(yarn.projects),
                 "is_favorite": yarn.id in favorites,
             },
             "preview_url": _resolve_preview(yarn),
@@ -149,7 +150,7 @@ async def list_yarns(
     query = (
         select(Yarn)
         .where(Yarn.owner_id == current_user.id)
-        .options(selectinload(Yarn.photos))
+        .options(selectinload(Yarn.photos), selectinload(Yarn.projects))
         .order_by(Yarn.created_at.desc())
     )
 
