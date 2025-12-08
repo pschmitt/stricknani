@@ -455,6 +455,9 @@ msgstr "Deutsch"
 msgid "Add Yarn"
 msgstr "Wolle hinzufügen"
 
+msgid "New Yarn"
+msgstr "Neue Wolle"
+
 msgid "New yarn entry"
 msgstr "Neuer Wolleintrag"
 
