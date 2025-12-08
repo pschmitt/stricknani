@@ -231,8 +231,12 @@
                     <span class="mdi mdi-chevron-right text-3xl"></span>
                 </button>
             </div>
+            <div class="hidden w-80 flex-col border-l border-slate-800 bg-slate-900/50 p-4 lg:flex overflow-y-auto">
+                <h3 class="mb-4 text-sm font-medium text-slate-400">{{ _('Gallery') }}</h3>
+                <div class="grid grid-cols-2 gap-2" data-lightbox-thumbnails></div>
+            </div>
         </div>
-    </div>
+    </dialog>
 
     <script>
         const toastVariants = {
@@ -347,6 +351,7 @@
             const closeButton = lightbox.querySelector("[data-lightbox-close]");
             const prevButton = lightbox.querySelector("[data-lightbox-prev]");
             const nextButton = lightbox.querySelector("[data-lightbox-next]");
+            const thumbnailsContainer = lightbox.querySelector("[data-lightbox-thumbnails]");
 
             let currentIndex = 0;
             let currentItems = [];
@@ -363,6 +368,34 @@
                 }
             };
 
+            const renderThumbnails = () => {
+                if (!thumbnailsContainer) {
+                    return;
+                }
+                thumbnailsContainer.innerHTML = "";
+                currentItems.forEach((item, index) => {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = `relative aspect-square w-full overflow-hidden rounded-lg border-2 transition ${
+                        index === currentIndex
+                            ? "border-blue-500 ring-2 ring-blue-500/20"
+                            : "border-transparent hover:border-slate-600"
+                    }`;
+                    button.onclick = () => {
+                        currentIndex = index;
+                        render();
+                    };
+
+                    const img = document.createElement("img");
+                    img.src = item.src;
+                    img.alt = item.alt;
+                    img.className = "h-full w-full object-cover";
+
+                    button.appendChild(img);
+                    thumbnailsContainer.appendChild(button);
+                });
+            };
+
             const render = () => {
                 const active = currentItems[currentIndex];
                 if (!active) {
@@ -372,6 +405,7 @@
                 image.alt = active.alt;
                 caption.textContent = active.alt || "";
                 updateNavigationState();
+                renderThumbnails();
             };
 
             const close = () => {
