@@ -13,7 +13,13 @@ from stricknani.utils.auth import get_password_hash
 @pytest.fixture
 async def test_client(
     tmp_path,
-) -> tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int]:
+) -> tuple[
+    AsyncClient,
+    async_sessionmaker[AsyncSession],
+    int,
+    int,
+    int,
+]:
     engine = create_async_engine("sqlite+aiosqlite:///:memory:?cache=shared")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -22,7 +28,8 @@ async def test_client(
 
     async with session_factory() as session:
         user = User(
-            email="tester@example.com", hashed_password=get_password_hash("secret")
+            email="tester@example.com",
+            hashed_password=get_password_hash("secret"),
         )
         session.add(user)
         await session.commit()

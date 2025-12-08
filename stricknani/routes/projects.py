@@ -254,9 +254,8 @@ async def list_projects(
             url = None
             if thumb_path.exists():
                 url = get_thumbnail_url(img.filename, project.id, subdir="projects")
-            elif (
-                config.MEDIA_ROOT / "projects" / str(project.id) / img.filename
-            ).exists():
+            file_path = config.MEDIA_ROOT / "projects" / str(project.id) / img.filename
+            if file_path.exists():
                 url = get_file_url(img.filename, project.id, subdir="projects")
 
             if url:
@@ -551,11 +550,13 @@ async def create_project(
     comment: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
-    yarn_ids: Annotated[list[int], Form()] = [],
+    yarn_ids: Annotated[list[int] | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
     """Create a new project."""
+    if yarn_ids is None:
+        yarn_ids = []
     gauge_stitches_value = _parse_optional_int("gauge_stitches", gauge_stitches)
     gauge_rows_value = _parse_optional_int("gauge_rows", gauge_rows)
     normalized_category = await _ensure_category(db, current_user.id, category)
@@ -607,11 +608,13 @@ async def update_project(
     comment: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
-    yarn_ids: Annotated[list[int], Form()] = [],
+    yarn_ids: Annotated[list[int] | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
     """Update a project."""
+    if yarn_ids is None:
+        yarn_ids = []
     result = await db.execute(
         select(Project)
         .where(Project.id == project_id)

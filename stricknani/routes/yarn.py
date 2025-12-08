@@ -207,11 +207,13 @@ async def create_yarn(
     weight_grams: Annotated[str | None, Form()] = None,
     length_meters: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
-    photos: Annotated[list[UploadFile], File()] = [],
+    photos: Annotated[list[UploadFile] | None, File()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
     """Create a yarn entry."""
+    if photos is None:
+        photos = []
 
     yarn = Yarn(
         name=name.strip(),
@@ -317,11 +319,13 @@ async def update_yarn(
     weight_grams: Annotated[str | None, Form()] = None,
     length_meters: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
-    new_photos: Annotated[list[UploadFile], File()] = [],
+    new_photos: Annotated[list[UploadFile] | None, File()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
     """Update a yarn entry."""
+    if new_photos is None:
+        new_photos = []
 
     yarn = await _fetch_yarn(db, yarn_id, current_user.id)
     if yarn is None:
