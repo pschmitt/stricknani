@@ -30,7 +30,6 @@ from stricknani.models import (
     Image,
     ImageType,
     Project,
-    ProjectCategory,
     Step,
     User,
     Yarn,
@@ -114,20 +113,38 @@ def _deserialize_tags(raw: str | None) -> list[str]:
     return [segment.strip() for segment in raw.split(",") if segment.strip()]
 
 
-async def _get_user_categories(db: AsyncSession, user_id: int) -> list[str]:
-    """Return all categories for a user including defaults."""
+async def _sync_project_categories(db: AsyncSession, user_id: int) -> None:
+    """Ensure categories used in projects exist in the category table."""
+    project_result = await db.execute(
+        select(Project.category)
+        .where(Project.owner_id == user_id)
+        .distinct()
+    )
+    project_categories = {row[0] for row in project_result if row[0]}
+    if not project_categories:
+        return
 
-    # Get user defined categories
+    existing_result = await db.execute(
+        select(Category.name).where(Category.user_id == user_id)
+    )
+    existing = {row[0] for row in existing_result}
+    missing = project_categories - existing
+    if not missing:
+        return
+
+    for name in sorted(missing):
+        db.add(Category(name=name, user_id=user_id))
+    await db.commit()
+
+
+async def _get_user_categories(db: AsyncSession, user_id: int) -> list[str]:
+    """Return all categories for a user."""
+    await _sync_project_categories(db, user_id)
+
     result = await db.execute(
         select(Category).where(Category.user_id == user_id).order_by(Category.name)
     )
-    user_categories = {category.name for category in result.scalars()}
-
-    # Add defaults
-    defaults = {cat.value for cat in ProjectCategory}
-
-    # Combine and sort
-    return sorted(user_categories | defaults)
+    return [category.name for category in result.scalars()]
 
 
 async def _get_user_yarns(db: AsyncSession, user_id: int) -> Sequence[Yarn]:
@@ -355,6 +372,8 @@ async def _render_categories_page(
     message: str | None = None,
     error: str | None = None,
 ) -> HTMLResponse:
+    await _sync_project_categories(db, current_user.id)
+
     categories_result = await db.execute(
         select(Category)
         .where(Category.user_id == current_user.id)

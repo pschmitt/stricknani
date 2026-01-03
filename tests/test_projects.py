@@ -172,3 +172,15 @@ async def test_upload_step_image_creates_image_record(
     assert media_path.exists()
     assert thumb_path.exists()
     assert any(thumb_path.iterdir())
+
+
+@pytest.mark.asyncio
+async def test_manage_categories_includes_project_categories(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, _session_factory, _user_id, _project_id, _step_id = test_client
+
+    response = await client.get("/projects/categories")
+
+    assert response.status_code == 200
+    assert 'value="Schal"' in response.text
