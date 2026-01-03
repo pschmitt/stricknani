@@ -115,3 +115,42 @@ async def reset_password(
     user.is_active = True
     await db.commit()
     return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/users/create")
+async def create_user_admin(
+    email: str = Form(...),
+    password: str = Form(...),
+    is_admin: bool = Form(False),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> RedirectResponse:
+    """Create a new user from the admin UI."""
+    normalized_email = email.strip().lower()
+    if not normalized_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email cannot be empty",
+        )
+    if not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password cannot be empty",
+        )
+
+    existing = await db.execute(select(User.id).where(User.email == normalized_email))
+    if existing.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    user = User(
+        email=normalized_email,
+        hashed_password=get_password_hash(password),
+        is_active=True,
+        is_admin=is_admin,
+    )
+    db.add(user)
+    await db.commit()
+    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)

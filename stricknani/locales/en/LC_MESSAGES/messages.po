@@ -495,3 +495,18 @@ msgstr "New password"
 
 msgid "Reset password"
 msgstr "Reset password"
+
+msgid "Create user"
+msgstr "Create user"
+
+msgid "Add a new account with a temporary password."
+msgstr "Add a new account with a temporary password."
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Temporary password"
+msgstr "Temporary password"
+
+msgid "Grant admin access"
+msgstr "Grant admin access"

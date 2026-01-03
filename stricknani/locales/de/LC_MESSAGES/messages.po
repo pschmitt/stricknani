@@ -667,3 +667,18 @@ msgstr "Neues Passwort"
 
 msgid "Reset password"
 msgstr "Passwort zurücksetzen"
+
+msgid "Create user"
+msgstr "Benutzer erstellen"
+
+msgid "Add a new account with a temporary password."
+msgstr "Neues Konto mit einem temporären Passwort anlegen."
+
+msgid "Email"
+msgstr "E-Mail"
+
+msgid "Temporary password"
+msgstr "Temporäres Passwort"
+
+msgid "Grant admin access"
+msgstr "Admin-Zugriff gewähren"

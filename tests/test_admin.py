@@ -3,6 +3,8 @@ from typing import Any
 import pytest
 
 from stricknani.main import app
+from sqlalchemy import select
+
 from stricknani.models import User
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.auth import get_password_hash
@@ -72,3 +74,33 @@ async def test_admin_toggle_active_updates_user(
         updated = await session.get(User, other_id)
         assert updated is not None
         assert updated.is_active is False
+
+
+@pytest.mark.asyncio
+async def test_admin_create_user(test_client: Any) -> None:
+    client, session_factory, user_id, _project_id, _step_id = test_client
+
+    async def override_admin() -> AdminUser:
+        return AdminUser(user_id, "tester@example.com")
+
+    app.dependency_overrides[require_auth] = override_admin
+    app.dependency_overrides[get_current_user] = override_admin
+
+    response = await client.post(
+        "/admin/users/create",
+        data={
+            "email": "new-user@example.com",
+            "password": "temporary-pass",
+            "is_admin": "on",
+        },
+    )
+
+    assert response.status_code == 303
+
+    async with session_factory() as session:
+        created = await session.execute(
+            select(User).where(User.email == "new-user@example.com")
+        )
+        user = created.scalar_one_or_none()
+        assert user is not None
+        assert user.is_admin is True
