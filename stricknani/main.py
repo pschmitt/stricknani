@@ -130,6 +130,10 @@ def render_template(
     # Add request and language to context
     context["request"] = request
     context["current_language"] = language
+    context.setdefault(
+        "is_dev_instance",
+        request.url.hostname in {"localhost", "127.0.0.1"} or config.DEBUG,
+    )
 
     current_user = context.get("current_user")
     avatar_url = None
