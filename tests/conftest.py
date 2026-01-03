@@ -67,10 +67,11 @@ async def test_client(
             yield session
 
     class AuthUser:
-        def __init__(self, user_id: int, email: str) -> None:
+        def __init__(self, user_id: int, email: str, is_admin: bool = False) -> None:
             self.id = user_id
             self.email = email
             self.profile_image = None
+            self.is_admin = is_admin
 
     auth_user = AuthUser(user_id, "tester@example.com")
 

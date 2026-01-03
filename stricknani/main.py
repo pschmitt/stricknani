@@ -171,13 +171,14 @@ async def healthz() -> dict[str, str]:
 
 
 # Import routes
-from stricknani.routes import auth, gauge, projects, user, yarn  # noqa: E402
+from stricknani.routes import admin, auth, gauge, projects, user, yarn  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(gauge.router)
 app.include_router(user.router)
 app.include_router(yarn.router)
+app.include_router(admin.router)
 
 
 # Login page

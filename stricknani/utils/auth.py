@@ -64,6 +64,8 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> User
     user = await get_user_by_email(db, email)
     if not user:
         return None
+    if not user.is_active:
+        return None
     if not verify_password(password, user.hashed_password):
         return None
     return user
@@ -87,20 +89,27 @@ async def ensure_initial_admin() -> None:
         return
 
     async with AsyncSessionLocal() as session:
+        existing = await get_user_by_email(session, email)
+        if existing:
+            if not existing.is_active:
+                existing.is_active = True
+            if not existing.is_admin:
+                existing.is_admin = True
+            await session.commit()
+            return
+
         # If any user exists, do nothing to avoid clobbering existing installs
         existing_any = await session.execute(select(User.id).limit(1))
         if existing_any.scalar_one_or_none() is not None:
             return
 
-        existing = await get_user_by_email(session, email)
-        if existing:
-            if not existing.is_active:
-                existing.is_active = True
-                await session.commit()
-            return
-
         hashed_password = get_password_hash(password)
-        user = User(email=email, hashed_password=hashed_password, is_active=True)
+        user = User(
+            email=email,
+            hashed_password=hashed_password,
+            is_active=True,
+            is_admin=True,
+        )
         session.add(user)
         await session.commit()
         await session.refresh(user)

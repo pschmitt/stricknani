@@ -127,6 +127,12 @@
                                 </form>
                             </div>
                             <div class="space-y-2 px-4 py-4" role="group">
+                                {% if current_user.is_admin %}
+                                <a href="/admin/users" class="flex w-full items-center gap-2 rounded-md border border-transparent px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-blue-500 hover:bg-blue-500/20 hover:text-blue-200" role="menuitem">
+                                    <span class="mdi mdi-shield-account text-lg"></span>
+                                    {{ _('Admin') }}
+                                </a>
+                                {% endif %}
                                 <a href="/user/profile" class="flex w-full items-center gap-2 rounded-md border border-transparent px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-blue-500 hover:bg-blue-500/20 hover:text-blue-200" role="menuitem">
                                     <span class="mdi mdi-account-details-outline text-lg"></span>
                                     {{ _('Profile') }}
@@ -172,6 +178,11 @@
                 <a href="/gauge" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/gauge') %}bg-blue-600 text-white{% else %}text-slate-200 hover:text-blue-400 hover:bg-slate-800{% endif %}">
                     <span class="mdi mdi-ruler mr-2"></span>{{ _('Gauge Calculator') }}
                 </a>
+                {% if current_user.is_admin %}
+                <a href="/admin/users" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/admin') %}bg-blue-600 text-white{% else %}text-slate-200 hover:text-blue-400 hover:bg-slate-800{% endif %}">
+                    <span class="mdi mdi-shield-account mr-2"></span>{{ _('Admin') }}
+                </a>
+                {% endif %}
             </div>
         </div>
         {% endif %}

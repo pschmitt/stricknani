@@ -622,3 +622,48 @@ msgstr "Wird hochgeladen..."
 
 msgid "Failed to upload image."
 msgstr "Bild konnte nicht hochgeladen werden."
+
+msgid "Admin"
+msgstr "Admin"
+
+msgid "User Management"
+msgstr "Benutzerverwaltung"
+
+msgid "Manage accounts, roles, and access for your instance."
+msgstr "Verwalte Konten, Rollen und Zugriffsrechte für deine Instanz."
+
+msgid "Total users"
+msgstr "Benutzer insgesamt"
+
+msgid "User ID"
+msgstr "Benutzer-ID"
+
+msgid "Active"
+msgstr "Aktiv"
+
+msgid "Yes"
+msgstr "Ja"
+
+msgid "No"
+msgstr "Nein"
+
+msgid "You"
+msgstr "Du"
+
+msgid "Revoke admin"
+msgstr "Admin entziehen"
+
+msgid "Make admin"
+msgstr "Zum Admin machen"
+
+msgid "Deactivate"
+msgstr "Deaktivieren"
+
+msgid "Activate"
+msgstr "Aktivieren"
+
+msgid "New password"
+msgstr "Neues Passwort"
+
+msgid "Reset password"
+msgstr "Passwort zurücksetzen"

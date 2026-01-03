@@ -90,6 +90,19 @@ async def test_authenticate_user(db_session: AsyncSession) -> None:
     assert user is None
 
 
+async def test_authenticate_user_inactive(db_session: AsyncSession) -> None:
+    """Inactive users should not authenticate."""
+    email = "inactive@example.com"
+    password = "test_password"
+
+    user = await create_user(db_session, email, password)
+    user.is_active = False
+    await db_session.commit()
+
+    authenticated = await authenticate_user(db_session, email, password)
+    assert authenticated is None
+
+
 @pytest.mark.asyncio
 async def test_login_cookie_not_secure_by_default(monkeypatch: Any) -> None:
     """The session cookie should omit the Secure flag when disabled in config."""

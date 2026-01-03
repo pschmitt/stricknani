@@ -17,7 +17,7 @@ from stricknani.models import User
 from stricknani.utils.auth import get_password_hash, get_user_by_email
 
 
-async def upsert_user(email: str, password: str) -> None:
+async def upsert_user(email: str, password: str, is_admin: bool | None) -> None:
     """Create or update a user with the given credentials."""
     await init_db()
     async with AsyncSessionLocal() as session:
@@ -27,11 +27,18 @@ async def upsert_user(email: str, password: str) -> None:
         if user:
             user.hashed_password = hashed
             user.is_active = True
+            if is_admin is not None:
+                user.is_admin = is_admin
             await session.commit()
             print(f"Updated password for existing user {email}")
             return
 
-        new_user = User(email=email, hashed_password=hashed, is_active=True)
+        new_user = User(
+            email=email,
+            hashed_password=hashed,
+            is_active=True,
+            is_admin=bool(is_admin),
+        )
         session.add(new_user)
         await session.commit()
         print(f"Created user {email}")
@@ -44,7 +51,14 @@ async def list_users() -> None:
         result = await session.execute(select(User))
         users = result.scalars().all()
         for user in users:
-            print(f"ID: {user.id}, Email: {user.email}, Active: {user.is_active}")
+            print(
+                "ID: {id}, Email: {email}, Active: {active}, Admin: {admin}".format(
+                    id=user.id,
+                    email=user.email,
+                    active=user.is_active,
+                    admin=user.is_admin,
+                )
+            )
 
 
 async def delete_user(email: str) -> None:
@@ -58,6 +72,34 @@ async def delete_user(email: str) -> None:
         await session.delete(user)
         await session.commit()
         print(f"Deleted user {email}")
+
+
+async def set_user_admin(email: str, is_admin: bool) -> None:
+    """Promote or demote a user."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        user = await get_user_by_email(session, email)
+        if not user:
+            print(f"User {email} not found.", file=sys.stderr)
+            return
+        user.is_admin = is_admin
+        await session.commit()
+        state = "admin" if is_admin else "regular"
+        print(f"Updated {email} to {state} user")
+
+
+async def reset_password(email: str, password: str) -> None:
+    """Reset a user's password."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        user = await get_user_by_email(session, email)
+        if not user:
+            print(f"User {email} not found.", file=sys.stderr)
+            return
+        user.hashed_password = get_password_hash(password)
+        user.is_active = True
+        await session.commit()
+        print(f"Reset password for {email}")
 
 
 async def api_request(url: str, endpoint: str, email: str, password: str) -> None:
@@ -124,13 +166,34 @@ def main() -> None:
     create_parser = user_subparsers.add_parser("create", help="Create or update a user")
     create_parser.add_argument("--email", required=True, help="User email")
     create_parser.add_argument("--password", help="Password (omit to prompt)")
+    admin_group = create_parser.add_mutually_exclusive_group()
+    admin_group.add_argument(
+        "--admin", action="store_true", help="Grant admin privileges"
+    )
+    admin_group.add_argument(
+        "--no-admin", action="store_true", help="Revoke admin privileges"
+    )
 
     # user list
     user_subparsers.add_parser("list", help="List all users")
 
+    # user promote/demote
+    promote_parser = user_subparsers.add_parser("promote", help="Promote a user")
+    promote_parser.add_argument("--email", required=True, help="User email")
+
+    demote_parser = user_subparsers.add_parser("demote", help="Demote a user")
+    demote_parser.add_argument("--email", required=True, help="User email")
+
     # user delete
     delete_parser = user_subparsers.add_parser("delete", help="Delete a user")
     delete_parser.add_argument("--email", required=True, help="User email")
+
+    # user reset-password
+    reset_parser = user_subparsers.add_parser(
+        "reset-password", help="Reset a user's password"
+    )
+    reset_parser.add_argument("--email", required=True, help="User email")
+    reset_parser.add_argument("--password", help="Password (omit to prompt)")
 
     # API interaction
     api_parser = subparsers.add_parser("api", help="Interact with the API")
@@ -148,11 +211,23 @@ def main() -> None:
     if args.command == "user":
         if args.user_command == "create":
             password = args.password or prompt_password(confirm=True)
-            asyncio.run(upsert_user(args.email, password))
+            is_admin: bool | None = None
+            if args.admin:
+                is_admin = True
+            elif args.no_admin:
+                is_admin = False
+            asyncio.run(upsert_user(args.email, password, is_admin))
         elif args.user_command == "list":
             asyncio.run(list_users())
+        elif args.user_command == "promote":
+            asyncio.run(set_user_admin(args.email, True))
+        elif args.user_command == "demote":
+            asyncio.run(set_user_admin(args.email, False))
         elif args.user_command == "delete":
             asyncio.run(delete_user(args.email))
+        elif args.user_command == "reset-password":
+            password = args.password or prompt_password(confirm=True)
+            asyncio.run(reset_password(args.email, password))
 
     elif args.command == "api":
         password = args.password or prompt_password(confirm=False)

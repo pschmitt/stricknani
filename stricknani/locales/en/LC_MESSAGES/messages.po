@@ -450,3 +450,48 @@ msgstr "English"
 msgid "German"
 msgstr "German"
 
+
+msgid "Admin"
+msgstr "Admin"
+
+msgid "User Management"
+msgstr "User Management"
+
+msgid "Manage accounts, roles, and access for your instance."
+msgstr "Manage accounts, roles, and access for your instance."
+
+msgid "Total users"
+msgstr "Total users"
+
+msgid "User ID"
+msgstr "User ID"
+
+msgid "Active"
+msgstr "Active"
+
+msgid "Yes"
+msgstr "Yes"
+
+msgid "No"
+msgstr "No"
+
+msgid "You"
+msgstr "You"
+
+msgid "Revoke admin"
+msgstr "Revoke admin"
+
+msgid "Make admin"
+msgstr "Make admin"
+
+msgid "Deactivate"
+msgstr "Deactivate"
+
+msgid "Activate"
+msgstr "Activate"
+
+msgid "New password"
+msgstr "New password"
+
+msgid "Reset password"
+msgstr "Reset password"
