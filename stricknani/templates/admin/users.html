@@ -43,10 +43,10 @@
                 />
             </div>
             <label class="inline-flex items-center gap-2 text-sm text-base-content/70">
-                <input type="checkbox" name="is_admin" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900" />
+                <input type="checkbox" name="is_admin" class="checkbox checkbox-sm" />
                 {{ _('Grant admin access') }}
             </label>
-            <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+            <button type="submit" class="btn btn-primary btn-sm">
                 <span class="mdi mdi-account-plus"></span>
                 {{ _('Create user') }}
             </button>
@@ -59,7 +59,7 @@
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div class="space-y-2">
                     <div class="flex items-center gap-3">
-                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800">
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-base-200">
                             <span class="mdi mdi-account"></span>
                         </span>
                         <div>
@@ -68,26 +68,26 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 text-xs">
-                        <span class="rounded-full border border-slate-200 px-2 py-1 text-slate-600 dark:border-slate-700 dark:text-slate-300">
+                        <span class="badge badge-ghost">
                             {{ _('Active') }}: {{ _('Yes') if user.is_active else _('No') }}
                         </span>
-                        <span class="rounded-full border border-slate-200 px-2 py-1 text-slate-600 dark:border-slate-700 dark:text-slate-300">
+                        <span class="badge badge-ghost">
                             {{ _('Admin') }}: {{ _('Yes') if user.is_admin else _('No') }}
                         </span>
                         {% if user.id == current_user.id %}
-                        <span class="rounded-full bg-blue-50 px-2 py-1 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">{{ _('You') }}</span>
+                        <span class="badge badge-info">{{ _('You') }}</span>
                         {% endif %}
                     </div>
                 </div>
                 <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                     <form method="post" action="/admin/users/{{ user.id }}/toggle-admin">
-                        <button type="submit" class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition {% if user.is_admin %}border border-red-200 text-red-700 hover:border-red-400 hover:text-red-700 dark:border-red-800 dark:text-red-200 dark:hover:border-red-600{% else %}border border-emerald-200 text-emerald-700 hover:border-emerald-400 hover:text-emerald-700 dark:border-emerald-800 dark:text-emerald-200 dark:hover:border-emerald-600{% endif %}">
+                        <button type="submit" class="btn btn-sm {% if user.is_admin %}btn-error btn-outline{% else %}btn-success btn-outline{% endif %}">
                             <span class="mdi mdi-shield-account"></span>
                             {% if user.is_admin %}{{ _('Revoke admin') }}{% else %}{{ _('Make admin') }}{% endif %}
                         </button>
                     </form>
                     <form method="post" action="/admin/users/{{ user.id }}/toggle-active">
-                        <button type="submit" class="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-200 dark:hover:border-blue-400 dark:hover:text-blue-200">
+                        <button type="submit" class="btn btn-sm btn-outline">
                             <span class="mdi mdi-account-off"></span>
                             {% if user.is_active %}{{ _('Deactivate') }}{% else %}{{ _('Activate') }}{% endif %}
                         </button>
@@ -103,7 +103,7 @@
                             class="w-48 input input-bordered input-sm"
                             required
                         />
-                        <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                        <button type="submit" class="btn btn-primary btn-sm">
                             <span class="mdi mdi-key-variant"></span>
                             {{ _('Reset password') }}
                         </button>
