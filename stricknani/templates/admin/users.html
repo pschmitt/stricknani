@@ -15,7 +15,7 @@
     <div class="card bg-base-100 shadow-sm p-4">
         <h2 class="text-lg font-semibold text-base-content">{{ _('Create user') }}</h2>
         <p class="text-sm text-base-content/70">{{ _('Add a new account with a temporary password.') }}</p>
-        <form method="post" action="/admin/users/create" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <form method="post" action="/admin/users/create" class="mt-4 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
             <div class="flex flex-1 flex-col gap-1">
                 <label class="label-text text-xs font-semibold uppercase tracking-wide" for="new-user-email">
                     {{ _('Email') }}
@@ -26,7 +26,7 @@
                     type="email"
                     required
                     autocomplete="email"
-                    class="input input-bordered input-sm"
+                    class="input input-bordered"
                 />
             </div>
             <div class="flex flex-1 flex-col gap-1">
@@ -39,14 +39,17 @@
                     type="password"
                     required
                     autocomplete="new-password"
-                    class="input input-bordered input-sm"
+                    class="input input-bordered"
                 />
             </div>
-            <label class="inline-flex items-center gap-2 text-sm text-base-content/70">
-                <input type="checkbox" name="is_admin" class="checkbox checkbox-sm" />
-                {{ _('Grant admin access') }}
+            <label class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 px-4 py-3 text-sm text-base-content/80 shadow-sm">
+                <input type="checkbox" name="is_admin" class="checkbox" />
+                <span>
+                    <span class="block font-semibold text-base-content">{{ _('Grant admin access') }}</span>
+                    <span class="block text-xs text-base-content/70">{{ _('Allow this user to manage accounts and settings.') }}</span>
+                </span>
             </label>
-            <button type="submit" class="btn btn-primary btn-sm">
+            <button type="submit" class="btn btn-primary">
                 <span class="mdi mdi-account-plus"></span>
                 {{ _('Create user') }}
             </button>
@@ -81,7 +84,11 @@
                 </div>
                 <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                     <form method="post" action="/admin/users/{{ user.id }}/toggle-admin">
-                        <button type="submit" class="btn btn-sm {% if user.is_admin %}btn-error{% else %}btn-success btn-outline{% endif %}">
+                        <button
+                            type="submit"
+                            class="btn btn-sm {% if user.is_admin %}btn-error{% else %}btn-success btn-outline{% endif %}"
+                            {% if user.is_admin and user.id == current_user.id %}disabled{% endif %}
+                        >
                             <span class="mdi mdi-shield-account"></span>
                             {% if user.is_admin %}{{ _('Revoke admin') }}{% else %}{{ _('Make admin') }}{% endif %}
                         </button>
@@ -100,7 +107,7 @@
                             type="password"
                             autocomplete="new-password"
                             placeholder="{{ _('New password') }}"
-                            class="w-48 input input-bordered input-sm"
+                            class="w-64 input input-bordered"
                             required
                         />
                         <button type="submit" class="btn btn-primary btn-sm">

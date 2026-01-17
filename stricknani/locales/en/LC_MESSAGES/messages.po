@@ -530,6 +530,9 @@ msgstr "Temporary password"
 msgid "Grant admin access"
 msgstr "Grant admin access"
 
+msgid "Allow this user to manage accounts and settings."
+msgstr "Allow this user to manage accounts and settings."
+
 msgid "Source Link"
 msgstr "Source Link"
 

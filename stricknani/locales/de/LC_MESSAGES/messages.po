@@ -714,6 +714,9 @@ msgstr "Temporäres Passwort"
 msgid "Grant admin access"
 msgstr "Admin-Zugriff gewähren"
 
+msgid "Allow this user to manage accounts and settings."
+msgstr "Ermöglicht diesem Benutzer, Konten und Einstellungen zu verwalten."
+
 msgid "Source Link"
 msgstr "Quelllink"
 
