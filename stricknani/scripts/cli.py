@@ -52,12 +52,8 @@ async def list_users() -> None:
         users = result.scalars().all()
         for user in users:
             print(
-                "ID: {id}, Email: {email}, Active: {active}, Admin: {admin}".format(
-                    id=user.id,
-                    email=user.email,
-                    active=user.is_active,
-                    admin=user.is_admin,
-                )
+                f"ID: {user.id}, Email: {user.email}, "
+                f"Active: {user.is_active}, Admin: {user.is_admin}"
             )
 
 

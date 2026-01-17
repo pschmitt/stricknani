@@ -82,6 +82,18 @@
                 <textarea id="notes" name="notes" rows="3" class="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">{{ yarn.notes if yarn else '' }}</textarea>
             </div>
             <div class="md:col-span-2">
+                <label for="link" class="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-1">{{ _('Source Link') }} <span class="text-slate-400 text-xs">{{ _('Optional') }}</span></label>
+                <input
+                    type="url"
+                    id="link"
+                    name="link"
+                    value="{{ yarn.link if yarn else '' }}"
+                    class="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    placeholder="https://example.com/yarn-details"
+                >
+                <p class="text-xs text-slate-500 mt-1 dark:text-slate-400">{{ _('Optional link to the yarn product page or details') }}</p>
+            </div>
+            <div class="md:col-span-2">
                 <label for="photos" class="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-1">{{ _('Photos') }} <span class="text-slate-400 text-xs">{{ _('Optional, you can add multiple') }}</span></label>
 
                 {% if photos %}

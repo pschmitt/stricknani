@@ -49,7 +49,9 @@ async def toggle_admin_status(
     """Toggle admin status for a user."""
     user = await db.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     if user.is_admin:
         admin_count = await _get_admin_count(db)
@@ -80,7 +82,9 @@ async def toggle_active_status(
     """Toggle active status for a user."""
     user = await db.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     if user.id == current_user.id and user.is_active:
         raise HTTPException(
@@ -103,7 +107,9 @@ async def reset_password(
     """Reset a user's password."""
     user = await db.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     if not password:
         raise HTTPException(

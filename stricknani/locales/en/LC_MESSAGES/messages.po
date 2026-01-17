@@ -510,3 +510,12 @@ msgstr "Temporary password"
 
 msgid "Grant admin access"
 msgstr "Grant admin access"
+
+msgid "Source Link"
+msgstr "Source Link"
+
+msgid "Optional link to the original pattern or source"
+msgstr "Optional link to the original pattern or source"
+
+msgid "Optional link to the yarn product page or details"
+msgstr "Optional link to the yarn product page or details"

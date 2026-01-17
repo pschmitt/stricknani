@@ -1,10 +1,9 @@
 from typing import Any
 
 import pytest
-
-from stricknani.main import app
 from sqlalchemy import select
 
+from stricknani.main import app
 from stricknani.models import User
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.auth import get_password_hash

@@ -238,6 +238,7 @@ async def create_yarn(
     weight_grams: Annotated[str | None, Form()] = None,
     length_meters: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
+    link: Annotated[str | None, Form()] = None,
     photos: Annotated[list[UploadFile | str] | None, File()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
@@ -256,6 +257,7 @@ async def create_yarn(
         weight_grams=_parse_optional_int("weight_grams", weight_grams),
         length_meters=_parse_optional_int("length_meters", length_meters),
         notes=notes.strip() if notes else None,
+        link=link.strip() if link else None,
         owner_id=current_user.id,
     )
     yarn.photos = []
@@ -354,6 +356,7 @@ async def update_yarn(
     weight_grams: Annotated[str | None, Form()] = None,
     length_meters: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
+    link: Annotated[str | None, Form()] = None,
     new_photos: Annotated[list[UploadFile | str] | None, File()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
@@ -375,6 +378,7 @@ async def update_yarn(
     yarn.weight_grams = _parse_optional_int("weight_grams", weight_grams)
     yarn.length_meters = _parse_optional_int("length_meters", length_meters)
     yarn.notes = notes.strip() if notes else None
+    yarn.link = link.strip() if link else None
 
     await _handle_photo_uploads(new_photos, yarn, db)
     await db.commit()

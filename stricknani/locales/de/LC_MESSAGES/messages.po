@@ -682,3 +682,12 @@ msgstr "Temporäres Passwort"
 
 msgid "Grant admin access"
 msgstr "Admin-Zugriff gewähren"
+
+msgid "Source Link"
+msgstr "Quelllink"
+
+msgid "Optional link to the original pattern or source"
+msgstr "Optionaler Link zum Originalmuster oder zur Quelle"
+
+msgid "Optional link to the yarn product page or details"
+msgstr "Optionaler Link zur Garnproduktseite oder Details"

@@ -12,9 +12,7 @@ from stricknani.models import Image, ProjectCategory, Step
 
 
 async def _fetch_steps(
-    session_factory: async_sessionmaker[
-        AsyncSession
-    ],
+    session_factory: async_sessionmaker[AsyncSession],
     project_id: int,
 ) -> list[Step]:
     async with session_factory() as session:
@@ -25,9 +23,7 @@ async def _fetch_steps(
 
 
 async def _fetch_images(
-    session_factory: async_sessionmaker[
-        AsyncSession
-    ],
+    session_factory: async_sessionmaker[AsyncSession],
     project_id: int,
 ) -> list[Image]:
     async with session_factory() as session:

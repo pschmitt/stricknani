@@ -59,10 +59,10 @@ admin-create email password='':
 
 # Database migrations
 migrate-create name:
-    uv run alembic revision --autogenerate -m "{{name}}"
+    uv run alembic --config stricknani/alembic.ini revision --autogenerate -m "{{name}}"
 
 migrate-up:
-    uv run alembic upgrade head
+    uv run alembic --config stricknani/alembic.ini upgrade head
 
 migrate-down:
-    uv run alembic downgrade -1
+    uv run alembic --config stricknani/alembic.ini downgrade -1

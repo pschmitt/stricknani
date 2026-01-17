@@ -116,9 +116,7 @@ def _deserialize_tags(raw: str | None) -> list[str]:
 async def _sync_project_categories(db: AsyncSession, user_id: int) -> None:
     """Ensure categories used in projects exist in the category table."""
     project_result = await db.execute(
-        select(Project.category)
-        .where(Project.owner_id == user_id)
-        .distinct()
+        select(Project.category).where(Project.owner_id == user_id).distinct()
     )
     project_categories = {row[0] for row in project_result if row[0]}
     if not project_categories:
@@ -282,10 +280,12 @@ async def list_projects(
                 url = get_file_url(img.filename, project.id, subdir="projects")
 
             if url:
-                preview_images.append({
-                    "url": url,
-                    "alt": img.alt_text or project.name,
-                })
+                preview_images.append(
+                    {
+                        "url": url,
+                        "alt": img.alt_text or project.name,
+                    }
+                )
 
         # Backwards compatibility for templates expecting single image
         thumbnail_url = preview_images[0]["url"] if preview_images else None
@@ -760,6 +760,7 @@ async def create_project(
     gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
+    link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[list[int] | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
@@ -780,6 +781,7 @@ async def create_project(
         gauge_stitches=gauge_stitches_value,
         gauge_rows=gauge_rows_value,
         comment=comment.strip() if comment else None,
+        link=link.strip() if link else None,
         owner_id=current_user.id,
         tags=_serialize_tags(normalized_tags),
     )
@@ -818,6 +820,7 @@ async def update_project(
     gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
+    link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[list[int] | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
@@ -852,6 +855,7 @@ async def update_project(
     project.gauge_stitches = _parse_optional_int("gauge_stitches", gauge_stitches)
     project.gauge_rows = _parse_optional_int("gauge_rows", gauge_rows)
     project.comment = comment.strip() if comment else None
+    project.link = link.strip() if link else None
     project.tags = _serialize_tags(_normalize_tags(tags))
 
     # Update steps
@@ -1039,9 +1043,6 @@ async def unfavorite_project(
     return RedirectResponse(
         url=f"/projects/{project_id}", status_code=status.HTTP_303_SEE_OTHER
     )
-
-
-
 
 
 @router.post("/{project_id}/images/title")

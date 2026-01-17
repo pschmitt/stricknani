@@ -144,6 +144,4 @@ async def upload_profile_image(
             },
         )
 
-    return RedirectResponse(
-        url="/user/profile", status_code=status.HTTP_303_SEE_OTHER
-    )
+    return RedirectResponse(url="/user/profile", status_code=status.HTTP_303_SEE_OTHER)
