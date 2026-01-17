@@ -95,11 +95,32 @@ def get_language(request: Request) -> str:
 
     # Check Accept-Language header
     accept_language = request.headers.get("accept-language", "")
-    for lang in config.SUPPORTED_LANGUAGES:
-        if lang in accept_language.lower():
-            return lang
+    if accept_language:
+        candidates: list[tuple[str, float]] = []
+        for part in accept_language.split(","):
+            raw = part.strip()
+            if not raw:
+                continue
+            pieces = [segment.strip() for segment in raw.split(";")]
+            lang_code = pieces[0].lower()
+            if "-" in lang_code:
+                lang_code = lang_code.split("-", 1)[0]
+            quality = 1.0
+            for segment in pieces[1:]:
+                if segment.startswith("q="):
+                    try:
+                        quality = float(segment[2:])
+                    except ValueError:
+                        quality = 0.0
+            candidates.append((lang_code, quality))
+        candidates.sort(key=lambda item: item[1], reverse=True)
+        for lang_code, _ in candidates:
+            if lang_code in config.SUPPORTED_LANGUAGES:
+                return lang_code
 
     # Default language
+    if "en" in config.SUPPORTED_LANGUAGES:
+        return "en"
     return config.DEFAULT_LANGUAGE
 
 

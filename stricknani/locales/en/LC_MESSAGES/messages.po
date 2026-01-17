@@ -46,6 +46,12 @@ msgstr "Login"
 msgid "Welcome to Stricknani"
 msgstr "Welcome to Stricknani"
 
+msgid "Welcome back"
+msgstr "Welcome back"
+
+msgid "Sign in to keep your projects moving"
+msgstr "Sign in to keep your projects moving"
+
 msgid "Email"
 msgstr "Email"
 

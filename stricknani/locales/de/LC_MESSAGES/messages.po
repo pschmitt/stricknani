@@ -46,6 +46,12 @@ msgstr "Anmelden"
 msgid "Welcome to Stricknani"
 msgstr "Willkommen bei Stricknani"
 
+msgid "Welcome back"
+msgstr "Willkommen zurück"
+
+msgid "Sign in to keep your projects moving"
+msgstr "Melde dich an, damit deine Projekte weiterlaufen"
+
 msgid "Email"
 msgstr "E-Mail"
 
