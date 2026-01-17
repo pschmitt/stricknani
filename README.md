@@ -45,7 +45,7 @@ The app will be available at http://localhost:7674
 
 ## Configuration
 
-Configuration is done via environment variables:
+Configuration is done via environment variables (or a `.env` file in the project root):
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -54,6 +54,25 @@ Configuration is done via environment variables:
 | `DATABASE_URL` | Database connection string | `sqlite:///./stricknani.db` |
 | `MEDIA_ROOT` | Directory for uploaded files | `./media` |
 | `FEATURE_SIGNUP_ENABLED` | Enable user signup | `true` |
+| `OPENAI_API_KEY` | OpenAI API key for AI-powered pattern import | (optional) |
+
+### AI-Powered Pattern Import
+
+Stricknani can use OpenAI to intelligently extract pattern data from any website URL. To enable this feature:
+
+1. Install with AI support:
+   ```bash
+   uv pip install -e ".[ai]"
+   ```
+
+2. Set your OpenAI API key in `.env`:
+   ```bash
+   OPENAI_API_KEY=sk-proj-...
+   ```
+
+3. When importing from URL, check "Use AI for better extraction" ✨
+
+The AI import provides much better accuracy than basic HTML parsing, especially for complex or varied website layouts.
 
 ## Development
 

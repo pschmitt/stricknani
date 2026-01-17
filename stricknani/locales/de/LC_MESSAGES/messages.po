@@ -715,3 +715,9 @@ msgstr "Muster erfolgreich importiert"
 
 msgid "Failed to import pattern"
 msgstr "Fehler beim Importieren des Musters"
+
+msgid "Use AI for better extraction"
+msgstr "KI für bessere Erkennung verwenden"
+
+msgid "requires API key"
+msgstr "benötigt API-Schlüssel"

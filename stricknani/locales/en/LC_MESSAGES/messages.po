@@ -543,3 +543,9 @@ msgstr "Pattern imported successfully"
 
 msgid "Failed to import pattern"
 msgstr "Failed to import pattern"
+
+msgid "Use AI for better extraction"
+msgstr "Use AI for better extraction"
+
+msgid "requires API key"
+msgstr "requires API key"

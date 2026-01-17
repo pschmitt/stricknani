@@ -4,7 +4,7 @@ import json
 import re
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import (
     APIRouter,
@@ -367,10 +367,17 @@ async def new_project_form(
 @router.post("/import")
 async def import_from_url(
     url: Annotated[str, Form()],
+    use_ai: Annotated[bool, Form()] = False,
     current_user: User = Depends(require_auth),
 ) -> JSONResponse:
-    """Import pattern data from URL."""
-    from stricknani.utils.importer import PatternImporter
+    """Import pattern data from URL.
+
+    Args:
+        url: The URL to import from
+        use_ai: If True, use AI-powered extraction (requires OPENAI_API_KEY)
+        current_user: Authenticated user
+    """
+    import os
 
     if not url or not url.strip():
         raise HTTPException(
@@ -388,8 +395,20 @@ async def import_from_url(
         )
 
     try:
-        importer = PatternImporter(url)
-        data = await importer.fetch_and_parse()
+        data: dict[str, Any]
+        # Try AI-powered import if requested and API key is available
+        if use_ai and os.getenv("OPENAI_API_KEY"):
+            from stricknani.utils.ai_importer import AIPatternImporter
+
+            ai_importer = AIPatternImporter(url)
+            data = await ai_importer.fetch_and_parse()
+        else:
+            # Fallback to basic HTML parsing
+            from stricknani.utils.importer import PatternImporter
+
+            basic_importer = PatternImporter(url)
+            data = await basic_importer.fetch_and_parse()
+
         return JSONResponse(content=data)
     except Exception as e:
         raise HTTPException(
