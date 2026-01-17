@@ -47,15 +47,23 @@ push-image:
 demo-data:
     uv run python -m stricknani.scripts.seed_demo
 
+# Run CLI with arguments
+cli *ARGS:
+    uv run stricknani-cli {{ARGS}}
+
+# Create or update admin user
 admin-create email password='':
     #!/usr/bin/env bash
     set -euo pipefail
-    if [[ -z "{{password}}" ]]
-    then
-      uv run stricknani-admin --email "{{email}}"
+    if [[ -z "{{password}}" ]]; then
+      uv run stricknani-cli user create --email "{{email}}" --admin
     else
-      uv run stricknani-admin --email "{{email}}" --password "{{password}}"
+      uv run stricknani-cli user create --email "{{email}}" --password "{{password}}" --admin
     fi
+
+# List all users
+user-list:
+    uv run stricknani-cli user list
 
 # Database migrations
 migrate-create name:

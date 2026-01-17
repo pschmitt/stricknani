@@ -364,6 +364,40 @@ async def new_project_form(
     )
 
 
+@router.post("/import")
+async def import_from_url(
+    url: Annotated[str, Form()],
+    current_user: User = Depends(require_auth),
+) -> JSONResponse:
+    """Import pattern data from URL."""
+    from stricknani.utils.importer import PatternImporter
+
+    if not url or not url.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="URL is required",
+        )
+
+    url = url.strip()
+
+    # Basic URL validation
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid URL format",
+        )
+
+    try:
+        importer = PatternImporter(url)
+        data = await importer.fetch_and_parse()
+        return JSONResponse(content=data)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to import from URL: {str(e)}",
+        ) from e
+
+
 async def _render_categories_page(
     request: Request,
     db: AsyncSession,

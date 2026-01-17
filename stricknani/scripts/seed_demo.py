@@ -28,9 +28,17 @@ async def seed_demo_data() -> None:
 
         if not demo_user:
             print("Creating demo user: demo@stricknani.local / demo")
-            demo_user = await create_user(db, "demo@stricknani.local", "demo")
+            demo_user = await create_user(
+                db, "demo@stricknani.local", "demo", is_admin=True
+            )
         else:
             print("Demo user already exists")
+            # Make sure demo user is admin
+            if not demo_user.is_admin:
+                demo_user.is_admin = True
+                db.add(demo_user)
+                await db.commit()
+                print("Updated demo user to admin")
 
         # Demo assets directory
         demo_assets_dir = Path(__file__).parent.parent.parent / "demo_assets"

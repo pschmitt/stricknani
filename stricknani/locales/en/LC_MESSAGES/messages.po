@@ -519,3 +519,27 @@ msgstr "Optional link to the original pattern or source"
 
 msgid "Optional link to the yarn product page or details"
 msgstr "Optional link to the yarn product page or details"
+
+msgid "Import from URL"
+msgstr "Import from URL"
+
+msgid "Pattern URL"
+msgstr "Pattern URL"
+
+msgid "Enter the URL of the knitting pattern you want to import"
+msgstr "Enter the URL of the knitting pattern you want to import"
+
+msgid "Import"
+msgstr "Import"
+
+msgid "Importing pattern..."
+msgstr "Importing pattern..."
+
+msgid "Please enter a URL"
+msgstr "Please enter a URL"
+
+msgid "Pattern imported successfully"
+msgstr "Pattern imported successfully"
+
+msgid "Failed to import pattern"
+msgstr "Failed to import pattern"

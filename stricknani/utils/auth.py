@@ -71,10 +71,12 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> User
     return user
 
 
-async def create_user(db: AsyncSession, email: str, password: str) -> User:
+async def create_user(
+    db: AsyncSession, email: str, password: str, is_admin: bool = False
+) -> User:
     """Create a new user."""
     hashed_password = get_password_hash(password)
-    user = User(email=email, hashed_password=hashed_password)
+    user = User(email=email, hashed_password=hashed_password, is_admin=is_admin)
     db.add(user)
     await db.commit()
     await db.refresh(user)
