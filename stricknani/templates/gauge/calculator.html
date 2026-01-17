@@ -4,178 +4,158 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    <h2 class="text-3xl font-bold text-slate-900 mb-6 dark:text-slate-100 flex items-center gap-2">
-        <span class="mdi mdi-calculator-variant-outline text-blue-600 dark:text-blue-400"></span>
+    <h2 class="text-3xl font-bold mb-6 flex items-center gap-2">
+        <span class="mdi mdi-calculator-variant-outline text-primary"></span>
         {{ _('Gauge Calculator') }}
     </h2>
 
-    <div class="bg-white/80 rounded-lg shadow-md p-8 backdrop-blur dark:bg-slate-900/80 dark:shadow-slate-900/30">
-        <p class="text-slate-600 mb-6 dark:text-slate-300">
-            Calculate how many stitches and rows you need based on your gauge and the pattern's gauge.
-        </p>
+    <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+            <p class="opacity-70 mb-6">
+                Calculate how many stitches and rows you need based on your gauge and the pattern's gauge.
+            </p>
 
-        <form
-            hx-post="/gauge/calculate"
-            hx-target="#result"
-            hx-swap="innerHTML"
-            class="space-y-6"
-        >
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Pattern Gauge -->
-                <div class="md:col-span-2">
-                    <h3 class="text-lg font-semibold text-slate-900 mb-3 dark:text-slate-100">{{ _('Pattern Gauge (per 10cm)') }}</h3>
+            <form
+                hx-post="/gauge/calculate"
+                hx-target="#result"
+                hx-swap="innerHTML"
+                class="space-y-6"
+            >
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Pattern Gauge -->
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-semibold mb-3">{{ _('Pattern Gauge (per 10cm)') }}</h3>
+                    </div>
+
+                    <div class="form-control">
+                        <label for="pattern_gauge_stitches" class="label">
+                            <span class="label-text">{{ _('Stitches') }} <span class="text-error">*</span></span>
+                        </label>
+                        <input
+                            type="number"
+                            id="pattern_gauge_stitches"
+                            name="pattern_gauge_stitches"
+                            required
+                            min="1"
+                            class="input input-bordered w-full"
+                            placeholder="20"
+                        >
+                    </div>
+
+                    <div class="form-control">
+                        <label for="pattern_gauge_rows" class="label">
+                            <span class="label-text">{{ _('Rows') }} <span class="text-error">*</span></span>
+                        </label>
+                        <input
+                            type="number"
+                            id="pattern_gauge_rows"
+                            name="pattern_gauge_rows"
+                            required
+                            min="1"
+                            class="input input-bordered w-full"
+                            placeholder="28"
+                        >
+                    </div>
+
+                    <!-- Your Gauge -->
+                    <div class="md:col-span-2 mt-4">
+                        <h3 class="text-lg font-semibold mb-3">{{ _('Your Gauge (per 10cm)') }}</h3>
+                    </div>
+
+                    <div class="form-control">
+                        <label for="user_gauge_stitches" class="label">
+                            <span class="label-text">{{ _('Stitches') }} <span class="text-error">*</span></span>
+                        </label>
+                        <input
+                            type="number"
+                            id="user_gauge_stitches"
+                            name="user_gauge_stitches"
+                            required
+                            min="1"
+                            class="input input-bordered w-full"
+                            placeholder="22"
+                        >
+                    </div>
+
+                    <div class="form-control">
+                        <label for="user_gauge_rows" class="label">
+                            <span class="label-text">{{ _('Rows') }} <span class="text-error">*</span></span>
+                        </label>
+                        <input
+                            type="number"
+                            id="user_gauge_rows"
+                            name="user_gauge_rows"
+                            required
+                            min="1"
+                            class="input input-bordered w-full"
+                            placeholder="30"
+                        >
+                    </div>
+
+                    <!-- Target Dimensions -->
+                    <div class="md:col-span-2 mt-4">
+                        <h3 class="text-lg font-semibold mb-3">{{ _('Target Dimensions') }}</h3>
+                    </div>
+
+                    <div class="form-control">
+                        <label for="target_width_cm" class="label">
+                            <span class="label-text">{{ _('Width (cm)') }}</span>
+                        </label>
+                        <input
+                            type="number"
+                            id="target_width_cm"
+                            name="target_width_cm"
+                            min="0.1"
+                            step="0.1"
+                            class="input input-bordered w-full"
+                            placeholder="50"
+                        >
+                    </div>
+
+                    <div class="form-control">
+                        <label for="target_height_cm" class="label">
+                            <span class="label-text">{{ _('Height (cm)') }} <span class="opacity-60">({{ _('optional') }})</span></span>
+                        </label>
+                        <input
+                            type="number"
+                            id="target_height_cm"
+                            name="target_height_cm"
+                            min="0"
+                            step="0.1"
+                            class="input input-bordered w-full"
+                            placeholder="60"
+                        >
+                    </div>
                 </div>
 
-                <div>
-                    <label for="pattern_gauge_stitches" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
-                        {{ _('Stitches') }} <span class="text-red-500 dark:text-red-400">*</span>
-                    </label>
-                    <input
-                        type="number"
-                        id="pattern_gauge_stitches"
-                        name="pattern_gauge_stitches"
-                        required
-                        min="1"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                        placeholder="20"
-                    >
+                <!-- Submit Button -->
+                <div class="mt-6">
+                    <button type="submit" class="btn btn-primary w-full">
+                        <span class="mdi mdi-calculator"></span>
+                        {{ _('Calculate') }}
+                    </button>
                 </div>
+            </form>
 
-                <div>
-                    <label for="pattern_gauge_rows" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
-                        {{ _('Rows') }} <span class="text-red-500 dark:text-red-400">*</span>
-                    </label>
-                    <input
-                        type="number"
-                        id="pattern_gauge_rows"
-                        name="pattern_gauge_rows"
-                        required
-                        min="1"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                        placeholder="28"
-                    >
-                </div>
-
-                <!-- Your Gauge -->
-                <div class="md:col-span-2 mt-4">
-                    <h3 class="text-lg font-semibold text-slate-900 mb-3 dark:text-slate-100">{{ _('Your Gauge (per 10cm)') }}</h3>
-                </div>
-
-                <div>
-                    <label for="user_gauge_stitches" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
-                        {{ _('Stitches') }} <span class="text-red-500 dark:text-red-400">*</span>
-                    </label>
-                    <input
-                        type="number"
-                        id="user_gauge_stitches"
-                        name="user_gauge_stitches"
-                        required
-                        min="1"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                        placeholder="22"
-                    >
-                </div>
-
-                <div>
-                    <label for="user_gauge_rows" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
-                        {{ _('Rows') }} <span class="text-red-500 dark:text-red-400">*</span>
-                    </label>
-                    <input
-                        type="number"
-                        id="user_gauge_rows"
-                        name="user_gauge_rows"
-                        required
-                        min="1"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                        placeholder="30"
-                    >
-                </div>
-
-                <!-- Target Dimensions -->
-                <div class="md:col-span-2 mt-4">
-                    <h3 class="text-lg font-semibold text-slate-900 mb-3 dark:text-slate-100">{{ _('Target Dimensions') }}</h3>
-                </div>
-
-                <div>
-                    <label for="target_width_cm" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
-                        {{ _('Width (cm)') }}
-                    </label>
-                    <input
-                        type="number"
-                        id="target_width_cm"
-                        name="target_width_cm"
-                        min="0.1"
-                        step="0.1"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                        placeholder="50"
-                    >
-                </div>
-
-                <div>
-                    <label for="target_height_cm" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
-                        {{ _('Height (cm)') }} <span class="text-gray-400 dark:text-slate-400">({{ _('optional') }})</span>
-                    </label>
-                    <input
-                        type="number"
-                        id="target_height_cm"
-                        name="target_height_cm"
-                        min="0"
-                        step="0.1"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                        placeholder="60"
-                    >
-                </div>
-            </div>
-
-            <!-- Submit Button -->
-            <div class="mt-6">
-                <button
-                    type="submit"
-                    class="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium inline-flex items-center justify-center gap-2 dark:hover:bg-blue-500 dark:focus:ring-offset-slate-900"
-                >
-                    <span class="mdi mdi-calculator"></span>
-                    {{ _('Calculate') }}
-                </button>
-            </div>
-        </form>
-
-        <!-- Results -->
-        <div id="result" class="mt-8"></div>
+            <!-- Results -->
+            <div id="result" class="mt-8"></div>
+        </div>
     </div>
 
     <!-- Help Section -->
-    <div class="mt-6 bg-blue-50 rounded-lg p-6 dark:bg-blue-500/10">
-        <h3 class="text-lg font-semibold text-slate-900 mb-3 dark:text-slate-100 flex items-center gap-2">
-            <span class="mdi mdi-help-circle-outline"></span>
-            {{ _('How to use this calculator') }}
-        </h3>
-        <ol class="list-decimal list-inside space-y-2 text-slate-700 dark:text-slate-300">
-            <li>{{ _('Enter the gauge from your pattern (stitches and rows per 10cm)') }}</li>
-            <li>{{ _('Enter your actual gauge from your swatch (stitches and rows per 10cm)') }}</li>
-            <li>{{ _('Enter the target dimensions you want to achieve') }}</li>
-            <li>{{ _('Click Calculate to see how many stitches and rows you need') }}</li>
-        </ol>
-    </div>
-</div>
-
-<template id="result-template">
-    <div class="bg-green-50 border-2 border-green-200 rounded-lg p-6 dark:bg-emerald-500/10 dark:border-emerald-500/40">
-        <h3 class="text-xl font-bold text-green-900 mb-4 dark:text-emerald-300 flex items-center gap-2">
-            <span class="mdi mdi-check-decagram"></span>
-            {{ _('Calculation Results') }}
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-white p-4 rounded-md dark:bg-slate-900/80">
-                <p class="text-sm font-medium text-slate-500 mb-1 dark:text-slate-300">{{ _('Adjusted Stitches') }}</p>
-                <p class="text-3xl font-bold text-blue-600 dark:text-blue-300" id="adjusted_stitches"></p>
-            </div>
-            <div class="bg-white p-4 rounded-md dark:bg-slate-900/80">
-                <p class="text-sm font-medium text-slate-500 mb-1 dark:text-slate-300">{{ _('Adjusted Rows') }}</p>
-                <p class="text-3xl font-bold text-blue-600 dark:text-blue-300" id="adjusted_rows"></p>
-            </div>
+    <div class="alert alert-info mt-6">
+        <span class="mdi mdi-help-circle-outline text-2xl"></span>
+        <div>
+            <h3 class="font-bold">{{ _('How to use this calculator') }}</h3>
+            <ol class="list-decimal list-inside space-y-2 text-sm mt-2">
+                <li>{{ _('Enter the gauge from your pattern (stitches and rows per 10cm)') }}</li>
+                <li>{{ _('Enter your actual gauge from your swatch (stitches and rows per 10cm)') }}</li>
+                <li>{{ _('Enter the target dimensions you want to achieve') }}</li>
+                <li>{{ _('Click Calculate to see how many stitches and rows you need') }}</li>
+            </ol>
         </div>
     </div>
-</template>
+</div>
 
 <script>
 document.body.addEventListener('htmx:afterRequest', function(event) {
@@ -183,23 +163,27 @@ document.body.addEventListener('htmx:afterRequest', function(event) {
         try {
             const data = JSON.parse(event.detail.xhr.responseText);
             const resultHtml = `
-                <div class="bg-green-50 border-2 border-green-200 rounded-lg p-6 dark:bg-emerald-500/10 dark:border-emerald-500/40">
-                    <h3 class="text-xl font-bold text-green-900 mb-4 dark:text-emerald-300 flex items-center gap-2">
-                        <span class="mdi mdi-check-decagram"></span>
-                        {{ _('Calculation Results') }}
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white p-4 rounded-md dark:bg-slate-900/80">
-                            <p class="text-sm font-medium text-slate-500 mb-1 dark:text-slate-300">{{ _('Adjusted Stitches') }}</p>
-                            <p class="text-3xl font-bold text-blue-600 dark:text-blue-300">${data.adjusted_stitches}</p>
+                <div class="alert alert-success">
+                    <span class="mdi mdi-check-decagram text-2xl"></span>
+                    <div class="w-full">
+                        <h3 class="font-bold mb-4">{{ _('Calculation Results') }}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="stats shadow">
+                                <div class="stat">
+                                    <div class="stat-title">{{ _('Adjusted Stitches') }}</div>
+                                    <div class="stat-value text-primary">${data.adjusted_stitches}</div>
+                                </div>
+                            </div>
+                            <div class="stats shadow">
+                                <div class="stat">
+                                    <div class="stat-title">{{ _('Adjusted Rows') }}</div>
+                                    <div class="stat-value text-primary">${data.adjusted_rows || '{{ _('N/A') }}'}</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-white p-4 rounded-md dark:bg-slate-900/80">
-                            <p class="text-sm font-medium text-slate-500 mb-1 dark:text-slate-300">{{ _('Adjusted Rows') }}</p>
-                            <p class="text-3xl font-bold text-blue-600 dark:text-blue-300">${data.adjusted_rows || '{{ _('N/A') }}'}</p>
+                        <div class="mt-4 text-sm opacity-70">
+                            <p>{{ _('For a piece') }} ${data.target_width_cm}cm {{ _('wide') }}${data.target_height_cm > 0 ? ` {{ _('and') }} ${data.target_height_cm}cm {{ _('tall') }}` : ''}</p>
                         </div>
-                    </div>
-                    <div class="mt-4 text-sm text-slate-600 dark:text-slate-300">
-                        <p>{{ _('For a piece') }} ${data.target_width_cm}cm {{ _('wide') }}${data.target_height_cm > 0 ? ` {{ _('and') }} ${data.target_height_cm}cm {{ _('tall') }}` : ''}</p>
                     </div>
                 </div>
             `;

@@ -20,8 +20,8 @@
     </a>
 </div>
 
-<div class="max-w-6xl mx-auto bg-slate-900/80 rounded-lg shadow-md p-8 backdrop-blur shadow-slate-900/30">
-    <h2 class="text-3xl font-bold text-slate-100 mb-6 flex items-center gap-2">
+<div class="max-w-6xl mx-auto bg-white dark:bg-white dark:bg-slate-900/80 rounded-lg shadow-md border border-slate-200 dark:border-slate-800 p-8 backdrop-blur border border-slate-200 dark:border-slate-800">
+    <h2 class="text-3xl font-bold text-slate-900 dark:text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
         <span class="mdi mdi-notebook-outline text-blue-400"></span>
         {{ _('Edit Project') if project else _('New Project') }}
     </h2>
@@ -32,7 +32,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Name -->
             <div class="md:col-span-2">
-                <label for="name" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
+                <label for="name" class="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-1">
                     {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
                 </label>
                 <input
@@ -41,7 +41,7 @@
                     name="name"
                     required
                     value="{{ project.name if project else '' }}"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                     placeholder="My Amazing Project"
                 >
             </div>
@@ -49,7 +49,7 @@
             <!-- Category -->
             <div>
                 <div class="flex items-center justify-between mb-1">
-                    <label for="category" class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                    <label for="category" class="block text-sm font-medium text-slate-900 dark:text-slate-200">
                         {{ _('Category') }} <span class="text-red-500 dark:text-red-400">*</span>
                     </label>
                     <a href="/projects/categories" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300" target="_blank" rel="noreferrer">
@@ -64,7 +64,7 @@
                     required
                     list="category-list"
                     value="{{ project.category if project else '' }}"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                     placeholder="{{ _('Select or type a new category') }}"
                     autocomplete="off"
                 >
@@ -79,7 +79,7 @@
             <!-- Linked stash yarns -->
             <div>
                 <div class="flex items-center justify-between mb-1">
-                    <label for="yarn_ids" class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                    <label for="yarn_ids" class="block text-sm font-medium text-slate-900 dark:text-slate-200">
                         {{ _('Yarn') }} <span class="text-slate-400 text-xs">{{ _('Select from stash') }}</span>
                     </label>
                     <a href="/yarn/new" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300" target="_blank" rel="noreferrer">
@@ -91,7 +91,7 @@
                     id="yarn_ids"
                     name="yarn_ids"
                     multiple
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                     size="5"
                 >
                     {% for yarn in yarns %}
@@ -105,39 +105,39 @@
 
             <!-- Needles -->
             <div class="md:col-span-2">
-                <label for="needles" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Needles') }}</label>
+                <label for="needles" class="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-1">{{ _('Needles') }}</label>
                 <input
                     type="text"
                     id="needles"
                     name="needles"
                     value="{{ project.needles if project else '' }}"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                     placeholder="e.g., 4.0mm circular"
                 >
             </div>
 
             <!-- Gauge -->
             <div>
-                <label for="gauge_stitches" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Gauge Stitches (per 10cm)') }}</label>
+                <label for="gauge_stitches" class="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-1">{{ _('Gauge Stitches (per 10cm)') }}</label>
                 <input
                     type="number"
                     id="gauge_stitches"
                     name="gauge_stitches"
                     value="{{ project.gauge_stitches if project else '' }}"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                     placeholder="20"
                     min="1"
                 >
             </div>
 
             <div>
-                <label for="gauge_rows" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">{{ _('Gauge Rows (per 10cm)') }}</label>
+                <label for="gauge_rows" class="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-1">{{ _('Gauge Rows (per 10cm)') }}</label>
                 <input
                     type="number"
                     id="gauge_rows"
                     name="gauge_rows"
                     value="{{ project.gauge_rows if project else '' }}"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                     placeholder="28"
                     min="1"
                 >
@@ -146,7 +146,7 @@
             <!-- Comment -->
             <div class="md:col-span-2">
                 <div class="flex items-center justify-between mb-1">
-                    <label for="comment" class="block text-sm font-medium text-slate-700 dark:text-slate-200">{{ _('Notes') }}</label>
+                    <label for="comment" class="block text-sm font-medium text-slate-900 dark:text-slate-200">{{ _('Notes') }}</label>
                     <button type="button" onclick="previewMarkdown('comment')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300">
                         <span class="mdi mdi-eye"></span>
                         {{ _('Preview') }}
@@ -156,7 +156,7 @@
                     id="comment"
                     name="comment"
                     rows="4"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                     placeholder="Personal notes about this project..."
                 >{{ project.comment if project else '' }}</textarea>
                 <p class="text-xs text-slate-500 mt-1 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>
@@ -176,11 +176,11 @@
                     <div class="flex items-center justify-between mb-3">
                         <h4 class="text-lg font-medium text-slate-900 dark:text-slate-100">{{ _('Step') }} <span class="step-number">{{ step.step_number }}</span></h4>
                         <div class="flex gap-2">
-                            <button type="button" onclick="moveStepUp(this)" class="px-2 py-1 text-sm bg-slate-200 hover:bg-slate-300 rounded inline-flex items-center gap-1 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200">
+                            <button type="button" onclick="moveStepUp(this)" class="px-2 py-1 text-sm bg-slate-200 hover:bg-slate-300 rounded inline-flex items-center gap-1 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200">
                                 <span class="mdi mdi-arrow-up"></span>
                                 {{ _('Move Up') }}
                             </button>
-                            <button type="button" onclick="moveStepDown(this)" class="px-2 py-1 text-sm bg-slate-200 hover:bg-slate-300 rounded inline-flex items-center gap-1 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200">
+                            <button type="button" onclick="moveStepDown(this)" class="px-2 py-1 text-sm bg-slate-200 hover:bg-slate-300 rounded inline-flex items-center gap-1 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200">
                                 <span class="mdi mdi-arrow-down"></span>
                                 {{ _('Move Down') }}
                             </button>
@@ -191,13 +191,13 @@
                         </div>
                     </div>
                     <div class="flex items-center justify-between mb-2">
-                        <input type="text" class="step-title w-full px-3 py-2 border border-gray-300 rounded-md dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 mr-2" placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
+                        <input type="text" class="step-title w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 mr-2" placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
                         <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300 whitespace-nowrap">
                             <span class="mdi mdi-eye"></span>
                             {{ _('Preview') }}
                         </button>
                     </div>
-                    <textarea class="step-description w-full px-3 py-2 border border-gray-300 rounded-md mb-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" rows="3" placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
+                    <textarea class="step-description w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md mb-2  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" rows="3" placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
                     <p class="text-xs text-slate-500 mb-2 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>
                     <div class="step-images grid grid-cols-3 gap-2 mb-2">
                         {% for image in step.images %}
@@ -218,10 +218,10 @@
                         </div>
                         {% endfor %}
                     </div>
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors step-image-dropzone dark:border-slate-600 dark:hover:border-blue-400" data-step-id="{{ step.id }}">
+                    <div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors step-image-dropzone dark:border-slate-600 dark:hover:border-blue-400" data-step-id="{{ step.id }}">
                         <input type="file" class="step-image-input hidden" accept="image/*" multiple data-step-id="{{ step.id }}" id="stepImageInput{{ step.id }}">
                         <label for="stepImageInput{{ step.id }}" class="cursor-pointer block">
-                            <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                            <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                             <p class="mt-2 text-sm text-slate-600 upload-instructions dark:text-slate-300" data-enabled-text="{{ _('Drag and drop images here or click to upload') }}" data-disabled-text="{{ _('Save the project before adding images to this step.') }}">{{ _('Drag and drop images here or click to upload') }}</p>
@@ -261,10 +261,10 @@
                 </div>
                 {% endfor %}
             </div>
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors dark:border-slate-600 dark:hover:border-blue-400" id="titleImageDropZone">
+            <div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors dark:border-slate-600 dark:hover:border-blue-400" id="titleImageDropZone">
                 <input type="file" id="titleImageInput" accept="image/*" multiple class="hidden">
                 <label for="titleImageInput" class="cursor-pointer">
-                    <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                    <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                     <p
@@ -303,7 +303,7 @@
             </button>
             <a
                 href="{{ '/projects/' + project.id|string if project else '/projects' }}"
-                class="px-6 py-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors font-medium text-gray-700 text-center inline-flex items-center justify-center gap-2 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                class="px-6 py-3 border border-slate-300 dark:border-slate-700 rounded-md hover:bg-gray-50 transition-colors font-medium text-gray-700 text-center inline-flex items-center justify-center gap-2 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
             >
                 <span class="mdi mdi-close-circle-outline"></span>
                 {{ _('Cancel') }}
@@ -820,10 +820,10 @@ function addStep() {
         <div class="mb-3 flex items-center justify-between">
             <h4 class="text-lg font-medium text-slate-900 dark:text-slate-100">{{ _('Step') }} <span class="step-number">${stepNumber}</span></h4>
             <div class="flex gap-2">
-                <button type="button" onclick="moveStepUp(this)" class="inline-flex items-center gap-1 rounded bg-slate-200 px-2 py-1 text-sm text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                <button type="button" onclick="moveStepUp(this)" class="inline-flex items-center gap-1 rounded bg-slate-200 px-2 py-1 text-sm text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
                     <span class="mdi mdi-arrow-up"></span>{{ _('Move Up') }}
                 </button>
-                <button type="button" onclick="moveStepDown(this)" class="inline-flex items-center gap-1 rounded bg-slate-200 px-2 py-1 text-sm text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                <button type="button" onclick="moveStepDown(this)" class="inline-flex items-center gap-1 rounded bg-slate-200 px-2 py-1 text-sm text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
                     <span class="mdi mdi-arrow-down"></span>{{ _('Move Down') }}
                 </button>
                 <button type="button" onclick="removeStep(this)" class="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 text-sm text-white hover:bg-red-700 dark:hover:bg-red-500">
@@ -831,20 +831,20 @@ function addStep() {
                 </button>
             </div>
         </div>
-        <input type="text" class="step-title mb-2 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="{{ _('Step Title') }}">
+        <input type="text" class="step-title mb-2 w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" placeholder="{{ _('Step Title') }}">
         <div class="flex items-center justify-end mb-1">
             <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300">
                 <span class="mdi mdi-eye"></span>
                 {{ _('Preview') }}
             </button>
         </div>
-        <textarea class="step-description mb-2 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" rows="3" placeholder="{{ _('Step Description') }}"></textarea>
+        <textarea class="step-description mb-2 w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2  bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" rows="3" placeholder="{{ _('Step Description') }}"></textarea>
         <p class="mb-2 text-xs text-slate-500 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>
         <div class="step-images mb-2 grid grid-cols-3 gap-2"></div>
-        <div class="step-image-dropzone border-2 border-dashed border-gray-300 p-8 text-center transition-colors dark:border-slate-600 dark:hover:border-blue-400" data-step-id="">
+        <div class="step-image-dropzone border-2 border-dashed border-slate-300 dark:border-slate-600 p-8 text-center transition-colors dark:border-slate-600 dark:hover:border-blue-400" data-step-id="">
             <input type="file" class="step-image-input hidden" accept="image/*" multiple data-step-id="" id="${inputId}">
             <label for="${inputId}" class="block cursor-pointer">
-                <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
                 <p class="upload-instructions mt-2 text-sm text-gray-600 dark:text-slate-300" data-enabled-text="${uploadInstructionsText}" data-disabled-text="${stepUploadDisabledMessage}">${stepUploadDisabledMessage}</p>

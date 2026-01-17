@@ -4,14 +4,11 @@
 
 {% block content %}
 <div class="flex justify-between items-center mb-6">
-    <h2 class="text-3xl font-bold text-slate-100 flex items-center gap-2">
-        <span class="mdi mdi-folder-multiple-outline text-blue-400"></span>
+    <h2 class="text-3xl font-bold flex items-center gap-2">
+        <span class="mdi mdi-folder-multiple-outline text-primary"></span>
         {{ _('My Projects') }}
     </h2>
-    <a
-        href="/projects/new"
-        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-500 transition-colors inline-flex items-center gap-2"
-    >
+    <a href="/projects/new" class="btn btn-primary">
         <span class="mdi mdi-plus-circle-outline text-lg"></span>
         {{ _('New Project') }}
     </a>
@@ -21,14 +18,16 @@
 <div class="mb-6 flex gap-4">
     <div>
         <div class="flex items-center justify-between gap-2 mb-1">
-            <label for="category-filter" class="block text-sm font-medium text-slate-200">{{ _('Category') }}</label>
-            <a href="/projects/categories" class="text-slate-500 hover:text-blue-400" title="{{ _('Manage categories') }}">
+            <label for="category-filter" class="label">
+                <span class="label-text">{{ _('Category') }}</span>
+            </label>
+            <a href="/projects/categories" class="btn btn-ghost btn-xs" title="{{ _('Manage categories') }}">
                 <span class="mdi mdi-cog-outline"></span>
             </a>
         </div>
         <select
             id="category-filter"
-            class="px-3 py-2 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-900 text-slate-100"
+            class="select select-bordered"
             hx-get="/projects"
             hx-target="#projects-list"
             hx-trigger="change"
@@ -43,14 +42,16 @@
             </div>
 
     <div class="flex-grow">
-        <label for="search" class="block text-sm font-medium text-slate-200 mb-1">{{ _('Search') }}</label>
+        <label for="search" class="label">
+            <span class="label-text">{{ _('Search') }}</span>
+        </label>
         <input
             type="text"
             id="search"
             name="search"
             value="{{ search or '' }}"
             placeholder="Search projects..."
-            class="w-full px-3 py-2 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-900 text-slate-100"
+            class="input input-bordered w-full"
             hx-get="/projects"
             hx-target="#projects-list"
             hx-trigger="keyup changed delay:500ms"
@@ -64,10 +65,10 @@
     {% if projects %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for project in projects %}
-            <div class="bg-slate-900/70 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow shadow-slate-900/20" data-project-card>
+            <div class="card bg-base-200 shadow-xl" data-project-card>
                 <a
                     href="/projects/{{ project.id }}"
-                    class="relative block aspect-[4/3] bg-slate-800/70 transition-transform hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    class="relative block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
                 >
                     {% if project.preview_images %}
                         {% if project.preview_images|length == 1 %}
@@ -102,7 +103,7 @@
                         </div>
                         {% endif %}
                     {% else %}
-                    <div class="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-500">
+                    <div class="flex h-full w-full flex-col items-center justify-center gap-2 opacity-50">
                         <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
                         <span class="text-sm font-semibold">{{ project.name[0]|upper }}</span>
                         <span class="sr-only">{{ _('Open project details') }}</span>
@@ -110,28 +111,28 @@
                     {% endif %}
                     <span class="sr-only">{{ _('Open project details for %(name)s') % {'name': project.name} }}</span>
                 </a>
-                <div class="p-6">
+                <div class="card-body">
                     <div class="flex justify-between items-start mb-3">
-                        <h3 class="text-xl font-semibold text-slate-100">
-                            <a href="/projects/{{ project.id }}" class="hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                        <h3 class="card-title">
+                            <a href="/projects/{{ project.id }}" class="hover:text-primary">
                                 {{ project.name }}
                             </a>
                         </h3>
-                        <a href="/projects?category={{ project.category }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-400/20 text-blue-300 hover:bg-blue-400/30 transition-colors">
+                        <a href="/projects?category={{ project.category }}" class="badge badge-primary">
                             {{ _(project.category) }}
                         </a>
                     </div>
                     <div class="mt-3 flex flex-wrap gap-2 text-xs mb-4">
-                        <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        <span class="badge badge-ghost gap-1">
                             <span class="mdi mdi-calendar-plus"></span>
                             {{ project.created_at[:10] }}
                         </span>
-                        <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        <span class="badge badge-ghost gap-1">
                             <span class="mdi mdi-update"></span>
                             {{ project.updated_at[:10] }}
                         </span>
                         {% if project.yarn_count > 0 %}
-                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+                        <span class="badge badge-success gap-1">
                             <span class="mdi mdi-sheep"></span>
                             {{ project.yarn_count }}
                         </span>
@@ -140,21 +141,21 @@
                     {% if project.tags %}
                     <div class="mb-4 flex flex-wrap gap-2">
                         {% for tag in project.tags %}
-                        <span class="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-300">#{{ tag }}</span>
+                        <span class="badge badge-outline">#{{ tag }}</span>
                         {% endfor %}
                     </div>
                     {% endif %}
-                    <div class="flex gap-2">
+                    <div class="card-actions justify-end">
                         {% with project_id=project.id, is_favorite=project.is_favorite, variant='card' %}
                             {% include "projects/_favorite_toggle.html" %}
                         {% endwith %}
                         <a
                             href="/projects/{{ project.id }}/edit"
-                            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-900/60 text-slate-300 text-xl transition hover:border-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                            class="btn btn-ghost btn-circle"
                             aria-label="{{ _('Edit project') }}"
                             title="{{ _('Edit project') }}"
                         >
-                            <span class="mdi mdi-pencil-outline" aria-hidden="true"></span>
+                            <span class="mdi mdi-pencil-outline text-xl" aria-hidden="true"></span>
                         </a>
                         <button
                             hx-delete="/projects/{{ project.id }}"
@@ -162,11 +163,11 @@
                             hx-target="closest [data-project-card]"
                             hx-swap="outerHTML swap:1s"
                             hx-on::after-request="if (event.detail.successful) { showToast('{{ _('Project deleted') }}', 'success'); }"
-                            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-900/60 text-slate-300 text-xl transition hover:border-red-400 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                            class="btn btn-ghost btn-circle text-error"
                             aria-label="{{ _('Delete project') }}"
                             title="{{ _('Delete project') }}"
                         >
-                            <span class="mdi mdi-delete-outline" aria-hidden="true"></span>
+                            <span class="mdi mdi-delete-outline text-xl" aria-hidden="true"></span>
                             <span class="sr-only">{{ _('Delete project') }}</span>
                         </button>
                     </div>

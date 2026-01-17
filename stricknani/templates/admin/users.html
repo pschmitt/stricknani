@@ -87,7 +87,7 @@
                         </button>
                     </form>
                     <form method="post" action="/admin/users/{{ user.id }}/toggle-active">
-                        <button type="submit" class="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-200 dark:hover:border-blue-400 dark:hover:text-blue-200">
+                        <button type="submit" class="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-200 dark:hover:border-blue-400 dark:hover:text-blue-200">
                             <span class="mdi mdi-account-off"></span>
                             {% if user.is_active %}{{ _('Deactivate') }}{% else %}{{ _('Activate') }}{% endif %}
                         </button>

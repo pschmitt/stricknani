@@ -4,14 +4,11 @@
 
 {% block content %}
 <div class="flex justify-between items-center mb-6">
-    <h2 class="text-3xl font-bold text-slate-100 flex items-center gap-2">
-        <span class="mdi mdi-sheep text-blue-400"></span>
+    <h2 class="text-3xl font-bold flex items-center gap-2">
+        <span class="mdi mdi-sheep text-primary"></span>
         {{ _('Yarn Stash') }}
     </h2>
-    <a
-        href="/yarn/new"
-        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-500 transition-colors inline-flex items-center gap-2"
-    >
+    <a href="/yarn/new" class="btn btn-primary">
         <span class="mdi mdi-plus-circle-outline text-lg"></span>
         {{ _('New Yarn') }}
     </a>
@@ -20,9 +17,11 @@
 <!-- Search -->
 <div class="mb-6">
     <form method="get" class="relative">
-        <label for="search" class="block text-sm font-medium text-slate-200 mb-1">{{ _('Search') }}</label>
+        <label for="search" class="label">
+            <span class="label-text">{{ _('Search') }}</span>
+        </label>
         <div class="relative">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <span class="mdi mdi-magnify"></span>
             </div>
             <input
@@ -31,7 +30,7 @@
                 name="search"
                 value="{{ search }}"
                 placeholder="{{ _('Search yarn...') }}"
-                class="w-full px-3 py-2 pl-10 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-900 text-slate-100"
+                class="input input-bordered w-full pl-10"
             >
         </div>
     </form>
@@ -42,33 +41,33 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for card in yarns %}
         {% set yarn = card.yarn %}
-        <div class="bg-slate-900/70 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow shadow-slate-900/20" data-yarn-card>
-            <a href="/yarn/{{ yarn.id }}" class="relative block aspect-[4/3] bg-slate-800/70 transition-transform hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+        <div class="card bg-base-200 shadow-xl" data-yarn-card>
+            <a href="/yarn/{{ yarn.id }}" class="relative block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]">
                 {% if card.preview_url %}
                 <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}" class="h-full w-full object-cover">
                 {% else %}
-                <div class="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-500">
+                <div class="flex h-full w-full flex-col items-center justify-center gap-2 opacity-50">
                     <span class="mdi mdi-yarn text-5xl" aria-hidden="true"></span>
                     <span class="sr-only">{{ _('Open yarn details') }}</span>
                 </div>
                 {% endif %}
                 <span class="sr-only">{{ _('Open yarn details for %(name)s') % {'name': yarn.name} }}</span>
             </a>
-            <div class="p-6">
+            <div class="card-body">
                 <div class="flex justify-between items-start mb-3">
-                    <h3 class="text-xl font-semibold text-slate-100">
-                        <a href="/yarn/{{ yarn.id }}" class="hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                    <h3 class="card-title">
+                        <a href="/yarn/{{ yarn.id }}" class="hover:text-primary">
                             {{ yarn.name }}
                         </a>
                     </h3>
                     {% if yarn.brand %}
-                    <a href="/yarn?search={{ yarn.brand }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors">
+                    <a href="/yarn?search={{ yarn.brand }}" class="badge badge-neutral">
                         {{ yarn.brand }}
                     </a>
                     {% endif %}
                 </div>
                 
-                <div class="grid grid-cols-2 gap-2 text-xs text-slate-200 mb-4">
+                <div class="grid grid-cols-2 gap-2 text-xs mb-4">
                     {% if yarn.colorway %}
                     <div class="flex items-center gap-1.5">
                         <span class="mdi mdi-palette"></span>
@@ -96,35 +95,35 @@
                 </div>
 
                 <div class="mt-3 flex flex-wrap gap-2 text-xs mb-4">
-                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                    <span class="badge badge-ghost gap-1">
                         <span class="mdi mdi-calendar-plus"></span>
                         {{ yarn.created_at[:10] }}
                     </span>
-                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                    <span class="badge badge-ghost gap-1">
                         <span class="mdi mdi-update"></span>
                         {{ yarn.updated_at[:10] }}
                     </span>
                     {% if yarn.project_count > 0 %}
-                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+                    <span class="badge badge-success gap-1">
                         <span class="mdi mdi-folder-multiple-outline"></span>
                         {{ yarn.project_count }}
                     </span>
                     {% endif %}
                 </div>
 
-                <p class="line-clamp-2 text-sm text-slate-300 mb-4">{{ yarn.description or _('No description yet.') }}</p>
+                <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
                 
-                <div class="flex gap-2">
+                <div class="card-actions justify-end">
                     {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='card' %}
                         {% include "yarn/_favorite_toggle.html" %}
                     {% endwith %}
                     <a
                         href="/yarn/{{ yarn.id }}/edit"
-                        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-900/60 text-slate-300 text-xl transition hover:border-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                        class="btn btn-ghost btn-circle"
                         aria-label="{{ _('Edit yarn') }}"
                         title="{{ _('Edit yarn') }}"
                     >
-                        <span class="mdi mdi-pencil-outline" aria-hidden="true"></span>
+                        <span class="mdi mdi-pencil-outline text-xl" aria-hidden="true"></span>
                     </a>
                     <button
                         hx-post="/yarn/{{ yarn.id }}/delete"
@@ -132,11 +131,11 @@
                         hx-target="closest [data-yarn-card]"
                         hx-swap="outerHTML swap:1s"
                         hx-on::after-request="if (event.detail.successful) { showToast('{{ _('Yarn deleted') }}', 'success'); }"
-                        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-900/60 text-slate-300 text-xl transition hover:border-red-400 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                        class="btn btn-ghost btn-circle text-error"
                         aria-label="{{ _('Delete yarn') }}"
                         title="{{ _('Delete yarn') }}"
                     >
-                        <span class="mdi mdi-delete-outline" aria-hidden="true"></span>
+                        <span class="mdi mdi-delete-outline text-xl" aria-hidden="true"></span>
                         <span class="sr-only">{{ _('Delete yarn') }}</span>
                     </button>
                 </div>
