@@ -23,9 +23,12 @@
           alembic
           babel
           bcrypt
+          beautifulsoup4
           bleach
+          cryptography
           fastapi
           httpx
+          httptools
           jinja2
           markdown
           pillow
@@ -35,6 +38,9 @@
           rich
           sqlalchemy
           uvicorn
+          uvloop
+          watchfiles
+          websockets
         ];
       in
       {
