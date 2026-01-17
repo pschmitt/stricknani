@@ -15,6 +15,10 @@
         (function() {
             const theme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', theme);
+            // Also set dark class for Tailwind dark mode
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
         })();
     </script>
     
@@ -22,7 +26,7 @@
         // Configure Tailwind and DaisyUI BEFORE loading them
         window.tailwind = window.tailwind || {};
         window.tailwind.config = {
-            darkMode: ['class', '[data-theme="dark"]'],
+            darkMode: 'class',
             daisyui: {
                 themes: ["light", "dark"],
                 darkTheme: "dark",
@@ -46,7 +50,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col bg-base-100">
     <nav class="navbar bg-base-200 shadow-sm border-b border-base-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div class="flex justify-between h-16 w-full">
@@ -641,6 +645,16 @@
 
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
+            
+            // Toggle dark class for Tailwind
+            if (newTheme === 'dark') {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
+            
+            console.log('Theme toggled to:', newTheme, 'HTML classes:', html.className);
+            
             updateThemeUI(newTheme);
         }
 
