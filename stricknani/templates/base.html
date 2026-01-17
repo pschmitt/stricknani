@@ -80,6 +80,12 @@
                             <span class="mdi mdi-ruler"></span>
                             {{ _('Gauge Calculator') }}
                         </a>
+                        {% if current_user and current_user.is_admin %}
+                        <a href="/admin/users" class="btn btn-ghost {% if current_path.startswith('/admin') %}btn-active{% endif %}">
+                            <span class="mdi mdi-shield-account"></span>
+                            {{ _('Admin') }}
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="flex items-center">
@@ -149,12 +155,6 @@
                                 </div>
                             </div>
                             <div class="space-y-2 px-4 py-4">
-                                {% if current_user.is_admin %}
-                                <a href="/admin/users" class="btn btn-ghost w-full justify-start">
-                                    <span class="mdi mdi-shield-account text-lg"></span>
-                                    {{ _('Admin') }}
-                                </a>
-                                {% endif %}
                                 <a href="/user/profile" class="btn btn-ghost w-full justify-start">
                                     <span class="mdi mdi-account-details-outline text-lg"></span>
                                     {{ _('Profile') }}

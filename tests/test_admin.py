@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import select
 
 from stricknani.main import app
-from stricknani.models import User
+from stricknani.models import Project, ProjectCategory, User
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.auth import get_password_hash
 
@@ -103,3 +103,44 @@ async def test_admin_create_user(test_client: Any) -> None:
         user = created.scalar_one_or_none()
         assert user is not None
         assert user.is_admin is True
+
+
+@pytest.mark.asyncio
+async def test_admin_delete_user_cascades(test_client: Any) -> None:
+    client, session_factory, user_id, _project_id, _step_id = test_client
+
+    async with session_factory() as session:
+        other = User(
+            email="delete-me@example.com",
+            hashed_password=get_password_hash("secret"),
+        )
+        session.add(other)
+        await session.commit()
+        await session.refresh(other)
+
+        project = Project(
+            name="Disposable Project",
+            category=ProjectCategory.SCHAL.value,
+            owner_id=other.id,
+        )
+        session.add(project)
+        await session.commit()
+        await session.refresh(project)
+        other_id = other.id
+        project_id = project.id
+
+    async def override_admin() -> AdminUser:
+        return AdminUser(user_id, "tester@example.com")
+
+    app.dependency_overrides[require_auth] = override_admin
+    app.dependency_overrides[get_current_user] = override_admin
+
+    response = await client.post(f"/admin/users/{other_id}/delete")
+
+    assert response.status_code == 303
+
+    async with session_factory() as session:
+        deleted_user = await session.get(User, other_id)
+        deleted_project = await session.get(Project, project_id)
+        assert deleted_user is None
+        assert deleted_project is None

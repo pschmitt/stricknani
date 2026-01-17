@@ -5,16 +5,16 @@
 {% if variant == 'card' %}
     {% set button_classes = 'inline-flex h-10 w-10 items-center justify-center rounded-full border text-xl transition focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900' %}
     {% if is_favorite %}
-        {% set button_classes = button_classes ~ ' border-pink-400 bg-pink-100 text-pink-600 hover:bg-pink-200 dark:border-pink-500 dark:bg-pink-500/25 dark:text-pink-200 dark:hover:bg-pink-500/35' %}
+        {% set button_classes = button_classes ~ ' border-pink-600 bg-pink-600 text-white hover:bg-pink-700 dark:border-pink-500 dark:bg-pink-500 dark:text-white dark:hover:bg-pink-400' %}
     {% else %}
-        {% set button_classes = button_classes ~ ' border-slate-200 bg-white/70 text-slate-500 hover:border-pink-300 hover:text-pink-500 dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-pink-400 dark:hover:text-pink-300' %}
+        {% set button_classes = button_classes ~ ' border-base-300 bg-base-100 text-base-content/70 hover:border-pink-400 hover:text-pink-600 dark:border-base-300 dark:bg-base-100 dark:text-base-content/70 dark:hover:border-pink-400 dark:hover:text-pink-300' %}
     {% endif %}
 {% else %}
     {% set button_classes = 'inline-flex h-11 w-11 items-center justify-center rounded-full border text-2xl transition focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900' %}
     {% if is_favorite %}
-        {% set button_classes = button_classes ~ ' border-pink-400 bg-pink-100 text-pink-600 hover:bg-pink-200 dark:border-pink-500 dark:bg-pink-500/25 dark:text-pink-200 dark:hover:bg-pink-500/35' %}
+        {% set button_classes = button_classes ~ ' border-pink-600 bg-pink-600 text-white hover:bg-pink-700 dark:border-pink-500 dark:bg-pink-500 dark:text-white dark:hover:bg-pink-400' %}
     {% else %}
-        {% set button_classes = button_classes ~ ' border-slate-200 bg-white/70 text-slate-500 hover:border-pink-300 hover:text-pink-500 dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-pink-400 dark:hover:text-pink-300' %}
+        {% set button_classes = button_classes ~ ' border-base-300 bg-base-100 text-base-content/70 hover:border-pink-400 hover:text-pink-600 dark:border-base-300 dark:bg-base-100 dark:text-base-content/70 dark:hover:border-pink-400 dark:hover:text-pink-300' %}
     {% endif %}
 {% endif %}
 <button

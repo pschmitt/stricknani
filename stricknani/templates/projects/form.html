@@ -61,49 +61,53 @@
     </div>
 </dialog>
 
-<div class="mb-6 flex items-center justify-between">
-    <a href="{{ '/projects/' + project.id|string if project else '/projects' }}" class="text-blue-600 hover:text-blue-800 inline-flex items-center gap-2 dark:text-blue-400 dark:hover:text-blue-300">
-        <span class="mdi mdi-arrow-left"></span>
-        {{ _('Back') }}
-    </a>
-    {% if not project %}
-    <button type="button" onclick="document.getElementById('importDialog').showModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium transition">
-        <span class="mdi mdi-download"></span>
-        {{ _('Import from URL') }}
-    </button>
-    {% endif %}
-</div>
-
-<div class="max-w-6xl mx-auto bg-base-100 rounded-lg shadow-md border border-base-300 p-8 backdrop-blur">
-    <!-- Import warning banner -->
-    <div id="importWarning" class="hidden mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded">
-        <div class="flex items-start gap-3">
-            <span class="mdi mdi-alert text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></span>
-            <div class="flex-1">
-                <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved Yet') }}</h3>
-                <p class="text-sm text-yellow-700 dark:text-yellow-300">
-                    {{ _('This project was imported from an external source. Please review all fields carefully and click "Create Project" to save it.') }}
-                </p>
-            </div>
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <p class="text-sm font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                <span class="mdi mdi-notebook-outline"></span>
+                {{ project.name if project else _('New Project') }}
+            </p>
+            <h1 class="text-2xl font-bold text-base-content">{{ project.name if project else _('Create a new project') }}</h1>
+            <p class="text-sm text-base-content/70">{{ _('Capture materials, gauge, and progress in one place.') }}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ '/projects/' + project.id|string if project else '/projects' }}" class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:border-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:text-blue-300">
+                <span class="mdi mdi-arrow-left"></span>
+                {{ _('Back') }}
+            </a>
+            {% if not project %}
+            <button type="button" onclick="document.getElementById('importDialog').showModal()" class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:border-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:text-blue-300">
+                <span class="mdi mdi-download"></span>
+                {{ _('Import from URL') }}
+            </button>
+            {% endif %}
+            {% if project %}
+            <button
+                type="button"
+                onclick="document.getElementById('deleteProjectDialog').showModal()"
+                class="inline-flex items-center gap-2 rounded-md bg-red-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 dark:hover:bg-red-500"
+            >
+                <span class="mdi mdi-delete-outline"></span>
+                {{ _('Delete Project') }}
+            </button>
+            {% endif %}
         </div>
     </div>
-    
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-bold text-base-content flex items-center gap-2">
-            <span class="mdi mdi-notebook-outline text-blue-400"></span>
-            {{ _('Edit Project') if project else _('New Project') }}
-        </h2>
-        {% if project %}
-        <button
-            type="button"
-            onclick="document.getElementById('deleteProjectDialog').showModal()"
-            class="inline-flex items-center gap-2 px-4 py-2 border border-red-300 dark:border-red-700 rounded-md hover:bg-red-50 transition-colors text-sm font-medium text-red-700 dark:text-red-400 dark:hover:bg-red-950"
-        >
-            <span class="mdi mdi-delete-outline"></span>
-            {{ _('Delete Project') }}
-        </button>
-        {% endif %}
-    </div>
+
+    <div class="bg-base-100 rounded-lg shadow-md border border-base-300 p-8 backdrop-blur">
+        <!-- Import warning banner -->
+        <div id="importWarning" class="hidden mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded">
+            <div class="flex items-start gap-3">
+                <span class="mdi mdi-alert text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></span>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved Yet') }}</h3>
+                    <p class="text-sm text-yellow-700 dark:text-yellow-300">
+                        {{ _('This project was imported from an external source. Please review all fields carefully and click "Create Project" to save it.') }}
+                    </p>
+                </div>
+            </div>
+        </div>
 
     <form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post" class="space-y-6">
         <div class="grid gap-6 md:grid-cols-3">
@@ -402,6 +406,7 @@
             </a>
         </div>
     </form>
+</div>
 </div>
 
 <script>

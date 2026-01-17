@@ -232,12 +232,25 @@ msgstr "Anleitung"
 msgid "Notes"
 msgstr "Notizen"
 
+# Admin
+msgid "Delete user"
+msgstr "Benutzer löschen"
+
+msgid "Delete this user? This will remove their projects and yarn."
+msgstr "Diesen Benutzer löschen? Dadurch werden auch Projekte und Garne entfernt."
+
 # Project form
 msgid "Back"
 msgstr "Zurück"
 
 msgid "New Project"
 msgstr "Neues Projekt"
+
+msgid "Create a new project"
+msgstr "Neues Projekt erstellen"
+
+msgid "Capture materials, gauge, and progress in one place."
+msgstr "Erfasse Material, Maschenprobe und Fortschritt an einem Ort."
 
 msgid "Edit Project"
 msgstr "Projekt bearbeiten"

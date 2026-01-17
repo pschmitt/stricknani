@@ -1,7 +1,7 @@
 <button
     hx-post="/yarn/{{ yarn_id }}/favorite"
     hx-swap="outerHTML"
-    class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/70 text-xl transition focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 dark:border-slate-600 dark:bg-slate-900/60 dark:focus:ring-offset-slate-900 {% if is_favorite %}text-pink-500 hover:border-pink-300 hover:text-pink-600 dark:text-pink-400 dark:hover:border-pink-400 dark:hover:text-pink-300{% else %}text-slate-400 hover:border-pink-300 hover:text-pink-500 dark:text-slate-500 dark:hover:border-pink-400 dark:hover:text-pink-400{% endif %}"
+    class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-base-300 bg-base-100 text-xl transition focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900 {% if is_favorite %}border-pink-600 bg-pink-600 text-white hover:bg-pink-700 dark:border-pink-500 dark:bg-pink-500 dark:text-white dark:hover:bg-pink-400{% else %}text-base-content/70 hover:border-pink-400 hover:text-pink-600 dark:text-base-content/70 dark:hover:border-pink-400 dark:hover:text-pink-300{% endif %}"
     aria-label="{{ _('Remove from favorites') if is_favorite else _('Add to favorites') }}"
     title="{{ _('Remove from favorites') if is_favorite else _('Add to favorites') }}"
 >
