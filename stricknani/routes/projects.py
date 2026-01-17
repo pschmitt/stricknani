@@ -458,14 +458,16 @@ async def import_pattern(
                 basic_importer = PatternImporter(url)
                 data = await basic_importer.fetch_and_parse()
 
-            # Add a note if AI failed but basic parser succeeded
-            if ai_failed and data.get("comment"):
-                data["comment"] = (
-                    data.get("comment", "")
-                    + "\n\n(Note: AI extraction failed, used basic parser)"
-                )
-            elif ai_failed:
-                data["comment"] = "(Note: AI extraction failed, used basic parser)"
+            # Add flag if AI failed
+            if ai_failed:
+                data["ai_fallback"] = True
+                if data.get("comment"):
+                    data["comment"] = (
+                        data.get("comment", "")
+                        + "\n\n(Note: AI extraction failed, used basic parser)"
+                    )
+                else:
+                    data["comment"] = "(Note: AI extraction failed, used basic parser)"
 
             return JSONResponse(content=data)
 

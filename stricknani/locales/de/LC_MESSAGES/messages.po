@@ -790,3 +790,13 @@ msgstr "KI für bessere Erkennung verwenden"
 
 msgid "requires API key"
 msgstr "benötigt API-Schlüssel"
+
+msgid "AI extraction failed - using basic parser"
+msgstr "KI-Extraktion fehlgeschlagen - verwende einfachen Parser"
+
+msgid "Imported Data - Not Saved Yet"
+msgstr "Importierte Daten - Noch nicht gespeichert"
+
+msgid "This project was imported from an external source. Please review all fields carefully and click \"Create Project\" to save it."
+msgstr "Dieses Projekt wurde aus einer externen Quelle importiert. Bitte überprüfe alle Felder sorgfältig und klicke auf \"Projekt erstellen\" zum Speichern."
+

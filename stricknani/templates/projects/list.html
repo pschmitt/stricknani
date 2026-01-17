@@ -481,6 +481,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 console.log('Import successful, data:', data);
                 
+                // Show warning if AI fallback occurred
+                if (data.ai_fallback) {
+                    showToast('{{ _('AI extraction failed - using basic parser') }}', 'warning');
+                }
+                
                 // Ensure the URL is included in the imported data (for URL imports)
                 if (currentTab === 'url' && !data.link) {
                     data.link = document.getElementById('importUrl').value.trim();
