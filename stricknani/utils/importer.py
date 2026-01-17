@@ -34,6 +34,7 @@ class PatternImporter:
             "comment": self._extract_description(soup),
             "steps": self._extract_steps(soup),
             "link": self.url,
+            "image_urls": self._extract_images(soup),
         }
 
     def _extract_title(self, soup: BeautifulSoup) -> str | None:
@@ -212,3 +213,57 @@ class PatternImporter:
                         )
 
         return steps
+
+    def _extract_images(self, soup: BeautifulSoup) -> list[str]:
+        """Extract image URLs from the page."""
+        images: list[str] = []
+
+        # Look for images in common pattern containers
+        for img in soup.find_all("img"):
+            src = img.get("src") or img.get("data-src")
+            if not src or not isinstance(src, str):
+                continue
+
+            # Make absolute URL
+            if src.startswith("//"):
+                src = f"https:{src}"
+            elif src.startswith("/"):
+                # Extract base URL from self.url
+                from urllib.parse import urlparse
+
+                parsed = urlparse(self.url)
+                src = f"{parsed.scheme}://{parsed.netloc}{src}"
+            elif not src.startswith(("http://", "https://")):
+                # Relative URL
+                from urllib.parse import urljoin
+
+                src = urljoin(self.url, src)
+
+            # Filter out small images (likely icons/logos)
+            width = img.get("width")
+            height = img.get("height")
+            if width and height:
+                try:
+                    if int(str(width)) < 100 or int(str(height)) < 100:
+                        continue
+                except (ValueError, TypeError):
+                    pass
+
+            # Skip common non-pattern images
+            if any(
+                x in src.lower()
+                for x in [
+                    "logo",
+                    "icon",
+                    "avatar",
+                    "button",
+                    "badge",
+                    "banner",
+                    "ad",
+                ]
+            ):
+                continue
+
+            images.append(src)
+
+        return images[:10]  # Limit to 10 images

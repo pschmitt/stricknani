@@ -3,15 +3,30 @@
 {% block title %}{{ _('Projects') }} - Stricknani{% endblock %}
 
 {% block content %}
+<style>
+    .tab-content {
+        display: block;
+        min-height: 200px;
+    }
+    .tab-content.hidden {
+        display: none;
+    }
+</style>
 <div class="flex justify-between items-center mb-6">
     <h2 class="text-3xl font-bold flex items-center gap-2">
         <span class="mdi mdi-folder-multiple-outline text-primary"></span>
         {{ _('My Projects') }}
     </h2>
-    <a href="/projects/new" class="btn btn-primary">
-        <span class="mdi mdi-plus-circle-outline text-lg"></span>
-        {{ _('New Project') }}
-    </a>
+    <div class="flex gap-2">
+        <a href="/projects/new" class="btn btn-ghost btn-sm">
+            <span class="mdi mdi-plus-circle-outline text-lg"></span>
+            {{ _('New Project') }}
+        </a>
+        <button data-action="import" class="btn btn-primary btn-sm">
+            <span class="mdi mdi-download text-lg"></span>
+            {{ _('Import') }}
+        </button>
+    </div>
 </div>
 
 <!-- Filters -->
@@ -158,11 +173,7 @@
                             <span class="mdi mdi-pencil-outline text-xl" aria-hidden="true"></span>
                         </a>
                         <button
-                            hx-delete="/projects/{{ project.id }}"
-                            hx-confirm="{{ _('Are you sure you want to delete this project?') }}"
-                            hx-target="closest [data-project-card]"
-                            hx-swap="outerHTML swap:1s"
-                            hx-on::after-request="if (event.detail.successful) { showToast('{{ _('Project deleted') }}', 'success'); }"
+                            onclick="showDeleteDialog({{ project.id }}, '{{ project.name|escape }}')"
                             class="btn btn-ghost btn-circle text-error"
                             aria-label="{{ _('Delete project') }}"
                             title="{{ _('Delete project') }}"
@@ -179,4 +190,383 @@
         {% include "projects/_empty_state.html" %}
     {% endif %}
 </div>
+
+<!-- Import Dialog -->
+<dialog id="importDialog" class="modal">
+    <div class="modal-box max-w-2xl">
+        <h3 class="font-bold text-lg mb-4">{{ _('Import Pattern') }}</h3>
+        <form id="importForm">
+            <!-- Import type tabs -->
+            <div role="tablist" class="tabs tabs-boxed mb-4">
+                <a role="tab" class="tab tab-active" data-tab="url">{{ _('From URL') }}</a>
+                <a role="tab" class="tab" data-tab="file">{{ _('From File') }}</a>
+                <a role="tab" class="tab" data-tab="text">{{ _('From Text') }}</a>
+            </div>
+
+            <!-- URL Input -->
+            <div id="tab-url" class="tab-content">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">{{ _('Pattern URL') }}</span>
+                    </label>
+                    <input
+                        type="url"
+                        id="importUrl"
+                        name="url"
+                        placeholder="https://..."
+                        class="input input-bordered"
+                    />
+                    <label class="label">
+                        <span class="label-text-alt">{{ _('Enter the URL of the knitting pattern') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- File Upload with Drag and Drop -->
+            <div id="tab-file" class="tab-content hidden">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">{{ _('Pattern File') }}</span>
+                    </label>
+                    
+                    <!-- Drag and Drop Zone -->
+                    <div id="dropZone" class="border-2 border-dashed border-base-300 rounded-lg p-8 text-center hover:border-primary hover:bg-base-200 transition-colors cursor-pointer">
+                        <input
+                            type="file"
+                            id="importFile"
+                            name="file"
+                            accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.gif"
+                            class="hidden"
+                        />
+                        <div id="dropZoneContent">
+                            <span class="mdi mdi-cloud-upload text-5xl text-base-content opacity-50"></span>
+                            <p class="mt-4 text-base font-medium">{{ _('Click to upload or drag and drop') }}</p>
+                            <p class="mt-2 text-sm text-base-content opacity-60">{{ _('PDF, text file, or image') }}</p>
+                        </div>
+                        <div id="filePreview" class="hidden">
+                            <span class="mdi mdi-file-document text-5xl text-primary"></span>
+                            <p id="fileName" class="mt-4 text-base font-medium"></p>
+                            <button type="button" id="removeFile" class="btn btn-sm btn-ghost mt-2">
+                                <span class="mdi mdi-close"></span>
+                                {{ _('Remove') }}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <label class="label">
+                        <span class="label-text-alt">{{ _('Supports PDF, TXT, MD, JPG, PNG, GIF') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Text Input -->
+            <div id="tab-text" class="tab-content hidden">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">{{ _('Pattern Text') }}</span>
+                    </label>
+                    <textarea
+                        id="importText"
+                        name="text"
+                        rows="10"
+                        placeholder="{{ _('Paste pattern instructions here...') }}"
+                        class="textarea textarea-bordered"
+                    ></textarea>
+                    <label class="label">
+                        <span class="label-text-alt">{{ _('Paste the pattern text directly') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            {% if has_openai_key %}
+            <div class="form-control mt-4">
+                <label class="cursor-pointer label justify-start gap-2">
+                    <input type="checkbox" id="useAI" name="use_ai" class="checkbox checkbox-primary" checked />
+                    <span class="label-text">{{ _('Use AI for better extraction') }}</span>
+                </label>
+            </div>
+            {% endif %}
+            <div class="modal-action">
+                <button type="button" class="btn" onclick="importDialog.close()">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary">
+                    {{ _('Import') }}
+                </button>
+            </div>
+        </form>
+        <div id="importLoading" class="hidden text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+            <p class="mt-4 text-base font-medium text-slate-700 dark:text-slate-300">{{ _('Importing pattern...') }}</p>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ _('This may take 10-30 seconds') }}</p>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>{{ _('Close') }}</button>
+    </form>
+</dialog>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const importBtn = document.querySelector('[data-action="import"]');
+    const importDialog = document.getElementById('importDialog');
+    const importForm = document.getElementById('importForm');
+    const importLoading = document.getElementById('importLoading');
+
+    // Tab switching
+    let currentTab = 'url';
+    const tabs = document.querySelectorAll('.tabs .tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tabName = tab.dataset.tab;
+            
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('tab-active'));
+            tab.classList.add('tab-active');
+            
+            // Show corresponding content
+            tabContents.forEach(content => {
+                if (content.id === `tab-${tabName}`) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+            
+            currentTab = tabName;
+        });
+    });
+
+    // File drag and drop
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('importFile');
+    const dropZoneContent = document.getElementById('dropZoneContent');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const removeFileBtn = document.getElementById('removeFile');
+
+    if (dropZone && fileInput) {
+        // Click to select file
+        dropZone.addEventListener('click', (e) => {
+            if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
+                fileInput.click();
+            }
+        });
+
+        // File selected via input
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                showFilePreview(file);
+            }
+        });
+
+        // Drag over
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-primary', 'bg-base-200');
+        });
+
+        // Drag leave
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-base-200');
+        });
+
+        // Drop
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-base-200');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // Set the file to the input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(files[0]);
+                fileInput.files = dataTransfer.files;
+                showFilePreview(files[0]);
+            }
+        });
+
+        // Remove file
+        if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileInput.value = '';
+                hideFilePreview();
+            });
+        }
+
+        function showFilePreview(file) {
+            fileName.textContent = file.name;
+            dropZoneContent.classList.add('hidden');
+            filePreview.classList.remove('hidden');
+        }
+
+        function hideFilePreview() {
+            dropZoneContent.classList.remove('hidden');
+            filePreview.classList.add('hidden');
+            fileName.textContent = '';
+        }
+    }
+
+    if (importBtn) {
+        importBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            importDialog.showModal();
+        });
+    }
+
+    async function performImport() {
+        const formData = new FormData();
+        const useAI = document.getElementById('useAI')?.checked || false;
+        formData.append('use_ai', useAI ? 'true' : 'false');
+
+        // Get data based on current tab
+        if (currentTab === 'url') {
+            const url = document.getElementById('importUrl').value.trim();
+            if (!url) {
+                showToast('{{ _('Please enter a URL') }}', 'error');
+                return;
+            }
+            formData.append('url', url);
+            formData.append('type', 'url');
+            
+        } else if (currentTab === 'file') {
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                showToast('{{ _('Please select a file') }}', 'error');
+                return;
+            }
+            formData.append('file', file);
+            formData.append('type', 'file');
+            
+        } else if (currentTab === 'text') {
+            const text = document.getElementById('importText').value.trim();
+            if (!text) {
+                showToast('{{ _('Please enter some text') }}', 'error');
+                return;
+            }
+            formData.append('text', text);
+            formData.append('type', 'text');
+        }
+
+        // Show loading state
+        importForm.classList.add('hidden');
+        importLoading.classList.remove('hidden');
+
+        try {
+            console.log('Importing with type:', currentTab, 'AI:', useAI);
+            
+            const response = await fetch('/projects/import', {
+                method: 'POST',
+                body: formData
+            });
+            
+            console.log('Import response status:', response.status);
+            
+            if (!response.ok) {
+                let errorMsg = 'Failed to import';
+                    try {
+                        const error = await response.json();
+                        errorMsg = error.detail || errorMsg;
+                    } catch (e) {
+                        errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMsg);
+                }
+                
+                const data = await response.json();
+                console.log('Import successful, data:', data);
+                
+                // Ensure the URL is included in the imported data (for URL imports)
+                if (currentTab === 'url' && !data.link) {
+                    data.link = document.getElementById('importUrl').value.trim();
+                }
+                
+                // Close dialog
+                importDialog.close();
+                
+                // Show success message - make it clear they'll be taken to the form
+                showToast('{{ _('Pattern data extracted - loading form...') }}', 'success');
+                
+                // Redirect to new project page with imported data
+                // Store data in sessionStorage
+                sessionStorage.setItem('importedData', JSON.stringify(data));
+                window.location.href = '/projects/new';
+                
+            } catch (error) {
+                console.error('Import error:', error);
+                showToast(error.message || '{{ _('Failed to import pattern') }}', 'error');
+                
+                // Reset form
+                importForm.classList.remove('hidden');
+                importLoading.classList.add('hidden');
+            }
+    }
+
+    if (importForm) {
+        importForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await performImport();
+        });
+    }
+});
+
+// Delete dialog functions
+let deleteProjectId = null;
+
+function showDeleteDialog(projectId, projectName) {
+    deleteProjectId = projectId;
+    document.getElementById('deleteProjectName').textContent = projectName || '';
+    document.getElementById('deleteProjectDialog').showModal();
+}
+
+function deleteProject() {
+    if (!deleteProjectId) return;
+    
+    fetch(`/projects/${deleteProjectId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if (response.ok) {
+            // Remove the card from the DOM
+            const card = document.querySelector(`[data-project-card] button[onclick*="${deleteProjectId}"]`)?.closest('[data-project-card]');
+            if (card) {
+                card.style.transition = 'opacity 1s';
+                card.style.opacity = '0';
+                setTimeout(() => card.remove(), 1000);
+            }
+            showToast('{{ _('Project deleted') }}', 'success');
+            document.getElementById('deleteProjectDialog').close();
+        }
+    });
+}
+</script>
+
+<!-- Delete confirmation dialog -->
+<dialog id="deleteProjectDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
+    <h3 class="text-lg font-bold text-base-content mb-4">{{ _('Delete Project') }}</h3>
+    <p class="text-base-content/80 mb-6">
+        {{ _('Are you sure you want to delete this project?') }}
+        <br>
+        <strong id="deleteProjectName" class="text-base-content"></strong>
+    </p>
+    <div class="flex justify-end gap-3">
+        <button onclick="document.getElementById('deleteProjectDialog').close()" class="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+            {{ _('Cancel') }}
+        </button>
+        <button
+            onclick="deleteProject()"
+            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+        >
+            {{ _('Delete') }}
+        </button>
+    </div>
+</dialog>
+
 {% endblock %}

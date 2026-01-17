@@ -335,6 +335,7 @@ async def list_projects(
             "categories": categories,
             "selected_category": category,
             "search": search,
+            "has_openai_key": bool(config.OPENAI_API_KEY),
         },
     )
 
@@ -346,11 +347,16 @@ async def new_project_form(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Show new project form."""
+    import os
+
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     categories = await _get_user_categories(db, current_user.id)
     yarn_options = await _get_user_yarns(db, current_user.id)
+
+    # Check if OpenAI API key is available for AI import
+    has_openai_key = bool(os.getenv("OPENAI_API_KEY"))
 
     return render_template(
         "projects/form.html",
@@ -360,60 +366,219 @@ async def new_project_form(
             "project": None,
             "categories": categories,
             "yarns": yarn_options,
+            "has_openai_key": has_openai_key,
         },
     )
 
 
 @router.post("/import")
-async def import_from_url(
-    url: Annotated[str, Form()],
+async def import_pattern(
+    import_type: Annotated[str, Form(alias="type")] = "url",
+    url: Annotated[str | None, Form()] = None,
+    text: Annotated[str | None, Form()] = None,
+    file: UploadFile | None = None,
     use_ai: Annotated[bool, Form()] = False,
     current_user: User = Depends(require_auth),
 ) -> JSONResponse:
-    """Import pattern data from URL.
+    """Import pattern data from URL, file, or text.
 
     Args:
-        url: The URL to import from
+        import_type: Type of import ('url', 'file', or 'text')
+        url: The URL to import from (when type='url')
+        text: Plain text to parse (when type='text')
+        file: Uploaded file (when type='file')
         use_ai: If True, use AI-powered extraction (requires OPENAI_API_KEY)
         current_user: Authenticated user
     """
+    import logging
     import os
 
-    if not url or not url.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="URL is required",
-        )
-
-    url = url.strip()
-
-    # Basic URL validation
-    if not url.startswith(("http://", "https://")):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid URL format",
-        )
+    logger = logging.getLogger(__name__)
 
     try:
-        data: dict[str, Any]
-        # Try AI-powered import if requested and API key is available
-        if use_ai and os.getenv("OPENAI_API_KEY"):
-            from stricknani.utils.ai_importer import AIPatternImporter
+        content_text = ""
+        source_url = None
 
-            ai_importer = AIPatternImporter(url)
-            data = await ai_importer.fetch_and_parse()
+        # Extract content based on import type
+        if import_type == "url":
+            if not url or not url.strip():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="URL is required",
+                )
+
+            url = url.strip()
+
+            # Basic URL validation
+            if not url.startswith(("http://", "https://")):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid URL format",
+                )
+
+            source_url = url
+
+            # For URLs, use the existing importers
+            data: dict[str, Any]
+            ai_failed = False
+
+            # Try AI-powered import if requested and API key is available
+            if use_ai and os.getenv("OPENAI_API_KEY"):
+                try:
+                    from stricknani.utils.ai_importer import AIPatternImporter
+
+                    ai_importer = AIPatternImporter(url)
+                    data = await ai_importer.fetch_and_parse()
+
+                    # Check if AI extraction actually worked (not all nulls)
+                    if all(
+                        v is None or v == [] or v == ""
+                        for k, v in data.items()
+                        if k not in {"link", "image_urls", "comment"}
+                    ):
+                        # AI failed, fall back to basic parser
+                        ai_failed = True
+                        raise ValueError("AI extraction returned empty data")
+
+                except Exception as e:
+                    # Log the AI failure and fall back to basic parser
+                    logger.warning(
+                        f"AI import failed, falling back to basic parser: {e}"
+                    )
+                    ai_failed = True
+
+                    from stricknani.utils.importer import PatternImporter
+
+                    basic_importer = PatternImporter(url)
+                    data = await basic_importer.fetch_and_parse()
+            else:
+                # Use basic HTML parsing
+                from stricknani.utils.importer import PatternImporter
+
+                basic_importer = PatternImporter(url)
+                data = await basic_importer.fetch_and_parse()
+
+            # Add a note if AI failed but basic parser succeeded
+            if ai_failed and data.get("comment"):
+                data["comment"] = (
+                    data.get("comment", "")
+                    + "\n\n(Note: AI extraction failed, used basic parser)"
+                )
+            elif ai_failed:
+                data["comment"] = "(Note: AI extraction failed, used basic parser)"
+
+            return JSONResponse(content=data)
+
+        elif import_type == "text":
+            if not text or not text.strip():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Text is required",
+                )
+            content_text = text.strip()
+
+        elif import_type == "file":
+            if not file:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="File is required",
+                )
+
+            # Read file content
+            content_bytes = await file.read()
+
+            # Handle different file types
+            if file.filename and file.filename.lower().endswith('.pdf'):
+                # TODO: Add PDF parsing with pypdf or similar
+                raise HTTPException(
+                    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                    detail="PDF parsing not yet implemented",
+                )
+            elif file.content_type and file.content_type.startswith('image/'):
+                # TODO: Add OCR with tesseract or similar
+                raise HTTPException(
+                    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                    detail="Image OCR not yet implemented",
+                )
+            else:
+                # Assume text file
+                try:
+                    content_text = content_bytes.decode('utf-8')
+                except UnicodeDecodeError as e:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="File is not valid UTF-8 text",
+                    ) from e
+
         else:
-            # Fallback to basic HTML parsing
-            from stricknani.utils.importer import PatternImporter
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid import type: {import_type}",
+            )
 
-            basic_importer = PatternImporter(url)
-            data = await basic_importer.fetch_and_parse()
+        # For text and file imports, use AI to extract pattern data
+        if content_text and use_ai and os.getenv("OPENAI_API_KEY"):
+            from openai import AsyncOpenAI
+
+            from stricknani.utils.ai_importer import _build_schema_from_model
+
+            client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            schema = _build_schema_from_model(Project)
+
+            system_prompt = f"""You are an expert at extracting knitting \
+pattern information.
+Extract the following fields from the provided text:
+
+{json.dumps(schema, indent=2)}
+
+Return valid JSON only. Use null for missing values."""
+
+            user_prompt = (
+                f"Extract knitting pattern information from this text:\n\n"
+                f"{content_text[:8000]}"
+            )
+
+            try:
+                response = await client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.1,
+                )
+
+                data = json.loads(response.choices[0].message.content or "{}")
+                if source_url:
+                    data["link"] = source_url
+                return JSONResponse(content=data)
+
+            except Exception as e:
+                logger.error(f"AI extraction failed for text/file: {e}")
+                # Fall through to basic extraction
+
+        # Basic extraction for text/file without AI
+        data = {
+            "title": None,
+            "needles": None,
+            "yarn": None,
+            "gauge_stitches": None,
+            "gauge_rows": None,
+            "comment": content_text[:2000] if content_text else None,
+            "steps": [],
+            "link": source_url,
+        }
 
         return JSONResponse(content=data)
+
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Import failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to import from URL: {str(e)}",
+            detail=f"Failed to import: {str(e)}",
         ) from e
 
 

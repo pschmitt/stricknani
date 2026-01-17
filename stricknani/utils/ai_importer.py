@@ -1,10 +1,13 @@
 """AI-powered URL import using OpenAI for better pattern extraction."""
 
+import inspect
+import json as json_module
 import os
 from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
+from sqlalchemy import Integer, String, Text
 
 # Check if OpenAI is available
 try:
@@ -13,6 +16,98 @@ try:
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
+
+
+def _build_schema_from_model(model_class: type) -> dict[str, Any]:
+    """Build JSON schema from SQLAlchemy model dynamically."""
+    from sqlalchemy.orm import ColumnProperty
+
+    schema: dict[str, Any] = {
+        "type": "object",
+        "properties": {},
+        "required": [],
+    }
+
+    # Get all Mapped columns from the model
+    for name, _annotation in inspect.get_annotations(model_class).items():
+        # Skip relationships, foreign keys, and timestamps
+        if name in {
+            "id",
+            "owner_id",
+            "owner",
+            "created_at",
+            "updated_at",
+            "images",
+            "steps",
+            "yarns",
+            "link",  # Skip link as we set it manually from the URL
+        }:
+            continue
+
+        # Get the column from the model
+        if not hasattr(model_class, name):
+            continue
+
+        col = getattr(model_class, name)
+        if not hasattr(col, "property") or not isinstance(col.property, ColumnProperty):
+            continue
+
+        # Get column info
+        columns = list(col.property.columns)
+        if not columns:
+            continue
+
+        column = columns[0]
+        column_type = column.type
+        is_nullable = column.nullable
+
+        json_type = "string"  # Default
+        description = f"The {name.replace('_', ' ')}"
+
+        if isinstance(column_type, Integer):
+            json_type = "integer"
+        elif isinstance(column_type, (String, Text)):
+            json_type = "string"
+
+        # Special handling for specific fields
+        if name == "gauge_stitches":
+            description = "Number of stitches per 10cm (integer)"
+        elif name == "gauge_rows":
+            description = "Number of rows per 10cm (integer)"
+        elif name == "needles":
+            description = "Needle size (e.g. '3.5mm', 'US 6')"
+        elif name == "yarn":
+            description = "Yarn name and weight"
+        elif name == "comment":
+            description = "A brief description or notes about the pattern"
+        elif name == "category":
+            description = "Project category (e.g. 'Pullover', 'Schal', 'Mütze')"
+        elif name == "name":
+            description = "The pattern or project name"
+            schema["required"].append(name)
+
+        prop: dict[str, Any] = {"type": json_type, "description": description}
+
+        if is_nullable or name not in schema["required"]:
+            prop["nullable"] = True
+
+        schema["properties"][name] = prop
+
+    # Add steps field (not a direct column but important for patterns)
+    schema["properties"]["steps"] = {
+        "type": "array",
+        "description": "Array of instruction steps",
+        "items": {
+            "type": "object",
+            "properties": {
+                "step_number": {"type": "integer"},
+                "title": {"type": "string"},
+                "description": {"type": "string"},
+            },
+        },
+    }
+
+    return schema
 
 
 class AIPatternImporter:
@@ -120,32 +215,55 @@ class AIPatternImporter:
         self, text_content: str, image_urls: list[str]
     ) -> dict[str, Any]:
         """Use OpenAI to extract pattern information."""
+        from stricknani.models import Project
+
         client = AsyncOpenAI(api_key=self.api_key)
 
-        system_prompt = """You are an expert at extracting knitting pattern information.
-Extract the following from the provided text:
-- title: The pattern name
-- needles: Needle size (e.g. "3.5mm", "US 6")
-- yarn: Yarn name and weight
-- gauge_stitches: Number of stitches per 10cm (integer)
-- gauge_rows: Number of rows per 10cm (integer)
-- comment: A brief description or notes about the pattern
-- steps: Array of instruction steps with title and description
+        # Build schema dynamically from Project model
+        schema = _build_schema_from_model(Project)
+
+        # Create example based on schema
+        example: dict[str, Any] = {}
+        for field, props in schema["properties"].items():
+            if field == "name":
+                example[field] = "Cozy Scarf"
+            elif field == "needles":
+                example[field] = "4mm"
+            elif field == "yarn":
+                example[field] = "Worsted weight wool"
+            elif field == "gauge_stitches":
+                example[field] = 20
+            elif field == "gauge_rows":
+                example[field] = 28
+            elif field == "comment":
+                example[field] = "A simple beginner-friendly scarf pattern"
+            elif field == "category":
+                example[field] = "Schal"
+            elif field == "steps":
+                example[field] = [
+                    {
+                        "step_number": 1,
+                        "title": "Cast On",
+                        "description": "Cast on 40 stitches",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Body",
+                        "description": "Knit in stockinette stitch",
+                    },
+                ]
+            elif props.get("nullable"):
+                example[field] = None
+
+        system_prompt = f"""You are an expert at extracting knitting \
+pattern information.
+Extract the following fields from the provided text:
+
+{json_module.dumps(schema, indent=2)}
 
 Return valid JSON only. Use null for missing values.
 Example format:
-{
-  "title": "Cozy Scarf",
-  "needles": "4mm",
-  "yarn": "Worsted weight wool",
-  "gauge_stitches": 20,
-  "gauge_rows": 28,
-  "comment": "A simple beginner-friendly scarf pattern",
-  "steps": [
-    {"step_number": 1, "title": "Cast On", "description": "Cast on 40 stitches"},
-    {"step_number": 2, "title": "Body", "description": "Knit in stockinette stitch"}
-  ]
-}"""
+{json_module.dumps(example, indent=2)}"""
 
         user_prompt = (
             f"Extract knitting pattern information from this text:\n\n{text_content}"
@@ -162,14 +280,20 @@ Example format:
                 temperature=0.1,
             )
 
-            import json
+            import json as json_parser
 
-            result: dict[str, Any] = json.loads(
+            result: dict[str, Any] = json_parser.loads(
                 response.choices[0].message.content or "{}"
             )
             return result
 
-        except Exception:
+        except Exception as e:
+            # Log the error but continue with fallback
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"AI extraction failed: {e}", exc_info=True)
+
             # Fallback to empty data if AI extraction fails
             return {
                 "title": None,
@@ -177,6 +301,9 @@ Example format:
                 "yarn": None,
                 "gauge_stitches": None,
                 "gauge_rows": None,
-                "comment": f"Imported from {self.url}",
+                "comment": (
+                    f"Imported from {self.url}\n\n"
+                    "(AI extraction failed - please fill in manually)"
+                ),
                 "steps": [],
             }

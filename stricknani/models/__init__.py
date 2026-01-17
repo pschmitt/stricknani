@@ -111,7 +111,7 @@ class Project(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), index=True)
-    category: Mapped[str] = mapped_column(String(50))
+    category: Mapped[str | None] = mapped_column(String(50), nullable=True)
     yarn: Mapped[str | None] = mapped_column(String(255), nullable=True)
     needles: Mapped[str | None] = mapped_column(String(255), nullable=True)
     gauge_stitches: Mapped[int | None] = mapped_column(Integer, nullable=True)

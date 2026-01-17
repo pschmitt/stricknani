@@ -46,6 +46,9 @@ class Config:
         os.getenv("FEATURE_SIGNUP_ENABLED", "true").lower() == "true"
     )
 
+    # AI/OpenAI
+    OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
+
     # Internationalization
     DEFAULT_LANGUAGE: str = os.getenv("DEFAULT_LANGUAGE", "de")
     SUPPORTED_LANGUAGES: list[str] = ["en", "de"]
