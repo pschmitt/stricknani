@@ -272,8 +272,8 @@ msgstr "Delete project"
 msgid "Image upload failed. Please try again."
 msgstr "Image upload failed. Please try again."
 
-msgid "Calculate how many stitches and rows you need based on your gauge and the pattern's gauge."
-msgstr "Calculate how many stitches and rows you need based on your gauge and the pattern's gauge."
+msgid "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge."
+msgstr "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge."
 
 msgid "Pattern Gauge (per 10cm)"
 msgstr "Pattern Gauge (per 10cm)"
@@ -287,14 +287,14 @@ msgstr "Rows"
 msgid "Your Gauge (per 10cm)"
 msgstr "Your Gauge (per 10cm)"
 
-msgid "Target Dimensions"
-msgstr "Target Dimensions"
+msgid "Pattern Counts"
+msgstr "Pattern Counts"
 
-msgid "Width (cm)"
-msgstr "Width (cm)"
+msgid "Stitches to cast on"
+msgstr "Stitches to cast on"
 
-msgid "Height (cm)"
-msgstr "Height (cm)"
+msgid "Rows to knit"
+msgstr "Rows to knit"
 
 msgid "optional"
 msgstr "optional"
@@ -311,8 +311,8 @@ msgstr "Enter the gauge from your pattern (stitches and rows per 10cm)"
 msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgstr "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 
-msgid "Enter the target dimensions you want to achieve"
-msgstr "Enter the target dimensions you want to achieve"
+msgid "Enter the stitch count from your pattern (cast-on stitches)"
+msgstr "Enter the stitch count from your pattern (cast-on stitches)"
 
 msgid "Click Calculate to see how many stitches and rows you need"
 msgstr "Click Calculate to see how many stitches and rows you need"
@@ -329,17 +329,17 @@ msgstr "Adjusted Rows"
 msgid "N/A"
 msgstr "N/A"
 
-msgid "For a piece"
-msgstr "For a piece"
+msgid "Based on a pattern cast-on of"
+msgstr "Based on a pattern cast-on of"
 
-msgid "wide"
-msgstr "wide"
+msgid "stitches"
+msgstr "stitches"
 
 msgid "and"
 msgstr "and"
 
-msgid "tall"
-msgstr "tall"
+msgid "rows"
+msgstr "rows"
 
 # Project categories
 msgid "Pullover"

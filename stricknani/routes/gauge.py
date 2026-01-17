@@ -32,17 +32,18 @@ async def calculate(
     pattern_gauge_rows: Annotated[int, Form()],
     user_gauge_stitches: Annotated[int, Form()],
     user_gauge_rows: Annotated[int, Form()],
-    target_width_cm: Annotated[float, Form()],
-    target_height_cm: Annotated[float, Form()] = 0.0,
+    pattern_cast_on_stitches: Annotated[int, Form()],
+    pattern_row_count: Annotated[str | None, Form()] = None,
 ) -> JSONResponse:
     """Calculate gauge adjustments."""
+    pattern_row_count_value = int(pattern_row_count) if pattern_row_count else None
     result = calculate_gauge(
         pattern_gauge_stitches=pattern_gauge_stitches,
         pattern_gauge_rows=pattern_gauge_rows,
         user_gauge_stitches=user_gauge_stitches,
         user_gauge_rows=user_gauge_rows,
-        target_width_cm=target_width_cm,
-        target_height_cm=target_height_cm,
+        pattern_cast_on_stitches=pattern_cast_on_stitches,
+        pattern_row_count=pattern_row_count_value,
     )
 
     return JSONResponse(
@@ -53,7 +54,7 @@ async def calculate(
             "pattern_gauge_rows": result.pattern_gauge_rows,
             "user_gauge_stitches": result.user_gauge_stitches,
             "user_gauge_rows": result.user_gauge_rows,
-            "target_width_cm": result.target_width_cm,
-            "target_height_cm": result.target_height_cm,
+            "pattern_cast_on_stitches": result.pattern_cast_on_stitches,
+            "pattern_row_count": result.pattern_row_count,
         }
     )

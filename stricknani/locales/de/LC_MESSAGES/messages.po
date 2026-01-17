@@ -284,8 +284,8 @@ msgstr "Bist du sicher, dass du dieses Garn löschen möchtest?"
 msgid "Image upload failed. Please try again."
 msgstr "Bild-Upload fehlgeschlagen. Bitte versuche es erneut."
 
-msgid "Calculate how many stitches and rows you need based on your gauge and the pattern's gauge."
-msgstr "Berechne wie viele Maschen und Reihen du basierend auf deiner Maschenprobe und der Anleitung benötigst."
+msgid "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge."
+msgstr "Berechne, wie viele Maschen du anschlagen und wie viele Reihen du stricken musst, basierend auf deiner Maschenprobe und der Anleitung."
 
 msgid "Pattern Gauge (per 10cm)"
 msgstr "Anleitung Maschenprobe (pro 10cm)"
@@ -299,14 +299,14 @@ msgstr "Reihen"
 msgid "Your Gauge (per 10cm)"
 msgstr "Deine Maschenprobe (pro 10cm)"
 
-msgid "Target Dimensions"
-msgstr "Zielmaße"
+msgid "Pattern Counts"
+msgstr "Anleitungsangaben"
 
-msgid "Width (cm)"
-msgstr "Breite (cm)"
+msgid "Stitches to cast on"
+msgstr "Maschen zum Anschlagen"
 
-msgid "Height (cm)"
-msgstr "Höhe (cm)"
+msgid "Rows to knit"
+msgstr "Reihen zum Stricken"
 
 msgid "optional"
 msgstr "optional"
@@ -323,8 +323,8 @@ msgstr "Gib die Maschenprobe aus deiner Anleitung ein (Maschen und Reihen pro 10
 msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgstr "Gib deine tatsächliche Maschenprobe von deinem Probemuster ein (Maschen und Reihen pro 10cm)"
 
-msgid "Enter the target dimensions you want to achieve"
-msgstr "Gib die gewünschten Zielmaße ein"
+msgid "Enter the stitch count from your pattern (cast-on stitches)"
+msgstr "Gib die Maschenzahl aus deiner Anleitung ein (Anschlagmaschen)"
 
 msgid "Click Calculate to see how many stitches and rows you need"
 msgstr "Klicke auf Berechnen, um zu sehen wie viele Maschen und Reihen du benötigst"
@@ -341,17 +341,17 @@ msgstr "Angepasste Reihen"
 msgid "N/A"
 msgstr "k. A."
 
-msgid "For a piece"
-msgstr "Für ein Stück"
+msgid "Based on a pattern cast-on of"
+msgstr "Basierend auf einem Anschlag von"
 
-msgid "wide"
-msgstr "breit"
+msgid "stitches"
+msgstr "Maschen"
 
 msgid "and"
 msgstr "und"
 
-msgid "tall"
-msgstr "hoch"
+msgid "rows"
+msgstr "Reihen"
 
 # Project categories
 msgid "Pullover"
@@ -799,4 +799,3 @@ msgstr "Importierte Daten - Noch nicht gespeichert"
 
 msgid "This project was imported from an external source. Please review all fields carefully and click \"Create Project\" to save it."
 msgstr "Dieses Projekt wurde aus einer externen Quelle importiert. Bitte überprüfe alle Felder sorgfältig und klicke auf \"Projekt erstellen\" zum Speichern."
-

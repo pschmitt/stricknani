@@ -10,27 +10,27 @@ def test_gauge_calculation_basic() -> None:
         pattern_gauge_rows=26,
         user_gauge_stitches=18,
         user_gauge_rows=24,
-        target_width_cm=50.0,
-        target_height_cm=0.0,
+        pattern_cast_on_stitches=120,
+        pattern_row_count=None,
     )
 
-    assert result.adjusted_stitches == 90  # (50 / 10) * 18 = 90
-    assert result.adjusted_rows == 0
+    assert result.adjusted_stitches == 108  # 120 * 18 / 20 = 108
+    assert result.adjusted_rows is None
 
 
-def test_gauge_calculation_with_height() -> None:
-    """Test gauge calculation with height."""
+def test_gauge_calculation_with_rows() -> None:
+    """Test gauge calculation with rows."""
     result = calculate_gauge(
         pattern_gauge_stitches=20,
         pattern_gauge_rows=26,
         user_gauge_stitches=18,
         user_gauge_rows=24,
-        target_width_cm=50.0,
-        target_height_cm=60.0,
+        pattern_cast_on_stitches=120,
+        pattern_row_count=100,
     )
 
-    assert result.adjusted_stitches == 90  # (50 / 10) * 18 = 90
-    assert result.adjusted_rows == 144  # (60 / 10) * 24 = 144
+    assert result.adjusted_stitches == 108  # 120 * 18 / 20 = 108
+    assert result.adjusted_rows == 92  # round(100 * 24 / 26)
 
 
 def test_gauge_calculation_exact_match() -> None:
@@ -40,12 +40,12 @@ def test_gauge_calculation_exact_match() -> None:
         pattern_gauge_rows=26,
         user_gauge_stitches=20,
         user_gauge_rows=26,
-        target_width_cm=40.0,
-        target_height_cm=50.0,
+        pattern_cast_on_stitches=80,
+        pattern_row_count=50,
     )
 
-    assert result.adjusted_stitches == 80  # (40 / 10) * 20 = 80
-    assert result.adjusted_rows == 130  # (50 / 10) * 26 = 130
+    assert result.adjusted_stitches == 80
+    assert result.adjusted_rows == 50
 
 
 def test_gauge_calculation_rounding() -> None:
@@ -55,12 +55,12 @@ def test_gauge_calculation_rounding() -> None:
         pattern_gauge_rows=28,
         user_gauge_stitches=19,
         user_gauge_rows=25,
-        target_width_cm=45.5,
-        target_height_cm=55.5,
+        pattern_cast_on_stitches=121,
+        pattern_row_count=95,
     )
 
     # Should round to nearest integer
     assert isinstance(result.adjusted_stitches, int)
     assert isinstance(result.adjusted_rows, int)
-    assert result.adjusted_stitches == 86  # round((45.5 / 10) * 19)
-    assert result.adjusted_rows == 139  # round((55.5 / 10) * 25)
+    assert result.adjusted_stitches == 104  # round(121 * 19 / 22)
+    assert result.adjusted_rows == 85  # round(95 * 25 / 28)
