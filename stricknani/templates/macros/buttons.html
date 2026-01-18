@@ -1,0 +1,77 @@
+{% macro primary(text, href=None, icon=None, type='button', class='', attrs='') %}
+    {% set base_classes = "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" %}
+    {% if href %}
+    <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ text }}
+    </a>
+    {% else %}
+    <button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ text }}
+    </button>
+    {% endif %}
+{% endmacro %}
+
+{% macro danger(text, href=None, icon=None, type='button', class='', attrs='') %}
+    {% set base_classes = "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-red-600 text-white font-medium hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" %}
+    {% if href %}
+    <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ text }}
+    </a>
+    {% else %}
+    <button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ text }}
+    </button>
+    {% endif %}
+{% endmacro %}
+
+{% macro secondary(text, href=None, icon=None, type='button', class='', attrs='') %}
+    {% set base_classes = "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-slate-300 bg-white text-slate-700 font-medium hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" %}
+    {% if href %}
+    <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ text }}
+    </a>
+    {% else %}
+    <button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ text }}
+    </button>
+    {% endif %}
+{% endmacro %}
+
+{% macro ghost(text, href=None, icon=None, type='button', class='', attrs='') %}
+    {% set base_classes = "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed" %}
+    {% if href %}
+    <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ text }}
+    </a>
+    {% else %}
+    <button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ text }}
+    </button>
+    {% endif %}
+{% endmacro %}
+
+{% macro icon_only(icon, href=None, type='button', variant='ghost', class='', attrs='') %}
+    {% set colors = {
+        'ghost': 'text-slate-500 border border-transparent hover:border-slate-300 hover:text-slate-700 hover:bg-slate-50 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200 dark:hover:bg-slate-800',
+        'danger': 'text-red-600 border border-transparent hover:border-red-300 hover:bg-red-50 dark:text-red-400 dark:hover:border-red-800 dark:hover:bg-red-900/20',
+        'primary': 'text-blue-600 border border-transparent hover:border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:hover:border-blue-800 dark:hover:bg-blue-900/20'
+    } %}
+    {% set base_classes = "inline-flex h-10 w-10 items-center justify-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900 " + colors[variant] %}
+    {% if href %}
+    <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        <span class="mdi {{ icon }} text-xl"></span>
+    </a>
+    {% else %}
+    <button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        <span class="mdi {{ icon }} text-xl"></span>
+    </button>
+    {% endif %}
+{% endmacro %}

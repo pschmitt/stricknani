@@ -521,7 +521,7 @@ async def import_pattern(
         # For text and file imports, use AI to extract pattern data
         if content_text and use_ai and os.getenv("OPENAI_API_KEY"):
             try:
-                from openai import AsyncOpenAI  # type: ignore[import-not-found]
+                from openai import AsyncOpenAI
             except ImportError:
                 logger.warning(
                     "OpenAI package not installed, AI extraction unavailable"

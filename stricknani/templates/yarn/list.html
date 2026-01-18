@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros/buttons.html" as buttons %}
 
 {% block title %}{{ _('Yarn') }} - {{ _('Stricknani') }}{% endblock %}
 
@@ -8,10 +9,7 @@
         <span class="mdi mdi-sheep text-primary"></span>
         {{ _('Yarn Stash') }}
     </h2>
-    <a href="/yarn/new" class="btn btn-primary">
-        <span class="mdi mdi-plus-circle-outline text-lg"></span>
-        {{ _('New Yarn') }}
-    </a>
+    {{ buttons.primary(_('New Yarn'), icon='mdi-plus-circle-outline', href='/yarn/new') }}
 </div>
 
 <!-- Search -->
@@ -117,23 +115,8 @@
                     {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='card' %}
                         {% include "yarn/_favorite_toggle.html" %}
                     {% endwith %}
-                    <a
-                        href="/yarn/{{ yarn.id }}/edit"
-                        class="btn btn-ghost btn-circle"
-                        aria-label="{{ _('Edit yarn') }}"
-                        title="{{ _('Edit yarn') }}"
-                    >
-                        <span class="mdi mdi-pencil-outline text-xl" aria-hidden="true"></span>
-                    </a>
-                    <button
-                        onclick="showDeleteDialog({{ yarn.id }}, '{{ yarn.name|escape }}')"
-                        class="btn btn-ghost btn-circle text-error"
-                        aria-label="{{ _('Delete yarn') }}"
-                        title="{{ _('Delete yarn') }}"
-                    >
-                        <span class="mdi mdi-delete-outline text-xl" aria-hidden="true"></span>
-                        <span class="sr-only">{{ _('Delete yarn') }}</span>
-                    </button>
+                    {{ buttons.icon_only('mdi-pencil-outline', href='/yarn/' + yarn.id|string + '/edit', variant='primary', attrs='aria-label="' + _('Edit yarn') + '" title="' + _('Edit yarn') + '"') }}
+                    {{ buttons.icon_only('mdi-delete-outline', variant='danger', attrs='onclick="showDeleteDialog(' + yarn.id|string + ', \'' + yarn.name|escape + '\')" aria-label="' + _('Delete yarn') + '" title="' + _('Delete yarn') + '"') }}
                 </div>
             </div>
         </div>
@@ -153,15 +136,8 @@
         <strong id="deleteYarnName" class="text-base-content"></strong>
     </p>
     <div class="flex justify-end gap-3">
-        <button onclick="document.getElementById('deleteYarnDialog').close()" class="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-            {{ _('Cancel') }}
-        </button>
-        <button
-            onclick="deleteYarn()"
-            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-        >
-            {{ _('Delete') }}
-        </button>
+        {{ buttons.secondary(_('Cancel'), attrs='onclick="document.getElementById(\'deleteYarnDialog\').close()"') }}
+        {{ buttons.danger(_('Delete'), attrs='onclick="deleteYarn()"') }}
     </div>
 </dialog>
 

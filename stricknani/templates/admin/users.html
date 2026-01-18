@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros/buttons.html" as buttons %}
 
 {% block content %}
 <div class="space-y-6">
@@ -49,10 +50,7 @@
                     <span class="block text-xs text-base-content/70">{{ _('Allow this user to manage accounts and settings.') }}</span>
                 </span>
             </label>
-            <button type="submit" class="btn btn-primary">
-                <span class="mdi mdi-account-plus"></span>
-                {{ _('Create user') }}
-            </button>
+            {{ buttons.primary(_('Create user'), type='submit', icon='mdi-account-plus') }}
         </form>
     </div>
 
@@ -84,20 +82,14 @@
                 </div>
                 <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                     <form method="post" action="/admin/users/{{ user.id }}/toggle-admin">
-                        <button
-                            type="submit"
-                            class="btn btn-sm {% if user.is_admin %}btn-error{% else %}btn-success btn-outline{% endif %}"
-                            {% if user.is_admin and user.id == current_user.id %}disabled{% endif %}
-                        >
-                            <span class="mdi mdi-shield-account"></span>
-                            {% if user.is_admin %}{{ _('Revoke admin') }}{% else %}{{ _('Make admin') }}{% endif %}
-                        </button>
+                        {% if user.is_admin %}
+                            {{ buttons.danger(_('Revoke admin'), type='submit', icon='mdi-shield-account', class='btn-sm', attrs='disabled' if user.id == current_user.id else '') }}
+                        {% else %}
+                            {{ buttons.ghost(_('Make admin'), type='submit', icon='mdi-shield-account', class='btn-sm btn-outline text-success hover:bg-success/20 hover:text-success-content', attrs='disabled' if user.id == current_user.id else '') }}
+                        {% endif %}
                     </form>
                     <form method="post" action="/admin/users/{{ user.id }}/toggle-active">
-                        <button type="submit" class="btn btn-sm btn-outline">
-                            <span class="mdi mdi-account-off"></span>
-                            {% if user.is_active %}{{ _('Deactivate') }}{% else %}{{ _('Activate') }}{% endif %}
-                        </button>
+                        {{ buttons.ghost(_('Deactivate') if user.is_active else _('Activate'), type='submit', icon='mdi-account-off', class='btn-sm btn-outline') }}
                     </form>
                     <form method="post" action="/admin/users/{{ user.id }}/reset-password" class="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <label class="sr-only" for="password-{{ user.id }}">{{ _('New password') }}</label>
@@ -107,29 +99,16 @@
                             type="password"
                             autocomplete="new-password"
                             placeholder="{{ _('New password') }}"
-                            class="w-64 input input-bordered"
+                            class="w-64 input input-bordered input-sm"
                             required
                         />
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            <span class="mdi mdi-key-variant"></span>
-                            {{ _('Reset password') }}
-                        </button>
+                        {{ buttons.primary(_('Reset password'), type='submit', icon='mdi-key-variant', class='btn-sm py-1') }}
                     </form>
                     <form
                         method="post"
                         action="/admin/users/{{ user.id }}/delete"
                     >
-                        <button
-                            type="button"
-                            class="btn btn-sm bg-red-600 text-white hover:bg-red-700 border-transparent dark:hover:bg-red-500"
-                            data-user-id="{{ user.id }}"
-                            data-user-email="{{ user.email }}"
-                            onclick="openDeleteUserDialog(this)"
-                            {% if user.id == current_user.id %}disabled{% endif %}
-                        >
-                            <span class="mdi mdi-delete-outline"></span>
-                            {{ _('Delete user') }}
-                        </button>
+                        {{ buttons.danger(_('Delete user'), type='button', icon='mdi-delete-outline', class='btn-sm py-1', attrs=('disabled' if user.id == current_user.id else '') + ' data-user-id="' + user.id|string + '" data-user-email="' + user.email + '" onclick="openDeleteUserDialog(this)"') }}
                     </form>
                 </div>
             </div>
@@ -146,20 +125,9 @@
         <strong id="deleteUserEmail" class="text-base-content"></strong>
     </p>
     <div class="flex justify-end gap-3">
-        <button
-            type="button"
-            onclick="document.getElementById('deleteUserDialog').close()"
-            class="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-        >
-            {{ _('Cancel') }}
-        </button>
+        {{ buttons.secondary(_('Cancel'), attrs='onclick="document.getElementById(\'deleteUserDialog\').close()"') }}
         <form id="deleteUserForm" method="post" action="/admin/users/0/delete">
-            <button
-                type="submit"
-                class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-            >
-                {{ _('Delete') }}
-            </button>
+            {{ buttons.danger(_('Delete'), type='submit') }}
         </form>
     </div>
 </dialog>

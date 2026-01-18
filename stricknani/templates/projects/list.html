@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros/buttons.html" as buttons %}
 
 {% block title %}{{ _('Projects') }} - Stricknani{% endblock %}
 
@@ -18,14 +19,8 @@
         {{ _('My Projects') }}
     </h2>
     <div class="flex gap-2 w-full sm:w-auto">
-        <a href="/projects/new" class="btn btn-ghost btn-sm flex-1 sm:flex-none">
-            <span class="mdi mdi-plus-circle-outline text-lg"></span>
-            {{ _('New Project') }}
-        </a>
-        <button data-action="import" class="btn btn-primary btn-sm flex-1 sm:flex-none">
-            <span class="mdi mdi-download text-lg"></span>
-            {{ _('Import') }}
-        </button>
+        {{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='flex-1 sm:flex-none') }}
+        {{ buttons.secondary(_('Import'), icon='mdi-download', attrs='data-action="import"', class='flex-1 sm:flex-none') }}
     </div>
 </div>
 
@@ -164,23 +159,8 @@
                         {% with project_id=project.id, is_favorite=project.is_favorite, variant='card' %}
                             {% include "projects/_favorite_toggle.html" %}
                         {% endwith %}
-                        <a
-                            href="/projects/{{ project.id }}/edit"
-                            class="btn btn-ghost btn-circle"
-                            aria-label="{{ _('Edit project') }}"
-                            title="{{ _('Edit project') }}"
-                        >
-                            <span class="mdi mdi-pencil-outline text-xl" aria-hidden="true"></span>
-                        </a>
-                        <button
-                            onclick="showDeleteDialog({{ project.id }}, '{{ project.name|escape }}')"
-                            class="btn btn-ghost btn-circle text-error"
-                            aria-label="{{ _('Delete project') }}"
-                            title="{{ _('Delete project') }}"
-                        >
-                            <span class="mdi mdi-delete-outline text-xl" aria-hidden="true"></span>
-                            <span class="sr-only">{{ _('Delete project') }}</span>
-                        </button>
+                        {{ buttons.icon_only('mdi-pencil-outline', href='/projects/' + project.id|string + '/edit', variant='primary', attrs='aria-label="' + _('Edit project') + '" title="' + _('Edit project') + '"') }}
+                        {{ buttons.icon_only('mdi-delete-outline', variant='danger', attrs='onclick="showDeleteDialog(' + project.id|string + ', \'' + project.name|escape + '\')" aria-label="' + _('Delete project') + '" title="' + _('Delete project') + '"') }}
                     </div>
                 </div>
             </div>
@@ -287,10 +267,8 @@
             </div>
             {% endif %}
             <div class="modal-action">
-                <button type="button" class="btn" onclick="importDialog.close()">{{ _('Cancel') }}</button>
-                <button type="submit" class="btn btn-primary">
-                    {{ _('Import') }}
-                </button>
+                {{ buttons.secondary(_('Cancel'), attrs='onclick="importDialog.close()"') }}
+                {{ buttons.primary(_('Import'), type='submit') }}
             </div>
         </form>
         <div id="importLoading" class="hidden text-center py-8">
@@ -562,15 +540,8 @@ function deleteProject() {
         <strong id="deleteProjectName" class="text-base-content"></strong>
     </p>
     <div class="flex justify-end gap-3">
-        <button onclick="document.getElementById('deleteProjectDialog').close()" class="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-            {{ _('Cancel') }}
-        </button>
-        <button
-            onclick="deleteProject()"
-            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-        >
-            {{ _('Delete') }}
-        </button>
+        {{ buttons.secondary(_('Cancel'), attrs='onclick="document.getElementById(\'deleteProjectDialog\').close()"') }}
+        {{ buttons.danger(_('Delete'), attrs='onclick="deleteProject()"') }}
     </div>
 </dialog>
 

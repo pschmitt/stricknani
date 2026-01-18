@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "macros/buttons.html" as buttons %}
 
 {% block title %}{{ _('Login') }} - {{ _('Stricknani') }}{% endblock %}
 
@@ -72,21 +73,12 @@
                         placeholder="••••••••"
                     >
                 </div>
-                <button type="submit" class="btn btn-primary w-full">
-                    <span class="mdi mdi-login text-lg"></span>
-                    {{ _('Login') }}
-                </button>
+                {{ buttons.primary(_('Login'), type='submit', icon='mdi-login', class='w-full text-lg') }}
             </form>
 
             {% if signup_enabled %}
             <div class="text-center">
-                <button
-                    onclick="document.getElementById('login-form').classList.add('hidden'); document.getElementById('signup-form').classList.remove('hidden')"
-                    class="btn btn-ghost btn-sm"
-                >
-                    <span class="mdi mdi-account-plus"></span>
-                    {{ _("Don't have an account? Sign up") }}
-                </button>
+                {{ buttons.ghost(_("Don't have an account? Sign up"), icon='mdi-account-plus', class='btn-sm', attrs='onclick="document.getElementById(\'login-form\').classList.add(\'hidden\'); document.getElementById(\'signup-form\').classList.remove(\'hidden\')"') }}
             </div>
             {% endif %}
         </div>
@@ -129,20 +121,11 @@
                         <span class="label-text-alt">{{ _('At least 8 characters') }}</span>
                     </label>
                 </div>
-                <button type="submit" class="btn btn-success w-full">
-                    <span class="mdi mdi-account-check text-lg"></span>
-                    {{ _('Sign Up') }}
-                </button>
+                {{ buttons.primary(_('Sign Up'), type='submit', icon='mdi-account-check', class='w-full text-lg bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:hover:bg-green-500') }}
             </form>
 
             <div class="text-center">
-                <button
-                    onclick="document.getElementById('signup-form').classList.add('hidden'); document.getElementById('login-form').classList.remove('hidden')"
-                    class="btn btn-ghost btn-sm"
-                >
-                    <span class="mdi mdi-login"></span>
-                    {{ _('Already have an account? Login') }}
-                </button>
+                {{ buttons.ghost(_('Already have an account? Login'), icon='mdi-login', class='btn-sm', attrs='onclick="document.getElementById(\'signup-form\').classList.add(\'hidden\'); document.getElementById(\'login-form\').classList.remove(\'hidden\')"') }}
             </div>
         </div>
         {% endif %}
