@@ -85,6 +85,10 @@ ignore = [
     "B008",  # Function call in default argument (required for FastAPI Depends)
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["stricknani"]
+known-third-party = ["alembic", "sqlalchemy"]
+
 [tool.mypy]
 python_version = "3.13"
 strict = true
