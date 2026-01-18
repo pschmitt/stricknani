@@ -13,7 +13,14 @@
     <script>
         // Theme initialization - MUST run before page renders
         (function() {
-            const theme = localStorage.getItem('theme') || 'light';
+            let theme = localStorage.getItem('theme');
+            if (!theme) {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    theme = 'dark';
+                } else {
+                    theme = 'light';
+                }
+            }
             document.documentElement.setAttribute('data-theme', theme);
             // Also set dark class for Tailwind dark mode
             if (theme === 'dark') {
@@ -50,15 +57,17 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bg-base-100">
-    <nav class="navbar bg-base-200 shadow-sm border-b border-base-300">
+<body class="min-h-screen bg-base-100">
+    <div class="drawer">
+        <input id="main-drawer" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content flex flex-col min-h-screen">
+            <nav class="navbar bg-base-200 shadow-sm border-b border-base-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div class="flex justify-between h-16 w-full">
                 <div class="flex items-center space-x-2 md:space-x-8">
-                    <button type="button" class="btn btn-ghost md:hidden" aria-controls="mobile-menu" aria-expanded="false" id="mobile-menu-button">
-                        <span class="sr-only">{{ _('Open main menu') }}</span>
+                    <label for="main-drawer" class="btn btn-ghost drawer-button md:hidden" aria-label="{{ _('Open main menu') }}">
                         <span class="mdi mdi-menu text-2xl"></span>
-                    </button>
+                    </label>
                     <a href="/" class="text-xl font-bold hover:text-primary inline-flex items-center gap-2">
                         <img src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}" alt="" class="h-6 w-6" />
                         <span class="mdi mdi-yarn text-primary"></span>
@@ -169,13 +178,13 @@
                         </div>
                     </div>
                     {% else %}
-                    <div class="flex items-center space-x-4">
+                    <div class="hidden md:flex items-center space-x-4">
                         <button type="button" onclick="toggleTheme()" class="text-slate-900 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 px-2 py-2 rounded-md transition-colors inline-flex items-center gap-2" title="{{ _('Toggle theme') }}">
                             <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
                         </button>
                         <form action="/auth/set-language" method="post" class="inline">
                             <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                            <select name="language" onchange="this.form.submit()" class="text-sm border-slate-300 dark:border-slate-700 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                            <select name="language" onchange="this.form.submit()" class="select select-bordered select-sm w-full max-w-xs">
                                 <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 {{ _('English') }}</option>
                                 <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 {{ _('German') }}</option>
                             </select>
@@ -187,33 +196,6 @@
                     </div>
                     {% endif %}
                 </div>
-            </div>
-        </div>
-
-        <div class="md:hidden hidden" id="mobile-menu">
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-slate-200 dark:border-slate-700 bg-slate-100/95 dark:bg-slate-900/95 backdrop-blur">
-                {% set current_path = request.url.path %}
-                {% if current_user %}
-                <a href="/projects" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/projects') %}bg-blue-600 text-white{% else %}text-slate-900 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-800{% endif %}">
-                    <span class="mdi mdi-folder-outline mr-2"></span>{{ _('Projects') }}
-                </a>
-                <a href="/yarn" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/yarn') %}bg-blue-600 text-white{% else %}text-slate-900 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-800{% endif %}">
-                    <span class="mdi mdi-sheep mr-2"></span>{{ _('Yarn') }}
-                </a>
-                {% endif %}
-                <a href="/gauge" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/gauge') %}bg-blue-600 text-white{% else %}text-slate-900 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-800{% endif %}">
-                    <span class="mdi mdi-ruler mr-2"></span>{{ _('Gauge Calculator') }}
-                </a>
-                {% if current_user and current_user.is_admin %}
-                <a href="/admin/users" class="block px-3 py-2 rounded-md text-base font-medium {% if current_path.startswith('/admin') %}bg-blue-600 text-white{% else %}text-slate-900 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-800{% endif %}">
-                    <span class="mdi mdi-shield-account mr-2"></span>{{ _('Admin') }}
-                </a>
-                {% endif %}
-                {% if not current_user %}
-                <a href="/login" class="block px-3 py-2 rounded-md text-base font-medium text-slate-900 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-800">
-                    <span class="mdi mdi-login mr-2"></span>{{ _('Login') }}
-                </a>
-                {% endif %}
             </div>
         </div>
     </nav>
@@ -228,6 +210,82 @@
             <span class="mdi mdi-github text-lg align-middle"></span>
         </a>
     </footer>
+    </div> 
+    <div class="drawer-side z-[9999]">
+        <label for="main-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+        <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
+            <!-- Sidebar content here -->
+            {% set current_path = request.url.path %}
+            <li class="mb-4">
+                <a href="/" class="text-xl font-bold gap-2 hover:bg-transparent">
+                    <img src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}" alt="" class="h-8 w-8" />
+                    <span class="mdi mdi-yarn text-primary"></span>
+                    {{ _('Stricknani') }}
+                </a>
+            </li>
+            
+            {% if current_user %}
+            <li>
+                <a href="/projects" class="{% if current_path.startswith('/projects') %}active{% endif %}">
+                    <span class="mdi mdi-folder-outline text-lg"></span>{{ _('Projects') }}
+                </a>
+            </li>
+            <li>
+                <a href="/yarn" class="{% if current_path.startswith('/yarn') %}active{% endif %}">
+                    <span class="mdi mdi-sheep text-lg"></span>{{ _('Yarn') }}
+                </a>
+            </li>
+            {% endif %}
+            
+            <li>
+                <a href="/gauge" class="{% if current_path.startswith('/gauge') %}active{% endif %}">
+                    <span class="mdi mdi-ruler text-lg"></span>{{ _('Gauge Calculator') }}
+                </a>
+            </li>
+            
+            {% if current_user and current_user.is_admin %}
+            <li>
+                <a href="/admin/users" class="{% if current_path.startswith('/admin') %}active{% endif %}">
+                    <span class="mdi mdi-shield-account text-lg"></span>{{ _('Admin') }}
+                </a>
+            </li>
+            {% endif %}
+
+            {% if not current_user %}
+            <li>
+                <a href="/login" class="">
+                    <span class="mdi mdi-login text-lg"></span>{{ _('Login') }}
+                </a>
+            </li>
+            
+            <div class="divider"></div>
+            <li class="menu-title">{{ _('Settings') }}</li>
+            <li>
+                <button type="button" onclick="toggleTheme()" class="justify-between">
+                    <span class="flex items-center gap-2">
+                        <span class="mdi mdi-theme-light-dark"></span> {{ _('Theme') }}
+                    </span>
+                    <span class="mdi mdi-weather-night text-lg"></span>
+                </button>
+            </li>
+            <li>
+                <div class="flex items-center justify-between py-2">
+                    <span class="flex items-center gap-2">
+                        <span class="mdi mdi-translate"></span> {{ _('Language') }}
+                    </span>
+                    <form action="/auth/set-language" method="post" class="inline m-0 p-0">
+                        <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                        <select name="language" onchange="this.form.submit()" class="select select-bordered select-sm w-full max-w-xs">
+                            <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 English</option>
+                            <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 Deutsch</option>
+                        </select>
+                    </form>
+                </div>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    </div>
 
     <div
         id="toastContainer"
@@ -628,16 +686,7 @@
 
             initLightbox();
 
-            const mobileMenuButton = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-
-            if (mobileMenuButton && mobileMenu) {
-                mobileMenuButton.addEventListener('click', () => {
-                    const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
-                    mobileMenuButton.setAttribute('aria-expanded', !expanded);
-                    mobileMenu.classList.toggle('hidden');
-                });
-            }
+            // Mobile menu logic handled by DaisyUI drawer (CSS only)
         });
 
         // Theme toggle functionality
