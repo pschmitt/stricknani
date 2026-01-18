@@ -46,8 +46,15 @@ jobs:
 
       - name: Verify image
         run: |
-          docker run --rm -d -p 7874:7874 --name stricknani-test \
+          docker run -d -p 7874:7874 --name stricknani-test \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 10
           curl -f http://localhost:7874/healthz
-          docker stop stricknani-test
+
+      - name: Dump container logs
+        if: failure()
+        run: docker logs stricknani-test
+
+      - name: Cleanup container
+        if: always()
+        run: docker rm -f stricknani-test
