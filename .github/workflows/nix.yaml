@@ -21,7 +21,11 @@ jobs:
         run: nix flake check
 
       - name: Build with Nix
-        run: nix build
+        run: |
+          nix build
+          tree result
 
       - name: Build Nix container
-        run: nix build .#stricknani-docker
+        run: |
+          nix build '.#stricknani-docker'
+          tree result
