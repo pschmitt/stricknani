@@ -46,10 +46,10 @@ jobs:
 
       - name: Verify image
         run: |
-          docker run -d -p 7874:7874 --name stricknani-test \
+          docker run -d -p 7674:7674 --name stricknani-test \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 10
-          curl -f http://localhost:7874/healthz
+          curl -f http://localhost:7674/healthz
 
       - name: Dump container logs
         if: failure()

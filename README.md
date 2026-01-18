@@ -16,7 +16,7 @@
 
 ```bash
 docker run -d \
-  -p 7874:7874 \
+  -p 7674:7674 \
   -v stricknani-data:/app/media \
   -e SECRET_KEY=your-secret-key \
   ghcr.io/pschmitt/stricknani:latest

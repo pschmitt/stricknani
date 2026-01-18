@@ -481,7 +481,7 @@ docker build -t stricknani:latest .
 
 # Run container
 docker run -d \
-  -p 7874:7874 \
+  -p 7674:7674 \
   -v stricknani-data:/app/media \
   -e SECRET_KEY=your-secret-key-here \
   ghcr.io/pschmitt/stricknani:latest
@@ -491,7 +491,7 @@ docker run -d \
 
 Environment variables:
 - `SECRET_KEY` - JWT secret (required in production)
-- `PORT` - Server port (default: 7674 dev, 7874 prod)
+- `PORT` - Server port (default: 7674 dev, 7674 prod)
 - `DATABASE_URL` - Database connection string
 - `MEDIA_ROOT` - Media files directory
 - `FEATURE_SIGNUP_ENABLED` - Enable/disable signups (default: true)
