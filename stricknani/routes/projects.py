@@ -490,13 +490,13 @@ async def import_pattern(
             content_bytes = await file.read()
 
             # Handle different file types
-            if file.filename and file.filename.lower().endswith('.pdf'):
+            if file.filename and file.filename.lower().endswith(".pdf"):
                 # TODO: Add PDF parsing with pypdf or similar
                 raise HTTPException(
                     status_code=status.HTTP_501_NOT_IMPLEMENTED,
                     detail="PDF parsing not yet implemented",
                 )
-            elif file.content_type and file.content_type.startswith('image/'):
+            elif file.content_type and file.content_type.startswith("image/"):
                 # TODO: Add OCR with tesseract or similar
                 raise HTTPException(
                     status_code=status.HTTP_501_NOT_IMPLEMENTED,
@@ -505,7 +505,7 @@ async def import_pattern(
             else:
                 # Assume text file
                 try:
-                    content_text = content_bytes.decode('utf-8')
+                    content_text = content_bytes.decode("utf-8")
                 except UnicodeDecodeError as e:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,

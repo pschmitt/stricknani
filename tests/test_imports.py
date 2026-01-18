@@ -1,8 +1,9 @@
 """Tests for pattern import functionality."""
 
+import json
 from io import BytesIO
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -278,7 +279,7 @@ async def test_import_text_with_ai(test_client: "TestClientFixture") -> None:
     Step 4: Repeat stripes until desired length.
     """
 
-    mock_ai_response = {
+    mock_ai_response_json = {
         "title": "Striped Scarf",
         "needles": "5mm",
         "yarn": "100g blue yarn, 100g white yarn",
@@ -299,13 +300,16 @@ async def test_import_text_with_ai(test_client: "TestClientFixture") -> None:
     }
 
     with (
-        patch(
-            "stricknani.utils.ai_importer.AIPatternImporter.fetch_and_parse"
-        ) as mock_ai,
+        patch("openai.AsyncOpenAI") as MockOpenAI,
         patch("os.getenv") as mock_env,
     ):
-        # Mock AI extraction
-        mock_ai.return_value = mock_ai_response
+        # Mock OpenAI response
+        mock_client = MockOpenAI.return_value
+        mock_completion = MagicMock()
+        mock_completion.choices[0].message.content = json.dumps(mock_ai_response_json)
+
+        # Configure create to be async
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
 
         # Mock API key presence
         mock_env.return_value = "fake-api-key"
@@ -335,8 +339,7 @@ async def test_import_text_file(test_client: "TestClientFixture") -> None:
     client, _, _, _, _ = test_client
 
     file_content = (
-        b"Simple Pattern\n\nNeedles: 4mm\nYarn: Cotton\n\n"
-        b"Cast on 50 stitches."
+        b"Simple Pattern\n\nNeedles: 4mm\nYarn: Cotton\n\nCast on 50 stitches."
     )
 
     response = await client.post(
