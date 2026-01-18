@@ -1,73 +1,30 @@
-name: CI/CD
+name: Docker Build
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_run:
+    workflows: ["CI/CD"]
+    types: [completed]
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: "latest"
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          uv sync --extra dev
-
-      - name: Run ruff
-        run: uv run ruff check .
-
-      - name: Run mypy
-        run: uv run mypy .
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: "latest"
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          uv sync --extra dev
-
-      - name: Run tests
-        run: uv run pytest -v
-
   build-docker:
+    if: >-
+      ${{
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'
+      }}
     runs-on: ubuntu-latest
-    needs: [lint, test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -98,5 +55,5 @@ jobs:
           docker run --rm -d -p 7874:7874 --name stricknani-test \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 10
-          curl -f http://localhost:7874/healthz || exit 1
+          curl -f http://localhost:7874/healthz
           docker stop stricknani-test
