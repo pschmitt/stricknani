@@ -1,14 +1,33 @@
 """Tests for pattern import functionality."""
 
-import json
 from io import BytesIO
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import TYPE_CHECKING
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+if TYPE_CHECKING:
+    from httpx import AsyncClient
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+    TestClientFixture = tuple[
+        AsyncClient,
+        async_sessionmaker[AsyncSession],
+        int,
+        int,
+        int,
+    ]
+
+try:
+    import openai  # noqa: F401  # type: ignore
+
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+
 
 @pytest.mark.asyncio
-async def test_import_url_basic(test_client: tuple) -> None:
+async def test_import_url_basic(test_client: "TestClientFixture") -> None:
     """Test basic URL import without AI."""
     client, _, _, _, _ = test_client
 
@@ -52,8 +71,9 @@ async def test_import_url_basic(test_client: tuple) -> None:
     assert "comment" in data or "instructions" in data
 
 
+@pytest.mark.skipif(not OPENAI_AVAILABLE, reason="OpenAI not installed")
 @pytest.mark.asyncio
-async def test_import_url_with_ai(test_client: tuple) -> None:
+async def test_import_url_with_ai(test_client: "TestClientFixture") -> None:
     """Test URL import with AI extraction."""
     client, _, _, _, _ = test_client
 
@@ -139,7 +159,7 @@ async def test_import_url_with_ai(test_client: tuple) -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_ai_fallback(test_client: tuple) -> None:
+async def test_import_ai_fallback(test_client: "TestClientFixture") -> None:
     """Test that AI failure falls back to basic parser."""
     client, _, _, _, _ = test_client
 
@@ -203,7 +223,7 @@ async def test_import_ai_fallback(test_client: tuple) -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_text(test_client: tuple) -> None:
+async def test_import_text(test_client: "TestClientFixture") -> None:
     """Test text import without AI."""
     client, _, _, _, _ = test_client
 
@@ -239,8 +259,9 @@ async def test_import_text(test_client: tuple) -> None:
     assert len(data["comment"]) > 0
 
 
+@pytest.mark.skipif(not OPENAI_AVAILABLE, reason="OpenAI not installed")
 @pytest.mark.asyncio
-async def test_import_text_with_ai(test_client: tuple) -> None:
+async def test_import_text_with_ai(test_client: "TestClientFixture") -> None:
     """Test text import with AI extraction."""
     client, _, _, _, _ = test_client
 
@@ -278,19 +299,15 @@ async def test_import_text_with_ai(test_client: tuple) -> None:
     }
 
     with (
-        patch("openai.AsyncOpenAI") as mock_openai_class,
+        patch(
+            "stricknani.utils.ai_importer.AIPatternImporter.fetch_and_parse"
+        ) as mock_ai,
         patch("os.getenv") as mock_env,
     ):
-        # Mock OpenAI client
-        mock_client = AsyncMock()
-        mock_response = MagicMock()
-        mock_response.choices = [
-            MagicMock(message=MagicMock(content=json.dumps(mock_ai_response)))
-        ]
-        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
-        mock_openai_class.return_value = mock_client
+        # Mock AI extraction
+        mock_ai.return_value = mock_ai_response
 
-        # Mock API key
+        # Mock API key presence
         mock_env.return_value = "fake-api-key"
 
         response = await client.post(
@@ -313,7 +330,7 @@ async def test_import_text_with_ai(test_client: tuple) -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_text_file(test_client: tuple) -> None:
+async def test_import_text_file(test_client: "TestClientFixture") -> None:
     """Test text file upload."""
     client, _, _, _, _ = test_client
 
@@ -337,7 +354,7 @@ async def test_import_text_file(test_client: tuple) -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_pdf_not_implemented(test_client: tuple) -> None:
+async def test_import_pdf_not_implemented(test_client: "TestClientFixture") -> None:
     """Test that PDF import returns not implemented."""
     client, _, _, _, _ = test_client
 
@@ -352,7 +369,7 @@ async def test_import_pdf_not_implemented(test_client: tuple) -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_image_not_implemented(test_client: tuple) -> None:
+async def test_import_image_not_implemented(test_client: "TestClientFixture") -> None:
     """Test that image OCR returns not implemented."""
     client, _, _, _, _ = test_client
 
@@ -367,7 +384,7 @@ async def test_import_image_not_implemented(test_client: tuple) -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_requires_auth(test_client: tuple) -> None:
+async def test_import_requires_auth(test_client: "TestClientFixture") -> None:
     """Test that import endpoint requires authentication."""
     client, _, _, _, _ = test_client
 
@@ -395,7 +412,7 @@ async def test_import_requires_auth(test_client: tuple) -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_invalid_url(test_client: tuple) -> None:
+async def test_import_invalid_url(test_client: "TestClientFixture") -> None:
     """Test that invalid URLs are rejected."""
     client, _, _, _, _ = test_client
 
@@ -413,7 +430,7 @@ async def test_import_invalid_url(test_client: tuple) -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_missing_url(test_client: tuple) -> None:
+async def test_import_missing_url(test_client: "TestClientFixture") -> None:
     """Test that missing URL is rejected."""
     client, _, _, _, _ = test_client
 
@@ -430,7 +447,7 @@ async def test_import_missing_url(test_client: tuple) -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_missing_text(test_client: tuple) -> None:
+async def test_import_missing_text(test_client: "TestClientFixture") -> None:
     """Test that missing text is rejected."""
     client, _, _, _, _ = test_client
 
@@ -447,7 +464,7 @@ async def test_import_missing_text(test_client: tuple) -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_missing_file(test_client: tuple) -> None:
+async def test_import_missing_file(test_client: "TestClientFixture") -> None:
     """Test that missing file is rejected."""
     client, _, _, _, _ = test_client
 

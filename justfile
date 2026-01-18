@@ -29,6 +29,14 @@ test:
 # Run all checks (lint + test)
 check: lint test
 
+# Build with Nix
+build-nix:
+    nix build
+
+# Build Nix container
+build-container:
+    nix build .#stricknani-docker
+
 # Build Docker image
 build-image:
     docker build -t stricknani:latest .

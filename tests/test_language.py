@@ -5,7 +5,9 @@ from starlette.requests import Request
 from stricknani.main import get_language
 
 
-def _make_request(accept_language: str | None = None, cookie: str | None = None) -> Request:
+def _make_request(
+    accept_language: str | None = None, cookie: str | None = None
+) -> Request:
     headers: list[tuple[bytes, bytes]] = []
     if accept_language:
         headers.append((b"accept-language", accept_language.encode("utf-8")))

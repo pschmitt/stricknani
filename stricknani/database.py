@@ -9,11 +9,11 @@ import time
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
-from alembic import command
 from alembic.config import Config as AlembicConfig
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from alembic import command
 from stricknani.config import config
 
 logger = logging.getLogger(__name__)

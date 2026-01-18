@@ -102,6 +102,7 @@ strict_equality = true
 [[tool.mypy.overrides]]
 module = [
     "jose.*",
+    "openai",
 ]
 ignore_missing_imports = true
 

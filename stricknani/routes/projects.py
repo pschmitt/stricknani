@@ -520,14 +520,19 @@ async def import_pattern(
 
         # For text and file imports, use AI to extract pattern data
         if content_text and use_ai and os.getenv("OPENAI_API_KEY"):
-            from openai import AsyncOpenAI
+            try:
+                from openai import AsyncOpenAI  # type: ignore[import-not-found]
+            except ImportError:
+                logger.warning(
+                    "OpenAI package not installed, AI extraction unavailable"
+                )
+            else:
+                from stricknani.utils.ai_importer import _build_schema_from_model
 
-            from stricknani.utils.ai_importer import _build_schema_from_model
+                client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+                schema = _build_schema_from_model(Project)
 
-            client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            schema = _build_schema_from_model(Project)
-
-            system_prompt = f"""You are an expert at extracting knitting \
+                system_prompt = f"""You are an expert at extracting knitting \
 pattern information.
 Extract the following fields from the provided text:
 
@@ -535,30 +540,30 @@ Extract the following fields from the provided text:
 
 Return valid JSON only. Use null for missing values."""
 
-            user_prompt = (
-                f"Extract knitting pattern information from this text:\n\n"
-                f"{content_text[:8000]}"
-            )
-
-            try:
-                response = await client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    response_format={"type": "json_object"},
-                    temperature=0.1,
+                user_prompt = (
+                    f"Extract knitting pattern information from this text:\n\n"
+                    f"{content_text[:8000]}"
                 )
 
-                data = json.loads(response.choices[0].message.content or "{}")
-                if source_url:
-                    data["link"] = source_url
-                return JSONResponse(content=data)
+                try:
+                    response = await client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        response_format={"type": "json_object"},
+                        temperature=0.1,
+                    )
 
-            except Exception as e:
-                logger.error(f"AI extraction failed for text/file: {e}")
-                # Fall through to basic extraction
+                    data = json.loads(response.choices[0].message.content or "{}")
+                    if source_url:
+                        data["link"] = source_url
+                    return JSONResponse(content=data)
+
+                except Exception as e:
+                    logger.error(f"AI extraction failed for text/file: {e}")
+                    # Fall through to basic extraction
 
         # Basic extraction for text/file without AI
         data = {

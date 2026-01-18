@@ -11,7 +11,7 @@ from sqlalchemy import Integer, String, Text
 
 # Check if OpenAI is available
 try:
-    from openai import AsyncOpenAI
+    from openai import AsyncOpenAI  # type: ignore[import-not-found]
 
     OPENAI_AVAILABLE = True
 except ImportError:
