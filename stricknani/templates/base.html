@@ -137,19 +137,30 @@
                                 </div>
                             </div>
                             <div class="space-y-4 border-b border-base-300 px-4 py-4">
-                                <form action="/auth/set-language" method="post" class="space-y-2">
-                                    <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                                <div class="space-y-2">
                                     <label class="label">
                                         <span class="label-text text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
                                             <span class="mdi mdi-translate"></span>
                                             {{ _('Language') }}
                                         </span>
                                     </label>
-                                    <select name="language" onchange="this.form.submit()" class="select select-bordered w-full">
-                                        <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 {{ _('English') }}</option>
-                                        <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 {{ _('German') }}</option>
-                                    </select>
-                                </form>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <form action="/auth/set-language" method="post" class="block">
+                                            <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                                            <input type="hidden" name="language" value="en">
+                                            <button type="submit" class="btn btn-sm w-full {% if current_language == 'en' %}btn-primary{% else %}btn-outline{% endif %}">
+                                                🇬🇧 EN
+                                            </button>
+                                        </form>
+                                        <form action="/auth/set-language" method="post" class="block">
+                                            <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                                            <input type="hidden" name="language" value="de">
+                                            <button type="submit" class="btn btn-sm w-full {% if current_language == 'de' %}btn-primary{% else %}btn-outline{% endif %}">
+                                                🇩🇪 DE
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
                                 <div class="space-y-2">
                                     <label class="label">
                                         <span class="label-text text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
@@ -182,13 +193,33 @@
                         <button type="button" onclick="toggleTheme()" class="btn btn-ghost btn-circle" title="{{ _('Toggle theme') }}">
                             <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
                         </button>
-                        <form action="/auth/set-language" method="post" class="inline">
-                            <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                            <select name="language" onchange="this.form.submit()" class="select select-bordered select-sm w-full max-w-xs">
-                                <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 {{ _('English') }}</option>
-                                <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 {{ _('German') }}</option>
-                            </select>
-                        </form>
+                        <div class="dropdown dropdown-end">
+                            <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1 px-2">
+                                <span class="mdi mdi-translate text-lg"></span>
+                                <span class="uppercase font-semibold text-xs">{{ current_language }}</span>
+                                <span class="mdi mdi-chevron-down text-xs opacity-50"></span>
+                            </div>
+                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 border border-base-200">
+                                <li>
+                                    <form action="/auth/set-language" method="post" class="block p-0">
+                                        <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                                        <input type="hidden" name="language" value="en">
+                                        <button type="submit" class="flex w-full items-center gap-2 {% if current_language == 'en' %}active{% endif %}">
+                                            <span>🇬🇧</span> {{ _('English') }}
+                                        </button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form action="/auth/set-language" method="post" class="block p-0">
+                                        <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                                        <input type="hidden" name="language" value="de">
+                                        <button type="submit" class="flex w-full items-center gap-2 {% if current_language == 'de' %}active{% endif %}">
+                                            <span>🇩🇪</span> {{ _('German') }}
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
                         <a href="/login" class="btn btn-ghost">
                             <span class="mdi mdi-login"></span>
                             {{ _('Login') }}
@@ -269,17 +300,22 @@
                 </button>
             </li>
             <li>
-                <div class="flex items-center justify-between py-2">
+                <div class="flex items-center justify-between py-2 active:bg-transparent hover:bg-transparent cursor-default">
                     <span class="flex items-center gap-2">
                         <span class="mdi mdi-translate"></span> {{ _('Language') }}
                     </span>
-                    <form action="/auth/set-language" method="post" class="inline m-0 p-0">
-                        <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                        <select name="language" onchange="this.form.submit()" class="select select-bordered select-sm w-full max-w-xs">
-                            <option value="en" {% if current_language == 'en' %}selected{% endif %}>🇬🇧 English</option>
-                            <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 Deutsch</option>
-                        </select>
-                    </form>
+                    <div class="join">
+                        <form action="/auth/set-language" method="post" class="inline">
+                            <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                            <input type="hidden" name="language" value="en">
+                            <button type="submit" class="join-item btn btn-sm {% if current_language == 'en' %}btn-primary{% else %}btn-ghost{% endif %}">🇬🇧</button>
+                        </form>
+                        <form action="/auth/set-language" method="post" class="inline">
+                            <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                            <input type="hidden" name="language" value="de">
+                            <button type="submit" class="join-item btn btn-sm {% if current_language == 'de' %}btn-primary{% else %}btn-ghost{% endif %}">🇩🇪</button>
+                        </form>
+                    </div>
                 </div>
             </li>
             {% endif %}

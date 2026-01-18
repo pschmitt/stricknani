@@ -32,10 +32,10 @@ class Config:
         ","
     )
     SESSION_COOKIE_SECURE: bool = (
-        os.getenv("SESSION_COOKIE_SECURE", "true").lower() == "true"
+        os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
     )
     LANGUAGE_COOKIE_SECURE: bool = (
-        os.getenv("LANGUAGE_COOKIE_SECURE", "true").lower() == "true"
+        os.getenv("LANGUAGE_COOKIE_SECURE", "false").lower() == "true"
     )
     COOKIE_SAMESITE: Literal["lax", "strict", "none"] = cast(
         Literal["lax", "strict", "none"], os.getenv("COOKIE_SAMESITE", "strict")
