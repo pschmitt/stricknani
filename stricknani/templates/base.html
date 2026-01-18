@@ -178,8 +178,8 @@
                         </div>
                     </div>
                     {% else %}
-                    <div class="hidden md:flex items-center space-x-4">
-                        <button type="button" onclick="toggleTheme()" class="text-slate-900 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 px-2 py-2 rounded-md transition-colors inline-flex items-center gap-2" title="{{ _('Toggle theme') }}">
+                    <div class="hidden md:flex items-center space-x-2">
+                        <button type="button" onclick="toggleTheme()" class="btn btn-ghost btn-circle" title="{{ _('Toggle theme') }}">
                             <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
                         </button>
                         <form action="/auth/set-language" method="post" class="inline">
@@ -189,7 +189,7 @@
                                 <option value="de" {% if current_language == 'de' %}selected{% endif %}>🇩🇪 {{ _('German') }}</option>
                             </select>
                         </form>
-                        <a href="/login" class="text-slate-900 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2">
+                        <a href="/login" class="btn btn-ghost">
                             <span class="mdi mdi-login"></span>
                             {{ _('Login') }}
                         </a>
