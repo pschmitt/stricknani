@@ -3,6 +3,15 @@
 {% block title %}{{ _('Edit') if project else _('New') }} {{ _('Project') }} - Stricknani{% endblock %}
 
 {% block content %}
+<style>
+    .tab-content {
+        display: block;
+        min-height: 200px;
+    }
+    .tab-content.hidden {
+        display: none;
+    }
+</style>
 <dialog id="previewDialog" class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-2xl">
     <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
         <h3 class="text-lg font-semibold">{{ _('Preview') }}</h3>
@@ -13,42 +22,104 @@
     <div id="previewContent" class="p-6 prose max-w-none dark:prose-invert overflow-y-auto max-h-[70vh]"></div>
 </dialog>
 
-<!-- Import from URL Dialog -->
-<dialog id="importDialog" class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-md">
-    <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-        <h3 class="text-lg font-semibold">{{ _('Import from URL') }}</h3>
-        <button onclick="document.getElementById('importDialog').close()" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-            <span class="mdi mdi-close text-xl"></span>
-        </button>
-    </div>
-    <div class="p-6">
-        <form id="importForm" class="space-y-4">
-            <div>
-                <label for="importUrl" class="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-1">{{ _('Pattern URL') }}</label>
-                <input
-                    type="url"
-                    id="importUrl"
-                    name="url"
-                    required
-                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                    placeholder="https://example.com/pattern"
-                >
-                <p class="text-xs text-slate-500 mt-1 dark:text-slate-400">{{ _('Enter the URL of the knitting pattern you want to import') }}</p>
+<!-- Import Dialog -->
+<dialog id="importDialog" class="modal">
+    <div class="modal-box max-w-2xl">
+        <h3 class="font-bold text-lg mb-4">{{ _('Import Pattern') }}</h3>
+        <form id="importForm">
+            <!-- Import type tabs -->
+            <div role="tablist" class="tabs tabs-boxed mb-4">
+                <a role="tab" class="tab tab-active" data-tab="url">{{ _('From URL') }}</a>
+                <a role="tab" class="tab" data-tab="file">{{ _('From File') }}</a>
+                <a role="tab" class="tab" data-tab="text">{{ _('From Text') }}</a>
             </div>
+
+            <!-- URL Input -->
+            <div id="tab-url" class="tab-content">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">{{ _('Pattern URL') }}</span>
+                    </label>
+                    <input
+                        type="url"
+                        id="importUrl"
+                        name="url"
+                        placeholder="https://..."
+                        class="input input-bordered"
+                    />
+                    <label class="label">
+                        <span class="label-text-alt">{{ _('Enter the URL of the knitting pattern') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- File Upload with Drag and Drop -->
+            <div id="tab-file" class="tab-content hidden">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">{{ _('Pattern File') }}</span>
+                    </label>
+                    
+                    <!-- Drag and Drop Zone -->
+                    <div id="dropZone" class="border-2 border-dashed border-base-300 rounded-lg p-8 text-center hover:border-primary hover:bg-base-200 transition-colors cursor-pointer">
+                        <input
+                            type="file"
+                            id="importFile"
+                            name="file"
+                            accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.gif"
+                            class="hidden"
+                        />
+                        <div id="dropZoneContent">
+                            <span class="mdi mdi-cloud-upload text-5xl text-base-content opacity-50"></span>
+                            <p class="mt-4 text-base font-medium">{{ _('Click to upload or drag and drop') }}</p>
+                            <p class="mt-2 text-sm text-base-content opacity-60">{{ _('PDF, text file, or image') }}</p>
+                        </div>
+                        <div id="filePreview" class="hidden">
+                            <span class="mdi mdi-file-document text-5xl text-primary"></span>
+                            <p id="fileName" class="mt-4 text-base font-medium"></p>
+                            <button type="button" id="removeFile" class="btn btn-sm btn-ghost mt-2">
+                                <span class="mdi mdi-close"></span>
+                                {{ _('Remove') }}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <label class="label">
+                        <span class="label-text-alt">{{ _('Supports PDF, TXT, MD, JPG, PNG, GIF') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Text Input -->
+            <div id="tab-text" class="tab-content hidden">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">{{ _('Pattern Text') }}</span>
+                    </label>
+                    <textarea
+                        id="importText"
+                        name="text"
+                        rows="10"
+                        placeholder="{{ _('Paste pattern instructions here...') }}"
+                        class="textarea textarea-bordered"
+                    ></textarea>
+                    <label class="label">
+                        <span class="label-text-alt">{{ _('Paste the pattern text directly') }}</span>
+                    </label>
+                </div>
+            </div>
+
             {% if has_openai_key %}
-            <div class="flex items-center gap-2">
-                <input type="checkbox" id="useAI" name="use_ai" class="rounded border-slate-300 dark:border-slate-700" checked>
-                <label for="useAI" class="text-sm text-slate-900 dark:text-slate-200">
-                    {{ _('Use AI for better extraction') }} <span class="text-xs text-green-600 dark:text-green-400">✓ {{ _('enabled') }}</span>
+            <div class="form-control mt-4">
+                <label class="cursor-pointer label justify-start gap-2">
+                    <input type="checkbox" id="useAI" name="use_ai" class="checkbox checkbox-primary" checked />
+                    <span class="label-text">{{ _('Use AI for better extraction') }}</span>
                 </label>
             </div>
             {% endif %}
-            <div class="flex justify-end gap-3">
-                <button type="button" onclick="document.getElementById('importDialog').close()" class="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
-                    {{ _('Cancel') }}
-                </button>
-                <button type="submit" id="importSubmitBtn" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 inline-flex items-center gap-2">
-                    <span class="mdi mdi-download"></span>
+            <div class="modal-action">
+                <button type="button" class="btn" onclick="importDialog.close()">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary">
                     {{ _('Import') }}
                 </button>
             </div>
@@ -59,6 +130,9 @@
             <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ _('This may take 10-30 seconds') }}</p>
         </div>
     </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>{{ _('Close') }}</button>
+    </form>
 </dialog>
 
 <div class="max-w-6xl mx-auto space-y-6">
@@ -79,7 +153,7 @@
             {% if not project %}
             <button type="button" onclick="document.getElementById('importDialog').showModal()" class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:border-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:text-blue-300">
                 <span class="mdi mdi-download"></span>
-                {{ _('Import from URL') }}
+                {{ _('Import') }}
             </button>
             {% endif %}
             {% if project %}
@@ -1105,136 +1179,273 @@ document.getElementById('projectForm').addEventListener('submit', (e) => {
 </script>
 {% endif %}
 
-<!-- Import from URL Handler -->
+<!-- Import Handler -->
 <script>
-document.getElementById('importForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const form = e.target;
-    const urlInput = document.getElementById('importUrl');
-    const url = urlInput.value.trim();
-    
-    if (!url) {
-        window.showToast?.('{{ _("Please enter a URL") }}', 'error');
-        return;
-    }
-    
-    // Show loading
-    form.classList.add('hidden');
-    document.getElementById('importLoading').classList.remove('hidden');
-    
-    try {
-        const formData = new FormData();
-        formData.append('url', url);
-        
-        // Add AI checkbox value
-        const useAI = document.getElementById('useAI')?.checked || false;
-        formData.append('use_ai', useAI ? 'true' : 'false');
-        
-        console.log('Importing from URL:', url, 'with AI:', useAI);
-        
-        const response = await fetch('/projects/import', {
-            method: 'POST',
-            body: formData
-        });
-        
-        console.log('Import response status:', response.status);
-        
-        if (!response.ok) {
-            let errorMsg = 'Failed to import';
-            try {
-                const error = await response.json();
-                errorMsg = error.detail || errorMsg;
-            } catch (e) {
-                errorMsg = `HTTP ${response.status}: ${response.statusText}`;
-            }
-            throw new Error(errorMsg);
-        }
-        
-        const data = await response.json();
-        console.log('Import successful, data:', data);
-        
-        // Ensure the URL is included
-        if (!data.link) {
-            data.link = url;
-        }
-        
-        // Populate form fields
-        if (data.title) {
-            document.getElementById('name').value = data.title;
-        }
-        if (data.needles) {
-            document.getElementById('needles').value = data.needles;
-        }
-        if (data.yarn) {
-            // Set the yarn field - this might be a text field or selection
-            const yarnField = document.getElementById('yarn');
-            if (yarnField) {
-                yarnField.value = data.yarn;
-            }
-        }
-        if (data.gauge_stitches) {
-            document.getElementById('gauge_stitches').value = data.gauge_stitches;
-        }
-        if (data.gauge_rows) {
-            document.getElementById('gauge_rows').value = data.gauge_rows;
-        }
-        // Handle comment and images
-        let comment = data.comment || '';
-        
-        // Add image URLs to comment if present
-        if (data.image_urls && data.image_urls.length > 0) {
-            if (comment) {
-                comment += '\n\n';
-            }
-            comment += '## Images\n\n';
-            data.image_urls.forEach((imgUrl, index) => {
-                comment += `![Image ${index + 1}](${imgUrl})\n\n`;
-            });
-            comment += '\n*Note: Download and re-upload images to save them permanently.*';
-        }
-        
-        if (comment) {
-            const commentField = document.getElementById('comment');
-            commentField.value = comment;
-            autoResize(commentField);
-        }
-        
-        if (data.link) {
-            document.getElementById('link').value = data.link;
-        }
-        
-        // Import steps
-        if (data.steps && data.steps.length > 0) {
-            // Clear existing steps
-            document.getElementById('stepsContainer')?.innerHTML = '';
+document.addEventListener('DOMContentLoaded', function() {
+    const importDialog = document.getElementById('importDialog');
+    const importForm = document.getElementById('importForm');
+    const importLoading = document.getElementById('importLoading');
+
+    // Tab switching
+    let currentTab = 'url';
+    const tabs = document.querySelectorAll('.tabs .tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tabName = tab.dataset.tab;
             
-            // Add imported steps
-            data.steps.forEach((step, index) => {
-                addStep(step.title || `Step ${index + 1}`, step.description || '');
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('tab-active'));
+            tab.classList.add('tab-active');
+            
+            // Show corresponding content
+            tabContents.forEach(content => {
+                if (content.id === `tab-${tabName}`) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+            
+            currentTab = tabName;
+        });
+    });
+
+    // File drag and drop
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('importFile');
+    const dropZoneContent = document.getElementById('dropZoneContent');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const removeFileBtn = document.getElementById('removeFile');
+
+    if (dropZone && fileInput) {
+        // Click to select file
+        dropZone.addEventListener('click', (e) => {
+            if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
+                fileInput.click();
+            }
+        });
+
+        // File selected via input
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                showFilePreview(file);
+            }
+        });
+
+        // Drag over
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-primary', 'bg-base-200');
+        });
+
+        // Drag leave
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-base-200');
+        });
+
+        // Drop
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-base-200');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // Set the file to the input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(files[0]);
+                fileInput.files = dataTransfer.files;
+                showFilePreview(files[0]);
+            }
+        });
+
+        // Remove file
+        if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileInput.value = '';
+                hideFilePreview();
             });
         }
-        
-        // Close dialog
-        document.getElementById('importDialog').close();
-        
-        // Reset form
-        form.reset();
-        form.classList.remove('hidden');
-        document.getElementById('importLoading').classList.add('hidden');
-        
-        window.showToast?.('{{ _("Pattern imported successfully") }}', 'success');
-        
-        // Scroll to top of form
-        document.getElementById('name').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-    } catch (error) {
-        console.error('Import failed:', error);
-        window.showToast?.(error.message || '{{ _("Failed to import pattern") }}', 'error');
-        
-        // Reset UI
-        form.classList.remove('hidden');
-        document.getElementById('importLoading').classList.add('hidden');
+
+        function showFilePreview(file) {
+            fileName.textContent = file.name;
+            dropZoneContent.classList.add('hidden');
+            filePreview.classList.remove('hidden');
+        }
+
+        function hideFilePreview() {
+            dropZoneContent.classList.remove('hidden');
+            filePreview.classList.add('hidden');
+            fileName.textContent = '';
+        }
+    }
+
+    if (importForm) {
+        importForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const useAI = document.getElementById('useAI')?.checked || false;
+            formData.append('use_ai', useAI ? 'true' : 'false');
+
+            // Get data based on current tab
+            if (currentTab === 'url') {
+                const url = document.getElementById('importUrl').value.trim();
+                if (!url) {
+                    window.showToast?.('{{ _('Please enter a URL') }}', 'error');
+                    return;
+                }
+                formData.append('url', url);
+                formData.append('type', 'url');
+                
+            } else if (currentTab === 'file') {
+                const fileInput = document.getElementById('importFile');
+                const file = fileInput.files[0];
+                if (!file) {
+                    window.showToast?.('{{ _('Please select a file') }}', 'error');
+                    return;
+                }
+                formData.append('file', file);
+                formData.append('type', 'file');
+                
+            } else if (currentTab === 'text') {
+                const text = document.getElementById('importText').value.trim();
+                if (!text) {
+                    window.showToast?.('{{ _('Please enter some text') }}', 'error');
+                    return;
+                }
+                formData.append('text', text);
+                formData.append('type', 'text');
+            }
+            
+            // Show loading
+            importForm.classList.add('hidden');
+            importLoading.classList.remove('hidden');
+            
+            try {
+                console.log('Importing with type:', currentTab, 'AI:', useAI);
+                
+                const response = await fetch('/projects/import', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    let errorMsg = 'Failed to import';
+                    try {
+                        const error = await response.json();
+                        errorMsg = error.detail || errorMsg;
+                    } catch (e) {
+                        errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMsg);
+                }
+                
+                const data = await response.json();
+                console.log('Import successful, data:', data);
+                
+                // Show warning if AI fallback occurred
+                if (data.ai_fallback) {
+                    window.showToast?.('{{ _('AI extraction failed - using basic parser') }}', 'warning');
+                }
+
+                // Ensure the URL is included (for URL imports)
+                if (currentTab === 'url' && !data.link) {
+                    data.link = document.getElementById('importUrl').value.trim();
+                }
+                
+                // Populate form fields
+                if (data.title) {
+                    document.getElementById('name').value = data.title;
+                }
+                if (data.needles) {
+                    document.getElementById('needles').value = data.needles;
+                }
+                if (data.yarn) {
+                    const yarnField = document.getElementById('yarn');
+                    if (yarnField) {
+                        yarnField.value = data.yarn;
+                    }
+                }
+                if (data.gauge_stitches) {
+                    document.getElementById('gauge_stitches').value = data.gauge_stitches;
+                }
+                if (data.gauge_rows) {
+                    document.getElementById('gauge_rows').value = data.gauge_rows;
+                }
+                
+                // Handle comment and images
+                let comment = data.comment || '';
+                
+                // Add image URLs to comment if present
+                if (data.image_urls && data.image_urls.length > 0) {
+                    if (comment) {
+                        comment += '\n\n';
+                    }
+                    comment += '## Images\n\n';
+                    data.image_urls.forEach((imgUrl, index) => {
+                        comment += `![Image ${index + 1}](${imgUrl})\n\n`;
+                    });
+                    comment += '\n*Note: Download and re-upload images to save them permanently.*';
+                }
+                
+                if (comment) {
+                    const commentField = document.getElementById('comment');
+                    commentField.value = comment;
+                    if (typeof autoResize === 'function') autoResize(commentField);
+                }
+                
+                if (data.link) {
+                    document.getElementById('link').value = data.link;
+                }
+                
+                // Import steps
+                if (data.steps && data.steps.length > 0) {
+                    // Clear existing steps
+                    const stepsContainer = document.getElementById('stepsContainer');
+                    if (stepsContainer) {
+                        stepsContainer.innerHTML = '';
+                        // Add imported steps
+                        data.steps.forEach((step, index) => {
+                            if (typeof addStep === 'function') {
+                                addStep(step.title || `Step ${index + 1}`, step.description || '');
+                            }
+                        });
+                    }
+                }
+                
+                // Close dialog
+                importDialog.close();
+                
+                // Reset form
+                importForm.reset();
+                importForm.classList.remove('hidden');
+                importLoading.classList.add('hidden');
+                
+                // Reset file preview if it exists
+                if (fileInput) fileInput.value = '';
+                if (typeof hideFilePreview === 'function') hideFilePreview();
+                
+                window.showToast?.('{{ _("Pattern imported successfully") }}', 'success');
+                
+                // Scroll to top of form
+                document.getElementById('name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+            } catch (error) {
+                console.error('Import failed:', error);
+                window.showToast?.(error.message || '{{ _("Failed to import pattern") }}', 'error');
+                
+                // Reset UI
+                importForm.classList.remove('hidden');
+                importLoading.classList.add('hidden');
+            }
+        });
     }
 });
 </script>
