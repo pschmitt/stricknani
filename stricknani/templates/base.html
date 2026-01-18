@@ -199,13 +199,17 @@
                                 <span class="uppercase font-semibold text-xs">{{ current_language }}</span>
                                 <span class="mdi mdi-chevron-down text-xs opacity-50"></span>
                             </div>
-                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 border border-base-200">
+                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
                                 <li>
                                     <form action="/auth/set-language" method="post" class="block p-0">
                                         <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
                                         <input type="hidden" name="language" value="en">
-                                        <button type="submit" class="flex w-full items-center gap-2 {% if current_language == 'en' %}active{% endif %}">
-                                            <span>🇬🇧</span> {{ _('English') }}
+                                        <button type="submit" class="flex w-full items-center gap-3 py-3 px-4 {% if current_language == 'en' %}bg-primary/10 text-primary font-medium{% endif %} hover:bg-base-200">
+                                            <span class="text-xl leading-none">🇬🇧</span>
+                                            <span class="text-base">{{ _('English') }}</span>
+                                            {% if current_language == 'en' %}
+                                            <span class="mdi mdi-check ml-auto text-primary"></span>
+                                            {% endif %}
                                         </button>
                                     </form>
                                 </li>
@@ -213,8 +217,12 @@
                                     <form action="/auth/set-language" method="post" class="block p-0">
                                         <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
                                         <input type="hidden" name="language" value="de">
-                                        <button type="submit" class="flex w-full items-center gap-2 {% if current_language == 'de' %}active{% endif %}">
-                                            <span>🇩🇪</span> {{ _('German') }}
+                                        <button type="submit" class="flex w-full items-center gap-3 py-3 px-4 {% if current_language == 'de' %}bg-primary/10 text-primary font-medium{% endif %} hover:bg-base-200">
+                                            <span class="text-xl leading-none">🇩🇪</span>
+                                            <span class="text-base">{{ _('German') }}</span>
+                                            {% if current_language == 'de' %}
+                                            <span class="mdi mdi-check ml-auto text-primary"></span>
+                                            {% endif %}
                                         </button>
                                     </form>
                                 </li>
