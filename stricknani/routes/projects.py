@@ -154,7 +154,13 @@ async def _get_user_yarns(db: AsyncSession, user_id: int) -> Sequence[Yarn]:
         .order_by(Yarn.name)
         .options(selectinload(Yarn.photos))
     )
-    return result.scalars().all()
+    yarns = result.scalars().all()
+    for yarn in yarns:
+        for photo in yarn.photos:
+            photo.thumbnail_url = get_thumbnail_url(
+                photo.filename, yarn.id, subdir="yarns"
+            )
+    return yarns
 
 
 async def _load_owned_yarns(

@@ -260,11 +260,11 @@
                             data-yarn-name="{{ yarn.name }}"
                             data-yarn-brand="{{ yarn.brand or '' }}"
                             data-yarn-colorway="{{ yarn.colorway or '' }}"
-                            data-yarn-image="{{ yarn.photos[0].url if yarn.photos and yarn.photos[0] else '' }}"
+                            data-yarn-image="{{ yarn.photos[0].thumbnail_url if yarn.photos and yarn.photos[0] else '' }}"
                         >
                             <div class="flex items-center gap-3">
                                 {% if yarn.photos and yarn.photos[0] %}
-                                <img src="{{ yarn.photos[0].url }}" alt="{{ yarn.name }}" class="w-10 h-10 rounded object-cover">
+                                <img src="{{ yarn.photos[0].thumbnail_url }}" alt="{{ yarn.name }}" class="w-10 h-10 rounded object-cover">
                                 {% else %}
                                 <div class="w-10 h-10 rounded bg-base-300 flex items-center justify-center">
                                     <span class="mdi mdi-yarn text-base-content/40"></span>
