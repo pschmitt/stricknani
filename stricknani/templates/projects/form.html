@@ -139,7 +139,7 @@
     <div class="flex flex-col gap-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap gap-2">
-                {{ buttons.secondary(_('Back'), icon='mdi-arrow-left', href='/projects/' + project.id|string if project else '/projects') }}
+                {{ buttons.back(_('Back'), href='/projects/' + project.id|string if project else '/projects') }}
 
                 {% if not project %}
                 {{ buttons.secondary(_('Import'), icon='mdi-download', attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
@@ -296,7 +296,7 @@
                     type="text"
                     id="needles"
                     name="needles"
-                    value="{{ project.needles if project else '' }}"
+                    value="{{ project.needles if project and project.needles else '' }}"
                     class="input input-bordered w-full"
                     placeholder="e.g., 4.0mm circular"
                 >
@@ -309,7 +309,7 @@
                     type="number"
                     id="gauge_stitches"
                     name="gauge_stitches"
-                    value="{{ project.gauge_stitches if project else '' }}"
+                    value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
                     class="input input-bordered w-full"
                     placeholder="20"
                     min="1"
@@ -322,7 +322,7 @@
                     type="number"
                     id="gauge_rows"
                     name="gauge_rows"
-                    value="{{ project.gauge_rows if project else '' }}"
+                    value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
                     class="input input-bordered w-full"
                     placeholder="28"
                     min="1"
@@ -344,7 +344,7 @@
                     rows="4"
                     class="input input-bordered w-full"
                     placeholder="Personal notes about this project..."
-                >{{ project.comment if project else '' }}</textarea>
+                >{{ project.comment if project and project.comment else '' }}</textarea>
                 <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
             </div>
 
@@ -475,7 +475,7 @@
         <!-- Submit Buttons -->
         <div class="flex flex-col gap-4">
             <div class="flex gap-4">
-                {{ buttons.primary(_('Update Project') if project else _('Create Project'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
+                {{ buttons.primary(_('Save'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
                 {{ buttons.secondary(_('Cancel'), href='/projects/' + project.id|string if project else '/projects', icon='mdi-close-circle-outline', class='py-3 px-6') }}
             </div>
 
