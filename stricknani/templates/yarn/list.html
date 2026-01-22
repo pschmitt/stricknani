@@ -44,8 +44,9 @@
                 {% if card.preview_url %}
                 <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}" class="h-full w-full object-cover">
                 {% else %}
-                <div class="flex h-full w-full flex-col items-center justify-center gap-2 opacity-50">
+                <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center opacity-50">
                     <span class="mdi mdi-yarn text-5xl" aria-hidden="true"></span>
+                    <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
                     <span class="sr-only">{{ _('Open yarn details') }}</span>
                 </div>
                 {% endif %}

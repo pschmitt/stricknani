@@ -27,17 +27,17 @@
 <!-- Filters -->
 <div class="mb-6 flex flex-col md:flex-row gap-4">
     <div>
-        <div class="flex items-center justify-between gap-2 mb-1">
-            <label for="category-filter" class="label">
+        <div class="relative">
+            <label for="category-filter" class="label pr-8">
                 <span class="label-text">{{ _('Category') }}</span>
             </label>
-            <a href="/projects/categories" class="btn btn-ghost btn-xs" title="{{ _('Manage categories') }}">
+            <a href="/projects/categories" class="btn btn-ghost btn-xs absolute right-0 top-0" title="{{ _('Manage categories') }}">
                 <span class="mdi mdi-cog-outline"></span>
             </a>
         </div>
         <select
             id="category-filter"
-            class="select select-bordered w-full md:w-auto"
+            class="select select-bordered w-full md:w-auto input input-bordered"
             hx-get="/projects"
             hx-target="#projects-list"
             hx-trigger="change"
@@ -48,8 +48,8 @@
                     {% for category in categories %}
                     <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>{{ _(category) }}</option>
                     {% endfor %}
-                </select>
-            </div>
+        </select>
+    </div>
 
     <div class="flex-grow">
         <label for="search" class="label">
@@ -113,9 +113,9 @@
                         </div>
                         {% endif %}
                     {% else %}
-                    <div class="flex h-full w-full flex-col items-center justify-center gap-2 opacity-50">
+                    <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center opacity-50">
                         <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
-                        <span class="text-sm font-semibold">{{ project.name[0]|upper }}</span>
+                        <span class="text-sm font-semibold line-clamp-2">{{ project.name }}</span>
                         <span class="sr-only">{{ _('Open project details') }}</span>
                     </div>
                     {% endif %}
