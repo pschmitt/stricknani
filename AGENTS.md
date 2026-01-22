@@ -195,6 +195,7 @@ Linting is **mandatory** in CI.
 | `just run` | Run dev server with reload |
 | `just lint` | Run Ruff + MyPy |
 | `just fmt` | Format code |
+| `just trim` | Trim trailing whitespace |
 | `just test` | Run pytest |
 | `just build-image` | Build Docker image |
 | `just push-image` | Push image to GHCR |

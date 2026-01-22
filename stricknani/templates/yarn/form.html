@@ -16,24 +16,28 @@
 </dialog>
 
 <div class="max-w-3xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
-        <div>
-            <p class="text-sm font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                <span class="mdi mdi-yarn"></span>
-                {{ yarn.name if yarn else _('New yarn entry') }}
-            </p>
-            <h1 class="text-2xl font-bold text-base-content">{{ yarn.name if yarn else _('Add yarn to your stash') }}</h1>
-            <p class="text-sm text-base-content/70">{{ _('Give it a name, jot a note, and add optional details so you remember what you have.') }}</p>
+    <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap gap-2">
+                {% if yarn %}
+                {{ buttons.secondary(_('Back'), icon='mdi-arrow-left', href='/yarn/' + yarn.id|string) }}
+                {% else %}
+                {{ buttons.secondary(_('Back'), icon='mdi-arrow-left', href='/yarn') }}
+                {% endif %}
+            </div>
+
+            {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"') }}
         </div>
-        <div class="flex gap-2">
-            {% if yarn %}
-            {{ buttons.secondary(_('Back'), icon='mdi-arrow-left', href='/yarn/' + yarn.id|string) }}
-            {{ buttons.danger(_('Delete Yarn'), icon='mdi-delete-outline', attrs='onclick="document.getElementById(\'deleteYarnDialog\').showModal()"') }}
-            {% endif %}
+
+        <div>
+            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+                <span class="mdi mdi-yarn text-blue-700 dark:text-blue-300"></span>
+                {{ yarn.name if yarn else _('New yarn entry') }}
+            </h1>
         </div>
     </div>
 
-    <form action="{{ '/yarn/' ~ yarn.id ~ '/edit' if yarn else '/yarn/' }}" method="post" enctype="multipart/form-data" class="space-y-6 rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
+    <form id="yarnForm" action="{{ '/yarn/' ~ yarn.id ~ '/edit' if yarn else '/yarn/' }}" method="post" enctype="multipart/form-data" class="bg-base-100 rounded-lg shadow-md border border-base-300 p-4 sm:p-6 md:p-8 backdrop-blur space-y-6">
         <div class="grid gap-4 md:grid-cols-2">
             <div class="md:col-span-2">
                 <label for="name" class="label-text text-sm font-medium mb-1">{{ _('Name') }}</label>
@@ -66,7 +70,7 @@
             <div class="md:col-span-2">
                 <div class="flex items-center justify-between mb-1">
                     <label for="description" class="label-text text-sm font-medium">{{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
-                    <button type="button" onclick="previewMarkdown('description')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300">
+                    <button type="button" onclick="previewMarkdown('description')" class="btn btn-xs btn-outline btn-primary gap-1">
                         <span class="mdi mdi-eye"></span>
                         {{ _('Preview') }}
                     </button>
@@ -76,7 +80,7 @@
             <div class="md:col-span-2">
                 <div class="flex items-center justify-between mb-1">
                     <label for="notes" class="label-text text-sm font-medium">{{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
-                    <button type="button" onclick="previewMarkdown('notes')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300">
+                    <button type="button" onclick="previewMarkdown('notes')" class="btn btn-xs btn-outline btn-primary gap-1">
                         <span class="mdi mdi-eye"></span>
                         {{ _('Preview') }}
                     </button>
@@ -127,12 +131,42 @@
                 <p class="text-xs text-base-content/70 mt-1">{{ _('Supported: JPG, PNG, GIF. Thumbnails are generated automatically.') }}</p>
             </div>
         </div>
-        <div class="flex justify-end gap-3">
-            {{ buttons.secondary(_('Cancel'), href='/yarn/' + yarn.id|string if yarn else '/yarn') }}
-            {{ buttons.primary(_('Save'), type='submit', icon='mdi-content-save') }}
+        <div class="flex flex-col gap-4">
+            <div class="flex gap-4">
+                {{ buttons.primary(_('Update Yarn') if yarn else _('Create Yarn'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
+                {{ buttons.secondary(_('Cancel'), href='/yarn/' + yarn.id|string if yarn else '/yarn', icon='mdi-close-circle-outline', class='py-3 px-6') }}
+            </div>
+
+            {% if yarn %}
+            <div class="flex justify-end pt-4 border-t border-base-200">
+                {{ buttons.danger(_('Delete Yarn'), icon='mdi-delete-outline', attrs='onclick="document.getElementById(\'deleteYarnDialog\').showModal()"', class="w-full sm:w-auto") }}
+            </div>
+            {% endif %}
         </div>
     </form>
 </div>
+
+<!-- Delete Dialog -->
+{% if yarn %}
+<dialog id="deleteYarnDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
+    <div class="max-w-md space-y-4">
+        <h3 class="text-lg font-bold text-red-600 flex items-center gap-2">
+            <span class="mdi mdi-alert-circle"></span>
+            {{ _('Delete Yarn') }}
+        </h3>
+        <p>{{ _('Are you sure you want to delete this yarn?') }}</p>
+        <p class="text-sm text-base-content/70">{{ _('This will also delete all photos associated with this yarn. This action cannot be undone.') }}</p>
+        <div class="modal-action flex gap-2 mt-6">
+            <form method="dialog">
+                {{ buttons.secondary(_('Cancel')) }}
+            </form>
+            <form action="/yarn/{{ yarn.id }}/delete" method="post">
+                {{ buttons.danger(_('Delete Forever'), type='submit', icon='mdi-delete-forever') }}
+            </form>
+        </div>
+    </div>
+</dialog>
+{% endif %}
 
 {% if photos %}
     {% for photo in photos %}
@@ -159,7 +193,7 @@ async function previewMarkdown(source) {
             method: 'POST',
             body: formData
         });
-        
+
         if (response.ok) {
             const html = await response.text();
             const dialog = document.getElementById('previewDialog');

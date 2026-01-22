@@ -61,7 +61,7 @@
                     <label class="label">
                         <span class="label-text">{{ _('Pattern File') }}</span>
                     </label>
-                    
+
                     <!-- Drag and Drop Zone -->
                     <div id="dropZone" class="border-2 border-dashed border-base-300 rounded-lg p-4 sm:p-8 text-center hover:border-primary hover:bg-base-200 transition-colors cursor-pointer">
                         <input
@@ -85,7 +85,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <label class="label">
                         <span class="label-text-alt">{{ _('Supports PDF, TXT, MD, JPG, PNG, GIF') }}</span>
                     </label>
@@ -136,25 +136,24 @@
 </dialog>
 
 <div class="max-w-6xl mx-auto space-y-6">
-    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-            <p class="text-sm font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                <span class="mdi mdi-notebook-outline"></span>
-                {{ project.name if project else _('New Project') }}
-            </p>
-            <h1 class="text-2xl font-bold text-base-content">{{ project.name if project else _('Create a new project') }}</h1>
-            <p class="text-sm text-base-content/70">{{ _('Capture materials, gauge, and progress in one place.') }}</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            {{ buttons.secondary(_('Back'), icon='mdi-arrow-left', href='/projects/' + project.id|string if project else '/projects') }}
-            
-            {% if not project %}
-            {{ buttons.secondary(_('Import'), icon='mdi-download', attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
-            {% endif %}
+    <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap gap-2">
+                {{ buttons.secondary(_('Back'), icon='mdi-arrow-left', href='/projects/' + project.id|string if project else '/projects') }}
 
-            {% if project %}
-            {{ buttons.danger(_('Delete Project'), icon='mdi-delete-outline', attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"') }}
-            {% endif %}
+                {% if not project %}
+                {{ buttons.secondary(_('Import'), icon='mdi-download', attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
+                {% endif %}
+            </div>
+
+            {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"') }}
+        </div>
+
+        <div>
+            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+                <span class="mdi mdi-notebook-outline text-blue-700 dark:text-blue-300"></span>
+                {{ project.name if project else _('New Project') }}
+            </h1>
         </div>
     </div>
 
@@ -334,7 +333,7 @@
             <div class="md:col-span-2">
                 <div class="flex items-center justify-between mb-1">
                     <label for="comment" class="label-text text-sm font-medium">{{ _('Notes') }}</label>
-                    <button type="button" onclick="previewMarkdown('comment')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300">
+                    <button type="button" onclick="previewMarkdown('comment')" class="btn btn-xs btn-outline btn-primary gap-1">
                         <span class="mdi mdi-eye"></span>
                         {{ _('Preview') }}
                     </button>
@@ -430,7 +429,7 @@
                     </div>
                     <div class="flex items-center justify-between mb-2">
                         <input type="text" class="step-title input input-bordered w-full mr-2" placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
-                        <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300 whitespace-nowrap">
+                        <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="btn btn-xs btn-outline btn-primary gap-1 shrink-0">
                             <span class="mdi mdi-eye"></span>
                             {{ _('Preview') }}
                         </button>
@@ -470,24 +469,21 @@
         </div>
         {% endif %}
 
-        <!-- Gauge Calculator Link -->
-        <div class="bg-blue-50 p-4 rounded-md dark:bg-blue-500/10">
-            <p class="text-sm text-blue-800 mb-2 dark:text-blue-300 flex items-center gap-2">
-                <span class="mdi mdi-lightbulb-on-outline text-lg"></span>
-                <span>
-                    <strong>{{ _('Tip:') }}</strong> {{ _('Need help calculating your gauge? Use our') }}
-                    <a href="/gauge" target="_blank" class="text-blue-600 hover:text-blue-800 underline dark:text-blue-300 dark:hover:text-blue-200">{{ _('Gauge Calculator') }}</a>
-                </span>
-            </p>
-        </div>
-
         <!-- Hidden field for steps data -->
         <input type="hidden" id="stepsData" name="steps_data">
 
         <!-- Submit Buttons -->
-        <div class="flex gap-4">
-            {{ buttons.primary(_('Update Project') if project else _('Create Project'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
-            {{ buttons.secondary(_('Cancel'), href='/projects/' + project.id|string if project else '/projects', icon='mdi-close-circle-outline', class='py-3 px-6') }}
+        <div class="flex flex-col gap-4">
+            <div class="flex gap-4">
+                {{ buttons.primary(_('Update Project') if project else _('Create Project'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
+                {{ buttons.secondary(_('Cancel'), href='/projects/' + project.id|string if project else '/projects', icon='mdi-close-circle-outline', class='py-3 px-6') }}
+            </div>
+
+            {% if project %}
+            <div class="flex justify-end pt-4 border-t border-base-200">
+                {{ buttons.danger(_('Delete Project'), icon='mdi-delete-outline', attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"', class="w-full sm:w-auto") }}
+            </div>
+            {% endif %}
         </div>
     </form>
 </div>
@@ -517,7 +513,7 @@ async function previewMarkdown(source) {
             method: 'POST',
             body: formData
         });
-        
+
         if (response.ok) {
             const html = await response.text();
             const dialog = document.getElementById('previewDialog');
@@ -537,13 +533,13 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const data = JSON.parse(importedData);
             console.log('Loading imported data:', data);
-            
+
             // Show import warning banner
             const warningBanner = document.getElementById('importWarning');
             if (warningBanner) {
                 warningBanner.classList.remove('hidden');
             }
-            
+
             // Populate form fields
             if (data.title || data.name) {
                 document.getElementById('name').value = data.title || data.name;
@@ -566,10 +562,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.tags) {
                 document.getElementById('tags').value = data.tags;
             }
-            
+
             // Handle comment and images
             let comment = data.comment || '';
-            
+
             // Add image URLs to comment if present
             if (data.image_urls && data.image_urls.length > 0) {
                 if (comment) {
@@ -581,17 +577,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 comment += '\n*Note: Download and re-upload images to save them permanently.*';
             }
-            
+
             if (comment) {
                 const commentField = document.getElementById('comment');
                 commentField.value = comment;
                 autoResize(commentField);
             }
-            
+
             if (data.link) {
                 document.getElementById('link').value = data.link;
             }
-            
+
             // Import steps
             if (data.steps && data.steps.length > 0) {
                 const stepsContainer = document.getElementById('stepsContainer');
@@ -602,13 +598,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             }
-            
+
             // Clear sessionStorage
             sessionStorage.removeItem('importedData');
-            
+
             // Show success message - make it clear they still need to save
             window.showToast?.('{{ _("Pattern data loaded - please review and save") }}', 'success');
-            
+
             // Scroll to the save button to make it obvious
             setTimeout(() => {
                 const saveButton = document.querySelector('button[type="submit"]');
@@ -620,18 +616,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 3000);
                 }
             }, 500);
-            
+
         } catch (error) {
             console.error('Error loading imported data:', error);
             sessionStorage.removeItem('importedData');
         }
     }
-    
+
     document.querySelectorAll('textarea').forEach(el => {
         el.style.overflowY = 'hidden';
         autoResize(el);
         el.addEventListener('input', () => autoResize(el));
-        
+
         // Enable drag and drop for images (only on edit pages)
         {% if project %}
         if (typeof projectId !== 'undefined' && projectId) {
@@ -651,9 +647,9 @@ function initYarnSelector() {
     const selectedContainer = document.getElementById('selected_yarns');
     const hiddenInput = document.getElementById('yarn_ids');
     const yarnOptions = document.querySelectorAll('.yarn-option');
-    
+
     const selectedYarns = new Map();
-    
+
     // Initialize with pre-selected yarns
     {% if project and project.yarn_ids %}
     const preSelectedIds = {{ project.yarn_ids | tojson }};
@@ -664,38 +660,38 @@ function initYarnSelector() {
         }
     });
     {% endif %}
-    
+
     function selectYarn(id, name, brand, colorway, imageUrl) {
         if (selectedYarns.has(id)) return;
-        
+
         selectedYarns.set(id, { name, brand, colorway, imageUrl });
         updateSelectedDisplay();
         updateHiddenInput();
         filterOptions();
     }
-    
+
     function removeYarn(id) {
         selectedYarns.delete(id);
         updateSelectedDisplay();
         updateHiddenInput();
         filterOptions();
     }
-    
+
     function updateSelectedDisplay() {
         if (selectedYarns.size === 0) {
             selectedContainer.innerHTML = '<span class="text-base-content/40 text-sm">{{ _("No yarns selected") }}</span>';
             return;
         }
-        
+
         selectedContainer.innerHTML = '';
         selectedYarns.forEach((yarn, id) => {
             const chip = document.createElement('div');
             chip.className = 'flex items-center gap-2 py-2 px-3 bg-primary/10 text-primary border border-primary/20 rounded-lg';
-            
-            const imageHtml = yarn.imageUrl 
+
+            const imageHtml = yarn.imageUrl
                 ? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-8 h-8 rounded object-cover">`
                 : `<div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center"><span class="mdi mdi-yarn text-base-content/40 text-sm"></span></div>`;
-            
+
             chip.innerHTML = `
                 ${imageHtml}
                 <span class="text-sm flex-1">
@@ -706,22 +702,22 @@ function initYarnSelector() {
                 </button>
             `;
             selectedContainer.appendChild(chip);
-            
+
             // Add remove handler
             chip.querySelector('[data-remove-yarn]').addEventListener('click', () => {
                 removeYarn(id);
             });
         });
     }
-    
+
     function updateHiddenInput() {
         hiddenInput.value = Array.from(selectedYarns.keys()).join(',');
     }
-    
+
     function filterOptions() {
         const searchTerm = searchInput.value.toLowerCase();
         let visibleCount = 0;
-        
+
         yarnOptions.forEach(option => {
             const yarnId = parseInt(option.dataset.yarnId);
             const isSelected = selectedYarns.has(yarnId);
@@ -729,7 +725,7 @@ function initYarnSelector() {
             const brand = (option.dataset.yarnBrand || '').toLowerCase();
             const colorway = (option.dataset.yarnColorway || '').toLowerCase();
             const matchesSearch = !searchTerm || name.includes(searchTerm) || brand.includes(searchTerm) || colorway.includes(searchTerm);
-            
+
             if (!isSelected && matchesSearch) {
                 option.classList.remove('hidden');
                 visibleCount++;
@@ -737,7 +733,7 @@ function initYarnSelector() {
                 option.classList.add('hidden');
             }
         });
-        
+
         // Show/hide dropdown based on visibility
         if (visibleCount > 0 && (searchInput === document.activeElement || searchTerm)) {
             dropdown.classList.remove('hidden');
@@ -745,16 +741,16 @@ function initYarnSelector() {
             dropdown.classList.add('hidden');
         }
     }
-    
+
     // Event listeners
     searchInput.addEventListener('focus', () => {
         filterOptions();
     });
-    
+
     searchInput.addEventListener('input', () => {
         filterOptions();
     });
-    
+
     searchInput.addEventListener('blur', (e) => {
         // Delay hiding to allow clicks on options
         setTimeout(() => {
@@ -763,7 +759,7 @@ function initYarnSelector() {
             }
         }, 200);
     });
-    
+
     yarnOptions.forEach(option => {
         option.addEventListener('click', (e) => {
             e.preventDefault();
@@ -772,13 +768,13 @@ function initYarnSelector() {
             const yarnBrand = option.dataset.yarnBrand;
             const yarnColorway = option.dataset.yarnColorway;
             const yarnImage = option.dataset.yarnImage;
-            
+
             selectYarn(yarnId, yarnName, yarnBrand, yarnColorway, yarnImage);
             searchInput.value = '';
             searchInput.focus();
         });
     });
-    
+
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
@@ -810,7 +806,7 @@ function setupTextareaDrop(textarea) {
             // Determine context (step or project)
             const stepItem = textarea.closest('.step-item');
             const stepId = stepItem ? stepItem.getAttribute('data-step-id') : null;
-            
+
             // If it's a step textarea but we don't have a step ID yet, we can't upload
             if (stepItem && !stepId) {
                 window.showToast?.('{{ _("Save the project to create this step before uploading images.") }}', 'info');
@@ -845,7 +841,7 @@ async function uploadAndInsertImage(file, textarea, stepId) {
     formData.append('file', file);
     formData.append('alt_text', file.name);
 
-    const url = stepId 
+    const url = stepId
         ? `/projects/${projectId}/steps/${stepId}/images`
         : `/projects/${projectId}/images/title`; // Fallback to title images for now, or need a generic endpoint
 
@@ -853,7 +849,7 @@ async function uploadAndInsertImage(file, textarea, stepId) {
     // Using title image endpoint sets is_title_image=True which shows up in the carousel.
     // We should probably add a generic endpoint. For now, let's use the title endpoint but maybe we can filter it out later?
     // Or better, let's just use the title endpoint and accept it shows in the gallery.
-    
+
     try {
         window.showToast?.('{{ _("Uploading image...") }}', 'info');
         const response = await fetch(url, {
@@ -866,7 +862,7 @@ async function uploadAndInsertImage(file, textarea, stepId) {
             const markdown = `![${data.alt_text}](${data.url})`;
             insertAtCursor(textarea, markdown);
             window.showToast?.('{{ _("Image uploaded!") }}', 'success');
-            
+
             // If it's a step image, also add to the gallery preview
             if (stepId) {
                 const stepItem = document.querySelector(`.step-item[data-step-id="${stepId}"]`);
@@ -1263,7 +1259,7 @@ function addStep(title = '', description = '') {
         </div>
         <input type="text" class="step-title input input-bordered w-full mb-2" placeholder="{{ _('Step Title') }}" value="${title.replace(/"/g, '&quot;')}">
         <div class="flex items-center justify-end mb-1">
-            <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300">
+            <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="btn btn-xs btn-outline btn-primary gap-1 shrink-0">
                 <span class="mdi mdi-eye"></span>
                 {{ _('Preview') }}
             </button>
@@ -1330,18 +1326,18 @@ async function saveStep(button) {
     const title = stepItem.querySelector('.step-title').value;
     const description = stepItem.querySelector('.step-description').value;
     const stepNumber = parseInt(stepItem.getAttribute('data-step-number')) || 1;
-    
+
     // Disable button during save
     button.disabled = true;
     const originalText = button.innerHTML;
     button.innerHTML = '<span class="mdi mdi-loading mdi-spin"></span> {{ _("Saving...") }}';
-    
+
     try {
-        const url = stepId 
+        const url = stepId
             ? `/projects/${projectId}/steps/${stepId}`
             : `/projects/${projectId}/steps`;
         const method = stepId ? 'PUT' : 'POST';
-        
+
         const response = await fetch(url, {
             method: method,
             headers: {
@@ -1353,13 +1349,13 @@ async function saveStep(button) {
                 step_number: stepNumber
             })
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to save step');
         }
-        
+
         const data = await response.json();
-        
+
         // Update step ID if it's a new step
         if (!stepId && data.id) {
             stepItem.setAttribute('data-step-id', data.id);
@@ -1369,7 +1365,7 @@ async function saveStep(button) {
             if (dropzone) dropzone.setAttribute('data-step-id', data.id);
             if (fileInput) fileInput.setAttribute('data-step-id', data.id);
         }
-        
+
         window.showToast?.('{{ _("Step saved successfully") }}', 'success');
     } catch (error) {
         console.error('Error saving step:', error);
@@ -1415,11 +1411,11 @@ document.addEventListener('DOMContentLoaded', function() {
         tab.addEventListener('click', (e) => {
             e.preventDefault();
             const tabName = tab.dataset.tab;
-            
+
             // Update active tab
             tabs.forEach(t => t.classList.remove('tab-active'));
             tab.classList.add('tab-active');
-            
+
             // Show corresponding content
             tabContents.forEach(content => {
                 if (content.id === `tab-${tabName}`) {
@@ -1428,7 +1424,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     content.classList.add('hidden');
                 }
             });
-            
+
             currentTab = tabName;
         });
     });
@@ -1473,7 +1469,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('border-primary', 'bg-base-200');
-            
+
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 // Set the file to the input
@@ -1509,7 +1505,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (importForm) {
         importForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const formData = new FormData();
             const useAI = document.getElementById('useAI')?.checked || false;
             formData.append('use_ai', useAI ? 'true' : 'false');
@@ -1523,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 formData.append('url', url);
                 formData.append('type', 'url');
-                
+
             } else if (currentTab === 'file') {
                 const fileInput = document.getElementById('importFile');
                 const file = fileInput.files[0];
@@ -1533,7 +1529,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 formData.append('file', file);
                 formData.append('type', 'file');
-                
+
             } else if (currentTab === 'text') {
                 const text = document.getElementById('importText').value.trim();
                 if (!text) {
@@ -1543,19 +1539,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('text', text);
                 formData.append('type', 'text');
             }
-            
+
             // Show loading
             importForm.classList.add('hidden');
             importLoading.classList.remove('hidden');
-            
+
             try {
                 console.log('Importing with type:', currentTab, 'AI:', useAI);
-                
+
                 const response = await fetch('/projects/import', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (!response.ok) {
                     let errorMsg = 'Failed to import';
                     try {
@@ -1566,10 +1562,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     throw new Error(errorMsg);
                 }
-                
+
                 const data = await response.json();
                 console.log('Import successful, data:', data);
-                
+
                 // Show warning if AI fallback occurred
                 if (data.ai_fallback) {
                     window.showToast?.('{{ _('AI extraction failed - using basic parser') }}', 'warning');
@@ -1579,7 +1575,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (currentTab === 'url' && !data.link) {
                     data.link = document.getElementById('importUrl').value.trim();
                 }
-                
+
                 // Populate form fields
                 if (data.title) {
                     document.getElementById('name').value = data.title;
@@ -1599,10 +1595,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.gauge_rows) {
                     document.getElementById('gauge_rows').value = data.gauge_rows;
                 }
-                
+
                 // Handle comment and images
                 let comment = data.comment || '';
-                
+
                 // Add image URLs to comment if present
                 if (data.image_urls && data.image_urls.length > 0) {
                     if (comment) {
@@ -1614,17 +1610,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     comment += '\n*Note: Download and re-upload images to save them permanently.*';
                 }
-                
+
                 if (comment) {
                     const commentField = document.getElementById('comment');
                     commentField.value = comment;
                     if (typeof autoResize === 'function') autoResize(commentField);
                 }
-                
+
                 if (data.link) {
                     document.getElementById('link').value = data.link;
                 }
-                
+
                 // Import steps
                 if (data.steps && data.steps.length > 0) {
                     // Clear existing steps
@@ -1639,28 +1635,28 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     }
                 }
-                
+
                 // Close dialog
                 importDialog.close();
-                
+
                 // Reset form
                 importForm.reset();
                 importForm.classList.remove('hidden');
                 importLoading.classList.add('hidden');
-                
+
                 // Reset file preview if it exists
                 if (fileInput) fileInput.value = '';
                 if (typeof hideFilePreview === 'function') hideFilePreview();
-                
+
                 window.showToast?.('{{ _("Pattern imported successfully") }}', 'success');
-                
+
                 // Scroll to top of form
                 document.getElementById('name').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
+
             } catch (error) {
                 console.error('Import failed:', error);
                 window.showToast?.(error.message || '{{ _("Failed to import pattern") }}', 'error');
-                
+
                 // Reset UI
                 importForm.classList.remove('hidden');
                 importLoading.classList.add('hidden');

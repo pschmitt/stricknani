@@ -22,6 +22,12 @@ fmt:
     uv run ruff format .
     uv run ruff check --fix .
 
+# Trim trailing whitespace
+trim:
+    @echo "Trimming trailing whitespace..."
+    @find . -type f \( -name "*.py" -o -name "*.html" -o -name "*.js" -o -name "*.css" -o -name "*.md" -o -name "*.nix" -o -name "*.toml" -o -name "justfile" \) -not -path "*/.*" -exec sed -i 's/[[:space:]]\+$//' {} +
+
+
 # Run tests
 test:
     uv run pytest -v

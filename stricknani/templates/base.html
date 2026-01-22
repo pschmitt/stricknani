@@ -28,7 +28,7 @@
             }
         })();
     </script>
-    
+
     <script>
         // Configure Tailwind and DaisyUI BEFORE loading them
         window.tailwind = window.tailwind || {};
@@ -249,7 +249,7 @@
             <span class="mdi mdi-github text-lg align-middle"></span>
         </a>
     </footer>
-    </div> 
+    </div>
     <div class="drawer-side z-[9999]">
         <label for="main-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
         <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
@@ -262,7 +262,7 @@
                     {{ _('Stricknani') }}
                 </a>
             </li>
-            
+
             {% if current_user %}
             <li>
                 <a href="/projects" class="{% if current_path.startswith('/projects') %}active{% endif %}">
@@ -275,13 +275,13 @@
                 </a>
             </li>
             {% endif %}
-            
+
             <li>
                 <a href="/gauge" class="{% if current_path.startswith('/gauge') %}active{% endif %}">
                     <span class="mdi mdi-ruler text-lg"></span>{{ _('Gauge Calculator') }}
                 </a>
             </li>
-            
+
             {% if current_user and current_user.is_admin %}
             <li>
                 <a href="/admin/users" class="{% if current_path.startswith('/admin') %}active{% endif %}">
@@ -297,7 +297,7 @@
                 </a>
             </li>
             {% endif %}
-            
+
             <div class="divider"></div>
             <li class="menu-title">{{ _('Settings') }}</li>
             <li>
@@ -695,7 +695,7 @@
             if (menuRoot) {
                 const trigger = menuRoot.querySelector("[data-user-menu-trigger]");
                 const panel = menuRoot.querySelector("[data-user-menu-panel]");
-                
+
                 if (trigger && panel) {
                     // Make dropdown work properly
                     trigger.addEventListener("click", (e) => {
@@ -708,21 +708,21 @@
                             panel.classList.add('hidden');
                         }
                     });
-                    
+
                     // Close on outside click
                     document.addEventListener("click", (event) => {
                         if (!menuRoot.contains(event.target)) {
                             panel.classList.add('hidden');
                         }
                     });
-                    
+
                     // Close on escape
                     document.addEventListener("keydown", (event) => {
                         if (event.key === "Escape") {
                             panel.classList.add('hidden');
                         }
                     });
-                    
+
                     // Start hidden
                     panel.classList.add('hidden');
                 }
@@ -741,16 +741,16 @@
 
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-            
+
             // Toggle dark class for Tailwind
             if (newTheme === 'dark') {
                 html.classList.add('dark');
             } else {
                 html.classList.remove('dark');
             }
-            
+
             console.log('Theme toggled to:', newTheme, 'HTML classes:', html.className);
-            
+
             updateThemeUI(newTheme);
         }
 

@@ -272,7 +272,7 @@
                 reader.onload = function(e) {
                     image.src = e.target.result;
                     modal.classList.remove('hidden');
-                    
+
                     if (cropper) {
                         cropper.destroy();
                     }
@@ -308,7 +308,7 @@
 
         saveBtn.addEventListener('click', function() {
             if (!cropper) return;
-            
+
             const canvas = cropper.getCroppedCanvas({
                 width: 400,
                 height: 400,

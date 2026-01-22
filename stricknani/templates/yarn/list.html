@@ -64,7 +64,7 @@
                     </a>
                     {% endif %}
                 </div>
-                
+
                 <div class="grid grid-cols-2 gap-2 text-xs mb-4">
                     {% if yarn.colorway %}
                     <div class="flex items-center gap-1.5">
@@ -110,7 +110,7 @@
                 </div>
 
                 <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
-                
+
                 <div class="card-actions justify-end">
                     {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='card' %}
                         {% include "yarn/_favorite_toggle.html" %}
@@ -152,7 +152,7 @@ function showDeleteDialog(yarnId, yarnName) {
 
 function deleteYarn() {
     if (!deleteYarnId) return;
-    
+
     fetch(`/yarn/${deleteYarnId}`, {
         method: 'DELETE',
         headers: {
