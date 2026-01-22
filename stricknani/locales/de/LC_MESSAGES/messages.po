@@ -552,6 +552,18 @@ msgstr "Unterstützt: JPG, PNG, GIF. Vorschaubilder werden automatisch erstellt.
 msgid "Save"
 msgstr "Speichern"
 
+msgid "Save Step"
+msgstr "Schritt speichern"
+
+msgid "Saving..."
+msgstr "Wird gespeichert..."
+
+msgid "Step saved successfully"
+msgstr "Schritt erfolgreich gespeichert"
+
+msgid "Failed to save step"
+msgstr "Schritt konnte nicht gespeichert werden"
+
 msgid "Yarn Stash"
 msgstr "Wollvorrat"
 

@@ -1413,3 +1413,95 @@ async def delete_image(
     await db.commit()
 
     return {"message": "Image deleted"}
+
+
+@router.post("/{project_id}/steps", response_class=JSONResponse)
+async def create_step(
+    project_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> dict[str, Any]:
+    """Create a new step for a project."""
+    # Verify project ownership
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+        )
+
+    if project.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    # Parse JSON body
+    data = await request.json()
+    title = data.get("title", "")
+    description = data.get("description")
+    step_number = data.get("step_number", 1)
+
+    # Create step
+    step = Step(
+        title=title,
+        description=description,
+        step_number=step_number,
+        project_id=project_id,
+    )
+    db.add(step)
+    await db.commit()
+    await db.refresh(step)
+
+    return {
+        "id": step.id,
+        "title": step.title,
+        "description": step.description,
+        "step_number": step.step_number,
+    }
+
+
+@router.put("/{project_id}/steps/{step_id}", response_class=JSONResponse)
+async def update_step(
+    project_id: int,
+    step_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> dict[str, Any]:
+    """Update an existing step."""
+    # Verify project ownership and step existence
+    result = await db.execute(
+        select(Step)
+        .join(Project)
+        .where(Step.id == step_id, Project.id == project_id)
+        .options(selectinload(Step.project))
+    )
+    step = result.scalar_one_or_none()
+
+    if not step:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Step not found"
+        )
+
+    if step.project.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    # Parse JSON body
+    data = await request.json()
+    step.title = data.get("title", step.title)
+    step.description = data.get("description", step.description)
+    step.step_number = data.get("step_number", step.step_number)
+
+    await db.commit()
+    await db.refresh(step)
+
+    return {
+        "id": step.id,
+        "title": step.title,
+        "description": step.description,
+        "step_number": step.step_number,
+    }
