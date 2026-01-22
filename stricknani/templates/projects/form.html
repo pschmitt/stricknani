@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "macros/buttons.html" as buttons %}
+{% import "macros/image_upload.html" as image_upload %}
 
 {% block title %}{{ _('Edit') if project else _('New') }} {{ _('Project') }} - Stricknani{% endblock %}
 
@@ -197,27 +198,24 @@
                     <label for="category" class="label-text text-sm font-medium">
                         {{ _('Category') }}
                     </label>
-                    <a href="/projects/categories" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300" target="_blank" rel="noreferrer">
+                    <a href="/projects/categories" class="btn btn-xs btn-outline btn-primary gap-1" target="_blank" rel="noreferrer">
                         <span class="mdi mdi-cog-outline"></span>
                         {{ _('Manage categories') }}
                     </a>
                 </div>
-                <input
-                    type="text"
+                <select
                     id="category"
                     name="category"
-                    list="category-list"
-                    value="{{ project.category if project else '' }}"
-                    class="input input-bordered w-full"
-                    placeholder="{{ _('Select or type a new category') }}"
-                    autocomplete="off"
+                    class="select select-bordered w-full"
                 >
-                <datalist id="category-list">
+                    <option value="">{{ _('Select a category (optional)') }}</option>
                     {% for category in categories %}
-                    <option value="{{ category }}"></option>
+                    <option value="{{ category }}" {% if project and project.category == category %}selected{% endif %}>
+                        {{ category }}
+                    </option>
                     {% endfor %}
-                </datalist>
-                <p class="text-xs text-base-content/70 mt-1">{{ _('Type a new name to create a category instantly.') }}</p>
+                </select>
+                <p class="text-xs text-base-content/70 mt-1">{{ _('You can manage categories using the link above.') }}</p>
             </div>
 
             <!-- Linked stash yarns -->
@@ -226,7 +224,7 @@
                     <label for="yarn_search" class="label-text text-sm font-medium">
                         {{ _('Yarn') }} <span class="text-base-content/60 text-xs">{{ _('Select from stash') }}</span>
                     </label>
-                    <a href="/yarn/new" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300" target="_blank" rel="noreferrer">
+                    <a href="/yarn/new" class="btn btn-xs btn-outline btn-primary gap-1" target="_blank" rel="noreferrer">
                         <span class="mdi mdi-plus"></span>
                         {{ _('Add yarn') }}
                     </a>
@@ -263,6 +261,7 @@
                             data-yarn-name="{{ yarn.name }}"
                             data-yarn-brand="{{ yarn.brand or '' }}"
                             data-yarn-colorway="{{ yarn.colorway or '' }}"
+                            data-yarn-image="{{ yarn.photos[0].url if yarn.photos and yarn.photos[0] else '' }}"
                         >
                             <div class="flex items-center gap-3">
                                 {% if yarn.photos and yarn.photos[0] %}
@@ -391,20 +390,10 @@
                 </div>
                 {% endfor %}
             </div>
-            <div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors dark:border-slate-600 dark:hover:border-blue-400" id="titleImageDropZone">
-                <input type="file" id="titleImageInput" accept="image/*" multiple class="hidden">
-                <label for="titleImageInput" class="cursor-pointer">
-                    <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <p
-                        class="upload-instructions mt-2 text-sm text-base-content/70"
-                        data-enabled-text="{{ _('Drag and drop images here or click to upload') }}"
-                    >
-                        {{ _('Drag and drop images here or click to upload') }}
-                    </p>
-                </label>
-            </div>
+            {{ image_upload.upload_dropzone(
+                input_id='titleImageInput',
+                container_id='titleImageDropZone'
+            ) }}
         </div>
 
         <!-- Steps Section (only for edit mode) -->
@@ -467,15 +456,10 @@
                         </div>
                         {% endfor %}
                     </div>
-                    <div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors step-image-dropzone dark:border-slate-600 dark:hover:border-blue-400" data-step-id="{{ step.id }}">
-                        <input type="file" class="step-image-input hidden" accept="image/*" multiple data-step-id="{{ step.id }}" id="stepImageInput{{ step.id }}">
-                        <label for="stepImageInput{{ step.id }}" class="cursor-pointer block">
-                            <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <p class="mt-2 text-sm text-base-content/70 upload-instructions" data-enabled-text="{{ _('Drag and drop images here or click to upload') }}" data-disabled-text="{{ _('Save the project before adding images to this step.') }}">{{ _('Drag and drop images here or click to upload') }}</p>
-                        </label>
-                    </div>
+                    {{ image_upload.step_upload_dropzone(
+                        input_id='stepImageInput' + step.id|string,
+                        step_id=step.id
+                    ) }}
                 </div>
                 {% endfor %}
             </div>
@@ -676,15 +660,15 @@ function initYarnSelector() {
     yarnOptions.forEach(option => {
         const yarnId = parseInt(option.dataset.yarnId);
         if (preSelectedIds.includes(yarnId)) {
-            selectYarn(yarnId, option.dataset.yarnName, option.dataset.yarnBrand, option.dataset.yarnColorway);
+            selectYarn(yarnId, option.dataset.yarnName, option.dataset.yarnBrand, option.dataset.yarnColorway, option.dataset.yarnImage);
         }
     });
     {% endif %}
     
-    function selectYarn(id, name, brand, colorway) {
+    function selectYarn(id, name, brand, colorway, imageUrl) {
         if (selectedYarns.has(id)) return;
         
-        selectedYarns.set(id, { name, brand, colorway });
+        selectedYarns.set(id, { name, brand, colorway, imageUrl });
         updateSelectedDisplay();
         updateHiddenInput();
         filterOptions();
@@ -706,9 +690,15 @@ function initYarnSelector() {
         selectedContainer.innerHTML = '';
         selectedYarns.forEach((yarn, id) => {
             const chip = document.createElement('div');
-            chip.className = 'badge badge-lg gap-2 py-3 px-3 bg-primary/10 text-primary border-primary/20';
+            chip.className = 'flex items-center gap-2 py-2 px-3 bg-primary/10 text-primary border border-primary/20 rounded-lg';
+            
+            const imageHtml = yarn.imageUrl 
+                ? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-8 h-8 rounded object-cover">`
+                : `<div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center"><span class="mdi mdi-yarn text-base-content/40 text-sm"></span></div>`;
+            
             chip.innerHTML = `
-                <span class="text-sm">
+                ${imageHtml}
+                <span class="text-sm flex-1">
                     ${yarn.name}${yarn.brand ? ` • ${yarn.brand}` : ''}
                 </span>
                 <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-yarn="${id}">
@@ -781,8 +771,9 @@ function initYarnSelector() {
             const yarnName = option.dataset.yarnName;
             const yarnBrand = option.dataset.yarnBrand;
             const yarnColorway = option.dataset.yarnColorway;
+            const yarnImage = option.dataset.yarnImage;
             
-            selectYarn(yarnId, yarnName, yarnBrand, yarnColorway);
+            selectYarn(yarnId, yarnName, yarnBrand, yarnColorway, yarnImage);
             searchInput.value = '';
             searchInput.focus();
         });

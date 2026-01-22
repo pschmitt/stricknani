@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "macros/buttons.html" as buttons %}
+{% import "macros/image_upload.html" as image_upload %}
 
 {% block title %}{{ yarn.name if yarn else _('Add Yarn') }} - {{ _('Yarn') }}{% endblock %}
 
@@ -117,7 +118,11 @@
                 </div>
                 {% endif %}
 
-                <input type="file" id="photos" name="{{ 'new_photos' if yarn else 'photos' }}" accept="image/*" multiple class="input input-bordered w-full" onchange="previewImages(this)">
+                {{ image_upload.upload_dropzone(
+                    input_id='photos',
+                    input_name='new_photos' if yarn else 'photos',
+                    onchange='previewImages(this)'
+                ) }}
                 <div id="image-preview-container" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 hidden"></div>
                 <p class="text-xs text-base-content/70 mt-1">{{ _('Supported: JPG, PNG, GIF. Thumbnails are generated automatically.') }}</p>
             </div>

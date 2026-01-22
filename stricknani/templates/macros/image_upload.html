@@ -1,0 +1,46 @@
+{# Image upload widget macro #}
+
+{# Standard drag-and-drop image upload widget #}
+{% macro upload_dropzone(
+    input_id,
+    label_text=None,
+    multiple=true,
+    container_id=None,
+    container_class=None,
+    input_name=None,
+    onchange=None
+) -%}
+<div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors dark:border-slate-600 dark:hover:border-blue-400 {{ container_class or '' }}"{% if container_id %} id="{{ container_id }}"{% endif %}>
+    <input type="file" id="{{ input_id }}"{% if input_name %} name="{{ input_name }}"{% endif %} accept="image/*"{% if multiple %} multiple{% endif %} class="hidden"{% if onchange %} onchange="{{ onchange }}"{% endif %}>
+    <label for="{{ input_id }}" class="cursor-pointer block">
+        <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <p class="upload-instructions mt-2 text-sm text-base-content/70"{% if label_text %} data-enabled-text="{{ label_text }}"{% endif %}>
+            {{ label_text or _('Drag and drop images here or click to upload') }}
+        </p>
+    </label>
+</div>
+{%- endmacro %}
+
+{# Step image upload widget with conditional enabled/disabled states #}
+{% macro step_upload_dropzone(
+    input_id,
+    step_id=None,
+    enabled_text=None,
+    disabled_text=None
+) -%}
+<div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors step-image-dropzone dark:border-slate-600 dark:hover:border-blue-400"{% if step_id %} data-step-id="{{ step_id }}"{% endif %}>
+    <input type="file" class="step-image-input hidden" accept="image/*" multiple{% if step_id %} data-step-id="{{ step_id }}"{% endif %} id="{{ input_id }}">
+    <label for="{{ input_id }}" class="cursor-pointer block">
+        <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <p class="mt-2 text-sm text-base-content/70 upload-instructions" 
+           data-enabled-text="{{ enabled_text or _('Drag and drop images here or click to upload') }}"
+           data-disabled-text="{{ disabled_text or _('Save the project before adding images to this step.') }}">
+            {{ enabled_text or _('Drag and drop images here or click to upload') }}
+        </p>
+    </label>
+</div>
+{%- endmacro %}

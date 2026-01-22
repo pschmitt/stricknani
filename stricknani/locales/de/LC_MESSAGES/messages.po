@@ -276,6 +276,12 @@ msgstr "Projektname"
 msgid "Select a category"
 msgstr "Kategorie wählen"
 
+msgid "Select a category (optional)"
+msgstr "Kategorie wählen (optional)"
+
+msgid "You can manage categories using the link above."
+msgstr "Du kannst Kategorien über den Link oben verwalten."
+
 msgid "Gauge Stitches (per 10cm)"
 msgstr "Maschenprobe Maschen (pro 10cm)"
 
