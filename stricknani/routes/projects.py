@@ -174,15 +174,17 @@ async def _load_owned_yarns(
     return result.scalars().all()
 
 
-async def _ensure_category(db: AsyncSession, user_id: int, name: str) -> str:
+async def _ensure_category(
+    db: AsyncSession, user_id: int, name: str | None
+) -> str | None:
     """Ensure category exists for the user and return the sanitized label."""
+
+    if not name:
+        return None
 
     cleaned = name.strip()
     if not cleaned:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Category is required",
-        )
+        return None
 
     result = await db.execute(
         select(Category).where(
@@ -979,7 +981,7 @@ async def edit_project_form(
 @router.post("/")
 async def create_project(
     name: Annotated[str, Form()],
-    category: Annotated[str, Form()],
+    category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
     gauge_stitches: Annotated[str | None, Form()] = None,
     gauge_rows: Annotated[str | None, Form()] = None,
@@ -987,13 +989,20 @@ async def create_project(
     tags: Annotated[str | None, Form()] = None,
     link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
-    yarn_ids: Annotated[list[int] | None, Form()] = None,
+    yarn_ids: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
     """Create a new project."""
-    if yarn_ids is None:
-        yarn_ids = []
+    # Parse comma-separated yarn IDs
+    parsed_yarn_ids = []
+    if yarn_ids:
+        try:
+            parsed_yarn_ids = [
+                int(id.strip()) for id in yarn_ids.split(",") if id.strip()
+            ]
+        except ValueError:
+            pass
     gauge_stitches_value = _parse_optional_int("gauge_stitches", gauge_stitches)
     gauge_rows_value = _parse_optional_int("gauge_rows", gauge_rows)
     normalized_category = await _ensure_category(db, current_user.id, category)
@@ -1010,7 +1019,7 @@ async def create_project(
         owner_id=current_user.id,
         tags=_serialize_tags(normalized_tags),
     )
-    project.yarns = list(await _load_owned_yarns(db, current_user.id, yarn_ids))
+    project.yarns = list(await _load_owned_yarns(db, current_user.id, parsed_yarn_ids))
     project.yarn = project.yarns[0].name if project.yarns else None
     db.add(project)
     await db.flush()  # Get project ID
@@ -1039,7 +1048,7 @@ async def create_project(
 async def update_project(
     project_id: int,
     name: Annotated[str, Form()],
-    category: Annotated[str, Form()],
+    category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
     gauge_stitches: Annotated[str | None, Form()] = None,
     gauge_rows: Annotated[str | None, Form()] = None,
@@ -1047,13 +1056,20 @@ async def update_project(
     tags: Annotated[str | None, Form()] = None,
     link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
-    yarn_ids: Annotated[list[int] | None, Form()] = None,
+    yarn_ids: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
     """Update a project."""
-    if yarn_ids is None:
-        yarn_ids = []
+    # Parse comma-separated yarn IDs
+    parsed_yarn_ids = []
+    if yarn_ids:
+        try:
+            parsed_yarn_ids = [
+                int(id.strip()) for id in yarn_ids.split(",") if id.strip()
+            ]
+        except ValueError:
+            pass
     result = await db.execute(
         select(Project)
         .where(Project.id == project_id)
@@ -1073,7 +1089,7 @@ async def update_project(
 
     project.name = name.strip()
     project.category = await _ensure_category(db, current_user.id, category)
-    selected_yarns = list(await _load_owned_yarns(db, current_user.id, yarn_ids))
+    selected_yarns = list(await _load_owned_yarns(db, current_user.id, parsed_yarn_ids))
     project.yarns = selected_yarns
     project.yarn = selected_yarns[0].name if selected_yarns else None
     project.needles = needles.strip() if needles else None

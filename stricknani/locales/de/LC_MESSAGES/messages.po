@@ -214,6 +214,21 @@ msgstr "Löschen"
 msgid "Yarn"
 msgstr "Wolle"
 
+msgid "Select from stash"
+msgstr "Aus Vorrat wählen"
+
+msgid "Add yarn"
+msgstr "Wolle hinzufügen"
+
+msgid "Search yarns..."
+msgstr "Wolle suchen..."
+
+msgid "No yarns selected"
+msgstr "Keine Wolle ausgewählt"
+
+msgid "Search and select yarns from your stash. Use the Add link to create new stash entries."
+msgstr "Suchen und wählen Sie Wolle aus Ihrem Vorrat. Nutzen Sie den Link \"Hinzufügen\", um neue Einträge zu erstellen."
+
 msgid "Not specified"
 msgstr "Nicht angegeben"
 

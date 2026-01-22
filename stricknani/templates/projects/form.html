@@ -223,7 +223,7 @@
             <!-- Linked stash yarns -->
             <div>
                 <div class="flex items-center justify-between mb-1">
-                    <label for="yarn_ids" class="label-text text-sm font-medium">
+                    <label for="yarn_search" class="label-text text-sm font-medium">
                         {{ _('Yarn') }} <span class="text-base-content/60 text-xs">{{ _('Select from stash') }}</span>
                     </label>
                     <a href="/yarn/new" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 dark:text-blue-400 dark:hover:text-blue-300" target="_blank" rel="noreferrer">
@@ -231,20 +231,64 @@
                         {{ _('Add yarn') }}
                     </a>
                 </div>
-                <select
-                    id="yarn_ids"
-                    name="yarn_ids"
-                    multiple
-                    class="input input-bordered w-full"
-                    size="5"
-                >
-                    {% for yarn in yarns %}
-                    <option value="{{ yarn.id }}" {% if project and yarn.id in project.yarn_ids %}selected{% endif %}>
-                        {{ yarn.name }}{% if yarn.brand %} — {{ yarn.brand }}{% endif %}
-                    </option>
-                    {% endfor %}
-                </select>
-                <p class="text-xs text-base-content/70 mt-1">{{ _("Select one or more yarns. Use the Add link to create stash entries without leaving this form.") }}</p>
+
+                <!-- Hidden input to store selected yarn IDs -->
+                <input type="hidden" id="yarn_ids" name="yarn_ids" value="">
+
+                <!-- Search input -->
+                <div class="relative mb-2">
+                    <input
+                        type="text"
+                        id="yarn_search"
+                        placeholder="{{ _('Search yarns...') }}"
+                        class="input input-bordered w-full pl-10"
+                        autocomplete="off"
+                    >
+                    <span class="mdi mdi-magnify absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60"></span>
+                </div>
+
+                <!-- Selected yarns -->
+                <div id="selected_yarns" class="flex flex-wrap gap-2 mb-3 min-h-[2.5rem] p-2 border border-base-300 rounded-lg bg-base-100">
+                    <!-- Selected yarn chips will appear here -->
+                </div>
+
+                <!-- Available yarns dropdown -->
+                <div class="relative">
+                    <div id="yarn_dropdown" class="hidden absolute z-10 w-full max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-lg">
+                        {% for yarn in yarns %}
+                        <button
+                            type="button"
+                            class="yarn-option w-full text-left px-4 py-2 hover:bg-base-200 border-b border-base-200 last:border-b-0"
+                            data-yarn-id="{{ yarn.id }}"
+                            data-yarn-name="{{ yarn.name }}"
+                            data-yarn-brand="{{ yarn.brand or '' }}"
+                            data-yarn-colorway="{{ yarn.colorway or '' }}"
+                        >
+                            <div class="flex items-center gap-3">
+                                {% if yarn.photos and yarn.photos[0] %}
+                                <img src="{{ yarn.photos[0].url }}" alt="{{ yarn.name }}" class="w-10 h-10 rounded object-cover">
+                                {% else %}
+                                <div class="w-10 h-10 rounded bg-base-300 flex items-center justify-center">
+                                    <span class="mdi mdi-yarn text-base-content/40"></span>
+                                </div>
+                                {% endif %}
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-medium truncate">{{ yarn.name }}</div>
+                                    {% if yarn.brand or yarn.colorway %}
+                                    <div class="text-xs text-base-content/70 truncate">
+                                        {% if yarn.brand %}{{ yarn.brand }}{% endif %}
+                                        {% if yarn.brand and yarn.colorway %} • {% endif %}
+                                        {% if yarn.colorway %}{{ yarn.colorway }}{% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <p class="text-xs text-base-content/70 mt-1">{{ _("Search and select yarns from your stash. Use the Add link to create new stash entries.") }}</p>
             </div>
 
             <!-- Needles -->
@@ -605,7 +649,146 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         {% endif %}
     });
+
+    // Initialize yarn selection widget
+    initYarnSelector();
 });
+
+// Yarn Selection Widget
+function initYarnSelector() {
+    const searchInput = document.getElementById('yarn_search');
+    const dropdown = document.getElementById('yarn_dropdown');
+    const selectedContainer = document.getElementById('selected_yarns');
+    const hiddenInput = document.getElementById('yarn_ids');
+    const yarnOptions = document.querySelectorAll('.yarn-option');
+    
+    const selectedYarns = new Map();
+    
+    // Initialize with pre-selected yarns
+    {% if project and project.yarn_ids %}
+    const preSelectedIds = {{ project.yarn_ids | tojson }};
+    yarnOptions.forEach(option => {
+        const yarnId = parseInt(option.dataset.yarnId);
+        if (preSelectedIds.includes(yarnId)) {
+            selectYarn(yarnId, option.dataset.yarnName, option.dataset.yarnBrand, option.dataset.yarnColorway);
+        }
+    });
+    {% endif %}
+    
+    function selectYarn(id, name, brand, colorway) {
+        if (selectedYarns.has(id)) return;
+        
+        selectedYarns.set(id, { name, brand, colorway });
+        updateSelectedDisplay();
+        updateHiddenInput();
+        filterOptions();
+    }
+    
+    function removeYarn(id) {
+        selectedYarns.delete(id);
+        updateSelectedDisplay();
+        updateHiddenInput();
+        filterOptions();
+    }
+    
+    function updateSelectedDisplay() {
+        if (selectedYarns.size === 0) {
+            selectedContainer.innerHTML = '<span class="text-base-content/40 text-sm">{{ _("No yarns selected") }}</span>';
+            return;
+        }
+        
+        selectedContainer.innerHTML = '';
+        selectedYarns.forEach((yarn, id) => {
+            const chip = document.createElement('div');
+            chip.className = 'badge badge-lg gap-2 py-3 px-3 bg-primary/10 text-primary border-primary/20';
+            chip.innerHTML = `
+                <span class="text-sm">
+                    ${yarn.name}${yarn.brand ? ` • ${yarn.brand}` : ''}
+                </span>
+                <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-yarn="${id}">
+                    <span class="mdi mdi-close"></span>
+                </button>
+            `;
+            selectedContainer.appendChild(chip);
+            
+            // Add remove handler
+            chip.querySelector('[data-remove-yarn]').addEventListener('click', () => {
+                removeYarn(id);
+            });
+        });
+    }
+    
+    function updateHiddenInput() {
+        hiddenInput.value = Array.from(selectedYarns.keys()).join(',');
+    }
+    
+    function filterOptions() {
+        const searchTerm = searchInput.value.toLowerCase();
+        let visibleCount = 0;
+        
+        yarnOptions.forEach(option => {
+            const yarnId = parseInt(option.dataset.yarnId);
+            const isSelected = selectedYarns.has(yarnId);
+            const name = option.dataset.yarnName.toLowerCase();
+            const brand = (option.dataset.yarnBrand || '').toLowerCase();
+            const colorway = (option.dataset.yarnColorway || '').toLowerCase();
+            const matchesSearch = !searchTerm || name.includes(searchTerm) || brand.includes(searchTerm) || colorway.includes(searchTerm);
+            
+            if (!isSelected && matchesSearch) {
+                option.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                option.classList.add('hidden');
+            }
+        });
+        
+        // Show/hide dropdown based on visibility
+        if (visibleCount > 0 && (searchInput === document.activeElement || searchTerm)) {
+            dropdown.classList.remove('hidden');
+        } else {
+            dropdown.classList.add('hidden');
+        }
+    }
+    
+    // Event listeners
+    searchInput.addEventListener('focus', () => {
+        filterOptions();
+    });
+    
+    searchInput.addEventListener('input', () => {
+        filterOptions();
+    });
+    
+    searchInput.addEventListener('blur', (e) => {
+        // Delay hiding to allow clicks on options
+        setTimeout(() => {
+            if (!dropdown.contains(document.activeElement)) {
+                dropdown.classList.add('hidden');
+            }
+        }, 200);
+    });
+    
+    yarnOptions.forEach(option => {
+        option.addEventListener('click', (e) => {
+            e.preventDefault();
+            const yarnId = parseInt(option.dataset.yarnId);
+            const yarnName = option.dataset.yarnName;
+            const yarnBrand = option.dataset.yarnBrand;
+            const yarnColorway = option.dataset.yarnColorway;
+            
+            selectYarn(yarnId, yarnName, yarnBrand, yarnColorway);
+            searchInput.value = '';
+            searchInput.focus();
+        });
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+}
 
 function setupTextareaDrop(textarea) {
     textarea.addEventListener('dragover', (e) => {
