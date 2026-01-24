@@ -29,7 +29,7 @@ async def admin_users_view(
     current_user: User = Depends(require_admin),
 ) -> HTMLResponse:
     """Render the admin user management view."""
-    result = await db.execute(select(User).order_by(User.created_at.desc()))
+    result = await db.execute(select(User).order_by(User.email))
     users = result.scalars().all()
     return render_template(
         "admin/users.html",

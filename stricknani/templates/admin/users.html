@@ -32,7 +32,7 @@
             </div>
             <div class="flex flex-1 flex-col gap-1">
                 <label class="label-text text-xs font-semibold uppercase tracking-wide" for="new-user-password">
-                    {{ _('Temporary password') }}
+                    {{ _('Password') }}
                 </label>
                 <input
                     id="new-user-password"
@@ -77,10 +77,16 @@
                         <span class="badge badge-error">{{ _('Disabled') }}</span>
                         {% endif %}
                         {% if user.is_admin %}
-                        <span class="badge badge-ghost">{{ _('Admin') }}</span>
+                        <span class="badge badge-ghost">
+                            <span class="mdi mdi-shield-account mr-1"></span>
+                            {{ _('Admin') }}
+                        </span>
                         {% endif %}
                         {% if user.id == current_user.id %}
-                        <span class="badge badge-info">{{ _('You') }}</span>
+                        <span class="badge badge-info">
+                            <span class="mdi mdi-account-check mr-1"></span>
+                            {{ _("That's you!") }}
+                        </span>
                         {% endif %}
                     </div>
                 </div>
@@ -89,11 +95,11 @@
                         {% if user.is_admin %}
                             {{ buttons.danger(_('Revoke admin'), type='submit', icon='mdi-shield-account', class='btn-sm', attrs='disabled' if user.id == current_user.id else '') }}
                         {% else %}
-                            {{ buttons.ghost(_('Make admin'), type='submit', icon='mdi-shield-account', class='btn-sm btn-outline text-success hover:bg-success/20 hover:text-success-content', attrs='disabled' if user.id == current_user.id else '') }}
+                            {{ buttons.secondary(_('Make admin'), type='submit', icon='mdi-shield-account', class='btn-sm', attrs='disabled' if user.id == current_user.id else '') }}
                         {% endif %}
                     </form>
                     <form method="post" action="/admin/users/{{ user.id }}/toggle-active">
-                        {{ buttons.ghost(_('Deactivate') if user.is_active else _('Activate'), type='submit', icon='mdi-account-off', class='btn-sm btn-outline') }}
+                        {{ buttons.secondary(_('Deactivate') if user.is_active else _('Activate'), type='submit', icon='mdi-account-off', class='btn-sm') }}
                     </form>
                     <form method="post" action="/admin/users/{{ user.id }}/reset-password" class="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <label class="sr-only" for="password-{{ user.id }}">{{ _('New password') }}</label>

@@ -696,6 +696,9 @@ msgstr "Bild konnte nicht hochgeladen werden."
 msgid "Admin"
 msgstr "Admin"
 
+msgid "Disabled"
+msgstr "Deaktiviert"
+
 msgid "User Management"
 msgstr "Benutzerverwaltung"
 
@@ -717,8 +720,8 @@ msgstr "Ja"
 msgid "No"
 msgstr "Nein"
 
-msgid "You"
-msgstr "Du"
+msgid "That's you!"
+msgstr "Das bist du!"
 
 msgid "Revoke admin"
 msgstr "Admin entziehen"
@@ -748,7 +751,7 @@ msgid "Email"
 msgstr "E-Mail"
 
 msgid "Temporary password"
-msgstr "Temporäres Passwort"
+msgstr "Passwort"
 
 msgid "Grant admin access"
 msgstr "Admin-Zugriff gewähren"
