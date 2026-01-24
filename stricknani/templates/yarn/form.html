@@ -82,6 +82,20 @@
                 <input type="text" id="weight_category" name="weight_category" placeholder="{{ _('e.g. Fingering, DK, Worsted') }}" value="{{ yarn.weight_category if yarn and yarn.weight_category else '' }}" class="input input-bordered w-full">
             </div>
             <div>
+                <label for="recommended_needles" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-needle text-base-content/70"></span>
+                    {{ _('Recommended needle size') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                </label>
+                <input
+                    type="text"
+                    id="recommended_needles"
+                    name="recommended_needles"
+                    value="{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}"
+                    class="input input-bordered w-full"
+                    placeholder="e.g., 4.0mm"
+                >
+            </div>
+            <div>
                 <label for="weight_grams" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
                     <span class="mdi mdi-scale text-base-content/70"></span>
                     {{ _('Weight (grams)') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>

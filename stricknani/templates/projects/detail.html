@@ -104,6 +104,13 @@
                 <p class="text-base-content/70 text-sm">{{ _('No linked stash yarns yet.') }}</p>
                 {% endif %}
             </div>
+            <div>
+                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
+                    <span class="mdi mdi-sheep"></span>
+                    {{ _('Yarn') }}
+                </h3>
+                <p class="text-base-content">{{ project.yarn or _('Not specified') }}</p>
+            </div>
 
             <div>
                 <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
@@ -112,16 +119,43 @@
                 </h3>
                 <p class="text-base-content">{{ project.needles or _('Not specified') }}</p>
             </div>
+            <div>
+                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
+                    <span class="mdi mdi-needle"></span>
+                    {{ _('Recommended needle size') }}
+                </h3>
+                <p class="text-base-content">{{ project.recommended_needles or _('Not specified') }}</p>
+            </div>
 
-            {% if project.gauge_stitches and project.gauge_rows %}
+            {% if project.gauge_stitches is not none or project.gauge_rows is not none %}
             <div>
                 <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
                     <span class="mdi mdi-ruler-square"></span>
                     {{ _('Gauge') }}
                 </h3>
-                <p class="text-base-content">{{ project.gauge_stitches }} {{ _('Stitches') }} × {{ project.gauge_rows }} {{ _('Rows') }} per 10cm</p>
+                <p class="text-base-content">
+                    {{ project.gauge_stitches if project.gauge_stitches is not none else _('Not specified') }}
+                    {{ _('Stitches') }}
+                    ×
+                    {{ project.gauge_rows if project.gauge_rows is not none else _('Not specified') }}
+                    {{ _('Rows') }}
+                    {{ _('per 10cm') }}
+                </p>
             </div>
             {% endif %}
+            <div>
+                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
+                    <span class="mdi mdi-link-variant"></span>
+                    {{ _('Source Link') }}
+                </h3>
+                {% if project.link %}
+                <a href="{{ project.link }}" class="link link-primary break-all" target="_blank" rel="noreferrer">
+                    {{ project.link }}
+                </a>
+                {% else %}
+                <p class="text-base-content">{{ _('Not specified') }}</p>
+                {% endif %}
+            </div>
 
             {% if project.tags %}
             <div>

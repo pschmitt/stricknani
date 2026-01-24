@@ -121,6 +121,12 @@
                             <dd class="mt-1 text-sm text-base-content">{{ yarn.weight_category }}</dd>
                         </div>
                         {% endif %}
+                        {% if yarn.recommended_needles %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-xs font-medium text-base-content/60">{{ _('Recommended needle size') }}</dt>
+                            <dd class="mt-1 text-sm text-base-content">{{ yarn.recommended_needles }}</dd>
+                        </div>
+                        {% endif %}
                         {% if yarn.weight_grams %}
                         <div class="sm:col-span-1">
                             <dt class="text-xs font-medium text-base-content/60">{{ _('Grams') }}</dt>
@@ -131,6 +137,16 @@
                         <div class="sm:col-span-1">
                             <dt class="text-xs font-medium text-base-content/60">{{ _('Length') }}</dt>
                             <dd class="mt-1 text-sm text-base-content">{{ yarn.length_meters }} m</dd>
+                        </div>
+                        {% endif %}
+                        {% if yarn.link %}
+                        <div class="sm:col-span-2">
+                            <dt class="text-xs font-medium text-base-content/60">{{ _('Source Link') }}</dt>
+                            <dd class="mt-1 text-sm text-base-content">
+                                <a href="{{ yarn.link }}" class="link link-primary break-all" target="_blank" rel="noreferrer">
+                                    {{ yarn.link }}
+                                </a>
+                            </dd>
                         </div>
                         {% endif %}
                     </dl>

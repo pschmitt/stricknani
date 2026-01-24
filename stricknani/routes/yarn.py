@@ -238,6 +238,7 @@ async def create_yarn(
     dye_lot: Annotated[str | None, Form()] = None,
     fiber_content: Annotated[str | None, Form()] = None,
     weight_category: Annotated[str | None, Form()] = None,
+    recommended_needles: Annotated[str | None, Form()] = None,
     weight_grams: Annotated[str | None, Form()] = None,
     length_meters: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
@@ -258,6 +259,9 @@ async def create_yarn(
         dye_lot=dye_lot.strip() if dye_lot else None,
         fiber_content=fiber_content.strip() if fiber_content else None,
         weight_category=weight_category.strip() if weight_category else None,
+        recommended_needles=(
+            recommended_needles.strip() if recommended_needles else None
+        ),
         weight_grams=_parse_optional_int("weight_grams", weight_grams),
         length_meters=_parse_optional_int("length_meters", length_meters),
         notes=notes.strip() if notes else None,
@@ -358,6 +362,7 @@ async def update_yarn(
     dye_lot: Annotated[str | None, Form()] = None,
     fiber_content: Annotated[str | None, Form()] = None,
     weight_category: Annotated[str | None, Form()] = None,
+    recommended_needles: Annotated[str | None, Form()] = None,
     weight_grams: Annotated[str | None, Form()] = None,
     length_meters: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
@@ -381,6 +386,9 @@ async def update_yarn(
     yarn.dye_lot = dye_lot.strip() if dye_lot else None
     yarn.fiber_content = fiber_content.strip() if fiber_content else None
     yarn.weight_category = weight_category.strip() if weight_category else None
+    yarn.recommended_needles = (
+        recommended_needles.strip() if recommended_needles else None
+    )
     yarn.weight_grams = _parse_optional_int("weight_grams", weight_grams)
     yarn.length_meters = _parse_optional_int("length_meters", length_meters)
     yarn.notes = notes.strip() if notes else None

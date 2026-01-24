@@ -577,6 +577,7 @@ Return valid JSON only. Use null for missing values."""
         data = {
             "title": None,
             "needles": None,
+            "recommended_needles": None,
             "yarn": None,
             "gauge_stitches": None,
             "gauge_rows": None,
@@ -847,12 +848,14 @@ async def get_project(
         "category": project.category,
         "yarn": project.yarn,
         "needles": project.needles,
+        "recommended_needles": project.recommended_needles,
         "gauge_stitches": project.gauge_stitches,
         "gauge_rows": project.gauge_rows,
         "comment": project.comment or "",
         "comment_html": render_markdown(project.comment, f"project-{project.id}")
         if project.comment
         else None,
+        "link": project.link,
         "created_at": project.created_at.isoformat(),
         "updated_at": project.updated_at.isoformat(),
         "title_images": title_images,
@@ -960,6 +963,7 @@ async def edit_project_form(
         "category": project.category,
         "yarn": project.yarn,
         "needles": project.needles,
+        "recommended_needles": project.recommended_needles,
         "gauge_stitches": project.gauge_stitches,
         "gauge_rows": project.gauge_rows,
         "comment": project.comment or "",
@@ -989,6 +993,7 @@ async def create_project(
     name: Annotated[str, Form()],
     category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
+    recommended_needles: Annotated[str | None, Form()] = None,
     gauge_stitches: Annotated[str | None, Form()] = None,
     gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
@@ -1018,6 +1023,9 @@ async def create_project(
         name=name.strip(),
         category=normalized_category,
         needles=needles.strip() if needles else None,
+        recommended_needles=(
+            recommended_needles.strip() if recommended_needles else None
+        ),
         gauge_stitches=gauge_stitches_value,
         gauge_rows=gauge_rows_value,
         comment=comment.strip() if comment else None,
@@ -1056,6 +1064,7 @@ async def update_project(
     name: Annotated[str, Form()],
     category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
+    recommended_needles: Annotated[str | None, Form()] = None,
     gauge_stitches: Annotated[str | None, Form()] = None,
     gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
@@ -1099,6 +1108,9 @@ async def update_project(
     project.yarns = selected_yarns
     project.yarn = selected_yarns[0].name if selected_yarns else None
     project.needles = needles.strip() if needles else None
+    project.recommended_needles = (
+        recommended_needles.strip() if recommended_needles else None
+    )
     project.gauge_stitches = _parse_optional_int("gauge_stitches", gauge_stitches)
     project.gauge_rows = _parse_optional_int("gauge_rows", gauge_rows)
     project.comment = comment.strip() if comment else None

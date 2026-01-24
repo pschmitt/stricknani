@@ -310,6 +310,20 @@
                     placeholder="e.g., 4.0mm circular"
                 >
             </div>
+            <div class="md:col-span-2">
+                <label for="recommended_needles" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-needle text-base-content/70"></span>
+                    {{ _('Recommended needle size') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                </label>
+                <input
+                    type="text"
+                    id="recommended_needles"
+                    name="recommended_needles"
+                    value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
+                    class="input input-bordered w-full"
+                    placeholder="e.g., 3.5mm"
+                >
+            </div>
 
             <!-- Gauge -->
             <div>
@@ -567,6 +581,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (data.needles) {
                 document.getElementById('needles').value = data.needles;
+            }
+            if (data.recommended_needles) {
+                document.getElementById('recommended_needles').value = data.recommended_needles;
             }
             if (data.yarn) {
                 document.getElementById('yarn').value = data.yarn;

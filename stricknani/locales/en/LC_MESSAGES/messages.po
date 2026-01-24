@@ -556,6 +556,15 @@ msgstr ""
 #~ msgid "Source Link"
 #~ msgstr "Source Link"
 
+msgid "Not specified"
+msgstr "Not specified"
+
+msgid "Source Link"
+msgstr "Source Link"
+
+msgid "per 10cm"
+msgstr "per 10cm"
+
 #~ msgid "Optional link to the original pattern or source"
 #~ msgstr "Optional link to the original pattern or source"
 
@@ -591,4 +600,3 @@ msgstr ""
 
 #~ msgid "requires API key"
 #~ msgstr "requires API key"
-

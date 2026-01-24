@@ -79,6 +79,8 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
             description = "Number of rows per 10cm (integer)"
         elif name == "needles":
             description = "Needle size (e.g. '3.5mm', 'US 6')"
+        elif name == "recommended_needles":
+            description = "Recommended needle size from the pattern"
         elif name == "yarn":
             description = "Yarn name and weight"
         elif name == "comment":
@@ -246,6 +248,8 @@ class AIPatternImporter:
                 example[field] = "Cozy Scarf"
             elif field == "needles":
                 example[field] = "4mm"
+            elif field == "recommended_needles":
+                example[field] = "3.5mm"
             elif field == "yarn":
                 example[field] = "Worsted weight wool"
             elif field == "gauge_stitches":

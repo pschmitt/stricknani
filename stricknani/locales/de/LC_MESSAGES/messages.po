@@ -260,6 +260,21 @@ msgstr ""
 #~ msgid "Needles"
 #~ msgstr "Nadeln"
 
+msgid "Recommended needle size"
+msgstr "Nadelstärke"
+
+msgid "Optional"
+msgstr "Optional"
+
+msgid "Not specified"
+msgstr "Nicht angegeben"
+
+msgid "Source Link"
+msgstr "Quelllink"
+
+msgid "per 10cm"
+msgstr "pro 10 cm"
+
 #~ msgid "Gauge"
 #~ msgstr "Maschenprobe"
 
@@ -935,4 +950,3 @@ msgstr ""
 #~ " Quelle importiert. Bitte überprüfe alle"
 #~ " Felder sorgfältig und klicke auf "
 #~ "\"Projekt erstellen\" zum Speichern."
-
