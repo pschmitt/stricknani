@@ -25,47 +25,21 @@
 </div>
 
 <!-- Filters -->
-<div class="mb-6 flex flex-col md:flex-row gap-4">
-    <div>
-        <div class="relative">
-            <label for="category-filter" class="label pr-8">
-                <span class="label-text">{{ _('Category') }}</span>
-            </label>
-            {{ buttons.icon_only('mdi-cog-outline', href='/projects/categories', variant='ghost', class='btn-xs absolute right-0 top-0', attrs='title="' + _('Manage categories') + '" aria-label="' + _('Manage categories') + '"') }}
-        </div>
-        <select
-            id="category-filter"
-            class="select select-bordered w-full md:w-auto input input-bordered"
-            hx-get="/projects"
-            hx-target="#projects-list"
-            hx-trigger="change"
-            hx-include="[name='search']"
-            name="category"
-        >
-            <option value="">{{ _('All Categories') }}</option>
-                    {% for category in categories %}
-                    <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>{{ _(category) }}</option>
-                    {% endfor %}
-        </select>
-    </div>
-
-    <div class="flex-grow">
-        <label for="search" class="label">
-            <span class="label-text">{{ _('Search') }}</span>
-        </label>
-        <input
-            type="text"
-            id="search"
-            name="search"
-            value="{{ search or '' }}"
-            placeholder="Search projects..."
-            class="input input-bordered w-full"
-            hx-get="/projects"
-            hx-target="#projects-list"
-            hx-trigger="keyup changed delay:500ms"
-            hx-include="[name='category']"
-        >
-    </div>
+<div class="mb-6">
+    <label for="search" class="label">
+        <span class="label-text">{{ _('Search') }}</span>
+    </label>
+    <input
+        type="text"
+        id="search"
+        name="search"
+        value="{{ search or '' }}"
+        placeholder="Search projects..."
+        class="input input-bordered w-full"
+        hx-get="/projects"
+        hx-target="#projects-list"
+        hx-trigger="keyup changed delay:500ms"
+    >
 </div>
 
 <!-- Projects List -->
