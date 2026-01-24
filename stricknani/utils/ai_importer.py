@@ -2,6 +2,7 @@
 
 import inspect
 import json as json_module
+import logging
 import os
 from typing import Any
 
@@ -16,6 +17,8 @@ try:
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
+
+logger = logging.getLogger("stricknani.imports")
 
 
 def _build_schema_from_model(model_class: type) -> dict[str, Any]:
@@ -128,11 +131,17 @@ class AIPatternImporter:
             )
 
         # Fetch the page
+        logger.info("Importing pattern with AI from %s", self.url)
         async with httpx.AsyncClient(
             timeout=self.timeout, follow_redirects=True
         ) as client:
             response = await client.get(self.url)
             response.raise_for_status()
+            logger.debug(
+                "AI import response %s %s",
+                response.status_code,
+                response.headers.get("content-type", ""),
+            )
 
         soup = BeautifulSoup(response.text, "html.parser")
 
@@ -159,6 +168,14 @@ class AIPatternImporter:
         # Add image URLs
         extracted_data["image_urls"] = images[:10]  # Limit to 10 images
 
+        logger.info(
+            "AI import extracted name=%s needles=%s yarn=%s steps=%s images=%s",
+            extracted_data.get("name"),
+            extracted_data.get("needles"),
+            extracted_data.get("yarn"),
+            len(extracted_data.get("steps") or []),
+            len(extracted_data.get("image_urls") or []),
+        )
         return extracted_data
 
     async def _extract_images(self, soup: BeautifulSoup) -> list[str]:
@@ -287,12 +304,8 @@ Example format:
             )
             return result
 
-        except Exception as e:
-            # Log the error but continue with fallback
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.error(f"AI extraction failed: {e}", exc_info=True)
+        except Exception:
+            logger.error("AI extraction failed", exc_info=True)
 
             # Fallback to empty data if AI extraction fails
             return {

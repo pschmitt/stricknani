@@ -37,6 +37,23 @@ def _configure_app_logger(level: int) -> None:
     access_logger.setLevel(level)
 
 
+def _configure_import_logger(level: int, log_path: str | None) -> None:
+    import_logger = logging.getLogger("stricknani.imports")
+    if log_path:
+        log_dir = os.path.dirname(log_path)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+        if not any(
+            isinstance(handler, logging.FileHandler)
+            for handler in import_logger.handlers
+        ):
+            handler = logging.FileHandler(log_path)
+            handler.setFormatter(logging.Formatter(_DEFAULT_FORMAT, _DEFAULT_DATEFMT))
+            import_logger.addHandler(handler)
+        import_logger.propagate = False
+    import_logger.setLevel(level)
+
+
 def configure_logging(*, debug: bool = False) -> None:
     """Ensure Stricknani and access loggers stream to the console."""
 
@@ -45,3 +62,4 @@ def configure_logging(*, debug: bool = False) -> None:
     level = _resolve_level(env_level or default_level)
 
     _configure_app_logger(level)
+    _configure_import_logger(level, os.getenv("IMPORT_LOG_PATH"))

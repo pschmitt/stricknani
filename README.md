@@ -55,6 +55,10 @@ Configuration is done via environment variables (or a `.env` file in the project
 | `MEDIA_ROOT` | Directory for uploaded files | `./media` |
 | `FEATURE_SIGNUP_ENABLED` | Enable user signup | `true` |
 | `OPENAI_API_KEY` | OpenAI API key for AI-powered pattern import | (optional) |
+| `IMPORT_LOG_PATH` | File path for import debug logs | (optional) |
+| `SENTRY_DSN` | Sentry DSN for error reporting | (optional) |
+| `SENTRY_ENVIRONMENT` | Sentry environment name | `production` |
+| `SENTRY_TRACES_SAMPLE_RATE` | Sentry performance sample rate | `0` |
 
 ### AI-Powered Pattern Import
 

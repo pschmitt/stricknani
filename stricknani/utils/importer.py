@@ -1,10 +1,13 @@
 """URL import utilities for extracting knitting pattern data."""
 
+import logging
 import re
 from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
+
+logger = logging.getLogger("stricknani.imports")
 
 
 class PatternImporter:
@@ -17,25 +20,42 @@ class PatternImporter:
 
     async def fetch_and_parse(self) -> dict[str, Any]:
         """Fetch URL and extract pattern data."""
+        logger.info("Importing pattern from %s", self.url)
         async with httpx.AsyncClient(
             timeout=self.timeout, follow_redirects=True
         ) as client:
             response = await client.get(self.url)
             response.raise_for_status()
+            logger.debug(
+                "Import response %s %s",
+                response.status_code,
+                response.headers.get("content-type", ""),
+            )
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        return {
+        steps = self._extract_steps(soup)
+        images = self._extract_images(soup)
+        data = {
             "title": self._extract_title(soup),
             "needles": self._extract_needles(soup),
             "yarn": self._extract_yarn(soup),
             "gauge_stitches": self._extract_gauge_stitches(soup),
             "gauge_rows": self._extract_gauge_rows(soup),
             "comment": self._extract_description(soup),
-            "steps": self._extract_steps(soup),
+            "steps": steps,
             "link": self.url,
-            "image_urls": self._extract_images(soup),
+            "image_urls": images,
         }
+        logger.info(
+            "Import extracted title=%s needles=%s yarn=%s steps=%s images=%s",
+            data.get("title"),
+            data.get("needles"),
+            data.get("yarn"),
+            len(steps),
+            len(images),
+        )
+        return data
 
     def _extract_title(self, soup: BeautifulSoup) -> str | None:
         """Extract pattern title."""

@@ -36,6 +36,7 @@
           python-jose
           python-multipart
           rich
+          sentry-sdk
           sqlalchemy
           uvicorn
           uvloop

@@ -33,6 +33,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 
 configure_logging(debug=config.DEBUG)
+if config.SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+
+    sentry_sdk.init(
+        dsn=config.SENTRY_DSN,
+        environment=config.SENTRY_ENVIRONMENT,
+        traces_sample_rate=config.SENTRY_TRACES_SAMPLE_RATE,
+        integrations=[FastApiIntegration()],
+    )
 config.ensure_media_dirs()
 
 

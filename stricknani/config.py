@@ -49,6 +49,13 @@ class Config:
     # AI/OpenAI
     OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
 
+    # Sentry
+    SENTRY_DSN: str | None = os.getenv("SENTRY_DSN")
+    SENTRY_ENVIRONMENT: str = os.getenv("SENTRY_ENVIRONMENT", "production")
+    SENTRY_TRACES_SAMPLE_RATE: float = float(
+        os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0")
+    )
+
     # Internationalization
     DEFAULT_LANGUAGE: str = os.getenv("DEFAULT_LANGUAGE", "de")
     SUPPORTED_LANGUAGES: list[str] = ["en", "de"]
