@@ -1,0 +1,88 @@
+{% import "macros/buttons.html" as buttons %}
+
+<div class="card bg-base-100 shadow-sm p-4" data-user-card id="user-card-{{ user.id }}">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="space-y-2">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-base-200 overflow-hidden">
+                    <img
+                        src="{{ gravatar_url(user.email, size=80) }}"
+                        alt="{{ _('Profile picture for %(email)s') % {'email': user.email} }}"
+                        class="h-full w-full object-cover"
+                    >
+                </span>
+                <div>
+                    <p class="text-base font-semibold text-base-content">{{ user.email }}</p>
+                    <p class="text-xs text-base-content/70">{{ _('User ID') }}: {{ user.id }}</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                {% if not user.is_active %}
+                <span class="badge badge-error">
+                    <span class="mdi mdi-account-off mr-1"></span>
+                    {{ _('Disabled') }}
+                </span>
+                {% endif %}
+                {% if user.is_admin %}
+                <span class="badge badge-ghost">
+                    <span class="mdi mdi-shield-account mr-1"></span>
+                    {{ _('Admin') }}
+                </span>
+                {% endif %}
+                {% if user.id == current_user.id %}
+                <span class="badge badge-info">
+                    <span class="mdi mdi-account-check mr-1"></span>
+                    {{ _("That's you!") }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <form
+                method="post"
+                action="/admin/users/{{ user.id }}/toggle-admin"
+                class="w-full sm:w-auto"
+                hx-post="/admin/users/{{ user.id }}/toggle-admin"
+                hx-target="#user-card-{{ user.id }}"
+                hx-swap="outerHTML"
+                data-toast-message="{{ _('Admin access revoked.') if user.is_admin else _('Admin access granted.') }}"
+                data-toast-variant="success"
+            >
+                {% if user.is_admin %}
+                    {{ buttons.danger(_('Revoke admin'), type='submit', icon='mdi-shield-account', class='btn-sm w-full sm:w-40', attrs='disabled' if user.id == current_user.id else '') }}
+                {% else %}
+                    {{ buttons.secondary(_('Make admin'), type='submit', icon='mdi-shield-account', class='btn-sm w-full sm:w-40', attrs='disabled' if user.id == current_user.id else '') }}
+                {% endif %}
+            </form>
+            <form
+                method="post"
+                action="/admin/users/{{ user.id }}/toggle-active"
+                class="w-full sm:w-auto"
+                hx-post="/admin/users/{{ user.id }}/toggle-active"
+                hx-target="#user-card-{{ user.id }}"
+                hx-swap="outerHTML"
+                data-toast-message="{{ _('User disabled.') if user.is_active else _('User activated.') }}"
+                data-toast-variant="success"
+            >
+                {{ buttons.secondary(_('Deactivate') if user.is_active else _('Activate'), type='submit', icon='mdi-account-off', class='btn-sm w-full sm:w-40') }}
+            </form>
+            <button
+                type="button"
+                class="btn btn-primary btn-sm w-full sm:w-40 py-1"
+                data-user-id="{{ user.id }}"
+                data-user-email="{{ user.email }}"
+                onclick="openResetPasswordDialog(this)"
+            >
+                <span class="mdi mdi-key-variant"></span>
+                {{ _('Reset password') }}
+            </button>
+            <form
+                method="post"
+                action="/admin/users/{{ user.id }}/delete"
+                class="w-full sm:w-auto"
+            >
+                {{ buttons.danger(_('Delete user'), type='button', icon='mdi-delete-outline', class='btn-sm w-full sm:w-40 py-1', attrs=('disabled' if user.id == current_user.id else '') + ' data-user-id=\"' + user.id|string + '\" data-user-email=\"' + user.email + '\" onclick=\"openDeleteUserDialog(this)\"') }}
+            </form>
+        </div>
+    </div>
+</div>

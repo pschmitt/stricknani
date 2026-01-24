@@ -402,7 +402,7 @@
 
             toastContainer.replaceChildren();
             const toast = document.createElement("div");
-            toast.className = `rounded-lg px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition hover:translate-y-1 ${
+            toast.className = `rounded-lg px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 hover:translate-y-1 ${
                 toastVariants[variant] || toastVariants.info
             }`;
             toast.setAttribute("role", "status");
@@ -429,6 +429,11 @@
             });
 
             toastContainer.appendChild(toast);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    toast.classList.remove("opacity-0", "translate-y-2");
+                });
+            });
 
             setTimeout(() => {
                 if (!toast.isConnected) {
@@ -798,6 +803,10 @@
             if (!element) {
                 return;
             }
+            const status = event.detail?.xhr?.status ?? 200;
+            if (status >= 400) {
+                return;
+            }
             const toastElement =
                 element.getAttribute("data-toast-message") !== null
                     ? element
@@ -812,6 +821,10 @@
             const variant = toastElement.getAttribute("data-toast-variant") || "info";
             if (window.showToast) {
                 window.showToast(message, variant);
+            }
+            const dialogId = element.getAttribute("data-dialog-close");
+            if (dialogId) {
+                closeDialog(dialogId);
             }
         });
 
