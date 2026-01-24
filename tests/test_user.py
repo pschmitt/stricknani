@@ -6,6 +6,7 @@ from PIL import Image as PILImage
 
 from stricknani.config import config
 from stricknani.models import User
+from stricknani.utils.gravatar import gravatar_url
 
 
 def _generate_avatar_bytes(color: str = "orange") -> BytesIO:
@@ -41,3 +42,14 @@ async def test_upload_profile_image_updates_avatar(test_client: Any) -> None:
     assert media_path.exists()
     assert thumb_dir.exists()
     assert any(thumb_dir.iterdir())
+
+
+@pytest.mark.asyncio
+async def test_profile_view_uses_gravatar_when_no_upload(test_client: Any) -> None:
+    client, _session_factory, _user_id, _project_id, _step_id = test_client
+
+    response = await client.get("/user/profile", headers={"HX-Request": "true"})
+
+    assert response.status_code == 200
+    assert gravatar_url("tester@example.com") in response.text
+    assert gravatar_url("tester@example.com", size=96) in response.text

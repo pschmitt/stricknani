@@ -42,14 +42,19 @@
         <div class="card bg-base-200 shadow-xl" data-yarn-card>
             <a href="/yarn/{{ yarn.id }}" class="relative block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]">
                 {% if card.preview_url %}
-                <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}" class="h-full w-full object-cover">
+                <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}" class="h-full w-full object-cover" onerror="this.replaceWith(this.closest('a').querySelector('[data-fallback-icon]').cloneNode(true)); this.closest('a').querySelector('[data-fallback-icon]').classList.remove('hidden')">
                 {% else %}
-                <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center opacity-50">
-                    <span class="mdi mdi-yarn text-5xl" aria-hidden="true"></span>
+                <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500">
+                    <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
                     <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
                     <span class="sr-only">{{ _('Open yarn details') }}</span>
                 </div>
                 {% endif %}
+                <div class="hidden h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500" data-fallback-icon>
+                    <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
+                    <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
+                    <span class="sr-only">{{ _('Open yarn details') }}</span>
+                </div>
                 <span class="sr-only">{{ _('Open yarn details for %(name)s') % {'name': yarn.name} }}</span>
             </a>
             <div class="card-body">

@@ -28,6 +28,7 @@ from stricknani.utils.files import (
     get_thumbnail_url,
     save_uploaded_file,
 )
+from stricknani.utils.gravatar import gravatar_url
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,8 @@ async def profile_view(
         profile_thumbnail_url = get_thumbnail_url(
             current_user.profile_image, current_user.id, subdir="users"
         )
+    else:
+        profile_thumbnail_url = gravatar_url(current_user.email)
 
     return render_template(
         "user/profile.html",
@@ -133,6 +136,8 @@ async def upload_profile_image(
             profile_thumbnail_url = get_thumbnail_url(
                 user.profile_image, user.id, subdir="users"
             )
+        else:
+            profile_thumbnail_url = gravatar_url(user.email)
 
         return render_template(
             "user/_profile_avatar.html",

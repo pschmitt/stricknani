@@ -260,16 +260,15 @@
                             data-yarn-name="{{ yarn.name }}"
                             data-yarn-brand="{{ yarn.brand or '' }}"
                             data-yarn-colorway="{{ yarn.colorway or '' }}"
-                            data-yarn-image="{{ yarn.photos[0].thumbnail_url if yarn.photos and yarn.photos[0] else '' }}"
+                            data-yarn-image="{{ yarn.photos[0].filename if yarn.photos and yarn.photos[0] else '' }}"
                         >
                             <div class="flex items-center gap-3">
                                 {% if yarn.photos and yarn.photos[0] %}
-                                <img src="{{ yarn.photos[0].thumbnail_url }}" alt="{{ yarn.name }}" class="w-10 h-10 rounded object-cover">
-                                {% else %}
-                                <div class="w-10 h-10 rounded bg-base-300 flex items-center justify-center">
-                                    <span class="mdi mdi-yarn text-base-content/40"></span>
-                                </div>
+                                <img src="{{ yarn.photos[0].filename }}" alt="{{ yarn.name }}" class="w-10 h-10 rounded object-cover" onerror="this.replaceWith(this.closest('button').querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">
                                 {% endif %}
+                                <div class="w-10 h-10 rounded bg-base-300 flex items-center justify-center text-base-content/60{% if yarn.photos and yarn.photos[0] %} hidden{% endif %}" data-fallback-icon>
+                                    <span class="mdi mdi-image-off text-lg" aria-hidden="true"></span>
+                                </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="font-medium truncate">{{ yarn.name }}</div>
                                     {% if yarn.brand or yarn.colorway %}
@@ -689,11 +688,14 @@ function initYarnSelector() {
             chip.className = 'flex items-center gap-2 py-2 px-3 bg-primary/10 text-primary border border-primary/20 rounded-lg';
 
             const imageHtml = yarn.imageUrl
-                ? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-8 h-8 rounded object-cover">`
-                : `<div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center"><span class="mdi mdi-yarn text-base-content/40 text-sm"></span></div>`;
+                ? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-8 h-8 rounded object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
+                : '';
 
             chip.innerHTML = `
                 ${imageHtml}
+                <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? ' hidden' : ''}" data-fallback-icon>
+                    <span class="mdi mdi-image-off text-sm" aria-hidden="true"></span>
+                </div>
                 <span class="text-sm flex-1">
                     ${yarn.name}${yarn.brand ? ` • ${yarn.brand}` : ''}
                 </span>

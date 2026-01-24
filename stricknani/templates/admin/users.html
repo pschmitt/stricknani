@@ -60,8 +60,12 @@
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div class="space-y-2">
                     <div class="flex items-center gap-3">
-                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-base-200">
-                            <span class="mdi mdi-account"></span>
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-base-200 overflow-hidden">
+                            <img
+                                src="{{ gravatar_url(user.email, size=80) }}"
+                                alt="{{ _('Profile picture for %(email)s') % {'email': user.email} }}"
+                                class="h-full w-full object-cover"
+                            >
                         </span>
                         <div>
                             <p class="text-base font-semibold text-base-content">{{ user.email }}</p>
@@ -69,12 +73,12 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 text-xs">
-                        <span class="badge badge-ghost">
-                            {{ _('Active') }}: {{ _('Yes') if user.is_active else _('No') }}
-                        </span>
-                        <span class="badge badge-ghost">
-                            {{ _('Admin') }}: {{ _('Yes') if user.is_admin else _('No') }}
-                        </span>
+                        {% if not user.is_active %}
+                        <span class="badge badge-error">{{ _('Disabled') }}</span>
+                        {% endif %}
+                        {% if user.is_admin %}
+                        <span class="badge badge-ghost">{{ _('Admin') }}</span>
+                        {% endif %}
                         {% if user.id == current_user.id %}
                         <span class="badge badge-info">{{ _('You') }}</span>
                         {% endif %}

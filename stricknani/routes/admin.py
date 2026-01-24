@@ -10,6 +10,7 @@ from stricknani.main import render_template
 from stricknani.models import User
 from stricknani.routes.auth import require_admin
 from stricknani.utils.auth import get_password_hash
+from stricknani.utils.gravatar import gravatar_url
 
 router: APIRouter = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -36,6 +37,7 @@ async def admin_users_view(
         {
             "current_user": current_user,
             "users": users,
+            "gravatar_url": gravatar_url,
         },
     )
 
