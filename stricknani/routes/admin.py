@@ -1,6 +1,8 @@
 """Admin management routes."""
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from urllib.parse import urlencode
+
+from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +15,13 @@ from stricknani.utils.auth import get_password_hash
 from stricknani.utils.gravatar import gravatar_url
 
 router: APIRouter = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def _admin_users_redirect(toast_key: str) -> RedirectResponse:
+    query = urlencode({"toast": toast_key})
+    return RedirectResponse(
+        url=f"/admin/users?{query}", status_code=status.HTTP_303_SEE_OTHER
+    )
 
 
 async def _get_admin_count(db: AsyncSession) -> int:
@@ -51,28 +60,22 @@ async def toggle_admin_status(
     """Toggle admin status for a user."""
     user = await db.get(User, user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+        return _admin_users_redirect("user_not_found")
 
     if user.is_admin:
         admin_count = await _get_admin_count(db)
         if admin_count <= 1:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot remove the last admin",
-            )
+            return _admin_users_redirect("cannot_remove_last_admin")
         if user.id == current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot remove your own admin access",
-            )
+            return _admin_users_redirect("cannot_remove_own_admin")
         user.is_admin = False
     else:
         user.is_admin = True
 
     await db.commit()
-    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
+    return _admin_users_redirect(
+        "admin_revoked" if not user.is_admin else "admin_granted"
+    )
 
 
 @router.post("/users/{user_id}/toggle-active")
@@ -84,19 +87,16 @@ async def toggle_active_status(
     """Toggle active status for a user."""
     user = await db.get(User, user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+        return _admin_users_redirect("user_not_found")
 
     if user.id == current_user.id and user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot deactivate your own account",
-        )
+        return _admin_users_redirect("cannot_deactivate_self")
 
     user.is_active = not user.is_active
     await db.commit()
-    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
+    return _admin_users_redirect(
+        "user_deactivated" if not user.is_active else "user_activated"
+    )
 
 
 @router.post("/users/{user_id}/delete")
@@ -108,27 +108,19 @@ async def delete_user_admin(
     """Delete a user and their data from the admin UI."""
     user = await db.get(User, user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+        return _admin_users_redirect("user_not_found")
 
     if user.id == current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete your own account",
-        )
+        return _admin_users_redirect("cannot_delete_self")
 
     if user.is_admin:
         admin_count = await _get_admin_count(db)
         if admin_count <= 1:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot delete the last admin",
-            )
+            return _admin_users_redirect("cannot_delete_last_admin")
 
     await db.delete(user)
     await db.commit()
-    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
+    return _admin_users_redirect("user_deleted")
 
 
 @router.post("/users/{user_id}/reset-password")
@@ -141,20 +133,15 @@ async def reset_password(
     """Reset a user's password."""
     user = await db.get(User, user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+        return _admin_users_redirect("user_not_found")
 
     if not password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password cannot be empty",
-        )
+        return _admin_users_redirect("password_empty")
 
     user.hashed_password = get_password_hash(password)
     user.is_active = True
     await db.commit()
-    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
+    return _admin_users_redirect("password_reset")
 
 
 @router.post("/users/create")
@@ -168,22 +155,13 @@ async def create_user_admin(
     """Create a new user from the admin UI."""
     normalized_email = email.strip().lower()
     if not normalized_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email cannot be empty",
-        )
+        return _admin_users_redirect("email_empty")
     if not password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password cannot be empty",
-        )
+        return _admin_users_redirect("password_empty")
 
     existing = await db.execute(select(User.id).where(User.email == normalized_email))
     if existing.scalar_one_or_none() is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
-        )
+        return _admin_users_redirect("email_exists")
 
     user = User(
         email=normalized_email,
@@ -193,4 +171,4 @@ async def create_user_admin(
     )
     db.add(user)
     await db.commit()
-    return RedirectResponse(url="/admin/users", status_code=status.HTTP_303_SEE_OTHER)
+    return _admin_users_redirect("user_created")

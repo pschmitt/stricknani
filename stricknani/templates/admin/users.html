@@ -3,55 +3,17 @@
 
 {% block content %}
 <div class="space-y-6">
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-2xl font-semibold text-base-content">{{ _('User Management') }}</h1>
             <p class="text-sm text-base-content/70">{{ _('Manage accounts, roles, and access for your instance.') }}</p>
         </div>
-        <div class="rounded-lg border border-base-300 bg-base-100 px-4 py-2 text-sm text-base-content/70 shadow-sm">
-            {{ _('Total users') }}: <span class="font-semibold text-base-content">{{ users | length }}</span>
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="rounded-lg border border-base-300 bg-base-100 px-4 py-2 text-sm text-base-content/70 shadow-sm">
+                {{ _('Total users') }}: <span class="font-semibold text-base-content">{{ users | length }}</span>
+            </div>
+            {{ buttons.primary(_('Create user'), type='button', icon='mdi-account-plus', attrs='onclick="openCreateUserDialog()"') }}
         </div>
-    </div>
-
-    <div class="card bg-base-100 shadow-sm p-4">
-        <h2 class="text-lg font-semibold text-base-content">{{ _('Create user') }}</h2>
-        <p class="text-sm text-base-content/70">{{ _('Add a new account with a temporary password.') }}</p>
-        <form method="post" action="/admin/users/create" class="mt-4 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
-            <div class="flex flex-1 flex-col gap-1">
-                <label class="label-text text-xs font-semibold uppercase tracking-wide" for="new-user-email">
-                    {{ _('Email') }}
-                </label>
-                <input
-                    id="new-user-email"
-                    name="email"
-                    type="email"
-                    required
-                    autocomplete="email"
-                    class="input input-bordered"
-                />
-            </div>
-            <div class="flex flex-1 flex-col gap-1">
-                <label class="label-text text-xs font-semibold uppercase tracking-wide" for="new-user-password">
-                    {{ _('Password') }}
-                </label>
-                <input
-                    id="new-user-password"
-                    name="password"
-                    type="password"
-                    required
-                    autocomplete="new-password"
-                    class="input input-bordered"
-                />
-            </div>
-            <label class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 px-4 py-3 text-sm text-base-content/80 shadow-sm">
-                <input type="checkbox" name="is_admin" class="checkbox" />
-                <span>
-                    <span class="block font-semibold text-base-content">{{ _('Grant admin access') }}</span>
-                    <span class="block text-xs text-base-content/70">{{ _('Allow this user to manage accounts and settings.') }}</span>
-                </span>
-            </label>
-            {{ buttons.primary(_('Create user'), type='submit', icon='mdi-account-plus') }}
-        </form>
     </div>
 
     <div class="space-y-4">
@@ -74,7 +36,10 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-2 text-xs">
                         {% if not user.is_active %}
-                        <span class="badge badge-error">{{ _('Disabled') }}</span>
+                        <span class="badge badge-error">
+                            <span class="mdi mdi-account-off mr-1"></span>
+                            {{ _('Disabled') }}
+                        </span>
                         {% endif %}
                         {% if user.is_admin %}
                         <span class="badge badge-ghost">
@@ -91,34 +56,32 @@
                     </div>
                 </div>
                 <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                    <form method="post" action="/admin/users/{{ user.id }}/toggle-admin">
+                    <form method="post" action="/admin/users/{{ user.id }}/toggle-admin" class="w-full sm:w-auto">
                         {% if user.is_admin %}
-                            {{ buttons.danger(_('Revoke admin'), type='submit', icon='mdi-shield-account', class='btn-sm', attrs='disabled' if user.id == current_user.id else '') }}
+                            {{ buttons.danger(_('Revoke admin'), type='submit', icon='mdi-shield-account', class='btn-sm w-full sm:w-40', attrs='disabled' if user.id == current_user.id else '') }}
                         {% else %}
-                            {{ buttons.secondary(_('Make admin'), type='submit', icon='mdi-shield-account', class='btn-sm', attrs='disabled' if user.id == current_user.id else '') }}
+                            {{ buttons.secondary(_('Make admin'), type='submit', icon='mdi-shield-account', class='btn-sm w-full sm:w-40', attrs='disabled' if user.id == current_user.id else '') }}
                         {% endif %}
                     </form>
-                    <form method="post" action="/admin/users/{{ user.id }}/toggle-active">
-                        {{ buttons.secondary(_('Deactivate') if user.is_active else _('Activate'), type='submit', icon='mdi-account-off', class='btn-sm') }}
+                    <form method="post" action="/admin/users/{{ user.id }}/toggle-active" class="w-full sm:w-auto">
+                        {{ buttons.secondary(_('Deactivate') if user.is_active else _('Activate'), type='submit', icon='mdi-account-off', class='btn-sm w-full sm:w-40') }}
                     </form>
-                    <form method="post" action="/admin/users/{{ user.id }}/reset-password" class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        <label class="sr-only" for="password-{{ user.id }}">{{ _('New password') }}</label>
-                        <input
-                            id="password-{{ user.id }}"
-                            name="password"
-                            type="password"
-                            autocomplete="new-password"
-                            placeholder="{{ _('New password') }}"
-                            class="w-64 input input-bordered input-sm"
-                            required
-                        />
-                        {{ buttons.primary(_('Reset password'), type='submit', icon='mdi-key-variant', class='btn-sm py-1') }}
-                    </form>
+                    <button
+                        type="button"
+                        class="btn btn-primary btn-sm w-full sm:w-40 py-1"
+                        data-user-id="{{ user.id }}"
+                        data-user-email="{{ user.email }}"
+                        onclick="openResetPasswordDialog(this)"
+                    >
+                        <span class="mdi mdi-key-variant"></span>
+                        {{ _('Reset password') }}
+                    </button>
                     <form
                         method="post"
                         action="/admin/users/{{ user.id }}/delete"
+                        class="w-full sm:w-auto"
                     >
-                        {{ buttons.danger(_('Delete user'), type='button', icon='mdi-delete-outline', class='btn-sm py-1', attrs=('disabled' if user.id == current_user.id else '') + ' data-user-id="' + user.id|string + '" data-user-email="' + user.email + '" onclick="openDeleteUserDialog(this)"') }}
+                        {{ buttons.danger(_('Delete user'), type='button', icon='mdi-delete-outline', class='btn-sm w-full sm:w-40 py-1', attrs=('disabled' if user.id == current_user.id else '') + ' data-user-id="' + user.id|string + '" data-user-email="' + user.email + '" onclick="openDeleteUserDialog(this)"') }}
                     </form>
                 </div>
             </div>
@@ -126,6 +89,78 @@
         {% endfor %}
     </div>
 </div>
+
+<dialog id="resetPasswordDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
+    <h3 class="text-lg font-bold text-base-content mb-2">{{ _('Reset password') }}</h3>
+    <p class="text-sm text-base-content/70 mb-4">
+        {{ _('Set a new password for this user.') }}
+        <br>
+        <strong id="resetPasswordEmail" class="text-base-content"></strong>
+    </p>
+    <form id="resetPasswordForm" method="post" action="/admin/users/0/reset-password" class="space-y-4">
+        <div class="flex flex-col gap-1">
+            <label class="label-text text-xs font-semibold uppercase tracking-wide" for="reset-password-input">
+                {{ _('New password') }}
+            </label>
+            <input
+                id="reset-password-input"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                class="input input-bordered"
+                required
+            />
+        </div>
+        <div class="flex justify-end gap-3">
+            {{ buttons.secondary(_('Cancel'), attrs='onclick="document.getElementById(\'resetPasswordDialog\').close()"') }}
+            {{ buttons.primary(_('Reset password'), type='submit', icon='mdi-key-variant') }}
+        </div>
+    </form>
+</dialog>
+
+<dialog id="createUserDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
+    <h3 class="text-lg font-bold text-base-content mb-2">{{ _('Create user') }}</h3>
+    <p class="text-sm text-base-content/70 mb-4">{{ _('Add a new account with a temporary password.') }}</p>
+    <form id="createUserForm" method="post" action="/admin/users/create" class="space-y-4">
+        <div class="flex flex-col gap-1">
+            <label class="label-text text-xs font-semibold uppercase tracking-wide" for="create-user-email">
+                {{ _('Email') }}
+            </label>
+            <input
+                id="create-user-email"
+                name="email"
+                type="email"
+                required
+                autocomplete="email"
+                class="input input-bordered"
+            />
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="label-text text-xs font-semibold uppercase tracking-wide" for="create-user-password">
+                {{ _('Password') }}
+            </label>
+            <input
+                id="create-user-password"
+                name="password"
+                type="password"
+                required
+                autocomplete="new-password"
+                class="input input-bordered"
+            />
+        </div>
+        <label class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 px-4 py-3 text-sm text-base-content/80 shadow-sm">
+            <input type="checkbox" name="is_admin" class="checkbox" />
+            <span>
+                <span class="block font-semibold text-base-content">{{ _('Grant admin access') }}</span>
+                <span class="block text-xs text-base-content/70">{{ _('Allow this user to manage accounts and settings.') }}</span>
+            </span>
+        </label>
+        <div class="flex justify-end gap-3">
+            {{ buttons.secondary(_('Cancel'), attrs='onclick="document.getElementById(\'createUserDialog\').close()"') }}
+            {{ buttons.primary(_('Create user'), type='submit', icon='mdi-account-plus') }}
+        </div>
+    </form>
+</dialog>
 
 <dialog id="deleteUserDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
     <h3 class="text-lg font-bold text-base-content mb-4">{{ _('Delete user') }}</h3>
@@ -143,6 +178,36 @@
 </dialog>
 
 <script>
+function openCreateUserDialog() {
+    const dialog = document.getElementById('createUserDialog');
+    const form = document.getElementById('createUserForm');
+
+    if (!dialog || !form) {
+        return;
+    }
+
+    form.reset();
+    dialog.showModal();
+}
+
+function openResetPasswordDialog(button) {
+    const userId = button.dataset.userId;
+    const userEmail = button.dataset.userEmail || '';
+    const dialog = document.getElementById('resetPasswordDialog');
+    const form = document.getElementById('resetPasswordForm');
+    const emailTarget = document.getElementById('resetPasswordEmail');
+    const input = document.getElementById('reset-password-input');
+
+    if (!dialog || !form || !emailTarget || !input || !userId) {
+        return;
+    }
+
+    form.action = `/admin/users/${userId}/reset-password`;
+    emailTarget.textContent = userEmail;
+    input.value = '';
+    dialog.showModal();
+}
+
 function openDeleteUserDialog(button) {
     const userId = button.dataset.userId;
     const userEmail = button.dataset.userEmail || '';
@@ -157,6 +222,34 @@ function openDeleteUserDialog(button) {
     form.action = `/admin/users/${userId}/delete`;
     emailTarget.textContent = userEmail;
     dialog.showModal();
+}
+
+const adminToastMessages = {
+    admin_granted: { message: '{{ _("Admin access granted.") }}', variant: 'success' },
+    admin_revoked: { message: '{{ _("Admin access revoked.") }}', variant: 'success' },
+    user_activated: { message: '{{ _("User activated.") }}', variant: 'success' },
+    user_deactivated: { message: '{{ _("User disabled.") }}', variant: 'success' },
+    user_deleted: { message: '{{ _("User deleted.") }}', variant: 'success' },
+    user_created: { message: '{{ _("User created.") }}', variant: 'success' },
+    password_reset: { message: '{{ _("Password reset.") }}', variant: 'success' },
+    user_not_found: { message: '{{ _("User not found.") }}', variant: 'error' },
+    cannot_remove_last_admin: { message: '{{ _("Cannot remove the last admin.") }}', variant: 'error' },
+    cannot_remove_own_admin: { message: '{{ _("Cannot remove your own admin access.") }}', variant: 'error' },
+    cannot_deactivate_self: { message: '{{ _("You cannot disable your own account.") }}', variant: 'error' },
+    cannot_delete_self: { message: '{{ _("You cannot delete your own account.") }}', variant: 'error' },
+    cannot_delete_last_admin: { message: '{{ _("Cannot delete the last admin.") }}', variant: 'error' },
+    email_empty: { message: '{{ _("Email cannot be empty.") }}', variant: 'error' },
+    password_empty: { message: '{{ _("Password cannot be empty.") }}', variant: 'error' },
+    email_exists: { message: '{{ _("Email already registered.") }}', variant: 'error' },
+};
+
+const toastKey = new URLSearchParams(window.location.search).get('toast');
+if (toastKey && adminToastMessages[toastKey]) {
+    const toast = adminToastMessages[toastKey];
+    window.showToast?.(toast.message, toast.variant);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('toast');
+    window.history.replaceState({}, '', url.toString());
 }
 </script>
 {% endblock %}

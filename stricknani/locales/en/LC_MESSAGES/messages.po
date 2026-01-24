@@ -6,568 +6,589 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2025-10-12 19:00+0000\n"
+"POT-Creation-Date: 2026-01-24 15:19+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
 "Language-Team: en <philipp@schmitt.co>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.14.0\n"
+"Generated-By: Babel 2.17.0\n"
 
 # Navigation and General
-msgid "Stricknani"
-msgstr "Stricknani"
+#~ msgid "Stricknani"
+#~ msgstr "Stricknani"
 
-msgid "Projects"
-msgstr "Projects"
+#~ msgid "Projects"
+#~ msgstr "Projects"
 
-msgid "Gauge Calculator"
-msgstr "Gauge Calculator"
+#~ msgid "Gauge Calculator"
+#~ msgstr "Gauge Calculator"
 
-msgid "Preferences"
-msgstr "Preferences"
+#~ msgid "Preferences"
+#~ msgstr "Preferences"
 
-msgid "Logout"
-msgstr "Logout"
+#~ msgid "Logout"
+#~ msgstr "Logout"
 
-msgid "Open user menu"
-msgstr "Open user menu"
+#~ msgid "Open user menu"
+#~ msgstr "Open user menu"
 
-msgid "Settings"
-msgstr "Settings"
+#~ msgid "Settings"
+#~ msgstr "Settings"
 
-msgid "Login"
-msgstr "Login"
+#~ msgid "Login"
+#~ msgstr "Login"
 
 # Login/Signup page
-msgid "Welcome to Stricknani"
-msgstr "Welcome to Stricknani"
+#~ msgid "Welcome to Stricknani"
+#~ msgstr "Welcome to Stricknani"
 
-msgid "Welcome back"
-msgstr "Welcome back"
+#~ msgid "Welcome back"
+#~ msgstr "Welcome back"
 
-msgid "Sign in to keep your projects moving"
-msgstr "Sign in to keep your projects moving"
+#~ msgid "Sign in to keep your projects moving"
+#~ msgstr "Sign in to keep your projects moving"
 
-msgid "Email"
-msgstr "Email"
+#~ msgid "Email"
+#~ msgstr "Email"
 
-msgid "Password"
-msgstr "Password"
+#~ msgid "Password"
+#~ msgstr "Password"
 
-msgid "Don't have an account? Sign up"
-msgstr "Don't have an account? Sign up"
+#~ msgid "Don't have an account? Sign up"
+#~ msgstr "Don't have an account? Sign up"
 
-msgid "Sign Up"
-msgstr "Sign Up"
+#~ msgid "Sign Up"
+#~ msgstr "Sign Up"
 
-msgid "At least 8 characters"
-msgstr "At least 8 characters"
+#~ msgid "At least 8 characters"
+#~ msgstr "At least 8 characters"
 
-msgid "Already have an account? Login"
-msgstr "Already have an account? Login"
+#~ msgid "Already have an account? Login"
+#~ msgstr "Already have an account? Login"
 
 # User preferences
-msgid "User Preferences"
-msgstr "User Preferences"
+#~ msgid "User Preferences"
+#~ msgstr "User Preferences"
 
-msgid "Control how Stricknani looks and feels for your account."
-msgstr "Control how Stricknani looks and feels for your account."
+#~ msgid "Control how Stricknani looks and feels for your account."
+#~ msgstr "Control how Stricknani looks and feels for your account."
 
-msgid "Theme"
-msgstr "Theme"
+#~ msgid "Theme"
+#~ msgstr "Theme"
 
-msgid "Choose theme"
-msgstr "Choose theme"
+#~ msgid "Choose theme"
+#~ msgstr "Choose theme"
 
-msgid "Choose whether Stricknani follows your device setting or sticks to light or dark mode."
-msgstr "Choose whether Stricknani follows your device setting or sticks to light or dark mode."
+#~ msgid ""
+#~ "Choose whether Stricknani follows your "
+#~ "device setting or sticks to light "
+#~ "or dark mode."
+#~ msgstr ""
+#~ "Choose whether Stricknani follows your "
+#~ "device setting or sticks to light "
+#~ "or dark mode."
 
-msgid "Light"
-msgstr "Light"
+#~ msgid "Light"
+#~ msgstr "Light"
 
-msgid "Dark"
-msgstr "Dark"
+#~ msgid "Dark"
+#~ msgstr "Dark"
 
-msgid "System"
-msgstr "System"
+#~ msgid "System"
+#~ msgstr "System"
 
-msgid "Signed in"
-msgstr "Signed in"
+#~ msgid "Signed in"
+#~ msgstr "Signed in"
 
-msgid "Your selection is stored locally in this browser."
-msgstr "Your selection is stored locally in this browser."
+#~ msgid "Your selection is stored locally in this browser."
+#~ msgstr "Your selection is stored locally in this browser."
 
-msgid "Profile picture"
-msgstr "Profile picture"
+#~ msgid "Profile picture"
+#~ msgstr "Profile picture"
 
-msgid "Upload a friendly face so it is easier to recognize your projects at a glance."
-msgstr "Upload a friendly face so it is easier to recognize your projects at a glance."
+#~ msgid ""
+#~ "Upload a friendly face so it is"
+#~ " easier to recognize your projects at"
+#~ " a glance."
+#~ msgstr ""
+#~ "Upload a friendly face so it is"
+#~ " easier to recognize your projects at"
+#~ " a glance."
 
-msgid "Profile picture updated successfully!"
-msgstr "Profile picture updated successfully!"
+#~ msgid "Profile picture updated successfully!"
+#~ msgstr "Profile picture updated successfully!"
 
-msgid "Select an image"
-msgstr "Select an image"
+#~ msgid "Select an image"
+#~ msgstr "Select an image"
 
-msgid "Upload"
-msgstr "Upload"
+#~ msgid "Upload"
+#~ msgstr "Upload"
 
-msgid "Tap to preview your current profile picture."
-msgstr "Tap to preview your current profile picture."
+#~ msgid "Tap to preview your current profile picture."
+#~ msgstr "Tap to preview your current profile picture."
 
-msgid "No profile picture uploaded yet."
-msgstr "No profile picture uploaded yet."
+#~ msgid "No profile picture uploaded yet."
+#~ msgstr "No profile picture uploaded yet."
 
-msgid "Favorite projects"
-msgstr "Favorite projects"
+#~ msgid "Favorite projects"
+#~ msgstr "Favorite projects"
 
-msgid "Quick access to the projects you reach for most often."
-msgstr "Quick access to the projects you reach for most often."
+#~ msgid "Quick access to the projects you reach for most often."
+#~ msgstr "Quick access to the projects you reach for most often."
 
-msgid "View project"
-msgstr "View project"
+#~ msgid "View project"
+#~ msgstr "View project"
 
-msgid "Removed from favorites"
-msgstr "Removed from favorites"
+#~ msgid "Removed from favorites"
+#~ msgstr "Removed from favorites"
 
-msgid "Last updated on %(date)s"
-msgstr "Last updated on %(date)s"
+#~ msgid "Last updated on %(date)s"
+#~ msgstr "Last updated on %(date)s"
 
-msgid "You have not favorited any projects yet."
-msgstr "You have not favorited any projects yet."
+#~ msgid "You have not favorited any projects yet."
+#~ msgstr "You have not favorited any projects yet."
 
-msgid "Visit a project to add it to your favorites list."
-msgstr "Visit a project to add it to your favorites list."
+#~ msgid "Visit a project to add it to your favorites list."
+#~ msgstr "Visit a project to add it to your favorites list."
 
-msgid "Profile picture for %(email)s"
-msgstr "Profile picture for %(email)s"
+#~ msgid "Profile picture for %(email)s"
+#~ msgstr "Profile picture for %(email)s"
 
-msgid "Add to favorites"
-msgstr "Add to favorites"
+#~ msgid "Add to favorites"
+#~ msgstr "Add to favorites"
 
-msgid "Remove from favorites"
-msgstr "Remove from favorites"
+#~ msgid "Remove from favorites"
+#~ msgstr "Remove from favorites"
 
-msgid "Added to favorites"
-msgstr "Added to favorites"
+#~ msgid "Added to favorites"
+#~ msgstr "Added to favorites"
 
-msgid "Preview"
-msgstr "Preview"
+#~ msgid "Preview"
+#~ msgstr "Preview"
 
-msgid "This preview updates to reflect your current theme choice."
-msgstr "This preview updates to reflect your current theme choice."
+#~ msgid "This preview updates to reflect your current theme choice."
+#~ msgstr "This preview updates to reflect your current theme choice."
 
-msgid "Hello from dark mode!"
-msgstr "Hello from dark mode!"
+#~ msgid "Hello from dark mode!"
+#~ msgstr "Hello from dark mode!"
 
-msgid "Hello from light mode!"
-msgstr "Hello from light mode!"
+#~ msgid "Hello from light mode!"
+#~ msgstr "Hello from light mode!"
 
-msgid "Sunlit surfaces keep details crisp and colorful."
-msgstr "Sunlit surfaces keep details crisp and colorful."
+#~ msgid "Sunlit surfaces keep details crisp and colorful."
+#~ msgstr "Sunlit surfaces keep details crisp and colorful."
 
-msgid "If you switch back to light mode, this preview will lighten up automatically."
-msgstr "If you switch back to light mode, this preview will lighten up automatically."
+#~ msgid ""
+#~ "If you switch back to light mode,"
+#~ " this preview will lighten up "
+#~ "automatically."
+#~ msgstr ""
+#~ "If you switch back to light mode,"
+#~ " this preview will lighten up "
+#~ "automatically."
 
 # Projects list
-msgid "My Projects"
-msgstr "My Projects"
+#~ msgid "My Projects"
+#~ msgstr "My Projects"
 
-msgid "+ New Project"
-msgstr "+ New Project"
+#~ msgid "+ New Project"
+#~ msgstr "+ New Project"
 
-msgid "Category"
-msgstr "Category"
+#~ msgid "Category"
+#~ msgstr "Category"
 
-msgid "All Categories"
-msgstr "All Categories"
+#~ msgid "All Categories"
+#~ msgstr "All Categories"
 
-msgid "Search"
-msgstr "Search"
+#~ msgid "Search"
+#~ msgstr "Search"
 
-msgid "No projects yet"
-msgstr "No projects yet"
+#~ msgid "No projects yet"
+#~ msgstr "No projects yet"
 
-msgid "Create Your First Project"
-msgstr "Create Your First Project"
+#~ msgid "Create Your First Project"
+#~ msgstr "Create Your First Project"
 
-msgid "Created"
-msgstr "Created"
+#~ msgid "Created"
+#~ msgstr "Created"
 
-msgid "View Details"
-msgstr "View Details"
+#~ msgid "View Details"
+#~ msgstr "View Details"
 
 # Project detail
-msgid "Back to Projects"
-msgstr "Back to Projects"
+#~ msgid "Back to Projects"
+#~ msgstr "Back to Projects"
 
-msgid "Edit"
-msgstr "Edit"
+#~ msgid "Edit"
+#~ msgstr "Edit"
 
-msgid "Delete"
-msgstr "Delete"
+#~ msgid "Delete"
+#~ msgstr "Delete"
 
-msgid "Yarn"
-msgstr "Yarn"
+#~ msgid "Yarn"
+#~ msgstr "Yarn"
 
-msgid "Not specified"
-msgstr "Not specified"
+#~ msgid "Not specified"
+#~ msgstr "Not specified"
 
-msgid "Needles"
-msgstr "Needles"
+#~ msgid "Needles"
+#~ msgstr "Needles"
 
-msgid "Gauge"
-msgstr "Gauge"
+#~ msgid "Gauge"
+#~ msgstr "Gauge"
 
-msgid "Last Updated"
-msgstr "Last Updated"
+#~ msgid "Last Updated"
+#~ msgstr "Last Updated"
 
-msgid "Instructions"
-msgstr "Instructions"
+#~ msgid "Instructions"
+#~ msgstr "Instructions"
 
-msgid "Notes"
-msgstr "Notes"
+#~ msgid "Notes"
+#~ msgstr "Notes"
 
 # Admin
-msgid "Delete user"
-msgstr "Delete user"
+#~ msgid "Delete user"
+#~ msgstr "Delete user"
 
-msgid "Delete this user? This will remove their projects and yarn."
-msgstr "Delete this user? This will remove their projects and yarn."
+#~ msgid "Delete this user? This will remove their projects and yarn."
+#~ msgstr "Delete this user? This will remove their projects and yarn."
 
 # Project form
-msgid "Back"
-msgstr "Back"
+#~ msgid "Back"
+#~ msgstr "Back"
 
-msgid "New Project"
-msgstr "New Project"
+#~ msgid "New Project"
+#~ msgstr "New Project"
 
-msgid "Create a new project"
-msgstr "Create a new project"
+#~ msgid "Create a new project"
+#~ msgstr "Create a new project"
 
-msgid "Capture materials, gauge, and progress in one place."
-msgstr "Capture materials, gauge, and progress in one place."
+#~ msgid "Capture materials, gauge, and progress in one place."
+#~ msgstr "Capture materials, gauge, and progress in one place."
 
-msgid "Edit Project"
-msgstr "Edit Project"
+#~ msgid "Edit Project"
+#~ msgstr "Edit Project"
 
-msgid "Project Name"
-msgstr "Project Name"
+#~ msgid "Project Name"
+#~ msgstr "Project Name"
 
-msgid "Select a category"
-msgstr "Select a category"
+#~ msgid "Select a category"
+#~ msgstr "Select a category"
 
-msgid "Gauge Stitches (per 10cm)"
-msgstr "Gauge Stitches (per 10cm)"
+#~ msgid "Gauge Stitches (per 10cm)"
+#~ msgstr "Gauge Stitches (per 10cm)"
 
-msgid "Gauge Rows (per 10cm)"
-msgstr "Gauge Rows (per 10cm)"
+#~ msgid "Gauge Rows (per 10cm)"
+#~ msgstr "Gauge Rows (per 10cm)"
 
-msgid "Supports Markdown formatting"
-msgstr "Supports Markdown formatting"
+#~ msgid "Supports Markdown formatting"
+#~ msgstr "Supports Markdown formatting"
 
-msgid "Tip:"
-msgstr "Tip:"
+#~ msgid "Tip:"
+#~ msgstr "Tip:"
 
-msgid "Need help calculating your gauge? Use our"
-msgstr "Need help calculating your gauge? Use our"
+#~ msgid "Need help calculating your gauge? Use our"
+#~ msgstr "Need help calculating your gauge? Use our"
 
-msgid "Create Project"
-msgstr "Create Project"
+#~ msgid "Create Project"
+#~ msgstr "Create Project"
 
-msgid "Update Project"
-msgstr "Update Project"
+#~ msgid "Update Project"
+#~ msgstr "Update Project"
 
-msgid "Cancel"
-msgstr "Cancel"
+#~ msgid "Cancel"
+#~ msgstr "Cancel"
 
-msgid "Delete project"
-msgstr "Delete project"
+#~ msgid "Delete project"
+#~ msgstr "Delete project"
 
-msgid "Image upload failed. Please try again."
-msgstr "Image upload failed. Please try again."
+#~ msgid "Image upload failed. Please try again."
+#~ msgstr "Image upload failed. Please try again."
 
-msgid "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge."
-msgstr "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge."
+#~ msgid ""
+#~ "Calculate how many stitches to cast "
+#~ "on and rows to knit based on "
+#~ "your gauge and the pattern's gauge."
+#~ msgstr ""
+#~ "Calculate how many stitches to cast "
+#~ "on and rows to knit based on "
+#~ "your gauge and the pattern's gauge."
 
-msgid "Pattern Gauge (per 10cm)"
-msgstr "Pattern Gauge (per 10cm)"
+#~ msgid "Pattern Gauge (per 10cm)"
+#~ msgstr "Pattern Gauge (per 10cm)"
 
-msgid "Stitches"
-msgstr "Stitches"
+#~ msgid "Stitches"
+#~ msgstr "Stitches"
 
-msgid "Rows"
-msgstr "Rows"
+#~ msgid "Rows"
+#~ msgstr "Rows"
 
-msgid "Your Gauge (per 10cm)"
-msgstr "Your Gauge (per 10cm)"
+#~ msgid "Your Gauge (per 10cm)"
+#~ msgstr "Your Gauge (per 10cm)"
 
-msgid "Pattern Counts"
-msgstr "Pattern Counts"
+#~ msgid "Pattern Counts"
+#~ msgstr "Pattern Counts"
 
-msgid "Stitches to cast on"
-msgstr "Stitches to cast on"
+#~ msgid "Stitches to cast on"
+#~ msgstr "Stitches to cast on"
 
-msgid "Rows to knit"
-msgstr "Rows to knit"
+#~ msgid "Rows to knit"
+#~ msgstr "Rows to knit"
 
-msgid "optional"
-msgstr "optional"
+#~ msgid "optional"
+#~ msgstr "optional"
 
-msgid "Calculate"
-msgstr "Calculate"
+#~ msgid "Calculate"
+#~ msgstr "Calculate"
 
-msgid "How to use this calculator"
-msgstr "How to use this calculator"
+#~ msgid "How to use this calculator"
+#~ msgstr "How to use this calculator"
 
-msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
-msgstr "Enter the gauge from your pattern (stitches and rows per 10cm)"
+#~ msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
+#~ msgstr "Enter the gauge from your pattern (stitches and rows per 10cm)"
 
-msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
-msgstr "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
+#~ msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
+#~ msgstr "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 
-msgid "Enter the stitch count from your pattern (cast-on stitches)"
-msgstr "Enter the stitch count from your pattern (cast-on stitches)"
+#~ msgid "Enter the stitch count from your pattern (cast-on stitches)"
+#~ msgstr "Enter the stitch count from your pattern (cast-on stitches)"
 
-msgid "Click Calculate to see how many stitches and rows you need"
-msgstr "Click Calculate to see how many stitches and rows you need"
+#~ msgid "Click Calculate to see how many stitches and rows you need"
+#~ msgstr "Click Calculate to see how many stitches and rows you need"
 
-msgid "Calculation Results"
-msgstr "Calculation Results"
+#~ msgid "Calculation Results"
+#~ msgstr "Calculation Results"
 
-msgid "Adjusted Stitches"
-msgstr "Adjusted Stitches"
+#~ msgid "Adjusted Stitches"
+#~ msgstr "Adjusted Stitches"
 
-msgid "Adjusted Rows"
-msgstr "Adjusted Rows"
+#~ msgid "Adjusted Rows"
+#~ msgstr "Adjusted Rows"
 
-msgid "N/A"
-msgstr "N/A"
+#~ msgid "N/A"
+#~ msgstr "N/A"
 
-msgid "Based on a pattern cast-on of"
-msgstr "Based on a pattern cast-on of"
+#~ msgid "Based on a pattern cast-on of"
+#~ msgstr "Based on a pattern cast-on of"
 
-msgid "stitches"
-msgstr "stitches"
+#~ msgid "stitches"
+#~ msgstr "stitches"
 
-msgid "and"
-msgstr "and"
+#~ msgid "and"
+#~ msgstr "and"
 
-msgid "rows"
-msgstr "rows"
+#~ msgid "rows"
+#~ msgstr "rows"
 
 # Project categories
-msgid "Pullover"
-msgstr "Pullover"
+#~ msgid "Pullover"
+#~ msgstr "Pullover"
 
-msgid "Jacke"
-msgstr "Jacket"
+#~ msgid "Jacke"
+#~ msgstr "Jacket"
 
-msgid "Schal"
-msgstr "Scarf"
+#~ msgid "Schal"
+#~ msgstr "Scarf"
 
-msgid "Mütze"
-msgstr "Hat"
+#~ msgid "Mütze"
+#~ msgstr "Hat"
 
-msgid "Stirnband"
-msgstr "Headband"
+#~ msgid "Stirnband"
+#~ msgstr "Headband"
 
 # Footer
-msgid "GPL-3.0-only"
-msgstr "GPL-3.0-only"
+#~ msgid "GPL-3.0-only"
+#~ msgstr "GPL-3.0-only"
 
 # Asset Management
-msgid "Gallery"
-msgstr "Gallery"
+#~ msgid "Gallery"
+#~ msgstr "Gallery"
 
-msgid "Assets"
-msgstr "Assets"
+#~ msgid "Assets"
+#~ msgstr "Assets"
 
-msgid "Add Title Image"
-msgstr "Add Title Image"
+#~ msgid "Add Title Image"
+#~ msgstr "Add Title Image"
 
-msgid "Drag and drop images here or click to upload"
-msgstr "Drag and drop images here or click to upload"
+#~ msgid "Drag and drop images here or click to upload"
+#~ msgstr "Drag and drop images here or click to upload"
 
-msgid "Save the project before adding images to this step."
-msgstr "Save the project before adding images to this step."
+#~ msgid "Save the project before adding images to this step."
+#~ msgstr "Save the project before adding images to this step."
 
-msgid "Only image files are supported."
-msgstr "Only image files are supported."
+#~ msgid "Only image files are supported."
+#~ msgstr "Only image files are supported."
 
-msgid "Network error while uploading image."
-msgstr "Network error while uploading image."
+#~ msgid "Network error while uploading image."
+#~ msgstr "Network error while uploading image."
 
-msgid "Failed to delete the image. Please try again."
-msgstr "Failed to delete the image. Please try again."
+#~ msgid "Failed to delete the image. Please try again."
+#~ msgstr "Failed to delete the image. Please try again."
 
-msgid "Network error while deleting image."
-msgstr "Network error while deleting image."
+#~ msgid "Network error while deleting image."
+#~ msgstr "Network error while deleting image."
 
-msgid "Uploading…"
-msgstr "Uploading…"
+#~ msgid "Uploading…"
+#~ msgstr "Uploading…"
 
-msgid "Upload Image"
-msgstr "Upload Image"
+#~ msgid "Upload Image"
+#~ msgstr "Upload Image"
 
 # Notifications and lightbox
-msgid "Image viewer"
-msgstr "Image viewer"
+#~ msgid "Image viewer"
+#~ msgstr "Image viewer"
 
-msgid "Close image viewer"
-msgstr "Close image viewer"
+#~ msgid "Close image viewer"
+#~ msgstr "Close image viewer"
 
-msgid "Previous image"
-msgstr "Previous image"
+#~ msgid "Previous image"
+#~ msgstr "Previous image"
 
-msgid "Next image"
-msgstr "Next image"
+#~ msgid "Next image"
+#~ msgstr "Next image"
 
-msgid "Dismiss message"
-msgstr "Dismiss message"
+#~ msgid "Dismiss message"
+#~ msgstr "Dismiss message"
 
-msgid "Something went wrong. Please try again."
-msgstr "Something went wrong. Please try again."
+#~ msgid "Something went wrong. Please try again."
+#~ msgstr "Something went wrong. Please try again."
 
-msgid "Steps"
-msgstr "Steps"
+#~ msgid "Steps"
+#~ msgstr "Steps"
 
-msgid "Add Step"
-msgstr "Add Step"
+#~ msgid "Add Step"
+#~ msgstr "Add Step"
 
-msgid "Step"
-msgstr "Step"
+#~ msgid "Step"
+#~ msgstr "Step"
 
-msgid "Step Title"
-msgstr "Step Title"
+#~ msgid "Step Title"
+#~ msgstr "Step Title"
 
-msgid "Step Description"
-msgstr "Step Description"
+#~ msgid "Step Description"
+#~ msgstr "Step Description"
 
-msgid "Add Image to Step"
-msgstr "Add Image to Step"
+#~ msgid "Add Image to Step"
+#~ msgstr "Add Image to Step"
 
-msgid "Remove Step"
-msgstr "Remove Step"
+#~ msgid "Remove Step"
+#~ msgstr "Remove Step"
 
-msgid "Move Up"
-msgstr "Move Up"
+#~ msgid "Move Up"
+#~ msgstr "Move Up"
 
-msgid "Move Down"
-msgstr "Move Down"
+#~ msgid "Move Down"
+#~ msgstr "Move Down"
 
-msgid "Language"
-msgstr "Language"
+#~ msgid "Language"
+#~ msgstr "Language"
 
-msgid "English"
-msgstr "English"
+#~ msgid "English"
+#~ msgstr "English"
 
-msgid "German"
-msgstr "German"
+#~ msgid "German"
+#~ msgstr "German"
 
+#~ msgid "Admin"
+#~ msgstr "Admin"
 
-msgid "Admin"
-msgstr "Admin"
+#~ msgid "User Management"
+#~ msgstr "User Management"
 
-msgid "User Management"
-msgstr "User Management"
+#~ msgid "Manage accounts, roles, and access for your instance."
+#~ msgstr "Manage accounts, roles, and access for your instance."
 
-msgid "Manage accounts, roles, and access for your instance."
-msgstr "Manage accounts, roles, and access for your instance."
+#~ msgid "Total users"
+#~ msgstr "Total users"
 
-msgid "Total users"
-msgstr "Total users"
+#~ msgid "User ID"
+#~ msgstr "User ID"
 
-msgid "User ID"
-msgstr "User ID"
+#~ msgid "Active"
+#~ msgstr "Active"
 
-msgid "Active"
-msgstr "Active"
+#~ msgid "Yes"
+#~ msgstr "Yes"
 
-msgid "Yes"
-msgstr "Yes"
+#~ msgid "No"
+#~ msgstr "No"
 
-msgid "No"
-msgstr "No"
+#~ msgid "You"
+#~ msgstr "You"
 
-msgid "You"
-msgstr "You"
+#~ msgid "Revoke admin"
+#~ msgstr "Revoke admin"
 
-msgid "Revoke admin"
-msgstr "Revoke admin"
+#~ msgid "Make admin"
+#~ msgstr "Make admin"
 
-msgid "Make admin"
-msgstr "Make admin"
+#~ msgid "Deactivate"
+#~ msgstr "Deactivate"
 
-msgid "Deactivate"
-msgstr "Deactivate"
+#~ msgid "Activate"
+#~ msgstr "Activate"
 
-msgid "Activate"
-msgstr "Activate"
+#~ msgid "New password"
+#~ msgstr "New password"
 
-msgid "New password"
-msgstr "New password"
+#~ msgid "Reset password"
+#~ msgstr "Reset password"
 
-msgid "Reset password"
-msgstr "Reset password"
+#~ msgid "Create user"
+#~ msgstr "Create user"
 
-msgid "Create user"
-msgstr "Create user"
+#~ msgid "Add a new account with a temporary password."
+#~ msgstr "Add a new account with a temporary password."
 
-msgid "Add a new account with a temporary password."
-msgstr "Add a new account with a temporary password."
+#~ msgid "Temporary password"
+#~ msgstr "Temporary password"
 
-msgid "Email"
-msgstr "Email"
+#~ msgid "Grant admin access"
+#~ msgstr "Grant admin access"
 
-msgid "Temporary password"
-msgstr "Temporary password"
+#~ msgid "Allow this user to manage accounts and settings."
+#~ msgstr "Allow this user to manage accounts and settings."
 
-msgid "Grant admin access"
-msgstr "Grant admin access"
+#~ msgid "Source Link"
+#~ msgstr "Source Link"
 
-msgid "Allow this user to manage accounts and settings."
-msgstr "Allow this user to manage accounts and settings."
+#~ msgid "Optional link to the original pattern or source"
+#~ msgstr "Optional link to the original pattern or source"
 
-msgid "Source Link"
-msgstr "Source Link"
+#~ msgid "Optional link to the yarn product page or details"
+#~ msgstr "Optional link to the yarn product page or details"
 
-msgid "Optional link to the original pattern or source"
-msgstr "Optional link to the original pattern or source"
+#~ msgid "Import from URL"
+#~ msgstr "Import from URL"
 
-msgid "Optional link to the yarn product page or details"
-msgstr "Optional link to the yarn product page or details"
+#~ msgid "Pattern URL"
+#~ msgstr "Pattern URL"
 
-msgid "Import from URL"
-msgstr "Import from URL"
+#~ msgid "Enter the URL of the knitting pattern you want to import"
+#~ msgstr "Enter the URL of the knitting pattern you want to import"
 
-msgid "Pattern URL"
-msgstr "Pattern URL"
+#~ msgid "Import"
+#~ msgstr "Import"
 
-msgid "Enter the URL of the knitting pattern you want to import"
-msgstr "Enter the URL of the knitting pattern you want to import"
+#~ msgid "Importing pattern..."
+#~ msgstr "Importing pattern..."
 
-msgid "Import"
-msgstr "Import"
+#~ msgid "Please enter a URL"
+#~ msgstr "Please enter a URL"
 
-msgid "Importing pattern..."
-msgstr "Importing pattern..."
+#~ msgid "Pattern imported successfully"
+#~ msgstr "Pattern imported successfully"
 
-msgid "Please enter a URL"
-msgstr "Please enter a URL"
+#~ msgid "Failed to import pattern"
+#~ msgstr "Failed to import pattern"
 
-msgid "Pattern imported successfully"
-msgstr "Pattern imported successfully"
+#~ msgid "Use AI for better extraction"
+#~ msgstr "Use AI for better extraction"
 
-msgid "Failed to import pattern"
-msgstr "Failed to import pattern"
+#~ msgid "requires API key"
+#~ msgstr "requires API key"
 
-msgid "Use AI for better extraction"
-msgstr "Use AI for better extraction"
-
-msgid "requires API key"
-msgstr "requires API key"
