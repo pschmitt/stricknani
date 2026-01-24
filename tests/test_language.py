@@ -1,8 +1,13 @@
 """Tests for language detection."""
 
+from pathlib import Path
+
+from babel.messages.pofile import read_po
 from starlette.requests import Request
 
 from stricknani.main import get_language
+
+LOCALES_DIR = Path(__file__).resolve().parents[1] / "stricknani" / "locales"
 
 
 def _make_request(
@@ -46,3 +51,16 @@ def test_get_language_falls_back_to_english() -> None:
     request = _make_request(accept_language="fr-FR,fr;q=0.9")
 
     assert get_language(request) == "en"
+
+
+def test_de_translations_have_no_missing_entries() -> None:
+    po_path = LOCALES_DIR / "de" / "LC_MESSAGES" / "messages.po"
+    with po_path.open("r", encoding="utf-8") as handle:
+        catalog = read_po(handle)
+
+    missing = [
+        message.id
+        for message in catalog
+        if message.id and (message.string is None or not str(message.string).strip())
+    ]
+    assert missing == []

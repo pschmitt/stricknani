@@ -31,9 +31,7 @@
             <label for="category-filter" class="label pr-8">
                 <span class="label-text">{{ _('Category') }}</span>
             </label>
-            <a href="/projects/categories" class="btn btn-ghost btn-xs absolute right-0 top-0" title="{{ _('Manage categories') }}">
-                <span class="mdi mdi-cog-outline"></span>
-            </a>
+            {{ buttons.icon_only('mdi-cog-outline', href='/projects/categories', variant='ghost', class='btn-xs absolute right-0 top-0', attrs='title="' + _('Manage categories') + '" aria-label="' + _('Manage categories') + '"') }}
         </div>
         <select
             id="category-filter"

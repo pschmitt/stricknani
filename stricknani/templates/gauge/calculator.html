@@ -39,12 +39,18 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Pattern Gauge -->
                     <div class="md:col-span-2">
-                        <h3 class="text-lg font-semibold mb-3">{{ _('Pattern Gauge (per 10cm)') }}</h3>
+                        <h3 class="text-lg font-semibold mb-3 inline-flex items-center gap-2">
+                            <span class="mdi mdi-ruler-square text-base-content/70"></span>
+                            {{ _('Pattern Gauge (per 10cm)') }}
+                        </h3>
                     </div>
 
                     <div class="form-control">
                         <label for="pattern_gauge_stitches" class="label">
-                            <span class="label-text">{{ _('Stitches') }} <span class="text-error">*</span></span>
+                            <span class="label-text inline-flex items-center gap-2">
+                                <span class="mdi mdi-grid text-base-content/70"></span>
+                                {{ _('Stitches') }} <span class="text-error">*</span>
+                            </span>
                         </label>
                         <input
                             type="number"
@@ -59,7 +65,10 @@
 
                     <div class="form-control">
                         <label for="pattern_gauge_rows" class="label">
-                            <span class="label-text">{{ _('Rows') }} <span class="text-error">*</span></span>
+                            <span class="label-text inline-flex items-center gap-2">
+                                <span class="mdi mdi-view-stream text-base-content/70"></span>
+                                {{ _('Rows') }} <span class="text-error">*</span>
+                            </span>
                         </label>
                         <input
                             type="number"
@@ -74,12 +83,18 @@
 
                     <!-- Your Gauge -->
                     <div class="md:col-span-2 mt-4">
-                        <h3 class="text-lg font-semibold mb-3">{{ _('Your Gauge (per 10cm)') }}</h3>
+                        <h3 class="text-lg font-semibold mb-3 inline-flex items-center gap-2">
+                            <span class="mdi mdi-ruler text-base-content/70"></span>
+                            {{ _('Your Gauge (per 10cm)') }}
+                        </h3>
                     </div>
 
                     <div class="form-control">
                         <label for="user_gauge_stitches" class="label">
-                            <span class="label-text">{{ _('Stitches') }} <span class="text-error">*</span></span>
+                            <span class="label-text inline-flex items-center gap-2">
+                                <span class="mdi mdi-grid text-base-content/70"></span>
+                                {{ _('Stitches') }} <span class="text-error">*</span>
+                            </span>
                         </label>
                         <input
                             type="number"
@@ -94,7 +109,10 @@
 
                     <div class="form-control">
                         <label for="user_gauge_rows" class="label">
-                            <span class="label-text">{{ _('Rows') }} <span class="text-error">*</span></span>
+                            <span class="label-text inline-flex items-center gap-2">
+                                <span class="mdi mdi-view-stream text-base-content/70"></span>
+                                {{ _('Rows') }} <span class="text-error">*</span>
+                            </span>
                         </label>
                         <input
                             type="number"
@@ -109,12 +127,18 @@
 
                     <!-- Pattern Counts -->
                     <div class="md:col-span-2 mt-4">
-                        <h3 class="text-lg font-semibold mb-3">{{ _('Pattern Counts') }}</h3>
+                        <h3 class="text-lg font-semibold mb-3 inline-flex items-center gap-2">
+                            <span class="mdi mdi-counter text-base-content/70"></span>
+                            {{ _('Pattern Counts') }}
+                        </h3>
                     </div>
 
                     <div class="form-control">
                         <label for="pattern_cast_on_stitches" class="label">
-                            <span class="label-text">{{ _('Stitches to cast on') }} <span class="text-error">*</span></span>
+                            <span class="label-text inline-flex items-center gap-2">
+                                <span class="mdi mdi-format-list-numbered text-base-content/70"></span>
+                                {{ _('Stitches to cast on') }} <span class="text-error">*</span>
+                            </span>
                         </label>
                         <input
                             type="number"
@@ -129,7 +153,10 @@
 
                     <div class="form-control">
                         <label for="pattern_row_count" class="label">
-                            <span class="label-text">{{ _('Rows to knit') }} <span class="opacity-60">({{ _('optional') }})</span></span>
+                            <span class="label-text inline-flex items-center gap-2">
+                                <span class="mdi mdi-format-list-bulleted text-base-content/70"></span>
+                                {{ _('Rows to knit') }} <span class="opacity-60">({{ _('optional') }})</span>
+                            </span>
                         </label>
                         <input
                             type="number"

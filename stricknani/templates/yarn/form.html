@@ -40,40 +40,67 @@
     <form id="yarnForm" action="{{ '/yarn/' ~ yarn.id ~ '/edit' if yarn else '/yarn/' }}" method="post" enctype="multipart/form-data" class="bg-base-100 rounded-lg shadow-md border border-base-300 p-4 sm:p-6 md:p-8 backdrop-blur space-y-6">
         <div class="grid gap-4 md:grid-cols-2">
             <div class="md:col-span-2">
-                <label for="name" class="label-text text-sm font-medium mb-1">{{ _('Name') }}</label>
+                <label for="name" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-sheep text-base-content/70"></span>
+                    {{ _('Name') }}
+                </label>
                 <input type="text" id="name" name="name" required value="{{ yarn.name if yarn else '' }}" class="input input-bordered w-full">
             </div>
             <div>
-                <label for="brand" class="label-text text-sm font-medium mb-1">{{ _('Brand') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                <label for="brand" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-factory text-base-content/70"></span>
+                    {{ _('Brand') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                </label>
                 <input type="text" id="brand" name="brand" value="{{ yarn.brand if yarn and yarn.brand else '' }}" class="input input-bordered w-full">
             </div>
             <div>
-                <label for="colorway" class="label-text text-sm font-medium mb-1">{{ _('Colorway') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                <label for="colorway" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-palette-outline text-base-content/70"></span>
+                    {{ _('Colorway') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                </label>
                 <input type="text" id="colorway" name="colorway" value="{{ yarn.colorway if yarn and yarn.colorway else '' }}" class="input input-bordered w-full">
             </div>
             <div>
-                <label for="dye_lot" class="label-text text-sm font-medium mb-1">{{ _('Dye Lot') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                <label for="dye_lot" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-palette-outline text-base-content/70"></span>
+                    {{ _('Dye Lot') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                </label>
                 <input type="text" id="dye_lot" name="dye_lot" value="{{ yarn.dye_lot if yarn and yarn.dye_lot else '' }}" class="input input-bordered w-full">
             </div>
             <div>
-                <label for="fiber_content" class="label-text text-sm font-medium mb-1">{{ _('Fiber content') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                <label for="fiber_content" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-leaf text-base-content/70"></span>
+                    {{ _('Fiber content') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                </label>
                 <input type="text" id="fiber_content" name="fiber_content" placeholder="{{ _('e.g. 80% Merino, 20% Nylon') }}" value="{{ yarn.fiber_content if yarn and yarn.fiber_content else '' }}" class="input input-bordered w-full">
             </div>
             <div>
-                <label for="weight_category" class="label-text text-sm font-medium mb-1">{{ _('Weight category') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                <label for="weight_category" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-weight text-base-content/70"></span>
+                    {{ _('Weight category') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                </label>
                 <input type="text" id="weight_category" name="weight_category" placeholder="{{ _('e.g. Fingering, DK, Worsted') }}" value="{{ yarn.weight_category if yarn and yarn.weight_category else '' }}" class="input input-bordered w-full">
             </div>
             <div>
-                <label for="weight_grams" class="label-text text-sm font-medium mb-1">{{ _('Weight (grams)') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                <label for="weight_grams" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-scale text-base-content/70"></span>
+                    {{ _('Weight (grams)') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                </label>
                 <input type="number" id="weight_grams" name="weight_grams" min="0" value="{{ yarn.weight_grams if yarn and yarn.weight_grams is not none else '' }}" class="input input-bordered w-full">
             </div>
             <div>
-                <label for="length_meters" class="label-text text-sm font-medium mb-1">{{ _('Length (meters)') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                <label for="length_meters" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-ruler text-base-content/70"></span>
+                    {{ _('Length (meters)') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                </label>
                 <input type="number" id="length_meters" name="length_meters" min="0" value="{{ yarn.length_meters if yarn and yarn.length_meters is not none else '' }}" class="input input-bordered w-full">
             </div>
             <div class="md:col-span-2">
                 <div class="flex items-center justify-between mb-1">
-                    <label for="description" class="label-text text-sm font-medium">{{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                    <label for="description" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                        <span class="mdi mdi-text-box-outline text-base-content/70"></span>
+                        {{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                    </label>
                     <button type="button" onclick="previewMarkdown('description')" class="btn btn-xs btn-outline btn-primary gap-1">
                         <span class="mdi mdi-eye"></span>
                         {{ _('Preview') }}
@@ -83,7 +110,10 @@
             </div>
             <div class="md:col-span-2">
                 <div class="flex items-center justify-between mb-1">
-                    <label for="notes" class="label-text text-sm font-medium">{{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                    <label for="notes" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                        <span class="mdi mdi-note-text-outline text-base-content/70"></span>
+                        {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                    </label>
                     <button type="button" onclick="previewMarkdown('notes')" class="btn btn-xs btn-outline btn-primary gap-1">
                         <span class="mdi mdi-eye"></span>
                         {{ _('Preview') }}
@@ -92,7 +122,10 @@
                 <textarea id="notes" name="notes" rows="3" class="input input-bordered w-full">{{ yarn.notes if yarn else '' }}</textarea>
             </div>
             <div class="md:col-span-2">
-                <label for="link" class="label-text text-sm font-medium mb-1">{{ _('Source Link') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                <label for="link" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-link-variant text-base-content/70"></span>
+                    {{ _('Source Link') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                </label>
                 <input
                     type="url"
                     id="link"
@@ -104,7 +137,10 @@
                 <p class="text-xs text-base-content/70 mt-1">{{ _('Optional link to the yarn product page or details') }}</p>
             </div>
             <div class="md:col-span-2">
-                <label for="photos" class="label-text text-sm font-medium mb-1">{{ _('Photos') }} <span class="text-base-content/60 text-xs">{{ _('Optional, you can add multiple') }}</span></label>
+                <label for="photos" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-image-multiple-outline text-base-content/70"></span>
+                    {{ _('Photos') }} <span class="text-base-content/60 text-xs">{{ _('Optional, you can add multiple') }}</span>
+                </label>
 
                 {% if photos %}
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">

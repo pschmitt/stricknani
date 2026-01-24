@@ -177,7 +177,8 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <!-- Name -->
             <div class="md:col-span-2">
-                <label for="name" class="label-text text-sm font-medium mb-1">
+                <label for="name" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-notebook-outline text-base-content/70"></span>
                     {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
                 </label>
                 <input
@@ -194,7 +195,8 @@
             <!-- Category -->
             <div>
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                    <label for="category" class="label-text text-sm font-medium">
+                    <label for="category" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                        <span class="mdi mdi-shape-outline text-base-content/70"></span>
                         {{ _('Category') }}
                     </label>
                     <a href="/projects/categories" class="btn btn-xs btn-outline btn-primary gap-1 self-start sm:self-auto" target="_blank" rel="noreferrer">
@@ -220,7 +222,8 @@
             <!-- Linked stash yarns -->
             <div>
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                    <label for="yarn_search" class="label-text text-sm font-medium">
+                    <label for="yarn_search" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                        <span class="mdi mdi-sheep text-base-content/70"></span>
                         {{ _('Yarn') }} <span class="text-base-content/60 text-xs">{{ _('Select from stash') }}</span>
                     </label>
                     <a href="/yarn/new" class="btn btn-xs btn-outline btn-primary gap-1 self-start sm:self-auto" target="_blank" rel="noreferrer">
@@ -294,7 +297,10 @@
 
             <!-- Needles -->
             <div class="md:col-span-2">
-                <label for="needles" class="label-text text-sm font-medium mb-1">{{ _('Needles') }}</label>
+                <label for="needles" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-needle text-base-content/70"></span>
+                    {{ _('Needles') }}
+                </label>
                 <input
                     type="text"
                     id="needles"
@@ -307,7 +313,10 @@
 
             <!-- Gauge -->
             <div>
-                <label for="gauge_stitches" class="label-text text-sm font-medium mb-1">{{ _('Gauge Stitches (per 10cm)') }}</label>
+                <label for="gauge_stitches" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-ruler-square text-base-content/70"></span>
+                    {{ _('Gauge Stitches (per 10cm)') }}
+                </label>
                 <input
                     type="number"
                     id="gauge_stitches"
@@ -320,7 +329,10 @@
             </div>
 
             <div>
-                <label for="gauge_rows" class="label-text text-sm font-medium mb-1">{{ _('Gauge Rows (per 10cm)') }}</label>
+                <label for="gauge_rows" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-ruler-square text-base-content/70"></span>
+                    {{ _('Gauge Rows (per 10cm)') }}
+                </label>
                 <input
                     type="number"
                     id="gauge_rows"
@@ -335,7 +347,10 @@
             <!-- Comment -->
             <div class="md:col-span-2">
                 <div class="flex items-center justify-between mb-1">
-                    <label for="comment" class="label-text text-sm font-medium">{{ _('Notes') }}</label>
+                    <label for="comment" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                        <span class="mdi mdi-note-text-outline text-base-content/70"></span>
+                        {{ _('Notes') }}
+                    </label>
                     <button type="button" onclick="previewMarkdown('comment')" class="btn btn-xs btn-outline btn-primary gap-1">
                         <span class="mdi mdi-eye"></span>
                         {{ _('Preview') }}
@@ -353,7 +368,10 @@
 
             <!-- Link -->
             <div class="md:col-span-2">
-                <label for="link" class="label-text text-sm font-medium mb-1">{{ _('Source Link') }}</label>
+                <label for="link" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                    <span class="mdi mdi-link-variant text-base-content/70"></span>
+                    {{ _('Source Link') }}
+                </label>
                 <input
                     type="url"
                     id="link"
