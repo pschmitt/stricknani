@@ -11,9 +11,10 @@ import sys
 import httpx
 from rich import print_json
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from stricknani.database import AsyncSessionLocal, init_db
-from stricknani.models import User
+from stricknani.models import Project, User, Yarn
 from stricknani.utils.auth import get_password_hash, get_user_by_email
 
 
@@ -55,6 +56,122 @@ async def list_users() -> None:
                 f"ID: {user.id}, Email: {user.email}, "
                 f"Active: {user.is_active}, Admin: {user.is_admin}"
             )
+
+
+async def list_projects(owner_email: str | None) -> None:
+    """List projects."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        owner_id = None
+        if owner_email:
+            owner = await get_user_by_email(session, owner_email)
+            if not owner:
+                print(f"User {owner_email} not found.", file=sys.stderr)
+                return
+            owner_id = owner.id
+
+        query = (
+            select(Project)
+            .options(selectinload(Project.owner))
+            .order_by(Project.created_at.desc())
+        )
+        if owner_id is not None:
+            query = query.where(Project.owner_id == owner_id)
+
+        result = await session.execute(query)
+        projects = result.scalars().all()
+        for project in projects:
+            category = project.category or "-"
+            owner_email_value = project.owner.email if project.owner else "-"
+            print(
+                f"ID: {project.id}, Name: {project.name}, "
+                f"Category: {category}, Owner: {owner_email_value}"
+            )
+
+
+async def delete_project(project_id: int, owner_email: str | None) -> None:
+    """Delete a project."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        project = await session.get(Project, project_id)
+        if not project:
+            print(f"Project {project_id} not found.", file=sys.stderr)
+            return
+
+        if owner_email:
+            owner = await get_user_by_email(session, owner_email)
+            if not owner:
+                print(f"User {owner_email} not found.", file=sys.stderr)
+                return
+            if project.owner_id != owner.id:
+                print(
+                    f"Project {project_id} is not owned by {owner_email}.",
+                    file=sys.stderr,
+                )
+                return
+
+        await session.delete(project)
+        await session.commit()
+        print(f"Deleted project {project_id}")
+
+
+async def list_yarns(owner_email: str | None) -> None:
+    """List yarns."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        owner_id = None
+        if owner_email:
+            owner = await get_user_by_email(session, owner_email)
+            if not owner:
+                print(f"User {owner_email} not found.", file=sys.stderr)
+                return
+            owner_id = owner.id
+
+        query = (
+            select(Yarn)
+            .options(selectinload(Yarn.owner))
+            .order_by(Yarn.created_at.desc())
+        )
+        if owner_id is not None:
+            query = query.where(Yarn.owner_id == owner_id)
+
+        result = await session.execute(query)
+        yarns = result.scalars().all()
+        for yarn in yarns:
+            brand = yarn.brand or "-"
+            colorway = yarn.colorway or "-"
+            owner_email_value = yarn.owner.email if yarn.owner else "-"
+            print(
+                f"ID: {yarn.id}, Name: {yarn.name}, "
+                f"Brand: {brand}, Colorway: {colorway}, "
+                f"Owner: {owner_email_value}"
+            )
+
+
+async def delete_yarn(yarn_id: int, owner_email: str | None) -> None:
+    """Delete a yarn."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        yarn = await session.get(Yarn, yarn_id)
+        if not yarn:
+            print(f"Yarn {yarn_id} not found.", file=sys.stderr)
+            return
+
+        if owner_email:
+            owner = await get_user_by_email(session, owner_email)
+            if not owner:
+                print(f"User {owner_email} not found.", file=sys.stderr)
+                return
+            if yarn.owner_id != owner.id:
+                print(
+                    f"Yarn {yarn_id} is not owned by {owner_email}.",
+                    file=sys.stderr,
+                )
+                return
+
+        await session.delete(yarn)
+        await session.commit()
+        print(f"Deleted yarn {yarn_id}")
 
 
 async def delete_user(email: str) -> None:
@@ -191,6 +308,38 @@ def main() -> None:
     reset_parser.add_argument("--email", required=True, help="User email")
     reset_parser.add_argument("--password", help="Password (omit to prompt)")
 
+    # Project management
+    project_parser = subparsers.add_parser("project", help="Manage projects")
+    project_subparsers = project_parser.add_subparsers(
+        dest="project_command", required=True
+    )
+    project_list_parser = project_subparsers.add_parser("list", help="List projects")
+    project_list_parser.add_argument(
+        "--owner-email", help="Filter by owner email"
+    )
+    project_delete_parser = project_subparsers.add_parser(
+        "delete", help="Delete a project"
+    )
+    project_delete_parser.add_argument(
+        "--id", type=int, required=True, help="Project ID"
+    )
+    project_delete_parser.add_argument(
+        "--owner-email", help="Ensure the project belongs to this user"
+    )
+
+    # Yarn management
+    yarn_parser = subparsers.add_parser("yarn", help="Manage yarns")
+    yarn_subparsers = yarn_parser.add_subparsers(dest="yarn_command", required=True)
+    yarn_list_parser = yarn_subparsers.add_parser("list", help="List yarns")
+    yarn_list_parser.add_argument("--owner-email", help="Filter by owner email")
+    yarn_delete_parser = yarn_subparsers.add_parser("delete", help="Delete a yarn")
+    yarn_delete_parser.add_argument(
+        "--id", type=int, required=True, help="Yarn ID"
+    )
+    yarn_delete_parser.add_argument(
+        "--owner-email", help="Ensure the yarn belongs to this user"
+    )
+
     # API interaction
     api_parser = subparsers.add_parser("api", help="Interact with the API")
     api_parser.add_argument("--url", default="http://localhost:7674", help="API URL")
@@ -234,6 +383,16 @@ def main() -> None:
             endpoint = "/yarn/"
 
         asyncio.run(api_request(args.url, endpoint, args.email, password))
+    elif args.command == "project":
+        if args.project_command == "list":
+            asyncio.run(list_projects(args.owner_email))
+        elif args.project_command == "delete":
+            asyncio.run(delete_project(args.id, args.owner_email))
+    elif args.command == "yarn":
+        if args.yarn_command == "list":
+            asyncio.run(list_yarns(args.owner_email))
+        elif args.yarn_command == "delete":
+            asyncio.run(delete_yarn(args.id, args.owner_email))
 
 
 if __name__ == "__main__":
