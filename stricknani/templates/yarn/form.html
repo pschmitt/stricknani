@@ -52,6 +52,10 @@
                 <input type="text" id="colorway" name="colorway" value="{{ yarn.colorway if yarn and yarn.colorway else '' }}" class="input input-bordered w-full">
             </div>
             <div>
+                <label for="dye_lot" class="label-text text-sm font-medium mb-1">{{ _('Dye Lot') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
+                <input type="text" id="dye_lot" name="dye_lot" value="{{ yarn.dye_lot if yarn and yarn.dye_lot else '' }}" class="input input-bordered w-full">
+            </div>
+            <div>
                 <label for="fiber_content" class="label-text text-sm font-medium mb-1">{{ _('Fiber content') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span></label>
                 <input type="text" id="fiber_content" name="fiber_content" placeholder="{{ _('e.g. 80% Merino, 20% Nylon') }}" value="{{ yarn.fiber_content if yarn and yarn.fiber_content else '' }}" class="input input-bordered w-full">
             </div>

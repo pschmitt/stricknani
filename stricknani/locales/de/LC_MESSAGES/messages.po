@@ -523,7 +523,10 @@ msgid "Brand"
 msgstr "Marke"
 
 msgid "Colorway"
-msgstr "Farbpartie"
+msgstr "Farbe"
+
+msgid "Dye Lot"
+msgstr "Partie"
 
 msgid "Fiber content"
 msgstr "Faseranteil"

@@ -103,6 +103,12 @@
                             <dd class="mt-1 text-sm text-base-content">{{ yarn.colorway }}</dd>
                         </div>
                         {% endif %}
+                        {% if yarn.dye_lot %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-xs font-medium text-base-content/60">{{ _('Dye Lot') }}</dt>
+                            <dd class="mt-1 text-sm text-base-content">{{ yarn.dye_lot }}</dd>
+                        </div>
+                        {% endif %}
                         {% if yarn.fiber_content %}
                         <div class="sm:col-span-1">
                             <dt class="text-xs font-medium text-base-content/60">{{ _('Fiber') }}</dt>

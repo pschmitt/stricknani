@@ -116,6 +116,7 @@ def _serialize_yarn_cards(
                 "name": yarn.name,
                 "brand": yarn.brand,
                 "colorway": yarn.colorway,
+                "dye_lot": yarn.dye_lot,
                 "fiber_content": yarn.fiber_content,
                 "weight_category": yarn.weight_category,
                 "weight_grams": yarn.weight_grams,
@@ -161,6 +162,7 @@ async def list_yarns(
             Yarn.name.ilike(ilike)
             | Yarn.brand.ilike(ilike)
             | Yarn.colorway.ilike(ilike)
+            | Yarn.dye_lot.ilike(ilike)
             | Yarn.fiber_content.ilike(ilike)
         )
 
@@ -233,6 +235,7 @@ async def create_yarn(
     description: Annotated[str | None, Form()] = None,
     brand: Annotated[str | None, Form()] = None,
     colorway: Annotated[str | None, Form()] = None,
+    dye_lot: Annotated[str | None, Form()] = None,
     fiber_content: Annotated[str | None, Form()] = None,
     weight_category: Annotated[str | None, Form()] = None,
     weight_grams: Annotated[str | None, Form()] = None,
@@ -252,6 +255,7 @@ async def create_yarn(
         description=description.strip() if description else None,
         brand=brand.strip() if brand else None,
         colorway=colorway.strip() if colorway else None,
+        dye_lot=dye_lot.strip() if dye_lot else None,
         fiber_content=fiber_content.strip() if fiber_content else None,
         weight_category=weight_category.strip() if weight_category else None,
         weight_grams=_parse_optional_int("weight_grams", weight_grams),
@@ -351,6 +355,7 @@ async def update_yarn(
     description: Annotated[str | None, Form()] = None,
     brand: Annotated[str | None, Form()] = None,
     colorway: Annotated[str | None, Form()] = None,
+    dye_lot: Annotated[str | None, Form()] = None,
     fiber_content: Annotated[str | None, Form()] = None,
     weight_category: Annotated[str | None, Form()] = None,
     weight_grams: Annotated[str | None, Form()] = None,
@@ -373,6 +378,7 @@ async def update_yarn(
     yarn.description = description.strip() if description else None
     yarn.brand = brand.strip() if brand else None
     yarn.colorway = colorway.strip() if colorway else None
+    yarn.dye_lot = dye_lot.strip() if dye_lot else None
     yarn.fiber_content = fiber_content.strip() if fiber_content else None
     yarn.weight_category = weight_category.strip() if weight_category else None
     yarn.weight_grams = _parse_optional_int("weight_grams", weight_grams)

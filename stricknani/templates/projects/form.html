@@ -260,6 +260,7 @@
                             data-yarn-name="{{ yarn.name }}"
                             data-yarn-brand="{{ yarn.brand or '' }}"
                             data-yarn-colorway="{{ yarn.colorway or '' }}"
+                            data-yarn-dye-lot="{{ yarn.dye_lot or '' }}"
                             data-yarn-image="{{ yarn.photos[0].filename if yarn.photos and yarn.photos[0] else '' }}"
                         >
                             <div class="flex items-center gap-3">
@@ -271,11 +272,14 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="font-medium truncate">{{ yarn.name }}</div>
-                                    {% if yarn.brand or yarn.colorway %}
+                                    {% if yarn.brand or yarn.colorway or yarn.dye_lot %}
                                     <div class="text-xs text-base-content/70 truncate">
                                         {% if yarn.brand %}{{ yarn.brand }}{% endif %}
                                         {% if yarn.brand and yarn.colorway %} • {% endif %}
+                                        {% if yarn.brand and yarn.dye_lot and not yarn.colorway %} • {% endif %}
+                                        {% if yarn.colorway and yarn.dye_lot %} • {% endif %}
                                         {% if yarn.colorway %}{{ yarn.colorway }}{% endif %}
+                                        {% if yarn.dye_lot %}{{ yarn.dye_lot }}{% endif %}
                                     </div>
                                     {% endif %}
                                 </div>
@@ -655,15 +659,22 @@ function initYarnSelector() {
     yarnOptions.forEach(option => {
         const yarnId = parseInt(option.dataset.yarnId);
         if (preSelectedIds.includes(yarnId)) {
-            selectYarn(yarnId, option.dataset.yarnName, option.dataset.yarnBrand, option.dataset.yarnColorway, option.dataset.yarnImage);
+            selectYarn(
+                yarnId,
+                option.dataset.yarnName,
+                option.dataset.yarnBrand,
+                option.dataset.yarnColorway,
+                option.dataset.yarnDyeLot,
+                option.dataset.yarnImage,
+            );
         }
     });
     {% endif %}
 
-    function selectYarn(id, name, brand, colorway, imageUrl) {
+    function selectYarn(id, name, brand, colorway, dyeLot, imageUrl) {
         if (selectedYarns.has(id)) return;
 
-        selectedYarns.set(id, { name, brand, colorway, imageUrl });
+        selectedYarns.set(id, { name, brand, colorway, dyeLot, imageUrl });
         updateSelectedDisplay();
         updateHiddenInput();
         filterOptions();
@@ -726,7 +737,13 @@ function initYarnSelector() {
             const name = option.dataset.yarnName.toLowerCase();
             const brand = (option.dataset.yarnBrand || '').toLowerCase();
             const colorway = (option.dataset.yarnColorway || '').toLowerCase();
-            const matchesSearch = !searchTerm || name.includes(searchTerm) || brand.includes(searchTerm) || colorway.includes(searchTerm);
+            const dyeLot = (option.dataset.yarnDyeLot || '').toLowerCase();
+            const matchesSearch =
+                !searchTerm
+                || name.includes(searchTerm)
+                || brand.includes(searchTerm)
+                || colorway.includes(searchTerm)
+                || dyeLot.includes(searchTerm);
 
             if (!isSelected && matchesSearch) {
                 option.classList.remove('hidden');
@@ -769,9 +786,10 @@ function initYarnSelector() {
             const yarnName = option.dataset.yarnName;
             const yarnBrand = option.dataset.yarnBrand;
             const yarnColorway = option.dataset.yarnColorway;
+            const yarnDyeLot = option.dataset.yarnDyeLot;
             const yarnImage = option.dataset.yarnImage;
 
-            selectYarn(yarnId, yarnName, yarnBrand, yarnColorway, yarnImage);
+            selectYarn(yarnId, yarnName, yarnBrand, yarnColorway, yarnDyeLot, yarnImage);
             searchInput.value = '';
             searchInput.focus();
         });
