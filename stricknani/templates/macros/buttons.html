@@ -43,6 +43,21 @@
     {% endif %}
 {% endmacro %}
 
+{% macro favorite(text, href=None, icon=None, type='button', class='', attrs='') %}
+    {% set base_classes = "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-pink-300 bg-pink-50 text-pink-700 font-medium hover:bg-pink-100 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 dark:bg-pink-900/30 dark:border-pink-700 dark:text-pink-200 dark:hover:bg-pink-900/50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" %}
+    {% if href %}
+    <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ text }}
+    </a>
+    {% else %}
+    <button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ text }}
+    </button>
+    {% endif %}
+{% endmacro %}
+
 {% macro back(text, href=None, class='', attrs='') %}
     {{ secondary(text, href=href, icon='mdi-arrow-left', class=class, attrs=attrs) }}
 {% endmacro %}

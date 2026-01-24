@@ -1,21 +1,13 @@
+{% import "macros/buttons.html" as buttons %}
 {% set icon = 'mdi-heart' if is_favorite else 'mdi-heart-outline' %}
 {% set label = _('Remove from favorites') if is_favorite else _('Add to favorites') %}
 {% set message = _('Removed from favorites') if is_favorite else _('Added to favorites') %}
 {% if variant == 'detail' %}
-    <button
-        type="button"
-        hx-post="/yarn/{{ yarn_id }}/favorite?variant={{ variant }}"
-        hx-target="closest [data-favorite-toggle]"
-        hx-swap="innerHTML"
-        data-toast-message="{{ message }}"
-        data-toast-variant="{{ 'info' if is_favorite else 'success' }}"
-        class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-slate-300 bg-white text-slate-700 font-medium hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-        aria-pressed="{{ 'true' if is_favorite else 'false' }}"
-        title="{{ label }}"
-    >
-        <span class="mdi {{ icon }}" aria-hidden="true"></span>
-        <span>{{ label }}</span>
-    </button>
+    {{ buttons.favorite(
+        label,
+        icon=icon,
+        attrs='hx-post="/yarn/' ~ yarn_id ~ '/favorite?variant=' ~ variant ~ '" hx-target="closest [data-favorite-toggle]" hx-swap="innerHTML" data-toast-message="' ~ message ~ '" data-toast-variant="' ~ ('info' if is_favorite else 'success') ~ '" aria-pressed="' ~ ('true' if is_favorite else 'false') ~ '" title="' ~ label ~ '"'
+    ) }}
 {% else %}
     <button
         type="button"

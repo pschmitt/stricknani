@@ -1,23 +1,14 @@
+{% import "macros/buttons.html" as buttons %}
 {% set action = 'delete' if is_favorite else 'post' %}
 {% set icon = 'mdi-heart' if is_favorite else 'mdi-heart-outline' %}
 {% set label = _('Remove from favorites') if is_favorite else _('Add to favorites') %}
 {% set message = _('Removed from favorites') if is_favorite else _('Added to favorites') %}
 {% if variant == 'detail' %}
-    {% set button_classes = 'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-slate-300 bg-white text-slate-700 font-medium hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm' %}
-    <button
-        type="button"
-        hx-{{ action }}="/projects/{{ project_id }}/favorite?variant={{ variant }}"
-        hx-target="closest [data-favorite-toggle]"
-        hx-swap="innerHTML"
-        data-toast-message="{{ message }}"
-        data-toast-variant="{{ 'info' if is_favorite else 'success' }}"
-        class="{{ button_classes }}"
-        aria-pressed="{{ 'true' if is_favorite else 'false' }}"
-        title="{{ label }}"
-    >
-        <span class="mdi {{ icon }}" aria-hidden="true"></span>
-        <span>{{ label }}</span>
-    </button>
+    {{ buttons.favorite(
+        label,
+        icon=icon,
+        attrs='hx-' ~ action ~ '="/projects/' ~ project_id ~ '/favorite?variant=' ~ variant ~ '" hx-target="closest [data-favorite-toggle]" hx-swap="innerHTML" data-toast-message="' ~ message ~ '" data-toast-variant="' ~ ('info' if is_favorite else 'success') ~ '" aria-pressed="' ~ ('true' if is_favorite else 'false') ~ '" title="' ~ label ~ '"'
+    ) }}
 {% else %}
     {% set button_classes = 'inline-flex h-10 w-10 items-center justify-center rounded-full border text-xl transition focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900' %}
     {% if is_favorite %}
