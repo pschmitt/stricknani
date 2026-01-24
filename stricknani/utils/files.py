@@ -1,8 +1,10 @@
 """File management utilities."""
 
+import mimetypes
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import UploadFile
 from PIL import Image
@@ -27,6 +29,31 @@ def generate_unique_filename(original_filename: str) -> str:
     short_uuid = str(uuid.uuid4())[:8]
 
     return f"{timestamp}_{short_uuid}{ext}"
+
+
+def build_import_filename(url: str | None, content_type: str | None) -> str:
+    """Build a safe filename for imported images."""
+    extension = ""
+    if content_type:
+        guessed = mimetypes.guess_extension(content_type.split(";", 1)[0].strip())
+        if guessed:
+            extension = guessed
+
+    if not extension and url:
+        parsed = urlparse(url)
+        extension = Path(parsed.path).suffix.lower()
+
+    if not extension:
+        extension = ".jpg"
+
+    base_name = "imported"
+    if url:
+        parsed = urlparse(url)
+        candidate = Path(parsed.path).name
+        if candidate:
+            base_name = Path(candidate).stem or base_name
+
+    return f"{base_name}{extension}"
 
 
 async def save_uploaded_file(
@@ -58,6 +85,24 @@ async def save_uploaded_file(
     file_path.write_bytes(content)
 
     return filename, upload_file.filename
+
+
+def save_bytes(
+    content: bytes, original_filename: str, entity_id: int, subdir: str = "projects"
+) -> tuple[str, str]:
+    """Save raw bytes to the media directory with a generated filename."""
+    if not original_filename:
+        raise ValueError("No filename provided")
+
+    filename = generate_unique_filename(original_filename)
+
+    target_dir = config.MEDIA_ROOT / subdir / str(entity_id)
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    file_path = target_dir / filename
+    file_path.write_bytes(content)
+
+    return filename, original_filename
 
 
 async def create_thumbnail(

@@ -17,6 +17,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
+msgid "Imported images will be downloaded after you save the project."
+msgstr "Importierte Bilder werden heruntergeladen, nachdem du das Projekt gespeichert hast."
+
+msgid "This project was imported from an external source. Please review all fields carefully and click \"Save\" to keep it."
+msgstr "Dieses Projekt wurde aus einer externen Quelle importiert. Bitte überprüfe alle Felder sorgfältig und klicke auf \"Speichern\", um es zu behalten."
+
 # Navigation and General
 #~ msgid "Stricknani"
 #~ msgstr "Stricknani"

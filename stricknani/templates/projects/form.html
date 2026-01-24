@@ -111,14 +111,6 @@
                 </div>
             </div>
 
-            {% if has_openai_key %}
-            <div class="form-control mt-4">
-                <label class="cursor-pointer label justify-start gap-2">
-                    <input type="checkbox" id="useAI" name="use_ai" class="checkbox checkbox-primary" checked />
-                    <span class="label-text">{{ _('Use AI for better extraction') }}</span>
-                </label>
-            </div>
-            {% endif %}
             <div class="modal-action">
                 {{ buttons.secondary(_('Cancel'), attrs='onclick="importDialog.close()"') }}
                 {{ buttons.primary(_('Import'), type='submit') }}
@@ -165,13 +157,14 @@
                 <div class="flex-1">
                     <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved Yet') }}</h3>
                     <p class="text-sm text-yellow-700 dark:text-yellow-300">
-                        {{ _('This project was imported from an external source. Please review all fields carefully and click "Create Project" to save it.') }}
+                        {{ _('This project was imported from an external source. Please review all fields carefully and click "Save" to keep it.') }}
                     </p>
                 </div>
             </div>
         </div>
 
     <form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post" class="space-y-6">
+        <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
         <div class="grid gap-4 md:gap-6 md:grid-cols-3">
             <div class="space-y-6 md:col-span-2">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -601,25 +594,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('tags').value = data.tags;
             }
 
-            // Handle comment and images
-            let comment = data.comment || '';
-
-            // Add image URLs to comment if present
-            if (data.image_urls && data.image_urls.length > 0) {
-                if (comment) {
-                    comment += '\n\n';
-                }
-                comment += '## Images\n\n';
-                data.image_urls.forEach((imgUrl, index) => {
-                    comment += `![Image ${index + 1}](${imgUrl})\n\n`;
-                });
-                comment += '\n*Note: Download and re-upload images to save them permanently.*';
-            }
-
+            // Handle comment
+            const comment = data.comment || '';
             if (comment) {
                 const commentField = document.getElementById('comment');
                 commentField.value = comment;
                 autoResize(commentField);
+            }
+
+            const importImagesField = document.getElementById('import_image_urls');
+            const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
+            if (importImagesField) {
+                importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
+            }
+            if (imageUrls.length > 0) {
+                window.showToast?.('{{ _("Imported images will be downloaded after you save the project.") }}', 'info');
             }
 
             if (data.link) {
@@ -1562,8 +1551,6 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
 
             const formData = new FormData();
-            const useAI = document.getElementById('useAI')?.checked || false;
-            formData.append('use_ai', useAI ? 'true' : 'false');
 
             // Get data based on current tab
             if (currentTab === 'url') {
@@ -1600,7 +1587,7 @@ document.addEventListener('DOMContentLoaded', function() {
             importLoading.classList.remove('hidden');
 
             try {
-                console.log('Importing with type:', currentTab, 'AI:', useAI);
+                console.log('Importing with type:', currentTab);
 
                 const response = await fetch('/projects/import', {
                     method: 'POST',
@@ -1632,8 +1619,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Populate form fields
-                if (data.title) {
-                    document.getElementById('name').value = data.title;
+                const titleValue = data.title || data.name;
+                if (titleValue) {
+                    document.getElementById('name').value = titleValue;
                 }
                 if (data.needles) {
                     document.getElementById('needles').value = data.needles;
@@ -1651,25 +1639,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('gauge_rows').value = data.gauge_rows;
                 }
 
-                // Handle comment and images
-                let comment = data.comment || '';
-
-                // Add image URLs to comment if present
-                if (data.image_urls && data.image_urls.length > 0) {
-                    if (comment) {
-                        comment += '\n\n';
-                    }
-                    comment += '## Images\n\n';
-                    data.image_urls.forEach((imgUrl, index) => {
-                        comment += `![Image ${index + 1}](${imgUrl})\n\n`;
-                    });
-                    comment += '\n*Note: Download and re-upload images to save them permanently.*';
-                }
-
+                // Handle comment
+                const comment = data.comment || '';
                 if (comment) {
                     const commentField = document.getElementById('comment');
                     commentField.value = comment;
                     if (typeof autoResize === 'function') autoResize(commentField);
+                }
+
+                const importImagesField = document.getElementById('import_image_urls');
+                const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
+                if (importImagesField) {
+                    importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
+                }
+                if (imageUrls.length > 0) {
+                    window.showToast?.('{{ _("Imported images will be downloaded after you save the project.") }}', 'info');
                 }
 
                 if (data.link) {

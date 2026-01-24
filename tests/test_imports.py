@@ -72,6 +72,56 @@ async def test_import_url_basic(test_client: "TestClientFixture") -> None:
     assert "comment" in data or "instructions" in data
 
 
+@pytest.mark.asyncio
+async def test_import_url_extracts_steps_and_images(
+    test_client: "TestClientFixture",
+) -> None:
+    """Test URL import extracts steps from pattern text and picture sources."""
+    client, _, _, _, _ = test_client
+
+    mock_html = """
+    <html>
+        <head>
+            <title>Example Pattern</title>
+            <meta property="og:image" content="https://example.com/og-image.jpg">
+        </head>
+        <body>
+            <div id="pattern_text">
+                Step One:<br>
+                Cast on 20 stitches.<br><br>
+                Step Two:<br>
+                Knit for 10 rows.<br>
+            </div>
+            <picture>
+                <source srcset="https://example.com/pattern-800.jpg 800w">
+                <img src="https://example.com/fallback.jpg">
+            </picture>
+        </body>
+    </html>
+    """
+
+    with patch("httpx.AsyncClient.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.text = mock_html
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+
+        response = await client.post(
+            "/projects/import",
+            data={
+                "type": "url",
+                "url": "https://example.com/pattern",
+                "use_ai": False,
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data.get("link") == "https://example.com/pattern"
+    assert len(data.get("steps") or []) >= 2
+    assert "https://example.com/pattern-800.jpg" in data.get("image_urls", [])
+
+
 @pytest.mark.skipif(not OPENAI_AVAILABLE, reason="OpenAI not installed")
 @pytest.mark.asyncio
 async def test_import_url_with_ai(test_client: "TestClientFixture") -> None:

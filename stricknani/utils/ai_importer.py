@@ -19,6 +19,10 @@ except ImportError:
     OPENAI_AVAILABLE = False
 
 logger = logging.getLogger("stricknani.imports")
+IMPORT_HEADERS = {
+    "User-Agent": "Stricknani Importer/0.1",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
 
 
 def _build_schema_from_model(model_class: type) -> dict[str, Any]:
@@ -118,11 +122,14 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
 class AIPatternImporter:
     """Extract knitting pattern data from URLs using AI."""
 
-    def __init__(self, url: str, timeout: int = 30) -> None:
+    def __init__(
+        self, url: str, timeout: int = 30, hints: dict[str, Any] | None = None
+    ) -> None:
         """Initialize with URL to import."""
         self.url = url
         self.timeout = timeout
         self.api_key = os.getenv("OPENAI_API_KEY")
+        self.hints = hints
 
     async def fetch_and_parse(self) -> dict[str, Any]:
         """Fetch URL and extract pattern data using AI."""
@@ -135,7 +142,7 @@ class AIPatternImporter:
         # Fetch the page
         logger.info("Importing pattern with AI from %s", self.url)
         async with httpx.AsyncClient(
-            timeout=self.timeout, follow_redirects=True
+            timeout=self.timeout, follow_redirects=True, headers=IMPORT_HEADERS
         ) as client:
             response = await client.get(self.url)
             response.raise_for_status()
@@ -160,9 +167,10 @@ class AIPatternImporter:
 
         # Extract images
         images = await self._extract_images(soup)
+        logger.debug("AI import image URLs: %s", images[:5])
 
         # Use AI to parse the content
-        extracted_data = await self._ai_extract(text_content, images[:5])
+        extracted_data = await self._ai_extract(text_content, images[:5], self.hints)
 
         # Add the source URL
         extracted_data["link"] = self.url
@@ -183,22 +191,56 @@ class AIPatternImporter:
     async def _extract_images(self, soup: BeautifulSoup) -> list[str]:
         """Extract image URLs from the page."""
         images: list[str] = []
+        seen: set[str] = set()
+
+        meta_image = soup.find("meta", property="og:image")
+        if meta_image:
+            content = meta_image.get("content")
+            if isinstance(content, str):
+                resolved = self._resolve_image_url(content)
+                if resolved:
+                    images.append(resolved)
+                    seen.add(resolved)
+
+        for source in soup.find_all("source"):
+            for attr in ["srcset", "data-srcset"]:
+                value = source.get(attr)
+                if not value or not isinstance(value, str):
+                    continue
+                srcset_url = self._pick_srcset_url(value)
+                if not srcset_url:
+                    continue
+                resolved = self._resolve_image_url(srcset_url)
+                if not resolved or resolved in seen:
+                    continue
+                images.append(resolved)
+                seen.add(resolved)
 
         # Look for images in common pattern containers
         for img in soup.find_all("img"):
-            src = img.get("src") or img.get("data-src")
-            if not src or not isinstance(src, str):
-                continue
+            candidates: list[str] = []
+            for attr in [
+                "src",
+                "data-src",
+                "data-original",
+                "data-lazy-src",
+                "data-image",
+                "data-pin-media",
+                "srcset",
+                "data-srcset",
+                "data-lazy-srcset",
+            ]:
+                value = img.get(attr)
+                if not value or not isinstance(value, str):
+                    continue
+                if "srcset" in attr:
+                    srcset_url = self._pick_srcset_url(value)
+                    if srcset_url:
+                        candidates.append(srcset_url)
+                else:
+                    candidates.append(value)
 
-            # Make absolute URL
-            if src.startswith("//"):
-                src = f"https:{src}"
-            elif src.startswith("/"):
-                from urllib.parse import urlparse
-
-                parsed = urlparse(self.url)
-                src = f"{parsed.scheme}://{parsed.netloc}{src}"
-            elif not src.startswith("http"):
+            if not candidates:
                 continue
 
             # Skip tiny images, icons, logos
@@ -211,27 +253,74 @@ class AIPatternImporter:
                 except (ValueError, TypeError):
                     pass
 
-            # Skip common non-pattern images
-            if any(
-                x in src.lower()
-                for x in [
-                    "logo",
-                    "icon",
-                    "avatar",
-                    "button",
-                    "badge",
-                    "banner",
-                    "ad",
-                ]
-            ):
-                continue
+            for candidate in candidates:
+                resolved = self._resolve_image_url(candidate)
+                if not resolved or resolved in seen:
+                    continue
 
-            images.append(src)
+                if any(
+                    x in resolved.lower()
+                    for x in [
+                        "logo",
+                        "icon",
+                        "avatar",
+                        "button",
+                        "badge",
+                        "banner",
+                        "ad",
+                    ]
+                ):
+                    continue
+
+                images.append(resolved)
+                seen.add(resolved)
 
         return images
 
+    def _resolve_image_url(self, src: str) -> str | None:
+        cleaned = src.strip()
+        if not cleaned or cleaned.startswith(("data:", "javascript:")):
+            return None
+        if cleaned.startswith("//"):
+            return f"https:{cleaned}"
+        if cleaned.startswith(("http://", "https://")):
+            return cleaned
+
+        from urllib.parse import urljoin
+
+        return urljoin(self.url, cleaned)
+
+    def _pick_srcset_url(self, srcset: str) -> str | None:
+        candidates: list[tuple[int, str]] = []
+        for entry in srcset.split(","):
+            parts = entry.strip().split()
+            if not parts:
+                continue
+            url = parts[0]
+            descriptor = parts[1] if len(parts) > 1 else ""
+            score = 0
+            if descriptor.endswith("w"):
+                try:
+                    score = int(descriptor[:-1])
+                except ValueError:
+                    score = 0
+            elif descriptor.endswith("x"):
+                try:
+                    score = int(float(descriptor[:-1]) * 1000)
+                except ValueError:
+                    score = 0
+            candidates.append((score, url))
+
+        if not candidates:
+            return None
+
+        return max(candidates, key=lambda item: item[0])[1]
+
     async def _ai_extract(
-        self, text_content: str, image_urls: list[str]
+        self,
+        text_content: str,
+        image_urls: list[str],
+        hints: dict[str, Any] | None,
     ) -> dict[str, Any]:
         """Use OpenAI to extract pattern information."""
         from stricknani.models import Project
@@ -286,9 +375,19 @@ Return valid JSON only. Use null for missing values.
 Example format:
 {json_module.dumps(example, indent=2)}"""
 
+        hint_block = ""
+        if hints:
+            hint_block = (
+                "\n\nHeuristic parser hints (may be wrong or incomplete; "
+                "use only if supported by the source text):\n"
+                f"{json_module.dumps(hints, indent=2)}"
+            )
+
         user_prompt = (
-            f"Extract knitting pattern information from this text:\n\n{text_content}"
+            "Extract knitting pattern information from this text:\n\n"
+            f"{text_content}{hint_block}"
         )
+        _log_ai_prompt(system_prompt, user_prompt)
 
         try:
             response = await client.chat.completions.create(
@@ -303,9 +402,9 @@ Example format:
 
             import json as json_parser
 
-            result: dict[str, Any] = json_parser.loads(
-                response.choices[0].message.content or "{}"
-            )
+            raw_content = response.choices[0].message.content or ""
+            _log_ai_response(raw_content)
+            result: dict[str, Any] = json_parser.loads(raw_content or "{}")
             return result
 
         except Exception:
@@ -324,3 +423,24 @@ Example format:
                 ),
                 "steps": [],
             }
+
+
+def _log_ai_response(raw_content: str) -> None:
+    if not raw_content:
+        logger.debug("AI raw response: <empty>")
+        return
+    truncated = raw_content
+    if len(truncated) > 4000:
+        truncated = f"{truncated[:4000]}... (truncated)"
+    logger.debug("AI raw response: %s", truncated)
+
+
+def _log_ai_prompt(system_prompt: str, user_prompt: str) -> None:
+    logger.debug("AI system prompt: %s", _truncate_prompt(system_prompt))
+    logger.debug("AI user prompt: %s", _truncate_prompt(user_prompt))
+
+
+def _truncate_prompt(value: str, limit: int = 4000) -> str:
+    if len(value) <= limit:
+        return value
+    return f"{value[:limit]}... (truncated)"

@@ -1,11 +1,14 @@
 """Project routes."""
 
 import json
+import logging
 import re
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Annotated, Any
+from urllib.parse import urlparse
 
+import httpx
 from fastapi import (
     APIRouter,
     Depends,
@@ -37,16 +40,187 @@ from stricknani.models import (
 )
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
+    build_import_filename,
     create_thumbnail,
     delete_file,
     get_file_url,
     get_thumbnail_url,
+    save_bytes,
     save_uploaded_file,
 )
 from stricknani.utils.i18n import install_i18n
 from stricknani.utils.markdown import render_markdown
 
 router: APIRouter = APIRouter(prefix="/projects", tags=["projects"])
+
+IMPORT_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+IMPORT_IMAGE_MAX_COUNT = 10
+IMPORT_IMAGE_TIMEOUT = 10
+IMPORT_IMAGE_HEADERS = {
+    "User-Agent": "Stricknani Importer/0.1",
+    "Accept": "image/*",
+}
+IMPORT_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+}
+IMPORT_ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
+def _parse_import_image_urls(raw: str | None) -> list[str]:
+    """Parse image URLs sent from the import form."""
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except (ValueError, TypeError):
+        return []
+    if not isinstance(data, list):
+        return []
+    cleaned = [str(item).strip() for item in data if str(item).strip()]
+    return cleaned
+
+
+def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
+    """Prepare lightweight hints for the AI importer."""
+    hints: dict[str, Any] = {}
+    for key in [
+        "title",
+        "name",
+        "needles",
+        "yarn",
+        "gauge_stitches",
+        "gauge_rows",
+        "category",
+        "comment",
+        "link",
+    ]:
+        value = data.get(key)
+        if value:
+            hints[key] = value
+
+    steps = data.get("steps")
+    if isinstance(steps, list) and steps:
+        hints["steps"] = steps[:5]
+
+    image_urls = data.get("image_urls")
+    if isinstance(image_urls, list) and image_urls:
+        hints["image_urls"] = image_urls[:5]
+
+    return hints
+
+
+def _is_valid_import_url(url: str) -> bool:
+    """Ensure the import URL uses http(s) and has a host."""
+    parsed = urlparse(url)
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def _is_allowed_import_image(content_type: str | None, url: str) -> bool:
+    """Validate content type or file extension for image imports."""
+    if content_type:
+        normalized = content_type.split(";", 1)[0].strip().lower()
+        if normalized in IMPORT_ALLOWED_IMAGE_TYPES:
+            return True
+    extension = Path(urlparse(url).path).suffix.lower()
+    return extension in IMPORT_ALLOWED_IMAGE_EXTENSIONS
+
+
+async def _import_images_from_urls(
+    db: AsyncSession, project: Project, image_urls: Sequence[str]
+) -> int:
+    """Download and attach imported images to a project."""
+    if not image_urls:
+        return 0
+
+    logger = logging.getLogger("stricknani.imports")
+    imported = 0
+
+    existing_title_images = await db.execute(
+        select(func.count())
+        .select_from(Image)
+        .where(Image.project_id == project.id, Image.is_title_image.is_(True))
+    )
+    title_available = existing_title_images.scalar_one() == 0
+
+    headers = dict(IMPORT_IMAGE_HEADERS)
+    if project.link:
+        headers["Referer"] = project.link
+    async with httpx.AsyncClient(
+        timeout=IMPORT_IMAGE_TIMEOUT,
+        follow_redirects=True,
+        headers=headers,
+    ) as client:
+        for image_url in image_urls:
+            if imported >= IMPORT_IMAGE_MAX_COUNT:
+                break
+            if not _is_valid_import_url(image_url):
+                logger.info("Skipping invalid image URL: %s", image_url)
+                continue
+
+            try:
+                response = await client.get(image_url)
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                logger.warning("Failed to download image %s: %s", image_url, exc)
+                continue
+
+            content_type = response.headers.get("content-type")
+            if not _is_allowed_import_image(content_type, image_url):
+                logger.info("Skipping non-image URL: %s", image_url)
+                continue
+
+            content_length = response.headers.get("content-length")
+            if content_length:
+                try:
+                    if int(content_length) > IMPORT_IMAGE_MAX_BYTES:
+                        logger.info("Skipping large image %s", image_url)
+                        continue
+                except ValueError:
+                    pass
+
+            if not response.content:
+                logger.info("Skipping empty image response: %s", image_url)
+                continue
+
+            if len(response.content) > IMPORT_IMAGE_MAX_BYTES:
+                logger.info("Skipping large image %s", image_url)
+                continue
+
+            original_filename = build_import_filename(image_url, content_type)
+            filename = ""
+            try:
+                filename, original_filename = save_bytes(
+                    response.content, original_filename, project.id
+                )
+                file_path = config.MEDIA_ROOT / "projects" / str(project.id) / filename
+                await create_thumbnail(file_path, project.id)
+            except Exception as exc:
+                if filename:
+                    delete_file(filename, project.id)
+                logger.warning("Failed to store image %s: %s", image_url, exc)
+                continue
+
+            alt_text = (
+                f"{project.name} (imported image {imported + 1})"
+                if project.name
+                else original_filename
+            )
+            image = Image(
+                filename=filename,
+                original_filename=original_filename,
+                image_type=ImageType.PHOTO.value,
+                alt_text=alt_text,
+                is_title_image=title_available,
+                project_id=project.id,
+            )
+            db.add(image)
+            imported += 1
+            title_available = False
+
+    return imported
 
 
 def _parse_optional_int(field_name: str, value: str | None) -> int | None:
@@ -407,6 +581,8 @@ async def import_pattern(
         content_text = ""
         source_url = None
 
+        use_ai_enabled = bool(os.getenv("OPENAI_API_KEY"))
+
         # Extract content based on import type
         if import_type == "url":
             if not url or not url.strip():
@@ -429,13 +605,21 @@ async def import_pattern(
             # For URLs, use the existing importers
             data: dict[str, Any]
             ai_failed = False
+            basic_data: dict[str, Any]
 
-            # Try AI-powered import if requested and API key is available
-            if use_ai and os.getenv("OPENAI_API_KEY"):
+            from stricknani.utils.importer import PatternImporter
+
+            basic_importer = PatternImporter(url)
+            basic_data = await basic_importer.fetch_and_parse()
+            data = basic_data
+
+            if use_ai_enabled:
                 try:
                     from stricknani.utils.ai_importer import AIPatternImporter
 
-                    ai_importer = AIPatternImporter(url)
+                    ai_importer = AIPatternImporter(
+                        url, hints=_build_ai_hints(basic_data)
+                    )
                     data = await ai_importer.fetch_and_parse()
 
                     # Check if AI extraction actually worked (not all nulls)
@@ -444,9 +628,8 @@ async def import_pattern(
                         for k, v in data.items()
                         if k not in {"link", "image_urls", "comment"}
                     ):
-                        # AI failed, fall back to basic parser
                         ai_failed = True
-                        raise ValueError("AI extraction returned empty data")
+                        data = basic_data
 
                 except Exception as e:
                     # Log the AI failure and fall back to basic parser
@@ -454,17 +637,7 @@ async def import_pattern(
                         f"AI import failed, falling back to basic parser: {e}"
                     )
                     ai_failed = True
-
-                    from stricknani.utils.importer import PatternImporter
-
-                    basic_importer = PatternImporter(url)
-                    data = await basic_importer.fetch_and_parse()
-            else:
-                # Use basic HTML parsing
-                from stricknani.utils.importer import PatternImporter
-
-                basic_importer = PatternImporter(url)
-                data = await basic_importer.fetch_and_parse()
+                    data = basic_data
 
             # Add flag if AI failed
             if ai_failed:
@@ -527,7 +700,7 @@ async def import_pattern(
             )
 
         # For text and file imports, use AI to extract pattern data
-        if content_text and use_ai and os.getenv("OPENAI_API_KEY"):
+        if content_text and use_ai_enabled:
             try:
                 from openai import AsyncOpenAI
             except ImportError:
@@ -565,6 +738,8 @@ Return valid JSON only. Use null for missing values."""
                     )
 
                     data = json.loads(response.choices[0].message.content or "{}")
+                    if not data.get("comment"):
+                        data["comment"] = content_text[:2000]
                     if source_url:
                         data["link"] = source_url
                     return JSONResponse(content=data)
@@ -1001,6 +1176,7 @@ async def create_project(
     link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
+    import_image_urls: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
@@ -1050,6 +1226,10 @@ async def create_project(
             )
             db.add(step)
 
+    image_urls = _parse_import_image_urls(import_image_urls)
+    if image_urls:
+        await _import_images_from_urls(db, project, image_urls)
+
     await db.commit()
     await db.refresh(project)
 
@@ -1072,6 +1252,7 @@ async def update_project(
     link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
+    import_image_urls: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
@@ -1116,6 +1297,10 @@ async def update_project(
     project.comment = comment.strip() if comment else None
     project.link = link.strip() if link else None
     project.tags = _serialize_tags(_normalize_tags(tags))
+
+    image_urls = _parse_import_image_urls(import_image_urls)
+    if image_urls:
+        await _import_images_from_urls(db, project, image_urls)
 
     # Update steps
     if steps_data:

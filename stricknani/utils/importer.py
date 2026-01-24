@@ -6,6 +6,7 @@ from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 logger = logging.getLogger("stricknani.imports")
 
@@ -22,7 +23,15 @@ class PatternImporter:
         """Fetch URL and extract pattern data."""
         logger.info("Importing pattern from %s", self.url)
         async with httpx.AsyncClient(
-            timeout=self.timeout, follow_redirects=True
+            timeout=self.timeout,
+            follow_redirects=True,
+            headers={
+                "User-Agent": "Stricknani Importer/0.1",
+                "Accept": (
+                    "text/html,application/xhtml+xml,application/xml;"
+                    "q=0.9,*/*;q=0.8"
+                ),
+            },
         ) as client:
             response = await client.get(self.url)
             response.raise_for_status()
@@ -180,14 +189,24 @@ class PatternImporter:
 
     def _extract_steps(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract pattern instructions as steps."""
-        steps = []
+        steps: list[dict[str, Any]] = []
 
         # Look for numbered lists or instruction sections
-        instructions_section = soup.find(
-            ["div", "section"], class_=re.compile(r"instruction|pattern|step", re.I)
-        )
+        candidates = [
+            soup.find(
+                ["div", "section"], class_=re.compile(r"instruction|pattern|step", re.I)
+            ),
+            soup.find(
+                ["div", "section"], id=re.compile(r"pattern[_-]?text|instruction", re.I)
+            ),
+            soup.find(
+                ["div", "section"], class_=re.compile(r"pattern[_-]?text", re.I)
+            ),
+            soup.find("article"),
+            soup.find("main"),
+        ]
 
-        if instructions_section:
+        for instructions_section in [c for c in candidates if c]:
             # Try to find ordered list
             ol = instructions_section.find("ol")
             if ol:
@@ -232,32 +251,158 @@ class PatternImporter:
                             }
                         )
 
+            if not steps:
+                steps = self._build_steps_from_text(instructions_section)
+
+            if steps:
+                break
+
         return steps
+
+    def _build_steps_from_text(self, container: Tag) -> list[dict[str, Any]]:
+        text = container.get_text("\n", strip=True)
+        if not text:
+            return []
+
+        lines = []
+        for line in text.splitlines():
+            cleaned = line.strip()
+            if not cleaned:
+                lines.append("")
+                continue
+            if set(cleaned) <= {"-"}:
+                continue
+            lines.append(cleaned)
+
+        steps: list[dict[str, Any]] = []
+        current_title: str | None = None
+        current_lines: list[str] = []
+
+        def flush() -> None:
+            if not current_lines:
+                return
+            description = " ".join(current_lines).strip()
+            if not description:
+                return
+            step_number = len(steps) + 1
+            steps.append(
+                {
+                    "step_number": step_number,
+                    "title": current_title or f"Step {step_number}",
+                    "description": description,
+                }
+            )
+
+        for line in lines:
+            if not line:
+                flush()
+                current_title = None
+                current_lines = []
+                continue
+            if line.endswith(":") and len(line) <= 80:
+                flush()
+                current_title = line.rstrip(":").strip()
+                current_lines = []
+                continue
+            current_lines.append(line)
+
+        flush()
+        return steps
+
+    def _resolve_image_url(self, src: str) -> str | None:
+        cleaned = src.strip()
+        if not cleaned or cleaned.startswith(("data:", "javascript:")):
+            return None
+
+        if cleaned.startswith("//"):
+            return f"https:{cleaned}"
+        if cleaned.startswith(("http://", "https://")):
+            return cleaned
+
+        from urllib.parse import urljoin
+
+        return urljoin(self.url, cleaned)
+
+    def _pick_srcset_url(self, srcset: str) -> str | None:
+        candidates: list[tuple[int, str]] = []
+        for entry in srcset.split(","):
+            parts = entry.strip().split()
+            if not parts:
+                continue
+            url = parts[0]
+            descriptor = parts[1] if len(parts) > 1 else ""
+            score = 0
+            if descriptor.endswith("w"):
+                try:
+                    score = int(descriptor[:-1])
+                except ValueError:
+                    score = 0
+            elif descriptor.endswith("x"):
+                try:
+                    score = int(float(descriptor[:-1]) * 1000)
+                except ValueError:
+                    score = 0
+            candidates.append((score, url))
+
+        if not candidates:
+            return None
+
+        return max(candidates, key=lambda item: item[0])[1]
 
     def _extract_images(self, soup: BeautifulSoup) -> list[str]:
         """Extract image URLs from the page."""
         images: list[str] = []
+        seen: set[str] = set()
+
+        meta_image = soup.find("meta", property="og:image")
+        if meta_image:
+            content = meta_image.get("content")
+            if isinstance(content, str):
+                resolved = self._resolve_image_url(content)
+                if resolved:
+                    images.append(resolved)
+                    seen.add(resolved)
+
+        for source in soup.find_all("source"):
+            for attr in ["srcset", "data-srcset"]:
+                value = source.get(attr)
+                if not value or not isinstance(value, str):
+                    continue
+                srcset_url = self._pick_srcset_url(value)
+                if not srcset_url:
+                    continue
+                resolved = self._resolve_image_url(srcset_url)
+                if not resolved or resolved in seen:
+                    continue
+                images.append(resolved)
+                seen.add(resolved)
 
         # Look for images in common pattern containers
         for img in soup.find_all("img"):
-            src = img.get("src") or img.get("data-src")
-            if not src or not isinstance(src, str):
+            candidates: list[str] = []
+            for attr in [
+                "src",
+                "data-src",
+                "data-original",
+                "data-lazy-src",
+                "data-image",
+                "data-pin-media",
+                "srcset",
+                "data-srcset",
+                "data-lazy-srcset",
+            ]:
+                value = img.get(attr)
+                if not value or not isinstance(value, str):
+                    continue
+                if "srcset" in attr:
+                    srcset_url = self._pick_srcset_url(value)
+                    if srcset_url:
+                        candidates.append(srcset_url)
+                else:
+                    candidates.append(value)
+
+            if not candidates:
                 continue
-
-            # Make absolute URL
-            if src.startswith("//"):
-                src = f"https:{src}"
-            elif src.startswith("/"):
-                # Extract base URL from self.url
-                from urllib.parse import urlparse
-
-                parsed = urlparse(self.url)
-                src = f"{parsed.scheme}://{parsed.netloc}{src}"
-            elif not src.startswith(("http://", "https://")):
-                # Relative URL
-                from urllib.parse import urljoin
-
-                src = urljoin(self.url, src)
 
             # Filter out small images (likely icons/logos)
             width = img.get("width")
@@ -270,20 +415,26 @@ class PatternImporter:
                     pass
 
             # Skip common non-pattern images
-            if any(
-                x in src.lower()
-                for x in [
-                    "logo",
-                    "icon",
-                    "avatar",
-                    "button",
-                    "badge",
-                    "banner",
-                    "ad",
-                ]
-            ):
-                continue
+            for candidate in candidates:
+                resolved = self._resolve_image_url(candidate)
+                if not resolved or resolved in seen:
+                    continue
 
-            images.append(src)
+                if any(
+                    x in resolved.lower()
+                    for x in [
+                        "logo",
+                        "icon",
+                        "avatar",
+                        "button",
+                        "badge",
+                        "banner",
+                        "ad",
+                    ]
+                ):
+                    continue
+
+                images.append(resolved)
+                seen.add(resolved)
 
         return images[:10]  # Limit to 10 images

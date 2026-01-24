@@ -1,5 +1,6 @@
 import json
 from io import BytesIO
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import AsyncClient
@@ -131,6 +132,63 @@ async def test_upload_title_image_creates_image_record(
     images = await _fetch_images(session_factory, project_id)
     assert len(images) == 1
     assert images[0].is_title_image
+
+    media_path = config.MEDIA_ROOT / "projects" / str(project_id) / images[0].filename
+    thumb_path = config.MEDIA_ROOT / "thumbnails" / "projects" / str(project_id)
+
+    assert media_path.exists()
+    assert thumb_path.exists()
+    assert any(thumb_path.iterdir())
+
+
+@pytest.mark.asyncio
+async def test_create_project_imports_images(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, _user_id, _project_id, _step_id = test_client
+
+    image_one = _generate_image_bytes("red").getvalue()
+    image_two = _generate_image_bytes("blue").getvalue()
+
+    def _mock_response(content: bytes) -> MagicMock:
+        response = MagicMock()
+        response.status_code = 200
+        response.headers = {
+            "content-type": "image/png",
+            "content-length": str(len(content)),
+        }
+        response.content = content
+        response.raise_for_status = MagicMock()
+        return response
+
+    with patch(
+        "httpx.AsyncClient.get",
+        new=AsyncMock(
+            side_effect=[_mock_response(image_one), _mock_response(image_two)]
+        ),
+    ):
+        response = await client.post(
+            "/projects/",
+            data={
+                "name": "Imported Project",
+                "category": ProjectCategory.SCHAL.value,
+                "import_image_urls": json.dumps(
+                    [
+                        "https://example.com/one.png",
+                        "https://example.com/two.png",
+                    ]
+                ),
+            },
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 303
+    location = response.headers["location"]
+    project_id = int(location.strip("/").split("/")[1])
+
+    images = await _fetch_images(session_factory, project_id)
+    assert len(images) == 2
+    assert any(image.is_title_image for image in images)
 
     media_path = config.MEDIA_ROOT / "projects" / str(project_id) / images[0].filename
     thumb_path = config.MEDIA_ROOT / "thumbnails" / "projects" / str(project_id)
