@@ -7,15 +7,25 @@ import asyncio
 import getpass
 import json
 import sys
+from types import ModuleType
 
 import httpx
 from rich import print_json
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from stricknani.config import config
 from stricknani.database import AsyncSessionLocal, init_db
-from stricknani.models import Project, User, Yarn
+from stricknani.models import Project, Step, User, Yarn
+from stricknani.routes.projects import (
+    _build_ai_hints,
+    _import_images_from_urls,
+    _normalize_tags,
+    _serialize_tags,
+    _sync_project_categories,
+)
 from stricknani.utils.auth import get_password_hash, get_user_by_email
+from stricknani.utils.importer import PatternImporter
 
 
 async def upsert_user(email: str, password: str, is_admin: bool | None) -> None:
@@ -174,6 +184,174 @@ async def delete_yarn(yarn_id: int, owner_email: str | None) -> None:
         print(f"Deleted yarn {yarn_id}")
 
 
+async def add_project(
+    owner_email: str,
+    name: str,
+    category: str | None,
+    yarn: str | None,
+    needles: str | None,
+    recommended_needles: str | None,
+    gauge_stitches: int | None,
+    gauge_rows: int | None,
+    comment: str | None,
+    tags: str | None,
+    link: str | None,
+) -> None:
+    """Create a project."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        owner = await get_user_by_email(session, owner_email)
+        if not owner:
+            print(f"User {owner_email} not found.", file=sys.stderr)
+            return
+
+        serialized_tags = _serialize_tags(_normalize_tags(tags))
+        project = Project(
+            name=name,
+            category=category,
+            yarn=yarn,
+            needles=needles,
+            recommended_needles=recommended_needles,
+            gauge_stitches=gauge_stitches,
+            gauge_rows=gauge_rows,
+            comment=comment,
+            tags=serialized_tags,
+            link=link,
+            owner_id=owner.id,
+        )
+        session.add(project)
+        await session.commit()
+        await session.refresh(project)
+
+        if category:
+            await _sync_project_categories(session, owner.id)
+
+        print(f"Created project {project.id}")
+
+
+async def add_yarn(
+    owner_email: str,
+    name: str,
+    brand: str | None,
+    colorway: str | None,
+    dye_lot: str | None,
+    fiber_content: str | None,
+    weight_category: str | None,
+    recommended_needles: str | None,
+    weight_grams: int | None,
+    length_meters: int | None,
+    notes: str | None,
+    link: str | None,
+) -> None:
+    """Create a yarn."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        owner = await get_user_by_email(session, owner_email)
+        if not owner:
+            print(f"User {owner_email} not found.", file=sys.stderr)
+            return
+
+        yarn_entry = Yarn(
+            name=name,
+            brand=brand,
+            colorway=colorway,
+            dye_lot=dye_lot,
+            fiber_content=fiber_content,
+            weight_category=weight_category,
+            recommended_needles=recommended_needles,
+            weight_grams=weight_grams,
+            length_meters=length_meters,
+            notes=notes,
+            link=link,
+            owner_id=owner.id,
+        )
+        session.add(yarn_entry)
+        await session.commit()
+        await session.refresh(yarn_entry)
+        print(f"Created yarn {yarn_entry.id}")
+
+
+async def import_project_url(
+    owner_email: str, url: str, use_ai: bool, import_images: bool
+) -> None:
+    """Import a project from a URL."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        owner = await get_user_by_email(session, owner_email)
+        if not owner:
+            print(f"User {owner_email} not found.", file=sys.stderr)
+            return
+
+        basic_importer = PatternImporter(url)
+        data = await basic_importer.fetch_and_parse()
+
+        if use_ai and config.OPENAI_API_KEY:
+            try:
+                ai_importer: ModuleType | None
+                import stricknani.utils.ai_importer as ai_importer
+            except ImportError:
+                ai_importer = None
+
+            if ai_importer and ai_importer.OPENAI_AVAILABLE:
+                try:
+                    ai_importer_instance = ai_importer.AIPatternImporter(
+                        url, hints=_build_ai_hints(data)
+                    )
+                    data = await ai_importer_instance.fetch_and_parse()
+                except Exception as exc:
+                    print(
+                        f"AI import failed, using basic parser: {exc}",
+                        file=sys.stderr,
+                    )
+
+        name = data.get("name") or data.get("title") or "Imported Project"
+        project = Project(
+            name=name,
+            category=data.get("category"),
+            yarn=data.get("yarn"),
+            needles=data.get("needles"),
+            recommended_needles=data.get("recommended_needles"),
+            gauge_stitches=data.get("gauge_stitches"),
+            gauge_rows=data.get("gauge_rows"),
+            comment=data.get("comment"),
+            link=data.get("link") or url,
+            owner_id=owner.id,
+        )
+        session.add(project)
+        await session.flush()
+
+        steps = data.get("steps")
+        if isinstance(steps, list):
+            for index, step in enumerate(steps, start=1):
+                if not isinstance(step, dict):
+                    continue
+                title = step.get("title") or f"Step {index}"
+                description = step.get("description")
+                step_number = step.get("step_number") or index
+                session.add(
+                    Step(
+                        title=title,
+                        description=description,
+                        step_number=step_number,
+                        project_id=project.id,
+                    )
+                )
+
+        if import_images:
+            config.ensure_media_dirs()
+            image_urls = data.get("image_urls")
+            if isinstance(image_urls, list):
+                await _import_images_from_urls(session, project, image_urls)
+
+        await session.commit()
+        await session.refresh(project)
+
+        if project.category:
+            await _sync_project_categories(session, owner.id)
+
+        print(f"Imported project {project.id}")
+
+
 async def delete_user(email: str) -> None:
     """Delete a user."""
     await init_db()
@@ -314,8 +492,41 @@ def main() -> None:
         dest="project_command", required=True
     )
     project_list_parser = project_subparsers.add_parser("list", help="List projects")
-    project_list_parser.add_argument(
-        "--owner-email", help="Filter by owner email"
+    project_list_parser.add_argument("--owner-email", help="Filter by owner email")
+    project_add_parser = project_subparsers.add_parser("add", help="Add a project")
+    project_add_parser.add_argument("--owner-email", required=True, help="Owner email")
+    project_add_parser.add_argument("--name", required=True, help="Project name")
+    project_add_parser.add_argument("--category", help="Project category")
+    project_add_parser.add_argument("--yarn", help="Yarn description")
+    project_add_parser.add_argument("--needles", help="Needle size")
+    project_add_parser.add_argument(
+        "--recommended-needles", help="Recommended needles"
+    )
+    project_add_parser.add_argument(
+        "--gauge-stitches", type=int, help="Gauge stitches per 10cm"
+    )
+    project_add_parser.add_argument(
+        "--gauge-rows", type=int, help="Gauge rows per 10cm"
+    )
+    project_add_parser.add_argument("--comment", help="Project comment")
+    project_add_parser.add_argument("--tags", help="Comma-separated tags")
+    project_add_parser.add_argument("--link", help="Project link")
+    project_import_parser = project_subparsers.add_parser(
+        "import-url", help="Import a project from a URL"
+    )
+    project_import_parser.add_argument(
+        "--owner-email", required=True, help="Owner email"
+    )
+    project_import_parser.add_argument("--url", required=True, help="URL to import")
+    project_import_parser.add_argument(
+        "--no-ai",
+        action="store_true",
+        help="Disable AI import even if configured",
+    )
+    project_import_parser.add_argument(
+        "--import-images",
+        action="store_true",
+        help="Download and attach images from the URL",
     )
     project_delete_parser = project_subparsers.add_parser(
         "delete", help="Delete a project"
@@ -332,6 +543,19 @@ def main() -> None:
     yarn_subparsers = yarn_parser.add_subparsers(dest="yarn_command", required=True)
     yarn_list_parser = yarn_subparsers.add_parser("list", help="List yarns")
     yarn_list_parser.add_argument("--owner-email", help="Filter by owner email")
+    yarn_add_parser = yarn_subparsers.add_parser("add", help="Add a yarn")
+    yarn_add_parser.add_argument("--owner-email", required=True, help="Owner email")
+    yarn_add_parser.add_argument("--name", required=True, help="Yarn name")
+    yarn_add_parser.add_argument("--brand", help="Brand")
+    yarn_add_parser.add_argument("--colorway", help="Colorway")
+    yarn_add_parser.add_argument("--dye-lot", help="Dye lot")
+    yarn_add_parser.add_argument("--fiber-content", help="Fiber content")
+    yarn_add_parser.add_argument("--weight-category", help="Weight category")
+    yarn_add_parser.add_argument("--recommended-needles", help="Recommended needles")
+    yarn_add_parser.add_argument("--weight-grams", type=int, help="Weight in grams")
+    yarn_add_parser.add_argument("--length-meters", type=int, help="Length in meters")
+    yarn_add_parser.add_argument("--notes", help="Notes")
+    yarn_add_parser.add_argument("--link", help="Link")
     yarn_delete_parser = yarn_subparsers.add_parser("delete", help="Delete a yarn")
     yarn_delete_parser.add_argument(
         "--id", type=int, required=True, help="Yarn ID"
@@ -386,11 +610,53 @@ def main() -> None:
     elif args.command == "project":
         if args.project_command == "list":
             asyncio.run(list_projects(args.owner_email))
+        elif args.project_command == "add":
+            asyncio.run(
+                add_project(
+                    args.owner_email,
+                    args.name,
+                    args.category,
+                    args.yarn,
+                    args.needles,
+                    args.recommended_needles,
+                    args.gauge_stitches,
+                    args.gauge_rows,
+                    args.comment,
+                    args.tags,
+                    args.link,
+                )
+            )
+        elif args.project_command == "import-url":
+            asyncio.run(
+                import_project_url(
+                    args.owner_email,
+                    args.url,
+                    not args.no_ai,
+                    args.import_images,
+                )
+            )
         elif args.project_command == "delete":
             asyncio.run(delete_project(args.id, args.owner_email))
     elif args.command == "yarn":
         if args.yarn_command == "list":
             asyncio.run(list_yarns(args.owner_email))
+        elif args.yarn_command == "add":
+            asyncio.run(
+                add_yarn(
+                    args.owner_email,
+                    args.name,
+                    args.brand,
+                    args.colorway,
+                    args.dye_lot,
+                    args.fiber_content,
+                    args.weight_category,
+                    args.recommended_needles,
+                    args.weight_grams,
+                    args.length_meters,
+                    args.notes,
+                    args.link,
+                )
+            )
         elif args.yarn_command == "delete":
             asyncio.run(delete_yarn(args.id, args.owner_email))
 
