@@ -1,40 +1,47 @@
 {% if projects %}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for project in projects %}
-        <div class="bg-white/80 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow dark:bg-slate-900/70 dark:shadow-slate-900/20" data-project-card>
-            <a
-                href="/projects/{{ project.id }}"
-                class="relative block aspect-[4/3] bg-slate-100 transition-transform hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-800/70"
-            >
-                {% if project.preview_images %}
-                    {% if project.preview_images|length == 1 %}
-                    <img
-                        src="{{ project.preview_images[0].url }}"
-                        alt="{{ project.preview_images[0].alt }}"
-                        class="h-full w-full object-cover"
-                        loading="lazy"
-                    >
-                    {% elif project.preview_images|length == 2 %}
-                    <div class="grid grid-cols-2 h-full w-full gap-0.5">
-                        <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}" class="h-full w-full object-cover">
-                        <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}" class="h-full w-full object-cover">
-                    </div>
+        <div class="bg-white/80 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow dark:bg-slate-900/70 dark:shadow-slate-900/20" data-project-card data-project-id="{{ project.id }}">
+            <div class="relative">
+                <a
+                    href="/projects/{{ project.id }}"
+                    class="block aspect-[4/3] bg-slate-100 transition-transform hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-800/70"
+                >
+                    {% if project.preview_images %}
+                        {% if project.preview_images|length == 1 %}
+                        <img
+                            src="{{ project.preview_images[0].url }}"
+                            alt="{{ project.preview_images[0].alt }}"
+                            class="h-full w-full object-cover"
+                            loading="lazy"
+                        >
+                        {% elif project.preview_images|length == 2 %}
+                        <div class="grid grid-cols-2 h-full w-full gap-0.5">
+                            <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}" class="h-full w-full object-cover">
+                            <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}" class="h-full w-full object-cover">
+                        </div>
+                        {% else %}
+                        <div class="grid grid-cols-3 grid-rows-2 h-full w-full gap-0.5">
+                            <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}" class="col-span-2 row-span-2 h-full w-full object-cover">
+                            <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}" class="col-span-1 row-span-1 h-full w-full object-cover">
+                            <img src="{{ project.preview_images[2].url }}" alt="{{ project.preview_images[2].alt }}" class="col-span-1 row-span-1 h-full w-full object-cover">
+                        </div>
+                        {% endif %}
                     {% else %}
-                    <div class="grid grid-cols-3 grid-rows-2 h-full w-full gap-0.5">
-                        <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}" class="col-span-2 row-span-2 h-full w-full object-cover">
-                        <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}" class="col-span-1 row-span-1 h-full w-full object-cover">
-                        <img src="{{ project.preview_images[2].url }}" alt="{{ project.preview_images[2].alt }}" class="col-span-1 row-span-1 h-full w-full object-cover">
+                    <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500">
+                        <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
+                        <span class="text-sm font-semibold line-clamp-2">{{ project.name }}</span>
+                        <span class="sr-only">{{ _('Open project details') }}</span>
                     </div>
                     {% endif %}
-                {% else %}
-                <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500">
-                    <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
-                    <span class="text-sm font-semibold line-clamp-2">{{ project.name }}</span>
-                    <span class="sr-only">{{ _('Open project details') }}</span>
+                    <span class="sr-only">{{ _('Open project details for %(name)s') % {'name': project.name} }}</span>
+                </a>
+                <div class="absolute top-2 left-2 z-10">
+                    {% with project_id=project.id, is_favorite=project.is_favorite, variant='card' %}
+                        {% include "projects/_favorite_toggle.html" %}
+                    {% endwith %}
                 </div>
-                {% endif %}
-                <span class="sr-only">{{ _('Open project details for %(name)s') % {'name': project.name} }}</span>
-            </a>
+            </div>
             <div class="p-6">
                 <div class="flex justify-between items-start mb-3">
                     <h3 class="text-xl font-semibold text-slate-900 dark:text-slate-100">
@@ -71,25 +78,11 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                <div class="flex gap-2">
-                    {% with project_id=project.id, is_favorite=project.is_favorite, variant='card' %}
-                        {% include "projects/_favorite_toggle.html" %}
-                    {% endwith %}
-                    <a
-                        href="/projects/{{ project.id }}/edit"
-                        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-900/60 text-slate-300 text-xl transition hover:border-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
-                        aria-label="{{ _('Edit project') }}"
-                        title="{{ _('Edit project') }}"
-                    >
-                        <span class="mdi mdi-pencil-outline" aria-hidden="true"></span>
+                <div class="mt-4">
+                    <a href="/projects/{{ project.id }}/edit" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm w-full">
+                        <span class="mdi mdi-pencil-outline"></span>
+                        {{ _('Edit') }}
                     </a>
-                    <button
-                        onclick="showDeleteDialog({{ project.id }}, '{{ project.name|escape }}')"
-                        class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors text-sm flex items-center justify-center gap-1 dark:text-red-400 dark:hover:bg-red-400/10"
-                        title="{{ _('Delete project') }}"
-                    >
-                        <span class="mdi mdi-delete-outline"></span>
-                    </button>
                 </div>
             </div>
         </div>

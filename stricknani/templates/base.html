@@ -791,6 +791,53 @@
             const message = await extractErrorMessage(event.detail.xhr, fallback);
             showToast(message, "error");
         });
+
+        function resolveDialog(dialogOrId) {
+            if (typeof dialogOrId === "string") {
+                return document.getElementById(dialogOrId);
+            }
+            return dialogOrId;
+        }
+
+        function openDialog(dialogOrId) {
+            console.log('openDialog called with:', dialogOrId);
+            const dialog = resolveDialog(dialogOrId);
+            if (!dialog) {
+                console.error('Dialog not found:', dialogOrId);
+                return false;
+            }
+            if (typeof dialog.showModal === "function") {
+                if (!dialog.open) {
+                    console.log('Calling showModal on dialog');
+                    dialog.showModal();
+                } else {
+                    console.log('Dialog is already open');
+                }
+                return true;
+            }
+            console.log('Fallback to legacy open attribute');
+            dialog.setAttribute("open", "");
+            dialog.style.display = "block";
+            dialog.setAttribute("aria-modal", "true");
+            return true;
+        }
+
+        function closeDialog(dialogOrId) {
+            const dialog = resolveDialog(dialogOrId);
+            if (!dialog) {
+                return false;
+            }
+            if (typeof dialog.close === "function") {
+                dialog.close();
+                return true;
+            }
+            dialog.removeAttribute("open");
+            dialog.style.display = "none";
+            return true;
+        }
+
+        window.openDialog = openDialog;
+        window.closeDialog = closeDialog;
     </script>
 </body>
 </html>
