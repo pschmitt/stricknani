@@ -29,6 +29,39 @@ msgstr "Project deleted."
 msgid "Yarn deleted."
 msgstr "Yarn deleted."
 
+msgid "e.g. 80% Merino, 20% Nylon"
+msgstr "e.g. 80% Merino, 20% Nylon"
+
+msgid "e.g. Fingering, DK, Worsted"
+msgstr "e.g. Fingering, DK, Worsted"
+
+msgid "e.g. 4.0mm"
+msgstr "e.g. 4.0mm"
+
+msgid "e.g. https://example.com/yarn-details"
+msgstr "e.g. https://example.com/yarn-details"
+
+msgid "e.g. https://..."
+msgstr "e.g. https://..."
+
+msgid "e.g. My Amazing Project"
+msgstr "e.g. My Amazing Project"
+
+msgid "e.g. 4.0mm circular"
+msgstr "e.g. 4.0mm circular"
+
+msgid "e.g. 3.5mm"
+msgstr "e.g. 3.5mm"
+
+msgid "e.g. 20"
+msgstr "e.g. 20"
+
+msgid "e.g. 28"
+msgstr "e.g. 28"
+
+msgid "e.g. https://example.com/pattern"
+msgstr "e.g. https://example.com/pattern"
+
 msgid "Delete Yarn"
 msgstr "Delete Yarn"
 

@@ -92,7 +92,7 @@
                     name="recommended_needles"
                     value="{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}"
                     class="input input-bordered w-full"
-                    placeholder="e.g., 4.0mm"
+                    placeholder="{{ _('e.g. 4.0mm') }}"
                 >
             </div>
             <div>
@@ -146,7 +146,7 @@
                     name="link"
                     value="{{ yarn.link if yarn else '' }}"
                     class="input input-bordered w-full"
-                    placeholder="https://example.com/yarn-details"
+                    placeholder="{{ _('e.g. https://example.com/yarn-details') }}"
                 >
                 <p class="text-xs text-base-content/70 mt-1">{{ _('Optional link to the yarn product page or details') }}</p>
             </div>
