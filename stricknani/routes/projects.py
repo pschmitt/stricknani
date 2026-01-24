@@ -427,15 +427,21 @@ async def list_projects(
         selectinload(Project.yarns),
     ).order_by(Project.created_at.desc())
 
-    result = await db.execute(query)
-    projects = result.scalars().unique().all()
-
     favorite_rows = await db.execute(
         select(user_favorites.c.project_id).where(
             user_favorites.c.user_id == current_user.id
         )
     )
     favorite_ids = {row[0] for row in favorite_rows}
+    result = await db.execute(query)
+    projects = result.scalars().unique().all()
+    projects = sorted(
+        projects,
+        key=lambda project: (
+            project.id not in favorite_ids,
+            project.name.casefold(),
+        ),
+    )
 
     def _serialize_project(project: Project) -> dict[str, object]:
         # Get all title images (or first image if no title image set)
@@ -1400,7 +1406,10 @@ async def delete_project(
 
         return Response(status_code=status.HTTP_200_OK)
 
-    return RedirectResponse(url="/projects", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        url="/projects?toast=project_deleted",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 
 # Image upload endpoints

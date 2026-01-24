@@ -243,13 +243,15 @@ const adminToastMessages = {
     email_exists: { message: '{{ _("Email already registered.") }}', variant: 'error' },
 };
 
-const toastKey = new URLSearchParams(window.location.search).get('toast');
-if (toastKey && adminToastMessages[toastKey]) {
-    const toast = adminToastMessages[toastKey];
-    window.showToast?.(toast.message, toast.variant);
-    const url = new URL(window.location.href);
-    url.searchParams.delete('toast');
-    window.history.replaceState({}, '', url.toString());
-}
+document.addEventListener('DOMContentLoaded', () => {
+    const toastKey = new URLSearchParams(window.location.search).get('toast');
+    if (toastKey && adminToastMessages[toastKey]) {
+        const toast = adminToastMessages[toastKey];
+        window.showToast?.(toast.message, toast.variant);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('toast');
+        window.history.replaceState({}, '', url.toString());
+    }
+});
 </script>
 {% endblock %}

@@ -168,6 +168,11 @@ async def list_yarns(
 
     result = await db.execute(query)
     yarns = result.scalars().unique().all()
+    favorite_ids = {yarn.id for yarn in current_user.favorite_yarns}
+    yarns = sorted(
+        yarns,
+        key=lambda yarn: (yarn.id not in favorite_ids, (yarn.name or "").casefold()),
+    )
 
     if request.headers.get("accept") == "application/json":
         return JSONResponse(_serialize_yarn_cards(yarns, current_user))
@@ -293,9 +298,11 @@ async def yarn_detail(
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
+    await db.refresh(current_user, ["favorite_yarns"])
     yarn = await _fetch_yarn(db, yarn_id, current_user.id)
     if yarn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    is_favorite = any(entry.id == yarn.id for entry in current_user.favorite_yarns)
 
     return render_template(
         "yarn/detail.html",
@@ -303,6 +310,7 @@ async def yarn_detail(
         {
             "current_user": current_user,
             "yarn": yarn,
+            "is_favorite": is_favorite,
             "description_html": render_markdown(yarn.description)
             if yarn.description
             else None,
@@ -502,7 +510,10 @@ async def delete_yarn(
 
         return Response(status_code=status.HTTP_200_OK)
 
-    return RedirectResponse(url="/yarn", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        url="/yarn?toast=yarn_deleted",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 
 @router.post("/{yarn_id}/photos/{photo_id}/delete", response_class=Response)

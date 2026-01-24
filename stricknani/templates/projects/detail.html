@@ -4,8 +4,19 @@
 {% block title %}{{ project.name }} - Stricknani{% endblock %}
 
 {% block content %}
-    <div class="mb-6 px-8">
-        {{ buttons.back(_('Back to Projects'), href='/projects') }}
+    <div class="mb-6 px-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            {{ buttons.back(_('Back to Projects'), href='/projects') }}
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <div data-favorite-toggle>
+                {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail' %}
+                    {% include "projects/_favorite_toggle.html" %}
+                {% endwith %}
+            </div>
+            {{ buttons.primary(_('Edit'), icon='mdi-pencil', href='/projects/' + project.id|string + '/edit') }}
+            {{ buttons.danger(_('Delete'), icon='mdi-delete', attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"') }}
+        </div>
     </div>
 
 <div class="bg-base-100 rounded-lg shadow-md p-8 backdrop-blur">
@@ -17,17 +28,6 @@
             {{ _(project.category) }}
         </a>
         {% endif %}
-    </div>
-
-    <!-- Action buttons -->
-    <div class="flex flex-wrap gap-2 mb-4">
-        <div data-favorite-toggle>
-            {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail' %}
-                {% include "projects/_favorite_toggle.html" %}
-            {% endwith %}
-        </div>
-        {{ buttons.primary(_('Edit'), icon='mdi-pencil', href='/projects/' + project.id|string + '/edit') }}
-        {{ buttons.danger(_('Delete'), icon='mdi-delete', attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"') }}
     </div>
 
     <!-- Metadata badges below buttons -->
@@ -256,7 +256,7 @@ function deleteProject() {
         }
     }).then(response => {
         if (response.ok) {
-            window.location.href = '/projects';
+            window.location.href = '/projects?toast=project_deleted';
         }
     });
 }

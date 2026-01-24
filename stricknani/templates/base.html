@@ -400,6 +400,7 @@
                 return;
             }
 
+            toastContainer.replaceChildren();
             const toast = document.createElement("div");
             toast.className = `rounded-lg px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition hover:translate-y-1 ${
                 toastVariants[variant] || toastVariants.info
@@ -790,6 +791,28 @@
             const fallback = "{{ _('Something went wrong. Please try again.') }}";
             const message = await extractErrorMessage(event.detail.xhr, fallback);
             showToast(message, "error");
+        });
+
+        document.body.addEventListener("htmx:afterRequest", (event) => {
+            const element = event.detail?.requestConfig?.elt || event.detail?.elt;
+            if (!element) {
+                return;
+            }
+            const toastElement =
+                element.getAttribute("data-toast-message") !== null
+                    ? element
+                    : element.querySelector?.("[data-toast-message]");
+            if (!toastElement) {
+                return;
+            }
+            const message = toastElement.getAttribute("data-toast-message");
+            if (!message) {
+                return;
+            }
+            const variant = toastElement.getAttribute("data-toast-variant") || "info";
+            if (window.showToast) {
+                window.showToast(message, variant);
+            }
         });
 
         function resolveDialog(dialogOrId) {

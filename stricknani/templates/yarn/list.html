@@ -51,7 +51,7 @@
                         <span class="sr-only">{{ _('Open yarn details') }}</span>
                     </div>
                     {% endif %}
-                    <div class="hidden h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500" data-fallback-icon>
+                    <div class="hidden flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500" data-fallback-icon>
                         <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
                         <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
                         <span class="sr-only">{{ _('Open yarn details') }}</span>
@@ -141,5 +141,17 @@
         {% include "yarn/_empty_state.html" %}
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toastKey = new URLSearchParams(window.location.search).get('toast');
+    if (toastKey === 'yarn_deleted') {
+        window.showToast?.('{{ _("Yarn deleted.") }}', 'success');
+        const url = new URL(window.location.href);
+        url.searchParams.delete('toast');
+        window.history.replaceState({}, '', url.toString());
+    }
+});
+</script>
 
 {% endblock %}

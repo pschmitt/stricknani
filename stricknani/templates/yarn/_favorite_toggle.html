@@ -1,10 +1,33 @@
-<button
-    hx-post="/yarn/{{ yarn_id }}/favorite"
-    hx-swap="outerHTML"
-    class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-base-300 bg-base-100 text-xl transition focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900 {% if is_favorite %}border-pink-600 bg-pink-600 text-white hover:bg-pink-700 dark:border-pink-500 dark:bg-pink-500 dark:text-white dark:hover:bg-pink-400{% else %}text-base-content/70 hover:border-pink-400 hover:text-pink-600 dark:text-base-content/70 dark:hover:border-pink-400 dark:hover:text-pink-300{% endif %}"
-    aria-label="{{ _('Remove from favorites') if is_favorite else _('Add to favorites') }}"
-    title="{{ _('Remove from favorites') if is_favorite else _('Add to favorites') }}"
->
-    <span class="mdi {{ 'mdi-heart' if is_favorite else 'mdi-heart-outline' }}" aria-hidden="true"></span>
-    <span class="sr-only">{{ _('Remove from favorites') if is_favorite else _('Add to favorites') }}</span>
-</button>
+{% set icon = 'mdi-heart' if is_favorite else 'mdi-heart-outline' %}
+{% set label = _('Remove from favorites') if is_favorite else _('Add to favorites') %}
+{% set message = _('Removed from favorites') if is_favorite else _('Added to favorites') %}
+{% if variant == 'detail' %}
+    <button
+        type="button"
+        hx-post="/yarn/{{ yarn_id }}/favorite?variant={{ variant }}"
+        hx-target="closest [data-favorite-toggle]"
+        hx-swap="innerHTML"
+        data-toast-message="{{ message }}"
+        data-toast-variant="{{ 'info' if is_favorite else 'success' }}"
+        class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-slate-300 bg-white text-slate-700 font-medium hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+        aria-pressed="{{ 'true' if is_favorite else 'false' }}"
+        title="{{ label }}"
+    >
+        <span class="mdi {{ icon }}" aria-hidden="true"></span>
+        <span>{{ label }}</span>
+    </button>
+{% else %}
+    <button
+        type="button"
+        hx-post="/yarn/{{ yarn_id }}/favorite?variant={{ variant }}"
+        hx-swap="outerHTML"
+        data-toast-message="{{ message }}"
+        data-toast-variant="{{ 'info' if is_favorite else 'success' }}"
+        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-base-300 bg-base-100 text-xl transition focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900 {% if is_favorite %}border-pink-600 bg-pink-600 text-white hover:bg-pink-700 dark:border-pink-500 dark:bg-pink-500 dark:text-white dark:hover:bg-pink-400{% else %}text-base-content/70 hover:border-pink-400 hover:text-pink-600 dark:text-base-content/70 dark:hover:border-pink-400 dark:hover:text-pink-300{% endif %}"
+        aria-label="{{ label }}"
+        title="{{ label }}"
+    >
+        <span class="mdi {{ icon }}" aria-hidden="true"></span>
+        <span class="sr-only">{{ label }}</span>
+    </button>
+{% endif %}

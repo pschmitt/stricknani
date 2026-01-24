@@ -252,6 +252,18 @@
 </dialog>
 
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toastKey = new URLSearchParams(window.location.search).get('toast');
+    if (toastKey === 'project_deleted') {
+        window.showToast?.('{{ _("Project deleted.") }}', 'success');
+        const url = new URL(window.location.href);
+        url.searchParams.delete('toast');
+        window.history.replaceState({}, '', url.toString());
+    }
+});
+</script>
+
+<script>
 document.addEventListener('DOMContentLoaded', function() {
     const importBtn = document.querySelector('[data-action="import"]');
     const importDialog = document.getElementById('importDialog');

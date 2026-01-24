@@ -23,6 +23,21 @@ msgstr "Importierte Bilder werden heruntergeladen, nachdem du das Projekt gespei
 msgid "This project was imported from an external source. Please review all fields carefully and click \"Save\" to keep it."
 msgstr "Dieses Projekt wurde aus einer externen Quelle importiert. Bitte überprüfe alle Felder sorgfältig und klicke auf \"Speichern\", um es zu behalten."
 
+msgid "Project deleted."
+msgstr "Projekt gelöscht."
+
+msgid "Yarn deleted."
+msgstr "Garn gelöscht."
+
+msgid "Delete Yarn"
+msgstr "Garn löschen"
+
+msgid "Are you sure you want to delete this yarn?"
+msgstr "Möchtest du dieses Garn wirklich löschen?"
+
+msgid "This will remove its photos too."
+msgstr "Dabei werden auch die Fotos entfernt."
+
 # Navigation and General
 #~ msgid "Stricknani"
 #~ msgstr "Stricknani"
