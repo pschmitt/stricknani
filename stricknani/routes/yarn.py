@@ -1,6 +1,7 @@
 """Yarn stash routes."""
 
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import (
@@ -22,7 +23,7 @@ from sqlalchemy.orm import selectinload
 from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.main import render_template
-from stricknani.models import User, Yarn, YarnImage, user_favorite_yarns
+from stricknani.models import Project, User, Yarn, YarnImage, user_favorite_yarns
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
     create_thumbnail,
@@ -61,7 +62,10 @@ async def _fetch_yarn(db: AsyncSession, yarn_id: int, owner_id: int) -> Yarn | N
     result = await db.execute(
         select(Yarn)
         .where(Yarn.id == yarn_id, Yarn.owner_id == owner_id)
-        .options(selectinload(Yarn.photos), selectinload(Yarn.projects))
+        .options(
+            selectinload(Yarn.photos),
+            selectinload(Yarn.projects).selectinload(Project.images),
+        )
     )
     return result.scalar_one_or_none()
 
@@ -73,6 +77,42 @@ def _resolve_preview(yarn: Yarn) -> str | None:
         return None
     first = yarn.photos[0]
     return get_thumbnail_url(first.filename, yarn.id, subdir="yarns")
+
+
+def _resolve_project_preview(project: Project) -> dict[str, str | None]:
+    """Return preview image data for a project if any images exist."""
+
+    candidates = [img for img in project.images if img.is_title_image]
+    if not candidates and project.images:
+        candidates = [project.images[0]]
+    if not candidates:
+        return {"preview_url": None, "preview_alt": None}
+
+    image = candidates[0]
+    thumb_name = f"thumb_{Path(image.filename).stem}.jpg"
+    thumb_path = (
+        config.MEDIA_ROOT
+        / "thumbnails"
+        / "projects"
+        / str(project.id)
+        / thumb_name
+    )
+    url = None
+    if thumb_path.exists():
+        url = get_thumbnail_url(
+            image.filename,
+            project.id,
+            subdir="projects",
+        )
+    file_path = config.MEDIA_ROOT / "projects" / str(project.id) / image.filename
+    if file_path.exists():
+        url = get_file_url(
+            image.filename,
+            project.id,
+            subdir="projects",
+        )
+
+    return {"preview_url": url, "preview_alt": image.alt_text or project.name}
 
 
 def _serialize_photos(yarn: Yarn) -> list[dict[str, object]]:
@@ -322,6 +362,7 @@ async def yarn_detail(
                     "id": project.id,
                     "name": project.name,
                     "category": project.category,
+                    **_resolve_project_preview(project),
                 }
                 for project in yarn.projects
             ],

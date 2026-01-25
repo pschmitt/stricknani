@@ -134,9 +134,9 @@
             <div>
                 <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-2">{{ _('Linked projects') }}</h3>
                 {% if linked_projects %}
-                <div class="flex flex-wrap gap-2">
+                <div class="grid gap-3 sm:grid-cols-2">
                     {% for project in linked_projects %}
-                    {{ cards.project_pill(project) }}
+                    {{ cards.project_preview_card(project) }}
                     {% endfor %}
                 </div>
                 {% else %}

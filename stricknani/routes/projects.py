@@ -83,6 +83,23 @@ def _parse_import_image_urls(raw: str | None) -> list[str]:
     return cleaned
 
 
+def _resolve_yarn_preview(yarn: Yarn) -> dict[str, str | None]:
+    """Return preview image data for a yarn if a photo exists."""
+
+    if not yarn.photos:
+        return {"preview_url": None, "preview_alt": None}
+
+    first = yarn.photos[0]
+    return {
+        "preview_url": get_thumbnail_url(
+            first.filename,
+            yarn.id,
+            subdir="yarns",
+        ),
+        "preview_alt": first.alt_text or yarn.name,
+    }
+
+
 def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
     """Prepare lightweight hints for the AI importer."""
     hints: dict[str, Any] = {}
@@ -966,7 +983,7 @@ async def get_project(
         .options(
             selectinload(Project.images),
             selectinload(Project.steps).selectinload(Step.images),
-            selectinload(Project.yarns),
+            selectinload(Project.yarns).selectinload(Yarn.photos),
         )
     )
     project = result.scalar_one_or_none()
@@ -1061,6 +1078,7 @@ async def get_project(
                 "name": yarn.name,
                 "brand": yarn.brand,
                 "colorway": yarn.colorway,
+                **_resolve_yarn_preview(yarn),
             }
             for yarn in project.yarns
         ],

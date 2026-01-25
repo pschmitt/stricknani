@@ -82,9 +82,9 @@
                             {{ _('Yarns') }}
                         </h3>
                         {% if project.linked_yarns %}
-                        <div class="flex flex-wrap gap-2">
+                        <div class="grid gap-3 sm:grid-cols-2">
                             {% for yarn in project.linked_yarns %}
-                            {{ cards.yarn_pill(yarn) }}
+                            {{ cards.yarn_preview_card(yarn) }}
                             {% endfor %}
                         </div>
                         {% else %}
