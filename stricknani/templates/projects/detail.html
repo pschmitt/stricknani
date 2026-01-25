@@ -93,25 +93,29 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
-                            <span class="mdi mdi-sheep"></span>
-                            {{ _('Yarn') }}
-                        </h3>
-                        <p class="text-base-content">{{ project.yarn or _('Not specified') }}</p>
-                    </div>
-
-                    <div>
-                        <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
                             <span class="mdi mdi-needle"></span>
                             {{ _('Needles') }}
                         </h3>
-                        <p class="text-base-content">{{ project.needles or _('Not specified') }}</p>
+                        <p class="text-base-content">
+                            {% if project.needles %}
+                                {{ project.needles }}
+                            {% else %}
+                                <span class="italic">{{ _('Not specified') }}</span>
+                            {% endif %}
+                        </p>
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
                             <span class="mdi mdi-needle"></span>
                             {{ _('Recommended needle size') }}
                         </h3>
-                        <p class="text-base-content">{{ project.recommended_needles or _('Not specified') }}</p>
+                        <p class="text-base-content">
+                            {% if project.recommended_needles %}
+                                {{ project.recommended_needles }}
+                            {% else %}
+                                <span class="italic">{{ _('Not specified') }}</span>
+                            {% endif %}
+                        </p>
                     </div>
 
                     {% if project.gauge_stitches is not none or project.gauge_rows is not none %}
@@ -121,10 +125,18 @@
                             {{ _('Gauge') }}
                         </h3>
                         <p class="text-base-content">
-                            {{ project.gauge_stitches if project.gauge_stitches is not none else _('Not specified') }}
+                            {% if project.gauge_stitches is not none %}
+                                {{ project.gauge_stitches }}
+                            {% else %}
+                                <span class="italic">{{ _('Not specified') }}</span>
+                            {% endif %}
                             {{ _('Stitches') }}
                             ×
-                            {{ project.gauge_rows if project.gauge_rows is not none else _('Not specified') }}
+                            {% if project.gauge_rows is not none %}
+                                {{ project.gauge_rows }}
+                            {% else %}
+                                <span class="italic">{{ _('Not specified') }}</span>
+                            {% endif %}
                             {{ _('Rows') }}
                             {{ _('per 10cm') }}
                         </p>
@@ -140,7 +152,7 @@
                             {{ project.link }}
                         </a>
                         {% else %}
-                        <p class="text-base-content">{{ _('Not specified') }}</p>
+                        <p class="text-base-content"><span class="italic">{{ _('Not specified') }}</span></p>
                         {% endif %}
                     </div>
 
