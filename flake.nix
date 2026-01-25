@@ -24,7 +24,7 @@
           babel
           bcrypt
           beautifulsoup4
-          bleach
+          nh3
           cryptography
           fastapi
           httpx

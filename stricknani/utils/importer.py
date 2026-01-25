@@ -267,12 +267,11 @@ class PatternImporter:
                             if text:
                                 content.append(text)
 
-                    if title:
                         # Try to find content in parent siblings if direct content was empty
-                        if not content and not step_images:
+                        if not content or not step_images:
                             curr = heading
-                            # Climb up to 3 levels to find a wrapper that has content siblings
-                            for _ in range(3):
+                            # Climb up to 5 levels to find a wrapper that has content siblings
+                            for _ in range(5):
                                 if not curr.parent or curr.parent == instructions_section:
                                     break
                                 curr = curr.parent
@@ -310,9 +309,14 @@ class PatternImporter:
                                         if text:
                                             parent_content.append(text)
 
-                                if parent_content or parent_images:
-                                    content = parent_content
-                                    step_images = parent_images
+                                if parent_content:
+                                    if not content:
+                                        content = parent_content
+                                if parent_images:
+                                    if not step_images:
+                                        step_images = parent_images
+                                
+                                if content and step_images:
                                     break
 
                         steps.append(
@@ -332,7 +336,30 @@ class PatternImporter:
             if steps:
                 break
 
-        return steps
+        # Deduplicate steps based on title and description
+        unique_steps: dict[tuple[str, str], dict[str, Any]] = {}
+        for step in steps:
+            key = (step["title"], step["description"] or "")
+            if key in unique_steps:
+                # Merge images if step exists
+                existing_images = unique_steps[key].get("images", [])
+                new_images = step.get("images", [])
+                for img in new_images:
+                    if img not in existing_images:
+                        existing_images.append(img)
+                unique_steps[key]["images"] = existing_images
+            else:
+                unique_steps[key] = step
+
+        # Re-index step numbers
+        final_steps = list(unique_steps.values())
+        for i, step in enumerate(final_steps, 1):
+            step["step_number"] = i
+            # Correct generic titles if re-indexing shifted them
+            if step["title"].startswith("Step ") and step["title"][5:].isdigit():
+                 step["title"] = f"Step {i}"
+
+        return final_steps
 
     def _build_steps_from_text(self, container: Tag) -> list[dict[str, Any]]:
         text = container.get_text("\n", strip=True)

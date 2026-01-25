@@ -1250,6 +1250,7 @@ async def edit_project_form(
         "gauge_stitches": project.gauge_stitches,
         "gauge_rows": project.gauge_rows,
         "comment": project.comment or "",
+        "link": project.link,
         "title_images": title_images,
         "steps": steps_data,
         "tags": project.tag_list(),

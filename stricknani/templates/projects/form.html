@@ -321,7 +321,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
                 </div>
 
                 <div class="md:col-span-2">
-                    <!-- DEBUG: project.link = {{ project.link }} -->
                     <label for="link" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
                         <span class="mdi mdi-link-variant text-base-content/70"></span>
                         {{ _('Source Link') }}
@@ -1102,6 +1101,39 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
         container.appendChild(div);
     }
 
+    function addPendingTitleImageToGallery(url) {
+        const container = document.getElementById('titleImagesContainer');
+        const div = document.createElement('div');
+        div.className = 'relative';
+        div.setAttribute('data-pending-url', url);
+        div.innerHTML = `
+        <img src="${url}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" data-lightbox-group="title-pending" data-lightbox-src="${url}">
+        <button type="button" onclick="deletePendingImage(this, '${url}')" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    `;
+        container.appendChild(div);
+    }
+
+    function deletePendingImage(button, url) {
+        if (!confirm('{{ _("Remove image?") }}')) return;
+
+        // Remove visual element
+        button.closest('.relative').remove();
+
+        // Update hidden input
+        const importInput = document.getElementById('import_image_urls');
+        if (importInput && importInput.value) {
+            try {
+                let urls = JSON.parse(importInput.value);
+                urls = urls.filter(u => u !== url);
+                importInput.value = JSON.stringify(urls);
+            } catch (e) {
+                console.error('Error updating import_image_urls:', e);
+            }
+        }
+    }
+
     async function deleteImage(imageId) {
         if (!confirm('{{ _("Delete") }}?')) return;
 
@@ -1579,8 +1611,15 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
                     if (importImagesField) {
                         importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
                     }
+
                     if (imageUrls.length > 0) {
                         window.showToast?.('{{ _("Imported images will be downloaded after you save the project.") }}', 'info');
+                        // Render pending images
+                        imageUrls.forEach(url => {
+                            if (typeof addPendingTitleImageToGallery === 'function') {
+                                addPendingTitleImageToGallery(url);
+                            }
+                        });
                     }
 
                     if (data.link) {

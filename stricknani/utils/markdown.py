@@ -2,7 +2,7 @@
 
 import xml.etree.ElementTree as etree
 
-import bleach
+import nh3
 import markdown as md
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
@@ -79,7 +79,7 @@ def render_markdown(
     )
 
     # Sanitize HTML
-    allowed_tags = [
+    allowed_tags = {
         "p",
         "br",
         "strong",
@@ -99,10 +99,10 @@ def render_markdown(
         "li",
         "a",
         "img",
-    ]
+    }
     allowed_attrs = {
-        "a": ["href", "title"],
-        "img": [
+        "a": {"href", "title"},
+        "img": {
             "src",
             "alt",
             "title",
@@ -110,7 +110,7 @@ def render_markdown(
             "data-lightbox-group",
             "data-lightbox-src",
             "data-lightbox-alt",
-        ],
+        },
     }
 
-    return bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs, strip=True)
+    return nh3.clean(html, tags=allowed_tags, attributes=allowed_attrs, link_rel=None)
