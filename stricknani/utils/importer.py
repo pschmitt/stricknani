@@ -212,12 +212,21 @@ class PatternImporter:
             if ol:
                 for i, li in enumerate(ol.find_all("li", recursive=False), 1):
                     text = li.get_text(strip=True)
-                    if text:
+                    step_images = []
+                    for img in li.find_all("img"):
+                        src = img.get("src") or img.get("data-src")
+                        if src:
+                            resolved = self._resolve_image_url(src)
+                            if resolved:
+                                step_images.append(resolved)
+
+                    if text or step_images:
                         steps.append(
                             {
                                 "step_number": i,
                                 "title": f"Step {i}",
                                 "description": text,
+                                "images": step_images,
                             }
                         )
 
@@ -228,6 +237,8 @@ class PatternImporter:
                     title = heading.get_text(strip=True)
                     # Get next sibling content
                     content = []
+                    step_images = []
+                    
                     for sibling in heading.next_siblings:
                         if hasattr(sibling, "name") and sibling.name in [
                             "h2",
@@ -235,12 +246,75 @@ class PatternImporter:
                             "h4",
                         ]:
                             break
+                        
+                        # Extract images
+                        if hasattr(sibling, "name") and sibling.name == "img":
+                            src = sibling.get("src") or sibling.get("data-src")
+                            if src:
+                                resolved = self._resolve_image_url(src)
+                                if resolved:
+                                    step_images.append(resolved)
+                        elif hasattr(sibling, "find_all"):
+                            for img in sibling.find_all("img"):
+                                src = img.get("src") or img.get("data-src")
+                                if src:
+                                    resolved = self._resolve_image_url(src)
+                                    if resolved:
+                                        step_images.append(resolved)
+
                         if hasattr(sibling, "get_text"):
                             text = sibling.get_text(strip=True)
                             if text:
                                 content.append(text)
 
                     if title:
+                        # Try to find content in parent siblings if direct content was empty
+                        if not content and not step_images:
+                            curr = heading
+                            # Climb up to 3 levels to find a wrapper that has content siblings
+                            for _ in range(3):
+                                if not curr.parent or curr.parent == instructions_section:
+                                    break
+                                curr = curr.parent
+
+                                parent_content = []
+                                parent_images = []
+                                # Check next siblings of this parent
+                                for sibling in curr.next_siblings:
+                                    if hasattr(sibling, "name") and sibling.name in ["h2", "h3", "h4"]:
+                                        break
+
+                                    # Only check content of Tags, not strings
+                                    if getattr(sibling, "name", None):
+                                        if sibling.find("h2") or sibling.find("h3") or sibling.find("h4"):
+                                            # Sibling contains a heading, so it's likely the next section
+                                            break
+                                    
+                                    # Extract images from parent siblings
+                                    if hasattr(sibling, "name") and sibling.name == "img":
+                                        src = sibling.get("src") or sibling.get("data-src")
+                                        if src:
+                                            resolved = self._resolve_image_url(src)
+                                            if resolved:
+                                                parent_images.append(resolved)
+                                    elif hasattr(sibling, "find_all"):
+                                        for img in sibling.find_all("img"):
+                                            src = img.get("src") or img.get("data-src")
+                                            if src:
+                                                resolved = self._resolve_image_url(src)
+                                                if resolved:
+                                                    parent_images.append(resolved)
+
+                                    if hasattr(sibling, "get_text"):
+                                        text = sibling.get_text(strip=True)
+                                        if text:
+                                            parent_content.append(text)
+
+                                if parent_content or parent_images:
+                                    content = parent_content
+                                    step_images = parent_images
+                                    break
+
                         steps.append(
                             {
                                 "step_number": i,
@@ -248,6 +322,7 @@ class PatternImporter:
                                 "description": "\n\n".join(content)
                                 if content
                                 else None,
+                                "images": step_images,
                             }
                         )
 

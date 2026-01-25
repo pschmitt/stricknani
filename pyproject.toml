@@ -27,6 +27,7 @@ dependencies = [
     "beautifulsoup4>=4.12.0",
     "rich>=13.9.4",
     "sentry-sdk[fastapi]>=2.20.0",
+    "trafilatura>=1.12.0",
 ]
 
 [project.optional-dependencies]

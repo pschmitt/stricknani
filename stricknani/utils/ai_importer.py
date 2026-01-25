@@ -158,12 +158,28 @@ class AIPatternImporter:
         for script in soup(["script", "style", "nav", "footer", "header"]):
             script.decompose()
 
-        # Get text content
-        text_content = soup.get_text(separator="\n", strip=True)
+        # Get text content using Trafilatura if available
+        text_content = ""
+        try:
+            import trafilatura
+
+            # Trafilatura needs the raw HTML string, which we have in response.text
+            text_content = trafilatura.extract(
+                response.text,
+                include_comments=False,
+                include_tables=False,
+                no_fallback=False,
+            )
+        except ImportError:
+            pass
+
+        # Fallback to BeautifulSoup if Trafilatura fails or returns empty
+        if not text_content:
+            text_content = soup.get_text(separator="\n", strip=True)
 
         # Limit text length to avoid token limits
-        if len(text_content) > 8000:
-            text_content = text_content[:8000]
+        if text_content and len(text_content) > 12000:
+            text_content = text_content[:12000]
 
         # Extract images
         images = await self._extract_images(soup)

@@ -38,6 +38,7 @@
           rich
           sentry-sdk
           sqlalchemy
+          trafilatura
           uvicorn
           uvloop
           watchfiles

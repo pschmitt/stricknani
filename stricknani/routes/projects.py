@@ -240,6 +240,84 @@ async def _import_images_from_urls(
     return imported
 
 
+async def _import_step_images(
+    db: AsyncSession, step: Step, image_urls: Sequence[str]
+) -> int:
+    """Download and attach imported images to a step."""
+    if not image_urls:
+        return 0
+
+    logger = logging.getLogger("stricknani.imports")
+    imported = 0
+
+    headers = dict(IMPORT_IMAGE_HEADERS)
+    # Use project link as referer if available (we need to fetch project associated with step)
+    # Since step.project might not be loaded yet, we rely on caller context or fetch it if needed.
+    # For now, simplistic headers.
+
+    async with httpx.AsyncClient(
+        timeout=IMPORT_IMAGE_TIMEOUT,
+        follow_redirects=True,
+        headers=headers,
+    ) as client:
+        for image_url in image_urls:
+            if imported >= IMPORT_IMAGE_MAX_COUNT:
+                break
+            if not _is_valid_import_url(image_url):
+                continue
+
+            try:
+                response = await client.get(image_url)
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                logger.warning("Failed to download step image %s: %s", image_url, exc)
+                continue
+
+            content_type = response.headers.get("content-type")
+            if not _is_allowed_import_image(content_type, image_url):
+                continue
+
+            content_length = response.headers.get("content-length")
+            if content_length:
+                try:
+                    if int(content_length) > IMPORT_IMAGE_MAX_BYTES:
+                        continue
+                except ValueError:
+                    pass
+
+            if not response.content or len(response.content) > IMPORT_IMAGE_MAX_BYTES:
+                continue
+
+            original_filename = build_import_filename(image_url, content_type)
+            filename = ""
+            try:
+                filename, original_filename = save_bytes(
+                    response.content, original_filename, step.project_id
+                )
+                file_path = config.MEDIA_ROOT / "projects" / str(step.project_id) / filename
+                await create_thumbnail(file_path, step.project_id)
+            except Exception as exc:
+                if filename:
+                    delete_file(filename, step.project_id)
+                logger.warning("Failed to store step image %s: %s", image_url, exc)
+                continue
+
+            alt_text = original_filename
+            image = Image(
+                filename=filename,
+                original_filename=original_filename,
+                image_type=ImageType.PHOTO.value,
+                alt_text=alt_text,
+                is_title_image=False,
+                project_id=step.project_id,
+                step_id=step.id,
+            )
+            db.add(image)
+            imported += 1
+
+    return imported
+
+
 def _parse_optional_int(field_name: str, value: str | None) -> int | None:
     """Parse optional integer fields coming from forms."""
 
@@ -1255,6 +1333,10 @@ async def create_project(
                 project_id=project.id,
             )
             db.add(step)
+            await db.flush()  # Get step ID
+            step_images = step_data.get("image_urls")
+            if step_images:
+                await _import_step_images(db, step, step_images)
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
@@ -1364,6 +1446,10 @@ async def update_project(
                     project_id=project.id,
                 )
                 db.add(step)
+                await db.flush()
+                step_images = step_data.get("image_urls")
+                if step_images:
+                    await _import_step_images(db, step, step_images)
 
     await db.commit()
 
