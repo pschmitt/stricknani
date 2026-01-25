@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    {% block detail_header %}{% endblock %}
+    <div class="bg-base-100 rounded-lg shadow-md p-6 sm:p-8 backdrop-blur">
+        {% block detail_body %}{% endblock %}
+    </div>
+</div>
+{% block detail_extra %}{% endblock %}
+{% block page_scripts %}{% endblock %}
+{% endblock %}

@@ -3,7 +3,12 @@
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Form, Request, status
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.responses import (
+    HTMLResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -57,7 +62,11 @@ def _render_user_card_response(
     return HTMLResponse(card_html + count_html)
 
 
-def _render_user_deleted_response(request: Request, user_id: int, user_count: int) -> HTMLResponse:
+def _render_user_deleted_response(
+    request: Request,
+    user_id: int,
+    user_count: int,
+) -> HTMLResponse:
     language = get_language(request)
     install_i18n(templates.env, language)
     count_html = templates.get_template("admin/_user_count.html").render(

@@ -1,9 +1,10 @@
-{% extends "base.html" %}
+{% extends "shared/list_base.html" %}
 {% import "macros/buttons.html" as buttons %}
+{% import "macros/cards.html" as cards %}
 
 {% block title %}{{ _('Projects') }} - Stricknani{% endblock %}
 
-{% block content %}
+{% block list_styles %}
 <style>
     .tab-content {
         display: block;
@@ -13,18 +14,20 @@
         display: none;
     }
 </style>
-<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
-    <h2 class="text-3xl font-bold flex items-center gap-2">
-        <span class="mdi mdi-folder-multiple-outline text-primary"></span>
-        {{ _('My Projects') }}
-    </h2>
-    <div class="flex gap-2 w-full sm:w-auto">
-        {{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='flex-1 sm:flex-none') }}
-        {{ buttons.secondary(_('Import'), icon='mdi-download', attrs='data-action="import"', class='flex-1 sm:flex-none') }}
-    </div>
-</div>
+{% endblock %}
 
-<!-- Filters -->
+{% block list_icon %}
+<span class="mdi mdi-folder-multiple-outline text-primary"></span>
+{% endblock %}
+
+{% block list_title %}{{ _('My Projects') }}{% endblock %}
+
+{% block list_actions %}
+{{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='flex-1 sm:flex-none') }}
+{{ buttons.secondary(_('Import'), icon='mdi-download', attrs='data-action="import"', class='flex-1 sm:flex-none') }}
+{% endblock %}
+
+{% block list_filters %}
 <div class="mb-6">
     <label for="search" class="label">
         <span class="label-text">{{ _('Search') }}</span>
@@ -41,14 +44,17 @@
         hx-trigger="keyup changed delay:500ms"
     >
 </div>
+{% endblock %}
 
-<!-- Projects List -->
-<div id="projects-list">
-    {% if projects %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {% for project in projects %}
-            <div class="card bg-base-200 shadow-xl" data-project-card data-project-id="{{ project.id }}">
-                <div class="relative">
+{% block list_container_attrs %}id="projects-list"{% endblock %}
+
+{% block list_content %}
+{% if projects %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for project in projects %}
+            {% set card_attrs = 'data-project-card data-project-id="%s"' % project.id %}
+            {% call(section) cards.list_card(data_attrs=card_attrs) %}
+                {% if section == 'media' %}
                     <a
                         href="/projects/{{ project.id }}"
                         class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
@@ -99,8 +105,7 @@
                             {% include "projects/_favorite_toggle.html" %}
                         {% endwith %}
                     </div>
-                </div>
-                <div class="card-body">
+                {% elif section == 'body' %}
                     <div class="flex justify-between items-start mb-3">
                         <h3 class="card-title">
                             <a href="/projects/{{ project.id }}" class="hover:text-primary">
@@ -139,28 +144,26 @@
                     <div class="card-actions">
                         {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/projects/' + project.id|string + '/edit', class='w-full') }}
                     </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        {% include "projects/_empty_state.html" %}
-    {% endif %}
-</div>
+                {% endif %}
+            {% endcall %}
+        {% endfor %}
+    </div>
+{% else %}
+    {% include "projects/_empty_state.html" %}
+{% endif %}
+{% endblock %}
 
-<!-- Import Dialog -->
+{% block list_extra %}
 <dialog id="importDialog" class="modal">
     <div class="modal-box max-w-2xl">
         <h3 class="font-bold text-lg mb-4">{{ _('Import Pattern') }}</h3>
         <form id="importForm">
-            <!-- Import type tabs -->
             <div role="tablist" class="tabs tabs-boxed mb-4">
                 <a role="tab" class="tab tab-active" data-tab="url">{{ _('From URL') }}</a>
                 <a role="tab" class="tab" data-tab="file">{{ _('From File') }}</a>
                 <a role="tab" class="tab" data-tab="text">{{ _('From Text') }}</a>
             </div>
 
-            <!-- URL Input -->
             <div id="tab-url" class="tab-content">
                 <div class="form-control">
                     <label class="label">
@@ -179,14 +182,12 @@
                 </div>
             </div>
 
-            <!-- File Upload with Drag and Drop -->
             <div id="tab-file" class="tab-content hidden">
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">{{ _('Pattern File') }}</span>
                     </label>
 
-                    <!-- Drag and Drop Zone -->
                     <div id="dropZone" class="border-2 border-dashed border-base-300 rounded-lg p-8 text-center hover:border-primary hover:bg-base-200 transition-colors cursor-pointer">
                         <input
                             type="file"
@@ -216,7 +217,6 @@
                 </div>
             </div>
 
-            <!-- Text Input -->
             <div id="tab-text" class="tab-content hidden">
                 <div class="form-control">
                     <label class="label">
@@ -250,7 +250,9 @@
         <button>{{ _('Close') }}</button>
     </form>
 </dialog>
+{% endblock %}
 
+{% block page_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const toastKey = new URLSearchParams(window.location.search).get('toast');
@@ -270,7 +272,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const importForm = document.getElementById('importForm');
     const importLoading = document.getElementById('importLoading');
 
-    // Tab switching
     let currentTab = 'url';
     const tabs = document.querySelectorAll('.tabs .tab');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -280,11 +281,9 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const tabName = tab.dataset.tab;
 
-            // Update active tab
             tabs.forEach(t => t.classList.remove('tab-active'));
             tab.classList.add('tab-active');
 
-            // Show corresponding content
             tabContents.forEach(content => {
                 if (content.id === `tab-${tabName}`) {
                     content.classList.remove('hidden');
@@ -297,7 +296,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // File drag and drop
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('importFile');
     const dropZoneContent = document.getElementById('dropZoneContent');
@@ -306,14 +304,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const removeFileBtn = document.getElementById('removeFile');
 
     if (dropZone && fileInput) {
-        // Click to select file
         dropZone.addEventListener('click', (e) => {
             if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
                 fileInput.click();
             }
         });
 
-        // File selected via input
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -321,26 +317,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Drag over
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('border-primary', 'bg-base-200');
         });
 
-        // Drag leave
         dropZone.addEventListener('dragleave', (e) => {
             e.preventDefault();
             dropZone.classList.remove('border-primary', 'bg-base-200');
         });
 
-        // Drop
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('border-primary', 'bg-base-200');
 
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                // Set the file to the input
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(files[0]);
                 fileInput.files = dataTransfer.files;
@@ -348,7 +340,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Remove file
         if (removeFileBtn) {
             removeFileBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -380,7 +371,6 @@ document.addEventListener('DOMContentLoaded', function() {
     async function performImport() {
         const formData = new FormData();
 
-        // Get data based on current tab
         if (currentTab === 'url') {
             const url = document.getElementById('importUrl').value.trim();
             if (!url) {
@@ -410,7 +400,6 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('type', 'text');
         }
 
-        // Show loading state
         importForm.classList.add('hidden');
         importLoading.classList.remove('hidden');
 
@@ -426,47 +415,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) {
                 let errorMsg = 'Failed to import';
-                    try {
-                        const error = await response.json();
-                        errorMsg = error.detail || errorMsg;
-                    } catch (e) {
-                        errorMsg = `HTTP ${response.status}: ${response.statusText}`;
-                    }
-                    throw new Error(errorMsg);
+                try {
+                    const error = await response.json();
+                    errorMsg = error.detail || errorMsg;
+                } catch (e) {
+                    errorMsg = `HTTP ${response.status}: ${response.statusText}`;
                 }
-
-                const data = await response.json();
-                console.log('Import successful, data:', data);
-
-                // Show warning if AI fallback occurred
-                if (data.ai_fallback) {
-                    showToast('{{ _('AI extraction failed - using basic parser') }}', 'warning');
-                }
-
-                // Ensure the URL is included in the imported data (for URL imports)
-                if (currentTab === 'url' && !data.link) {
-                    data.link = document.getElementById('importUrl').value.trim();
-                }
-
-                // Close dialog
-                importDialog.close();
-
-                // Show success message - make it clear they'll be taken to the form
-                showToast('{{ _('Pattern data extracted - loading form...') }}', 'success');
-
-                // Redirect to new project page with imported data
-                // Store data in sessionStorage
-                sessionStorage.setItem('importedData', JSON.stringify(data));
-                window.location.href = '/projects/new';
-
-            } catch (error) {
-                console.error('Import error:', error);
-                showToast(error.message || '{{ _('Failed to import pattern') }}', 'error');
-
-                // Reset form
-                importForm.classList.remove('hidden');
-                importLoading.classList.add('hidden');
+                throw new Error(errorMsg);
             }
+
+            const data = await response.json();
+            console.log('Import successful, data:', data);
+
+            if (data.ai_fallback) {
+                showToast('{{ _('AI extraction failed - using basic parser') }}', 'warning');
+            }
+
+            if (currentTab === 'url' && !data.link) {
+                data.link = document.getElementById('importUrl').value.trim();
+            }
+
+            importDialog.close();
+            showToast('{{ _('Pattern data extracted - loading form...') }}', 'success');
+
+            sessionStorage.setItem('importedData', JSON.stringify(data));
+            window.location.href = '/projects/new';
+
+        } catch (error) {
+            console.error('Import error:', error);
+            showToast(error.message || '{{ _('Failed to import pattern') }}', 'error');
+
+            importForm.classList.remove('hidden');
+            importLoading.classList.add('hidden');
+        }
     }
 
     if (importForm) {
@@ -477,5 +458,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
 {% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% block form_styles %}{% endblock %}
+{% block form_before %}{% endblock %}
+<div class="{% block form_container_class %}max-w-6xl{% endblock %} mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap gap-2">
+                {% block form_nav %}{% endblock %}
+            </div>
+            <div class="flex flex-wrap gap-2">
+                {% block form_actions %}{% endblock %}
+            </div>
+        </div>
+        <div>
+            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+                {% block form_title %}{% endblock %}
+            </h1>
+        </div>
+    </div>
+    <div class="bg-base-100 rounded-lg shadow-md border border-base-300 p-4 sm:p-6 md:p-8 backdrop-blur">
+        {% block form_body %}{% endblock %}
+    </div>
+</div>
+{% block page_scripts %}{% endblock %}
+{% endblock %}

@@ -1,10 +1,10 @@
-{% extends "base.html" %}
+{% extends "shared/form_base.html" %}
 {% import "macros/buttons.html" as buttons %}
 {% import "macros/image_upload.html" as image_upload %}
 
 {% block title %}{{ _('Edit') if project else _('New') }} {{ _('Project') }} - Stricknani{% endblock %}
 
-{% block content %}
+{% block form_styles %}
 <style>
     .tab-content {
         display: block;
@@ -14,6 +14,9 @@
         display: none;
     }
 </style>
+{% endblock %}
+
+{% block form_before %}
 <dialog id="previewDialog" class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-2xl">
     <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
         <h3 class="text-lg font-semibold">{{ _('Preview') }}</h3>
@@ -24,19 +27,16 @@
     <div id="previewContent" class="p-6 prose max-w-none dark:prose-invert overflow-y-auto max-h-[70vh]"></div>
 </dialog>
 
-<!-- Import Dialog -->
 <dialog id="importDialog" class="modal">
     <div class="modal-box max-w-2xl">
         <h3 class="font-bold text-lg mb-4">{{ _('Import Pattern') }}</h3>
         <form id="importForm">
-            <!-- Import type tabs -->
             <div role="tablist" class="tabs tabs-boxed mb-4">
                 <a role="tab" class="tab tab-active" data-tab="url">{{ _('From URL') }}</a>
                 <a role="tab" class="tab" data-tab="file">{{ _('From File') }}</a>
                 <a role="tab" class="tab" data-tab="text">{{ _('From Text') }}</a>
             </div>
 
-            <!-- URL Input -->
             <div id="tab-url" class="tab-content">
                 <div class="form-control">
                     <label class="label">
@@ -55,14 +55,12 @@
                 </div>
             </div>
 
-            <!-- File Upload with Drag and Drop -->
             <div id="tab-file" class="tab-content hidden">
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">{{ _('Pattern File') }}</span>
                     </label>
 
-                    <!-- Drag and Drop Zone -->
                     <div id="dropZone" class="border-2 border-dashed border-base-300 rounded-lg p-4 sm:p-8 text-center hover:border-primary hover:bg-base-200 transition-colors cursor-pointer">
                         <input
                             type="file"
@@ -92,7 +90,6 @@
                 </div>
             </div>
 
-            <!-- Text Input -->
             <div id="tab-text" class="tab-content hidden">
                 <div class="form-control">
                     <label class="label">
@@ -126,397 +123,378 @@
         <button>{{ _('Close') }}</button>
     </form>
 </dialog>
+{% endblock %}
 
-<div class="max-w-6xl mx-auto space-y-6">
-    <div class="flex flex-col gap-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap gap-2">
-                {{ buttons.back(_('Back'), href='/projects/' + project.id|string if project else '/projects') }}
+{% block form_nav %}
+{{ buttons.back(_('Back'), href='/projects/' + project.id|string if project else '/projects') }}
 
-                {% if not project %}
-                {{ buttons.secondary(_('Import'), icon='mdi-download', attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
-                {% endif %}
-            </div>
+{% if not project %}
+{{ buttons.secondary(_('Import'), icon='mdi-download', attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
+{% endif %}
+{% endblock %}
 
-            {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"') }}
-        </div>
+{% block form_actions %}
+{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"') }}
+{% endblock %}
 
-        <div>
-            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
-                <span class="mdi mdi-notebook-outline text-blue-700 dark:text-blue-300"></span>
-                {{ project.name if project else _('New Project') }}
-            </h1>
+{% block form_title %}
+<span class="mdi mdi-notebook-outline text-blue-700 dark:text-blue-300"></span>
+{{ project.name if project else _('New Project') }}
+{% endblock %}
+
+{% block form_body %}
+<div id="importWarning" class="hidden mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded">
+    <div class="flex items-start gap-3">
+        <span class="mdi mdi-alert text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></span>
+        <div class="flex-1">
+            <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved Yet') }}</h3>
+            <p class="text-sm text-yellow-700 dark:text-yellow-300">
+                {{ _('This project was imported from an external source. Please review all fields carefully and click "Save" to keep it.') }}
+            </p>
         </div>
     </div>
+</div>
 
-    <div class="bg-base-100 rounded-lg shadow-md border border-base-300 p-4 sm:p-6 md:p-8 backdrop-blur">
-        <!-- Import warning banner -->
-        <div id="importWarning" class="hidden mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded">
-            <div class="flex items-start gap-3">
-                <span class="mdi mdi-alert text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></span>
-                <div class="flex-1">
-                    <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved Yet') }}</h3>
-                    <p class="text-sm text-yellow-700 dark:text-yellow-300">
-                        {{ _('This project was imported from an external source. Please review all fields carefully and click "Save" to keep it.') }}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-    <form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post" class="space-y-6">
-        <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
-        <div class="grid gap-4 md:gap-6 md:grid-cols-3">
-            <div class="space-y-6 md:col-span-2">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <!-- Name -->
-            <div class="md:col-span-2">
-                <label for="name" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                    <span class="mdi mdi-notebook-outline text-base-content/70"></span>
-                    {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
-                </label>
-                <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    required
-                    value="{{ project.name if project else '' }}"
-                    class="input input-bordered w-full"
-                    placeholder="{{ _('e.g. My Amazing Project') }}"
-                >
-            </div>
-
-            <!-- Category -->
-            <div>
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                    <label for="category" class="label-text text-sm font-medium inline-flex items-center gap-2">
-                        <span class="mdi mdi-shape-outline text-base-content/70"></span>
-                        {{ _('Category') }}
+<form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post" class="space-y-6">
+    <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
+    <div class="grid gap-4 md:gap-6 md:grid-cols-3">
+        <div class="space-y-6 md:col-span-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div class="md:col-span-2">
+                    <label for="name" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                        <span class="mdi mdi-notebook-outline text-base-content/70"></span>
+                        {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
                     </label>
-                    <a href="/projects/categories" class="btn btn-xs btn-outline btn-primary gap-1 self-start sm:self-auto" target="_blank" rel="noreferrer">
-                        <span class="mdi mdi-cog-outline"></span>
-                        {{ _('Manage categories') }}
-                    </a>
-                </div>
-                <select
-                    id="category"
-                    name="category"
-                    class="select select-bordered w-full"
-                >
-                    <option value="">{{ _('Select a category (optional)') }}</option>
-                    {% for category in categories %}
-                    <option value="{{ category }}" {% if project and project.category == category %}selected{% endif %}>
-                        {{ category }}
-                    </option>
-                    {% endfor %}
-                </select>
-                <p class="text-xs text-base-content/70 mt-1">{{ _('You can manage categories using the link above.') }}</p>
-            </div>
-
-            <!-- Linked stash yarns -->
-            <div>
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                    <label for="yarn_search" class="label-text text-sm font-medium inline-flex items-center gap-2">
-                        <span class="mdi mdi-sheep text-base-content/70"></span>
-                        {{ _('Yarn') }} <span class="text-base-content/60 text-xs">{{ _('Select from stash') }}</span>
-                    </label>
-                    <a href="/yarn/new" class="btn btn-xs btn-outline btn-primary gap-1 self-start sm:self-auto" target="_blank" rel="noreferrer">
-                        <span class="mdi mdi-plus"></span>
-                        {{ _('Add yarn') }}
-                    </a>
-                </div>
-
-                <!-- Hidden input to store selected yarn IDs -->
-                <input type="hidden" id="yarn_ids" name="yarn_ids" value="">
-
-                <!-- Search input -->
-                <div class="relative mb-2">
                     <input
                         type="text"
-                        id="yarn_search"
-                        placeholder="{{ _('Search yarns...') }}"
-                        class="input input-bordered w-full pl-10"
-                        autocomplete="off"
+                        id="name"
+                        name="name"
+                        required
+                        value="{{ project.name if project else '' }}"
+                        class="input input-bordered w-full"
+                        placeholder="{{ _('e.g. My Amazing Project') }}"
                     >
-                    <span class="mdi mdi-magnify absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60"></span>
                 </div>
 
-                <!-- Selected yarns -->
-                <div id="selected_yarns" class="flex flex-wrap gap-2 mb-3 min-h-[2.5rem] p-2 border border-base-300 rounded-lg bg-base-100">
-                    <!-- Selected yarn chips will appear here -->
-                </div>
-
-                <!-- Available yarns dropdown -->
-                <div class="relative">
-                    <div id="yarn_dropdown" class="hidden absolute z-10 w-full max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-lg">
-                        {% for yarn in yarns %}
-                        <button
-                            type="button"
-                            class="yarn-option w-full text-left px-4 py-2 hover:bg-base-200 border-b border-base-200 last:border-b-0"
-                            data-yarn-id="{{ yarn.id }}"
-                            data-yarn-name="{{ yarn.name }}"
-                            data-yarn-brand="{{ yarn.brand or '' }}"
-                            data-yarn-colorway="{{ yarn.colorway or '' }}"
-                            data-yarn-dye-lot="{{ yarn.dye_lot or '' }}"
-                            data-yarn-image="{{ yarn.photos[0].filename if yarn.photos and yarn.photos[0] else '' }}"
-                        >
-                            <div class="flex items-center gap-3">
-                                {% if yarn.photos and yarn.photos[0] %}
-                                <img src="{{ yarn.photos[0].filename }}" alt="{{ yarn.name }}" class="w-10 h-10 rounded object-cover" onerror="this.replaceWith(this.closest('button').querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">
-                                {% endif %}
-                                <div class="w-10 h-10 rounded bg-base-300 flex items-center justify-center text-base-content/60{% if yarn.photos and yarn.photos[0] %} hidden{% endif %}" data-fallback-icon>
-                                    <span class="mdi mdi-image-off text-lg" aria-hidden="true"></span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="font-medium truncate">{{ yarn.name }}</div>
-                                    {% if yarn.brand or yarn.colorway or yarn.dye_lot %}
-                                    <div class="text-xs text-base-content/70 truncate">
-                                        {% if yarn.brand %}{{ yarn.brand }}{% endif %}
-                                        {% if yarn.brand and yarn.colorway %} • {% endif %}
-                                        {% if yarn.brand and yarn.dye_lot and not yarn.colorway %} • {% endif %}
-                                        {% if yarn.colorway and yarn.dye_lot %} • {% endif %}
-                                        {% if yarn.colorway %}{{ yarn.colorway }}{% endif %}
-                                        {% if yarn.dye_lot %}{{ yarn.dye_lot }}{% endif %}
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </button>
+                <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
+                        <label for="category" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                            <span class="mdi mdi-shape-outline text-base-content/70"></span>
+                            {{ _('Category') }}
+                        </label>
+                        <a href="/projects/categories" class="btn btn-xs btn-outline btn-primary gap-1 self-start sm:self-auto" target="_blank" rel="noreferrer">
+                            <span class="mdi mdi-cog-outline"></span>
+                            {{ _('Manage categories') }}
+                        </a>
+                    </div>
+                    <select
+                        id="category"
+                        name="category"
+                        class="select select-bordered w-full"
+                    >
+                        <option value="">{{ _('Select a category (optional)') }}</option>
+                        {% for category in categories %}
+                        <option value="{{ category }}" {% if project and project.category == category %}selected{% endif %}>
+                            {{ category }}
+                        </option>
                         {% endfor %}
-                    </div>
+                    </select>
+                    <p class="text-xs text-base-content/70 mt-1">{{ _('You can manage categories using the link above.') }}</p>
                 </div>
 
-                <p class="text-xs text-base-content/70 mt-1">{{ _("Search and select yarns from your stash. Use the Add link to create new stash entries.") }}</p>
-            </div>
+                <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
+                        <label for="yarn_search" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                            <span class="mdi mdi-sheep text-base-content/70"></span>
+                            {{ _('Yarn') }} <span class="text-base-content/60 text-xs">{{ _('Select from stash') }}</span>
+                        </label>
+                        <a href="/yarn/new" class="btn btn-xs btn-outline btn-primary gap-1 self-start sm:self-auto" target="_blank" rel="noreferrer">
+                            <span class="mdi mdi-plus"></span>
+                            {{ _('Add yarn') }}
+                        </a>
+                    </div>
 
-            <!-- Needles -->
-            <div class="md:col-span-2">
-                <label for="needles" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                    <span class="mdi mdi-needle text-base-content/70"></span>
-                    {{ _('Needles') }}
-                </label>
-                <input
-                    type="text"
-                    id="needles"
-                    name="needles"
-                    value="{{ project.needles if project and project.needles else '' }}"
-                    class="input input-bordered w-full"
-                    placeholder="{{ _('e.g. 4.0mm circular') }}"
-                >
-            </div>
-            <div class="md:col-span-2">
-                <label for="recommended_needles" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                    <span class="mdi mdi-needle text-base-content/70"></span>
-                    {{ _('Recommended needle size') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
-                </label>
-                <input
-                    type="text"
-                    id="recommended_needles"
-                    name="recommended_needles"
-                    value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
-                    class="input input-bordered w-full"
-                    placeholder="{{ _('e.g. 3.5mm') }}"
-                >
-            </div>
+                    <input type="hidden" id="yarn_ids" name="yarn_ids" value="">
 
-            <!-- Gauge -->
-            <div>
-                <label for="gauge_stitches" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                    <span class="mdi mdi-ruler-square text-base-content/70"></span>
-                    {{ _('Gauge Stitches (per 10cm)') }}
-                </label>
-                <input
-                    type="number"
-                    id="gauge_stitches"
-                    name="gauge_stitches"
-                    value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
-                    class="input input-bordered w-full"
-                    placeholder="{{ _('e.g. 20') }}"
-                    min="1"
-                >
-            </div>
+                    <div class="relative mb-2">
+                        <input
+                            type="text"
+                            id="yarn_search"
+                            placeholder="{{ _('Search yarns...') }}"
+                            class="input input-bordered w-full pl-10"
+                            autocomplete="off"
+                        >
+                        <span class="mdi mdi-magnify absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60"></span>
+                    </div>
 
-            <div>
-                <label for="gauge_rows" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                    <span class="mdi mdi-ruler-square text-base-content/70"></span>
-                    {{ _('Gauge Rows (per 10cm)') }}
-                </label>
-                <input
-                    type="number"
-                    id="gauge_rows"
-                    name="gauge_rows"
-                    value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
-                    class="input input-bordered w-full"
-                    placeholder="{{ _('e.g. 28') }}"
-                    min="1"
-                >
-            </div>
+                    <div id="selected_yarns" class="flex flex-wrap gap-2 mb-3 min-h-[2.5rem] p-2 border border-base-300 rounded-lg bg-base-100">
+                    </div>
 
-            <!-- Comment -->
-            <div class="md:col-span-2">
-                <div class="flex items-center justify-between mb-1">
-                    <label for="comment" class="label-text text-sm font-medium inline-flex items-center gap-2">
-                        <span class="mdi mdi-note-text-outline text-base-content/70"></span>
-                        {{ _('Notes') }}
+                    <div class="relative">
+                        <div id="yarn_dropdown" class="hidden absolute z-10 w-full max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-lg">
+                            {% for yarn in yarns %}
+                            <button
+                                type="button"
+                                class="yarn-option w-full text-left px-4 py-2 hover:bg-base-200 border-b border-base-200 last:border-b-0"
+                                data-yarn-id="{{ yarn.id }}"
+                                data-yarn-name="{{ yarn.name }}"
+                                data-yarn-brand="{{ yarn.brand or '' }}"
+                                data-yarn-colorway="{{ yarn.colorway or '' }}"
+                                data-yarn-dye-lot="{{ yarn.dye_lot or '' }}"
+                                data-yarn-image="{{ yarn.photos[0].filename if yarn.photos and yarn.photos[0] else '' }}"
+                            >
+                                <div class="flex items-center gap-3">
+                                    {% if yarn.photos and yarn.photos[0] %}
+                                    <img src="{{ yarn.photos[0].filename }}" alt="{{ yarn.name }}" class="w-10 h-10 rounded object-cover" onerror="this.replaceWith(this.closest('button').querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">
+                                    {% endif %}
+                                    <div class="w-10 h-10 rounded bg-base-300 flex items-center justify-center text-base-content/60{% if yarn.photos and yarn.photos[0] %} hidden{% endif %}" data-fallback-icon>
+                                        <span class="mdi mdi-image-off text-lg" aria-hidden="true"></span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-medium truncate">{{ yarn.name }}</div>
+                                        {% if yarn.brand or yarn.colorway or yarn.dye_lot %}
+                                        <div class="text-xs text-base-content/70 truncate">
+                                            {% if yarn.brand %}{{ yarn.brand }}{% endif %}
+                                            {% if yarn.brand and yarn.colorway %} • {% endif %}
+                                            {% if yarn.brand and yarn.dye_lot and not yarn.colorway %} • {% endif %}
+                                            {% if yarn.colorway and yarn.dye_lot %} • {% endif %}
+                                            {% if yarn.colorway %}{{ yarn.colorway }}{% endif %}
+                                            {% if yarn.dye_lot %}{{ yarn.dye_lot }}{% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-base-content/70 mt-1">{{ _('Search and select yarns from your stash. Use the Add link to create new stash entries.') }}</p>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="needles" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                        <span class="mdi mdi-needle text-base-content/70"></span>
+                        {{ _('Needles') }}
                     </label>
-                    <button type="button" onclick="previewMarkdown('comment')" class="btn btn-xs btn-outline btn-primary gap-1">
-                        <span class="mdi mdi-eye"></span>
-                        {{ _('Preview') }}
-                    </button>
-                </div>
-                <textarea
-                    id="comment"
-                    name="comment"
-                    rows="4"
-                    class="input input-bordered w-full"
-                    placeholder="Personal notes about this project..."
-                >{{ project.comment if project and project.comment else '' }}</textarea>
-                <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
-            </div>
-
-            <!-- Link -->
-            <div class="md:col-span-2">
-                <label for="link" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                    <span class="mdi mdi-link-variant text-base-content/70"></span>
-                    {{ _('Source Link') }}
-                </label>
-                <input
-                    type="url"
-                    id="link"
-                    name="link"
-                    value="{{ project.link if project else '' }}"
-                    class="input input-bordered w-full"
-                    placeholder="{{ _('e.g. https://example.com/pattern') }}"
-                >
-                <p class="text-xs text-base-content/70 mt-1">{{ _('Optional link to the original pattern or source') }}</p>
-            </div>
-        </div>
-
-{% if project %}
-        <!-- Title Images Section (only for edit mode) -->
-        <div class="border-t pt-6 border-slate-200 dark:border-slate-700">
-            <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-                <span class="mdi mdi-image-multiple"></span>
-                {{ _('Gallery') }}
-            </h3>
-            <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                {% for image in project.title_images %}
-                <div class="relative" data-image-id="{{ image.id }}">
-                    <img
-                        src="{{ image.thumbnail_url }}"
-                        alt="{{ image.alt_text }}"
-                        class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
-                        data-lightbox-group="title-{{ project.id }}"
-                        data-lightbox-src="{{ image.url }}"
-                        data-lightbox-alt="{{ image.alt_text }}"
-                        draggable="true"
-                        ondragstart="handleImageDragStart(event)"
+                    <input
+                        type="text"
+                        id="needles"
+                        name="needles"
+                        value="{{ project.needles if project and project.needles else '' }}"
+                        class="input input-bordered w-full"
+                        placeholder="{{ _('e.g. 4.0mm circular') }}"
                     >
-                    <button type="button" onclick="deleteImage({{ image.id }})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
                 </div>
-                {% endfor %}
-            </div>
-            {{ image_upload.upload_dropzone(
-                input_id='titleImageInput',
-                container_id='titleImageDropZone'
-            ) }}
-        </div>
+                <div class="md:col-span-2">
+                    <label for="recommended_needles" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                        <span class="mdi mdi-needle text-base-content/70"></span>
+                        {{ _('Recommended needle size') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="recommended_needles"
+                        name="recommended_needles"
+                        value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
+                        class="input input-bordered w-full"
+                        placeholder="{{ _('e.g. 3.5mm') }}"
+                    >
+                </div>
 
-        <!-- Steps Section (only for edit mode) -->
-        <div class="border-t pt-6 border-slate-200 dark:border-slate-700">
-            <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-                <span class="mdi mdi-format-list-text"></span>
-                {{ _('Steps') }}
-            </h3>
-            <div id="stepsContainer" class="space-y-4">
-                {% for step in project.steps %}
-                <div class="step-item border rounded-lg p-4 bg-slate-100 border-slate-200 dark:bg-slate-900/60 dark:border-slate-700" data-step-id="{{ step.id }}" data-step-number="{{ step.step_number }}">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span class="step-number">{{ step.step_number }}</span></h4>
-                            <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="moveStepUp(this)" class="px-2 py-1 text-sm bg-slate-200 hover:bg-slate-300 rounded inline-flex items-center gap-1 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" title="{{ _('Move Up') }}">
-                                    <span class="mdi mdi-arrow-up"></span>
-                                    <span class="hidden sm:inline">{{ _('Move Up') }}</span>
-                                </button>
-                                <button type="button" onclick="moveStepDown(this)" class="px-2 py-1 text-sm bg-slate-200 hover:bg-slate-300 rounded inline-flex items-center gap-1 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" title="{{ _('Move Down') }}">
-                                    <span class="mdi mdi-arrow-down"></span>
-                                    <span class="hidden sm:inline">{{ _('Move Down') }}</span>
-                                </button>
-                                {% if project %}
-                                <button type="button" onclick="saveStep(this)" class="px-2 py-1 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded inline-flex items-center gap-1 dark:bg-blue-600 dark:hover:bg-blue-500" title="{{ _('Save') }}">
-                                    <span class="mdi mdi-content-save"></span>
-                                    <span class="hidden sm:inline">{{ _('Save') }}</span>
-                                </button>
-                                {% endif %}
-                                <button type="button" onclick="removeStep(this)" class="px-2 py-1 text-sm bg-red-600 text-white hover:bg-red-700 rounded inline-flex items-center gap-1 dark:hover:bg-red-500" title="{{ _('Remove Step') }}">
-                                    <span class="mdi mdi-delete"></span>
-                                    <span class="hidden sm:inline">{{ _('Remove') }}</span>
-                                </button>
-                            </div>
-                    </div>
-                    <div class="flex items-center justify-between mb-2">
-                        <input type="text" class="step-title input input-bordered w-full mr-2" placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
-                        <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="btn btn-xs btn-outline btn-primary gap-1 shrink-0">
+                <div>
+                    <label for="gauge_stitches" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                        <span class="mdi mdi-ruler-square text-base-content/70"></span>
+                        {{ _('Gauge Stitches (per 10cm)') }}
+                    </label>
+                    <input
+                        type="number"
+                        id="gauge_stitches"
+                        name="gauge_stitches"
+                        value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
+                        class="input input-bordered w-full"
+                        placeholder="{{ _('e.g. 20') }}"
+                        min="1"
+                    >
+                </div>
+
+                <div>
+                    <label for="gauge_rows" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                        <span class="mdi mdi-ruler-square text-base-content/70"></span>
+                        {{ _('Gauge Rows (per 10cm)') }}
+                    </label>
+                    <input
+                        type="number"
+                        id="gauge_rows"
+                        name="gauge_rows"
+                        value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
+                        class="input input-bordered w-full"
+                        placeholder="{{ _('e.g. 28') }}"
+                        min="1"
+                    >
+                </div>
+
+                <div class="md:col-span-2">
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="comment" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                            <span class="mdi mdi-note-text-outline text-base-content/70"></span>
+                            {{ _('Notes') }}
+                        </label>
+                        <button type="button" onclick="previewMarkdown('comment')" class="btn btn-xs btn-outline btn-primary gap-1">
                             <span class="mdi mdi-eye"></span>
                             {{ _('Preview') }}
                         </button>
                     </div>
-                    <textarea class="step-description textarea textarea-bordered w-full mb-2" rows="3" placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
-                    <p class="text-xs text-base-content/70 mb-2">{{ _('Supports Markdown formatting') }}</p>
-                    <div class="step-images grid grid-cols-3 gap-2 mb-2">
-                        {% for image in step.images %}
-                        <div class="relative" data-image-id="{{ image.id }}">
-                            <img
-                                src="{{ image.thumbnail_url }}"
-                                alt="{{ image.alt_text }}"
-                                class="w-full h-20 cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
-                                data-lightbox-group="step-{{ step.id }}"
-                                data-lightbox-src="{{ image.url }}"
-                                data-lightbox-alt="{{ image.alt_text }}"
-                                draggable="true"
-                                ondragstart="handleImageDragStart(event)"
-                            >
-                            <button type="button" onclick="deleteImage({{ image.id }})" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <textarea
+                        id="comment"
+                        name="comment"
+                        rows="4"
+                        class="input input-bordered w-full"
+                        placeholder="Personal notes about this project..."
+                    >{{ project.comment if project and project.comment else '' }}</textarea>
+                    <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="link" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                        <span class="mdi mdi-link-variant text-base-content/70"></span>
+                        {{ _('Source Link') }}
+                    </label>
+                    <input
+                        type="url"
+                        id="link"
+                        name="link"
+                        value="{{ project.link if project else '' }}"
+                        class="input input-bordered w-full"
+                        placeholder="{{ _('e.g. https://example.com/pattern') }}"
+                    >
+                    <p class="text-xs text-base-content/70 mt-1">{{ _('Optional link to the original pattern or source') }}</p>
+                </div>
+            </div>
+
+{% if project %}
+            <div class="border-t pt-6 border-slate-200 dark:border-slate-700">
+                <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
+                    <span class="mdi mdi-image-multiple"></span>
+                    {{ _('Gallery') }}
+                </h3>
+                <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                    {% for image in project.title_images %}
+                    <div class="relative" data-image-id="{{ image.id }}">
+                        <img
+                            src="{{ image.thumbnail_url }}"
+                            alt="{{ image.alt_text }}"
+                            class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
+                            data-lightbox-group="title-{{ project.id }}"
+                            data-lightbox-src="{{ image.url }}"
+                            data-lightbox-alt="{{ image.alt_text }}"
+                            draggable="true"
+                            ondragstart="handleImageDragStart(event)"
+                        >
+                        <button type="button" onclick="deleteImage({{ image.id }})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {{ image_upload.upload_dropzone(
+                    input_id='titleImageInput',
+                    container_id='titleImageDropZone'
+                ) }}
+            </div>
+
+            <div class="border-t pt-6 border-slate-200 dark:border-slate-700">
+                <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
+                    <span class="mdi mdi-format-list-text"></span>
+                    {{ _('Steps') }}
+                </h3>
+                <div id="stepsContainer" class="space-y-4">
+                    {% for step in project.steps %}
+                    <div class="step-item border rounded-lg p-4 bg-slate-100 border-slate-200 dark:bg-slate-900/60 dark:border-slate-700" data-step-id="{{ step.id }}" data-step-number="{{ step.step_number }}">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span class="step-number">{{ step.step_number }}</span></h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" onclick="moveStepUp(this)" class="px-2 py-1 text-sm bg-slate-200 hover:bg-slate-300 rounded inline-flex items-center gap-1 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" title="{{ _('Move Up') }}">
+                                        <span class="mdi mdi-arrow-up"></span>
+                                        <span class="hidden sm:inline">{{ _('Move Up') }}</span>
+                                    </button>
+                                    <button type="button" onclick="moveStepDown(this)" class="px-2 py-1 text-sm bg-slate-200 hover:bg-slate-300 rounded inline-flex items-center gap-1 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" title="{{ _('Move Down') }}">
+                                        <span class="mdi mdi-arrow-down"></span>
+                                        <span class="hidden sm:inline">{{ _('Move Down') }}</span>
+                                    </button>
+                                    {% if project %}
+                                    <button type="button" onclick="saveStep(this)" class="px-2 py-1 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded inline-flex items-center gap-1 dark:bg-blue-600 dark:hover:bg-blue-500" title="{{ _('Save') }}">
+                                        <span class="mdi mdi-content-save"></span>
+                                        <span class="hidden sm:inline">{{ _('Save') }}</span>
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" onclick="removeStep(this)" class="px-2 py-1 text-sm bg-red-600 text-white hover:bg-red-700 rounded inline-flex items-center gap-1 dark:hover:bg-red-500" title="{{ _('Remove Step') }}">
+                                        <span class="mdi mdi-delete"></span>
+                                        <span class="hidden sm:inline">{{ _('Remove') }}</span>
+                                    </button>
+                                </div>
+                        </div>
+                        <div class="flex items-center justify-between mb-2">
+                            <input type="text" class="step-title input input-bordered w-full mr-2" placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
+                            <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="btn btn-xs btn-outline btn-primary gap-1 shrink-0">
+                                <span class="mdi mdi-eye"></span>
+                                {{ _('Preview') }}
                             </button>
                         </div>
-                        {% endfor %}
+                        <textarea class="step-description textarea textarea-bordered w-full mb-2" rows="3" placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
+                        <p class="text-xs text-base-content/70 mb-2">{{ _('Supports Markdown formatting') }}</p>
+                        <div class="step-images grid grid-cols-3 gap-2 mb-2">
+                            {% for image in step.images %}
+                            <div class="relative" data-image-id="{{ image.id }}">
+                                <img
+                                    src="{{ image.thumbnail_url }}"
+                                    alt="{{ image.alt_text }}"
+                                    class="w-full h-20 cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
+                                    data-lightbox-group="step-{{ step.id }}"
+                                    data-lightbox-src="{{ image.url }}"
+                                    data-lightbox-alt="{{ image.alt_text }}"
+                                    draggable="true"
+                                    ondragstart="handleImageDragStart(event)"
+                                >
+                                <button type="button" onclick="deleteImage({{ image.id }})" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {{ image_upload.step_upload_dropzone(
+                            input_id='stepImageInput' + step.id|string,
+                            step_id=step.id
+                        ) }}
                     </div>
-                    {{ image_upload.step_upload_dropzone(
-                        input_id='stepImageInput' + step.id|string,
-                        step_id=step.id
-                    ) }}
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
-            <button type="button" onclick="addStep()" class="mt-4 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md inline-flex items-center gap-2 dark:hover:bg-green-500">
-                <span class="mdi mdi-playlist-plus"></span>
-                {{ _('Add Step') }}
-            </button>
-        </div>
-        {% endif %}
-
-        <!-- Hidden field for steps data -->
-        <input type="hidden" id="stepsData" name="steps_data">
-
-        <!-- Submit Buttons -->
-        <div class="flex flex-col gap-4">
-            <div class="flex gap-4">
-                {{ buttons.primary(_('Save'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
-                {{ buttons.secondary(_('Cancel'), href='/projects/' + project.id|string if project else '/projects', icon='mdi-close-circle-outline', class='py-3 px-6') }}
-            </div>
-
-            {% if project %}
-            <div class="flex justify-end pt-4 border-t border-base-200">
-                {{ buttons.danger(_('Delete Project'), icon='mdi-delete-outline', attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"', class="w-full sm:w-auto") }}
+                <button type="button" onclick="addStep()" class="mt-4 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md inline-flex items-center gap-2 dark:hover:bg-green-500">
+                    <span class="mdi mdi-playlist-plus"></span>
+                    {{ _('Add Step') }}
+                </button>
             </div>
             {% endif %}
-        </div>
-    </form>
-</div>
-</div>
 
+            <input type="hidden" id="stepsData" name="steps_data">
+
+            <div class="flex flex-col gap-4">
+                <div class="flex gap-4">
+                    {{ buttons.primary(_('Save'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
+                    {{ buttons.secondary(_('Cancel'), href='/projects/' + project.id|string if project else '/projects', icon='mdi-close-circle-outline', class='py-3 px-6') }}
+                </div>
+
+                {% if project %}
+                <div class="flex justify-end pt-4 border-t border-base-200">
+                    {{ buttons.danger(_('Delete Project'), icon='mdi-delete-outline', attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"', class="w-full sm:w-auto") }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block page_scripts %}
 <script>
 function autoResize(el) {
     el.style.height = 'auto';
@@ -555,20 +533,17 @@ async function previewMarkdown(source) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Check for imported data from sessionStorage
     const importedData = sessionStorage.getItem('importedData');
     if (importedData) {
         try {
             const data = JSON.parse(importedData);
             console.log('Loading imported data:', data);
 
-            // Show import warning banner
             const warningBanner = document.getElementById('importWarning');
             if (warningBanner) {
                 warningBanner.classList.remove('hidden');
             }
 
-            // Populate form fields
             if (data.title || data.name) {
                 document.getElementById('name').value = data.title || data.name;
             }
@@ -594,7 +569,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('tags').value = data.tags;
             }
 
-            // Handle comment
             const comment = data.comment || '';
             if (comment) {
                 const commentField = document.getElementById('comment');
@@ -615,7 +589,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('link').value = data.link;
             }
 
-            // Import steps
             if (data.steps && data.steps.length > 0) {
                 const stepsContainer = document.getElementById('stepsContainer');
                 if (stepsContainer) {
@@ -626,13 +599,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Clear sessionStorage
             sessionStorage.removeItem('importedData');
 
-            // Show success message - make it clear they still need to save
             window.showToast?.('{{ _("Pattern data loaded - please review and save") }}', 'success');
 
-            // Scroll to the save button to make it obvious
             setTimeout(() => {
                 const saveButton = document.querySelector('button[type="submit"]');
                 if (saveButton) {
@@ -655,7 +625,6 @@ document.addEventListener('DOMContentLoaded', () => {
         autoResize(el);
         el.addEventListener('input', () => autoResize(el));
 
-        // Enable drag and drop for images (only on edit pages)
         {% if project %}
         if (typeof projectId !== 'undefined' && projectId) {
             setupTextareaDrop(el);
@@ -663,11 +632,9 @@ document.addEventListener('DOMContentLoaded', () => {
         {% endif %}
     });
 
-    // Initialize yarn selection widget
     initYarnSelector();
 });
 
-// Yarn Selection Widget
 function initYarnSelector() {
     const searchInput = document.getElementById('yarn_search');
     const dropdown = document.getElementById('yarn_dropdown');
@@ -677,7 +644,6 @@ function initYarnSelector() {
 
     const selectedYarns = new Map();
 
-    // Initialize with pre-selected yarns
     {% if project and project.yarn_ids %}
     const preSelectedIds = {{ project.yarn_ids | tojson }};
     yarnOptions.forEach(option => {
@@ -740,7 +706,6 @@ function initYarnSelector() {
             `;
             selectedContainer.appendChild(chip);
 
-            // Add remove handler
             chip.querySelector('[data-remove-yarn]').addEventListener('click', () => {
                 removeYarn(id);
             });
@@ -777,7 +742,6 @@ function initYarnSelector() {
             }
         });
 
-        // Show/hide dropdown based on visibility
         if (visibleCount > 0 && (searchInput === document.activeElement || searchTerm)) {
             dropdown.classList.remove('hidden');
         } else {
@@ -785,7 +749,6 @@ function initYarnSelector() {
         }
     }
 
-    // Event listeners
     searchInput.addEventListener('focus', () => {
         filterOptions();
     });
@@ -795,7 +758,6 @@ function initYarnSelector() {
     });
 
     searchInput.addEventListener('blur', (e) => {
-        // Delay hiding to allow clicks on options
         setTimeout(() => {
             if (!dropdown.contains(document.activeElement)) {
                 dropdown.classList.add('hidden');
@@ -819,7 +781,6 @@ function initYarnSelector() {
         });
     });
 
-    // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
             dropdown.classList.add('hidden');
@@ -847,11 +808,9 @@ function setupTextareaDrop(textarea) {
             const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
             if (imageFiles.length === 0) return;
 
-            // Determine context (step or project)
             const stepItem = textarea.closest('.step-item');
             const stepId = stepItem ? stepItem.getAttribute('data-step-id') : null;
 
-            // If it's a step textarea but we don't have a step ID yet, we can't upload
             if (stepItem && !stepId) {
                 window.showToast?.('{{ _("Save the project to create this step before uploading images.") }}', 'info');
                 return;
@@ -863,7 +822,6 @@ function setupTextareaDrop(textarea) {
             return;
         }
 
-        // Handle text drop (e.g. from existing images)
         const text = e.dataTransfer.getData('text/plain');
         if (text) {
             insertAtCursor(textarea, text);
@@ -887,12 +845,7 @@ async function uploadAndInsertImage(file, textarea, stepId) {
 
     const url = stepId
         ? `/projects/${projectId}/steps/${stepId}/images`
-        : `/projects/${projectId}/images/title`; // Fallback to title images for now, or need a generic endpoint
-
-    // For project notes, we ideally want a generic "content image" endpoint.
-    // Using title image endpoint sets is_title_image=True which shows up in the carousel.
-    // We should probably add a generic endpoint. For now, let's use the title endpoint but maybe we can filter it out later?
-    // Or better, let's just use the title endpoint and accept it shows in the gallery.
+        : `/projects/${projectId}/images/title`;
 
     try {
         window.showToast?.('{{ _("Uploading image...") }}', 'info');
@@ -907,14 +860,12 @@ async function uploadAndInsertImage(file, textarea, stepId) {
             insertAtCursor(textarea, markdown);
             window.showToast?.('{{ _("Image uploaded!") }}', 'success');
 
-            // If it's a step image, also add to the gallery preview
             if (stepId) {
                 const stepItem = document.querySelector(`.step-item[data-step-id="${stepId}"]`);
                 if (stepItem) {
                     addStepImagePreview(stepItem, data);
                 }
             } else {
-                // It's a project image (title image endpoint used)
                 addTitleImageToGallery(data);
             }
         } else {
@@ -1112,7 +1063,6 @@ function setupImageUploadWidget(input, dropzone, onUpload) {
     });
 }
 
-// Handle title image upload
 const titleImageInput = document.getElementById('titleImageInput');
 const titleImageDropZone = document.getElementById('titleImageDropZone');
 
@@ -1270,10 +1220,8 @@ function addStepImagePreview(stepItem, imageData) {
     imagesContainer.appendChild(div);
 }
 
-// Initialize step upload widgets on page load
 initStepImageUploaders();
 
-// Step management
 function addStep(title = '', description = '') {
     const container = document.getElementById('stepsContainer');
     const stepNumber = container.children.length + 1;
@@ -1329,7 +1277,6 @@ function addStep(title = '', description = '') {
         newTextarea.style.overflowY = 'hidden';
         autoResize(newTextarea);
         newTextarea.addEventListener('input', () => autoResize(newTextarea));
-        // Note: We can't enable drag-and-drop for new steps until they are saved and have an ID
     }
 }
 
@@ -1351,7 +1298,7 @@ function moveStepDown(button) {
     const item = button.closest('.step-item');
     const next = item.nextElementSibling;
     if (next) {
-        item.parentNode.insertBefore(next, item);
+        item.parentNode.insertBefore(item, next);
         updateStepNumbers();
     }
 }
@@ -1371,7 +1318,6 @@ async function saveStep(button) {
     const description = stepItem.querySelector('.step-description').value;
     const stepNumber = parseInt(stepItem.getAttribute('data-step-number')) || 1;
 
-    // Disable button during save
     button.disabled = true;
     const originalText = button.innerHTML;
     button.innerHTML = '<span class="mdi mdi-loading mdi-spin"></span> {{ _("Saving...") }}';
@@ -1400,10 +1346,8 @@ async function saveStep(button) {
 
         const data = await response.json();
 
-        // Update step ID if it's a new step
         if (!stepId && data.id) {
             stepItem.setAttribute('data-step-id', data.id);
-            // Update image upload inputs with the new step ID
             const dropzone = stepItem.querySelector('.step-image-dropzone');
             const fileInput = stepItem.querySelector('.step-image-input');
             if (dropzone) dropzone.setAttribute('data-step-id', data.id);
@@ -1422,9 +1366,7 @@ async function saveStep(button) {
 </script>
 {% endif %}
 
-<!-- Form submission handler for steps -->
 <script>
-// Form submission
 document.getElementById('projectForm').addEventListener('submit', (e) => {
     const steps = [];
     document.querySelectorAll('.step-item').forEach((item, index) => {
@@ -1439,14 +1381,12 @@ document.getElementById('projectForm').addEventListener('submit', (e) => {
 });
 </script>
 
-<!-- Import Handler -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const importDialog = document.getElementById('importDialog');
     const importForm = document.getElementById('importForm');
     const importLoading = document.getElementById('importLoading');
 
-    // Tab switching
     let currentTab = 'url';
     const tabs = document.querySelectorAll('.tabs .tab');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -1456,11 +1396,9 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const tabName = tab.dataset.tab;
 
-            // Update active tab
             tabs.forEach(t => t.classList.remove('tab-active'));
             tab.classList.add('tab-active');
 
-            // Show corresponding content
             tabContents.forEach(content => {
                 if (content.id === `tab-${tabName}`) {
                     content.classList.remove('hidden');
@@ -1473,7 +1411,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // File drag and drop
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('importFile');
     const dropZoneContent = document.getElementById('dropZoneContent');
@@ -1482,14 +1419,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const removeFileBtn = document.getElementById('removeFile');
 
     if (dropZone && fileInput) {
-        // Click to select file
         dropZone.addEventListener('click', (e) => {
             if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
                 fileInput.click();
             }
         });
 
-        // File selected via input
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -1497,26 +1432,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Drag over
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('border-primary', 'bg-base-200');
         });
 
-        // Drag leave
         dropZone.addEventListener('dragleave', (e) => {
             e.preventDefault();
             dropZone.classList.remove('border-primary', 'bg-base-200');
         });
 
-        // Drop
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('border-primary', 'bg-base-200');
 
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                // Set the file to the input
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(files[0]);
                 fileInput.files = dataTransfer.files;
@@ -1524,7 +1455,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Remove file
         if (removeFileBtn) {
             removeFileBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1552,7 +1482,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const formData = new FormData();
 
-            // Get data based on current tab
             if (currentTab === 'url') {
                 const url = document.getElementById('importUrl').value.trim();
                 if (!url) {
@@ -1582,7 +1511,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('type', 'text');
             }
 
-            // Show loading
             importForm.classList.add('hidden');
             importLoading.classList.remove('hidden');
 
@@ -1608,17 +1536,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 console.log('Import successful, data:', data);
 
-                // Show warning if AI fallback occurred
                 if (data.ai_fallback) {
                     window.showToast?.('{{ _('AI extraction failed - using basic parser') }}', 'warning');
                 }
 
-                // Ensure the URL is included (for URL imports)
                 if (currentTab === 'url' && !data.link) {
                     data.link = document.getElementById('importUrl').value.trim();
                 }
 
-                // Populate form fields
                 const titleValue = data.title || data.name;
                 if (titleValue) {
                     document.getElementById('name').value = titleValue;
@@ -1639,7 +1564,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('gauge_rows').value = data.gauge_rows;
                 }
 
-                // Handle comment
                 const comment = data.comment || '';
                 if (comment) {
                     const commentField = document.getElementById('comment');
@@ -1660,13 +1584,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('link').value = data.link;
                 }
 
-                // Import steps
                 if (data.steps && data.steps.length > 0) {
-                    // Clear existing steps
                     const stepsContainer = document.getElementById('stepsContainer');
                     if (stepsContainer) {
                         stepsContainer.innerHTML = '';
-                        // Add imported steps
                         data.steps.forEach((step, index) => {
                             if (typeof addStep === 'function') {
                                 addStep(step.title || `Step ${index + 1}`, step.description || '');
@@ -1675,28 +1596,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
-                // Close dialog
                 importDialog.close();
 
-                // Reset form
                 importForm.reset();
                 importForm.classList.remove('hidden');
                 importLoading.classList.add('hidden');
 
-                // Reset file preview if it exists
                 if (fileInput) fileInput.value = '';
                 if (typeof hideFilePreview === 'function') hideFilePreview();
 
                 window.showToast?.('{{ _("Pattern imported successfully") }}', 'success');
 
-                // Scroll to top of form
                 document.getElementById('name').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             } catch (error) {
                 console.error('Import failed:', error);
                 window.showToast?.(error.message || '{{ _("Failed to import pattern") }}', 'error');
 
-                // Reset UI
                 importForm.classList.remove('hidden');
                 importLoading.classList.add('hidden');
             }
@@ -1705,7 +1621,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- Delete confirmation dialog -->
 {% if project %}
 <dialog id="deleteProjectDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
     <h3 class="text-lg font-bold text-base-content mb-4">{{ _('Delete Project') }}</h3>
@@ -1735,5 +1650,4 @@ function deleteProject() {
 }
 </script>
 {% endif %}
-
 {% endblock %}

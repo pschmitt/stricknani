@@ -1,18 +1,20 @@
-{% extends "base.html" %}
+{% extends "shared/list_base.html" %}
 {% import "macros/buttons.html" as buttons %}
+{% import "macros/cards.html" as cards %}
 
 {% block title %}{{ _('Yarn') }} - {{ _('Stricknani') }}{% endblock %}
 
-{% block content %}
-<div class="flex justify-between items-center mb-6">
-    <h2 class="text-3xl font-bold flex items-center gap-2">
-        <span class="mdi mdi-sheep text-primary"></span>
-        {{ _('Yarn Stash') }}
-    </h2>
-    {{ buttons.primary(_('New Yarn'), icon='mdi-plus-circle-outline', href='/yarn/new') }}
-</div>
+{% block list_icon %}
+<span class="mdi mdi-sheep text-primary"></span>
+{% endblock %}
 
-<!-- Search -->
+{% block list_title %}{{ _('Yarn Stash') }}{% endblock %}
+
+{% block list_actions %}
+{{ buttons.primary(_('New Yarn'), icon='mdi-plus-circle-outline', href='/yarn/new', class='flex-1 sm:flex-none') }}
+{% endblock %}
+
+{% block list_filters %}
 <div class="mb-6">
     <form method="get" class="relative">
         <label for="search" class="label">
@@ -33,115 +35,119 @@
         </div>
     </form>
 </div>
+{% endblock %}
 
-<div id="yarn-content">
-    {% if yarns %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for card in yarns %}
-        {% set yarn = card.yarn %}
-        <div class="card bg-base-200 shadow-xl" data-yarn-card data-yarn-id="{{ yarn.id }}">
-            <div class="relative">
-                <a href="/yarn/{{ yarn.id }}" class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]">
-                    {% if card.preview_url %}
-                    <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}" class="h-full w-full object-cover" onerror="const parent = this.closest('a'); const fallback = parent.querySelector('[data-fallback-icon]'); if (fallback) { this.replaceWith(fallback.cloneNode(true)); fallback.classList.remove('hidden'); }">
-                    {% else %}
-                    <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500">
-                        <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
-                        <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
-                        <span class="sr-only">{{ _('Open yarn details') }}</span>
-                    </div>
-                    {% endif %}
-                    <div class="hidden flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500" data-fallback-icon>
-                        <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
-                        <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
-                        <span class="sr-only">{{ _('Open yarn details') }}</span>
-                    </div>
-                    <span class="sr-only">{{ _('Open yarn details for %(name)s') % {'name': yarn.name} }}</span>
-                </a>
-                <div class="absolute top-2 left-2 z-10">
-                    {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='card' %}
-                        {% include "yarn/_favorite_toggle.html" %}
-                    {% endwith %}
+{% block list_container_attrs %}id="yarn-content"{% endblock %}
+
+{% block list_content %}
+{% if yarns %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for card in yarns %}
+    {% set yarn = card.yarn %}
+    {% set card_attrs = 'data-yarn-card data-yarn-id="%s"' % yarn.id %}
+    {% call(section) cards.list_card(data_attrs=card_attrs) %}
+        {% if section == 'media' %}
+            <a href="/yarn/{{ yarn.id }}" class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]">
+                {% if card.preview_url %}
+                <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}" class="h-full w-full object-cover" onerror="const parent = this.closest('a'); const fallback = parent.querySelector('[data-fallback-icon]'); if (fallback) { this.replaceWith(fallback.cloneNode(true)); fallback.classList.remove('hidden'); }">
+                {% else %}
+                <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500">
+                    <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
+                    <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
+                    <span class="sr-only">{{ _('Open yarn details') }}</span>
                 </div>
+                {% endif %}
+                <div class="hidden flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500" data-fallback-icon>
+                    <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
+                    <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
+                    <span class="sr-only">{{ _('Open yarn details') }}</span>
+                </div>
+                <span class="sr-only">{{ _('Open yarn details for %(name)s') % {'name': yarn.name} }}</span>
+            </a>
+            <div class="absolute top-2 left-2 z-10">
+                {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='card' %}
+                    {% include "yarn/_favorite_toggle.html" %}
+                {% endwith %}
             </div>
-            <div class="card-body">
-                <div class="flex justify-between items-start mb-3">
-                    <h3 class="card-title">
-                        <a href="/yarn/{{ yarn.id }}" class="hover:text-primary">
-                            {{ yarn.name }}
-                        </a>
-                    </h3>
-                    {% if yarn.brand %}
-                    <a href="/yarn?search={{ yarn.brand }}" class="badge badge-neutral">
-                        {{ yarn.brand }}
+        {% elif section == 'body' %}
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="card-title">
+                    <a href="/yarn/{{ yarn.id }}" class="hover:text-primary">
+                        {{ yarn.name }}
                     </a>
-                    {% endif %}
-                </div>
-
-                <div class="grid grid-cols-2 gap-2 text-xs mb-4">
-                    {% if yarn.colorway %}
-                    <div class="flex items-center gap-1.5">
-                        <span class="mdi mdi-palette"></span>
-                        <span>{{ yarn.colorway }}</span>
-                    </div>
-                    {% endif %}
-                    {% if yarn.dye_lot %}
-                    <div class="flex items-center gap-1.5">
-                        <span class="mdi mdi-shaker-outline"></span>
-                        <span>{{ yarn.dye_lot }}</span>
-                    </div>
-                    {% endif %}
-                    {% if yarn.weight_category %}
-                    <div class="flex items-center gap-1.5">
-                        <span class="mdi mdi-weight"></span>
-                        <span>{{ yarn.weight_category }}</span>
-                    </div>
-                    {% endif %}
-                    {% if yarn.fiber_content %}
-                    <div class="flex items-center gap-1.5">
-                        <span class="mdi mdi-pine-tree"></span>
-                        <span>{{ yarn.fiber_content }}</span>
-                    </div>
-                    {% endif %}
-                    {% if yarn.length_meters %}
-                    <div class="flex items-center gap-1.5">
-                        <span class="mdi mdi-ruler"></span>
-                        <span>{{ yarn.length_meters }} m</span>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div class="mt-3 flex flex-wrap gap-2 text-xs mb-4">
-                    <span class="badge badge-ghost gap-1">
-                        <span class="mdi mdi-calendar-plus"></span>
-                        {{ yarn.created_at[:10] }}
-                    </span>
-                    <span class="badge badge-ghost gap-1">
-                        <span class="mdi mdi-update"></span>
-                        {{ yarn.updated_at[:10] }}
-                    </span>
-                    {% if yarn.project_count > 0 %}
-                    <span class="badge badge-success gap-1">
-                        <span class="mdi mdi-folder-multiple-outline"></span>
-                        {{ yarn.project_count }}
-                    </span>
-                    {% endif %}
-                </div>
-
-                <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
-
-                <div class="card-actions">
-                    {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/yarn/' + yarn.id|string + '/edit', class='w-full') }}
-                </div>
+                </h3>
+                {% if yarn.brand %}
+                <a href="/yarn?search={{ yarn.brand }}" class="badge badge-neutral">
+                    {{ yarn.brand }}
+                </a>
+                {% endif %}
             </div>
-        </div>
-        {% endfor %}
-        </div>
-    {% else %}
-        {% include "yarn/_empty_state.html" %}
-    {% endif %}
-</div>
 
+            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                {% if yarn.colorway %}
+                <div class="flex items-center gap-1.5">
+                    <span class="mdi mdi-palette"></span>
+                    <span>{{ yarn.colorway }}</span>
+                </div>
+                {% endif %}
+                {% if yarn.dye_lot %}
+                <div class="flex items-center gap-1.5">
+                    <span class="mdi mdi-shaker-outline"></span>
+                    <span>{{ yarn.dye_lot }}</span>
+                </div>
+                {% endif %}
+                {% if yarn.weight_category %}
+                <div class="flex items-center gap-1.5">
+                    <span class="mdi mdi-weight"></span>
+                    <span>{{ yarn.weight_category }}</span>
+                </div>
+                {% endif %}
+                {% if yarn.fiber_content %}
+                <div class="flex items-center gap-1.5">
+                    <span class="mdi mdi-pine-tree"></span>
+                    <span>{{ yarn.fiber_content }}</span>
+                </div>
+                {% endif %}
+                {% if yarn.length_meters %}
+                <div class="flex items-center gap-1.5">
+                    <span class="mdi mdi-ruler"></span>
+                    <span>{{ yarn.length_meters }} m</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-3 flex flex-wrap gap-2 text-xs mb-4">
+                <span class="badge badge-ghost gap-1">
+                    <span class="mdi mdi-calendar-plus"></span>
+                    {{ yarn.created_at[:10] }}
+                </span>
+                <span class="badge badge-ghost gap-1">
+                    <span class="mdi mdi-update"></span>
+                    {{ yarn.updated_at[:10] }}
+                </span>
+                {% if yarn.project_count > 0 %}
+                <span class="badge badge-success gap-1">
+                    <span class="mdi mdi-folder-multiple-outline"></span>
+                    {{ yarn.project_count }}
+                </span>
+                {% endif %}
+            </div>
+
+            <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
+
+            <div class="card-actions">
+                {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/yarn/' + yarn.id|string + '/edit', class='w-full') }}
+            </div>
+        {% endif %}
+    {% endcall %}
+    {% endfor %}
+    </div>
+{% else %}
+    {% include "yarn/_empty_state.html" %}
+{% endif %}
+{% endblock %}
+
+{% block page_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const toastKey = new URLSearchParams(window.location.search).get('toast');
@@ -153,5 +159,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
-
 {% endblock %}

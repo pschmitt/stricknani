@@ -1,26 +1,23 @@
-{% extends "base.html" %}
+{% extends "shared/detail_base.html" %}
 {% import "macros/buttons.html" as buttons %}
+{% import "macros/detail_layout.html" as detail %}
+{% import "macros/cards.html" as cards %}
 
 {% block title %}{{ project.name }} - Stricknani{% endblock %}
 
-{% block content %}
-    <div class="mb-6 px-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            {{ buttons.back(_('Back to Projects'), href='/projects') }}
+{% block detail_header %}
+    {% call detail.header(_('Back to Projects'), '/projects') %}
+        <div data-favorite-toggle>
+            {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail' %}
+                {% include "projects/_favorite_toggle.html" %}
+            {% endwith %}
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-            <div data-favorite-toggle>
-                {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail' %}
-                    {% include "projects/_favorite_toggle.html" %}
-                {% endwith %}
-            </div>
-            {{ buttons.primary(_('Edit'), icon='mdi-pencil', href='/projects/' + project.id|string + '/edit') }}
-            {{ buttons.danger(_('Delete'), icon='mdi-delete', attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"') }}
-        </div>
-    </div>
+        {{ buttons.primary(_('Edit'), icon='mdi-pencil', href='/projects/' + project.id|string + '/edit') }}
+        {{ buttons.danger(_('Delete'), icon='mdi-delete', attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"') }}
+    {% endcall %}
+{% endblock %}
 
-<div class="bg-base-100 rounded-lg shadow-md p-8 backdrop-blur">
-    <!-- Title and category -->
+{% block detail_body %}
     <div class="mb-4">
         <h2 class="text-3xl font-bold text-base-content mb-2">{{ project.name }}</h2>
         {% if project.category and project.category != 'None' %}
@@ -30,7 +27,6 @@
         {% endif %}
     </div>
 
-    <!-- Metadata badges below buttons -->
     <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 text-xs mb-6">
         <span class="inline-flex items-center gap-1 badge badge-neutral whitespace-nowrap text-xs">
             <span class="mdi mdi-calendar-plus"></span>
@@ -48,7 +44,6 @@
         {% endif %}
     </div>
 
-    <!-- Tags (if any) -->
     {% if project.tags %}
     <div class="flex flex-wrap gap-2 mb-6">
         {% for tag in project.tags %}
@@ -57,13 +52,8 @@
     </div>
     {% endif %}
 
-    <!-- Title Images Carousel -->
     {% if project.title_images %}
-    <div class="mb-8">
-        <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-            <span class="mdi mdi-image-multiple"></span>
-            {{ _('Gallery') }}
-        </h3>
+    {% call detail.media_section(_('Gallery'), icon='mdi-image-multiple') %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for image in project.title_images %}
             <div class="relative group flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -79,101 +69,98 @@
             </div>
             {% endfor %}
         </div>
-    </div>
+    {% endcall %}
     {% endif %}
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Project Details -->
         <div class="space-y-4">
-            <div>
-                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
-                    <span class="mdi mdi-sheep"></span>
-                    {{ _('Yarns') }}
-                </h3>
-                {% if project.linked_yarns %}
-                <div class="flex flex-wrap gap-2">
-                    {% for yarn in project.linked_yarns %}
-                    <a href="/yarn/{{ yarn.id }}" class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-base-content transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:hover:bg-slate-700">
-                        <span class="mdi mdi-needle text-sm"></span>
-                        <span>{{ yarn.name }}</span>
-                        {% if yarn.colorway %}<span class="text-base-content/70">· {{ yarn.colorway }}</span>{% endif %}
-                    </a>
-                    {% endfor %}
+            {% call detail.detail_box(_('Details')) %}
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
+                            <span class="mdi mdi-sheep"></span>
+                            {{ _('Yarns') }}
+                        </h3>
+                        {% if project.linked_yarns %}
+                        <div class="flex flex-wrap gap-2">
+                            {% for yarn in project.linked_yarns %}
+                            {{ cards.yarn_pill(yarn) }}
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-base-content/70 text-sm">{{ _('No linked stash yarns yet.') }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
+                            <span class="mdi mdi-sheep"></span>
+                            {{ _('Yarn') }}
+                        </h3>
+                        <p class="text-base-content">{{ project.yarn or _('Not specified') }}</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
+                            <span class="mdi mdi-needle"></span>
+                            {{ _('Needles') }}
+                        </h3>
+                        <p class="text-base-content">{{ project.needles or _('Not specified') }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
+                            <span class="mdi mdi-needle"></span>
+                            {{ _('Recommended needle size') }}
+                        </h3>
+                        <p class="text-base-content">{{ project.recommended_needles or _('Not specified') }}</p>
+                    </div>
+
+                    {% if project.gauge_stitches is not none or project.gauge_rows is not none %}
+                    <div>
+                        <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
+                            <span class="mdi mdi-ruler-square"></span>
+                            {{ _('Gauge') }}
+                        </h3>
+                        <p class="text-base-content">
+                            {{ project.gauge_stitches if project.gauge_stitches is not none else _('Not specified') }}
+                            {{ _('Stitches') }}
+                            ×
+                            {{ project.gauge_rows if project.gauge_rows is not none else _('Not specified') }}
+                            {{ _('Rows') }}
+                            {{ _('per 10cm') }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
+                            <span class="mdi mdi-link-variant"></span>
+                            {{ _('Source Link') }}
+                        </h3>
+                        {% if project.link %}
+                        <a href="{{ project.link }}" class="link link-primary break-all" target="_blank" rel="noreferrer">
+                            {{ project.link }}
+                        </a>
+                        {% else %}
+                        <p class="text-base-content">{{ _('Not specified') }}</p>
+                        {% endif %}
+                    </div>
+
+                    {% if project.tags %}
+                    <div>
+                        <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
+                            <span class="mdi mdi-tag-multiple"></span>
+                            {{ _('Tags') }}
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in project.tags %}
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-base-content/70 dark:bg-slate-800">#{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <p class="text-base-content/70 text-sm">{{ _('No linked stash yarns yet.') }}</p>
-                {% endif %}
-            </div>
-            <div>
-                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
-                    <span class="mdi mdi-sheep"></span>
-                    {{ _('Yarn') }}
-                </h3>
-                <p class="text-base-content">{{ project.yarn or _('Not specified') }}</p>
-            </div>
-
-            <div>
-                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
-                    <span class="mdi mdi-needle"></span>
-                    {{ _('Needles') }}
-                </h3>
-                <p class="text-base-content">{{ project.needles or _('Not specified') }}</p>
-            </div>
-            <div>
-                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
-                    <span class="mdi mdi-needle"></span>
-                    {{ _('Recommended needle size') }}
-                </h3>
-                <p class="text-base-content">{{ project.recommended_needles or _('Not specified') }}</p>
-            </div>
-
-            {% if project.gauge_stitches is not none or project.gauge_rows is not none %}
-            <div>
-                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
-                    <span class="mdi mdi-ruler-square"></span>
-                    {{ _('Gauge') }}
-                </h3>
-                <p class="text-base-content">
-                    {{ project.gauge_stitches if project.gauge_stitches is not none else _('Not specified') }}
-                    {{ _('Stitches') }}
-                    ×
-                    {{ project.gauge_rows if project.gauge_rows is not none else _('Not specified') }}
-                    {{ _('Rows') }}
-                    {{ _('per 10cm') }}
-                </p>
-            </div>
-            {% endif %}
-            <div>
-                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
-                    <span class="mdi mdi-link-variant"></span>
-                    {{ _('Source Link') }}
-                </h3>
-                {% if project.link %}
-                <a href="{{ project.link }}" class="link link-primary break-all" target="_blank" rel="noreferrer">
-                    {{ project.link }}
-                </a>
-                {% else %}
-                <p class="text-base-content">{{ _('Not specified') }}</p>
-                {% endif %}
-            </div>
-
-            {% if project.tags %}
-            <div>
-                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-1 flex items-center gap-2">
-                    <span class="mdi mdi-tag-multiple"></span>
-                    {{ _('Tags') }}
-                </h3>
-                <div class="flex flex-wrap gap-2">
-                    {% for tag in project.tags %}
-                    <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-base-content/70 dark:bg-slate-800">#{{ tag }}</span>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
+            {% endcall %}
         </div>
 
-        <!-- Notes -->
         <div class="space-y-4">
             {% if project.comment_html %}
             <div>
@@ -189,7 +176,6 @@
         </div>
     </div>
 
-    <!-- Steps Section -->
     {% if project.steps %}
     <div class="mt-8 border-t pt-8 border-base-300">
         <h3 class="text-2xl font-semibold text-base-content mb-6 flex items-center gap-2">
@@ -231,9 +217,9 @@
         </div>
     </div>
     {% endif %}
-</div>
+{% endblock %}
 
-<!-- Delete confirmation dialog -->
+{% block detail_extra %}
 <dialog id="deleteProjectDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
     <h3 class="text-lg font-bold text-base-content mb-4">{{ _('Delete Project') }}</h3>
     <p class="text-base-content/80 mb-6">
@@ -246,7 +232,9 @@
         {{ buttons.danger(_('Delete'), attrs='onclick="deleteProject()"') }}
     </div>
 </dialog>
+{% endblock %}
 
+{% block page_scripts %}
 <script>
 function deleteProject() {
     fetch('/projects/{{ project.id }}', {
@@ -261,5 +249,4 @@ function deleteProject() {
     });
 }
 </script>
-
 {% endblock %}
