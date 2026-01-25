@@ -264,7 +264,7 @@ class AIPatternImporter:
             height = img.get("height")
             if width and height:
                 try:
-                    if int(str(width)) < 100 or int(str(height)) < 100:
+                    if int(str(width)) < 128 or int(str(height)) < 128:
                         continue
                 except (ValueError, TypeError):
                     pass

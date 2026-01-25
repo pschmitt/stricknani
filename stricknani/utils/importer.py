@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
-from bs4.element import Tag
+from bs4.element import NavigableString, Tag
 
 logger = logging.getLogger("stricknani.imports")
 
@@ -26,11 +26,17 @@ class PatternImporter:
             timeout=self.timeout,
             follow_redirects=True,
             headers={
-                "User-Agent": "Stricknani Importer/0.1",
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
                 "Accept": (
                     "text/html,application/xhtml+xml,application/xml;"
-                    "q=0.9,*/*;q=0.8"
+                    "q=0.9,image/avif,image/webp,image/apng,*/*;"
+                    "q=0.8,application/signed-exchange;v=b3;q=0.7"
                 ),
+                "Accept-Language": "en-US,en;q=0.9",
             },
         ) as client:
             response = await client.get(self.url)
@@ -116,9 +122,9 @@ class PatternImporter:
             match = re.search(pattern, text, re.I)
             if match:
                 yarn_text = match.group(1).strip()
-                # Limit length
-                if len(yarn_text) > 200:
-                    yarn_text = yarn_text[:200] + "..."
+                # If the match looks like a whole paragraph rather than a yarn name, skip it
+                if len(yarn_text) > 150:
+                    continue
                 return yarn_text
 
         return None
@@ -127,6 +133,7 @@ class PatternImporter:
         """Extract gauge stitches per 10cm."""
         patterns = [
             r"(\d+)\s*st(?:itches?)?\s*(?:per|in|over|=)\s*10\s*cm",
+            r"(\d+)\s*st(?:itches?)?\s+in\s+width",
             r"gauge[:\s]+(\d+)\s*st",
         ]
 
@@ -145,6 +152,7 @@ class PatternImporter:
         """Extract gauge rows per 10cm."""
         patterns = [
             r"(\d+)\s*row[s]?\s*(?:per|in|over|=)\s*10\s*cm",
+            r"(\d+)\s*row[s]?\s+in\s+height",
             r"gauge[:\s]+\d+\s*st[^,]+,\s*(\d+)\s*row",
         ]
 
@@ -193,15 +201,24 @@ class PatternImporter:
 
         # Look for numbered lists or instruction sections
         candidates = [
+            # Specific ID/Class matches first (Garnstudio uses pattern-instructions)
+            soup.find(["div", "section"], class_="pattern-instructions"),
+            soup.find(["div", "section"], class_="instructions"),
+            soup.find(["div", "section"], id="instructions"),
+            soup.find(["div", "section"], id="pattern-instructions"),
+            
+            # Regex matches (stricter)
             soup.find(
-                ["div", "section"], class_=re.compile(r"instruction|pattern|step", re.I)
+                ["div", "section"], class_=re.compile(r"instruction(s)?$", re.I)
             ),
             soup.find(
-                ["div", "section"], id=re.compile(r"pattern[_-]?text|instruction", re.I)
+                ["div", "section"], id=re.compile(r"pattern[_-]?text", re.I)
             ),
             soup.find(
                 ["div", "section"], class_=re.compile(r"pattern[_-]?text", re.I)
             ),
+            
+            # Fallbacks
             soup.find("article"),
             soup.find("main"),
         ]
@@ -230,108 +247,9 @@ class PatternImporter:
                             }
                         )
 
-            # Try to find headings with content
+            # Try to find headings or mixed content
             if not steps:
-                headings = instructions_section.find_all(["h2", "h3", "h4"], limit=10)
-                for i, heading in enumerate(headings, 1):
-                    title = heading.get_text(strip=True)
-                    # Get next sibling content
-                    content = []
-                    step_images = []
-                    
-                    for sibling in heading.next_siblings:
-                        if hasattr(sibling, "name") and sibling.name in [
-                            "h2",
-                            "h3",
-                            "h4",
-                        ]:
-                            break
-                        
-                        # Extract images
-                        if hasattr(sibling, "name") and sibling.name == "img":
-                            src = sibling.get("src") or sibling.get("data-src")
-                            if src:
-                                resolved = self._resolve_image_url(src)
-                                if resolved:
-                                    step_images.append(resolved)
-                        elif hasattr(sibling, "find_all"):
-                            for img in sibling.find_all("img"):
-                                src = img.get("src") or img.get("data-src")
-                                if src:
-                                    resolved = self._resolve_image_url(src)
-                                    if resolved:
-                                        step_images.append(resolved)
-
-                        if hasattr(sibling, "get_text"):
-                            text = sibling.get_text(strip=True)
-                            if text:
-                                content.append(text)
-
-                        # Try to find content in parent siblings if direct content was empty
-                        if not content or not step_images:
-                            curr = heading
-                            # Climb up to 5 levels to find a wrapper that has content siblings
-                            for _ in range(5):
-                                if not curr.parent or curr.parent == instructions_section:
-                                    break
-                                curr = curr.parent
-
-                                parent_content = []
-                                parent_images = []
-                                # Check next siblings of this parent
-                                for sibling in curr.next_siblings:
-                                    if hasattr(sibling, "name") and sibling.name in ["h2", "h3", "h4"]:
-                                        break
-
-                                    # Only check content of Tags, not strings
-                                    if getattr(sibling, "name", None):
-                                        if sibling.find("h2") or sibling.find("h3") or sibling.find("h4"):
-                                            # Sibling contains a heading, so it's likely the next section
-                                            break
-                                    
-                                    # Extract images from parent siblings
-                                    if hasattr(sibling, "name") and sibling.name == "img":
-                                        src = sibling.get("src") or sibling.get("data-src")
-                                        if src:
-                                            resolved = self._resolve_image_url(src)
-                                            if resolved:
-                                                parent_images.append(resolved)
-                                    elif hasattr(sibling, "find_all"):
-                                        for img in sibling.find_all("img"):
-                                            src = img.get("src") or img.get("data-src")
-                                            if src:
-                                                resolved = self._resolve_image_url(src)
-                                                if resolved:
-                                                    parent_images.append(resolved)
-
-                                    if hasattr(sibling, "get_text"):
-                                        text = sibling.get_text(strip=True)
-                                        if text:
-                                            parent_content.append(text)
-
-                                if parent_content:
-                                    if not content:
-                                        content = parent_content
-                                if parent_images:
-                                    if not step_images:
-                                        step_images = parent_images
-                                
-                                if content and step_images:
-                                    break
-
-                        steps.append(
-                            {
-                                "step_number": i,
-                                "title": title,
-                                "description": "\n\n".join(content)
-                                if content
-                                else None,
-                                "images": step_images,
-                            }
-                        )
-
-            if not steps:
-                steps = self._build_steps_from_text(instructions_section)
+                steps = self._extract_mixed_content_steps(instructions_section)
 
             if steps:
                 break
@@ -361,54 +279,91 @@ class PatternImporter:
 
         return final_steps
 
-    def _build_steps_from_text(self, container: Tag) -> list[dict[str, Any]]:
-        text = container.get_text("\n", strip=True)
-        if not text:
-            return []
-
-        lines = []
-        for line in text.splitlines():
-            cleaned = line.strip()
-            if not cleaned:
-                lines.append("")
-                continue
-            if set(cleaned) <= {"-"}:
-                continue
-            lines.append(cleaned)
-
+    def _extract_mixed_content_steps(self, container: Tag) -> list[dict[str, Any]]:
+        """
+        Extract steps by traversing the DOM mixed content (text, images, headings).
+        This fallback handles cases where steps aren't clearly structured with top-level headings.
+        """
         steps: list[dict[str, Any]] = []
         current_title: str | None = None
         current_lines: list[str] = []
+        current_images: list[str] = []
 
         def flush() -> None:
-            if not current_lines:
-                return
+            nonlocal current_title, current_lines, current_images
             description = " ".join(current_lines).strip()
-            if not description:
+            
+            # Don't save empty steps unless they have images
+            if not description and not current_images:
                 return
+
             step_number = len(steps) + 1
             steps.append(
                 {
                     "step_number": step_number,
                     "title": current_title or f"Step {step_number}",
                     "description": description,
+                    "images": list(current_images),
                 }
             )
+            # Reset for next step
+            current_title = None
+            current_lines = []
+            current_images = []
 
-        for line in lines:
-            if not line:
-                flush()
-                current_title = None
-                current_lines = []
-                continue
-            if line.endswith(":") and len(line) <= 80:
-                flush()
-                current_title = line.rstrip(":").strip()
-                current_lines = []
-                continue
-            current_lines.append(line)
+        def process_node(node: Any) -> None:
+            nonlocal current_title
+            
+            if isinstance(node, NavigableString):
+                text = str(node).strip()
+                if not text:
+                    return
+                
+                # Check if this text line looks like a title (e.g. "NECK:")
+                # Heuristic: ends with colon, short-ish, or all caps
+                is_title = False
+                if text.endswith(":") and len(text) < 50:
+                    is_title = True
+                elif text.isupper() and len(text) < 50 and len(text) > 3:
+                    is_title = True
+                
+                if is_title:
+                    flush()
+                    current_title = text.rstrip(":").strip()
+                else:
+                    if set(text) <= {"-", "_"}: # Separator lines
+                        return
+                    current_lines.append(text)
+                return
 
+            if isinstance(node, Tag):
+                if node.name in ["script", "style", "noscript"]:
+                    return
+                
+                if node.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+                    flush()
+                    current_title = node.get_text(strip=True)
+                    return # Don't process children (text is already title)
+
+                if node.name == "br":
+                    pass
+                
+                if node.name == "img":
+                    src = node.get("src") or node.get("data-src")
+                    if src:
+                        resolved = self._resolve_image_url(src)
+                        if resolved:
+                            current_images.append(resolved)
+                    return
+
+                # Recurse for other tags (div, span, p, etc)
+                for child in node.children:
+                    process_node(child)
+
+        # Start traversal
+        process_node(container)
         flush()
+        
         return steps
 
     def _resolve_image_url(self, src: str) -> str | None:
@@ -511,7 +466,7 @@ class PatternImporter:
             height = img.get("height")
             if width and height:
                 try:
-                    if int(str(width)) < 100 or int(str(height)) < 100:
+                    if int(str(width)) < 128 or int(str(height)) < 128:
                         continue
                 except (ValueError, TypeError):
                     pass

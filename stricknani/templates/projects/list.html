@@ -10,6 +10,7 @@
         display: block;
         min-height: 200px;
     }
+
     .tab-content.hidden {
         display: none;
     }
@@ -23,7 +24,8 @@
 {% block list_title %}{{ _('My Projects') }}{% endblock %}
 
 {% block list_actions %}
-{{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='flex-1 sm:flex-none') }}
+{{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='flex-1 sm:flex-none')
+}}
 {{ buttons.secondary(_('Import'), icon='mdi-download', attrs='data-action="import"', class='flex-1 sm:flex-none') }}
 {% endblock %}
 
@@ -32,17 +34,9 @@
     <label for="search" class="label">
         <span class="label-text">{{ _('Search') }}</span>
     </label>
-    <input
-        type="text"
-        id="search"
-        name="search"
-        value="{{ search or '' }}"
-        placeholder="Search projects..."
-        class="input input-bordered w-full"
-        hx-get="/projects"
-        hx-target="#projects-list"
-        hx-trigger="keyup changed delay:500ms"
-    >
+    <input type="text" id="search" name="search" value="{{ search or '' }}" placeholder="Search projects..."
+        class="input input-bordered w-full" hx-get="/projects" hx-target="#projects-list"
+        hx-trigger="keyup changed delay:500ms">
 </div>
 {% endblock %}
 
@@ -50,110 +44,111 @@
 
 {% block list_content %}
 {% if projects %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for project in projects %}
-            {% if project.yarn_count and project.yarn_names %}
-                {% if project.yarn_count == 1 %}
-                    {% set tooltip_text = _('%(count)s linked yarn: %(names)s') % {'count': project.yarn_count, 'names': project.yarn_names|join(', ')} %}
-                {% else %}
-                    {% set tooltip_text = _('%(count)s linked yarns: %(names)s') % {'count': project.yarn_count, 'names': project.yarn_names|join(', ')} %}
-                {% endif %}
-            {% else %}
-                {% set tooltip_text = _('No linked yarns') %}
-            {% endif %}
-            {% set card_attrs = 'data-project-card data-project-id="%s" title="%s"' % (project.id, tooltip_text) %}
-            {% call(section) cards.list_card(data_attrs=card_attrs) %}
-                {% if section == 'media' %}
-                    <a
-                        href="/projects/{{ project.id }}"
-                        class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
-                        title="{{ tooltip_text }}"
-                    >
-                        {% if project.preview_images %}
-                            {% if project.preview_images|length == 1 %}
-                            <div class="relative h-full w-full">
-                                <img
-                                    src="{{ project.preview_images[0].url }}"
-                                    alt="{{ project.preview_images[0].alt }}"
-                                    class="h-full w-full object-cover"
-                                    loading="lazy"
-                                >
-                            </div>
-                            {% elif project.preview_images|length == 2 %}
-                            <div class="grid grid-cols-2 h-full w-full gap-0.5">
-                                <div class="relative h-full w-full">
-                                    <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}" class="h-full w-full object-cover">
-                                </div>
-                                <div class="relative h-full w-full">
-                                    <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}" class="h-full w-full object-cover">
-                                </div>
-                            </div>
-                            {% else %}
-                            <div class="grid grid-cols-3 grid-rows-2 h-full w-full gap-0.5">
-                                <div class="relative col-span-2 row-span-2 h-full w-full">
-                                    <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}" class="h-full w-full object-cover">
-                                </div>
-                                <div class="relative col-span-1 row-span-1 h-full w-full">
-                                    <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}" class="h-full w-full object-cover">
-                                </div>
-                                <div class="relative col-span-1 row-span-1 h-full w-full">
-                                    <img src="{{ project.preview_images[2].url }}" alt="{{ project.preview_images[2].alt }}" class="h-full w-full object-cover">
-                                </div>
-                            </div>
-                            {% endif %}
-                        {% else %}
-                        <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center opacity-50">
-                            <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
-                            <span class="text-sm font-semibold line-clamp-2">{{ project.name }}</span>
-                            <span class="sr-only">{{ _('Open project details') }}</span>
-                        </div>
-                        {% endif %}
-                        <span class="sr-only">{{ _('Open project details for %(name)s') % {'name': project.name} }}</span>
-                    </a>
-                    <div class="absolute top-2 left-2 z-10">
-                        {% with project_id=project.id, is_favorite=project.is_favorite, variant='card' %}
-                            {% include "projects/_favorite_toggle.html" %}
-                        {% endwith %}
-                    </div>
-                {% elif section == 'body' %}
-                    <div class="flex flex-col h-full">
-                    <div class="flex justify-between items-start mb-3">
-                        <h3 class="card-title">
-                            <a href="/projects/{{ project.id }}" class="hover:text-primary">
-                                {{ project.name }}
-                            </a>
-                        </h3>
-                        {% if project.category and project.category != 'None' %}
-                        <a href="/projects?category={{ project.category }}" class="badge badge-primary">
-                            {{ _(project.category) }}
-                        </a>
-                        {% endif %}
-                    </div>
-                    {% if project.yarn_count > 0 %}
-                    <div class="mt-3 flex flex-wrap gap-2 text-xs mb-4">
-                        <span class="badge badge-success gap-1">
-                            <span class="mdi mdi-sheep"></span>
-                            {{ project.yarn_count }}
-                        </span>
-                    </div>
-                    {% endif %}
-                    {% if project.tags %}
-                    <div class="mb-4 flex flex-wrap gap-2">
-                        {% for tag in project.tags %}
-                        <span class="badge badge-outline">#{{ tag }}</span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    <div class="card-actions mt-auto justify-end">
-                        {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/projects/' + project.id|string + '/edit', class='w-auto', attrs='title=\"' + (_('Edit %(name)s') % {'name': project.name}) + '\"') }}
-                    </div>
-                    </div>
-                {% endif %}
-            {% endcall %}
-        {% endfor %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for project in projects %}
+    {% if project.yarn_count and project.yarn_names %}
+    {% if project.yarn_count == 1 %}
+    {% set tooltip_text = _('%(count)s linked yarn: %(names)s') % {'count': project.yarn_count, 'names':
+    project.yarn_names|join(', ')} %}
+    {% else %}
+    {% set tooltip_text = _('%(count)s linked yarns: %(names)s') % {'count': project.yarn_count, 'names':
+    project.yarn_names|join(', ')} %}
+    {% endif %}
+    {% else %}
+    {% set tooltip_text = _('No linked yarns') %}
+    {% endif %}
+    {% set card_attrs = 'data-project-card data-project-id="%s" title="%s"' % (project.id, tooltip_text) %}
+    {% call(section) cards.list_card(data_attrs=card_attrs) %}
+    {% if section == 'media' %}
+    <a href="/projects/{{ project.id }}" class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
+        title="{{ tooltip_text }}">
+        {% if project.preview_images %}
+        {% if project.preview_images|length == 1 %}
+        <div class="relative h-full w-full">
+            <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}"
+                class="h-full w-full object-cover" loading="lazy">
+        </div>
+        {% elif project.preview_images|length == 2 %}
+        <div class="grid grid-cols-2 h-full w-full gap-0.5">
+            <div class="relative h-full w-full">
+                <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}"
+                    class="h-full w-full object-cover">
+            </div>
+            <div class="relative h-full w-full">
+                <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}"
+                    class="h-full w-full object-cover">
+            </div>
+        </div>
+        {% else %}
+        <div class="grid grid-cols-3 grid-rows-2 h-full w-full gap-0.5">
+            <div class="relative col-span-2 row-span-2 h-full w-full">
+                <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}"
+                    class="h-full w-full object-cover">
+            </div>
+            <div class="relative col-span-1 row-span-1 h-full w-full">
+                <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}"
+                    class="h-full w-full object-cover">
+            </div>
+            <div class="relative col-span-1 row-span-1 h-full w-full">
+                <img src="{{ project.preview_images[2].url }}" alt="{{ project.preview_images[2].alt }}"
+                    class="h-full w-full object-cover">
+            </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center opacity-50">
+            <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
+            <span class="text-sm font-semibold line-clamp-2">{{ project.name }}</span>
+            <span class="sr-only">{{ _('Open project details') }}</span>
+        </div>
+        {% endif %}
+        <span class="sr-only">{{ _('Open project details for %(name)s') % {'name': project.name} }}</span>
+    </a>
+    <div class="absolute top-2 left-2 z-10">
+        {% with project_id=project.id, is_favorite=project.is_favorite, variant='card' %}
+        {% include "projects/_favorite_toggle.html" %}
+        {% endwith %}
     </div>
+    {% elif section == 'body' %}
+    <div class="flex flex-col h-full">
+        <div class="flex justify-between items-start mb-3">
+            <h3 class="card-title">
+                <a href="/projects/{{ project.id }}" class="hover:text-primary">
+                    {{ project.name }}
+                </a>
+            </h3>
+            {% if project.category and project.category != 'None' %}
+            <a href="/projects?category={{ project.category }}" class="badge badge-primary">
+                {{ _(project.category) }}
+            </a>
+            {% endif %}
+        </div>
+        {% if project.yarn_count > 0 %}
+        <div class="mt-3 flex flex-wrap gap-2 text-xs mb-4">
+            <span class="badge badge-success gap-1">
+                <span class="mdi mdi-sheep"></span>
+                {{ project.yarn_count }}
+            </span>
+        </div>
+        {% endif %}
+        {% if project.tags %}
+        <div class="mb-4 flex flex-wrap gap-2">
+            {% for tag in project.tags %}
+            <span class="badge badge-outline">#{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="card-actions mt-auto justify-end">
+            {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/projects/' + project.id|string + '/edit',
+            class='w-auto', attrs='title=\"' + (_('Edit %(name)s') % {'name': project.name}) + '\"') }}
+        </div>
+    </div>
+    {% endif %}
+    {% endcall %}
+    {% endfor %}
+</div>
 {% else %}
-    {% include "projects/_empty_state.html" %}
+{% include "projects/_empty_state.html" %}
 {% endif %}
 {% endblock %}
 
@@ -173,13 +168,8 @@
                     <label class="label">
                         <span class="label-text">{{ _('Pattern URL') }}</span>
                     </label>
-                    <input
-                        type="url"
-                        id="importUrl"
-                        name="url"
-                        placeholder="https://..."
-                        class="input input-bordered"
-                    />
+                    <input type="url" id="importUrl" name="url" placeholder="https://..."
+                        class="input input-bordered" />
                     <label class="label">
                         <span class="label-text-alt">{{ _('Enter the URL of the knitting pattern') }}</span>
                     </label>
@@ -192,14 +182,10 @@
                         <span class="label-text">{{ _('Pattern File') }}</span>
                     </label>
 
-                    <div id="dropZone" class="border-2 border-dashed border-base-300 rounded-lg p-8 text-center hover:border-primary hover:bg-base-200 transition-colors cursor-pointer">
-                        <input
-                            type="file"
-                            id="importFile"
-                            name="file"
-                            accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.gif"
-                            class="hidden"
-                        />
+                    <div id="dropZone"
+                        class="border-2 border-dashed border-base-300 rounded-lg p-8 text-center hover:border-primary hover:bg-base-200 transition-colors cursor-pointer">
+                        <input type="file" id="importFile" name="file" accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.gif"
+                            class="hidden" />
                         <div id="dropZoneContent">
                             <span class="mdi mdi-cloud-upload text-5xl text-base-content opacity-50"></span>
                             <p class="mt-4 text-base font-medium">{{ _('Click to upload or drag and drop') }}</p>
@@ -226,13 +212,9 @@
                     <label class="label">
                         <span class="label-text">{{ _('Pattern Text') }}</span>
                     </label>
-                    <textarea
-                        id="importText"
-                        name="text"
-                        rows="10"
+                    <textarea id="importText" name="text" rows="10"
                         placeholder="{{ _('Paste pattern instructions here...') }}"
-                        class="textarea textarea-bordered"
-                    ></textarea>
+                        class="textarea textarea-bordered"></textarea>
                     <label class="label">
                         <span class="label-text-alt">{{ _('Paste the pattern text directly') }}</span>
                     </label>
@@ -245,7 +227,8 @@
             </div>
         </form>
         <div id="importLoading" class="hidden text-center py-8">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent">
+            </div>
             <p class="mt-4 text-base font-medium text-slate-700 dark:text-slate-300">{{ _('Importing pattern...') }}</p>
             <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ _('This may take 10-30 seconds') }}</p>
         </div>
@@ -258,208 +241,208 @@
 
 {% block page_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const toastKey = new URLSearchParams(window.location.search).get('toast');
-    if (toastKey === 'project_deleted') {
-        window.showToast?.('{{ _("Project deleted.") }}', 'success');
-        const url = new URL(window.location.href);
-        url.searchParams.delete('toast');
-        window.history.replaceState({}, '', url.toString());
-    }
-});
+    document.addEventListener('DOMContentLoaded', () => {
+        const toastKey = new URLSearchParams(window.location.search).get('toast');
+        if (toastKey === 'project_deleted') {
+            window.showToast?.('{{ _("Project deleted.") }}', 'success');
+            const url = new URL(window.location.href);
+            url.searchParams.delete('toast');
+            window.history.replaceState({}, '', url.toString());
+        }
+    });
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const importBtn = document.querySelector('[data-action="import"]');
-    const importDialog = document.getElementById('importDialog');
-    const importForm = document.getElementById('importForm');
-    const importLoading = document.getElementById('importLoading');
+    document.addEventListener('DOMContentLoaded', function () {
+        const importBtn = document.querySelector('[data-action="import"]');
+        const importDialog = document.getElementById('importDialog');
+        const importForm = document.getElementById('importForm');
+        const importLoading = document.getElementById('importLoading');
 
-    let currentTab = 'url';
-    const tabs = document.querySelectorAll('.tabs .tab');
-    const tabContents = document.querySelectorAll('.tab-content');
+        let currentTab = 'url';
+        const tabs = document.querySelectorAll('.tabs .tab');
+        const tabContents = document.querySelectorAll('.tab-content');
 
-    tabs.forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            e.preventDefault();
-            const tabName = tab.dataset.tab;
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tabName = tab.dataset.tab;
 
-            tabs.forEach(t => t.classList.remove('tab-active'));
-            tab.classList.add('tab-active');
+                tabs.forEach(t => t.classList.remove('tab-active'));
+                tab.classList.add('tab-active');
 
-            tabContents.forEach(content => {
-                if (content.id === `tab-${tabName}`) {
-                    content.classList.remove('hidden');
-                } else {
-                    content.classList.add('hidden');
+                tabContents.forEach(content => {
+                    if (content.id === `tab-${tabName}`) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+
+                currentTab = tabName;
+            });
+        });
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('importFile');
+        const dropZoneContent = document.getElementById('dropZoneContent');
+        const filePreview = document.getElementById('filePreview');
+        const fileName = document.getElementById('fileName');
+        const removeFileBtn = document.getElementById('removeFile');
+
+        if (dropZone && fileInput) {
+            dropZone.addEventListener('click', (e) => {
+                if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
+                    fileInput.click();
                 }
             });
 
-            currentTab = tabName;
-        });
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    showFilePreview(file);
+                }
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-primary', 'bg-base-200');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-primary', 'bg-base-200');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-primary', 'bg-base-200');
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(files[0]);
+                    fileInput.files = dataTransfer.files;
+                    showFilePreview(files[0]);
+                }
+            });
+
+            if (removeFileBtn) {
+                removeFileBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    fileInput.value = '';
+                    hideFilePreview();
+                });
+            }
+
+            function showFilePreview(file) {
+                fileName.textContent = file.name;
+                dropZoneContent.classList.add('hidden');
+                filePreview.classList.remove('hidden');
+            }
+
+            function hideFilePreview() {
+                dropZoneContent.classList.remove('hidden');
+                filePreview.classList.add('hidden');
+                fileName.textContent = '';
+            }
+        }
+
+        if (importBtn) {
+            importBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                importDialog.showModal();
+            });
+        }
+
+        async function performImport() {
+            const formData = new FormData();
+
+            if (currentTab === 'url') {
+                const url = document.getElementById('importUrl').value.trim();
+                if (!url) {
+                    showToast("{{ _('Please enter a URL') }}", 'error');
+                    return;
+                }
+                formData.append('url', url);
+                formData.append('type', 'url');
+
+            } else if (currentTab === 'file') {
+                const fileInput = document.getElementById('importFile');
+                const file = fileInput.files[0];
+                if (!file) {
+                    showToast("{{ _('Please select a file') }}", 'error');
+                    return;
+                }
+                formData.append('file', file);
+                formData.append('type', 'file');
+
+            } else if (currentTab === 'text') {
+                const text = document.getElementById('importText').value.trim();
+                if (!text) {
+                    showToast("{{ _('Please enter some text') }}", 'error');
+                    return;
+                }
+                formData.append('text', text);
+                formData.append('type', 'text');
+            }
+
+            importForm.classList.add('hidden');
+            importLoading.classList.remove('hidden');
+
+            try {
+                console.log('Importing with type:', currentTab);
+
+                const response = await fetch('/projects/import', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Import response status:', response.status);
+
+                if (!response.ok) {
+                    let errorMsg = 'Failed to import';
+                    try {
+                        const error = await response.json();
+                        errorMsg = error.detail || errorMsg;
+                    } catch (e) {
+                        errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const data = await response.json();
+                console.log('Import successful, data:', data);
+
+                if (data.ai_fallback) {
+                    showToast("{{ _('AI extraction failed - using basic parser') }}", 'warning');
+                }
+
+                if (currentTab === 'url' && !data.link) {
+                    data.link = document.getElementById('importUrl').value.trim();
+                }
+
+                importDialog.close();
+                showToast("{{ _('Pattern data extracted - loading form...') }}", 'success');
+
+                sessionStorage.setItem('importedData', JSON.stringify(data));
+                window.location.href = '/projects/new';
+
+            } catch (error) {
+                console.error('Import error:', error);
+                showToast(error.message || "{{ _('Failed to import pattern') }}", 'error');
+
+                importForm.classList.remove('hidden');
+                importLoading.classList.add('hidden');
+            }
+        }
+
+        if (importForm) {
+            importForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await performImport();
+            });
+        }
     });
-
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('importFile');
-    const dropZoneContent = document.getElementById('dropZoneContent');
-    const filePreview = document.getElementById('filePreview');
-    const fileName = document.getElementById('fileName');
-    const removeFileBtn = document.getElementById('removeFile');
-
-    if (dropZone && fileInput) {
-        dropZone.addEventListener('click', (e) => {
-            if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
-                fileInput.click();
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                showFilePreview(file);
-            }
-        });
-
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('border-primary', 'bg-base-200');
-        });
-
-        dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('border-primary', 'bg-base-200');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('border-primary', 'bg-base-200');
-
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(files[0]);
-                fileInput.files = dataTransfer.files;
-                showFilePreview(files[0]);
-            }
-        });
-
-        if (removeFileBtn) {
-            removeFileBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                fileInput.value = '';
-                hideFilePreview();
-            });
-        }
-
-        function showFilePreview(file) {
-            fileName.textContent = file.name;
-            dropZoneContent.classList.add('hidden');
-            filePreview.classList.remove('hidden');
-        }
-
-        function hideFilePreview() {
-            dropZoneContent.classList.remove('hidden');
-            filePreview.classList.add('hidden');
-            fileName.textContent = '';
-        }
-    }
-
-    if (importBtn) {
-        importBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            importDialog.showModal();
-        });
-    }
-
-    async function performImport() {
-        const formData = new FormData();
-
-        if (currentTab === 'url') {
-            const url = document.getElementById('importUrl').value.trim();
-            if (!url) {
-                showToast('{{ _('Please enter a URL') }}', 'error');
-                return;
-            }
-            formData.append('url', url);
-            formData.append('type', 'url');
-
-        } else if (currentTab === 'file') {
-            const fileInput = document.getElementById('importFile');
-            const file = fileInput.files[0];
-            if (!file) {
-                showToast('{{ _('Please select a file') }}', 'error');
-                return;
-            }
-            formData.append('file', file);
-            formData.append('type', 'file');
-
-        } else if (currentTab === 'text') {
-            const text = document.getElementById('importText').value.trim();
-            if (!text) {
-                showToast('{{ _('Please enter some text') }}', 'error');
-                return;
-            }
-            formData.append('text', text);
-            formData.append('type', 'text');
-        }
-
-        importForm.classList.add('hidden');
-        importLoading.classList.remove('hidden');
-
-        try {
-            console.log('Importing with type:', currentTab);
-
-            const response = await fetch('/projects/import', {
-                method: 'POST',
-                body: formData
-            });
-
-            console.log('Import response status:', response.status);
-
-            if (!response.ok) {
-                let errorMsg = 'Failed to import';
-                try {
-                    const error = await response.json();
-                    errorMsg = error.detail || errorMsg;
-                } catch (e) {
-                    errorMsg = `HTTP ${response.status}: ${response.statusText}`;
-                }
-                throw new Error(errorMsg);
-            }
-
-            const data = await response.json();
-            console.log('Import successful, data:', data);
-
-            if (data.ai_fallback) {
-                showToast('{{ _('AI extraction failed - using basic parser') }}', 'warning');
-            }
-
-            if (currentTab === 'url' && !data.link) {
-                data.link = document.getElementById('importUrl').value.trim();
-            }
-
-            importDialog.close();
-            showToast('{{ _('Pattern data extracted - loading form...') }}', 'success');
-
-            sessionStorage.setItem('importedData', JSON.stringify(data));
-            window.location.href = '/projects/new';
-
-        } catch (error) {
-            console.error('Import error:', error);
-            showToast(error.message || '{{ _('Failed to import pattern') }}', 'error');
-
-            importForm.classList.remove('hidden');
-            importLoading.classList.add('hidden');
-        }
-    }
-
-    if (importForm) {
-        importForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await performImport();
-        });
-    }
-});
 </script>
 {% endblock %}

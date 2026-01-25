@@ -325,7 +325,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
                         <span class="mdi mdi-link-variant text-base-content/70"></span>
                         {{ _('Source Link') }}
                     </label>
-                    <input type="url" id="link" name="link" value="{{ project.link if project else '' }}"
+                    <input type="url" id="link" name="link" value="{{ project.link or '' }}"
                         class="input input-bordered w-full" placeholder="{{ _('e.g. https://example.com/pattern') }}">
                     <p class="text-xs text-base-content/70 mt-1">{{ _('Optional link to the original pattern or source')
                         }}</p>
@@ -528,70 +528,67 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
         if (importedData) {
             try {
                 const data = JSON.parse(importedData);
-                console.log('Loading imported data:', data);
+                console.log('[DEBUG] Loading imported data from storage:', data);
+
+                const setFieldValue = (id, value) => {
+                    const el = document.getElementById(id);
+                    if (el && value !== undefined && value !== null) {
+                        el.value = value;
+                        if (typeof autoResize === 'function') autoResize(el);
+                        return true;
+                    }
+                    return false;
+                };
 
                 const warningBanner = document.getElementById('importWarning');
-                if (warningBanner) {
-                    warningBanner.classList.remove('hidden');
-                }
+                if (warningBanner) warningBanner.classList.remove('hidden');
 
-                if (data.title || data.name) {
-                    document.getElementById('name').value = data.title || data.name;
-                }
-                if (data.needles) {
-                    document.getElementById('needles').value = data.needles;
-                }
-                if (data.recommended_needles) {
-                    document.getElementById('recommended_needles').value = data.recommended_needles;
-                }
-                if (data.yarn) {
-                    document.getElementById('yarn').value = data.yarn;
-                }
-                if (data.gauge_stitches) {
-                    document.getElementById('gauge_stitches').value = data.gauge_stitches;
-                }
-                if (data.gauge_rows) {
-                    document.getElementById('gauge_rows').value = data.gauge_rows;
-                }
-                if (data.category) {
-                    document.getElementById('category').value = data.category;
-                }
-                if (data.tags) {
-                    document.getElementById('tags').value = data.tags;
-                }
+                // Metadata
+                setFieldValue('name', data.title || data.name);
+                setFieldValue('needles', data.needles);
+                setFieldValue('recommended_needles', data.recommended_needles);
+                setFieldValue('yarn_search', data.yarn);
+                setFieldValue('gauge_stitches', data.gauge_stitches);
+                setFieldValue('gauge_rows', data.gauge_rows);
+                setFieldValue('category', data.category);
+                setFieldValue('tags', data.tags);
+                setFieldValue('comment', data.comment);
+                setFieldValue('link', data.link);
 
-                const comment = data.comment || '';
-                if (comment) {
-                    const commentField = document.getElementById('comment');
-                    commentField.value = comment;
-                    autoResize(commentField);
-                }
-
+                // Image URLs (Project level)
                 const importImagesField = document.getElementById('import_image_urls');
                 const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
                 if (importImagesField) {
                     importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
                 }
+
+                // Render pending images for preview
                 if (imageUrls.length > 0) {
-                    window.showToast?.('{{ _("Imported images will be downloaded after you save the project.") }}', 'info');
+                    imageUrls.forEach(url => {
+                        if (typeof addPendingTitleImageToGallery === 'function') {
+                            try { addPendingTitleImageToGallery(url); } catch (e) { console.error(e); }
+                        }
+                    });
                 }
 
-                if (data.link) {
-                    document.getElementById('link').value = data.link;
-                }
-
+                // Steps
                 if (data.steps && data.steps.length > 0) {
                     const stepsContainer = document.getElementById('stepsContainer');
                     if (stepsContainer) {
                         stepsContainer.innerHTML = '';
                         data.steps.forEach((step, index) => {
-                            addStep(step.title || `Step ${index + 1}`, step.description || '', step.images || []);
+                            if (typeof addStep === 'function') {
+                                try {
+                                    addStep(step.title || `Step ${index + 1}`, step.description || '', step.images || []);
+                                } catch (e) {
+                                    console.error('Failed to add step from storage', e, step);
+                                }
+                            }
                         });
                     }
                 }
 
                 sessionStorage.removeItem('importedData');
-
                 window.showToast?.('{{ _("Pattern data loaded - please review and save") }}', 'success');
 
                 setTimeout(() => {
@@ -882,15 +879,15 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
 </script>
 
 <script>
-    const projectId = {{ project.id if project else 'null' }};
-    const uploadInstructionsText = '{{ _('Drag and drop images here or click to upload') }}';
-    const stepUploadDisabledMessage = '{{ _('Save the project before adding images to this step.') }}';
-    const uploadErrorMessage = '{{ _('Image upload failed.Please try again.') }}';
-    const uploadNetworkErrorMessage = '{{ _('Network error while uploading image.') }}';
-    const unsupportedFileMessage = '{{ _('Only image files are supported.') }}';
-    const deleteErrorMessage = '{{ _('Failed to delete the image.Please try again.') }}';
-    const deleteNetworkErrorMessage = '{{ _('Network error while deleting image.') }}';
-    const uploadingMessage = '{{ _('Uploading…') }}';
+    const projectId = {{ (project.id if project else null) | tojson }};
+    const uploadInstructionsText = '{{ _("Drag and drop images here or click to upload") }}';
+    const stepUploadDisabledMessage = '{{ _("Save the project before adding images to this step.") }}';
+    const uploadErrorMessage = '{{ _("Image upload failed. Please try again.") }}';
+    const uploadNetworkErrorMessage = '{{ _("Network error while uploading image.") }}';
+    const unsupportedFileMessage = '{{ _("Only image files are supported.") }}';
+    const deleteErrorMessage = '{{ _("Failed to delete the image. Please try again.") }}';
+    const deleteNetworkErrorMessage = '{{ _("Network error while deleting image.") }}';
+    const uploadingMessage = '{{ _("Uploading…") }}';
 
     const parseErrorMessage =
         typeof extractErrorMessage === 'function'
@@ -1520,7 +1517,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
                 if (currentTab === 'url') {
                     const url = document.getElementById('importUrl').value.trim();
                     if (!url) {
-                        window.showToast?.('{{ _('Please enter a URL') }}', 'error');
+                        window.showToast?.("{{ _('Please enter a URL') }}", 'error');
                         return;
                     }
                     formData.append('url', url);
@@ -1530,7 +1527,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
                     const fileInput = document.getElementById('importFile');
                     const file = fileInput.files[0];
                     if (!file) {
-                        window.showToast?.('{{ _('Please select a file') }}', 'error');
+                        window.showToast?.("{{ _('Please select a file') }}", 'error');
                         return;
                     }
                     formData.append('file', file);
@@ -1539,7 +1536,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
                 } else if (currentTab === 'text') {
                     const text = document.getElementById('importText').value.trim();
                     if (!text) {
-                        window.showToast?.('{{ _('Please enter some text') }}', 'error');
+                        window.showToast?.("{{ _('Please enter some text') }}", 'error');
                         return;
                     }
                     formData.append('text', text);
@@ -1572,70 +1569,77 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
                     console.log('Import successful, data:', data);
 
                     if (data.ai_fallback) {
-                        window.showToast?.('{{ _('AI extraction failed - using basic parser') }}', 'warning');
+                        window.showToast?.("{{ _('AI extraction failed - using basic parser') }}", 'warning');
                     }
 
-                    if (currentTab === 'url' && !data.link) {
-                        data.link = document.getElementById('importUrl').value.trim();
-                    }
-
-                    const titleValue = data.title || data.name;
-                    if (titleValue) {
-                        document.getElementById('name').value = titleValue;
-                    }
-                    if (data.needles) {
-                        document.getElementById('needles').value = data.needles;
-                    }
-                    if (data.yarn) {
-                        const yarnField = document.getElementById('yarn');
-                        if (yarnField) {
-                            yarnField.value = data.yarn;
+                    // Map fields helper
+                    const setFieldValue = (id, value) => {
+                        const el = document.getElementById(id);
+                        if (el && value) {
+                            el.value = value;
+                            if (typeof autoResize === 'function') autoResize(el);
+                            return true;
                         }
-                    }
-                    if (data.gauge_stitches) {
-                        document.getElementById('gauge_stitches').value = data.gauge_stitches;
-                    }
-                    if (data.gauge_rows) {
-                        document.getElementById('gauge_rows').value = data.gauge_rows;
+                        return false;
+                    };
+
+                    // Metadata
+                    try {
+                        setFieldValue('name', data.title || data.name);
+                        setFieldValue('needles', data.needles);
+                        setFieldValue('recommended_needles', data.recommended_needles);
+                        setFieldValue('yarn_search', data.yarn); // Populate autocomplete search
+                        setFieldValue('gauge_stitches', data.gauge_stitches);
+                        setFieldValue('gauge_rows', data.gauge_rows);
+                        setFieldValue('comment', data.comment);
+
+                        if (currentTab === 'url' && !data.link) {
+                            data.link = document.getElementById('importUrl').value.trim();
+                        }
+                        setFieldValue('link', data.link);
+                    } catch (e) {
+                        console.error('Error mapping metadata', e);
                     }
 
-                    const comment = data.comment || '';
-                    if (comment) {
-                        const commentField = document.getElementById('comment');
-                        commentField.value = comment;
-                        if (typeof autoResize === 'function') autoResize(commentField);
-                    }
+                    // Project Image Previews
+                    try {
+                        const importImagesField = document.getElementById('import_image_urls');
+                        const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
+                        if (importImagesField) {
+                            importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
+                        }
 
-                    const importImagesField = document.getElementById('import_image_urls');
-                    const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
-                    if (importImagesField) {
-                        importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
-                    }
-
-                    if (imageUrls.length > 0) {
-                        window.showToast?.('{{ _("Imported images will be downloaded after you save the project.") }}', 'info');
-                        // Render pending images
-                        imageUrls.forEach(url => {
-                            if (typeof addPendingTitleImageToGallery === 'function') {
-                                addPendingTitleImageToGallery(url);
-                            }
-                        });
-                    }
-
-                    if (data.link) {
-                        document.getElementById('link').value = data.link;
-                    }
-
-                    if (data.steps && data.steps.length > 0) {
-                        const stepsContainer = document.getElementById('stepsContainer');
-                        if (stepsContainer) {
-                            stepsContainer.innerHTML = '';
-                            data.steps.forEach((step, index) => {
-                                if (typeof addStep === 'function') {
-                                    addStep(step.title || `Step ${index + 1}`, step.description || '');
+                        if (imageUrls.length > 0) {
+                            window.showToast?.('{{ _("Imported images will be previewed in the gallery.") }}', 'info');
+                            imageUrls.forEach(url => {
+                                if (typeof addPendingTitleImageToGallery === 'function') {
+                                    try { addPendingTitleImageToGallery(url); } catch (e) { console.error(e); }
                                 }
                             });
                         }
+                    } catch (e) {
+                        console.error('Error mapping images', e);
+                    }
+
+                    // Steps
+                    try {
+                        if (data.steps && data.steps.length > 0) {
+                            const stepsContainer = document.getElementById('stepsContainer');
+                            if (stepsContainer) {
+                                stepsContainer.innerHTML = '';
+                                data.steps.forEach((step, index) => {
+                                    if (typeof addStep === 'function') {
+                                        try {
+                                            addStep(step.title || `Step ${index + 1}`, step.description || '', step.images || []);
+                                        } catch (e) {
+                                            console.error('Failed to add step:', e, step);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error processing steps', e);
                     }
 
                     importDialog.close();

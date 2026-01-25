@@ -720,6 +720,10 @@ async def import_pattern(
             basic_data = await basic_importer.fetch_and_parse()
             data = basic_data
 
+            logger.info("Basic importer found %d steps and %d images",
+                        len(basic_data.get("steps", [])),
+                        len(basic_data.get("image_urls", [])))
+
             if use_ai_enabled:
                 try:
                     from stricknani.utils.ai_importer import AIPatternImporter
@@ -727,13 +731,42 @@ async def import_pattern(
                     ai_importer = AIPatternImporter(
                         url, hints=_build_ai_hints(basic_data)
                     )
-                    data = await ai_importer.fetch_and_parse()
+                    ai_data = await ai_importer.fetch_and_parse()
 
-                    # Check if AI extraction actually worked (not all nulls)
+                    logger.info("AI importer found %d steps and %d images",
+                                len(ai_data.get("steps", [])),
+                                len(ai_data.get("image_urls", [])))
+
+                    # Use AI data but intelligently fallback or merge
+                    # 1. Use basic data steps if AI has none or significantly fewer
+                    basic_steps = basic_data.get("steps", [])
+                    ai_steps = ai_data.get("steps", [])
+
+                    if not ai_steps and basic_steps:
+                        ai_data["steps"] = basic_steps
+                        logger.info("AI found no steps, using basic parser steps")
+                    elif len(ai_steps) <= 1 and len(basic_steps) > 3:
+                        # AI likely failed to split steps correctly, prefer heuristic
+                        ai_data["steps"] = basic_steps
+                        logger.info("AI returned %d steps vs basic %d, preferring basic",
+                                    len(ai_steps), len(basic_steps))
+
+                    # 2. Use basic image urls if AI has none or fewer
+                    if len(ai_data.get("image_urls", [])) < len(basic_data.get("image_urls", [])):
+                        ai_data["image_urls"] = basic_data["image_urls"]
+                        logger.info("AI found fewer images, using basic parser images")
+
+                    # 3. Check if name/title is actually set
+                    if not ai_data.get("name") and not ai_data.get("title") and basic_data.get("title"):
+                        ai_data["title"] = basic_data["title"]
+
+                    data = ai_data
+
+                    # Check if AI extraction actually worked (not just returning source URL/images)
                     if all(
                         v is None or v == [] or v == ""
                         for k, v in data.items()
-                        if k not in {"link", "image_urls", "comment"}
+                        if k not in {"link", "image_urls", "comment", "steps"}
                     ):
                         ai_failed = True
                         data = basic_data
@@ -756,6 +789,13 @@ async def import_pattern(
                     )
                 else:
                     data["comment"] = "(Note: AI extraction failed, used basic parser)"
+            else:
+                # Even if not fully failed, if we used basic steps, tag the comment
+                if data.get("steps") == basic_data.get("steps") and use_ai_enabled and data is not basic_data:
+                     if data.get("comment"):
+                        data["comment"] = data.get("comment", "") + "\n\n(Note: AI used for metadata, basic parser for steps)"
+                     else:
+                        data["comment"] = "(Note: AI used for metadata, basic parser for steps)"
 
             return JSONResponse(content=data)
 
