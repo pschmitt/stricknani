@@ -6,7 +6,7 @@
 {% block title %}{{ yarn.name }} - {{ _('Yarn') }}{% endblock %}
 
 {% block detail_header %}
-    {% call detail.header(_('Back to Yarn Stash'), '/yarn') %}
+    {% call detail.header(_('Back'), '/yarn') %}
         <div data-favorite-toggle>
             {% with yarn_id=yarn.id, is_favorite=is_favorite, variant='detail' %}
                 {% include "yarn/_favorite_toggle.html" %}
@@ -36,43 +36,41 @@
             <span class="mdi mdi-update"></span>
             {{ _('Updated') }} {{ metadata.updated }}
         </span>
-        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-            <span class="mdi mdi-folder-multiple-outline"></span>
-            {{ metadata.project_count }} {{ _('projects linked') }}
-        </span>
     </div>
 
-    {% if photos %}
-    {% call detail.media_section(_('Photos'), icon='mdi-image-multiple') %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for photo in photos %}
-            <div class="relative group flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                <img
-                    src="{{ photo.thumbnail_url }}"
-                    alt="{{ photo.alt_text or yarn.name }}"
-                    class="h-full w-full cursor-zoom-in object-contain object-center p-2 shadow-md dark:shadow-slate-900/30 block"
-                    data-lightbox-group="yarn-{{ yarn.id }}"
-                    data-lightbox-src="{{ photo.full_url }}"
-                    data-lightbox-alt="{{ photo.alt_text or yarn.name }}"
-                >
-                <form action="/yarn/{{ yarn.id }}/photos/{{ photo.id }}/delete" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="submit" class="bg-white/90 text-red-600 rounded-full p-1.5 hover:bg-red-50 shadow-sm transition-colors dark:bg-slate-900/90 dark:text-red-400 dark:hover:bg-red-900/50" title="{{ _('Delete photo') }}">
-                        <span class="mdi mdi-trash-can-outline"></span>
-                    </button>
-                </form>
-            </div>
-            {% endfor %}
-        </div>
-    {% endcall %}
-    {% else %}
-    {% call detail.media_section(_('Photos'), icon='mdi-image-multiple') %}
-        <div class="rounded-lg border border-dashed border-base-300 p-6 text-center text-sm text-base-content/70">
-            <p class="mb-3">{{ _('No photos yet. Add a skein or swatch photo to recognize this yarn quickly.') }}</p>
-        </div>
-    {% endcall %}
-    {% endif %}
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-6">
+            {% if photos %}
+            {% call detail.media_section(_('Photos'), icon='mdi-image-multiple') %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for photo in photos %}
+                    <div class="relative group flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                        <img
+                            src="{{ photo.thumbnail_url }}"
+                            alt="{{ photo.alt_text or yarn.name }}"
+                            class="h-full w-full cursor-zoom-in object-contain object-center p-2 shadow-md dark:shadow-slate-900/30 block"
+                            data-lightbox-group="yarn-{{ yarn.id }}"
+                            data-lightbox-src="{{ photo.full_url }}"
+                            data-lightbox-alt="{{ photo.alt_text or yarn.name }}"
+                        >
+                        <form action="/yarn/{{ yarn.id }}/photos/{{ photo.id }}/delete" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button type="submit" class="bg-white/90 text-red-600 rounded-full p-1.5 hover:bg-red-50 shadow-sm transition-colors dark:bg-slate-900/90 dark:text-red-400 dark:hover:bg-red-900/50" title="{{ _('Delete photo') }}">
+                                <span class="mdi mdi-trash-can-outline"></span>
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endcall %}
+            {% else %}
+            {% call detail.media_section(_('Photos'), icon='mdi-image-multiple') %}
+                <div class="rounded-lg border border-dashed border-base-300 p-6 text-center text-sm text-base-content/70">
+                    <p class="mb-3">{{ _('No photos yet. Add a skein or swatch photo to recognize this yarn quickly.') }}</p>
+                </div>
+            {% endcall %}
+            {% endif %}
+        </div>
+
         <div class="space-y-6">
             {% call detail.detail_box(_('Details')) %}
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
@@ -144,34 +142,34 @@
                 {% endif %}
             </div>
         </div>
+    </div>
 
-        <div class="space-y-6">
-            {% if yarn.description %}
-            <div>
-                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-2">{{ _('Description') }}</h3>
-                <div class="prose max-w-none">
-                    {% if description_html %}
-                        {{ description_html | safe }}
-                    {% else %}
-                        {{ yarn.description }}
-                    {% endif %}
-                </div>
+    <div class="mt-8 space-y-6">
+        {% if yarn.description %}
+        <div>
+            <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-2">{{ _('Description') }}</h3>
+            <div class="prose max-w-none">
+                {% if description_html %}
+                    {{ description_html | safe }}
+                {% else %}
+                    {{ yarn.description }}
+                {% endif %}
             </div>
-            {% endif %}
-
-            {% if yarn.notes %}
-            <div>
-                <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-2">{{ _('Notes') }}</h3>
-                <div class="prose max-w-none bg-base-200 p-4 rounded-md">
-                    {% if notes_html %}
-                        {{ notes_html | safe }}
-                    {% else %}
-                        {{ yarn.notes }}
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
         </div>
+        {% endif %}
+
+        {% if yarn.notes %}
+        <div>
+            <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-2">{{ _('Notes') }}</h3>
+            <div class="prose max-w-none bg-base-200 p-4 rounded-md">
+                {% if notes_html %}
+                    {{ notes_html | safe }}
+                {% else %}
+                    {{ yarn.notes }}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 {% endblock %}
 

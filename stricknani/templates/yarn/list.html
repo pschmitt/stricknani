@@ -44,10 +44,27 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for card in yarns %}
     {% set yarn = card.yarn %}
-    {% set card_attrs = 'data-yarn-card data-yarn-id="%s" title="%s"' % (yarn.id, yarn.name) %}
+    {% set tooltip_parts = [yarn.name] %}
+    {% if yarn.brand %}
+        {% set tooltip_parts = tooltip_parts + [(_('Brand: %(brand)s') % {'brand': yarn.brand})] %}
+    {% endif %}
+    {% if yarn.colorway %}
+        {% set tooltip_parts = tooltip_parts + [(_('Colorway: %(colorway)s') % {'colorway': yarn.colorway})] %}
+    {% endif %}
+    {% if yarn.project_count %}
+        {% if yarn.project_count == 1 %}
+            {% set tooltip_parts = tooltip_parts + [(_('%(count)s linked project') % {'count': yarn.project_count})] %}
+        {% else %}
+            {% set tooltip_parts = tooltip_parts + [(_('%(count)s linked projects') % {'count': yarn.project_count})] %}
+        {% endif %}
+    {% else %}
+        {% set tooltip_parts = tooltip_parts + [(_('No linked projects'))] %}
+    {% endif %}
+    {% set tooltip_text = tooltip_parts | join(' | ') %}
+    {% set card_attrs = 'data-yarn-card data-yarn-id="%s" title="%s"' % (yarn.id, tooltip_text) %}
     {% call(section) cards.list_card(data_attrs=card_attrs) %}
         {% if section == 'media' %}
-            <a href="/yarn/{{ yarn.id }}" class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]" title="{{ yarn.name }}">
+            <a href="/yarn/{{ yarn.id }}" class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]" title="{{ tooltip_text }}">
                 {% if card.preview_url %}
                 <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}" class="h-full w-full object-cover" onerror="const parent = this.closest('a'); const fallback = parent.querySelector('[data-fallback-icon]'); if (fallback) { this.replaceWith(fallback.cloneNode(true)); fallback.classList.remove('hidden'); }">
                 {% else %}
@@ -128,7 +145,7 @@
             <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
 
             <div class="card-actions">
-                {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/yarn/' + yarn.id|string + '/edit', class='w-full', attrs='title=\"' + yarn.name + '\"') }}
+                {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/yarn/' + yarn.id|string + '/edit', class='w-full', attrs='title=\"' + (_('Edit %(name)s') % {'name': yarn.name}) + '\"') }}
             </div>
         {% endif %}
     {% endcall %}

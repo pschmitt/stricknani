@@ -496,6 +496,11 @@ async def list_projects(
         thumbnail_url = preview_images[0]["url"] if preview_images else None
         image_alt = preview_images[0]["alt"] if preview_images else project.name
 
+        yarn_names = sorted(
+            {yarn.name for yarn in project.yarns if yarn.name},
+            key=str.casefold,
+        )
+
         return {
             "id": project.id,
             "name": project.name,
@@ -503,6 +508,7 @@ async def list_projects(
             "created_at": project.created_at.isoformat(),
             "updated_at": project.updated_at.isoformat(),
             "yarn_count": len(project.yarns),
+            "yarn_names": yarn_names,
             "is_favorite": project.id in favorite_ids,
             "thumbnail_url": thumbnail_url,
             "image_alt": image_alt,

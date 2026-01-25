@@ -1,7 +1,7 @@
 {% import "macros/buttons.html" as buttons %}
 {% set action = 'delete' if is_favorite else 'post' %}
 {% set icon = 'mdi-heart' if is_favorite else 'mdi-heart-outline' %}
-{% set label = _('Remove from favorites') if is_favorite else _('Add to favorites') %}
+{% set label = _('Unfavorite') if is_favorite else _('Favorite') %}
 {% set message = _('Removed from favorites') if is_favorite else _('Added to favorites') %}
 {% if variant == 'detail' %}
     {{ buttons.favorite(

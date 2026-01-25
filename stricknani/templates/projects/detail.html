@@ -6,7 +6,7 @@
 {% block title %}{{ project.name }} - Stricknani{% endblock %}
 
 {% block detail_header %}
-    {% call detail.header(_('Back to Projects'), '/projects') %}
+    {% call detail.header(_('Back'), '/projects') %}
         <div data-favorite-toggle>
             {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail' %}
                 {% include "projects/_favorite_toggle.html" %}
@@ -36,12 +36,6 @@
             <span class="mdi mdi-update"></span>
             {{ _('Updated') }} {{ project.updated_at[:10] }}
         </span>
-        {% if project.linked_yarns|length > 0 %}
-        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-            <span class="mdi mdi-folder-multiple-outline"></span>
-            {{ project.linked_yarns|length }} {{ _('yarns linked') }}
-        </span>
-        {% endif %}
     </div>
 
     {% if project.tags %}
@@ -52,27 +46,29 @@
     </div>
     {% endif %}
 
-    {% if project.title_images %}
-    {% call detail.media_section(_('Gallery'), icon='mdi-image-multiple') %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for image in project.title_images %}
-            <div class="relative group flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                <img
-                    src="{{ image.url }}"
-                    alt="{{ image.alt_text }}"
-                    class="h-full w-full cursor-zoom-in object-contain object-center p-2 shadow-md dark:shadow-slate-900/30 block"
-                    data-lightbox-group="project-{{ project.id }}"
-                    data-lightbox-src="{{ image.url }}"
-                    data-lightbox-alt="{{ image.alt_text }}"
-                >
-                <div class="absolute inset-0 rounded-lg bg-black/0 transition-opacity pointer-events-none group-hover:bg-black/10"></div>
-            </div>
-            {% endfor %}
-        </div>
-    {% endcall %}
-    {% endif %}
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-6">
+            {% if project.title_images %}
+            {% call detail.media_section(_('Gallery'), icon='mdi-image-multiple') %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for image in project.title_images %}
+                    <div class="relative group flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                        <img
+                            src="{{ image.url }}"
+                            alt="{{ image.alt_text }}"
+                            class="h-full w-full cursor-zoom-in object-contain object-center p-2 shadow-md dark:shadow-slate-900/30 block"
+                            data-lightbox-group="project-{{ project.id }}"
+                            data-lightbox-src="{{ image.url }}"
+                            data-lightbox-alt="{{ image.alt_text }}"
+                        >
+                        <div class="absolute inset-0 rounded-lg bg-black/0 transition-opacity pointer-events-none group-hover:bg-black/10"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endcall %}
+            {% endif %}
+        </div>
+
         <div class="space-y-4">
             {% call detail.detail_box(_('Details')) %}
                 <div class="space-y-4">
@@ -171,9 +167,7 @@
                     {% endif %}
                 </div>
             {% endcall %}
-        </div>
 
-        <div class="space-y-4">
             {% if project.comment_html %}
             <div>
                 <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-2 flex items-center gap-2">

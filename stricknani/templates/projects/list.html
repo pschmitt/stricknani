@@ -52,13 +52,22 @@
 {% if projects %}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for project in projects %}
-            {% set card_attrs = 'data-project-card data-project-id="%s" title="%s"' % (project.id, project.name) %}
+            {% if project.yarn_count and project.yarn_names %}
+                {% if project.yarn_count == 1 %}
+                    {% set tooltip_text = _('%(count)s linked yarn: %(names)s') % {'count': project.yarn_count, 'names': project.yarn_names|join(', ')} %}
+                {% else %}
+                    {% set tooltip_text = _('%(count)s linked yarns: %(names)s') % {'count': project.yarn_count, 'names': project.yarn_names|join(', ')} %}
+                {% endif %}
+            {% else %}
+                {% set tooltip_text = _('No linked yarns') %}
+            {% endif %}
+            {% set card_attrs = 'data-project-card data-project-id="%s" title="%s"' % (project.id, tooltip_text) %}
             {% call(section) cards.list_card(data_attrs=card_attrs) %}
                 {% if section == 'media' %}
                     <a
                         href="/projects/{{ project.id }}"
                         class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
-                        title="{{ project.name }}"
+                        title="{{ tooltip_text }}"
                     >
                         {% if project.preview_images %}
                             {% if project.preview_images|length == 1 %}
@@ -136,7 +145,7 @@
                     </div>
                     {% endif %}
                     <div class="card-actions mt-auto">
-                        {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/projects/' + project.id|string + '/edit', class='w-full', attrs='title=\"' + project.name + '\"') }}
+                        {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/projects/' + project.id|string + '/edit', class='w-full', attrs='title=\"' + (_('Edit %(name)s') % {'name': project.name}) + '\"') }}
                     </div>
                     </div>
                 {% endif %}

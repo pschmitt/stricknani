@@ -1004,3 +1004,36 @@ msgstr "pro 10 cm"
 #~ " Quelle importiert. Bitte überprüfe alle"
 #~ " Felder sorgfältig und klicke auf "
 #~ "\"Projekt erstellen\" zum Speichern."
+
+msgid "%(count)s linked yarn: %(names)s"
+msgstr "%(count)s verknuepftes Garn: %(names)s"
+
+msgid "%(count)s linked yarns: %(names)s"
+msgstr "%(count)s verknuepfte Garne: %(names)s"
+
+msgid "No linked yarns"
+msgstr "Keine verknuepften Garne"
+
+msgid "Edit %(name)s"
+msgstr "%(name)s bearbeiten"
+
+msgid "Brand: %(brand)s"
+msgstr "Marke: %(brand)s"
+
+msgid "Colorway: %(colorway)s"
+msgstr "Farbvariante: %(colorway)s"
+
+msgid "%(count)s linked project"
+msgstr "%(count)s verknuepftes Projekt"
+
+msgid "%(count)s linked projects"
+msgstr "%(count)s verknuepfte Projekte"
+
+msgid "No linked projects"
+msgstr "Keine verknuepften Projekte"
+
+msgid "Favorite"
+msgstr "Favorisieren"
+
+msgid "Unfavorite"
+msgstr "Entfavorisieren"
