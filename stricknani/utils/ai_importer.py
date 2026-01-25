@@ -164,11 +164,14 @@ class AIPatternImporter:
             import trafilatura
 
             # Trafilatura needs the raw HTML string, which we have in response.text
-            text_content = trafilatura.extract(
-                response.text,
-                include_comments=False,
-                include_tables=False,
-                no_fallback=False,
+            text_content = (
+                trafilatura.extract(
+                    response.text,
+                    include_comments=False,
+                    include_tables=False,
+                    no_fallback=False,
+                )
+                or ""
             )
         except ImportError:
             pass

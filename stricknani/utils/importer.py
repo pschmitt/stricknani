@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
-from bs4.element import NavigableString, Tag
+from bs4.element import AttributeValueList, NavigableString, Tag
 
 logger = logging.getLogger("stricknani.imports")
 
@@ -367,8 +367,13 @@ class PatternImporter:
 
         return steps
 
-    def _resolve_image_url(self, src: str) -> str | None:
-        cleaned = src.strip()
+    def _resolve_image_url(self, src: str | AttributeValueList) -> str | None:
+        if isinstance(src, list):
+            if not src:
+                return None
+            cleaned = " ".join(src).strip()
+        else:
+            cleaned = src.strip()
         if not cleaned or cleaned.startswith(("data:", "javascript:")):
             return None
 
