@@ -144,8 +144,8 @@
 
             <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
 
-            <div class="card-actions">
-                {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/yarn/' + yarn.id|string + '/edit', class='w-full', attrs='title=\"' + (_('Edit %(name)s') % {'name': yarn.name}) + '\"') }}
+            <div class="card-actions justify-end">
+                {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/yarn/' + yarn.id|string + '/edit', class='w-auto', attrs='title=\"' + (_('Edit %(name)s') % {'name': yarn.name}) + '\"') }}
             </div>
         {% endif %}
     {% endcall %}
