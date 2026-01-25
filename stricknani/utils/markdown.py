@@ -2,8 +2,8 @@
 
 import xml.etree.ElementTree as etree
 
-import nh3
 import markdown as md
+import nh3
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 

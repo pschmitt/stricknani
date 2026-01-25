@@ -122,7 +122,7 @@ class PatternImporter:
             match = re.search(pattern, text, re.I)
             if match:
                 yarn_text = match.group(1).strip()
-                # If the match looks like a whole paragraph rather than a yarn name, skip it
+                # If the match looks like a whole paragraph, skip it.
                 if len(yarn_text) > 150:
                     continue
                 return yarn_text
@@ -206,7 +206,7 @@ class PatternImporter:
             soup.find(["div", "section"], class_="instructions"),
             soup.find(["div", "section"], id="instructions"),
             soup.find(["div", "section"], id="pattern-instructions"),
-            
+
             # Regex matches (stricter)
             soup.find(
                 ["div", "section"], class_=re.compile(r"instruction(s)?$", re.I)
@@ -217,7 +217,7 @@ class PatternImporter:
             soup.find(
                 ["div", "section"], class_=re.compile(r"pattern[_-]?text", re.I)
             ),
-            
+
             # Fallbacks
             soup.find("article"),
             soup.find("main"),
@@ -275,14 +275,15 @@ class PatternImporter:
             step["step_number"] = i
             # Correct generic titles if re-indexing shifted them
             if step["title"].startswith("Step ") and step["title"][5:].isdigit():
-                 step["title"] = f"Step {i}"
+                step["title"] = f"Step {i}"
 
         return final_steps
 
     def _extract_mixed_content_steps(self, container: Tag) -> list[dict[str, Any]]:
         """
         Extract steps by traversing the DOM mixed content (text, images, headings).
-        This fallback handles cases where steps aren't clearly structured with top-level headings.
+        This fallback handles cases where steps aren't clearly structured with top-level
+        headings.
         """
         steps: list[dict[str, Any]] = []
         current_title: str | None = None
@@ -292,7 +293,7 @@ class PatternImporter:
         def flush() -> None:
             nonlocal current_title, current_lines, current_images
             description = " ".join(current_lines).strip()
-            
+
             # Don't save empty steps unless they have images
             if not description and not current_images:
                 return
@@ -313,12 +314,12 @@ class PatternImporter:
 
         def process_node(node: Any) -> None:
             nonlocal current_title
-            
+
             if isinstance(node, NavigableString):
                 text = str(node).strip()
                 if not text:
                     return
-                
+
                 # Check if this text line looks like a title (e.g. "NECK:")
                 # Heuristic: ends with colon, short-ish, or all caps
                 is_title = False
@@ -326,7 +327,7 @@ class PatternImporter:
                     is_title = True
                 elif text.isupper() and len(text) < 50 and len(text) > 3:
                     is_title = True
-                
+
                 if is_title:
                     flush()
                     current_title = text.rstrip(":").strip()
@@ -339,7 +340,7 @@ class PatternImporter:
             if isinstance(node, Tag):
                 if node.name in ["script", "style", "noscript"]:
                     return
-                
+
                 if node.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                     flush()
                     current_title = node.get_text(strip=True)
@@ -347,7 +348,7 @@ class PatternImporter:
 
                 if node.name == "br":
                     pass
-                
+
                 if node.name == "img":
                     src = node.get("src") or node.get("data-src")
                     if src:
@@ -363,7 +364,7 @@ class PatternImporter:
         # Start traversal
         process_node(container)
         flush()
-        
+
         return steps
 
     def _resolve_image_url(self, src: str) -> str | None:
