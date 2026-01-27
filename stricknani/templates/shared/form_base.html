@@ -58,11 +58,11 @@
         const leaveButton = dialog?.querySelector('[data-unsaved-leave]');
         const saveButton = dialog?.querySelector('[data-unsaved-save]');
         let pendingNavigation = null;
-        
+
         // Track changes
         form.addEventListener('input', () => isDirty = true);
         form.addEventListener('change', () => isDirty = true);
-        
+
         // Allow submission without warning
         form.addEventListener('submit', () => isDirty = false);
 

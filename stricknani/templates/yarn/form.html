@@ -27,7 +27,7 @@
 {% endblock %}
 
 {% block form_actions %}
-{# Save button logic: 
+{# Save button logic:
    - Always hidden on mobile (moved to FAB)
    - Visible on desktop #}
 {% set save_classes = 'hidden md:inline-flex flex-1 sm:flex-none md:btn-wide' %}
@@ -366,7 +366,7 @@ function previewImages(input) {
 
     if (input.files && input.files.length > 0) {
         Array.from(input.files).forEach(file => {
-            const exists = Array.from(yarnFiles.files).some(f => 
+            const exists = Array.from(yarnFiles.files).some(f =>
                 f.name === file.name && f.size === file.size && f.lastModified === file.lastModified
             );
             if (!exists) {
@@ -403,16 +403,16 @@ function previewImages(input) {
 function removeYarnFile(index) {
     const input = document.getElementById('photos');
     const newDt = new DataTransfer();
-    
+
     Array.from(yarnFiles.files).forEach((file, i) => {
         if (i !== index) {
             newDt.items.add(file);
         }
     });
-    
+
     yarnFiles.items.clear();
     Array.from(newDt.files).forEach(file => yarnFiles.items.add(file));
-    
+
     if (input) {
         input.files = yarnFiles.files;
         previewImages(input);

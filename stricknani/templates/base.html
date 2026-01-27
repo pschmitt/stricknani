@@ -584,11 +584,11 @@
 
             titleEl.textContent = title;
             messageEl.textContent = message;
-            
+
             // Remove old listeners to avoid stacking
             const newConfirmBtn = confirmBtn.cloneNode(true);
             confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-            
+
             newConfirmBtn.addEventListener('click', () => {
                 onConfirm();
                 dialog.close();
@@ -797,7 +797,7 @@
                 }
                 // Reset zoom on slide change
                 if (isZoomed) toggleZoom();
-                
+
                 image.src = active.src;
                 image.alt = active.alt;
                 caption.textContent = active.alt || "";
@@ -911,16 +911,16 @@
             // Mobile-friendly tap handler
             let lastTap = 0;
             let tapTimeout;
-            
+
             const toggleControls = () => {
                 const controls = [closeButton, zoomButton, caption];
                 const navControls = [prevButton, nextButton];
-                
+
                 if (!closeButton) return;
 
                 // Check if currently hidden (check closeButton as proxy)
                 const isHidden = closeButton.classList.contains("opacity-0");
-                
+
                 if (isHidden) {
                     // Show
                     controls.forEach(el => {
@@ -943,7 +943,7 @@
                 e.stopPropagation();
                 const now = Date.now();
                 const timeDiff = now - lastTap;
-                
+
                 if (timeDiff < 300 && timeDiff > 0) {
                     // Double tap
                     if (tapTimeout) clearTimeout(tapTimeout);
