@@ -879,7 +879,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
 </script>
 
 <script>
-    const projectId = {{ (project.id if project else null) | tojson }};
+    const projectId = {{ (project.id if project else none) | tojson }};
     const uploadInstructionsText = '{{ _("Drag and drop images here or click to upload") }}';
     const stepUploadDisabledMessage = '{{ _("Save the project before adding images to this step.") }}';
     const uploadErrorMessage = '{{ _("Image upload failed. Please try again.") }}';
