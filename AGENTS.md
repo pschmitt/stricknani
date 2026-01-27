@@ -8,6 +8,7 @@ This document contains instructions for AI agents working on the Stricknani code
 *   **ALWAYS** check for missing translations when adding or modifying UI elements.
 *   **ALWAYS** add missing translations to `stricknani/locales/de/LC_MESSAGES/messages.po`.
 *   **ALWAYS** compile translations after modifying `.po` files using `uv run python -m babel.messages.frontend compile -d stricknani/locales`.
+*   **ALWAYS** run `just i18n-check` to verify translations are complete.
 *   Ensure both English (source) and German (translation) are covered.
 
 ### 2. Linting & Code Quality
