@@ -5,7 +5,7 @@
 {% block title %}{{ project.name }} - Stricknani{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4 md:mb-8">
         <div class="space-y-2">
@@ -88,6 +88,158 @@
             </div>
             {% endif %}
 
+            <!-- Mobile: Details + Notes before steps -->
+            <div class="space-y-6 lg:hidden">
+                <!-- Details Card -->
+                <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+                    <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                        <span class="mdi mdi-information-outline"></span>
+                        {{ _('Project Details') }}
+                    </h3>
+
+                    <div class="space-y-4">
+                        <!-- Badges Info -->
+                        {% if project.category and project.category != 'None' %}
+                        <div class="flex items-center justify-between py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Category') }}</span>
+                            <a href="/projects?category={{ project.category }}" class="text-sm font-medium text-primary hover:underline flex items-center gap-1 max-w-[12rem]">
+                                <span class="mdi mdi-shape-outline text-sm"></span>
+                                <span class="truncate">{{ _(project.category) }}</span>
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        <div class="flex items-center justify-between py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Created') }}</span>
+                            <span class="text-xs font-medium text-base-content/70 flex items-center gap-1">
+                                <span class="mdi mdi-calendar-plus"></span>
+                                {{ project.created_at[:10] }}
+                            </span>
+                        </div>
+
+                        {% if project.tags %}
+                        <div class="py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Tags') }}</span>
+                            <div class="flex flex-wrap gap-1.5">
+                                {% for tag in project.tags %}
+                                <span class="badge badge-ghost badge-xs text-[10px] py-2 px-2">#{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="divider my-2"></div>
+
+                        <!-- Gauge -->
+                        {% if project.gauge_stitches is not none or project.gauge_rows is not none %}
+                        <div class="bg-base-200/50 rounded-xl p-3">
+                            <div class="flex items-center gap-2 mb-1.5">
+                                <span class="mdi mdi-ruler-square text-primary"></span>
+                                <span class="text-xs font-bold uppercase text-base-content/70">{{ _('Gauge (10cm)') }}</span>
+                            </div>
+                            <div class="flex items-baseline gap-1 text-sm">
+                                <strong class="text-base-content text-lg">{{ project.gauge_stitches or '-' }}</strong>
+                                <span class="text-base-content/60 text-xs">{{ _('sts') }}</span>
+                                <span class="text-base-content/40 mx-1">×</span>
+                                <strong class="text-base-content text-lg">{{ project.gauge_rows or '-' }}</strong>
+                                <span class="text-base-content/60 text-xs">{{ _('rows') }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Linked Yarns (compact) -->
+                        {% if project.linked_yarns %}
+                        <div>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used') }}</span>
+                            <div class="space-y-2">
+                                {% for yarn in project.linked_yarns %}
+                                <a href="/yarn/{{ yarn.id }}" class="flex items-center gap-2 rounded-lg border border-base-200 bg-base-100 px-2.5 py-2 text-sm transition hover:border-base-300 hover:bg-base-200/40">
+                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
+                                        {% if yarn.preview_url %}
+                                        <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}" class="h-full w-full object-cover">
+                                        {% else %}
+                                        <span class="mdi mdi-sheep text-base-content/40"></span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="truncate font-medium">{{ yarn.name }}</div>
+                                        <div class="text-xs text-base-content/60 truncate">
+                                            {{ yarn.brand or _('Unknown Brand') }}
+                                            {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
+                                        </div>
+                                    </div>
+                                    <span class="mdi mdi-chevron-right text-base-content/30"></span>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used') }}</span>
+                            <div class="flex items-center justify-between rounded-lg border border-dashed border-base-300 bg-base-200/30 px-3 py-2 text-sm text-base-content/60">
+                                <span>{{ _('No yarns linked') }}</span>
+                                <a href="/projects/{{ project.id }}/edit" class="text-primary hover:underline">{{ _('Link yarn') }}</a>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Needles -->
+                        <div class="space-y-3">
+                            <div>
+                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Used Needles') }}</span>
+                                {% if project.needles %}
+                                    <div class="flex items-center gap-2 text-sm font-medium">
+                                        <span class="mdi mdi-needle text-primary/70"></span>
+                                        {{ project.needles }}
+                                    </div>
+                                {% else %}
+                                    <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Recommended') }}</span>
+                                {% if project.recommended_needles %}
+                                    <div class="flex items-center gap-2 text-sm font-medium">
+                                        <span class="mdi mdi-needle text-base-content/40"></span>
+                                        {{ project.recommended_needles }}
+                                    </div>
+                                {% else %}
+                                    <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="divider my-2"></div>
+
+                        <!-- Source Link -->
+                        <div>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
+                            {% if project.link %}
+                            <a href="{{ project.link }}" target="_blank" rel="noreferrer" class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
+                                <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
+                                {{ project.link }}
+                            </a>
+                            {% else %}
+                            <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes Card -->
+                {% if project.comment_html %}
+                <div class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
+                    <h3 class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                        <span class="mdi mdi-notebook-outline"></span>
+                        {{ _('Notes') }}
+                    </h3>
+                    <div class="prose prose-sm max-w-none text-base-content/90">
+                        {{ project.comment_html | safe }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
             <!-- Steps Section -->
             {% if project.steps %}
             <div class="space-y-4">
@@ -152,7 +304,7 @@
         </div>
 
         <!-- Sidebar Column -->
-        <div class="space-y-6">
+        <div class="space-y-6 hidden lg:block">
             <!-- Details Card -->
             <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
                 <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
@@ -210,6 +362,42 @@
                     </div>
                     {% endif %}
 
+                    <!-- Linked Yarns (compact) -->
+                    {% if project.linked_yarns %}
+                    <div>
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used') }}</span>
+                        <div class="space-y-2">
+                            {% for yarn in project.linked_yarns %}
+                            <a href="/yarn/{{ yarn.id }}" class="flex items-center gap-2 rounded-lg border border-base-200 bg-base-100 px-2.5 py-2 text-sm transition hover:border-base-300 hover:bg-base-200/40">
+                                <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
+                                    {% if yarn.preview_url %}
+                                    <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}" class="h-full w-full object-cover">
+                                    {% else %}
+                                    <span class="mdi mdi-sheep text-base-content/40"></span>
+                                    {% endif %}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate font-medium">{{ yarn.name }}</div>
+                                    <div class="text-xs text-base-content/60 truncate">
+                                        {{ yarn.brand or _('Unknown Brand') }}
+                                        {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
+                                    </div>
+                                </div>
+                                <span class="mdi mdi-chevron-right text-base-content/30"></span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div>
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used') }}</span>
+                        <div class="flex items-center justify-between rounded-lg border border-dashed border-base-300 bg-base-200/30 px-3 py-2 text-sm text-base-content/60">
+                            <span>{{ _('No yarns linked') }}</span>
+                            <a href="/projects/{{ project.id }}/edit" class="text-primary hover:underline">{{ _('Link yarn') }}</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Needles -->
                     <div class="space-y-3">
                         <div>
@@ -251,53 +439,6 @@
                         {% endif %}
                     </div>
                 </div>
-            </div>
-
-            <!-- Yarns Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
-                        <span class="mdi mdi-sheep"></span>
-                        {{ _('Yarns Used') }}
-                    </h3>
-                    {% if project.linked_yarns %}
-                    <span class="badge badge-sm badge-ghost">{{ project.linked_yarns|length }}</span>
-                    {% endif %}
-                </div>
-
-                {% if project.linked_yarns %}
-                <div class="space-y-3">
-                    {% for yarn in project.linked_yarns %}
-                    <a href="/yarn/{{ yarn.id }}" class="flex items-center gap-3 p-2 rounded-xl hover:bg-base-200 transition group border border-transparent hover:border-base-300">
-                        <!-- Yarn Thumbnail -->
-                        <div class="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-base-200 border border-base-200">
-                            {% if yarn.preview_url %}
-                            <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}" class="h-full w-full object-cover">
-                            {% else %}
-                            <div class="flex h-full w-full items-center justify-center text-base-content/30">
-                                <span class="mdi mdi-sheep text-lg"></span>
-                            </div>
-                            {% endif %}
-                        </div>
-                        <!-- Yarn Info -->
-                        <div class="min-w-0 flex-1">
-                            <div class="font-semibold text-sm truncate group-hover:text-primary transition-colors">{{ yarn.name }}</div>
-                            <div class="text-xs text-base-content/60 truncate">
-                                {{ yarn.brand or _('Unknown Brand') }}
-                                {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
-                            </div>
-                        </div>
-                        <span class="mdi mdi-chevron-right text-base-content/30 group-hover:text-primary transition-colors"></span>
-                    </a>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="text-center py-6 bg-base-200/30 rounded-xl border border-dashed border-base-300">
-                    <span class="mdi mdi-sheep text-3xl text-base-content/20 block mb-2"></span>
-                    <p class="text-sm text-base-content/60">{{ _('No yarns linked') }}</p>
-                    <a href="/projects/{{ project.id }}/edit" class="btn btn-xs btn-ghost text-primary mt-2">{{ _('Link yarn') }}</a>
-                </div>
-                {% endif %}
             </div>
 
             <!-- Notes Card -->
