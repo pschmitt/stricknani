@@ -571,6 +571,7 @@ async def delete_yarn(
 async def delete_yarn_photo(
     yarn_id: int,
     photo_id: int,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -587,6 +588,12 @@ async def delete_yarn_photo(
     delete_file(target.filename, yarn.id, subdir="yarns")
     await db.delete(target)
     await db.commit()
+
+    if (
+        request.headers.get("accept") == "application/json"
+        or request.headers.get("content-type") == "application/json"
+    ):
+        return Response(status_code=status.HTTP_200_OK)
 
     return RedirectResponse(
         url=f"/yarn/{yarn.id}",

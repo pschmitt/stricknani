@@ -2,7 +2,7 @@
 
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, Form, Request, UploadFile, File, status
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status
 from fastapi.responses import (
     HTMLResponse,
     PlainTextResponse,
@@ -21,8 +21,6 @@ from stricknani.utils.auth import get_password_hash
 from stricknani.utils.files import (
     create_thumbnail,
     delete_file,
-    get_file_url,
-    get_thumbnail_url,
     save_uploaded_file,
 )
 from stricknani.utils.gravatar import gravatar_url

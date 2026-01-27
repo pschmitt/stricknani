@@ -184,7 +184,9 @@ async def test_create_project_imports_images(
 
     assert response.status_code == 303
     location = response.headers["location"]
-    project_id = int(location.strip("/").split("/")[1])
+    # Handle query parameters (e.g. ?toast=...)
+    path = location.split("?")[0]
+    project_id = int(path.strip("/").split("/")[1])
 
     images = await _fetch_images(session_factory, project_id)
     assert len(images) == 2
@@ -238,3 +240,30 @@ async def test_manage_categories_includes_project_categories(
 
     assert response.status_code == 200
     assert 'value="Schal"' in response.text
+
+
+@pytest.mark.asyncio
+async def test_delete_image_removes_file_and_record(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, _user_id, project_id, _step_id = test_client
+
+    # Upload an image
+    image_stream = _generate_image_bytes("yellow")
+    response = await client.post(
+        f"/projects/{project_id}/images/title",
+        files={"file": ("delete_me.png", image_stream, "image/png")},
+        data={"alt_text": "To be deleted"},
+    )
+    assert response.status_code == 200
+    image_id = response.json()["id"]
+
+    # Delete the image
+    response = await client.delete(f"/projects/{project_id}/images/{image_id}")
+    assert response.status_code == 200
+    assert response.json()["message"] == "Image deleted"
+
+    # Verify deletion from DB
+    images = await _fetch_images(session_factory, project_id)
+    assert len(images) == 0
+

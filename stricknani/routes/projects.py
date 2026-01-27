@@ -23,7 +23,7 @@ from fastapi import (
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from stricknani.config import config
 from stricknani.database import get_db
@@ -1411,7 +1411,8 @@ async def create_project(
     await db.refresh(project)
 
     return RedirectResponse(
-        url=f"/projects/{project.id}?toast=project_created", status_code=status.HTTP_303_SEE_OTHER
+        url=f"/projects/{project.id}?toast=project_created",
+        status_code=status.HTTP_303_SEE_OTHER,
     )
 
 
@@ -1519,7 +1520,8 @@ async def update_project(
     await db.commit()
 
     return RedirectResponse(
-        url=f"/projects/{project.id}?toast=project_updated", status_code=status.HTTP_303_SEE_OTHER
+        url=f"/projects/{project.id}?toast=project_updated",
+        status_code=status.HTTP_303_SEE_OTHER,
     )
 
 
@@ -1784,6 +1786,7 @@ async def delete_image(
     """Delete an image."""
     result = await db.execute(
         select(Image)
+        .options(joinedload(Image.project))
         .join(Project)
         .where(Image.id == image_id, Project.id == project_id)
     )

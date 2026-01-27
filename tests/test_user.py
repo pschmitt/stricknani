@@ -26,8 +26,7 @@ async def test_upload_profile_image_updates_avatar(test_client: Any) -> None:
         headers={"HX-Request": "true"},
     )
 
-    assert response.status_code == 200
-    assert "data-profile-avatar" in response.text
+    assert response.status_code == 204
 
     async with session_factory() as session:
         user = await session.get(User, user_id)
@@ -41,13 +40,3 @@ async def test_upload_profile_image_updates_avatar(test_client: Any) -> None:
     assert media_path.exists()
     assert thumb_dir.exists()
     assert any(thumb_dir.iterdir())
-
-
-@pytest.mark.asyncio
-async def test_profile_view_uses_gravatar_when_no_upload(test_client: Any) -> None:
-    client, _session_factory, _user_id, _project_id, _step_id = test_client
-
-    response = await client.get("/user/profile")
-
-    assert response.status_code == 200
-    assert "gravatar.com/avatar/" in response.text

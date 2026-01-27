@@ -1,0 +1,1460 @@
+# Translations template for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-01-27 20:48+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:6
+#: stricknani/templates/base.html:86 stricknani/templates/base.html:258
+#: stricknani/templates/base.html:273 stricknani/templates/yarn/list.html:5
+msgid "Stricknani"
+msgstr ""
+
+#: stricknani/templates/base.html:80
+msgid "Open main menu"
+msgstr ""
+
+#: stricknani/templates/base.html:93 stricknani/templates/base.html:280
+#: stricknani/templates/projects/list.html:5
+msgid "Projects"
+msgstr ""
+
+#: stricknani/templates/base.html:97 stricknani/templates/base.html:285
+#: stricknani/templates/yarn/list.html:11
+msgid "Yarns"
+msgstr ""
+
+#: stricknani/templates/base.html:102 stricknani/templates/base.html:292
+#: stricknani/templates/gauge/calculator.html:10
+msgid "Gauge Calculator"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:13
+#: stricknani/templates/base.html:107 stricknani/templates/base.html:299
+msgid "Admin"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:9
+#: stricknani/templates/base.html:123 stricknani/templates/base.html:138
+#, python-format
+msgid "Profile picture for %(email)s"
+msgstr ""
+
+#: stricknani/templates/base.html:151
+msgid "Signed in"
+msgstr ""
+
+#: stricknani/templates/base.html:159 stricknani/templates/base.html:325
+msgid "Language"
+msgstr ""
+
+#: stricknani/templates/base.html:183 stricknani/templates/base.html:317
+msgid "Theme"
+msgstr ""
+
+#: stricknani/templates/base.html:187 stricknani/templates/base.html:1045
+msgid "Dark"
+msgstr ""
+
+#: stricknani/templates/base.html:196
+msgid "Logout"
+msgstr ""
+
+#: stricknani/templates/base.html:204
+msgid "Toggle theme"
+msgstr ""
+
+#: stricknani/templates/base.html:220
+msgid "English"
+msgstr ""
+
+#: stricknani/templates/base.html:233
+msgid "German"
+msgstr ""
+
+#: stricknani/templates/auth/login.html:4
+#: stricknani/templates/auth/login.html:42
+#: stricknani/templates/auth/login.html:76 stricknani/templates/base.html:244
+#: stricknani/templates/base.html:307
+msgid "Login"
+msgstr ""
+
+#: stricknani/templates/base.html:258
+msgid "GPL-3.0-only"
+msgstr ""
+
+#: stricknani/templates/base.html:313
+msgid "Settings"
+msgstr ""
+
+#: stricknani/templates/base.html:350
+msgid "Crop Profile Picture"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:86
+#: stricknani/templates/admin/users.html:130
+#: stricknani/templates/admin/users.html:196
+#: stricknani/templates/admin/users.html:221 stricknani/templates/base.html:355
+#: stricknani/templates/base.html:566
+#: stricknani/templates/projects/detail.html:317
+#: stricknani/templates/projects/form.html:102
+#: stricknani/templates/projects/form.html:1715
+#: stricknani/templates/yarn/detail.html:290
+#: stricknani/templates/yarn/form.html:268
+msgid "Cancel"
+msgstr ""
+
+#: stricknani/templates/base.html:356
+msgid "Save & Upload"
+msgstr ""
+
+#: stricknani/templates/base.html:432
+msgid "Uploading..."
+msgstr ""
+
+#: stricknani/templates/base.html:485
+msgid "Profile picture updated successfully"
+msgstr ""
+
+#: stricknani/templates/base.html:490
+msgid "Failed to upload image"
+msgstr ""
+
+#: stricknani/templates/base.html:512
+msgid "Image viewer"
+msgstr ""
+
+#: stricknani/templates/base.html:520
+msgid "Toggle zoom"
+msgstr ""
+
+#: stricknani/templates/base.html:528
+msgid "Close image viewer"
+msgstr ""
+
+#: stricknani/templates/base.html:536
+msgid "Previous image"
+msgstr ""
+
+#: stricknani/templates/base.html:548
+msgid "Next image"
+msgstr ""
+
+#: stricknani/templates/base.html:554
+#: stricknani/templates/projects/detail.html:57
+#: stricknani/templates/projects/form.html:245
+#: stricknani/templates/yarn/detail.html:56
+msgid "Gallery"
+msgstr ""
+
+#: stricknani/templates/base.html:562
+msgid "Confirm Action"
+msgstr ""
+
+#: stricknani/templates/base.html:563
+msgid "Are you sure you want to proceed?"
+msgstr ""
+
+#: stricknani/templates/base.html:567
+msgid "Confirm"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:95
+#: stricknani/templates/admin/users.html:139
+#: stricknani/templates/admin/users.html:205
+#: stricknani/templates/admin/users.html:239 stricknani/templates/base.html:572
+#: stricknani/templates/projects/detail.html:327
+#: stricknani/templates/yarn/detail.html:302
+msgid "close"
+msgstr ""
+
+#: stricknani/templates/base.html:629
+msgid "Dismiss message"
+msgstr ""
+
+#: stricknani/templates/base.html:658 stricknani/templates/base.html:1066
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: stricknani/templates/base.html:955
+msgid "Project created successfully"
+msgstr ""
+
+#: stricknani/templates/base.html:956
+msgid "Project updated successfully"
+msgstr ""
+
+#: stricknani/templates/base.html:957
+msgid "Project deleted"
+msgstr ""
+
+#: stricknani/templates/base.html:958
+msgid "Yarn created successfully"
+msgstr ""
+
+#: stricknani/templates/base.html:959
+msgid "Yarn updated successfully"
+msgstr ""
+
+#: stricknani/templates/base.html:960
+msgid "Yarn deleted"
+msgstr ""
+
+#: stricknani/templates/base.html:961
+msgid "Profile updated successfully"
+msgstr ""
+
+#: stricknani/templates/base.html:1045
+msgid "Light"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:23
+msgid "You"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:30
+msgid "Disabled"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:34
+msgid "Active"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:48
+#: stricknani/templates/admin/users.html:331
+msgid "User disabled"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:48
+#: stricknani/templates/admin/users.html:330
+msgid "User activated"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:52
+msgid "Disable"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:54
+msgid "Enable"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:65
+#: stricknani/templates/admin/users.html:41
+msgid "Edit profile"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:70
+#: stricknani/templates/admin/users.html:102
+#: stricknani/templates/admin/users.html:133
+msgid "Reset password"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:81
+#: stricknani/templates/admin/users.html:329
+msgid "Admin access revoked"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:81
+#: stricknani/templates/admin/users.html:328
+msgid "Admin access granted"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:86
+msgid "Revoke admin"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:86
+msgid "Make admin"
+msgstr ""
+
+#: stricknani/templates/admin/_user_card.html:99
+#: stricknani/templates/admin/users.html:213
+msgid "Delete user"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:13
+msgid "User Management"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:16
+msgid "Manage accounts, roles, and access for your instance."
+msgstr ""
+
+#: stricknani/templates/admin/users.html:23
+msgid "Total Users"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:26
+#: stricknani/templates/admin/users.html:199
+msgid "Create User"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:43
+msgid "Update profile details for"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:50
+#: stricknani/templates/admin/users.html:334
+msgid "Profile updated"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:59
+#: stricknani/templates/admin/users.html:161
+#: stricknani/templates/auth/login.html:47
+#: stricknani/templates/auth/login.html:96
+msgid "Email"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:73
+msgid "Profile Image"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:81
+msgid "Change Photo"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:89
+msgid "Save Changes"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:104
+msgid "Set a new password for"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:111
+#: stricknani/templates/admin/users.html:335
+msgid "Password reset"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:118
+msgid "New password"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:145
+msgid "Create user"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:146
+msgid "Add a new account with a temporary password."
+msgstr ""
+
+#: stricknani/templates/admin/users.html:152
+#: stricknani/templates/admin/users.html:333
+msgid "User created"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:175
+#: stricknani/templates/auth/login.html:63
+#: stricknani/templates/auth/login.html:109
+msgid "Password"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:190
+msgid "Grant admin access"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:191
+msgid "Allow this user to manage accounts and settings."
+msgstr ""
+
+#: stricknani/templates/admin/users.html:216
+#: stricknani/templates/projects/detail.html:313
+#: stricknani/templates/yarn/detail.html:286
+msgid "Are you sure you want to delete"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:218
+msgid "This will permanently remove their projects and yarn."
+msgstr ""
+
+#: stricknani/templates/admin/users.html:226
+#: stricknani/templates/admin/users.html:332
+msgid "User deleted"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:233
+#: stricknani/templates/yarn/detail.html:295
+#: stricknani/templates/yarn/form.html:271
+msgid "Delete Forever"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:336
+msgid "User not found"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:337
+#: stricknani/templates/projects/form.html:888
+#: stricknani/templates/projects/form.html:892
+msgid "Upload failed"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:338
+msgid "Cannot remove the last admin"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:339
+msgid "Cannot remove your own admin access"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:340
+msgid "You cannot disable your own account"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:341
+msgid "You cannot delete your own account"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:342
+msgid "Cannot delete the last admin"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:343
+msgid "Email cannot be empty"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:344
+msgid "Password cannot be empty"
+msgstr ""
+
+#: stricknani/templates/admin/users.html:345
+msgid "Email already registered"
+msgstr ""
+
+#: stricknani/templates/auth/login.html:11
+msgid "Welcome back"
+msgstr ""
+
+#: stricknani/templates/auth/login.html:12
+msgid "Sign in to keep your projects moving"
+msgstr ""
+
+#: stricknani/templates/auth/login.html:20
+msgid "Welcome to Stricknani"
+msgstr ""
+
+#: stricknani/templates/auth/login.html:27
+msgid "Login failed"
+msgstr ""
+
+#: stricknani/templates/auth/login.html:28
+msgid ""
+"We could not sign you in with those details. Please review them and try "
+"again."
+msgstr ""
+
+#: stricknani/templates/auth/login.html:30
+msgid "Check for typos or extra spaces in your email and password."
+msgstr ""
+
+#: stricknani/templates/auth/login.html:31
+msgid "Make sure Caps Lock is off before you retry."
+msgstr ""
+
+#: stricknani/templates/auth/login.html:32
+msgid ""
+"If you lost access, reach out to your instance admin to reset your "
+"password."
+msgstr ""
+
+#: stricknani/templates/auth/login.html:81
+msgid "Don't have an account? Sign up"
+msgstr ""
+
+#: stricknani/templates/auth/login.html:91
+#: stricknani/templates/auth/login.html:124
+msgid "Sign Up"
+msgstr ""
+
+#: stricknani/templates/auth/login.html:121
+msgid "At least 8 characters"
+msgstr ""
+
+#: stricknani/templates/auth/login.html:128
+msgid "Already have an account? Login"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:16
+msgid ""
+"Calculate how many stitches to cast on and rows to knit based on your "
+"gauge and the pattern's gauge."
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:23
+msgid "How to use this calculator"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:25
+msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:26
+msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:27
+msgid "Enter the stitch count from your pattern (cast-on stitches)"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:28
+msgid "Click Calculate to see how many stitches and rows you need"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:44
+msgid "Pattern Gauge (per 10cm)"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:52
+#: stricknani/templates/gauge/calculator.html:96
+msgid "Stitches"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:70
+#: stricknani/templates/gauge/calculator.html:114
+msgid "Rows"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:88
+msgid "Your Gauge (per 10cm)"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:132
+msgid "Pattern Counts"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:140
+msgid "Stitches to cast on"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:158
+msgid "Rows to knit"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:158
+msgid "optional"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:174
+msgid "Calculate"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:189
+msgid "N/A"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:190
+msgid "and"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:190
+#: stricknani/templates/projects/detail.html:191
+msgid "rows"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:195
+msgid "Calculation Results"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:199
+msgid "Adjusted Stitches"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:205
+msgid "Adjusted Rows"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:211
+msgid "Based on a pattern cast-on of"
+msgstr ""
+
+#: stricknani/templates/gauge/calculator.html:211
+msgid "stitches"
+msgstr ""
+
+#: stricknani/templates/macros/buttons.html:77
+msgid "Back"
+msgstr ""
+
+#: stricknani/templates/macros/image_upload.html:20
+#: stricknani/templates/macros/image_upload.html:40
+#: stricknani/templates/macros/image_upload.html:42
+#: stricknani/templates/projects/form.html:910
+msgid "Drag and drop images here or click to upload"
+msgstr ""
+
+#: stricknani/templates/macros/image_upload.html:41
+#: stricknani/templates/projects/form.html:911
+msgid "Save the project before adding images to this step."
+msgstr ""
+
+#: stricknani/templates/projects/_empty_state.html:2
+#: stricknani/templates/projects/_list_partial.html:93
+msgid "No projects yet"
+msgstr ""
+
+#: stricknani/templates/projects/_empty_state.html:8
+#: stricknani/templates/projects/_list_partial.html:99
+msgid "Create Your First Project"
+msgstr ""
+
+#: stricknani/templates/projects/_favorite_toggle.html:4
+#: stricknani/templates/yarn/_favorite_toggle.html:3
+msgid "Unfavorite"
+msgstr ""
+
+#: stricknani/templates/projects/_favorite_toggle.html:4
+#: stricknani/templates/yarn/_favorite_toggle.html:3
+msgid "Favorite"
+msgstr ""
+
+#: stricknani/templates/projects/_favorite_toggle.html:5
+#: stricknani/templates/yarn/_favorite_toggle.html:4
+msgid "Removed from favorites"
+msgstr ""
+
+#: stricknani/templates/projects/_favorite_toggle.html:5
+#: stricknani/templates/yarn/_favorite_toggle.html:4
+msgid "Added to favorites"
+msgstr ""
+
+#: stricknani/templates/projects/_list_partial.html:34
+#: stricknani/templates/projects/list.html:100
+msgid "Open project details"
+msgstr ""
+
+#: stricknani/templates/projects/_list_partial.html:37
+#: stricknani/templates/projects/list.html:103
+#, python-format
+msgid "Open project details for %(name)s"
+msgstr ""
+
+#: stricknani/templates/projects/_list_partial.html:84
+#: stricknani/templates/projects/detail.html:34
+#: stricknani/templates/projects/form.html:5
+#: stricknani/templates/projects/list.html:140
+#: stricknani/templates/yarn/_list_partial.html:109
+#: stricknani/templates/yarn/detail.html:34
+msgid "Edit"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:4
+#: stricknani/templates/projects/categories.html:17
+msgid "Manage Categories"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:9
+msgid "Back to Projects"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:20
+msgid "Create, rename, or remove project categories."
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:53
+msgid "Add New Category"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:56
+#: stricknani/templates/projects/categories.html:80
+msgid "Category Name"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:62
+msgid "e.g., Socks, Shawl, Amigurumi"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:66
+msgid "Create"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:73
+msgid "Your Categories"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:90
+#, python-format
+msgid "%(num)d project"
+msgid_plural "%(num)d projects"
+msgstr[0] ""
+msgstr[1] ""
+
+#: stricknani/templates/projects/categories.html:94
+msgid "Edit category"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:94
+msgid "Save changes"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:96
+msgid "Are you sure you want to delete this category?"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:96
+msgid "Delete category"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:100
+msgid "Cannot delete category with associated projects"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html:111
+msgid "You have no custom categories yet."
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:13
+#: stricknani/templates/projects/form.html:120
+msgid "Back to projects"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:22
+#: stricknani/templates/projects/form.html:132
+#: stricknani/templates/yarn/detail.html:22
+#: stricknani/templates/yarn/form.html:34
+msgid "More actions"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:40
+#: stricknani/templates/projects/form.html:144
+#: stricknani/templates/projects/form.html:1716
+#: stricknani/templates/yarn/detail.html:40
+#: stricknani/templates/yarn/form.html:46
+msgid "Delete"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:59
+msgid "images"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:85
+msgid "Instructions"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:111
+msgid "Step Photos"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:143
+#: stricknani/templates/projects/form.html:192
+#: stricknani/templates/projects/form.html:370
+msgid "Project Details"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:150
+#: stricknani/templates/projects/form.html:198
+#: stricknani/templates/projects/form.html:377
+msgid "Category"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:159
+msgid "Created"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:168
+msgid "Tags"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:184
+msgid "Gauge (10cm)"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:188
+msgid "sts"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:199
+#: stricknani/templates/projects/form.html:399
+msgid "Used Needles"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:206
+#: stricknani/templates/projects/detail.html:217
+msgid "Not specified"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:210
+msgid "Recommended"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:226
+#: stricknani/templates/projects/form.html:440
+msgid "Pattern Source"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:233
+msgid "No link provided"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:244
+#: stricknani/templates/projects/form.html:453
+msgid "Yarns Used"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:269
+msgid "Unknown Brand"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:280
+msgid "No yarns linked"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:281
+msgid "Link yarn"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:291
+#: stricknani/templates/projects/form.html:226
+#: stricknani/templates/yarn/detail.html:107
+#: stricknani/templates/yarn/form.html:111
+msgid "Notes"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:307
+#: stricknani/templates/projects/detail.html:321
+#: stricknani/templates/projects/form.html:506
+#: stricknani/templates/projects/form.html:1708
+msgid "Delete Project"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:308
+msgid "This action cannot be undone."
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:348
+msgid "Failed to delete project"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:5
+msgid "New"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:5
+msgid "Project"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:24
+#: stricknani/templates/projects/form.html:231
+#: stricknani/templates/projects/form.html:328
+#: stricknani/templates/projects/form.html:1312
+#: stricknani/templates/yarn/form.html:12
+#: stricknani/templates/yarn/form.html:101
+#: stricknani/templates/yarn/form.html:115
+msgid "Preview"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:35
+msgid "Import Pattern"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:38
+msgid "From URL"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:39
+msgid "From File"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:40
+msgid "From Text"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:46
+msgid "Pattern URL"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:48
+msgid "e.g. https://..."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:51
+msgid "Enter the URL of the knitting pattern"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:59
+msgid "Pattern File"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:68
+msgid "Click to upload or drag and drop"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:69
+msgid "PDF, text file, or image"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:76
+#: stricknani/templates/projects/form.html:317
+#: stricknani/templates/projects/form.html:1304
+msgid "Remove"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:82
+msgid "Supports PDF, TXT, MD, JPG, PNG, GIF"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:90
+msgid "Pattern Text"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:93
+msgid "Paste pattern instructions here..."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:96
+msgid "Paste the pattern text directly"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:103
+#: stricknani/templates/projects/form.html:125
+msgid "Import"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:109
+msgid "Importing pattern..."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:110
+msgid "This may take 10-30 seconds"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:114
+msgid "Close"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:128
+#: stricknani/templates/projects/form.html:308
+#: stricknani/templates/projects/form.html:310
+#: stricknani/templates/projects/form.html:1299
+#: stricknani/templates/projects/form.html:1300
+#: stricknani/templates/yarn/form.html:30
+msgid "Save"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:153
+#: stricknani/templates/projects/list.html:27
+msgid "New Project"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:165
+msgid "Imported Data - Not Saved Yet"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:167
+msgid ""
+"This project was imported from an external source. Please review all "
+"fields carefully and click \"Save\" to keep it."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:182
+msgid "Project Name"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:185
+msgid "e.g. My Amazing Project"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:201
+#: stricknani/templates/projects/form.html:386
+msgid "Select a category"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:211
+#: stricknani/templates/projects/form.html:420
+msgid "Gauge St."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:215
+#: stricknani/templates/projects/form.html:428
+msgid "Gauge Rows"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:236
+#: stricknani/templates/projects/form.html:333
+#: stricknani/templates/projects/form.html:1316
+msgid "Supports Markdown formatting"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:273
+msgid "Save the project to enable image uploads."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:282
+msgid "Steps"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:290
+#: stricknani/templates/projects/form.html:1290
+msgid "Step"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:295
+#: stricknani/templates/projects/form.html:297
+#: stricknani/templates/projects/form.html:1292
+#: stricknani/templates/projects/form.html:1293
+msgid "Move Up"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:301
+#: stricknani/templates/projects/form.html:303
+#: stricknani/templates/projects/form.html:1295
+#: stricknani/templates/projects/form.html:1296
+msgid "Move Down"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:315
+#: stricknani/templates/projects/form.html:1303
+msgid "Remove Step"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:323
+#: stricknani/templates/projects/form.html:1308
+msgid "Step Title"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:332
+#: stricknani/templates/projects/form.html:1315
+msgid "Step Description"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:359
+msgid "Add Step"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:382
+msgid "Manage"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:403
+msgid "e.g. 4.0mm circular"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:408
+msgid "Recommended Size"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:412
+msgid "e.g. 3.5mm"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:456
+msgid "Add new"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:464
+msgid "Search yarns..."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:504
+#: stricknani/templates/yarn/form.html:248
+msgid "Danger Zone"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:528
+#: stricknani/templates/yarn/form.html:331
+msgid "Nothing to preview"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:619
+msgid "Pattern data loaded - please review and save"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:698
+msgid "No yarns selected"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:831
+msgid "Save the project to create this step before uploading images."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:867
+msgid "Uploading image..."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:877
+msgid "Image uploaded!"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:912
+msgid "Image upload failed. Please try again."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:913
+msgid "Network error while uploading image."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:914
+msgid "Only image files are supported."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:915
+msgid "Failed to delete the image. Please try again."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:916
+msgid "Network error while deleting image."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:917
+msgid "Uploading…"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1144
+msgid "Remove Image"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1145
+msgid "Remove this image from the import list?"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1167
+msgid "Delete Image"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1168
+msgid "Are you sure you want to delete this image? This action cannot be undone."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1388
+msgid "Saving..."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1422
+msgid "Step saved successfully"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1425
+msgid "Failed to save step"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1555
+msgid "Please enter a URL"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1565
+msgid "Please select a file"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1574
+msgid "Please enter some text"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1607
+msgid "AI extraction failed - using basic parser"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1648
+msgid "Imported images will be previewed in the gallery."
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1689
+msgid "Pattern imported successfully"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1695
+msgid "Failed to import pattern"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1710
+msgid "Are you sure you want to delete this project?"
+msgstr ""
+
+#: stricknani/templates/projects/list.html:24
+msgid "My Projects"
+msgstr ""
+
+#: stricknani/templates/projects/list.html:35
+msgid "Search projects..."
+msgstr ""
+
+#: stricknani/templates/projects/list.html:49
+#, python-format
+msgid "%(count)s linked yarn: %(names)s"
+msgstr ""
+
+#: stricknani/templates/projects/list.html:52
+#, python-format
+msgid "%(count)s linked yarns: %(names)s"
+msgstr ""
+
+#: stricknani/templates/projects/list.html:56
+msgid "No linked yarns"
+msgstr ""
+
+#: stricknani/templates/projects/list.html:141
+#: stricknani/templates/yarn/_list_partial.html:109
+#, python-format
+msgid "Edit %(name)s"
+msgstr ""
+
+#: stricknani/templates/projects/list.html:161
+msgid "Project deleted."
+msgstr ""
+
+#: stricknani/templates/shared/list_base.html:15
+msgid "Manage your collection"
+msgstr ""
+
+#: stricknani/templates/yarn/_empty_state.html:5
+msgid "Start your stash"
+msgstr ""
+
+#: stricknani/templates/yarn/_empty_state.html:6
+msgid "Track skeins, colorways, and notes so you know what you can use next."
+msgstr ""
+
+#: stricknani/templates/yarn/_empty_state.html:10
+msgid "Add your first yarn"
+msgstr ""
+
+#: stricknani/templates/yarn/_list_partial.html:10
+#, python-format
+msgid "Brand: %(brand)s"
+msgstr ""
+
+#: stricknani/templates/yarn/_list_partial.html:13
+#, python-format
+msgid "Colorway: %(colorway)s"
+msgstr ""
+
+#: stricknani/templates/yarn/_list_partial.html:17
+#, python-format
+msgid "%(count)s linked project"
+msgstr ""
+
+#: stricknani/templates/yarn/_list_partial.html:19
+#, python-format
+msgid "%(count)s linked projects"
+msgstr ""
+
+#: stricknani/templates/yarn/_list_partial.html:22
+msgid "No linked projects"
+msgstr ""
+
+#: stricknani/templates/yarn/_list_partial.html:30
+#, python-format
+msgid "Photo for %(name)s"
+msgstr ""
+
+#: stricknani/templates/yarn/_list_partial.html:35
+#: stricknani/templates/yarn/_list_partial.html:41
+msgid "Open yarn details"
+msgstr ""
+
+#: stricknani/templates/yarn/_list_partial.html:43
+#, python-format
+msgid "Open yarn details for %(name)s"
+msgstr ""
+
+#: stricknani/templates/yarn/_list_partial.html:106
+msgid "No description yet."
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:5
+#: stricknani/templates/yarn/form.html:5 stricknani/templates/yarn/list.html:5
+msgid "Yarn"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:13
+#: stricknani/templates/yarn/form.html:23
+msgid "Back to yarn"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:58
+msgid "photos"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:79
+msgid "No photos yet"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:90
+#: stricknani/templates/yarn/form.html:97
+msgid "Description"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:126
+#: stricknani/templates/yarn/form.html:78
+#: stricknani/templates/yarn/form.html:166
+msgid "Yarn Details"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:133
+#: stricknani/templates/yarn/form.html:83
+#: stricknani/templates/yarn/form.html:172
+msgid "Brand"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:142
+msgid "Added"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:154
+#: stricknani/templates/yarn/form.html:180
+msgid "Colorway"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:160
+#: stricknani/templates/yarn/form.html:186
+msgid "Dye Lot"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:168
+msgid "Fiber Content"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:178
+msgid "Weight Category"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:188
+#: stricknani/templates/yarn/form.html:210
+msgid "Recommended Needles"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:201
+msgid "Weight"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:207
+msgid "Length"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:215
+#: stricknani/templates/yarn/form.html:236
+msgid "Source Link"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:230
+msgid "Linked Projects"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:267
+msgid "No projects linked"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:280
+#: stricknani/templates/yarn/form.html:250
+#: stricknani/templates/yarn/form.html:262
+msgid "Delete Yarn"
+msgstr ""
+
+#: stricknani/templates/yarn/detail.html:281
+msgid "This will remove its photos too."
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:5
+msgid "Add Yarn"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:25
+msgid "Back to yarns"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:55
+msgid "New yarn entry"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:69
+msgid "Name"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:87
+#: stricknani/templates/yarn/form.html:196
+msgid "Fiber content"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:97
+#: stricknani/templates/yarn/form.html:111
+msgid "Optional"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:127
+msgid "Photos"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:142
+msgid "Delete photo"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:156
+msgid "Supported: JPG, PNG, GIF. Thumbnails are generated automatically."
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:198
+msgid "e.g. 80% Merino..."
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:203
+msgid "Weight category"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:205
+msgid "e.g. Fingering, DK..."
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:220
+msgid "Weight (g)"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:226
+msgid "Length (m)"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:264
+msgid "Are you sure you want to delete this yarn?"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:265
+msgid ""
+"This will also delete all photos associated with this yarn. This action "
+"cannot be undone."
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:283
+msgid "Failed to delete the photo. Please try again."
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:284
+msgid "Network error while deleting photo."
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:288
+msgid "Delete Photo"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:289
+msgid "Are you sure you want to delete this photo? This action cannot be undone."
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:315
+msgid "Photo deleted"
+msgstr ""
+
+#: stricknani/templates/yarn/form.html:384
+msgid "Remove image"
+msgstr ""
+
+#: stricknani/templates/yarn/list.html:14
+msgid "New Yarn"
+msgstr ""
+
+#: stricknani/templates/yarn/list.html:27
+msgid "Search yarn..."
+msgstr ""
+
+#: stricknani/templates/yarn/list.html:47
+msgid "Yarn deleted."
+msgstr ""
+

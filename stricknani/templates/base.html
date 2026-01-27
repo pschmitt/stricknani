@@ -515,6 +515,14 @@
             <div class="relative flex flex-1 flex-col items-center justify-center p-4">
                 <button
                     type="button"
+                    class="absolute right-16 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20 z-10"
+                    data-lightbox-zoom
+                    aria-label="{{ _('Toggle zoom') }}"
+                >
+                    <span class="mdi mdi-magnify-plus"></span>
+                </button>
+                <button
+                    type="button"
                     class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20 z-10"
                     data-lightbox-close
                     aria-label="{{ _('Close image viewer') }}"
@@ -529,8 +537,8 @@
                 >
                     <span class="mdi mdi-chevron-left text-3xl"></span>
                 </button>
-                <div class="flex max-h-full w-full max-w-4xl flex-col items-center justify-center">
-                    <img src="" alt="" class="max-h-[75vh] max-w-full rounded-lg object-contain shadow-lg" data-lightbox-image>
+                <div class="flex max-h-full w-full max-w-4xl flex-col items-center justify-center overflow-hidden" data-zoom-container>
+                    <img src="" alt="" class="max-h-[75vh] max-w-full rounded-lg object-contain shadow-lg transition-transform duration-200 origin-center cursor-zoom-in" data-lightbox-image>
                     <p class="mt-4 text-center text-sm text-white/80" data-lightbox-caption></p>
                 </div>
                 <button
@@ -549,7 +557,46 @@
         </div>
     </dialog>
 
+    <dialog id="confirmationDialog" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg" id="confirmationTitle">{{ _('Confirm Action') }}</h3>
+            <p class="py-4" id="confirmationMessage">{{ _('Are you sure you want to proceed?') }}</p>
+            <div class="modal-action">
+                <form method="dialog">
+                    <button class="btn btn-ghost" id="confirmationCancel">{{ _('Cancel') }}</button>
+                    <button class="btn btn-error text-white" id="confirmationConfirm">{{ _('Confirm') }}</button>
+                </form>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>{{ _('close') }}</button>
+        </form>
+    </dialog>
+
     <script>
+        window.confirmAction = (title, message, onConfirm) => {
+            const dialog = document.getElementById('confirmationDialog');
+            const titleEl = document.getElementById('confirmationTitle');
+            const messageEl = document.getElementById('confirmationMessage');
+            const confirmBtn = document.getElementById('confirmationConfirm');
+
+            if (!dialog || !titleEl || !messageEl || !confirmBtn) return;
+
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            
+            // Remove old listeners to avoid stacking
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            
+            newConfirmBtn.addEventListener('click', () => {
+                onConfirm();
+                dialog.close();
+            });
+
+            dialog.showModal();
+        };
+
         const toastVariants = {
             success: "bg-emerald-500/90 text-white",
             error: "bg-red-600/90 text-white",
@@ -666,13 +713,16 @@
             const image = lightbox.querySelector("[data-lightbox-image]");
             const caption = lightbox.querySelector("[data-lightbox-caption]");
             const closeButton = lightbox.querySelector("[data-lightbox-close]");
+            const zoomButton = lightbox.querySelector("[data-lightbox-zoom]");
             const prevButton = lightbox.querySelector("[data-lightbox-prev]");
             const nextButton = lightbox.querySelector("[data-lightbox-next]");
             const thumbnailsContainer = lightbox.querySelector("[data-lightbox-thumbnails]");
+            const zoomContainer = lightbox.querySelector("[data-zoom-container]");
 
             let currentIndex = 0;
             let currentItems = [];
             let touchStartX = null;
+            let isZoomed = false;
 
             const updateNavigationState = () => {
                 const hasMultiple = currentItems.length > 1;
@@ -682,6 +732,33 @@
                 } else {
                     prevButton.classList.add("opacity-50", "pointer-events-none");
                     nextButton.classList.add("opacity-50", "pointer-events-none");
+                }
+            };
+
+            const toggleZoom = () => {
+                isZoomed = !isZoomed;
+                if (isZoomed) {
+                    image.style.transform = "scale(2.5)";
+                    image.classList.remove("cursor-zoom-in");
+                    image.classList.add("cursor-zoom-out");
+                    if (zoomButton) {
+                        zoomButton.querySelector("span").classList.replace("mdi-magnify-plus", "mdi-magnify-minus");
+                        zoomButton.classList.add("bg-white/30");
+                    }
+                    if (zoomContainer) zoomContainer.style.overflow = "auto";
+                } else {
+                    image.style.transform = "";
+                    image.classList.remove("cursor-zoom-out");
+                    image.classList.add("cursor-zoom-in");
+                    if (zoomButton) {
+                        zoomButton.querySelector("span").classList.replace("mdi-magnify-minus", "mdi-magnify-plus");
+                        zoomButton.classList.remove("bg-white/30");
+                    }
+                    if (zoomContainer) {
+                        zoomContainer.style.overflow = "hidden";
+                        zoomContainer.scrollTop = 0;
+                        zoomContainer.scrollLeft = 0;
+                    }
                 }
             };
 
@@ -718,6 +795,9 @@
                 if (!active) {
                     return;
                 }
+                // Reset zoom on slide change
+                if (isZoomed) toggleZoom();
+                
                 image.src = active.src;
                 image.alt = active.alt;
                 caption.textContent = active.alt || "";
@@ -827,6 +907,11 @@
             });
 
             closeButton.addEventListener("click", () => close());
+            if (zoomButton) zoomButton.addEventListener("click", () => toggleZoom());
+            image.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleZoom();
+            });
             nextButton.addEventListener("click", () => showNext());
             prevButton.addEventListener("click", () => showPrev());
 
