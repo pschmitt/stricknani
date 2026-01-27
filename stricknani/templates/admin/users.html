@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "macros/buttons.html" as buttons %}
+{% import "macros/image_upload.html" as uploads %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -15,7 +16,7 @@
                     {{ _('Manage accounts, roles, and access for your instance.') }}
                 </p>
             </div>
-            
+
             <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                 <div class="px-4 py-2 rounded-lg bg-base-100 border border-base-200 text-sm font-medium shadow-sm flex items-center gap-2">
                     <span class="mdi mdi-account-group text-base-content/50 text-lg"></span>
@@ -35,7 +36,68 @@
     </div>
 </div>
 
-<dialog id="resetPasswordDialog" class="modal modal-bottom sm:modal-middle">
+<dialog id="editUserDialog" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-2">{{ _('Edit profile') }}</h3>
+        <p class="text-sm opacity-70 mb-6">
+            {{ _('Update profile details for') }} <strong id="editUserEmailTitle" class="text-base-content"></strong>.
+        </p>
+        <form
+            id="editUserForm"
+            method="post"
+            action="/admin/users/0/edit"
+            class="space-y-4"
+            data-toast-message="{{ _('Profile updated') }}"
+            data-toast-variant="success"
+            data-dialog-close="editUserDialog"
+            hx-post="/admin/users/0/edit"
+            hx-target="#admin-user-list"
+            hx-swap="outerHTML"
+        >
+            <div class="form-control w-full">
+                <label class="label">
+                    <span class="label-text font-medium">{{ _('Email') }}</span>
+                </label>
+                <input
+                    id="edit-user-email"
+                    name="email"
+                    type="email"
+                    required
+                    autocomplete="email"
+                    class="input input-bordered w-full"
+                />
+            </div>
+
+            <div class="form-control w-full">
+                <label class="label">
+                    <span class="label-text font-medium">{{ _('Profile Image') }}</span>
+                </label>
+                <button
+                    type="button"
+                    class="btn btn-outline gap-2"
+                    onclick="triggerEditUserImageUpload()"
+                >
+                    <span class="mdi mdi-camera"></span>
+                    {{ _('Change Photo') }}
+                </button>
+            </div>
+
+            <div class="modal-action">
+                <button type="button" class="btn btn-ghost" onclick="document.getElementById('editUserDialog').close()">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary gap-2">
+                    <span class="mdi mdi-content-save"></span>
+                    {{ _('Save Changes') }}
+                </button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>{{ _('close') }}</button>
+    </form>
+</dialog>
+
+<dialog id="resetPasswordDialog"
+ class="modal modal-bottom sm:modal-middle">
     <div class="modal-box">
         <h3 class="font-bold text-lg mb-2">{{ _('Reset password') }}</h3>
         <p class="text-sm opacity-70 mb-6">
@@ -46,7 +108,7 @@
             method="post"
             action="/admin/users/0/reset-password"
             class="space-y-4"
-            data-toast-message="{{ _('Password reset.') }}"
+            data-toast-message="{{ _('Password reset') }}"
             data-toast-variant="success"
             data-dialog-close="resetPasswordDialog"
             hx-swap="none"
@@ -87,7 +149,7 @@
             method="post"
             action="/admin/users/create"
             class="space-y-4"
-            data-toast-message="{{ _('User created.') }}"
+            data-toast-message="{{ _('User created') }}"
             data-toast-variant="success"
             data-dialog-close="createUserDialog"
             hx-post="/admin/users/create"
@@ -161,7 +223,7 @@
                 id="deleteUserForm"
                 method="post"
                 action="/admin/users/0/delete"
-                data-toast-message="{{ _('User deleted.') }}"
+                data-toast-message="{{ _('User deleted') }}"
                 data-toast-variant="success"
                 data-dialog-close="deleteUserDialog"
                 hx-swap="outerHTML"
@@ -188,6 +250,39 @@ function openCreateUserDialog() {
     }
 
     form.reset();
+    dialog.showModal();
+}
+
+let currentEditingUserId = null;
+
+function triggerEditUserImageUpload() {
+    if (currentEditingUserId) {
+        window.triggerProfileImageUpload(currentEditingUserId);
+    }
+}
+
+function openEditUserDialog(button) {
+    const userId = button.dataset.userId;
+    const userEmail = button.dataset.userEmail || '';
+    const dialog = document.getElementById('editUserDialog');
+    const form = document.getElementById('editUserForm');
+    const emailTitle = document.getElementById('editUserEmailTitle');
+    const emailInput = document.getElementById('edit-user-email');
+
+    if (!dialog || !form || !emailInput || !userId) {
+        return;
+    }
+
+    currentEditingUserId = userId;
+    form.action = `/admin/users/${userId}/edit`;
+    form.setAttribute('hx-post', `/admin/users/${userId}/edit`);
+    form.setAttribute('hx-target', `#user-card-${userId}`);
+    emailTitle.textContent = userEmail;
+    emailInput.value = userEmail;
+
+    // Refresh HTMX to pick up the new hx-post and hx-target
+    htmx.process(form);
+
     dialog.showModal();
 }
 
@@ -230,22 +325,24 @@ function openDeleteUserDialog(button) {
 }
 
 const adminToastMessages = {
-    admin_granted: { message: '{{ _("Admin access granted.") }}', variant: 'success' },
-    admin_revoked: { message: '{{ _("Admin access revoked.") }}', variant: 'success' },
-    user_activated: { message: '{{ _("User activated.") }}', variant: 'success' },
-    user_deactivated: { message: '{{ _("User disabled.") }}', variant: 'success' },
-    user_deleted: { message: '{{ _("User deleted.") }}', variant: 'success' },
-    user_created: { message: '{{ _("User created.") }}', variant: 'success' },
-    password_reset: { message: '{{ _("Password reset.") }}', variant: 'success' },
-    user_not_found: { message: '{{ _("User not found.") }}', variant: 'error' },
-    cannot_remove_last_admin: { message: '{{ _("Cannot remove the last admin.") }}', variant: 'error' },
-    cannot_remove_own_admin: { message: '{{ _("Cannot remove your own admin access.") }}', variant: 'error' },
-    cannot_deactivate_self: { message: '{{ _("You cannot disable your own account.") }}', variant: 'error' },
-    cannot_delete_self: { message: '{{ _("You cannot delete your own account.") }}', variant: 'error' },
-    cannot_delete_last_admin: { message: '{{ _("Cannot delete the last admin.") }}', variant: 'error' },
-    email_empty: { message: '{{ _("Email cannot be empty.") }}', variant: 'error' },
-    password_empty: { message: '{{ _("Password cannot be empty.") }}', variant: 'error' },
-    email_exists: { message: '{{ _("Email already registered.") }}', variant: 'error' },
+    admin_granted: { message: '{{ _("Admin access granted") }}', variant: 'success' },
+    admin_revoked: { message: '{{ _("Admin access revoked") }}', variant: 'success' },
+    user_activated: { message: '{{ _("User activated") }}', variant: 'success' },
+    user_deactivated: { message: '{{ _("User disabled") }}', variant: 'success' },
+    user_deleted: { message: '{{ _("User deleted") }}', variant: 'success' },
+    user_created: { message: '{{ _("User created") }}', variant: 'success' },
+    user_updated: { message: '{{ _("Profile updated") }}', variant: 'success' },
+    password_reset: { message: '{{ _("Password reset") }}', variant: 'success' },
+    user_not_found: { message: '{{ _("User not found") }}', variant: 'error' },
+    upload_failed: { message: '{{ _("Upload failed") }}', variant: 'error' },
+    cannot_remove_last_admin: { message: '{{ _("Cannot remove the last admin") }}', variant: 'error' },
+    cannot_remove_own_admin: { message: '{{ _("Cannot remove your own admin access") }}', variant: 'error' },
+    cannot_deactivate_self: { message: '{{ _("You cannot disable your own account") }}', variant: 'error' },
+    cannot_delete_self: { message: '{{ _("You cannot delete your own account") }}', variant: 'error' },
+    cannot_delete_last_admin: { message: '{{ _("Cannot delete the last admin") }}', variant: 'error' },
+    email_empty: { message: '{{ _("Email cannot be empty") }}', variant: 'error' },
+    password_empty: { message: '{{ _("Password cannot be empty") }}', variant: 'error' },
+    email_exists: { message: '{{ _("Email already registered") }}', variant: 'error' },
 };
 
 document.addEventListener('DOMContentLoaded', () => {

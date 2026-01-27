@@ -2,7 +2,7 @@
 
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, Form, Request, status
+from fastapi import APIRouter, Depends, Form, Request, UploadFile, File, status
 from fastapi.responses import (
     HTMLResponse,
     PlainTextResponse,
@@ -12,11 +12,19 @@ from fastapi.responses import (
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.main import get_language, render_template, templates
 from stricknani.models import User
 from stricknani.routes.auth import require_admin
 from stricknani.utils.auth import get_password_hash
+from stricknani.utils.files import (
+    create_thumbnail,
+    delete_file,
+    get_file_url,
+    get_thumbnail_url,
+    save_uploaded_file,
+)
 from stricknani.utils.gravatar import gravatar_url
 from stricknani.utils.i18n import gettext, install_i18n
 
@@ -255,6 +263,94 @@ async def reset_password(
     if request and request.headers.get("HX-Request"):
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     return _admin_users_redirect("password_reset")
+
+
+@router.post("/users/{user_id}/edit")
+async def edit_user_admin(
+    user_id: int,
+    request: Request,
+    email: str = Form(...),
+    profile_image: UploadFile | None = File(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> Response:
+    """Edit a user's profile from the admin UI."""
+    user = await db.get(User, user_id)
+    if not user:
+        return _admin_error_response(
+            request,
+            "user_not_found",
+            "User not found.",
+        )
+
+    normalized_email = email.strip().lower()
+    if not normalized_email:
+        return _admin_error_response(
+            request,
+            "email_empty",
+            "Email cannot be empty.",
+        )
+
+    if normalized_email != user.email:
+        existing = await db.execute(
+            select(User.id).where(User.email == normalized_email)
+        )
+        if existing.scalar_one_or_none() is not None:
+            return _admin_error_response(
+                request,
+                "email_exists",
+                "Email already registered.",
+            )
+        user.email = normalized_email
+
+    await db.commit()
+    if request.headers.get("HX-Request"):
+        result = await db.execute(select(func.count()).select_from(User))
+        user_count = int(result.scalar_one())
+        return _render_user_card_response(request, user, current_user, user_count)
+    return _admin_users_redirect("user_updated")
+
+@router.post("/users/{user_id}/profile-image", response_class=HTMLResponse)
+async def profile_image_upload_admin(
+    user_id: int,
+    request: Request,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> Response:
+    """Upload a new profile image for a user from the admin UI."""
+    user = await db.get(User, user_id)
+    if not user:
+        return _admin_error_response(
+            request,
+            "user_not_found",
+            "User not found.",
+        )
+
+    try:
+        filename, _ = await save_uploaded_file(file, user.id, subdir="users")
+        file_path = config.MEDIA_ROOT / "users" / str(user.id) / filename
+        await create_thumbnail(file_path, user.id, subdir="users")
+    except Exception as exc:  # noqa: BLE001
+        return _admin_error_response(
+            request,
+            "upload_failed",
+            f"Could not process the uploaded image: {exc}",
+        )
+
+    previous_image = user.profile_image
+    user.profile_image = filename
+    await db.commit()
+
+    if previous_image and previous_image != filename:
+        delete_file(previous_image, user.id, subdir="users")
+
+    if request.headers.get("HX-Request"):
+        result = await db.execute(select(func.count()).select_from(User))
+        user_count = int(result.scalar_one())
+        return _render_user_card_response(request, user, current_user, user_count)
+
+    return _admin_users_redirect("user_updated")
 
 
 @router.post("/users/create")

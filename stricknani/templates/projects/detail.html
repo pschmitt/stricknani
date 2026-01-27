@@ -84,7 +84,7 @@
                     <span class="mdi mdi-format-list-checks text-primary"></span>
                     {{ _('Instructions') }}
                 </h2>
-                
+
                 <div class="space-y-6 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-base-300 before:to-transparent">
                     {% for step in project.steps %}
                     <div class="relative flex items-start group">
@@ -98,7 +98,7 @@
                         <!-- Content Card -->
                         <div class="ml-16 md:ml-0 flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 transition hover:shadow-md hover:border-primary/20">
                             <h3 class="text-lg font-bold text-base-content mb-2">{{ step.title }}</h3>
-                            
+
                             {% if step.description_html %}
                             <div class="prose prose-sm max-w-none text-base-content/80 mb-4">
                                 {{ step.description_html | safe }}
@@ -142,7 +142,7 @@
                     <span class="mdi mdi-information-outline"></span>
                     {{ _('Project Details') }}
                 </h3>
-                
+
                 <div class="space-y-4">
                     <!-- Badges Info -->
                     {% if project.category and project.category != 'None' %}
@@ -333,7 +333,7 @@ function deleteProject() {
     const btn = document.querySelector('#deleteProjectDialog .btn-error');
     btn.disabled = true;
     btn.classList.add('loading');
-    
+
     fetch('/projects/{{ project.id }}', {
         method: 'DELETE',
         headers: {

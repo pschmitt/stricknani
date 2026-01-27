@@ -51,3 +51,23 @@ class User(Base):
     categories: Mapped[list[Category]] = relationship(
         "Category", back_populates="owner", cascade="all, delete-orphan"
     )
+
+    @property
+    def avatar_url(self) -> str:
+        """Get the user's avatar URL."""
+        from stricknani.utils.files import get_file_url
+        from stricknani.utils.gravatar import gravatar_url
+
+        if self.profile_image:
+            return get_file_url(self.profile_image, self.id, subdir="users")
+        return gravatar_url(self.email)
+
+    @property
+    def avatar_thumbnail_url(self) -> str:
+        """Get the user's avatar thumbnail URL."""
+        from stricknani.utils.files import get_thumbnail_url
+        from stricknani.utils.gravatar import gravatar_url
+
+        if self.profile_image:
+            return get_thumbnail_url(self.profile_image, self.id, subdir="users")
+        return gravatar_url(self.email, size=96)

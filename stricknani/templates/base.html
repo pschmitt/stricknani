@@ -6,10 +6,9 @@
     <title>{% block title %}{{ _('Stricknani') }}{% endblock %}</title>
     {% block head %}{% endblock %}
     <link rel="icon" type="image/svg+xml" href="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}">
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css"
-    >
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
     <script>
         // Theme initialization - MUST run before page renders
         (function() {
@@ -47,6 +46,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
+        .cropper-view-box,
+        .cropper-face {
+            border-radius: 50%;
+        }
+        .cropper-view-box {
+            outline: 0;
+            box-shadow: 0 0 0 1px #39f;
+        }
         .markdown-inline-image {
             max-width: 250px;
             width: 100%;
@@ -126,7 +133,7 @@
                         >
                             <div class="flex items-center gap-3 border-b border-base-300 px-4 py-3">
                                 <div class="avatar">
-                                    <div class="w-12 rounded-full">
+                                    <div class="w-12 rounded-full cursor-pointer hover:ring-2 hover:ring-primary transition-all group relative" onclick="document.getElementById('profile-image-input').click()">
                                         {% if current_user_avatar_thumbnail %}
                                         <img src="{{ current_user_avatar_thumbnail }}" alt="{{ _('Profile picture for %(email)s') % {'email': current_user.email} }}" />
                                         {% else %}
@@ -134,6 +141,9 @@
                                             <span class="mdi mdi-account text-2xl"></span>
                                         </div>
                                         {% endif %}
+                                        <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                                            <span class="mdi mdi-camera text-white text-lg"></span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div>
@@ -180,10 +190,6 @@
                                 </div>
                             </div>
                             <div class="space-y-2 px-4 py-4">
-                                <a href="/user/profile" class="btn btn-ghost w-full justify-start">
-                                    <span class="mdi mdi-account-details-outline text-lg"></span>
-                                    {{ _('Profile') }}
-                                </a>
                                 <form action="/auth/logout" method="post">
                                     <button type="submit" class="btn btn-ghost w-full justify-start text-error">
                                         <span class="mdi mdi-logout text-lg"></span>
@@ -335,6 +341,163 @@
         </ul>
     </div>
     </div>
+
+    {% if current_user %}
+    <!-- Profile Image Upload Tools -->
+    <input type="file" id="profile-image-input" class="hidden" accept="image/*">
+    <dialog id="crop-modal" class="modal">
+        <div class="modal-box max-w-lg">
+            <h3 class="font-bold text-lg mb-4">{{ _('Crop Profile Picture') }}</h3>
+            <div class="relative h-96 w-full rounded-lg bg-base-300 overflow-hidden">
+                <img id="crop-image" src="" alt="Image to crop" class="max-h-full max-w-full">
+            </div>
+            <div class="modal-action">
+                <button type="button" id="crop-cancel" class="btn btn-ghost">{{ _('Cancel') }}</button>
+                <button type="button" id="crop-save" class="btn btn-primary">{{ _('Save & Upload') }}</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let cropper;
+            const input = document.getElementById('profile-image-input');
+            const modal = document.getElementById('crop-modal');
+            const image = document.getElementById('crop-image');
+            const saveBtn = document.getElementById('crop-save');
+            const cancelBtn = document.getElementById('crop-cancel');
+            let targetUserId = {{ current_user.id }};
+
+            window.triggerProfileImageUpload = function(userId) {
+                targetUserId = userId || {{ current_user.id }};
+                input.click();
+            };
+
+            input.addEventListener('change', function(e) {
+                const files = e.target.files;
+                if (files && files.length > 0) {
+                    const file = files[0];
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        image.src = e.target.result;
+                        modal.showModal();
+
+                        if (cropper) {
+                            cropper.destroy();
+                        }
+                        cropper = new Cropper(image, {
+                            aspectRatio: 1,
+                            viewMode: 1,
+                            dragMode: 'move',
+                            autoCropArea: 1,
+                            restore: false,
+                            guides: false,
+                            center: false,
+                            highlight: false,
+                            cropBoxMovable: false,
+                            cropBoxResizable: false,
+                            toggleDragModeOnDblclick: false,
+                            zoomable: true,
+                            zoomOnTouch: true,
+                            zoomOnWheel: true,
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            cancelBtn.addEventListener('click', function() {
+                modal.close();
+                input.value = '';
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+            });
+
+            saveBtn.addEventListener('click', function() {
+                if (!cropper) return;
+
+                const canvas = cropper.getCroppedCanvas({
+                    width: 400,
+                    height: 400,
+                });
+
+                canvas.toBlob(function(blob) {
+                    const formData = new FormData();
+                    formData.append('file', blob, 'avatar.png');
+
+                    // Show loading state
+                    const originalText = saveBtn.textContent;
+                    saveBtn.textContent = '{{ _("Uploading...") }}';
+                    saveBtn.disabled = true;
+
+                    const url = targetUserId === {{ current_user.id }} ? '/user/profile-image' : `/admin/users/${targetUserId}/profile-image`;
+
+                    fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'HX-Request': 'true'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Upload failed');
+                        return response.text();
+                    })
+                    .then(html => {
+                        if (targetUserId === {{ current_user.id }}) {
+                            // Refresh page or update avatars
+                            window.location.reload();
+                        } else {
+                            // Admin case: update user card
+                            const card = document.getElementById(`user-card-${targetUserId}`);
+                            if (card) {
+                                // Parse the response to handle OOB swaps manually
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+
+                                // Update user card
+                                const newCard = doc.getElementById(`user-card-${targetUserId}`);
+                                if (newCard) {
+                                    card.replaceWith(newCard);
+                                    // Re-initialize HTMX on the new content
+                                    if (window.htmx) {
+                                        window.htmx.process(newCard);
+                                    }
+                                }
+
+                                // Update user count (OOB swap)
+                                const newCount = doc.getElementById('user-count');
+                                const currentCount = document.getElementById('user-count');
+                                if (newCount && currentCount) {
+                                    currentCount.replaceWith(newCount);
+                                }
+                            }
+                            modal.close();
+
+                            // Close the edit user dialog if it's open
+                            const editUserDialog = document.getElementById('editUserDialog');
+                            if (editUserDialog && editUserDialog.open) {
+                                editUserDialog.close();
+                            }
+
+                            showToast('{{ _("Profile picture updated successfully") }}', 'success');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showToast('{{ _("Failed to upload image") }}', 'error');
+                    })
+                    .finally(() => {
+                        saveBtn.textContent = originalText;
+                        saveBtn.disabled = false;
+                    });
+                }, 'image/png');
+            });
+        });
+    </script>
+    {% endif %}
 
     <div
         id="toastContainer"

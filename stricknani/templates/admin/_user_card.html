@@ -5,7 +5,7 @@
         <div class="flex items-center gap-4">
             <div class="relative h-12 w-12 shrink-0">
                 <img
-                    src="{{ gravatar_url(user.email, size=96) }}"
+                    src="{{ user.avatar_thumbnail_url }}"
                     alt="{{ _('Profile picture for %(email)s') % {'email': user.email} }}"
                     class="h-full w-full rounded-full object-cover bg-base-200"
                 >
@@ -15,7 +15,7 @@
                 </div>
                 {% endif %}
             </div>
-            
+
             <div class="min-w-0">
                 <div class="flex items-center gap-2 mb-0.5">
                     <p class="font-bold text-base text-base-content truncate">{{ user.email }}</p>
@@ -45,7 +45,7 @@
                 hx-post="/admin/users/{{ user.id }}/toggle-active"
                 hx-target="#user-card-{{ user.id }}"
                 hx-swap="outerHTML"
-                data-toast-message="{{ _('User disabled.') if user.is_active else _('User activated.') }}"
+                data-toast-message="{{ _('User disabled') if user.is_active else _('User activated') }}"
                 data-toast-variant="success"
             >
                 {% if user.is_active %}
@@ -61,6 +61,11 @@
                 </div>
                 <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
                     <li>
+                        <button type="button" onclick="openEditUserDialog(this)" data-user-id="{{ user.id }}" data-user-email="{{ user.email }}">
+                            <span class="mdi mdi-account-edit"></span> {{ _('Edit profile') }}
+                        </button>
+                    </li>
+                    <li>
                         <button type="button" onclick="openResetPasswordDialog(this)" data-user-id="{{ user.id }}" data-user-email="{{ user.email }}">
                             <span class="mdi mdi-key-variant"></span> {{ _('Reset password') }}
                         </button>
@@ -73,7 +78,7 @@
                             hx-target="#user-card-{{ user.id }}"
                             hx-swap="outerHTML"
                             class="w-full p-0"
-                            data-toast-message="{{ _('Admin access revoked.') if user.is_admin else _('Admin access granted.') }}"
+                            data-toast-message="{{ _('Admin access revoked') if user.is_admin else _('Admin access granted') }}"
                             data-toast-variant="success"
                         >
                             <button type="submit" class="w-full text-left flex items-center gap-2 py-2 px-4" {% if user.id == current_user.id %}disabled style="cursor: not-allowed" text-base-content/50{% endif %}>
@@ -83,12 +88,12 @@
                         </form>
                     </li>
                     <li class="{% if user.id == current_user.id %}disabled opacity-50{% endif %}">
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             class="text-error hover:bg-error/10"
                             {% if user.id == current_user.id %}disabled style="cursor: not-allowed"{% endif %}
-                            data-user-id="{{ user.id }}" 
-                            data-user-email="{{ user.email }}" 
+                            data-user-id="{{ user.id }}"
+                            data-user-email="{{ user.email }}"
                             onclick="openDeleteUserDialog(this)"
                         >
                             <span class="mdi mdi-delete"></span> {{ _('Delete user') }}

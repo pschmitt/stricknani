@@ -15,8 +15,6 @@ from stricknani.config import config
 from stricknani.database import init_db
 from stricknani.logging_config import configure_logging
 from stricknani.utils.auth import ensure_initial_admin
-from stricknani.utils.files import get_file_url, get_thumbnail_url
-from stricknani.utils.gravatar import gravatar_url
 from stricknani.utils.i18n import install_i18n
 from stricknani.utils.markdown import render_markdown
 
@@ -171,15 +169,8 @@ def render_template(
     avatar_url = None
     avatar_thumb = None
     if current_user is not None:
-        profile_image = getattr(current_user, "profile_image", None)
-        user_id = getattr(current_user, "id", None)
-        email = getattr(current_user, "email", "")
-        if profile_image and user_id:
-            avatar_url = get_file_url(profile_image, user_id, subdir="users")
-            avatar_thumb = get_thumbnail_url(profile_image, user_id, subdir="users")
-        elif email:
-            avatar_url = gravatar_url(email)
-            avatar_thumb = gravatar_url(email, size=96)
+        avatar_url = getattr(current_user, "avatar_url", None)
+        avatar_thumb = getattr(current_user, "avatar_thumbnail_url", None)
 
     context.setdefault("current_user_avatar_url", avatar_url)
     context.setdefault("current_user_avatar_thumbnail", avatar_thumb)
