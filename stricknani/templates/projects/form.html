@@ -126,6 +126,27 @@
 attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='flex-1 sm:flex-none') }}
 {% endif %}
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class='flex-1 sm:flex-none') }}
+
+{% if project %}
+<div class="dropdown dropdown-end">
+    <div tabindex="0" role="button" class="btn btn-circle btn-ghost" aria-label="{{ _('More actions') }}">
+        <span class="mdi mdi-dots-vertical text-xl"></span>
+    </div>
+    <ul tabindex="0" class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
+        <li data-favorite-toggle>
+            {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail' %}
+                {% include "projects/_favorite_toggle.html" %}
+            {% endwith %}
+        </li>
+        <li>
+            <button type="button" onclick="document.getElementById('deleteProjectDialog').showModal()" class="text-error hover:bg-error/10 hover:text-error">
+                <span class="mdi mdi-delete-outline text-lg"></span>
+                {{ _('Delete') }}
+            </button>
+        </li>
+    </ul>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block form_title %}
@@ -162,6 +183,40 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         </label>
                         <input type="text" id="name" name="name" required value="{{ project.name if project else '' }}"
                             class="input input-bordered w-full" placeholder="{{ _('e.g. My Amazing Project') }}">
+                    </div>
+
+                    <!-- Mobile Details Card -->
+                    <div class="lg:hidden p-4 bg-base-200/30 rounded-xl border border-base-200 space-y-4">
+                        <h3 class="font-bold text-xs uppercase tracking-widest text-base-content/40 flex items-center gap-2">
+                            <span class="mdi mdi-information-outline"></span>
+                            {{ _('Project Details') }}
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="category-mobile" class="label-text text-xs font-bold uppercase text-base-content/50">
+                                    {{ _('Category') }}
+                                </label>
+                                <select name="category" class="select select-bordered select-sm w-full mt-1">
+                                    <option value="">{{ _('Select a category') }}</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category }}" {% if project and project.category==category %}selected{% endif %}>
+                                        {{ category }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Gauge St.') }}</label>
+                                    <input type="number" name="gauge_stitches" value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}" class="input input-bordered input-sm w-full mt-1">
+                                </div>
+                                <div>
+                                    <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Gauge Rows') }}</label>
+                                    <input type="number" name="gauge_rows" value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}" class="input input-bordered input-sm w-full mt-1">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
@@ -309,7 +364,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         <!-- Sidebar Column -->
         <div class="space-y-6">
             <!-- Project Details Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 hidden lg:block">
                 <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                     <span class="mdi mdi-information-outline"></span>
                     {{ _('Project Details') }}

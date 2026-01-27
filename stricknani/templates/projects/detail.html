@@ -18,17 +18,16 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <div data-favorite-toggle class="contents">
-                {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail', extra_classes='flex-1 sm:flex-none' %}
-                    {% include "projects/_favorite_toggle.html" %}
-                {% endwith %}
-            </div>
-            
             <div class="dropdown dropdown-end">
                 <div tabindex="0" role="button" class="btn btn-circle btn-ghost" aria-label="{{ _('More actions') }}">
                     <span class="mdi mdi-dots-vertical text-xl"></span>
                 </div>
                 <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
+                    <li data-favorite-toggle>
+                        {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
+                            {% include "projects/_favorite_toggle.html" %}
+                        {% endwith %}
+                    </li>
                     <li>
                         <a href="/projects/{{ project.id }}/edit">
                             <span class="mdi mdi-pencil text-lg"></span>

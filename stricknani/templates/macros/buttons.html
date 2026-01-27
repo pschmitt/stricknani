@@ -58,6 +58,13 @@
     {% endif %}
 {% endmacro %}
 
+{% macro favorite_menu_item(text, icon=None, attrs='') %}
+    <button type="button" class="flex items-center gap-2 w-full text-left" {{ attrs|safe }}>
+        {% if icon %}<span class="mdi {{ icon }} text-lg"></span>{% endif %}
+        {{ text }}
+    </button>
+{% endmacro %}
+
 {% macro back(text, href=None, class='', attrs='') %}
     {% set base_classes = "btn btn-ghost btn-sm text-base-content/60 hover:text-base-content gap-2" %}
     <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>

@@ -28,6 +28,27 @@
 
 {% block form_actions %}
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"', class='flex-1 sm:flex-none') }}
+
+{% if yarn %}
+<div class="dropdown dropdown-end">
+    <div tabindex="0" role="button" class="btn btn-circle btn-ghost" aria-label="{{ _('More actions') }}">
+        <span class="mdi mdi-dots-vertical text-xl"></span>
+    </div>
+    <ul tabindex="0" class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
+        <li data-favorite-toggle>
+            {% with yarn_id=yarn.id, is_favorite=is_favorite, variant='detail' %}
+                {% include "yarn/_favorite_toggle.html" %}
+            {% endwith %}
+        </li>
+        <li>
+            <button type="button" onclick="document.getElementById('deleteYarnDialog').showModal()" class="text-error hover:bg-error/10 hover:text-error">
+                <span class="mdi mdi-delete-outline text-lg"></span>
+                {{ _('Delete') }}
+            </button>
+        </li>
+    </ul>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block form_title %}
@@ -48,6 +69,25 @@
                             {{ _('Name') }}
                         </label>
                         <input type="text" id="name" name="name" required value="{{ yarn.name if yarn else '' }}" class="input input-bordered w-full">
+                    </div>
+
+                    <!-- Mobile Details Card -->
+                    <div class="lg:hidden p-4 bg-base-200/30 rounded-xl border border-base-200 space-y-4">
+                        <h3 class="font-bold text-xs uppercase tracking-widest text-base-content/40 flex items-center gap-2">
+                            <span class="mdi mdi-information-outline"></span>
+                            {{ _('Yarn Details') }}
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Brand') }}</label>
+                                <input type="text" name="brand" value="{{ yarn.brand if yarn and yarn.brand else '' }}" class="input input-bordered input-sm w-full mt-1">
+                            </div>
+                            <div>
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Fiber content') }}</label>
+                                <input type="text" name="fiber_content" value="{{ yarn.fiber_content if yarn and yarn.fiber_content else '' }}" class="input input-bordered input-sm w-full mt-1">
+                            </div>
+                        </div>
                     </div>
 
                     <div>
@@ -120,7 +160,7 @@
         <!-- Sidebar Column -->
         <div class="space-y-6">
             <!-- Yarn Details Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 hidden lg:block">
                 <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                     <span class="mdi mdi-information-outline"></span>
                     {{ _('Yarn Details') }}

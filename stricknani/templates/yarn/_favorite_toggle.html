@@ -3,10 +3,9 @@
 {% set label = _('Unfavorite') if is_favorite else _('Favorite') %}
 {% set message = _('Removed from favorites') if is_favorite else _('Added to favorites') %}
 {% if variant == 'detail' %}
-    {{ buttons.favorite(
+    {{ buttons.favorite_menu_item(
         label,
         icon=icon,
-        class=extra_classes|default(''),
         attrs='hx-post="/yarn/' ~ yarn_id ~ '/favorite?variant=' ~ variant ~ '" hx-target="closest [data-favorite-toggle]" hx-swap="innerHTML" data-toast-message="' ~ message ~ '" data-toast-variant="' ~ ('info' if is_favorite else 'success') ~ '" aria-pressed="' ~ ('true' if is_favorite else 'false') ~ '" title="' ~ label ~ '"'
     ) }}
 {% else %}
