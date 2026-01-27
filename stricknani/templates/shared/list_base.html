@@ -2,20 +2,37 @@
 
 {% block content %}
 {% block list_styles %}{% endblock %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div class="flex flex-col gap-6">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
-            <div class="flex items-center gap-2">
-                {% block list_icon %}{% endblock %}
-                <h2 class="text-3xl font-bold">{% block list_title %}{% endblock %}</h2>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+    <div class="flex flex-col gap-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div class="space-y-1">
+                <h1 class="text-3xl font-extrabold text-base-content flex items-center gap-3 tracking-tight">
+                    {% block list_icon %}{% endblock %}
+                    {% block list_title %}{% endblock %}
+                </h1>
+                <p class="text-base font-medium text-base-content/60">
+                    {% block list_subtitle %}{{ _('Manage your collection') }}{% endblock %}
+                </p>
             </div>
-            <div class="flex gap-2 w-full sm:w-auto">
+            
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                 {% block list_actions %}{% endblock %}
             </div>
         </div>
 
-        {% block list_filters %}{% endblock %}
+        <!-- Filters & Search -->
+        <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="w-full md:max-w-md">
+                {% block list_filters %}{% endblock %}
+            </div>
+            <!-- Optional: Sort or View toggles could go here -->
+            <div class="text-sm text-base-content/50 font-medium">
+                {% block list_stats %}{% endblock %}
+            </div>
+        </div>
 
+        <!-- Content Grid -->
         <div {% block list_container_attrs %}id="list-content"{% endblock %}>
             {% block list_content %}{% endblock %}
         </div>

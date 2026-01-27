@@ -2,140 +2,180 @@
 {% import "macros/buttons.html" as buttons %}
 
 {% block content %}
-<div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-2xl font-semibold text-base-content">{{ _('User Management') }}</h1>
-            <p class="text-sm text-base-content/70">{{ _('Manage accounts, roles, and access for your instance.') }}</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
-            <div class="rounded-lg border border-base-300 bg-base-100 px-4 py-2 text-sm text-base-content/70 shadow-sm">
-                {{ _('Total users') }}: <span id="user-count" class="font-semibold text-base-content">{{ users | length }}</span>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col gap-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div class="space-y-1">
+                <h1 class="text-3xl font-extrabold text-base-content flex items-center gap-3 tracking-tight">
+                    <span class="mdi mdi-shield-account text-primary"></span>
+                    {{ _('User Management') }}
+                </h1>
+                <p class="text-base font-medium text-base-content/60">
+                    {{ _('Manage accounts, roles, and access for your instance.') }}
+                </p>
             </div>
-            {{ buttons.primary(_('Create user'), type='button', icon='mdi-account-plus', attrs='onclick="openCreateUserDialog()"') }}
+            
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div class="px-4 py-2 rounded-lg bg-base-100 border border-base-200 text-sm font-medium shadow-sm flex items-center gap-2">
+                    <span class="mdi mdi-account-group text-base-content/50 text-lg"></span>
+                    <span>{{ _('Total Users') }}:</span>
+                    <span id="user-count" class="text-primary font-bold">{{ users | length }}</span>
+                </div>
+                {{ buttons.primary(_('Create User'), type='button', icon='mdi-account-plus', attrs='onclick="openCreateUserDialog()"') }}
+            </div>
         </div>
-    </div>
 
-    <div class="space-y-4" id="admin-user-list">
-        {% for user in users %}
-            {% include "admin/_user_card.html" %}
-        {% endfor %}
+        <!-- User List -->
+        <div class="space-y-4" id="admin-user-list">
+            {% for user in users %}
+                {% include "admin/_user_card.html" %}
+            {% endfor %}
+        </div>
     </div>
 </div>
 
-<dialog id="resetPasswordDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
-    <h3 class="text-lg font-bold text-base-content mb-2">{{ _('Reset password') }}</h3>
-    <p class="text-sm text-base-content/70 mb-4">
-        {{ _('Set a new password for this user.') }}
-        <br>
-        <strong id="resetPasswordEmail" class="text-base-content"></strong>
-    </p>
-    <form
-        id="resetPasswordForm"
-        method="post"
-        action="/admin/users/0/reset-password"
-        class="space-y-4"
-        data-toast-message="{{ _('Password reset.') }}"
-        data-toast-variant="success"
-        data-dialog-close="resetPasswordDialog"
-        hx-swap="none"
-    >
-        <div class="flex flex-col gap-1">
-            <label class="label-text text-xs font-semibold uppercase tracking-wide" for="reset-password-input">
-                {{ _('New password') }}
-            </label>
-            <input
-                id="reset-password-input"
-                name="password"
-                type="password"
-                autocomplete="new-password"
-                class="input input-bordered"
-                required
-            />
-        </div>
-        <div class="flex justify-end gap-3">
-            {{ buttons.secondary(_('Cancel'), attrs='onclick="document.getElementById(\'resetPasswordDialog\').close()"') }}
-            {{ buttons.primary(_('Reset password'), type='submit', icon='mdi-key-variant') }}
-        </div>
-    </form>
-</dialog>
-
-<dialog id="createUserDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
-    <h3 class="text-lg font-bold text-base-content mb-2">{{ _('Create user') }}</h3>
-    <p class="text-sm text-base-content/70 mb-4">{{ _('Add a new account with a temporary password.') }}</p>
-    <form
-        id="createUserForm"
-        method="post"
-        action="/admin/users/create"
-        class="space-y-4"
-        data-toast-message="{{ _('User created.') }}"
-        data-toast-variant="success"
-        data-dialog-close="createUserDialog"
-        hx-post="/admin/users/create"
-        hx-target="#admin-user-list"
-        hx-swap="afterbegin"
-    >
-        <div class="flex flex-col gap-1">
-            <label class="label-text text-xs font-semibold uppercase tracking-wide" for="create-user-email">
-                {{ _('Email') }}
-            </label>
-            <input
-                id="create-user-email"
-                name="email"
-                type="email"
-                required
-                autocomplete="email"
-                class="input input-bordered"
-            />
-        </div>
-        <div class="flex flex-col gap-1">
-            <label class="label-text text-xs font-semibold uppercase tracking-wide" for="create-user-password">
-                {{ _('Password') }}
-            </label>
-            <input
-                id="create-user-password"
-                name="password"
-                type="password"
-                required
-                autocomplete="new-password"
-                class="input input-bordered"
-            />
-        </div>
-        <label class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 px-4 py-3 text-sm text-base-content/80 shadow-sm">
-            <input type="checkbox" name="is_admin" class="checkbox" />
-            <span>
-                <span class="block font-semibold text-base-content">{{ _('Grant admin access') }}</span>
-                <span class="block text-xs text-base-content/70">{{ _('Allow this user to manage accounts and settings.') }}</span>
-            </span>
-        </label>
-        <div class="flex justify-end gap-3">
-            {{ buttons.secondary(_('Cancel'), attrs='onclick="document.getElementById(\'createUserDialog\').close()"') }}
-            {{ buttons.primary(_('Create user'), type='submit', icon='mdi-account-plus') }}
-        </div>
-    </form>
-</dialog>
-
-<dialog id="deleteUserDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
-    <h3 class="text-lg font-bold text-base-content mb-4">{{ _('Delete user') }}</h3>
-    <p class="text-base-content/80 mb-6">
-        {{ _('Delete this user? This will remove their projects and yarn.') }}
-        <br>
-        <strong id="deleteUserEmail" class="text-base-content"></strong>
-    </p>
-    <div class="flex justify-end gap-3">
-        {{ buttons.secondary(_('Cancel'), attrs='onclick="document.getElementById(\'deleteUserDialog\').close()"') }}
+<dialog id="resetPasswordDialog" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-2">{{ _('Reset password') }}</h3>
+        <p class="text-sm opacity-70 mb-6">
+            {{ _('Set a new password for') }} <strong id="resetPasswordEmail" class="text-base-content"></strong>.
+        </p>
         <form
-            id="deleteUserForm"
+            id="resetPasswordForm"
             method="post"
-            action="/admin/users/0/delete"
-            data-toast-message="{{ _('User deleted.') }}"
+            action="/admin/users/0/reset-password"
+            class="space-y-4"
+            data-toast-message="{{ _('Password reset.') }}"
             data-toast-variant="success"
-            data-dialog-close="deleteUserDialog"
-            hx-swap="outerHTML"
+            data-dialog-close="resetPasswordDialog"
+            hx-swap="none"
         >
-            {{ buttons.danger(_('Delete'), type='submit') }}
+            <div class="form-control w-full">
+                <label class="label">
+                    <span class="label-text font-medium">{{ _('New password') }}</span>
+                </label>
+                <input
+                    id="reset-password-input"
+                    name="password"
+                    type="password"
+                    autocomplete="new-password"
+                    class="input input-bordered w-full"
+                    required
+                />
+            </div>
+            <div class="modal-action">
+                <button type="button" class="btn btn-ghost" onclick="document.getElementById('resetPasswordDialog').close()">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary gap-2">
+                    <span class="mdi mdi-key-variant"></span>
+                    {{ _('Reset password') }}
+                </button>
+            </div>
         </form>
     </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>{{ _('close') }}</button>
+    </form>
+</dialog>
+
+<dialog id="createUserDialog" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-2">{{ _('Create user') }}</h3>
+        <p class="text-sm opacity-70 mb-6">{{ _('Add a new account with a temporary password.') }}</p>
+        <form
+            id="createUserForm"
+            method="post"
+            action="/admin/users/create"
+            class="space-y-4"
+            data-toast-message="{{ _('User created.') }}"
+            data-toast-variant="success"
+            data-dialog-close="createUserDialog"
+            hx-post="/admin/users/create"
+            hx-target="#admin-user-list"
+            hx-swap="afterbegin"
+        >
+            <div class="form-control w-full">
+                <label class="label">
+                    <span class="label-text font-medium">{{ _('Email') }}</span>
+                </label>
+                <input
+                    id="create-user-email"
+                    name="email"
+                    type="email"
+                    required
+                    autocomplete="email"
+                    class="input input-bordered w-full"
+                    placeholder="user@example.com"
+                />
+            </div>
+            <div class="form-control w-full">
+                <label class="label">
+                    <span class="label-text font-medium">{{ _('Password') }}</span>
+                </label>
+                <input
+                    id="create-user-password"
+                    name="password"
+                    type="password"
+                    required
+                    autocomplete="new-password"
+                    class="input input-bordered w-full"
+                />
+            </div>
+            <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-4 p-4 border border-base-200 rounded-lg bg-base-100 hover:bg-base-200 transition-colors">
+                    <input type="checkbox" name="is_admin" class="checkbox checkbox-primary" />
+                    <div class="flex-1">
+                        <span class="label-text font-bold block">{{ _('Grant admin access') }}</span>
+                        <span class="label-text-alt block">{{ _('Allow this user to manage accounts and settings.') }}</span>
+                    </div>
+                </label>
+            </div>
+            <div class="modal-action">
+                <button type="button" class="btn btn-ghost" onclick="document.getElementById('createUserDialog').close()">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary gap-2">
+                    <span class="mdi mdi-account-plus"></span>
+                    {{ _('Create User') }}
+                </button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>{{ _('close') }}</button>
+    </form>
+</dialog>
+
+<dialog id="deleteUserDialog" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg text-error flex items-center gap-2 mb-2">
+            <span class="mdi mdi-alert-circle"></span>
+            {{ _('Delete user') }}
+        </h3>
+        <p class="text-base-content/80 mb-6">
+            {{ _('Are you sure you want to delete') }} <strong id="deleteUserEmail" class="text-base-content"></strong>?
+            <br>
+            <span class="text-sm opacity-70">{{ _('This will permanently remove their projects and yarn.') }}</span>
+        </p>
+        <div class="modal-action">
+            <button type="button" class="btn btn-ghost" onclick="document.getElementById('deleteUserDialog').close()">{{ _('Cancel') }}</button>
+            <form
+                id="deleteUserForm"
+                method="post"
+                action="/admin/users/0/delete"
+                data-toast-message="{{ _('User deleted.') }}"
+                data-toast-variant="success"
+                data-dialog-close="deleteUserDialog"
+                hx-swap="outerHTML"
+            >
+                <button type="submit" class="btn btn-error text-white gap-2">
+                    <span class="mdi mdi-delete-forever"></span>
+                    {{ _('Delete Forever') }}
+                </button>
+            </form>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>{{ _('close') }}</button>
+    </form>
 </dialog>
 
 <script>

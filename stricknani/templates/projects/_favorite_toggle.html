@@ -7,6 +7,7 @@
     {{ buttons.favorite(
         label,
         icon=icon,
+        class=extra_classes|default(''),
         attrs='hx-' ~ action ~ '="/projects/' ~ project_id ~ '/favorite?variant=' ~ variant ~ '" hx-target="closest [data-favorite-toggle]" hx-swap="innerHTML" data-toast-message="' ~ message ~ '" data-toast-variant="' ~ ('info' if is_favorite else 'success') ~ '" aria-pressed="' ~ ('true' if is_favorite else 'false') ~ '" title="' ~ label ~ '"'
     ) }}
 {% else %}
