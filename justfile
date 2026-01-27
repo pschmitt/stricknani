@@ -17,6 +17,10 @@ lint:
     uv run ruff check .
     uv run mypy .
 
+# Check translations
+i18n-check:
+    uv run python -m stricknani.scripts.check_translations
+
 # Format code
 fmt:
     uv run ruff format .
@@ -33,7 +37,7 @@ test:
     uv run pytest -v
 
 # Run all checks (lint + test)
-check: lint test
+check: lint test i18n-check
 
 # Build with Nix
 build-nix:
