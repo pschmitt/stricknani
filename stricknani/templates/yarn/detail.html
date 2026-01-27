@@ -20,10 +20,10 @@
         <div class="flex items-center gap-2">
             <!-- Desktop Actions -->
             <div class="hidden md:flex items-center gap-2">
-                {% with yarn_id=yarn.id, is_favorite=is_favorite, variant='detail' %}
+                {% with yarn_id=yarn.id, is_favorite=is_favorite, variant='card' %}
                     {% include "yarn/_favorite_toggle.html" %}
                 {% endwith %}
-                <a href="/yarn/{{ yarn.id }}/edit" class="btn btn-primary btn-sm gap-2">
+                <a href="/yarn/{{ yarn.id }}/edit" class="btn btn-primary gap-2">
                     <span class="mdi mdi-pencil"></span>
                     {{ _('Edit') }}
                 </a>

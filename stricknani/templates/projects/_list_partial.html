@@ -64,12 +64,6 @@
                         <span class="mdi mdi-update"></span>
                         {{ project.updated_at[:10] }}
                     </span>
-                    {% if project.yarn_count > 0 %}
-                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-                        <span class="mdi mdi-sheep"></span>
-                        {{ project.yarn_count }}
-                    </span>
-                    {% endif %}
                 </div>
                 {% if project.tags %}
                 <div class="mb-4 flex flex-wrap gap-2">

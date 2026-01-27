@@ -134,7 +134,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class=save_classes) }}
 
 {% if project %}
-<div class="dropdown dropdown-end dropdown-top md:dropdown-bottom fixed bottom-6 right-6 z-50 md:static md:z-auto">
+<div class="dropdown dropdown-end dropdown-top fixed bottom-6 right-6 z-50 md:hidden">
     <div tabindex="0" role="button" class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10" aria-label="{{ _('More actions') }}">
         <span class="mdi mdi-dots-vertical text-2xl md:text-xl"></span>
     </div>

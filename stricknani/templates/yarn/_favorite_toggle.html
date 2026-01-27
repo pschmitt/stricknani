@@ -12,10 +12,12 @@
     <button
         type="button"
         hx-post="/yarn/{{ yarn_id }}/favorite?variant={{ variant }}"
+        hx-target="this"
         hx-swap="outerHTML"
         data-toast-message="{{ message }}"
         data-toast-variant="{{ 'info' if is_favorite else 'success' }}"
         class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-base-300 bg-base-100 text-xl transition focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900 {% if is_favorite %}border-pink-600 bg-pink-600 text-white hover:bg-pink-700 dark:border-pink-500 dark:bg-pink-500 dark:text-white dark:hover:bg-pink-400{% else %}text-base-content/70 hover:border-pink-400 hover:text-pink-600 dark:text-base-content/70 dark:hover:border-pink-400 dark:hover:text-pink-300{% endif %}"
+        aria-pressed="{{ 'true' if is_favorite else 'false' }}"
         aria-label="{{ label }}"
         title="{{ label }}"
     >
