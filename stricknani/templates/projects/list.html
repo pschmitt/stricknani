@@ -24,7 +24,10 @@
 {% block list_title %}{{ _('My Projects') }}{% endblock %}
 
 {% block list_actions %}
-{{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='flex-1 sm:flex-none') }}
+{{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='hidden md:inline-flex flex-1 sm:flex-none') }}
+
+<!-- Mobile FAB -->
+{{ buttons.fab('mdi-plus', href='/projects/new', class='md:hidden', label=_('New Project')) }}
 {% endblock %}
 
 {% block list_filters %}
@@ -107,16 +110,22 @@
         {% include "projects/_favorite_toggle.html" %}
         {% endwith %}
     </div>
+    <div class="absolute bottom-2 right-2 z-10">
+        <a href="/projects/{{ project.id }}/edit" class="btn btn-circle btn-primary shadow-sm h-10 w-10 min-h-0 text-xl" title="{{ _('Edit %(name)s') % {'name': project.name} }}">
+            <span class="mdi mdi-pencil" aria-hidden="true"></span>
+            <span class="sr-only">{{ _('Edit') }}</span>
+        </a>
+    </div>
     {% elif section == 'body' %}
     <div class="flex flex-col h-full">
         <div class="flex justify-between items-start mb-3">
-            <h3 class="card-title">
-                <a href="/projects/{{ project.id }}" class="hover:text-primary">
+            <h3 class="card-title min-w-0 flex-1">
+                <a href="/projects/{{ project.id }}" class="hover:text-primary block truncate" title="{{ project.name }}">
                     {{ project.name }}
                 </a>
             </h3>
             {% if project.category and project.category != 'None' %}
-            <a href="/projects?category={{ project.category }}" class="badge badge-primary">
+            <a href="/projects?category={{ project.category }}" class="badge badge-primary shrink-0 ml-2">
                 {{ _(project.category) }}
             </a>
             {% endif %}
@@ -136,10 +145,6 @@
             {% endfor %}
         </div>
         {% endif %}
-        <div class="card-actions mt-auto justify-end">
-            {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/projects/' + project.id|string + '/edit',
-            class='w-auto btn-sm', attrs='title=\"' + (_('Edit %(name)s') % {'name': project.name}) + '\"') }}
-        </div>
     </div>
     {% endif %}
     {% endcall %}

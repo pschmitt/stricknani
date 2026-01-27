@@ -47,6 +47,12 @@
                     {% include "yarn/_favorite_toggle.html" %}
                 {% endwith %}
             </div>
+            <div class="absolute bottom-2 right-2 z-10">
+        <a href="/yarn/{{ yarn.id }}/edit" class="btn btn-circle btn-primary shadow-sm h-10 w-10 min-h-0 text-xl" title="{{ _('Edit %(name)s') % {'name': yarn.name} }}">
+            <span class="mdi mdi-pencil" aria-hidden="true"></span>
+            <span class="sr-only">{{ _('Edit') }}</span>
+        </a>
+    </div>
         {% elif section == 'body' %}
             <div class="flex justify-between items-start mb-3">
                 <h3 class="card-title">
@@ -104,10 +110,6 @@
             {% endif %}
 
             <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
-
-            <div class="card-actions justify-end">
-                {{ buttons.primary(_('Edit'), icon='mdi-pencil-outline', href='/yarn/' + yarn.id|string + '/edit', class='w-auto btn-sm', attrs='title="' + (_('Edit %(name)s') % {'name': yarn.name}) + '"') }}
-            </div>
         {% endif %}
     {% endcall %}
     {% endfor %}

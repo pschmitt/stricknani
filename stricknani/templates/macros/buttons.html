@@ -94,20 +94,15 @@
     {% endif %}
 {% endmacro %}
 
-{% macro icon_only(icon, href=None, type='button', variant='ghost', class='', attrs='') %}
-    {% set variants = {
-        'ghost': 'btn-ghost',
-        'danger': 'btn-ghost text-error hover:bg-error/10',
-        'primary': 'btn-ghost text-primary hover:bg-primary/10'
-    } %}
-    {% set base_classes = "btn btn-circle " + variants[variant] %}
+{% macro fab(icon, href=None, type='button', label='', class='', attrs='') %}
+    {% set base_classes = "btn btn-circle btn-primary fixed bottom-6 right-6 shadow-xl z-50 h-14 w-14 min-h-0 p-0 flex items-center justify-center" %}
     {% if href %}
-    <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-        <span class="mdi {{ icon }} text-xl"></span>
+    <a href="{{ href }}" class="{{ base_classes }} {{ class }}" aria-label="{{ label }}" {{ attrs|safe }}>
+        <span class="mdi {{ icon }} text-2xl"></span>
     </a>
     {% else %}
-    <button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-        <span class="mdi {{ icon }} text-xl"></span>
+    <button type="{{ type }}" class="{{ base_classes }} {{ class }}" aria-label="{{ label }}" {{ attrs|safe }}>
+        <span class="mdi {{ icon }} text-2xl"></span>
     </button>
     {% endif %}
 {% endmacro %}

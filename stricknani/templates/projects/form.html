@@ -125,14 +125,26 @@
 {{ buttons.secondary(_('Import'), icon='mdi-download',
 attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='flex-1 sm:flex-none') }}
 {% endif %}
-{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class='flex-1 sm:flex-none') }}
+
+{# Save button logic: 
+   - Always hidden on mobile (moved to FAB)
+   - Visible on desktop #}
+{% set save_classes = 'hidden md:inline-flex flex-1 sm:flex-none md:btn-wide' %}
+
+{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class=save_classes) }}
 
 {% if project %}
-<div class="dropdown dropdown-end">
-    <div tabindex="0" role="button" class="btn btn-circle btn-ghost" aria-label="{{ _('More actions') }}">
-        <span class="mdi mdi-dots-vertical text-xl"></span>
+<div class="dropdown dropdown-end dropdown-top md:dropdown-bottom fixed bottom-6 right-6 z-50 md:static md:z-auto">
+    <div tabindex="0" role="button" class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10" aria-label="{{ _('More actions') }}">
+        <span class="mdi mdi-dots-vertical text-2xl md:text-xl"></span>
     </div>
-    <ul tabindex="0" class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
+    <ul tabindex="0" class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2 md:mb-0">
+        <li class="md:hidden">
+            <button type="submit" form="projectForm">
+                <span class="mdi mdi-content-save text-lg"></span>
+                {{ _('Save') }}
+            </button>
+        </li>
         <li data-favorite-toggle>
             {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail' %}
                 {% include "projects/_favorite_toggle.html" %}
@@ -146,6 +158,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         </li>
     </ul>
 </div>
+{% else %}
+<!-- Mobile FAB for New Project -->
+{{ buttons.fab('mdi-content-save', type='submit', attrs='form="projectForm"', class='md:hidden', label=_('Save')) }}
 {% endif %}
 {% endblock %}
 
@@ -225,11 +240,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                 <span class="mdi mdi-note-text-outline text-base-content/70"></span>
                                 {{ _('Notes') }}
                             </label>
-                            <button type="button" onclick="previewMarkdown('comment')"
-                                class="btn btn-xs btn-outline btn-primary gap-1">
-                                <span class="mdi mdi-eye"></span>
-                                {{ _('Preview') }}
-                            </button>
                         </div>
                         <textarea id="comment" name="comment" rows="6" class="textarea textarea-bordered w-full"
                             placeholder="Personal notes about this project...">{{ project.comment if project and project.comment else '' }}</textarea>
@@ -283,7 +293,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 </h3>
                 <div id="stepsContainer" class="space-y-4">
                     {% for step in (project.steps if project else []) %}
-                    <div class="step-item border rounded-lg p-4 bg-base-200/50 border-base-300"
+                    <div class="step-item border rounded-lg p-2 md:p-4 bg-base-200/50 border-base-300"
                         data-step-id="{{ step.id }}" data-step-number="{{ step.step_number }}">
                         <!-- Step Item Content (Keep as is but adjust colors if needed) -->
                         <div class="flex items-center justify-between mb-3">
@@ -318,15 +328,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                 </button>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between mb-2 gap-2">
+                        <div class="mb-2">
                             <input type="text" class="step-title input input-bordered w-full"
                                 placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
-                            <button type="button"
-                                onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))"
-                                class="btn btn-xs btn-outline btn-primary gap-1 shrink-0">
-                                <span class="mdi mdi-eye"></span>
-                                {{ _('Preview') }}
-                            </button>
                         </div>
                         <textarea class="step-description textarea textarea-bordered w-full mb-2" rows="3"
                             placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
@@ -1282,7 +1286,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         const container = document.getElementById('stepsContainer');
         const stepNumber = container.children.length + 1;
         const div = document.createElement('div');
-        div.className = 'step-item border rounded-lg p-4 bg-slate-100 border-slate-200 dark:bg-slate-900/60 dark:border-slate-700';
+        div.className = 'step-item border rounded-lg p-2 md:p-4 bg-slate-100 border-slate-200 dark:bg-slate-900/60 dark:border-slate-700';
         div.setAttribute('data-step-number', stepNumber);
         const inputId = `newStepImageInput${Date.now()}`;
         div.innerHTML = `
@@ -1305,12 +1309,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 </button>
             </div>
         </div>
-        <input type="text" class="step-title input input-bordered w-full mb-2" placeholder="{{ _('Step Title') }}" value="${title.replace(/"/g, '&quot;')}">
-        <div class="flex items-center justify-end mb-1">
-            <button type="button" onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))" class="btn btn-xs btn-outline btn-primary gap-1 shrink-0">
-                <span class="mdi mdi-eye"></span>
-                {{ _('Preview') }}
-            </button>
+        <div class="mb-2">
+            <input type="text" class="step-title input input-bordered w-full" placeholder="{{ _('Step Title') }}" value="${title.replace(/"/g, '&quot;')}">
         </div>
         <textarea class="textarea textarea-bordered w-full mb-2 step-description" rows="3" placeholder="{{ _('Step Description') }}">${description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
         <p class="mb-2 text-xs text-slate-500 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>

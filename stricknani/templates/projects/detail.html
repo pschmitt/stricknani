@@ -18,11 +18,11 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <div class="dropdown dropdown-end">
-                <div tabindex="0" role="button" class="btn btn-circle btn-ghost" aria-label="{{ _('More actions') }}">
-                    <span class="mdi mdi-dots-vertical text-xl"></span>
+            <div class="dropdown dropdown-end dropdown-top md:dropdown-bottom fixed bottom-6 right-6 z-50 md:static md:z-auto">
+                <div tabindex="0" role="button" class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10" aria-label="{{ _('More actions') }}">
+                    <span class="mdi mdi-dots-vertical text-2xl md:text-xl"></span>
                 </div>
-                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
+                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2 md:mb-0">
                     <li data-favorite-toggle>
                         {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
                             {% include "projects/_favorite_toggle.html" %}
@@ -85,19 +85,25 @@
                     {{ _('Instructions') }}
                 </h2>
 
-                <div class="space-y-6 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-base-300 before:to-transparent">
+                <div class="space-y-6 relative md:before:absolute md:before:inset-0 md:before:mx-auto md:before:translate-x-0 md:before:h-full md:before:w-0.5 md:before:bg-gradient-to-b md:before:from-transparent md:before:via-base-300 md:before:to-transparent">
                     {% for step in project.steps %}
                     <div class="relative flex items-start group">
-                        <!-- Timeline Node -->
-                        <div class="absolute left-6 -translate-x-1/2 mt-1 md:relative md:left-auto md:translate-x-0 md:mr-8 flex flex-col items-center">
+                        <!-- Timeline Node (Desktop) -->
+                        <div class="hidden md:flex relative md:mr-8 flex-col items-center">
                             <div class="flex h-12 w-12 items-center justify-center rounded-full bg-base-100 border-4 border-base-200 shadow-sm z-10 group-hover:border-primary/50 transition-colors">
                                 <span class="font-bold text-base-content/70">{{ step.step_number }}</span>
                             </div>
                         </div>
 
                         <!-- Content Card -->
-                        <div class="ml-16 md:ml-0 flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 transition hover:shadow-md hover:border-primary/20">
-                            <h3 class="text-lg font-bold text-base-content mb-2">{{ step.title }}</h3>
+                        <div class="flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 transition hover:shadow-md hover:border-primary/20">
+                            <div class="flex items-center gap-3 mb-2">
+                                <!-- Mobile Step Number -->
+                                <div class="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20">
+                                    <span class="font-bold text-sm">{{ step.step_number }}</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-base-content">{{ step.title }}</h3>
+                            </div>
 
                             {% if step.description_html %}
                             <div class="prose prose-sm max-w-none text-base-content/80 mb-4">

@@ -27,14 +27,25 @@
 {% endblock %}
 
 {% block form_actions %}
-{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"', class='flex-1 sm:flex-none') }}
+{# Save button logic: 
+   - Always hidden on mobile (moved to FAB)
+   - Visible on desktop #}
+{% set save_classes = 'hidden md:inline-flex flex-1 sm:flex-none md:btn-wide' %}
+
+{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"', class=save_classes) }}
 
 {% if yarn %}
-<div class="dropdown dropdown-end">
-    <div tabindex="0" role="button" class="btn btn-circle btn-ghost" aria-label="{{ _('More actions') }}">
-        <span class="mdi mdi-dots-vertical text-xl"></span>
+<div class="dropdown dropdown-end dropdown-top md:dropdown-bottom fixed bottom-6 right-6 z-50 md:static md:z-auto">
+    <div tabindex="0" role="button" class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10" aria-label="{{ _('More actions') }}">
+        <span class="mdi mdi-dots-vertical text-2xl md:text-xl"></span>
     </div>
-    <ul tabindex="0" class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
+    <ul tabindex="0" class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2 md:mb-0">
+        <li class="md:hidden">
+            <button type="submit" form="yarnForm">
+                <span class="mdi mdi-content-save text-lg"></span>
+                {{ _('Save') }}
+            </button>
+        </li>
         <li data-favorite-toggle>
             {% with yarn_id=yarn.id, is_favorite=is_favorite, variant='detail' %}
                 {% include "yarn/_favorite_toggle.html" %}
@@ -48,6 +59,9 @@
         </li>
     </ul>
 </div>
+{% else %}
+<!-- Mobile FAB for New Yarn -->
+{{ buttons.fab('mdi-content-save', type='submit', attrs='form="yarnForm"', class='md:hidden', label=_('Save')) }}
 {% endif %}
 {% endblock %}
 

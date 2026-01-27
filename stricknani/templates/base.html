@@ -515,23 +515,23 @@
             <div class="relative flex flex-1 flex-col items-center justify-center p-4">
                 <button
                     type="button"
-                    class="absolute right-16 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20 z-10"
+                    class="absolute right-16 top-4 rounded-full bg-white/10 p-3 text-white transition-all duration-300 hover:bg-white/20 z-10"
                     data-lightbox-zoom
                     aria-label="{{ _('Toggle zoom') }}"
                 >
-                    <span class="mdi mdi-magnify-plus"></span>
+                    <span class="mdi mdi-magnify-plus text-xl"></span>
                 </button>
                 <button
                     type="button"
-                    class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20 z-10"
+                    class="absolute right-4 top-4 rounded-full bg-white/10 p-3 text-white transition-all duration-300 hover:bg-white/20 z-10"
                     data-lightbox-close
                     aria-label="{{ _('Close image viewer') }}"
                 >
-                    <span class="mdi mdi-close"></span>
+                    <span class="mdi mdi-close text-xl"></span>
                 </button>
                 <button
                     type="button"
-                    class="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20 z-10"
+                    class="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-4 text-white transition-all duration-300 hover:bg-white/20 z-10 hidden sm:flex"
                     data-lightbox-prev
                     aria-label="{{ _('Previous image') }}"
                 >
@@ -539,11 +539,11 @@
                 </button>
                 <div class="flex max-h-full w-full max-w-4xl flex-col items-center justify-center overflow-hidden" data-zoom-container>
                     <img src="" alt="" class="max-h-[75vh] max-w-full rounded-lg object-contain shadow-lg transition-transform duration-200 origin-center cursor-zoom-in" data-lightbox-image>
-                    <p class="mt-4 text-center text-sm text-white/80" data-lightbox-caption></p>
+                    <p class="mt-4 text-center text-sm text-white/80 transition-opacity duration-300" data-lightbox-caption></p>
                 </div>
                 <button
                     type="button"
-                    class="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20 z-10"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-4 text-white transition-all duration-300 hover:bg-white/20 z-10 hidden sm:flex"
                     data-lightbox-next
                     aria-label="{{ _('Next image') }}"
                 >
@@ -908,10 +908,55 @@
 
             closeButton.addEventListener("click", () => close());
             if (zoomButton) zoomButton.addEventListener("click", () => toggleZoom());
+            // Mobile-friendly tap handler
+            let lastTap = 0;
+            let tapTimeout;
+            
+            const toggleControls = () => {
+                const controls = [closeButton, zoomButton, caption];
+                const navControls = [prevButton, nextButton];
+                
+                if (!closeButton) return;
+
+                // Check if currently hidden (check closeButton as proxy)
+                const isHidden = closeButton.classList.contains("opacity-0");
+                
+                if (isHidden) {
+                    // Show
+                    controls.forEach(el => {
+                        if (el) el.classList.remove("opacity-0", "pointer-events-none");
+                    });
+                    navControls.forEach(el => {
+                         if (el) el.classList.remove("opacity-0");
+                    });
+                    // Re-apply correct state for nav buttons
+                    updateNavigationState();
+                } else {
+                    // Hide
+                    [...controls, ...navControls].forEach(el => {
+                        if (el) el.classList.add("opacity-0", "pointer-events-none");
+                    });
+                }
+            };
+
             image.addEventListener("click", (e) => {
                 e.stopPropagation();
-                toggleZoom();
+                const now = Date.now();
+                const timeDiff = now - lastTap;
+                
+                if (timeDiff < 300 && timeDiff > 0) {
+                    // Double tap
+                    if (tapTimeout) clearTimeout(tapTimeout);
+                    toggleZoom();
+                } else {
+                    // Single tap
+                    tapTimeout = setTimeout(() => {
+                        toggleControls();
+                    }, 300);
+                }
+                lastTap = now;
             });
+
             nextButton.addEventListener("click", () => showNext());
             prevButton.addEventListener("click", () => showPrev());
 
@@ -922,7 +967,7 @@
             });
 
             lightbox.addEventListener("pointerup", (event) => {
-                if (touchStartX === null) {
+                if (touchStartX === null || isZoomed) {
                     return;
                 }
                 const deltaX = event.clientX - touchStartX;
