@@ -1006,13 +1006,19 @@ msgstr "pro 10 cm"
 #~ "\"Projekt erstellen\" zum Speichern."
 
 msgid "%(count)s linked yarn: %(names)s"
-msgstr "%(count)s verknuepftes Garn: %(names)s"
+msgstr "%(count)s verknüpftes Garn: %(names)s"
 
 msgid "%(count)s linked yarns: %(names)s"
-msgstr "%(count)s verknuepfte Garne: %(names)s"
+msgstr "%(count)s verknüpfte Garne: %(names)s"
+
+msgid "Yarns"
+msgstr "Garne"
 
 msgid "No linked yarns"
-msgstr "Keine verknuepften Garne"
+msgstr "Keine verknüpften Garne"
+
+msgid "No linked yarns yet."
+msgstr "Noch keine verknüpften Garne."
 
 msgid "Edit %(name)s"
 msgstr "%(name)s bearbeiten"
@@ -1024,13 +1030,13 @@ msgid "Colorway: %(colorway)s"
 msgstr "Farbvariante: %(colorway)s"
 
 msgid "%(count)s linked project"
-msgstr "%(count)s verknuepftes Projekt"
+msgstr "%(count)s verknüpftes Projekt"
 
 msgid "%(count)s linked projects"
-msgstr "%(count)s verknuepfte Projekte"
+msgstr "%(count)s verknüpfte Projekte"
 
 msgid "No linked projects"
-msgstr "Keine verknuepften Projekte"
+msgstr "Keine verknüpften Projekte"
 
 msgid "Favorite"
 msgstr "Favorisieren"
