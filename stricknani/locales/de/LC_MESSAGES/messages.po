@@ -846,9 +846,8 @@ msgid "Not specified"
 msgstr "Nicht angegeben"
 
 #: stricknani/templates/projects/detail.html:210
-#, fuzzy
-msgid "Recommended"
-msgstr "Nadelstärke"
+msgid "Recommended needle size"
+msgstr "Empfohlene Nadelstärke"
 
 #: stricknani/templates/projects/detail.html:226
 #: stricknani/templates/projects/form.html:440
@@ -856,15 +855,13 @@ msgid "Pattern Source"
 msgstr "Anleitungsquelle"
 
 #: stricknani/templates/projects/detail.html:233
-#, fuzzy
 msgid "No link provided"
-msgstr "Keine verknüpften Projekte"
+msgstr "Kein Link angegeben"
 
 #: stricknani/templates/projects/detail.html:244
 #: stricknani/templates/projects/form.html:453
-#, fuzzy
 msgid "Yarns Used"
-msgstr "Garne"
+msgstr "Verwendete Garne"
 
 #: stricknani/templates/projects/detail.html:269
 msgid "Unknown Brand"
@@ -875,9 +872,8 @@ msgid "No yarns linked"
 msgstr "Keine Garne verknüpft"
 
 #: stricknani/templates/projects/detail.html:281
-#, fuzzy
 msgid "Link yarn"
-msgstr "Keine verknüpften Garne"
+msgstr "Garn verknüpfen"
 
 #: stricknani/templates/projects/detail.html:291
 #: stricknani/templates/projects/form.html:226

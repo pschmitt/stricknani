@@ -785,7 +785,7 @@ msgid "Not specified"
 msgstr ""
 
 #: stricknani/templates/projects/detail.html:210
-msgid "Recommended"
+msgid "Recommended needle size"
 msgstr ""
 
 #: stricknani/templates/projects/detail.html:226
@@ -1457,4 +1457,3 @@ msgstr ""
 #: stricknani/templates/yarn/list.html:47
 msgid "Yarn deleted."
 msgstr ""
-
