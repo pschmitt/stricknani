@@ -700,6 +700,28 @@
         };
 
         document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const toastKey = urlParams.get('toast');
+            if (toastKey) {
+                const toastMessages = {
+                    'project_created': '{{ _("Project created successfully") }}',
+                    'project_updated': '{{ _("Project updated successfully") }}',
+                    'project_deleted': '{{ _("Project deleted") }}',
+                    'yarn_created': '{{ _("Yarn created successfully") }}',
+                    'yarn_updated': '{{ _("Yarn updated successfully") }}',
+                    'yarn_deleted': '{{ _("Yarn deleted") }}',
+                    'profile_updated': '{{ _("Profile updated successfully") }}',
+                };
+
+                const message = toastMessages[toastKey];
+                if (message) {
+                    window.showToast?.(message, 'success');
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('toast');
+                    window.history.replaceState({}, '', url.toString());
+                }
+            }
+
             // DaisyUI handles dropdown automatically via focus/blur, no custom JS needed
             // Just handle escape key for accessibility
             const menuRoot = document.querySelector("[data-user-menu]");

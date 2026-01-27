@@ -504,16 +504,10 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     {{ _('Danger Zone') }}
                 </h3>
                 {{ buttons.danger(_('Delete Project'), icon='mdi-delete-outline',
-                    attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"', class="w-full btn-sm") }}
+                    attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"', class="w-full") }}
             </div>
             {% endif %}
         </div>
-    </div>
-
-    <div class="flex gap-4 pt-6 border-t border-base-200">
-        {{ buttons.primary(_('Save'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
-        {{ buttons.secondary(_('Cancel'), href='/projects/' + project.id|string if project else '/projects',
-        icon='mdi-close-circle-outline', class='py-3 px-6') }}
     </div>
 </form>
 {% endblock %}
@@ -1361,7 +1355,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         const item = button.closest('.step-item');
         const next = item.nextElementSibling;
         if (next) {
-            item.parentNode.insertBefore(item, next);
+            item.parentNode.insertBefore(next, item);
             updateStepNumbers();
         }
     }

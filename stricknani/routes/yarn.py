@@ -321,7 +321,7 @@ async def create_yarn(
     await db.commit()
 
     return RedirectResponse(
-        url=f"/yarn/{yarn.id}",
+        url=f"/yarn/{yarn.id}?toast=yarn_created",
         status_code=status.HTTP_303_SEE_OTHER,
     )
 
@@ -447,7 +447,7 @@ async def update_yarn(
     await db.commit()
 
     return RedirectResponse(
-        url=f"/yarn/{yarn.id}",
+        url=f"/yarn/{yarn.id}?toast=yarn_updated",
         status_code=status.HTTP_303_SEE_OTHER,
     )
 

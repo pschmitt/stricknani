@@ -247,15 +247,10 @@
                     <span class="mdi mdi-alert-outline"></span>
                     {{ _('Danger Zone') }}
                 </h3>
-                {{ buttons.danger(_('Delete Yarn'), icon='mdi-delete-outline', attrs='onclick="document.getElementById(\'deleteYarnDialog\').showModal()"', class="w-full btn-sm") }}
+                {{ buttons.danger(_('Delete Yarn'), icon='mdi-delete-outline', attrs='onclick="document.getElementById(\'deleteYarnDialog\').showModal()"', class="w-full") }}
             </div>
             {% endif %}
         </div>
-    </div>
-
-    <div class="flex gap-4 pt-6 border-t border-base-200">
-        {{ buttons.primary(_('Save'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
-        {{ buttons.secondary(_('Cancel'), href='/yarn/' + yarn.id|string if yarn else '/yarn', icon='mdi-close-circle-outline', class='py-3 px-6') }}
     </div>
 </form>
 
