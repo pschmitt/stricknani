@@ -18,7 +18,18 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <div class="dropdown dropdown-end dropdown-top md:dropdown-bottom fixed bottom-6 right-6 z-50 md:static md:z-auto">
+            <!-- Desktop Actions -->
+            <div class="hidden md:flex items-center gap-2">
+                {% with yarn_id=yarn.id, is_favorite=is_favorite, variant='detail' %}
+                    {% include "yarn/_favorite_toggle.html" %}
+                {% endwith %}
+                <a href="/yarn/{{ yarn.id }}/edit" class="btn btn-primary btn-sm gap-2">
+                    <span class="mdi mdi-pencil"></span>
+                    {{ _('Edit') }}
+                </a>
+            </div>
+
+            <div class="dropdown dropdown-end dropdown-top md:dropdown-bottom fixed bottom-6 right-6 z-50 md:static md:z-auto md:hidden">
                 <div tabindex="0" role="button" class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10" aria-label="{{ _('More actions') }}">
                     <span class="mdi mdi-dots-vertical text-2xl md:text-xl"></span>
                 </div>

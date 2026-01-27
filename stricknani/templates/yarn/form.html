@@ -110,10 +110,6 @@
                                 <span class="mdi mdi-text-box-outline text-base-content/70"></span>
                                 {{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
                             </label>
-                            <button type="button" onclick="previewMarkdown('description')" class="btn btn-xs btn-outline btn-primary gap-1">
-                                <span class="mdi mdi-eye"></span>
-                                {{ _('Preview') }}
-                            </button>
                         </div>
                         <textarea id="description" name="description" rows="4" class="textarea textarea-bordered w-full">{{ yarn.description if yarn else '' }}</textarea>
                     </div>
@@ -124,10 +120,6 @@
                                 <span class="mdi mdi-note-text-outline text-base-content/70"></span>
                                 {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
                             </label>
-                            <button type="button" onclick="previewMarkdown('notes')" class="btn btn-xs btn-outline btn-primary gap-1">
-                                <span class="mdi mdi-eye"></span>
-                                {{ _('Preview') }}
-                            </button>
                         </div>
                         <textarea id="notes" name="notes" rows="4" class="textarea textarea-bordered w-full">{{ yarn.notes if yarn else '' }}</textarea>
                     </div>

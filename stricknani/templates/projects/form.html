@@ -189,8 +189,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         <!-- Main Content Column -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Basic Info Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 sm:p-6">
-                <div class="space-y-6">
+            <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
+                <div class="space-y-4 sm:space-y-6">
                     <div>
                         <label for="name" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
                             <span class="mdi mdi-notebook-outline text-base-content/70"></span>
@@ -249,7 +249,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             </div>
 
             <!-- Gallery Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 sm:p-6">
+            <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
                 <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
                     <span class="mdi mdi-image-multiple text-primary"></span>
                     {{ _('Gallery') }}
@@ -286,7 +286,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             </div>
 
             <!-- Steps Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 sm:p-6">
+            <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
                 <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
                     <span class="mdi mdi-format-list-text text-primary"></span>
                     {{ _('Steps') }}
@@ -450,7 +450,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             </div>
 
             <!-- Yarns Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+            <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-5">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
                         <span class="mdi mdi-sheep"></span>
@@ -502,7 +502,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
             <!-- Danger Zone -->
             {% if project %}
-            <div class="bg-red-50 dark:bg-red-900/10 rounded-2xl shadow-sm border border-red-100 dark:border-red-900/30 p-5">
+            <div class="bg-red-50 dark:bg-red-900/10 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-red-100 dark:border-red-900/30 p-3 sm:p-5">
                 <h3 class="font-bold text-base text-red-800 dark:text-red-400 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                     <span class="mdi mdi-alert-outline"></span>
                     {{ _('Danger Zone') }}
