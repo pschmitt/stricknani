@@ -3,24 +3,24 @@
 {% block content %}
 {% block form_styles %}{% endblock %}
 {% block form_before %}{% endblock %}
-<div class="{% block form_container_class %}max-w-5xl{% endblock %} mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+<div class="{% block form_container_class %}max-w-7xl{% endblock %} mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 space-y-6">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div class="flex-1 min-w-0">
-            <h1 class="text-3xl font-extrabold text-base-content flex items-center gap-3 tracking-tight truncate">
-                {% block form_title %}{% endblock %}
-            </h1>
+            <div class="flex items-center gap-3">
+                {% block form_nav %}{% endblock %}
+                <h1 class="text-3xl md:text-4xl font-extrabold text-base-content tracking-tight truncate">
+                    {% block form_title %}{% endblock %}
+                </h1>
+            </div>
         </div>
         <div class="flex flex-wrap items-center gap-3 shrink-0">
-            {% block form_nav %}{% endblock %}
             {% block form_actions %}{% endblock %}
         </div>
     </div>
 
-    <!-- Main Form Card -->
-    <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-6 sm:p-8">
-        {% block form_body %}{% endblock %}
-    </div>
+    <!-- Form Content -->
+    {% block form_body %}{% endblock %}
 </div>
 {% block page_scripts %}{% endblock %}
 {% endblock %}

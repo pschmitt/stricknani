@@ -117,370 +117,348 @@
 {% endblock %}
 
 {% block form_nav %}
-{{ buttons.back(_('Back'), href='/projects/' + project.id|string if project else '/projects') }}
-
-{% if not project %}
-{{ buttons.secondary(_('Import'), icon='mdi-download',
-attrs='onclick="document.getElementById(\'importDialog\').showModal()"') }}
-{% endif %}
+{{ buttons.back_circle('/projects/' + project.id|string if project else '/projects', label=_('Back to projects')) }}
 {% endblock %}
 
 {% block form_actions %}
-{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"') }}
+{% if not project %}
+{{ buttons.secondary(_('Import'), icon='mdi-download',
+attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='flex-1 sm:flex-none') }}
+{% endif %}
+{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class='flex-1 sm:flex-none') }}
 {% endblock %}
 
 {% block form_title %}
-<span class="mdi mdi-notebook-outline text-blue-700 dark:text-blue-300"></span>
 {{ project.name if project else _('New Project') }}
 {% endblock %}
 
 {% block form_body %}
-<div id="importWarning"
-    class="hidden mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded">
-    <div class="flex items-start gap-3">
-        <span class="mdi mdi-alert text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></span>
-        <div class="flex-1">
-            <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved Yet') }}
-            </h3>
-            <p class="text-sm text-yellow-700 dark:text-yellow-300">
-                {{ _('This project was imported from an external source. Please review all fields carefully and click
-                "Save" to keep it.') }}
-            </p>
-        </div>
-    </div>
-</div>
-
-<form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post"
-    class="space-y-6">
+<form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post" class="space-y-6">
     <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
-    <div class="grid gap-4 md:gap-6 md:grid-cols-3">
-        <div class="space-y-6 md:col-span-2">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div class="md:col-span-2">
-                    <label for="name" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                        <span class="mdi mdi-notebook-outline text-base-content/70"></span>
-                        {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
-                    </label>
-                    <input type="text" id="name" name="name" required value="{{ project.name if project else '' }}"
-                        class="input input-bordered w-full" placeholder="{{ _('e.g. My Amazing Project') }}">
-                </div>
+    <input type="hidden" id="stepsData" name="steps_data">
 
-                <div>
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                        <label for="category" class="label-text text-sm font-medium inline-flex items-center gap-2">
-                            <span class="mdi mdi-shape-outline text-base-content/70"></span>
-                            {{ _('Category') }}
+    <div id="importWarning" class="hidden mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded">
+        <div class="flex items-start gap-3">
+            <span class="mdi mdi-alert text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></span>
+            <div class="flex-1">
+                <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved Yet') }}</h3>
+                <p class="text-sm text-yellow-700 dark:text-yellow-300">
+                    {{ _('This project was imported from an external source. Please review all fields carefully and click "Save" to keep it.') }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <!-- Main Content Column -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Basic Info Card -->
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 sm:p-6">
+                <div class="space-y-6">
+                    <div>
+                        <label for="name" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                            <span class="mdi mdi-notebook-outline text-base-content/70"></span>
+                            {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
                         </label>
-                        <a href="/projects/categories"
-                            class="btn btn-xs btn-outline btn-primary gap-1 self-start sm:self-auto" target="_blank"
-                            rel="noreferrer">
-                            <span class="mdi mdi-cog-outline"></span>
-                            {{ _('Manage categories') }}
-                        </a>
-                    </div>
-                    <select id="category" name="category" class="select select-bordered w-full">
-                        <option value="">{{ _('Select a category (optional)') }}</option>
-                        {% for category in categories %}
-                        <option value="{{ category }}" {% if project and project.category==category %}selected{% endif
-                            %}>
-                            {{ category }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <p class="text-xs text-base-content/70 mt-1">{{ _('You can manage categories using the link above.')
-                        }}</p>
-                </div>
-
-                <div>
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                        <label for="yarn_search" class="label-text text-sm font-medium inline-flex items-center gap-2">
-                            <span class="mdi mdi-sheep text-base-content/70"></span>
-                            {{ _('Yarn') }} <span class="text-base-content/60 text-xs">{{ _('Select from stash')
-                                }}</span>
-                        </label>
-                        <a href="/yarn/new" class="btn btn-xs btn-outline btn-primary gap-1 self-start sm:self-auto"
-                            target="_blank" rel="noreferrer">
-                            <span class="mdi mdi-plus"></span>
-                            {{ _('Add yarn') }}
-                        </a>
+                        <input type="text" id="name" name="name" required value="{{ project.name if project else '' }}"
+                            class="input input-bordered w-full" placeholder="{{ _('e.g. My Amazing Project') }}">
                     </div>
 
-                    <input type="hidden" id="yarn_ids" name="yarn_ids" value="">
-
-                    <div class="relative mb-2">
-                        <input type="text" id="yarn_search" placeholder="{{ _('Search yarns...') }}"
-                            class="input input-bordered w-full pl-10" autocomplete="off">
-                        <span
-                            class="mdi mdi-magnify absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60"></span>
-                    </div>
-
-                    <div id="selected_yarns"
-                        class="flex flex-wrap gap-2 mb-3 min-h-[2.5rem] p-2 border border-base-300 rounded-lg bg-base-100">
-                    </div>
-
-                    <div class="relative">
-                        <div id="yarn_dropdown"
-                            class="hidden absolute z-10 w-full max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-lg">
-                            {% for yarn in yarns %}
-                            <button type="button"
-                                class="yarn-option w-full text-left px-4 py-2 hover:bg-base-200 border-b border-base-200 last:border-b-0"
-                                data-yarn-id="{{ yarn.id }}" data-yarn-name="{{ yarn.name }}"
-                                data-yarn-brand="{{ yarn.brand or '' }}" data-yarn-colorway="{{ yarn.colorway or '' }}"
-                                data-yarn-dye-lot="{{ yarn.dye_lot or '' }}"
-                                data-yarn-image="{{ yarn.photos[0].filename if yarn.photos and yarn.photos[0] else '' }}">
-                                <div class="flex items-center gap-3">
-                                    {% if yarn.photos and yarn.photos[0] %}
-                                    <img src="{{ yarn.photos[0].filename }}" alt="{{ yarn.name }}"
-                                        class="w-10 h-10 rounded object-cover"
-                                        onerror="this.replaceWith(this.closest('button').querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">
-                                    {% endif %}
-                                    <div class="w-10 h-10 rounded bg-base-300 flex items-center justify-center text-base-content/60{% if yarn.photos and yarn.photos[0] %} hidden{% endif %}"
-                                        data-fallback-icon>
-                                        <span class="mdi mdi-image-off text-lg" aria-hidden="true"></span>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="font-medium truncate">{{ yarn.name }}</div>
-                                        {% if yarn.brand or yarn.colorway or yarn.dye_lot %}
-                                        <div class="text-xs text-base-content/70 truncate">
-                                            {% if yarn.brand %}{{ yarn.brand }}{% endif %}
-                                            {% if yarn.brand and yarn.colorway %} • {% endif %}
-                                            {% if yarn.brand and yarn.dye_lot and not yarn.colorway %} • {% endif %}
-                                            {% if yarn.colorway and yarn.dye_lot %} • {% endif %}
-                                            {% if yarn.colorway %}{{ yarn.colorway }}{% endif %}
-                                            {% if yarn.dye_lot %}{{ yarn.dye_lot }}{% endif %}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="comment" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                                <span class="mdi mdi-note-text-outline text-base-content/70"></span>
+                                {{ _('Notes') }}
+                            </label>
+                            <button type="button" onclick="previewMarkdown('comment')"
+                                class="btn btn-xs btn-outline btn-primary gap-1">
+                                <span class="mdi mdi-eye"></span>
+                                {{ _('Preview') }}
                             </button>
-                            {% endfor %}
                         </div>
+                        <textarea id="comment" name="comment" rows="6" class="textarea textarea-bordered w-full"
+                            placeholder="Personal notes about this project...">{{ project.comment if project and project.comment else '' }}</textarea>
+                        <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
                     </div>
-
-                    <p class="text-xs text-base-content/70 mt-1">{{ _('Search and select yarns from your stash. Use the
-                        Add link to create new stash entries.') }}</p>
-                </div>
-
-                <div class="md:col-span-2">
-                    <label for="needles" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                        <span class="mdi mdi-needle text-base-content/70"></span>
-                        {{ _('Needles') }}
-                    </label>
-                    <input type="text" id="needles" name="needles"
-                        value="{{ project.needles if project and project.needles else '' }}"
-                        class="input input-bordered w-full" placeholder="{{ _('e.g. 4.0mm circular') }}">
-                </div>
-                <div class="md:col-span-2">
-                    <label for="recommended_needles"
-                        class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                        <span class="mdi mdi-needle text-base-content/70"></span>
-                        {{ _('Recommended needle size') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
-                            }}</span>
-                    </label>
-                    <input type="text" id="recommended_needles" name="recommended_needles"
-                        value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
-                        class="input input-bordered w-full" placeholder="{{ _('e.g. 3.5mm') }}">
-                </div>
-
-                <div>
-                    <label for="gauge_stitches"
-                        class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                        <span class="mdi mdi-ruler-square text-base-content/70"></span>
-                        {{ _('Gauge Stitches (per 10cm)') }}
-                    </label>
-                    <input type="number" id="gauge_stitches" name="gauge_stitches"
-                        value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
-                        class="input input-bordered w-full" placeholder="{{ _('e.g. 20') }}" min="1">
-                </div>
-
-                <div>
-                    <label for="gauge_rows" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                        <span class="mdi mdi-ruler-square text-base-content/70"></span>
-                        {{ _('Gauge Rows (per 10cm)') }}
-                    </label>
-                    <input type="number" id="gauge_rows" name="gauge_rows"
-                        value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
-                        class="input input-bordered w-full" placeholder="{{ _('e.g. 28') }}" min="1">
-                </div>
-
-                <div class="md:col-span-2">
-                    <div class="flex items-center justify-between mb-1">
-                        <label for="comment" class="label-text text-sm font-medium inline-flex items-center gap-2">
-                            <span class="mdi mdi-note-text-outline text-base-content/70"></span>
-                            {{ _('Notes') }}
-                        </label>
-                        <button type="button" onclick="previewMarkdown('comment')"
-                            class="btn btn-xs btn-outline btn-primary gap-1">
-                            <span class="mdi mdi-eye"></span>
-                            {{ _('Preview') }}
-                        </button>
-                    </div>
-                    <textarea id="comment" name="comment" rows="4" class="input input-bordered w-full"
-                        placeholder="Personal notes about this project...">{{ project.comment if project and project.comment else '' }}</textarea>
-                    <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
-                </div>
-
-                <div class="md:col-span-2">
-                    <label for="link" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
-                        <span class="mdi mdi-link-variant text-base-content/70"></span>
-                        {{ _('Source Link') }}
-                    </label>
-                    <input type="url" id="link" name="link" value="{{ project.link or '' }}"
-                        class="input input-bordered w-full" placeholder="{{ _('e.g. https://example.com/pattern') }}">
-                    <p class="text-xs text-base-content/70 mt-1">{{ _('Optional link to the original pattern or source')
-                        }}</p>
                 </div>
             </div>
 
-
-
-        </div>
-    </div>
-    </div>
-
-    <div class="border-t pt-6 border-slate-200 dark:border-slate-700">
-        <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-            <span class="mdi mdi-image-multiple"></span>
-            {{ _('Gallery') }}
-        </h3>
-        <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-            {% if project %}
-            {% for image in project.title_images %}
-            <div class="relative" data-image-id="{{ image.id }}">
-                <img src="{{ image.thumbnail_url }}" alt="{{ image.alt_text }}"
-                    class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
-                    data-lightbox-group="title-{{ project.id }}" data-lightbox-src="{{ image.url }}"
-                    data-lightbox-alt="{{ image.alt_text }}" draggable="true" ondragstart="handleImageDragStart(event)">
-                <button type="button" onclick="deleteImage({{ image.id }})"
-                    class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
-                    </svg>
-                </button>
-            </div>
-            {% endfor %}
-            {% endif %}
-        </div>
-
-        <div id="titleImageUploadContainer" class="{% if not project %}hidden{% endif %}">
-            {{ image_upload.upload_dropzone(
-            input_id='titleImageInput',
-            container_id='titleImageDropZone'
-            ) }}
-        </div>
-        {% if not project %}
-        <div class="alert alert-info text-sm">
-            <span class="mdi mdi-information"></span>
-            {{ _('Save the project to enable image uploads.') }}
-        </div>
-        {% endif %}
-    </div>
-
-    <div class="border-t pt-6 border-slate-200 dark:border-slate-700">
-        <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-            <span class="mdi mdi-format-list-text"></span>
-            {{ _('Steps') }}
-        </h3>
-        <div id="stepsContainer" class="space-y-4">
-            {% for step in (project.steps if project else []) %}
-            <div class="step-item border rounded-lg p-4 bg-slate-100 border-slate-200 dark:bg-slate-900/60 dark:border-slate-700"
-                data-step-id="{{ step.id }}" data-step-number="{{ step.step_number }}">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span class="step-number">{{
-                            step.step_number }}</span></h4>
-                    <div class="flex flex-wrap gap-2">
-                        <button type="button" onclick="moveStepUp(this)"
-                            class="px-2 py-1 text-sm bg-slate-200 hover:bg-slate-300 rounded inline-flex items-center gap-1 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
-                            title="{{ _('Move Up') }}">
-                            <span class="mdi mdi-arrow-up"></span>
-                            <span class="hidden sm:inline">{{ _('Move Up') }}</span>
-                        </button>
-                        <button type="button" onclick="moveStepDown(this)"
-                            class="px-2 py-1 text-sm bg-slate-200 hover:bg-slate-300 rounded inline-flex items-center gap-1 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
-                            title="{{ _('Move Down') }}">
-                            <span class="mdi mdi-arrow-down"></span>
-                            <span class="hidden sm:inline">{{ _('Move Down') }}</span>
-                        </button>
-                        {% if project %}
-                        <button type="button" onclick="saveStep(this)"
-                            class="px-2 py-1 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded inline-flex items-center gap-1 dark:bg-blue-600 dark:hover:bg-blue-500"
-                            title="{{ _('Save') }}">
-                            <span class="mdi mdi-content-save"></span>
-                            <span class="hidden sm:inline">{{ _('Save') }}</span>
-                        </button>
-                        {% endif %}
-                        <button type="button" onclick="removeStep(this)"
-                            class="px-2 py-1 text-sm bg-red-600 text-white hover:bg-red-700 rounded inline-flex items-center gap-1 dark:hover:bg-red-500"
-                            title="{{ _('Remove Step') }}">
-                            <span class="mdi mdi-delete"></span>
-                            <span class="hidden sm:inline">{{ _('Remove') }}</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="flex items-center justify-between mb-2">
-                    <input type="text" class="step-title input input-bordered w-full mr-2"
-                        placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
-                    <button type="button"
-                        onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))"
-                        class="btn btn-xs btn-outline btn-primary gap-1 shrink-0">
-                        <span class="mdi mdi-eye"></span>
-                        {{ _('Preview') }}
-                    </button>
-                </div>
-                <textarea class="step-description textarea textarea-bordered w-full mb-2" rows="3"
-                    placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
-                <p class="text-xs text-base-content/70 mb-2">{{ _('Supports Markdown formatting') }}</p>
-                <div class="step-images grid grid-cols-3 gap-2 mb-2">
-                    {% for image in step.images %}
+            <!-- Gallery Card -->
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 sm:p-6">
+                <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
+                    <span class="mdi mdi-image-multiple text-primary"></span>
+                    {{ _('Gallery') }}
+                </h3>
+                <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                    {% if project %}
+                    {% for image in project.title_images %}
                     <div class="relative" data-image-id="{{ image.id }}">
                         <img src="{{ image.thumbnail_url }}" alt="{{ image.alt_text }}"
-                            class="w-full h-20 cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
-                            data-lightbox-group="step-{{ step.id }}" data-lightbox-src="{{ image.url }}"
-                            data-lightbox-alt="{{ image.alt_text }}" draggable="true"
-                            ondragstart="handleImageDragStart(event)">
+                            class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
+                            data-lightbox-group="title-{{ project.id }}" data-lightbox-src="{{ image.url }}"
+                            data-lightbox-alt="{{ image.alt_text }}" draggable="true" ondragstart="handleImageDragStart(event)">
                         <button type="button" onclick="deleteImage({{ image.id }})"
-                            class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
+                            class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
+                            <span class="mdi mdi-close"></span>
                         </button>
                     </div>
                     {% endfor %}
+                    {% endif %}
                 </div>
-                {{ image_upload.step_upload_dropzone(
-                input_id='stepImageInput' + step.id|string,
-                step_id=step.id
-                ) }}
+
+                <div id="titleImageUploadContainer" class="{% if not project %}hidden{% endif %}">
+                    {{ image_upload.upload_dropzone(
+                    input_id='titleImageInput',
+                    container_id='titleImageDropZone'
+                    ) }}
+                </div>
+                {% if not project %}
+                <div class="alert alert-info text-sm">
+                    <span class="mdi mdi-information"></span>
+                    {{ _('Save the project to enable image uploads.') }}
+                </div>
+                {% endif %}
             </div>
-            {% endfor %}
+
+            <!-- Steps Card -->
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 sm:p-6">
+                <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
+                    <span class="mdi mdi-format-list-text text-primary"></span>
+                    {{ _('Steps') }}
+                </h3>
+                <div id="stepsContainer" class="space-y-4">
+                    {% for step in (project.steps if project else []) %}
+                    <div class="step-item border rounded-lg p-4 bg-base-200/50 border-base-300"
+                        data-step-id="{{ step.id }}" data-step-number="{{ step.step_number }}">
+                        <!-- Step Item Content (Keep as is but adjust colors if needed) -->
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span class="step-number">{{
+                                    step.step_number }}</span></h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" onclick="moveStepUp(this)"
+                                    class="btn btn-xs btn-ghost gap-1"
+                                    title="{{ _('Move Up') }}">
+                                    <span class="mdi mdi-arrow-up"></span>
+                                    <span class="hidden sm:inline">{{ _('Move Up') }}</span>
+                                </button>
+                                <button type="button" onclick="moveStepDown(this)"
+                                    class="btn btn-xs btn-ghost gap-1"
+                                    title="{{ _('Move Down') }}">
+                                    <span class="mdi mdi-arrow-down"></span>
+                                    <span class="hidden sm:inline">{{ _('Move Down') }}</span>
+                                </button>
+                                {% if project %}
+                                <button type="button" onclick="saveStep(this)"
+                                    class="btn btn-xs btn-primary gap-1"
+                                    title="{{ _('Save') }}">
+                                    <span class="mdi mdi-content-save"></span>
+                                    <span class="hidden sm:inline">{{ _('Save') }}</span>
+                                </button>
+                                {% endif %}
+                                <button type="button" onclick="removeStep(this)"
+                                    class="btn btn-xs btn-error text-white gap-1"
+                                    title="{{ _('Remove Step') }}">
+                                    <span class="mdi mdi-delete"></span>
+                                    <span class="hidden sm:inline">{{ _('Remove') }}</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mb-2 gap-2">
+                            <input type="text" class="step-title input input-bordered w-full"
+                                placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
+                            <button type="button"
+                                onclick="previewMarkdown(this.closest('.step-item').querySelector('.step-description'))"
+                                class="btn btn-xs btn-outline btn-primary gap-1 shrink-0">
+                                <span class="mdi mdi-eye"></span>
+                                {{ _('Preview') }}
+                            </button>
+                        </div>
+                        <textarea class="step-description textarea textarea-bordered w-full mb-2" rows="3"
+                            placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
+                        <p class="text-xs text-base-content/70 mb-2">{{ _('Supports Markdown formatting') }}</p>
+                        <div class="step-images grid grid-cols-3 gap-2 mb-2">
+                            {% for image in step.images %}
+                            <div class="relative" data-image-id="{{ image.id }}">
+                                <img src="{{ image.thumbnail_url }}" alt="{{ image.alt_text }}"
+                                    class="w-full h-20 cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
+                                    data-lightbox-group="step-{{ step.id }}" data-lightbox-src="{{ image.url }}"
+                                    data-lightbox-alt="{{ image.alt_text }}" draggable="true"
+                                    ondragstart="handleImageDragStart(event)">
+                                <button type="button" onclick="deleteImage({{ image.id }})"
+                                    class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
+                                    <span class="mdi mdi-close"></span>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {{ image_upload.step_upload_dropzone(
+                        input_id='stepImageInput' + step.id|string,
+                        step_id=step.id
+                        ) }}
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" onclick="addStep()"
+                    class="btn btn-success text-white mt-4 gap-2">
+                    <span class="mdi mdi-playlist-plus text-xl"></span>
+                    {{ _('Add Step') }}
+                </button>
+            </div>
         </div>
-        <button type="button" onclick="addStep()"
-            class="mt-4 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md inline-flex items-center gap-2 dark:hover:bg-green-500">
-            <span class="mdi mdi-playlist-plus"></span>
-            {{ _('Add Step') }}
-        </button>
+
+        <!-- Sidebar Column -->
+        <div class="space-y-6">
+            <!-- Project Details Card -->
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+                <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                    <span class="mdi mdi-information-outline"></span>
+                    {{ _('Project Details') }}
+                </h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
+                            <label for="category" class="label-text text-xs font-bold uppercase text-base-content/50">
+                                {{ _('Category') }}
+                            </label>
+                            <a href="/projects/categories"
+                                class="btn btn-link btn-xs p-0 h-auto min-h-0" target="_blank"
+                                rel="noreferrer">
+                                {{ _('Manage') }}
+                            </a>
+                        </div>
+                        <select id="category" name="category" class="select select-bordered select-sm w-full">
+                            <option value="">{{ _('Select a category') }}</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}" {% if project and project.category==category %}selected{% endif %}>
+                                {{ category }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="divider my-2"></div>
+
+                    <div>
+                        <label for="needles" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            {{ _('Used Needles') }}
+                        </label>
+                        <input type="text" id="needles" name="needles"
+                            value="{{ project.needles if project and project.needles else '' }}"
+                            class="input input-bordered input-sm w-full" placeholder="{{ _('e.g. 4.0mm circular') }}">
+                    </div>
+
+                    <div>
+                        <label for="recommended_needles" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            {{ _('Recommended Size') }}
+                        </label>
+                        <input type="text" id="recommended_needles" name="recommended_needles"
+                            value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
+                            class="input input-bordered input-sm w-full" placeholder="{{ _('e.g. 3.5mm') }}">
+                    </div>
+
+                    <div class="divider my-2"></div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="gauge_stitches" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                                {{ _('Gauge St.') }}
+                            </label>
+                            <input type="number" id="gauge_stitches" name="gauge_stitches"
+                                value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
+                                class="input input-bordered input-sm w-full" placeholder="20" min="1">
+                        </div>
+                        <div>
+                            <label for="gauge_rows" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                                {{ _('Gauge Rows') }}
+                            </label>
+                            <input type="number" id="gauge_rows" name="gauge_rows"
+                                value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
+                                class="input input-bordered input-sm w-full" placeholder="28" min="1">
+                        </div>
+                    </div>
+
+                    <div class="divider my-2"></div>
+
+                    <div>
+                        <label for="link" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            {{ _('Pattern Source') }}
+                        </label>
+                        <input type="url" id="link" name="link" value="{{ project.link or '' }}"
+                            class="input input-bordered input-sm w-full" placeholder="https://...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Yarns Card -->
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
+                        <span class="mdi mdi-sheep"></span>
+                        {{ _('Yarns Used') }}
+                    </h3>
+                    <a href="/yarn/new" class="btn btn-link btn-xs p-0 h-auto min-h-0" target="_blank" rel="noreferrer">
+                        {{ _('Add new') }}
+                    </a>
+                </div>
+
+                <div class="space-y-4">
+                    <input type="hidden" id="yarn_ids" name="yarn_ids" value="">
+
+                    <div class="relative">
+                        <input type="text" id="yarn_search" placeholder="{{ _('Search yarns...') }}"
+                            class="input input-bordered input-sm w-full pl-8" autocomplete="off">
+                        <span class="mdi mdi-magnify absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/60"></span>
+                    </div>
+
+                    <div id="yarn_dropdown" class="hidden absolute z-20 w-64 max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
+                        {% for yarn in yarns %}
+                        <button type="button" class="yarn-option w-full text-left px-3 py-2 hover:bg-base-200 border-b border-base-200 last:border-b-0 text-sm"
+                            data-yarn-id="{{ yarn.id }}" data-yarn-name="{{ yarn.name }}"
+                            data-yarn-brand="{{ yarn.brand or '' }}" data-yarn-colorway="{{ yarn.colorway or '' }}"
+                            data-yarn-dye-lot="{{ yarn.dye_lot or '' }}"
+                            data-yarn-image="{{ yarn.photos[0].filename if yarn.photos and yarn.photos[0] else '' }}">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center shrink-0">
+                                    {% if yarn.photos and yarn.photos[0] %}
+                                    <img src="{{ yarn.photos[0].filename }}" alt="" class="w-full h-full rounded object-cover">
+                                    {% else %}
+                                    <span class="mdi mdi-sheep text-sm opacity-50"></span>
+                                    {% endif %}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-medium truncate">{{ yarn.name }}</div>
+                                    <div class="text-[10px] opacity-60 truncate">{{ yarn.brand or '' }}</div>
+                                </div>
+                            </div>
+                        </button>
+                        {% endfor %}
+                    </div>
+
+                    <div id="selected_yarns" class="space-y-2">
+                        <!-- Chips populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            {% if project %}
+            <div class="bg-red-50 dark:bg-red-900/10 rounded-2xl shadow-sm border border-red-100 dark:border-red-900/30 p-5">
+                <h3 class="font-bold text-base text-red-800 dark:text-red-400 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                    <span class="mdi mdi-alert-outline"></span>
+                    {{ _('Danger Zone') }}
+                </h3>
+                {{ buttons.danger(_('Delete Project'), icon='mdi-delete-outline',
+                    attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"', class="w-full btn-sm") }}
+            </div>
+            {% endif %}
+        </div>
     </div>
 
-    <input type="hidden" id="stepsData" name="steps_data">
-
-    <div class="flex flex-col gap-4">
-        <div class="flex gap-4">
-            {{ buttons.primary(_('Save'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
-            {{ buttons.secondary(_('Cancel'), href='/projects/' + project.id|string if project else '/projects',
-            icon='mdi-close-circle-outline', class='py-3 px-6') }}
-        </div>
-
-        {% if project %}
-        <div class="flex justify-end pt-4 border-t border-base-200">
-            {{ buttons.danger(_('Delete Project'), icon='mdi-delete-outline',
-            attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"', class="w-full
-            sm:w-auto") }}
-        </div>
-        {% endif %}
-    </div>
-    </div>
+    <div class="flex gap-4 pt-6 border-t border-base-200">
+        {{ buttons.primary(_('Save'), type='submit', icon='mdi-content-save', class='flex-1 py-3 px-6') }}
+        {{ buttons.secondary(_('Cancel'), href='/projects/' + project.id|string if project else '/projects',
+        icon='mdi-close-circle-outline', class='py-3 px-6') }}
     </div>
 </form>
 {% endblock %}

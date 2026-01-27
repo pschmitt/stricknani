@@ -66,6 +66,12 @@
     </a>
 {% endmacro %}
 
+{% macro back_circle(href, label=None) %}
+    <a href="{{ href }}" class="btn btn-circle btn-ghost btn-sm text-base-content/60" aria-label="{{ label or _('Back') }}">
+        <span class="mdi mdi-arrow-left text-xl"></span>
+    </a>
+{% endmacro %}
+
 {% macro ghost(text, href=None, icon=None, type='button', class='', attrs='') %}
     {% set base_classes = "btn btn-ghost" %}
     {% if href %}
