@@ -1555,6 +1555,15 @@ msgstr "Garn suchen..."
 msgid "Yarn deleted."
 msgstr "Garn gelöscht."
 
+msgid "Unsaved changes"
+msgstr "Ungespeicherte Änderungen"
+
+msgid "You have unsaved changes. Save before leaving?"
+msgstr "Sie haben ungespeicherte Änderungen. Vor dem Verlassen speichern?"
+
+msgid "Discard changes"
+msgstr "Änderungen verwerfen"
+
 # Navigation and General
 #~ msgid "Stricknani"
 #~ msgstr "Stricknani"
@@ -2543,4 +2552,3 @@ msgstr "Sind Sie sicher, dass Sie fortfahren möchten?"
 
 #~ msgid "Browse yarn stash"
 #~ msgstr "Wollvorrat durchsuchen"
-

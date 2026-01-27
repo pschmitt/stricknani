@@ -22,6 +22,29 @@
     <!-- Form Content -->
     {% block form_body %}{% endblock %}
 </div>
+<dialog id="unsavedChangesDialog" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">{{ _('Unsaved changes') }}</h3>
+        <p class="py-4">{{ _('You have unsaved changes. Save before leaving?') }}</p>
+        <div class="modal-action">
+            <button type="button" class="btn btn-ghost gap-2" data-unsaved-cancel>
+                <span class="mdi mdi-close"></span>
+                {{ _('Cancel') }}
+            </button>
+            <button type="button" class="btn btn-error text-white gap-2" data-unsaved-leave>
+                <span class="mdi mdi-trash-can-outline"></span>
+                {{ _('Discard changes') }}
+            </button>
+            <button type="button" class="btn btn-primary gap-2" data-unsaved-save>
+                <span class="mdi mdi-content-save"></span>
+                {{ _('Save') }}
+            </button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>{{ _('close') }}</button>
+    </form>
+</dialog>
 {% block page_scripts %}{% endblock %}
 
 <script>
@@ -30,6 +53,11 @@
         if (!form) return;
 
         let isDirty = false;
+        const dialog = document.getElementById('unsavedChangesDialog');
+        const cancelButton = dialog?.querySelector('[data-unsaved-cancel]');
+        const leaveButton = dialog?.querySelector('[data-unsaved-leave]');
+        const saveButton = dialog?.querySelector('[data-unsaved-save]');
+        let pendingNavigation = null;
         
         // Track changes
         form.addEventListener('input', () => isDirty = true);
@@ -37,7 +65,52 @@
         
         // Allow submission without warning
         form.addEventListener('submit', () => isDirty = false);
-        
+
+        const showUnsavedDialog = (href) => {
+            if (!dialog) return;
+            pendingNavigation = href || null;
+            dialog.showModal();
+        };
+
+        const handleConfirmNav = (event) => {
+            if (!isDirty) return;
+            event.preventDefault();
+            showUnsavedDialog(event.currentTarget.getAttribute('href'));
+        };
+
+        document.querySelectorAll('[data-unsaved-confirm]').forEach((link) => {
+            if (link.tagName.toLowerCase() !== 'a') return;
+            link.addEventListener('click', handleConfirmNav);
+        });
+
+        cancelButton?.addEventListener('click', () => {
+            dialog?.close();
+        });
+
+        leaveButton?.addEventListener('click', () => {
+            isDirty = false;
+            dialog?.close();
+            const target = pendingNavigation;
+            pendingNavigation = null;
+            if (target) {
+                window.location.href = target;
+            } else {
+                window.history.back();
+            }
+        });
+
+        saveButton?.addEventListener('click', () => {
+            if (form.requestSubmit) {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        });
+
+        dialog?.addEventListener('close', () => {
+            pendingNavigation = null;
+        });
+
         // Warn before leaving
         window.addEventListener('beforeunload', (e) => {
             if (isDirty) {

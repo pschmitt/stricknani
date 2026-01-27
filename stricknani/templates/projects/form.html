@@ -117,7 +117,7 @@
 {% endblock %}
 
 {% block form_nav %}
-{{ buttons.back_circle('/projects/' + project.id|string if project else '/projects', label=_('Back to projects')) }}
+{{ buttons.back_circle('/projects/' + project.id|string if project else '/projects', label=_('Back to projects'), attrs='data-unsaved-confirm="true"') }}
 {% endblock %}
 
 {% block form_actions %}

@@ -20,9 +20,9 @@
 
 {% block form_nav %}
 {% if yarn %}
-{{ buttons.back_circle('/yarn/' + yarn.id|string, label=_('Back to yarn')) }}
+{{ buttons.back_circle('/yarn/' + yarn.id|string, label=_('Back to yarn'), attrs='data-unsaved-confirm="true"') }}
 {% else %}
-{{ buttons.back_circle('/yarn', label=_('Back to yarns')) }}
+{{ buttons.back_circle('/yarn', label=_('Back to yarns'), attrs='data-unsaved-confirm="true"') }}
 {% endif %}
 {% endblock %}
 
@@ -241,7 +241,7 @@
                         <label for="link" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Source Link') }}
                         </label>
-                        <input type="url" id="link" name="link" value="{{ yarn.link if yarn else '' }}" class="input input-bordered input-sm w-full" placeholder="https://...">
+                        <input type="url" id="link" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}" class="input input-bordered input-sm w-full" placeholder="https://...">
                     </div>
                 </div>
             </div>

@@ -73,8 +73,8 @@
     </a>
 {% endmacro %}
 
-{% macro back_circle(href, label=None) %}
-    <a href="{{ href }}" class="btn btn-circle btn-ghost btn-sm text-base-content/60" aria-label="{{ label or _('Back') }}">
+{% macro back_circle(href, label=None, attrs='') %}
+    <a href="{{ href }}" class="btn btn-circle btn-ghost btn-sm text-base-content/60" aria-label="{{ label or _('Back') }}" {{ attrs|safe }}>
         <span class="mdi mdi-arrow-left text-xl"></span>
     </a>
 {% endmacro %}
