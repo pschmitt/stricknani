@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block list_filters %}
-<form method="get" class="relative w-full">
+<div class="relative w-full">
     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50">
         <span class="mdi mdi-magnify text-lg"></span>
     </div>
@@ -26,16 +26,17 @@
         value="{{ search }}"
         placeholder="{{ _('Search yarn...') }}"
         class="input input-bordered w-full pl-10"
+        hx-get="/yarn"
+        hx-target="#yarn-content"
+        hx-trigger="keyup changed delay:500ms"
     >
-</form>
+</div>
 {% endblock %}
 
 {% block list_container_attrs %}id="yarn-content"{% endblock %}
 
 {% block list_content %}
-<div hx-get="/yarn" hx-trigger="load" hx-target="this" hx-swap="innerHTML">
-    {% include "yarn/_list_partial.html" %}
-</div>
+{% include "yarn/_list_partial.html" %}
 {% endblock %}
 
 {% block page_scripts %}

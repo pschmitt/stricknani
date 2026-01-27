@@ -214,6 +214,16 @@ async def list_yarns(
         key=lambda yarn: (yarn.id not in favorite_ids, (yarn.name or "").casefold()),
     )
 
+    if request.headers.get("HX-Request"):
+        return render_template(
+            "yarn/_list_partial.html",
+            request,
+            {
+                "current_user": current_user,
+                "yarns": _serialize_yarn_cards(yarns, current_user),
+            },
+        )
+
     if request.headers.get("accept") == "application/json":
         return JSONResponse(_serialize_yarn_cards(yarns, current_user))
 
