@@ -82,7 +82,7 @@
                             <span class="mdi mdi-sheep text-base-content/70"></span>
                             {{ _('Name') }}
                         </label>
-                        <input type="text" id="name" name="name" required value="{{ yarn.name if yarn else '' }}" class="input input-bordered w-full">
+                        <input type="text" id="name" name="name" required value="{{ yarn.name if yarn and yarn.name else '' }}" class="input input-bordered w-full">
                     </div>
 
                     <!-- Mobile Details Card -->
@@ -111,7 +111,7 @@
                                 {{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
                             </label>
                         </div>
-                        <textarea id="description" name="description" rows="4" class="textarea textarea-bordered w-full">{{ yarn.description if yarn else '' }}</textarea>
+                        <textarea id="description" name="description" rows="4" class="textarea textarea-bordered w-full">{{ yarn.description if yarn and yarn.description else '' }}</textarea>
                     </div>
 
                     <div>
@@ -121,7 +121,7 @@
                                 {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
                             </label>
                         </div>
-                        <textarea id="notes" name="notes" rows="4" class="textarea textarea-bordered w-full">{{ yarn.notes if yarn else '' }}</textarea>
+                        <textarea id="notes" name="notes" rows="4" class="textarea textarea-bordered w-full">{{ yarn.notes if yarn and yarn.notes else '' }}</textarea>
                     </div>
                 </div>
             </div>

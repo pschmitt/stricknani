@@ -165,9 +165,9 @@
                     {% if project.category and project.category != 'None' %}
                     <div class="flex items-center justify-between py-1">
                         <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Category') }}</span>
-                        <a href="/projects?category={{ project.category }}" class="badge badge-primary badge-outline badge-sm gap-1">
-                            <span class="mdi mdi-shape-outline text-[10px]"></span>
-                            {{ _(project.category) }}
+                        <a href="/projects?category={{ project.category }}" class="text-sm font-medium text-primary hover:underline flex items-center gap-1 max-w-[12rem]">
+                            <span class="mdi mdi-shape-outline text-sm"></span>
+                            <span class="truncate">{{ _(project.category) }}</span>
                         </a>
                     </div>
                     {% endif %}

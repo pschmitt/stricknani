@@ -196,7 +196,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             <span class="mdi mdi-notebook-outline text-base-content/70"></span>
                             {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
                         </label>
-                        <input type="text" id="name" name="name" required value="{{ project.name if project else '' }}"
+                        <input type="text" id="name" name="name" required value="{{ project.name if project and project.name else '' }}"
                             class="input input-bordered w-full" placeholder="{{ _('e.g. My Amazing Project') }}">
                     </div>
 

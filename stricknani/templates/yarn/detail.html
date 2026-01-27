@@ -142,9 +142,9 @@
                     {% if yarn.brand %}
                     <div class="flex items-center justify-between py-1">
                         <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Brand') }}</span>
-                        <a href="/yarn?search={{ yarn.brand }}" class="badge badge-primary badge-outline badge-sm gap-1">
-                            <span class="mdi mdi-factory text-[10px]"></span>
-                            {{ yarn.brand }}
+                        <a href="/yarn?search={{ yarn.brand }}" class="text-sm font-medium text-primary hover:underline flex items-center gap-1 max-w-[12rem]">
+                            <span class="mdi mdi-factory text-sm"></span>
+                            <span class="truncate">{{ yarn.brand }}</span>
                         </a>
                     </div>
                     {% endif %}
