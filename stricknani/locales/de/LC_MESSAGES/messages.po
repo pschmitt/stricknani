@@ -268,9 +268,8 @@ msgstr "Aktivieren"
 
 #: stricknani/templates/admin/_user_card.html:65
 #: stricknani/templates/admin/users.html:41
-#, fuzzy
 msgid "Edit profile"
-msgstr "Benutzerprofil"
+msgstr "Profil bearbeiten"
 
 #: stricknani/templates/admin/_user_card.html:70
 #: stricknani/templates/admin/users.html:102
@@ -322,15 +321,13 @@ msgid "Create User"
 msgstr "Benutzer erstellen"
 
 #: stricknani/templates/admin/users.html:43
-#, fuzzy
 msgid "Update profile details for"
-msgstr "Projekt gelöscht."
+msgstr "Profildetails aktualisieren für"
 
 #: stricknani/templates/admin/users.html:50
 #: stricknani/templates/admin/users.html:334
-#, fuzzy
 msgid "Profile updated"
-msgstr "Profilbild"
+msgstr "Profil aktualisiert"
 
 #: stricknani/templates/admin/users.html:59
 #: stricknani/templates/admin/users.html:161
@@ -340,17 +337,14 @@ msgid "Email"
 msgstr "E-Mail"
 
 #: stricknani/templates/admin/users.html:73
-#, fuzzy
 msgid "Profile Image"
 msgstr "Profilbild"
 
 #: stricknani/templates/admin/users.html:81
-#, fuzzy
 msgid "Change Photo"
-msgstr "Schritt-Fotos"
+msgstr "Foto ändern"
 
 #: stricknani/templates/admin/users.html:89
-#, fuzzy
 msgid "Save Changes"
 msgstr "Änderungen speichern"
 
@@ -360,9 +354,8 @@ msgstr "Neues Passwort festlegen für"
 
 #: stricknani/templates/admin/users.html:111
 #: stricknani/templates/admin/users.html:335
-#, fuzzy
 msgid "Password reset"
-msgstr "Passwort zurückgesetzt."
+msgstr "Passwort zurückgesetzt"
 
 #: stricknani/templates/admin/users.html:118
 msgid "New password"
