@@ -1,32 +1,36 @@
 # Agent Instructions
 
-This document contains instructions for AI agents working on the Stricknani codebase.
+Use this file as the single source of truth for how to work in the Stricknani repo.
 
-## 🚨 Critical Instructions
+## Critical Requirements
 
-### 1. Translations
-*   **ALWAYS** check for missing translations when adding or modifying UI elements.
-*   **ALWAYS** add missing translations to `stricknani/locales/de/LC_MESSAGES/messages.po`.
-*   **ALWAYS** compile translations after modifying `.po` files using `uv run python -m babel.messages.frontend compile -d stricknani/locales`.
-*   **ALWAYS** run `just i18n-check` to verify translations are complete.
-*   Ensure both English (source) and German (translation) are covered.
+### Translations (UI text)
+- Always add new strings to `stricknani/locales/en/LC_MESSAGES/messages.po` and `stricknani/locales/de/LC_MESSAGES/messages.po`.
+- Compile catalogs after edits:
+  `uv run python -m babel.messages.frontend compile -d stricknani/locales`
+- Verify translations:
+  `just i18n-check`
 
-### 2. Linting & Code Quality
-*   **Mandatory**: `ruff check` must pass.
-*   **Mandatory**: `mypy` (strict mode) must pass.
-*   **Mandatory**: Trim trailing whitespace from all code, configuration, and documentation files.
-*   Run `just lint` to verify.
+### Code Quality
+- Linting: `uv run ruff check .`
+- Type checking: `uv run mypy .` (strict)
+- Tests: `uv run pytest -v`
+- Trim trailing whitespace in all edited files.
 
-### 3. Testing
-*   **Mandatory**: Run `pytest` to ensure no regressions.
-*   **Mandatory**: Add new tests when adding new features.
-*   Run `just test` to verify.
+### Release/CI Parity
+- `just check` runs `lint`, `test`, and `i18n-check`.
+- When touching build/deploy or release paths, also run:
+  - `nix flake check`
+  - `just build-image` (Docker)
 
-### 4. Build & Deployment
-*   **Mandatory**: Ensure the Docker container builds successfully.
-*   **Mandatory**: Ensure Nix flake checks pass (`nix flake check`).
-*   Run `just check` to run all verifications (lint, test, build checks).
-*   **Note**: `just lint` and `just test` must always pass.
+## Handy Commands
+
+- Setup: `just setup`
+- Dev server: `just run`
+- Lint: `just lint`
+- Format: `just fmt`
+- Tests: `just test`
+- Full checks: `just check`
 
 ---
 
@@ -34,33 +38,29 @@ This document contains instructions for AI agents working on the Stricknani code
 
 > “A Mealie for knitting.”
 
-Stricknani is a self-hosted web app for managing knitting projects — think **[Mealie](https://github.com/mealie-recipes/mealie)**, but for knitters.
+Stricknani is a self-hosted web app for managing knitting projects — think **Mealie**, but for knitters.
 It lets users organize projects with photos, gauge calculations, and notes in a clean, modern interface.
 
 ## 1. Purpose & Vision
 
 - Provide a modern, private, self-hosted space for knitters to document their projects.
-- Recreate the quality and usability of *Mealie*, adapted for fiber arts.
+- Recreate the quality and usability of Mealie, adapted for fiber arts.
 - Focus on usability, reproducibility, and maintainability.
 
 ---
 
 ## 2. Guiding Principles
 
-- 🧠 **Don’t re-invent the wheel.**
-  Always use established Python libraries where possible (e.g., FastAPI auth/session middlewares, SQLAlchemy ORM, Jinja2, existing Markdown renderers, etc.).
-
-- ⚡ **FastAPI + HTMX.**
+- Don’t re-invent the wheel.
+  Always use established Python libraries where possible (FastAPI auth/session middlewares, SQLAlchemy ORM, Jinja2, existing Markdown renderers, etc.).
+- FastAPI + HTMX.
   Use FastAPI for API + server-side rendering (Jinja2 templates).
   Use HTMX for progressive enhancement and dynamic interactivity.
-
-- 🪶 **Modern but simple.**
+- Modern but simple.
   Avoid SPA frameworks. Keep it responsive, clean, and keyboard-friendly.
-
-- 🧩 **Reproducible + portable.**
+- Reproducible + portable.
   Built and tested through Nix + Docker, pushed to GHCR via CI.
-
-- 🔒 **Privacy-respecting.**
+- Privacy-respecting.
   No external analytics, no external asset CDN.
 
 ---
@@ -131,36 +131,37 @@ Operations:
 
 | Area | Requirement |
 |------|--------------|
-| **UI/UX** | Modern, responsive layout; light/dark mode; WCAG AA accessibility. |
-| **Performance** | Fast initial load (<200 KB critical path). |
-| **Security** | HTTPS-only, CSP, secure cookies, validated uploads. |
-| **Extensibility** | Modular design for additional features (inventory, patterns). |
-| **Reliability** | Versioned DB migrations, documented backup process. |
+| UI/UX | Modern, responsive layout; light/dark mode; WCAG AA accessibility. |
+| Performance | Fast initial load (<200 KB critical path). |
+| Security | HTTPS-only, CSP, secure cookies, validated uploads. |
+| Extensibility | Modular design for additional features (inventory, patterns). |
+| Reliability | Versioned DB migrations, documented backup process. |
 
 ---
 
 ## 6. Architecture Overview
 
-- **Framework:** FastAPI + Jinja2 + HTMX
-- **Database:** SQLite (dev), PostgreSQL (optional)
-- **Auth:** built on standard FastAPI middlewares
-- **Storage:** local filesystem for user uploads (later S3-compatible option)
-- **Frontend:** Tailwind-styled templates with HTMX for interactivity
-- **Tests:** pytest for unit + integration
+- Framework: FastAPI + Jinja2 + HTMX
+- Database: SQLite (dev), PostgreSQL (optional)
+- Auth: built on standard FastAPI middlewares
+- Storage: local filesystem for user uploads (later S3-compatible option)
+- Frontend: Tailwind-styled templates with HTMX for interactivity
+- Tests: pytest for unit + integration
 
 ---
 
 ## 7. Deployment & Operations
 
 ### 7.1 Docker
+
 - Single container exposing `$PORT` (default 7674)
 - Config via env vars (`DATABASE_URL`, `SECRET_KEY`, `MEDIA_ROOT`, `ALLOWED_HOSTS`)
 - `/healthz` endpoint for liveness
 - Graceful shutdown (SIGTERM → ≤10 s)
 
 ### 7.2 CI/CD
-- Build, lint, test, and push to **GHCR** at
-  [`ghcr.io/pschmitt/stricknani`](https://ghcr.io/pschmitt/stricknani)
+
+- Build, lint, test, and push to GHCR at `ghcr.io/pschmitt/stricknani`
 - Tags: `<git-sha>` and `latest`
 - CI must run `just check` and `nix flake check`
 
@@ -172,17 +173,17 @@ Operations:
 
 | Tool | Purpose |
 |------|----------|
-| **Python 3.13+** | Language runtime |
-| **uv** | Dependency management |
-| **pytest** | Unit & integration tests |
-| **ruff** | Linter + formatter |
-| **mypy (strict)** | Type checking |
-| **just** | Task runner |
-| **nix** | Reproducible builds |
+| Python 3.13+ | Language runtime |
+| uv | Dependency management |
+| pytest | Unit & integration tests |
+| ruff | Linter + formatter |
+| mypy (strict) | Type checking |
+| just | Task runner |
+| nix | Reproducible builds |
 
 ### 8.2 Linting Policy
 
-Linting is **mandatory** in CI.
+Linting is mandatory in CI.
 - Ruff enforces style, formatting, and common error checks.
 - MyPy runs in strict mode (`--strict`) for full typing discipline.
 - All code must be Ruff- and MyPy-clean before merge.
@@ -200,7 +201,7 @@ Linting is **mandatory** in CI.
 | `just test` | Run pytest |
 | `just build-image` | Build Docker image |
 | `just push-image` | Push image to GHCR |
-| `just check` | Aggregate lint + test + flake checks |
+| `just check` | Aggregate lint + test + i18n checks |
 | `just demo-data` | Seed demo user and sample projects |
 
 ### 8.4 Nix Flake
@@ -220,9 +221,9 @@ Linting is **mandatory** in CI.
 - CI runs:
   1. `ruff check .`
   2. `mypy .`
-  3. `pytest -q`
+  3. `pytest -v`
   4. `nix flake check`
-- Coverage ≥ 80 %.
+- Coverage ≥ 80%.
 - Image verification: start container → `/healthz` returns 200.
 
 ---
@@ -233,24 +234,24 @@ Linting is **mandatory** in CI.
 
 | Section | Content |
 |----------|----------|
-| **Projects** | List + filters |
-| **New Project** | Form + inline gauge tool |
-| **Gauge Calculator** | Standalone tool |
-| **User Menu** | Login / Signup / Logout |
-| **Footer** | Version + Privacy note |
+| Projects | List + filters |
+| New Project | Form + inline gauge tool |
+| Gauge Calculator | Standalone tool |
+| User Menu | Login / Signup / Logout |
+| Footer | Version + Privacy note |
 
 ### 10.2 Screens
 
-- **Projects List:** cards with preview image, name, category, date.
-- **Project Detail:** title, metadata, rendered instructions, photos gallery, comments.
-- **New/Edit Project:** form with drag-drop uploads and inline calculator.
-- **Auth:** login/signup/logout pages.
+- Projects List: cards with preview image, name, category, date.
+- Project Detail: title, metadata, rendered instructions, photos gallery, comments.
+- New/Edit Project: form with drag-drop uploads and inline calculator.
+- Auth: login/signup/logout pages.
 
 ---
 
 ## 11. Accessibility
 
-- Important: the smartphone is the primary device for knitters. We need a responsive, touch-friendly design.
+- Smartphone is the primary device for knitters. Responsive, touch-friendly design.
 - Full keyboard navigation, visible focus indicators.
 - ARIA labels for interactive components.
 - Mandatory alt text for all uploaded images.
@@ -269,9 +270,9 @@ Linting is **mandatory** in CI.
 
 | Env | Description |
 |-----|--------------|
-| **Dev** | SQLite, local media, `.env` file for secrets |
-| **Prod** | Configurable DB URL, media volume mount, HTTPS reverse proxy |
-| **Flags** | `FEATURE_SIGNUP_ENABLED` (toggleable) |
+| Dev | SQLite, local media, `.env` file for secrets |
+| Prod | Configurable DB URL, media volume mount, HTTPS reverse proxy |
+| Flags | `FEATURE_SIGNUP_ENABLED` (toggleable) |
 
 ---
 
@@ -307,8 +308,8 @@ Linting is **mandatory** in CI.
 
 ## 17. Licensing & Versioning
 
-- **License:** GPL-3.0-only
-- **Versioning:** *Leading-zero* incremental scheme, not semantic.
+- License: GPL-3.0-only
+- Versioning: leading-zero incremental scheme, not semantic.
   Examples:
   - `v0.1`, `v0.2`, `v0.3` → sequential milestones.
   - `v1.0` only when stable maturity is reached.
@@ -318,10 +319,10 @@ Linting is **mandatory** in CI.
 
 ## 18. Repository
 
-**URL:** [github.com/pschmitt/stricknani](https://github.com/pschmitt/stricknani)
-**Maintainer:** Philipp Schmitt (@pschmitt)
-**License:** GPL-3.0-only
-**Spec version:** 0.4
+- URL: `github.com/pschmitt/stricknani`
+- Maintainer: Philipp Schmitt (@pschmitt)
+- License: GPL-3.0-only
+- Spec version: 0.4
 
 ---
 
@@ -333,33 +334,33 @@ This section summarizes the initial implementation of Stricknani v0.1.0.
 
 ### Core Components
 
-1. **FastAPI Application** (`stricknani/main.py`)
+1. FastAPI Application (`stricknani/main.py`)
    - Health check endpoint at `/healthz`
    - Async lifecycle management with database initialization
    - Static file serving for media and templates
    - RESTful API endpoints for projects, authentication, and gauge calculation
 
-2. **Database Models** (`stricknani/models/`)
+2. Database Models (`stricknani/models/`)
    - User model with bcrypt password hashing
    - Project model with full metadata support
    - Image model for project photos and diagrams
    - SQLAlchemy ORM with async support
    - Automatic migrations setup (Alembic ready)
 
-3. **Authentication System** (`stricknani/routes/auth.py`, `stricknani/utils/auth.py`)
+3. Authentication System (`stricknani/routes/auth.py`, `stricknani/utils/auth.py`)
    - JWT-based session authentication
    - Secure password hashing with bcrypt
    - Cookie-based sessions
    - Signup, login, logout endpoints
    - User authentication middleware
 
-4. **Project Management** (`stricknani/routes/projects.py`)
+4. Project Management (`stricknani/routes/projects.py`)
    - Create, read, list, and delete projects
    - Filtering by category and search
    - Owner-based access control
    - Full CRUD operations via REST API
 
-5. **Gauge Calculator** (`stricknani/routes/gauge.py`, `stricknani/utils/gauge.py`)
+5. Gauge Calculator (`stricknani/routes/gauge.py`, `stricknani/utils/gauge.py`)
    - Accurate stitch and row calculations
    - Adjusts for gauge differences between pattern and user
    - Supports width and height calculations
@@ -367,31 +368,30 @@ This section summarizes the initial implementation of Stricknani v0.1.0.
 
 ### Development Infrastructure
 
-6. **Testing Framework** (`tests/`)
+6. Testing Framework (`tests/`)
    - pytest with async support
    - Unit tests for authentication and gauge calculator
    - Integration tests with in-memory SQLite
-   - 100% test pass rate
    - Coverage for core functionality
 
-7. **Code Quality Tools**
+7. Code Quality Tools
    - Ruff for linting and formatting (all checks passing)
    - MyPy in strict mode for type checking (all checks passing)
    - Configuration in `pyproject.toml`
    - Pre-configured ignore rules for FastAPI patterns
 
-8. **Build & Deployment**
-   - **Dockerfile** for containerization
-   - **Nix flake** for reproducible builds
-   - **GitHub Actions CI/CD** workflow
+8. Build & Deployment
+   - Dockerfile for containerization
+   - Nix flake for reproducible builds
+   - GitHub Actions CI/CD workflow
    - Automated linting, testing, and image publishing to GHCR
    - Health check verification in CI
 
-9. **Developer Tools**
-   - **justfile** with common tasks (setup, run, lint, test, etc.)
-   - **Demo data seeder** for development (`just demo-data`)
+9. Developer Tools
+   - justfile with common tasks (setup, run, lint, test, etc.)
+   - Demo data seeder for development (`just demo-data`)
    - Environment configuration via `.env` file
-   - UV for fast dependency management
+   - uv for fast dependency management
 
 ## Project Structure
 
@@ -498,16 +498,6 @@ Environment variables:
 - `MEDIA_ROOT` - Media files directory
 - `FEATURE_SIGNUP_ENABLED` - Enable/disable signups (default: true)
 
-## Test Results
-
-All tests passing:
-- ✅ 4 authentication tests
-- ✅ 4 gauge calculator tests
-- ✅ Linting (Ruff) - all checks passed
-- ✅ Type checking (MyPy strict mode) - no issues
-- ✅ Application starts successfully
-- ✅ Health check returns 200 OK
-
 ## Demo Data
 
 Run `just demo-data` to create:
@@ -517,31 +507,31 @@ Run `just demo-data` to create:
 
 ## Technical Decisions
 
-1. **Replaced passlib with bcrypt directly**
+1. Replaced passlib with bcrypt directly
    - Passlib had compatibility issues with Python 3.14
    - Direct bcrypt usage is simpler and works perfectly
 
-2. **Python 3.14 Support**
+2. Python 3.14 Support
    - Application fully compatible with Python 3.14
    - All dependencies work correctly
 
-3. **Async-First Design**
+3. Async-First Design
    - All database operations use async/await
    - Better performance and scalability
 
-4. **Type Safety**
+4. Type Safety
    - Strict MyPy configuration
    - Full type hints throughout codebase
 
 ## Conclusion
 
 The core backend implementation of Stricknani is complete and functional. The application:
-- ✅ Follows the specification architecture
-- ✅ Uses established libraries (FastAPI, SQLAlchemy, bcrypt)
-- ✅ Has comprehensive test coverage
-- ✅ Passes all linting and type checking
-- ✅ Is containerized and ready for deployment
-- ✅ Has reproducible builds via Nix
-- ✅ Includes CI/CD pipeline
+- Follows the specification architecture
+- Uses established libraries (FastAPI, SQLAlchemy, bcrypt)
+- Has comprehensive test coverage
+- Passes all linting and type checking
+- Is containerized and ready for deployment
+- Has reproducible builds via Nix
+- Includes CI/CD pipeline
 
 The foundation is solid and ready for UI development and additional features.
