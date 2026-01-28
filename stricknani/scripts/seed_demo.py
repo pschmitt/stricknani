@@ -23,6 +23,8 @@ from stricknani.models import (
 )
 from stricknani.utils.auth import create_user, get_user_by_email
 
+_THUMBNAILS_AVAILABLE: bool | None = None
+
 
 async def _reset_demo_data(db: AsyncSession, demo_user: User) -> None:
     await db.refresh(
@@ -49,6 +51,65 @@ async def _reset_demo_data(db: AsyncSession, demo_user: User) -> None:
         await db.delete(category)
 
     await db.commit()
+
+
+async def _maybe_create_thumbnail(
+    source_path: Path, entity_id: int, subdir: str
+) -> None:
+    global _THUMBNAILS_AVAILABLE
+
+    if _THUMBNAILS_AVAILABLE is False:
+        return
+
+    try:
+        from stricknani.utils.files import create_thumbnail
+    except ModuleNotFoundError:
+        if _THUMBNAILS_AVAILABLE is None:
+            print("Pillow not installed; skipping thumbnail generation.")
+        _THUMBNAILS_AVAILABLE = False
+        return
+
+    _THUMBNAILS_AVAILABLE = True
+    try:
+        await create_thumbnail(source_path, entity_id, subdir=subdir)
+    except Exception as exc:  # pragma: no cover - demo utility
+        print(f"Failed to create thumbnail for {source_path.name}: {exc}")
+
+
+async def _ensure_thumbnails(db: AsyncSession, demo_user: User) -> None:
+    await db.refresh(demo_user, ["projects", "yarns"])
+
+    for project in demo_user.projects:
+        await db.refresh(project, ["images"])
+        for image in project.images:
+            source_path = (
+                config.MEDIA_ROOT / "projects" / str(project.id) / image.filename
+            )
+            thumb_path = (
+                config.MEDIA_ROOT
+                / "thumbnails"
+                / "projects"
+                / str(project.id)
+                / f"thumb_{Path(image.filename).stem}.jpg"
+            )
+            if source_path.exists() and not thumb_path.exists():
+                await _maybe_create_thumbnail(source_path, project.id, subdir="projects")
+
+    for yarn in demo_user.yarns:
+        await db.refresh(yarn, ["photos"])
+        for photo in yarn.photos:
+            source_path = (
+                config.MEDIA_ROOT / "yarns" / str(yarn.id) / photo.filename
+            )
+            thumb_path = (
+                config.MEDIA_ROOT
+                / "thumbnails"
+                / "yarns"
+                / str(yarn.id)
+                / f"thumb_{Path(photo.filename).stem}.jpg"
+            )
+            if source_path.exists() and not thumb_path.exists():
+                await _maybe_create_thumbnail(source_path, yarn.id, subdir="yarns")
 
 
 async def seed_demo_data(reset: bool = False) -> None:
@@ -205,6 +266,11 @@ async def seed_demo_data(reset: bool = False) -> None:
                             yarn_id=yarn.id,
                         )
                         db.add(yarn_image)
+                        await _maybe_create_thumbnail(
+                            dst_path,
+                            yarn.id,
+                            subdir="yarns",
+                        )
 
                 print(f"Created yarn: {yarn_data['name']}")
             else:
@@ -466,6 +532,11 @@ async def seed_demo_data(reset: bool = False) -> None:
                             project_id=project.id,
                         )
                         db.add(project_image)
+                        await _maybe_create_thumbnail(
+                            dst_path,
+                            project.id,
+                            subdir="projects",
+                        )
 
                 # Add steps
                 for step_number, step_data in enumerate(steps_data, 1):
@@ -508,6 +579,11 @@ async def seed_demo_data(reset: bool = False) -> None:
                                 step_id=step.id,
                             )
                             db.add(step_image)
+                            await _maybe_create_thumbnail(
+                                dst_path,
+                                project.id,
+                                subdir="projects",
+                            )
 
                 print(f"Created project: {project_data['name']}")
             else:
@@ -546,6 +622,8 @@ async def seed_demo_data(reset: bool = False) -> None:
             yarn = yarn_by_name.get(yarn_name)
             if yarn and yarn not in demo_user.favorite_yarns:
                 demo_user.favorite_yarns.append(yarn)
+
+        await _ensure_thumbnails(db, demo_user)
 
         await db.commit()
 
