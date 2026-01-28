@@ -65,6 +65,10 @@ push-image:
 demo-data:
     uv run python -m stricknani.scripts.seed_demo
 
+# Reset demo data and re-seed
+demo-reset:
+    uv run python -m stricknani.scripts.seed_demo --reset
+
 # Run CLI with arguments
 cli *ARGS:
     uv run stricknani-cli {{ARGS}}
