@@ -6,11 +6,15 @@ import argparse
 import asyncio
 import getpass
 import json
+import logging
 import sys
 from types import ModuleType
 
 import httpx
 from rich import print_json
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.table import Table
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -28,6 +32,55 @@ from stricknani.utils.auth import get_password_hash, get_user_by_email
 from stricknani.utils.importer import PatternImporter
 
 
+console = Console()
+error_console = Console(stderr=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(console=error_console, rich_tracebacks=True)],
+)
+logger = logging.getLogger("stricknani.cli")
+for logger_name in (
+    "alembic",
+    "alembic.runtime.migration",
+    "alembic.runtime.environment",
+):
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.WARNING)
+    logger.propagate = False
+
+JSON_OUTPUT = False
+
+
+def output_json(payload: dict[str, object]) -> None:
+    print_json(data=payload)
+
+
+def output_ok(message: str, payload: dict[str, object] | None = None) -> None:
+    if JSON_OUTPUT:
+        data: dict[str, object] = {"status": "ok"}
+        if payload:
+            data.update(payload)
+        output_json(data)
+        return
+    console.print(message)
+
+
+def output_table(
+    headers: list[str],
+    rows: list[list[str]],
+    styles: list[str] | None = None,
+) -> None:
+    table = Table(show_header=True, box=None, show_edge=False, show_lines=False)
+    for index, header in enumerate(headers):
+        style = styles[index] if styles and index < len(styles) else None
+        table.add_column(header, overflow="fold", style=style)
+    for row in rows:
+        table.add_row(*row)
+    console.print(table)
+
+
 async def upsert_user(email: str, password: str, is_admin: bool | None) -> None:
     """Create or update a user with the given credentials."""
     await init_db()
@@ -41,7 +94,10 @@ async def upsert_user(email: str, password: str, is_admin: bool | None) -> None:
             if is_admin is not None:
                 user.is_admin = is_admin
             await session.commit()
-            print(f"Updated password for existing user {email}")
+            output_ok(
+                f"[green]Updated password[/green] for [cyan]{email}[/cyan]",
+                {"email": email},
+            )
             return
 
         new_user = User(
@@ -52,7 +108,7 @@ async def upsert_user(email: str, password: str, is_admin: bool | None) -> None:
         )
         session.add(new_user)
         await session.commit()
-        print(f"Created user {email}")
+        output_ok(f"[green]Created user[/green] [cyan]{email}[/cyan]", {"email": email})
 
 
 async def list_users() -> None:
@@ -61,11 +117,36 @@ async def list_users() -> None:
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(User))
         users = result.scalars().all()
-        for user in users:
-            print(
-                f"ID: {user.id}, Email: {user.email}, "
-                f"Active: {user.is_active}, Admin: {user.is_admin}"
+        if JSON_OUTPUT:
+            output_json(
+                {
+                    "users": [
+                        {
+                            "id": user.id,
+                            "email": user.email,
+                            "is_active": user.is_active,
+                            "is_admin": user.is_admin,
+                        }
+                        for user in users
+                    ]
+                }
             )
+            return
+
+        rows = [
+            [
+                str(user.id),
+                user.email,
+                "true" if user.is_active else "false",
+                "true" if user.is_admin else "false",
+            ]
+            for user in users
+        ]
+        output_table(
+            ["ID", "EMAIL", "ACTIVE", "ADMIN"],
+            rows,
+            styles=["cyan", "cyan", "green", "magenta"],
+        )
 
 
 async def list_projects(owner_email: str | None) -> None:
@@ -76,7 +157,9 @@ async def list_projects(owner_email: str | None) -> None:
         if owner_email:
             owner = await get_user_by_email(session, owner_email)
             if not owner:
-                print(f"User {owner_email} not found.", file=sys.stderr)
+                error_console.print(
+                    f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+                )
                 return
             owner_id = owner.id
 
@@ -90,13 +173,38 @@ async def list_projects(owner_email: str | None) -> None:
 
         result = await session.execute(query)
         projects = result.scalars().all()
-        for project in projects:
-            category = project.category or "-"
-            owner_email_value = project.owner.email if project.owner else "-"
-            print(
-                f"ID: {project.id}, Name: {project.name}, "
-                f"Category: {category}, Owner: {owner_email_value}"
+        if JSON_OUTPUT:
+            output_json(
+                {
+                    "projects": [
+                        {
+                            "id": project.id,
+                            "name": project.name,
+                            "category": project.category,
+                            "owner_email": project.owner.email
+                            if project.owner
+                            else None,
+                        }
+                        for project in projects
+                    ]
+                }
             )
+            return
+
+        rows = [
+            [
+                str(project.id),
+                project.name,
+                project.category or "-",
+                project.owner.email if project.owner else "-",
+            ]
+            for project in projects
+        ]
+        output_table(
+            ["ID", "NAME", "CATEGORY", "OWNER"],
+            rows,
+            styles=["cyan", "yellow", "magenta", "cyan"],
+        )
 
 
 async def delete_project(project_id: int, owner_email: str | None) -> None:
@@ -105,24 +213,31 @@ async def delete_project(project_id: int, owner_email: str | None) -> None:
     async with AsyncSessionLocal() as session:
         project = await session.get(Project, project_id)
         if not project:
-            print(f"Project {project_id} not found.", file=sys.stderr)
+            error_console.print(
+                f"[red]Project [cyan]{project_id}[/cyan] not found.[/red]"
+            )
             return
 
         if owner_email:
             owner = await get_user_by_email(session, owner_email)
             if not owner:
-                print(f"User {owner_email} not found.", file=sys.stderr)
+                error_console.print(
+                    f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+                )
                 return
             if project.owner_id != owner.id:
-                print(
-                    f"Project {project_id} is not owned by {owner_email}.",
-                    file=sys.stderr,
+                error_console.print(
+                    f"[red]Project [cyan]{project_id}[/cyan] is not owned by "
+                    f"[cyan]{owner_email}[/cyan].[/red]"
                 )
                 return
 
         await session.delete(project)
         await session.commit()
-        print(f"Deleted project {project_id}")
+        output_ok(
+            f"[green]Deleted project[/green] [cyan]{project_id}[/cyan]",
+            {"project_id": project_id},
+        )
 
 
 async def list_yarns(owner_email: str | None) -> None:
@@ -133,7 +248,9 @@ async def list_yarns(owner_email: str | None) -> None:
         if owner_email:
             owner = await get_user_by_email(session, owner_email)
             if not owner:
-                print(f"User {owner_email} not found.", file=sys.stderr)
+                error_console.print(
+                    f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+                )
                 return
             owner_id = owner.id
 
@@ -147,15 +264,38 @@ async def list_yarns(owner_email: str | None) -> None:
 
         result = await session.execute(query)
         yarns = result.scalars().all()
-        for yarn in yarns:
-            brand = yarn.brand or "-"
-            colorway = yarn.colorway or "-"
-            owner_email_value = yarn.owner.email if yarn.owner else "-"
-            print(
-                f"ID: {yarn.id}, Name: {yarn.name}, "
-                f"Brand: {brand}, Colorway: {colorway}, "
-                f"Owner: {owner_email_value}"
+        if JSON_OUTPUT:
+            output_json(
+                {
+                    "yarns": [
+                        {
+                            "id": yarn.id,
+                            "name": yarn.name,
+                            "brand": yarn.brand,
+                            "colorway": yarn.colorway,
+                            "owner_email": yarn.owner.email if yarn.owner else None,
+                        }
+                        for yarn in yarns
+                    ]
+                }
             )
+            return
+
+        rows = [
+            [
+                str(yarn.id),
+                yarn.name,
+                yarn.brand or "-",
+                yarn.colorway or "-",
+                yarn.owner.email if yarn.owner else "-",
+            ]
+            for yarn in yarns
+        ]
+        output_table(
+            ["ID", "NAME", "BRAND", "COLORWAY", "OWNER"],
+            rows,
+            styles=["cyan", "yellow", "magenta", "blue", "cyan"],
+        )
 
 
 async def delete_yarn(yarn_id: int, owner_email: str | None) -> None:
@@ -164,24 +304,31 @@ async def delete_yarn(yarn_id: int, owner_email: str | None) -> None:
     async with AsyncSessionLocal() as session:
         yarn = await session.get(Yarn, yarn_id)
         if not yarn:
-            print(f"Yarn {yarn_id} not found.", file=sys.stderr)
+            error_console.print(
+                f"[red]Yarn [cyan]{yarn_id}[/cyan] not found.[/red]"
+            )
             return
 
         if owner_email:
             owner = await get_user_by_email(session, owner_email)
             if not owner:
-                print(f"User {owner_email} not found.", file=sys.stderr)
+                error_console.print(
+                    f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+                )
                 return
             if yarn.owner_id != owner.id:
-                print(
-                    f"Yarn {yarn_id} is not owned by {owner_email}.",
-                    file=sys.stderr,
+                error_console.print(
+                    f"[red]Yarn [cyan]{yarn_id}[/cyan] is not owned by "
+                    f"[cyan]{owner_email}[/cyan].[/red]"
                 )
                 return
 
         await session.delete(yarn)
         await session.commit()
-        print(f"Deleted yarn {yarn_id}")
+        output_ok(
+            f"[green]Deleted yarn[/green] [cyan]{yarn_id}[/cyan]",
+            {"yarn_id": yarn_id},
+        )
 
 
 async def add_project(
@@ -202,7 +349,9 @@ async def add_project(
     async with AsyncSessionLocal() as session:
         owner = await get_user_by_email(session, owner_email)
         if not owner:
-            print(f"User {owner_email} not found.", file=sys.stderr)
+            error_console.print(
+                f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+            )
             return
 
         serialized_tags = serialize_tags(normalize_tags(tags))
@@ -226,7 +375,10 @@ async def add_project(
         if category:
             await sync_project_categories(session, owner.id)
 
-        print(f"Created project {project.id}")
+        output_ok(
+            f"[green]Created project[/green] [cyan]{project.id}[/cyan]",
+            {"project_id": project.id},
+        )
 
 
 async def add_yarn(
@@ -248,7 +400,9 @@ async def add_yarn(
     async with AsyncSessionLocal() as session:
         owner = await get_user_by_email(session, owner_email)
         if not owner:
-            print(f"User {owner_email} not found.", file=sys.stderr)
+            error_console.print(
+                f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+            )
             return
 
         yarn_entry = Yarn(
@@ -268,7 +422,10 @@ async def add_yarn(
         session.add(yarn_entry)
         await session.commit()
         await session.refresh(yarn_entry)
-        print(f"Created yarn {yarn_entry.id}")
+        output_ok(
+            f"[green]Created yarn[/green] [cyan]{yarn_entry.id}[/cyan]",
+            {"yarn_id": yarn_entry.id},
+        )
 
 
 async def import_project_url(
@@ -279,7 +436,9 @@ async def import_project_url(
     async with AsyncSessionLocal() as session:
         owner = await get_user_by_email(session, owner_email)
         if not owner:
-            print(f"User {owner_email} not found.", file=sys.stderr)
+            error_console.print(
+                f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+            )
             return
 
         basic_importer = PatternImporter(url)
@@ -299,10 +458,7 @@ async def import_project_url(
                     )
                     data = await ai_importer_instance.fetch_and_parse()
                 except Exception as exc:
-                    print(
-                        f"AI import failed, using basic parser: {exc}",
-                        file=sys.stderr,
-                    )
+                    logger.warning("AI import failed, using basic parser: %s", exc)
 
         name = data.get("name") or data.get("title") or "Imported Project"
         project = Project(
@@ -349,7 +505,10 @@ async def import_project_url(
         if project.category:
             await sync_project_categories(session, owner.id)
 
-        print(f"Imported project {project.id}")
+        output_ok(
+            f"[green]Imported project[/green] [cyan]{project.id}[/cyan]",
+            {"project_id": project.id},
+        )
 
 
 async def delete_user(email: str) -> None:
@@ -358,11 +517,14 @@ async def delete_user(email: str) -> None:
     async with AsyncSessionLocal() as session:
         user = await get_user_by_email(session, email)
         if not user:
-            print(f"User {email} not found.", file=sys.stderr)
+            error_console.print(f"[red]User [cyan]{email}[/cyan] not found.[/red]")
             return
         await session.delete(user)
         await session.commit()
-        print(f"Deleted user {email}")
+        output_ok(
+            f"[green]Deleted user[/green] [cyan]{email}[/cyan]",
+            {"email": email},
+        )
 
 
 async def set_user_admin(email: str, is_admin: bool) -> None:
@@ -371,12 +533,16 @@ async def set_user_admin(email: str, is_admin: bool) -> None:
     async with AsyncSessionLocal() as session:
         user = await get_user_by_email(session, email)
         if not user:
-            print(f"User {email} not found.", file=sys.stderr)
+            error_console.print(f"[red]User [cyan]{email}[/cyan] not found.[/red]")
             return
         user.is_admin = is_admin
         await session.commit()
         state = "admin" if is_admin else "regular"
-        print(f"Updated {email} to {state} user")
+        output_ok(
+            f"[green]Updated[/green] [cyan]{email}[/cyan] to "
+            f"[yellow]{state}[/yellow] user",
+            {"email": email, "state": state},
+        )
 
 
 async def reset_password(email: str, password: str) -> None:
@@ -385,12 +551,15 @@ async def reset_password(email: str, password: str) -> None:
     async with AsyncSessionLocal() as session:
         user = await get_user_by_email(session, email)
         if not user:
-            print(f"User {email} not found.", file=sys.stderr)
+            error_console.print(f"[red]User [cyan]{email}[/cyan] not found.[/red]")
             return
         user.hashed_password = get_password_hash(password)
         user.is_active = True
         await session.commit()
-        print(f"Reset password for {email}")
+        output_ok(
+            f"[green]Reset password[/green] for [cyan]{email}[/cyan]",
+            {"email": email},
+        )
 
 
 async def api_request(url: str, endpoint: str, email: str, password: str) -> None:
@@ -407,7 +576,7 @@ async def api_request(url: str, endpoint: str, email: str, password: str) -> Non
             login_resp.status_code not in (302, 303)
             and "session_token" not in login_resp.cookies
         ):
-            print("Login failed.", file=sys.stderr)
+            error_console.print("[red]Login failed.[/red]")
             sys.exit(1)
 
         cookies = login_resp.cookies
@@ -423,10 +592,10 @@ async def api_request(url: str, endpoint: str, email: str, password: str) -> Non
             try:
                 print_json(data=resp.json())
             except json.JSONDecodeError:
-                print(resp.text)
+                console.print(resp.text)
         else:
-            print(f"Error: {resp.status_code}", file=sys.stderr)
-            print(resp.text, file=sys.stderr)
+            error_console.print(f"[red]Error: {resp.status_code}[/red]")
+            error_console.print(resp.text)
 
 
 def prompt_password(confirm: bool = True) -> str:
@@ -437,16 +606,25 @@ def prompt_password(confirm: bool = True) -> str:
 
     second = getpass.getpass("Confirm password: ")
     if first != second:
-        print("Passwords do not match.", file=sys.stderr)
+        error_console.print("[red]Passwords do not match.[/red]")
         sys.exit(1)
     if not first:
-        print("Password cannot be empty.", file=sys.stderr)
+        error_console.print("[red]Password cannot be empty.[/red]")
         sys.exit(1)
     return first
 
 
 def main() -> None:
+    raw_args = [arg for arg in sys.argv[1:] if arg != "--json"]
+    global JSON_OUTPUT
+    JSON_OUTPUT = "--json" in sys.argv[1:]
+
     parser = argparse.ArgumentParser(description="Stricknani CLI tool.")
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output JSON (useful for scripts)",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # User management
@@ -575,7 +753,7 @@ def main() -> None:
     api_subparsers.add_parser("projects", help="List projects")
     api_subparsers.add_parser("yarns", help="List yarns")
 
-    args = parser.parse_args()
+    args = parser.parse_args(raw_args)
 
     if args.command == "user":
         if args.user_command == "create":
