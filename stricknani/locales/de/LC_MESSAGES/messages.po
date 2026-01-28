@@ -627,8 +627,16 @@ msgid "No matching results"
 msgstr "Keine passenden Ergebnisse"
 
 #: stricknani/templates/shared/_empty_search_state.html:8
-msgid "Clear search"
-msgstr "Suche löschen"
+msgid "Clear filters"
+msgstr "Filter löschen"
+
+#: stricknani/templates/projects/list.html:49
+msgid "Clear category"
+msgstr "Kategorie entfernen"
+
+#: stricknani/templates/yarn/list.html:36
+msgid "Clear brand"
+msgstr "Marke entfernen"
 
 #: stricknani/templates/projects/_empty_state.html:6
 msgid "Start a project to track photos, gauge notes, and progress."

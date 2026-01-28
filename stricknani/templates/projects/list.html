@@ -30,14 +30,25 @@
 {% endblock %}
 
 {% block list_filters %}
-<div class="relative w-full">
-    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50">
-        <span class="mdi mdi-magnify text-lg"></span>
-    </div>
-    <input type="text" id="search" name="search" value="{{ search or '' }}" placeholder="{{ _('Search projects...') }}"
-        class="input input-bordered w-full pl-10" hx-get="/projects" hx-target="#projects-list"
-        hx-trigger="keyup changed delay:500ms" hx-replace-url="true">
-</div>
+{% set search_id = "search" %}
+{% set search_name = "search" %}
+{% set search_value = search or "" %}
+{% set search_placeholder = _('Search projects...') %}
+{% set search_url = "/projects" %}
+{% set search_target = "#projects-list" %}
+{% set extra_filter_id = "category-filter" %}
+{% set extra_filter_name = "category" %}
+{% set extra_filter_value = selected_category %}
+{% set extra_filter_label = _('Category') %}
+{% set extra_filter_icon = "mdi-tag-outline" %}
+{% set extra_filter_clear_label = _('Clear category') %}
+{% set extra_filter_clear_url = "/projects" %}
+{% set extra_filter_value_label = selected_category and _(selected_category) %}
+{% if search %}
+{% set extra_filter_clear_url = extra_filter_clear_url + "?search=" + (search|urlencode) %}
+{% endif %}
+{% set wrapper_id = "project-search" %}
+{% include "shared/_search_bar.html" with context %}
 {% endblock %}
 
 {% block list_container_attrs %}id="projects-list"{% endblock %}

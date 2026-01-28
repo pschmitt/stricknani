@@ -180,6 +180,7 @@ async def list_yarns(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_current_user),
     search: str | None = None,
+    brand: str | None = None,
 ) -> Response:
     """List yarn stash for the current user."""
 
@@ -195,6 +196,9 @@ async def list_yarns(
         .options(selectinload(Yarn.photos), selectinload(Yarn.projects))
         .order_by(Yarn.created_at.desc())
     )
+
+    if brand:
+        query = query.where(Yarn.brand.ilike(f"%{brand}%"))
 
     if search:
         ilike = f"%{search}%"
@@ -222,6 +226,7 @@ async def list_yarns(
                 "current_user": current_user,
                 "yarns": _serialize_yarn_cards(yarns, current_user),
                 "search": search or "",
+                "selected_brand": brand,
             },
         )
 
@@ -235,6 +240,7 @@ async def list_yarns(
             "current_user": current_user,
             "yarns": _serialize_yarn_cards(yarns, current_user),
             "search": search or "",
+            "selected_brand": brand,
         },
     )
 

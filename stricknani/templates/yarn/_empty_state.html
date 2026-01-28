@@ -1,4 +1,4 @@
-{% if search %}
+{% if search or selected_brand %}
 {% set clear_url = "/yarn" %}
 {% include "shared/_empty_search_state.html" with context %}
 {% else %}

@@ -18,23 +18,24 @@
 {% endblock %}
 
 {% block list_filters %}
-<div class="relative w-full">
-    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50">
-        <span class="mdi mdi-magnify text-lg"></span>
-    </div>
-    <input
-        type="text"
-        id="search"
-        name="search"
-        value="{{ search }}"
-        placeholder="{{ _('Search yarn...') }}"
-        class="input input-bordered w-full pl-10"
-        hx-get="/yarn"
-        hx-target="#yarn-content"
-        hx-trigger="keyup changed delay:500ms"
-        hx-replace-url="true"
-    >
-</div>
+{% set search_id = "search" %}
+{% set search_name = "search" %}
+{% set search_value = search %}
+{% set search_placeholder = _('Search yarn...') %}
+{% set search_url = "/yarn" %}
+{% set search_target = "#yarn-content" %}
+{% set extra_filter_id = "brand-filter" %}
+{% set extra_filter_name = "brand" %}
+{% set extra_filter_value = selected_brand %}
+{% set extra_filter_label = _('Brand') %}
+{% set extra_filter_icon = "mdi-label-outline" %}
+{% set extra_filter_clear_label = _('Clear brand') %}
+{% set extra_filter_clear_url = "/yarn" %}
+{% if search %}
+{% set extra_filter_clear_url = extra_filter_clear_url + "?search=" + (search|urlencode) %}
+{% endif %}
+{% set wrapper_id = "yarn-search" %}
+{% include "shared/_search_bar.html" with context %}
 {% endblock %}
 
 {% block list_container_attrs %}id="yarn-content"{% endblock %}

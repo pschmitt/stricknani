@@ -281,8 +281,24 @@ msgid "No matching results"
 msgstr "No matching results"
 
 #: stricknani/templates/shared/_empty_search_state.html:8
-msgid "Clear search"
-msgstr "Clear search"
+msgid "Clear filters"
+msgstr "Clear filters"
+
+#: stricknani/templates/projects/list.html:46
+msgid "Category"
+msgstr "Category"
+
+#: stricknani/templates/projects/list.html:49
+msgid "Clear category"
+msgstr "Clear category"
+
+#: stricknani/templates/yarn/list.html:34
+msgid "Brand"
+msgstr "Brand"
+
+#: stricknani/templates/yarn/list.html:36
+msgid "Clear brand"
+msgstr "Clear brand"
 
 #: stricknani/templates/projects/_empty_state.html:6
 msgid "Start a project to track photos, gauge notes, and progress."
