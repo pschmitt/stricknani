@@ -276,13 +276,17 @@ msgstr "Discard changes"
 #~ msgid "Create Your First Project"
 #~ msgstr "Create Your First Project"
 
-#: stricknani/templates/projects/_empty_state.html:3
-msgid "No matching projects"
-msgstr "No matching projects"
+#: stricknani/templates/shared/_empty_search_state.html:2
+msgid "No matching results"
+msgstr "No matching results"
 
-#: stricknani/templates/projects/_empty_state.html:9
+#: stricknani/templates/shared/_empty_search_state.html:8
 msgid "Clear search"
 msgstr "Clear search"
+
+#: stricknani/templates/projects/_empty_state.html:6
+msgid "Start a project to track photos, gauge notes, and progress."
+msgstr "Start a project to track photos, gauge notes, and progress."
 
 #~ msgid "Created"
 #~ msgstr "Created"

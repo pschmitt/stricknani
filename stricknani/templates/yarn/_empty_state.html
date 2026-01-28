@@ -1,13 +1,12 @@
-<div class="rounded-xl border border-dashed border-base-300 bg-base-100 p-10 text-center shadow-sm">
-    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-200">
-        <span class="mdi mdi-yarn text-2xl"></span>
-    </div>
-    <p class="text-lg font-semibold text-base-content">{{ _('Start your stash') }}</p>
-    <p class="text-sm text-base-content/70">{{ _('Track skeins, colorways, and notes so you know what you can use next.') }}</p>
-    <div class="mt-4">
-        <a href="/yarn/new" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
-            <span class="mdi mdi-plus"></span>
-            {{ _('Add your first yarn') }}
-        </a>
-    </div>
-</div>
+{% if search %}
+{% set clear_url = "/yarn" %}
+{% include "shared/_empty_search_state.html" with context %}
+{% else %}
+{% set empty_icon = "mdi-yarn" %}
+{% set empty_title = _('Start your stash') %}
+{% set empty_body = _('Track skeins, colorways, and notes so you know what you can use next.') %}
+{% set empty_action_url = "/yarn/new" %}
+{% set empty_action_label = _('Add your first yarn') %}
+{% set empty_action_icon = "mdi-plus" %}
+{% include "shared/_empty_state.html" with context %}
+{% endif %}

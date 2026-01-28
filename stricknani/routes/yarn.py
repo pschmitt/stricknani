@@ -221,6 +221,7 @@ async def list_yarns(
             {
                 "current_user": current_user,
                 "yarns": _serialize_yarn_cards(yarns, current_user),
+                "search": search or "",
             },
         )
 
