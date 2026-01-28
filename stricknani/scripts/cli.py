@@ -17,12 +17,12 @@ from sqlalchemy.orm import selectinload
 from stricknani.config import config
 from stricknani.database import AsyncSessionLocal, init_db
 from stricknani.models import Project, Step, User, Yarn
-from stricknani.routes.projects import (
-    _build_ai_hints,
-    _import_images_from_urls,
-    _normalize_tags,
-    _serialize_tags,
-    _sync_project_categories,
+from stricknani.utils.project_import import (
+    build_ai_hints,
+    import_images_from_urls,
+    normalize_tags,
+    serialize_tags,
+    sync_project_categories,
 )
 from stricknani.utils.auth import get_password_hash, get_user_by_email
 from stricknani.utils.importer import PatternImporter
@@ -205,7 +205,7 @@ async def add_project(
             print(f"User {owner_email} not found.", file=sys.stderr)
             return
 
-        serialized_tags = _serialize_tags(_normalize_tags(tags))
+        serialized_tags = serialize_tags(normalize_tags(tags))
         project = Project(
             name=name,
             category=category,
@@ -224,7 +224,7 @@ async def add_project(
         await session.refresh(project)
 
         if category:
-            await _sync_project_categories(session, owner.id)
+            await sync_project_categories(session, owner.id)
 
         print(f"Created project {project.id}")
 
@@ -295,7 +295,7 @@ async def import_project_url(
             if ai_importer and ai_importer.OPENAI_AVAILABLE:
                 try:
                     ai_importer_instance = ai_importer.AIPatternImporter(
-                        url, hints=_build_ai_hints(data)
+                        url, hints=build_ai_hints(data)
                     )
                     data = await ai_importer_instance.fetch_and_parse()
                 except Exception as exc:
@@ -341,13 +341,13 @@ async def import_project_url(
             config.ensure_media_dirs()
             image_urls = data.get("image_urls")
             if isinstance(image_urls, list):
-                await _import_images_from_urls(session, project, image_urls)
+                await import_images_from_urls(session, project, image_urls)
 
         await session.commit()
         await session.refresh(project)
 
         if project.category:
-            await _sync_project_categories(session, owner.id)
+            await sync_project_categories(session, owner.id)
 
         print(f"Imported project {project.id}")
 
