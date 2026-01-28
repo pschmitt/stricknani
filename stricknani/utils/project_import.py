@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from stricknani.config import config
 from stricknani.models import Category, Image, ImageType, Project, Yarn
-from stricknani.utils.files import save_bytes
+from stricknani.utils.files import create_thumbnail, delete_file, save_bytes
 from stricknani.utils.importer import PatternImporter
 
 
@@ -103,6 +103,12 @@ async def import_images_from_urls(
             project.id,
             subdir="projects",
         )
+        file_path = config.MEDIA_ROOT / "projects" / str(project.id) / filename
+        try:
+            await create_thumbnail(file_path, project.id)
+        except Exception:
+            delete_file(filename, project.id)
+            continue
         db.add(
             Image(
                 filename=filename,
