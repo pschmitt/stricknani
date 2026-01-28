@@ -203,6 +203,7 @@ Linting is mandatory in CI.
 | `just push-image` | Push image to GHCR |
 | `just check` | Aggregate lint + test + i18n checks |
 | `just demo-data` | Seed demo user and sample projects |
+| `just demo-reset` | Reset and re-seed demo data |
 
 ### 8.4 Nix Flake
 
@@ -502,8 +503,9 @@ Environment variables:
 
 Run `just demo-data` to create:
 - Demo user: `demo@stricknani.local` / `demo`
-- 3 sample projects (Baby Blanket, Winter Scarf, Spring Pullover)
-- 3 sample yarns (Merino Soft, Sock Delight, Chunky Monkey)
+- Sample projects: Baby Blanket, Winter Scarf, Spring Pullover, City Beanie, Lace Headband, Weekend Cardigan
+- Sample yarns: Merino Soft, Sock Delight, Chunky Monkey, Linen Breeze, Alpaca Cloud, Highland Tweed
+Run `just demo-reset` to delete existing demo data and re-seed it.
 
 ## Technical Decisions
 

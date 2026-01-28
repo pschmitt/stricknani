@@ -88,6 +88,7 @@ just build-image    # Build Docker image
 just build-nix      # Build Nix package
 just build-container # Build Nix container
 just demo-data      # Seed demo data
+just demo-reset     # Reset and re-seed demo data
 ```
 
 When editing UI text, update translations in:
