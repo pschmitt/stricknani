@@ -607,6 +607,7 @@ async def list_projects(
                 "request": request,
                 "projects": projects_data,
                 "current_language": language,
+                "search": search or "",
             },
         )
 

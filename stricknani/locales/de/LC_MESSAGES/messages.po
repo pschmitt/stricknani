@@ -614,15 +614,21 @@ msgstr "Bilder hierher ziehen oder zum Hochladen klicken"
 msgid "Save the project before adding images to this step."
 msgstr "Speichere das Projekt, bevor du diesem Schritt Bilder hinzufügst."
 
-#: stricknani/templates/projects/_empty_state.html:2
-#: stricknani/templates/projects/_list_partial.html:93
+#: stricknani/templates/projects/_empty_state.html:11
 msgid "No projects yet"
 msgstr "Noch keine Projekte"
 
-#: stricknani/templates/projects/_empty_state.html:8
-#: stricknani/templates/projects/_list_partial.html:99
+#: stricknani/templates/projects/_empty_state.html:17
 msgid "Create Your First Project"
 msgstr "Erstelle dein erstes Projekt"
+
+#: stricknani/templates/projects/_empty_state.html:3
+msgid "No matching projects"
+msgstr "Keine passenden Projekte"
+
+#: stricknani/templates/projects/_empty_state.html:9
+msgid "Clear search"
+msgstr "Suche löschen"
 
 #: stricknani/templates/projects/_favorite_toggle.html:4
 #: stricknani/templates/yarn/_favorite_toggle.html:3

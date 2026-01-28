@@ -276,6 +276,14 @@ msgstr "Discard changes"
 #~ msgid "Create Your First Project"
 #~ msgstr "Create Your First Project"
 
+#: stricknani/templates/projects/_empty_state.html:3
+msgid "No matching projects"
+msgstr "No matching projects"
+
+#: stricknani/templates/projects/_empty_state.html:9
+msgid "Clear search"
+msgstr "Clear search"
+
 #~ msgid "Created"
 #~ msgstr "Created"
 
