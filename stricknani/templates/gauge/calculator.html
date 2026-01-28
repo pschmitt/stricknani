@@ -189,13 +189,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const userRows = document.getElementById('user_gauge_rows');
 
     const mirrorIfEmpty = (source, target) => {
-        if (target && source && !target.value) {
+        if (!target || !source) {
+            return;
+        }
+        const wasAutofilled = target.dataset.autofilled === 'true';
+        if (!target.value || wasAutofilled) {
             target.value = source.value;
+            if (source.value) {
+                target.dataset.autofilled = 'true';
+            } else {
+                delete target.dataset.autofilled;
+            }
+        }
+    };
+
+    const stopAutofill = (target) => {
+        if (target) {
+            delete target.dataset.autofilled;
         }
     };
 
     patternStitches?.addEventListener('input', () => mirrorIfEmpty(patternStitches, userStitches));
     patternRows?.addEventListener('input', () => mirrorIfEmpty(patternRows, userRows));
+    userStitches?.addEventListener('input', () => stopAutofill(userStitches));
+    userRows?.addEventListener('input', () => stopAutofill(userRows));
 });
 
 document.body.addEventListener('htmx:afterRequest', function(event) {
