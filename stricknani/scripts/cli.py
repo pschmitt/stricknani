@@ -41,16 +41,25 @@ logging.basicConfig(
     handlers=[RichHandler(console=error_console, rich_tracebacks=True)],
 )
 logger = logging.getLogger("stricknani.cli")
-for logger_name in (
-    "alembic",
-    "alembic.runtime.migration",
-    "alembic.runtime.environment",
-):
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.WARNING)
-    logger.propagate = False
+
 
 JSON_OUTPUT = False
+VERBOSE = False
+
+
+def suppress_alembic_logging() -> None:
+    if VERBOSE:
+        return
+    for name in (
+        "alembic",
+        "alembic.runtime.migration",
+        "alembic.runtime.environment",
+    ):
+        target = logging.getLogger(name)
+        target.setLevel(logging.CRITICAL)
+        target.propagate = False
+        target.disabled = True
+        target.handlers.clear()
 
 
 def output_json(payload: dict[str, object]) -> None:
@@ -615,15 +624,26 @@ def prompt_password(confirm: bool = True) -> str:
 
 
 def main() -> None:
-    raw_args = [arg for arg in sys.argv[1:] if arg != "--json"]
-    global JSON_OUTPUT
+    raw_args = [
+        arg
+        for arg in sys.argv[1:]
+        if arg not in ("--json", "--verbose")
+    ]
+    global JSON_OUTPUT, VERBOSE
     JSON_OUTPUT = "--json" in sys.argv[1:]
+    VERBOSE = "--verbose" in sys.argv[1:]
+    suppress_alembic_logging()
 
     parser = argparse.ArgumentParser(description="Stricknani CLI tool.")
     parser.add_argument(
         "--json",
         action="store_true",
         help="Output JSON (useful for scripts)",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Show verbose logs (including Alembic output)",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
