@@ -182,6 +182,22 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+    const patternStitches = document.getElementById('pattern_gauge_stitches');
+    const patternRows = document.getElementById('pattern_gauge_rows');
+    const userStitches = document.getElementById('user_gauge_stitches');
+    const userRows = document.getElementById('user_gauge_rows');
+
+    const mirrorIfEmpty = (source, target) => {
+        if (target && source && !target.value) {
+            target.value = source.value;
+        }
+    };
+
+    patternStitches?.addEventListener('input', () => mirrorIfEmpty(patternStitches, userStitches));
+    patternRows?.addEventListener('input', () => mirrorIfEmpty(patternRows, userRows));
+});
+
 document.body.addEventListener('htmx:afterRequest', function(event) {
     if (event.detail.target.id === 'result') {
         try {
