@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import json
 from pathlib import Path
 from typing import Any
@@ -91,9 +92,8 @@ async def import_images_from_urls(
     if not image_urls:
         return
 
-    importer = PatternImporter(
-        config.MEDIA_ROOT / "projects" / str(project.id)
-    )
+    logger = logging.getLogger("stricknani.cli")
+    importer = PatternImporter(config.MEDIA_ROOT / "projects" / str(project.id))
     imported_images = await importer.download_images(image_urls)
 
     for image_path, original_name in imported_images:
@@ -106,8 +106,13 @@ async def import_images_from_urls(
         file_path = config.MEDIA_ROOT / "projects" / str(project.id) / filename
         try:
             await create_thumbnail(file_path, project.id)
-        except Exception:
+        except Exception as exc:
             delete_file(filename, project.id)
+            logger.warning(
+                "Failed to create thumbnail for %s: %s",
+                original_filename,
+                exc,
+            )
             continue
         db.add(
             Image(
