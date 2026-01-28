@@ -1,4 +1,4 @@
-{% if search or selected_category %}
+{% if search or selected_category or selected_tag %}
 {% set clear_url = "/projects" %}
 {% include "shared/_empty_search_state.html" with context %}
 {% else %}

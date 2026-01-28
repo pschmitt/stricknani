@@ -24,17 +24,25 @@
 {% set search_placeholder = _('Search yarn...') %}
 {% set search_url = "/yarn" %}
 {% set search_target = "#yarn-content" %}
-{% set extra_filter_id = "brand-filter" %}
-{% set extra_filter_name = "brand" %}
-{% set extra_filter_value = selected_brand %}
-{% set extra_filter_label = _('Brand') %}
-{% set extra_filter_icon = "mdi-label-outline" %}
-{% set extra_filter_clear_label = _('Clear brand') %}
-{% set extra_filter_clear_url = "/yarn" %}
-{% if search %}
-{% set extra_filter_clear_url = extra_filter_clear_url + "?search=" + (search|urlencode) %}
-{% endif %}
 {% set wrapper_id = "yarn-search" %}
+{% set extra_filters = [] %}
+{% if selected_brand %}
+{% set params = namespace(items=[]) %}
+{% if search %}
+{% set unused = params.items.append('search=' + (search|urlencode)) %}
+{% endif %}
+{% set clear_url = "/yarn" + ('?' + (params.items|join('&'))) if params.items else "/yarn" %}
+{% set extra_filters = extra_filters + [{
+    'id': 'brand-filter',
+    'name': 'brand',
+    'value': selected_brand,
+    'label': _('Brand'),
+    'label_value': selected_brand,
+    'icon': 'mdi-label-outline',
+    'clear_url': clear_url,
+    'clear_label': _('Clear brand'),
+}] %}
+{% endif %}
 {% include "shared/_search_bar.html" with context %}
 {% endblock %}
 

@@ -505,6 +505,7 @@ async def list_projects(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_current_user),
     category: str | None = None,
+    tag: str | None = None,
     search: str | None = None,
 ) -> Response:
     """List all projects for the current user."""
@@ -515,6 +516,9 @@ async def list_projects(
 
     if category:
         query = query.where(Project.category == category)
+
+    if tag:
+        query = query.where(Project.tags.ilike(f"%{tag}%"))
 
     if search:
         query = query.where(Project.name.ilike(f"%{search}%"))
@@ -609,6 +613,7 @@ async def list_projects(
                 "current_language": language,
                 "search": search or "",
                 "selected_category": category,
+                "selected_tag": tag,
             },
         )
 
@@ -627,6 +632,7 @@ async def list_projects(
             "projects": projects_data,
             "categories": categories,
             "selected_category": category,
+            "selected_tag": tag,
             "search": search,
             "has_openai_key": bool(config.OPENAI_API_KEY),
         },

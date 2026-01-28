@@ -634,6 +634,14 @@ msgstr "Filter löschen"
 msgid "Clear category"
 msgstr "Kategorie entfernen"
 
+#: stricknani/templates/projects/list.html:64
+msgid "Tag"
+msgstr "Tag"
+
+#: stricknani/templates/projects/list.html:67
+msgid "Clear tag"
+msgstr "Tag entfernen"
+
 #: stricknani/templates/yarn/list.html:36
 msgid "Clear brand"
 msgstr "Marke entfernen"

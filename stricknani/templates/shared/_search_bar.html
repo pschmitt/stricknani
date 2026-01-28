@@ -3,51 +3,86 @@
         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50">
             <span class="mdi mdi-magnify text-lg"></span>
         </div>
+        {% set filters = extra_filters
+            if extra_filters is defined
+            else (
+                [{
+                    'id': extra_filter_id,
+                    'name': extra_filter_name,
+                    'value': extra_filter_value,
+                    'label': extra_filter_label,
+                    'label_value': extra_filter_value_label|default(extra_filter_value),
+                    'icon': extra_filter_icon,
+                    'clear_url': extra_filter_clear_url,
+                    'clear_label': extra_filter_clear_label,
+                }]
+                if extra_filter_value is defined and extra_filter_value
+                else []
+            )
+        %}
+        {% set inline_filters = filters|length == 1 %}
         <input
             type="text"
             id="{{ search_id }}"
             name="{{ search_name }}"
             value="{{ search_value }}"
             placeholder="{{ search_placeholder }}"
-            class="input input-bordered w-full pl-10{% if extra_filter_value %} pr-10 sm:pr-32{% endif %}"
+            class="input input-bordered w-full pl-10{% if inline_filters %} pr-10 sm:pr-32{% endif %}"
             hx-get="{{ search_url }}"
             hx-target="{{ search_target }}"
             hx-trigger="keyup changed delay:500ms"
             hx-replace-url="true"
-            {% if extra_filter_value %}hx-include="#{{ extra_filter_id }}"{% endif %}
+            {% if filters %}hx-include=".search-filter-input"{% endif %}
         >
-        {% if extra_filter_value %}
-        <input type="hidden" id="{{ extra_filter_id }}" name="{{ extra_filter_name }}" value="{{ extra_filter_value }}">
+        {% if filters %}
+        {% for filter in filters %}
+        <input
+            type="hidden"
+            id="{{ filter.id }}"
+            name="{{ filter.name }}"
+            value="{{ filter.value }}"
+            class="search-filter-input"
+        >
+        {% endfor %}
+        {% if inline_filters %}
+        {% set filter = filters[0] %}
         <div class="absolute inset-y-0 right-0 hidden sm:flex items-center pr-2">
             <div class="badge badge-outline gap-1">
-                <span class="mdi {{ extra_filter_icon }}" aria-hidden="true"></span>
-                <span class="truncate max-w-[6rem] sm:max-w-[10rem]">{{ extra_filter_label }}: {{ extra_filter_value_label|default(extra_filter_value) }}</span>
+                <span class="mdi {{ filter.icon }}" aria-hidden="true"></span>
+                <span class="truncate max-w-[6rem] sm:max-w-[10rem]">
+                    {{ filter.label }}: {{ filter.label_value }}
+                </span>
                 <a
-                    href="{{ extra_filter_clear_url }}"
+                    href="{{ filter.clear_url }}"
                     class="ml-1 inline-flex items-center"
-                    title="{{ extra_filter_clear_label }}"
+                    title="{{ filter.clear_label }}"
                 >
                     <span class="mdi mdi-close" aria-hidden="true"></span>
-                    <span class="sr-only">{{ extra_filter_clear_label }}</span>
+                    <span class="sr-only">{{ filter.clear_label }}</span>
                 </a>
             </div>
         </div>
         {% endif %}
+        {% endif %}
     </div>
-    {% if extra_filter_value %}
-    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs sm:hidden">
-        <span class="badge badge-outline gap-1 flex-1 min-w-0">
-            <span class="mdi {{ extra_filter_icon }}" aria-hidden="true"></span>
-            <span class="truncate">{{ extra_filter_label }}: {{ extra_filter_value_label|default(extra_filter_value) }}</span>
+    {% if filters %}
+    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs {% if inline_filters %}sm:hidden{% endif %}">
+        {% for filter in filters %}
+        <span class="badge badge-outline gap-1 min-w-0">
+            <span class="mdi {{ filter.icon }}" aria-hidden="true"></span>
+            <span class="truncate">
+                {{ filter.label }}: {{ filter.label_value }}
+            </span>
         </span>
         <a
-            href="{{ extra_filter_clear_url }}"
+            href="{{ filter.clear_url }}"
             class="btn btn-ghost btn-xs ml-auto"
-            title="{{ extra_filter_clear_label }}"
+            title="{{ filter.clear_label }}"
         >
             <span class="mdi mdi-close" aria-hidden="true"></span>
-            <span class="sr-only">{{ extra_filter_clear_label }}</span>
+            <span class="sr-only">{{ filter.clear_label }}</span>
         </a>
+        {% endfor %}
     </div>
     {% endif %}
 </div>

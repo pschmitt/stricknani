@@ -300,6 +300,14 @@ msgstr "Brand"
 msgid "Clear brand"
 msgstr "Clear brand"
 
+#: stricknani/templates/projects/list.html:64
+msgid "Tag"
+msgstr "Tag"
+
+#: stricknani/templates/projects/list.html:67
+msgid "Clear tag"
+msgstr "Clear tag"
+
 #: stricknani/templates/projects/_empty_state.html:6
 msgid "Start a project to track photos, gauge notes, and progress."
 msgstr "Start a project to track photos, gauge notes, and progress."
