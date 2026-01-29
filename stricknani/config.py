@@ -26,6 +26,11 @@ class Config:
 
     # Media Storage
     MEDIA_ROOT: Path = Path(os.getenv("MEDIA_ROOT", "./media"))
+    IMPORT_TRACE_ENABLED: bool = bool(os.getenv("IMPORT_TRACE_ENABLED"))
+    IMPORT_TRACE_DIR: Path = Path(
+        os.getenv("IMPORT_TRACE_DIR", str(MEDIA_ROOT / "import-traces"))
+    )
+    IMPORT_TRACE_MAX_CHARS: int = int(os.getenv("IMPORT_TRACE_MAX_CHARS", "12000"))
 
     # Security
     ALLOWED_HOSTS: list[str] = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(
@@ -79,6 +84,8 @@ class Config:
         (cls.MEDIA_ROOT / "thumbnails").mkdir(exist_ok=True)
         (cls.MEDIA_ROOT / "thumbnails" / "projects").mkdir(parents=True, exist_ok=True)
         (cls.MEDIA_ROOT / "thumbnails" / "users").mkdir(parents=True, exist_ok=True)
+        if cls.IMPORT_TRACE_ENABLED:
+            cls.IMPORT_TRACE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 config = Config()

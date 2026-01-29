@@ -4,7 +4,7 @@ import inspect
 import json as json_module
 import logging
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 from bs4 import BeautifulSoup
@@ -23,6 +23,9 @@ IMPORT_HEADERS = {
     "User-Agent": "Stricknani Importer/0.1",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
+
+if TYPE_CHECKING:
+    from stricknani.utils.import_trace import ImportTrace
 
 
 def _build_schema_from_model(model_class: type) -> dict[str, Any]:
@@ -119,17 +122,108 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
     return schema
 
 
+def _build_example_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    example: dict[str, Any] = {}
+    for field, props in schema["properties"].items():
+        if field == "name":
+            example[field] = "Cozy Scarf"
+        elif field == "needles":
+            example[field] = "4mm"
+        elif field == "recommended_needles":
+            example[field] = "3.5mm"
+        elif field == "yarn":
+            example[field] = "Worsted weight wool"
+        elif field == "gauge_stitches":
+            example[field] = 20
+        elif field == "gauge_rows":
+            example[field] = 28
+        elif field == "comment":
+            example[field] = "A simple beginner-friendly scarf pattern"
+        elif field == "category":
+            example[field] = "Schal"
+        elif field == "steps":
+            example[field] = [
+                {
+                    "step_number": 1,
+                    "title": "Cast On",
+                    "description": "Cast on 40 stitches",
+                },
+                {
+                    "step_number": 2,
+                    "title": "Body",
+                    "description": "Knit in stockinette stitch",
+                },
+            ]
+        elif props.get("nullable"):
+            example[field] = None
+    return example
+
+
+def _build_ai_prompts(
+    *,
+    schema: dict[str, Any],
+    text_content: str,
+    hints: dict[str, Any] | None = None,
+    image_urls: list[str] | None = None,
+    source_url: str | None = None,
+) -> tuple[str, str]:
+    example = _build_example_from_schema(schema)
+
+    system_prompt = (
+        "You are an expert at extracting knitting pattern information.\n"
+        "Extract the following fields from the provided text.\n"
+        "Use the exact field names from the schema. Use null for missing values.\n"
+        "Prefer structured steps: split instructions into ordered steps when possible.\n"
+        "Do not invent data that is not present in the source.\n\n"
+        f"{json_module.dumps(schema, indent=2)}\n\n"
+        "Return valid JSON only.\n"
+        "Example format:\n"
+        f"{json_module.dumps(example, indent=2)}"
+    )
+
+    hint_block = ""
+    if hints:
+        hint_block = (
+            "\n\nHeuristic parser hints (may be wrong or incomplete; "
+            "use only if supported by the source text):\n"
+            f"{json_module.dumps(hints, indent=2)}"
+        )
+
+    image_block = ""
+    if image_urls:
+        image_block = (
+            "\n\nImage URLs (for reference only; may include non-pattern images):\n"
+            + "\n".join(f"- {url}" for url in image_urls)
+        )
+
+    source_block = ""
+    if source_url:
+        source_block = f"\n\nSource URL: {source_url}"
+
+    user_prompt = (
+        "Extract knitting pattern information from this text:\n\n"
+        f"{text_content}{hint_block}{image_block}{source_block}"
+    )
+
+    return system_prompt, user_prompt
+
+
 class AIPatternImporter:
     """Extract knitting pattern data from URLs using AI."""
 
     def __init__(
-        self, url: str, timeout: int = 30, hints: dict[str, Any] | None = None
+        self,
+        url: str,
+        timeout: int = 30,
+        hints: dict[str, Any] | None = None,
+        trace: "ImportTrace | None" = None,
     ) -> None:
         """Initialize with URL to import."""
         self.url = url
         self.timeout = timeout
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.hints = hints
+        self.trace = trace
 
     async def fetch_and_parse(self) -> dict[str, Any]:
         """Fetch URL and extract pattern data using AI."""
@@ -187,6 +281,17 @@ class AIPatternImporter:
         # Extract images
         images = await self._extract_images(soup)
         logger.debug("AI import image URLs: %s", images[:5])
+
+        if self.trace:
+            self.trace.add_event(
+                "source_extracted",
+                {
+                    "url": self.url,
+                    "text_length": len(text_content),
+                    "image_count": len(images),
+                },
+            )
+            self.trace.record_text_blob("source_text", text_content)
 
         # Use AI to parse the content
         extracted_data = await self._ai_extract(text_content, images[:5], self.hints)
@@ -349,64 +454,16 @@ class AIPatternImporter:
         # Build schema dynamically from Project model
         schema = _build_schema_from_model(Project)
 
-        # Create example based on schema
-        example: dict[str, Any] = {}
-        for field, props in schema["properties"].items():
-            if field == "name":
-                example[field] = "Cozy Scarf"
-            elif field == "needles":
-                example[field] = "4mm"
-            elif field == "recommended_needles":
-                example[field] = "3.5mm"
-            elif field == "yarn":
-                example[field] = "Worsted weight wool"
-            elif field == "gauge_stitches":
-                example[field] = 20
-            elif field == "gauge_rows":
-                example[field] = 28
-            elif field == "comment":
-                example[field] = "A simple beginner-friendly scarf pattern"
-            elif field == "category":
-                example[field] = "Schal"
-            elif field == "steps":
-                example[field] = [
-                    {
-                        "step_number": 1,
-                        "title": "Cast On",
-                        "description": "Cast on 40 stitches",
-                    },
-                    {
-                        "step_number": 2,
-                        "title": "Body",
-                        "description": "Knit in stockinette stitch",
-                    },
-                ]
-            elif props.get("nullable"):
-                example[field] = None
-
-        system_prompt = f"""You are an expert at extracting knitting \
-pattern information.
-Extract the following fields from the provided text:
-
-{json_module.dumps(schema, indent=2)}
-
-Return valid JSON only. Use null for missing values.
-Example format:
-{json_module.dumps(example, indent=2)}"""
-
-        hint_block = ""
-        if hints:
-            hint_block = (
-                "\n\nHeuristic parser hints (may be wrong or incomplete; "
-                "use only if supported by the source text):\n"
-                f"{json_module.dumps(hints, indent=2)}"
-            )
-
-        user_prompt = (
-            "Extract knitting pattern information from this text:\n\n"
-            f"{text_content}{hint_block}"
+        system_prompt, user_prompt = _build_ai_prompts(
+            schema=schema,
+            text_content=text_content,
+            hints=hints,
+            image_urls=image_urls,
+            source_url=self.url,
         )
         _log_ai_prompt(system_prompt, user_prompt)
+        if self.trace:
+            self.trace.record_ai_prompt(system_prompt, user_prompt)
 
         try:
             response = await client.chat.completions.create(
@@ -423,11 +480,15 @@ Example format:
 
             raw_content = response.choices[0].message.content or ""
             _log_ai_response(raw_content)
+            if self.trace:
+                self.trace.record_ai_response(raw_content)
             result: dict[str, Any] = json_parser.loads(raw_content or "{}")
             return result
 
-        except Exception:
+        except Exception as exc:
             logger.error("AI extraction failed", exc_info=True)
+            if self.trace:
+                self.trace.record_error("ai_extract", exc)
 
             # Fallback to empty data if AI extraction fails
             return {

@@ -2,7 +2,7 @@
 
 import json
 from io import BytesIO
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -531,3 +531,62 @@ async def test_import_missing_file(test_client: "TestClientFixture") -> None:
 
     assert response.status_code == 400
     assert "required" in response.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_import_trace_written(
+    test_client: "TestClientFixture", tmp_path: Any
+) -> None:
+    """Ensure import traces are persisted when enabled."""
+    client, _, _, _, _ = test_client
+
+    from stricknani.config import config
+
+    original_enabled = config.IMPORT_TRACE_ENABLED
+    original_dir = config.IMPORT_TRACE_DIR
+    original_max = config.IMPORT_TRACE_MAX_CHARS
+
+    config.IMPORT_TRACE_ENABLED = True
+    config.IMPORT_TRACE_DIR = tmp_path / "import-traces"
+    config.IMPORT_TRACE_MAX_CHARS = 2000
+
+    mock_html = """
+    <html>
+        <head><title>Trace Pattern</title></head>
+        <body>
+            <h1>Trace Scarf</h1>
+            <p>Needles: 4mm</p>
+        </body>
+    </html>
+    """
+
+    try:
+        with patch("httpx.AsyncClient.get") as mock_get:
+            mock_response = MagicMock()
+            mock_response.text = mock_html
+            mock_response.status_code = 200
+            mock_get.return_value = mock_response
+
+            response = await client.post(
+                "/projects/import",
+                data={
+                    "type": "url",
+                    "url": "https://example.com/trace",
+                    "use_ai": False,
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        trace_id = data.get("import_trace_id")
+        assert trace_id
+        trace_file = config.IMPORT_TRACE_DIR / f"{trace_id}.json"
+        assert trace_file.exists()
+
+        payload = json.loads(trace_file.read_text(encoding="utf-8"))
+        assert payload["trace_id"] == trace_id
+        assert any(event["name"] == "basic_import" for event in payload["events"])
+    finally:
+        config.IMPORT_TRACE_ENABLED = original_enabled
+        config.IMPORT_TRACE_DIR = original_dir
+        config.IMPORT_TRACE_MAX_CHARS = original_max

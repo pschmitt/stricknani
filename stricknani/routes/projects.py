@@ -49,6 +49,7 @@ from stricknani.utils.files import (
     save_uploaded_file,
 )
 from stricknani.utils.i18n import install_i18n
+from stricknani.utils.import_trace import ImportTrace
 from stricknani.utils.markdown import render_markdown
 
 router: APIRouter = APIRouter(prefix="/projects", tags=["projects"])
@@ -693,6 +694,20 @@ async def import_pattern(
     import os
 
     logger = logging.getLogger(__name__)
+    trace: ImportTrace | None = None
+    if config.IMPORT_TRACE_ENABLED:
+        trace = ImportTrace.create(
+            config.IMPORT_TRACE_DIR,
+            max_chars=config.IMPORT_TRACE_MAX_CHARS,
+        )
+        trace.add_event(
+            "request",
+            {
+                "import_type": import_type,
+                "use_ai": use_ai,
+                "user_id": current_user.id,
+            },
+        )
 
     try:
         content_text = ""
@@ -718,6 +733,8 @@ async def import_pattern(
                 )
 
             source_url = url
+            if trace:
+                trace.add_event("source_url", {"url": source_url})
 
             # For URLs, use the existing importers
             data: dict[str, Any]
@@ -729,6 +746,16 @@ async def import_pattern(
             basic_importer = PatternImporter(url)
             basic_data = await basic_importer.fetch_and_parse()
             data = basic_data
+            if trace:
+                trace.add_event(
+                    "basic_import",
+                    {
+                        "steps": len(basic_data.get("steps", [])),
+                        "images": len(basic_data.get("image_urls", [])),
+                        "title": basic_data.get("title"),
+                        "name": basic_data.get("name"),
+                    },
+                )
 
             logger.info(
                 "Basic importer found %d steps and %d images",
@@ -741,7 +768,9 @@ async def import_pattern(
                     from stricknani.utils.ai_importer import AIPatternImporter
 
                     ai_importer = AIPatternImporter(
-                        url, hints=_build_ai_hints(basic_data)
+                        url,
+                        hints=_build_ai_hints(basic_data),
+                        trace=trace,
                     )
                     ai_data = await ai_importer.fetch_and_parse()
 
@@ -782,6 +811,8 @@ async def import_pattern(
                         and basic_data.get("title")
                     ):
                         ai_data["title"] = basic_data["title"]
+                    if ai_data.get("title") and not ai_data.get("name"):
+                        ai_data["name"] = ai_data.get("title")
 
                     data = ai_data
 
@@ -799,6 +830,8 @@ async def import_pattern(
                     logger.warning(
                         f"AI import failed, falling back to basic parser: {e}"
                     )
+                    if trace:
+                        trace.record_error("ai_import", e)
                     ai_failed = True
                     data = basic_data
 
@@ -829,6 +862,18 @@ async def import_pattern(
                             "(Note: AI used for metadata, basic parser for steps)"
                         )
 
+            if data.get("title") and not data.get("name"):
+                data["name"] = data.get("title")
+            if trace:
+                trace.add_event(
+                    "import_result",
+                    {
+                        "steps": len(data.get("steps", [])),
+                        "images": len(data.get("image_urls", [])),
+                        "ai_fallback": bool(data.get("ai_fallback")),
+                    },
+                )
+                data["import_trace_id"] = trace.trace_id
             return JSONResponse(content=data)
 
         elif import_type == "text":
@@ -838,6 +883,8 @@ async def import_pattern(
                     detail="Text is required",
                 )
             content_text = text.strip()
+            if trace:
+                trace.record_text_blob("source_text", content_text)
 
         elif import_type == "file":
             if not file:
@@ -848,6 +895,15 @@ async def import_pattern(
 
             # Read file content
             content_bytes = await file.read()
+            if trace:
+                trace.add_event(
+                    "file_upload",
+                    {
+                        "filename": file.filename,
+                        "content_type": file.content_type,
+                        "size": len(content_bytes),
+                    },
+                )
 
             # Handle different file types
             if file.filename and file.filename.lower().endswith(".pdf"):
@@ -871,6 +927,8 @@ async def import_pattern(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="File is not valid UTF-8 text",
                     ) from e
+            if content_text and trace:
+                trace.record_text_blob("source_text", content_text)
 
         else:
             raise HTTPException(
@@ -887,23 +945,21 @@ async def import_pattern(
                     "OpenAI package not installed, AI extraction unavailable"
                 )
             else:
-                from stricknani.utils.ai_importer import _build_schema_from_model
+                from stricknani.utils.ai_importer import (
+                    _build_ai_prompts,
+                    _build_schema_from_model,
+                )
 
                 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
                 schema = _build_schema_from_model(Project)
 
-                system_prompt = f"""You are an expert at extracting knitting \
-pattern information.
-Extract the following fields from the provided text:
-
-{json.dumps(schema, indent=2)}
-
-Return valid JSON only. Use null for missing values."""
-
-                user_prompt = (
-                    f"Extract knitting pattern information from this text:\n\n"
-                    f"{content_text[:8000]}"
+                system_prompt, user_prompt = _build_ai_prompts(
+                    schema=schema,
+                    text_content=content_text[:8000],
+                    source_url=source_url,
                 )
+                if trace:
+                    trace.record_ai_prompt(system_prompt, user_prompt)
 
                 try:
                     response = await client.chat.completions.create(
@@ -916,15 +972,24 @@ Return valid JSON only. Use null for missing values."""
                         temperature=0.1,
                     )
 
-                    data = json.loads(response.choices[0].message.content or "{}")
+                    raw_content = response.choices[0].message.content or ""
+                    if trace:
+                        trace.record_ai_response(raw_content)
+                    data = json.loads(raw_content or "{}")
                     if not data.get("comment"):
                         data["comment"] = content_text[:2000]
                     if source_url:
                         data["link"] = source_url
+                    if data.get("title") and not data.get("name"):
+                        data["name"] = data.get("title")
+                    if trace:
+                        data["import_trace_id"] = trace.trace_id
                     return JSONResponse(content=data)
 
                 except Exception as e:
                     logger.error(f"AI extraction failed for text/file: {e}")
+                    if trace:
+                        trace.record_error("ai_import_text_file", e)
                     # Fall through to basic extraction
 
         # Basic extraction for text/file without AI
@@ -939,6 +1004,10 @@ Return valid JSON only. Use null for missing values."""
             "steps": [],
             "link": source_url,
         }
+        if data.get("title") and not data.get("name"):
+            data["name"] = data.get("title")
+        if trace:
+            data["import_trace_id"] = trace.trace_id
 
         return JSONResponse(content=data)
 
@@ -946,10 +1015,18 @@ Return valid JSON only. Use null for missing values."""
         raise
     except Exception as e:
         logger.error(f"Import failed: {e}", exc_info=True)
+        if trace:
+            trace.record_error("import_failure", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to import: {str(e)}",
+            detail=(
+                f"Failed to import: {str(e)}"
+                + (f" (trace: {trace.trace_id})" if trace else "")
+            ),
         ) from e
+    finally:
+        if trace:
+            trace.save()
 
 
 async def _render_categories_page(
