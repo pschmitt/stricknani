@@ -23,7 +23,29 @@
 {% block list_title %}{{ _('My Projects') }}{% endblock %}
 
 {% block list_actions %}
-{{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='hidden md:inline-flex flex-1 sm:flex-none') }}
+{{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='hidden md:inline-flex
+flex-1 sm:flex-none') }}
+
+<div class="dropdown dropdown-end">
+    <button tabindex="0" role="button" class="btn btn-square btn-ghost" aria-label="{{ _('More options') }}">
+        <span class="mdi mdi-dots-vertical text-xl"></span>
+    </button>
+    <ul tabindex="0"
+        class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
+        <li>
+            <button type="button" onclick="importDialog.showModal()">
+                <span class="mdi mdi-download"></span>
+                {{ _('Import Project') }}
+            </button>
+        </li>
+        <li>
+            <a href="/projects/categories">
+                <span class="mdi mdi-shape-outline"></span>
+                {{ _('Manage Categories') }}
+            </a>
+        </li>
+    </ul>
+</div>
 
 <!-- Mobile FAB -->
 {{ buttons.fab('mdi-plus', href='/projects/new', class='md:hidden', label=_('New Project')) }}
@@ -48,14 +70,14 @@
 {% endif %}
 {% set clear_url = "/projects" + ('?' + (params.items|join('&'))) if params.items else "/projects" %}
 {% set extra_filters = extra_filters + [{
-    'id': 'category-filter',
-    'name': 'category',
-    'value': selected_category,
-    'label': _('Category'),
-    'label_value': _(selected_category),
-    'icon': 'mdi-tag-outline',
-    'clear_url': clear_url,
-    'clear_label': _('Clear category'),
+'id': 'category-filter',
+'name': 'category',
+'value': selected_category,
+'label': _('Category'),
+'label_value': _(selected_category),
+'icon': 'mdi-tag-outline',
+'clear_url': clear_url,
+'clear_label': _('Clear category'),
 }] %}
 {% endif %}
 {% if selected_tag %}
@@ -68,14 +90,14 @@
 {% endif %}
 {% set clear_url = "/projects" + ('?' + (params.items|join('&'))) if params.items else "/projects" %}
 {% set extra_filters = extra_filters + [{
-    'id': 'tag-filter',
-    'name': 'tag',
-    'value': selected_tag,
-    'label': _('Tag'),
-    'label_value': selected_tag,
-    'icon': 'mdi-tag-multiple-outline',
-    'clear_url': clear_url,
-    'clear_label': _('Clear tag'),
+'id': 'tag-filter',
+'name': 'tag',
+'value': selected_tag,
+'label': _('Tag'),
+'label_value': selected_tag,
+'icon': 'mdi-tag-multiple-outline',
+'clear_url': clear_url,
+'clear_label': _('Clear tag'),
 }] %}
 {% endif %}
 {% include "shared/_search_bar.html" with context %}
@@ -88,6 +110,7 @@
 {% endblock %}
 
 {% block list_extra %}
+{% include "projects/_import_dialog.html" %}
 {% endblock %}
 
 {% block page_scripts %}

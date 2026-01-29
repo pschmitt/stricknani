@@ -30,94 +30,12 @@
     <div id="previewContent" class="p-6 prose max-w-none dark:prose-invert overflow-y-auto max-h-[70vh]"></div>
 </dialog>
 
-<dialog id="importDialog" class="modal">
-    <div class="modal-box max-w-2xl">
-        <h3 class="font-bold text-lg mb-4">{{ _('Import Pattern') }}</h3>
-        <form id="importForm">
-            <div role="tablist" class="tabs tabs-boxed mb-4">
-                <a role="tab" class="tab tab-active" data-tab="url">{{ _('From URL') }}</a>
-                <a role="tab" class="tab" data-tab="file">{{ _('From File') }}</a>
-                <a role="tab" class="tab" data-tab="text">{{ _('From Text') }}</a>
-            </div>
-
-            <div id="tab-url" class="tab-content">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">{{ _('Pattern URL') }}</span>
-                    </label>
-                    <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
-                        class="input input-bordered" />
-                    <label class="label">
-                        <span class="label-text-alt">{{ _('Enter the URL of the knitting pattern') }}</span>
-                    </label>
-                </div>
-            </div>
-
-            <div id="tab-file" class="tab-content hidden">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">{{ _('Pattern File') }}</span>
-                    </label>
-
-                    <div id="dropZone"
-                        class="border-2 border-dashed border-base-300 rounded-lg p-4 sm:p-8 text-center hover:border-primary hover:bg-base-200 transition-colors cursor-pointer">
-                        <input type="file" id="importFile" name="file" accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.gif"
-                            class="hidden" />
-                        <div id="dropZoneContent">
-                            <span class="mdi mdi-cloud-upload text-5xl text-base-content opacity-50"></span>
-                            <p class="mt-4 text-base font-medium">{{ _('Click to upload or drag and drop') }}</p>
-                            <p class="mt-2 text-sm text-base-content opacity-60">{{ _('PDF, text file, or image') }}</p>
-                        </div>
-                        <div id="filePreview" class="hidden">
-                            <span class="mdi mdi-file-document text-5xl text-primary"></span>
-                            <p id="fileName" class="mt-4 text-base font-medium"></p>
-                            <button type="button" id="removeFile" class="btn btn-sm btn-ghost mt-2">
-                                <span class="mdi mdi-close"></span>
-                                {{ _('Remove') }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <label class="label">
-                        <span class="label-text-alt">{{ _('Supports PDF, TXT, MD, JPG, PNG, GIF') }}</span>
-                    </label>
-                </div>
-            </div>
-
-            <div id="tab-text" class="tab-content hidden">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">{{ _('Pattern Text') }}</span>
-                    </label>
-                    <textarea id="importText" name="text" rows="10"
-                        placeholder="{{ _('Paste pattern instructions here...') }}"
-                        class="textarea textarea-bordered"></textarea>
-                    <label class="label">
-                        <span class="label-text-alt">{{ _('Paste the pattern text directly') }}</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="modal-action">
-                {{ buttons.secondary(_('Cancel'), attrs='onclick="importDialog.close()"') }}
-                {{ buttons.primary(_('Import'), type='submit') }}
-            </div>
-        </form>
-        <div id="importLoading" class="hidden text-center py-8">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent">
-            </div>
-            <p class="mt-4 text-base font-medium text-slate-700 dark:text-slate-300">{{ _('Importing pattern...') }}</p>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ _('This may take 10-30 seconds') }}</p>
-        </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>{{ _('Close') }}</button>
-    </form>
-</dialog>
+{% include "projects/_import_dialog.html" %}
 {% endblock %}
 
 {% block form_nav %}
-{{ buttons.back_circle('/projects/' + project.id|string if project else '/projects', label=_('Back to projects'), attrs='data-unsaved-confirm="true"') }}
+{{ buttons.back_circle('/projects/' + project.id|string if project else '/projects', label=_('Back to projects'),
+attrs='data-unsaved-confirm="true"') }}
 {% endblock %}
 
 {% block form_actions %}
@@ -127,18 +45,21 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 {% endif %}
 
 {# Save button logic:
-   - Always hidden on mobile (moved to FAB)
-   - Visible on desktop #}
+- Always hidden on mobile (moved to FAB)
+- Visible on desktop #}
 {% set save_classes = 'hidden md:inline-flex flex-1 sm:flex-none md:btn-wide' %}
 
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class=save_classes) }}
 
 {% if project %}
 <div class="dropdown dropdown-end dropdown-top fixed bottom-6 right-6 z-50 md:hidden">
-    <div tabindex="0" role="button" class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10" aria-label="{{ _('More actions') }}">
+    <div tabindex="0" role="button"
+        class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10"
+        aria-label="{{ _('More actions') }}">
         <span class="mdi mdi-dots-vertical text-2xl md:text-xl"></span>
     </div>
-    <ul tabindex="0" class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2 md:mb-0">
+    <ul tabindex="0"
+        class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2 md:mb-0">
         <li class="md:hidden">
             <button type="submit" form="projectForm">
                 <span class="mdi mdi-content-save text-lg"></span>
@@ -147,11 +68,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         </li>
         <li data-favorite-toggle>
             {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail' %}
-                {% include "projects/_favorite_toggle.html" %}
+            {% include "projects/_favorite_toggle.html" %}
             {% endwith %}
         </li>
         <li>
-            <button type="button" onclick="document.getElementById('deleteProjectDialog').showModal()" class="text-error hover:bg-error/10 hover:text-error">
+            <button type="button" onclick="document.getElementById('deleteProjectDialog').showModal()"
+                class="text-error hover:bg-error/10 hover:text-error">
                 <span class="mdi mdi-delete-outline text-lg"></span>
                 {{ _('Delete') }}
             </button>
@@ -169,17 +91,21 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 {% endblock %}
 
 {% block form_body %}
-<form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post" class="space-y-6">
+<form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post"
+    class="space-y-6">
     <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
     <input type="hidden" id="stepsData" name="steps_data">
 
-    <div id="importWarning" class="hidden mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded">
+    <div id="importWarning"
+        class="hidden mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded">
         <div class="flex items-start gap-3">
             <span class="mdi mdi-alert text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></span>
             <div class="flex-1">
-                <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved Yet') }}</h3>
+                <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved
+                    Yet') }}</h3>
                 <p class="text-sm text-yellow-700 dark:text-yellow-300">
-                    {{ _('This project was imported from an external source. Please review all fields carefully and click "Save" to keep it.') }}
+                    {{ _('This project was imported from an external source. Please review all fields carefully and
+                    click "Save" to keep it.') }}
                 </p>
             </div>
         </div>
@@ -189,33 +115,38 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         <!-- Main Content Column -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Basic Info Card -->
-            <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
+            <div
+                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
                 <div class="space-y-4 sm:space-y-6">
                     <div>
                         <label for="name" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
                             <span class="mdi mdi-notebook-outline text-base-content/70"></span>
                             {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
                         </label>
-                        <input type="text" id="name" name="name" required value="{{ project.name if project and project.name else '' }}"
+                        <input type="text" id="name" name="name" required
+                            value="{{ project.name if project and project.name else '' }}"
                             class="input input-bordered w-full" placeholder="{{ _('e.g. My Amazing Project') }}">
                     </div>
 
                     <!-- Mobile Details Card -->
                     <div class="lg:hidden p-4 bg-base-200/30 rounded-xl border border-base-200 space-y-4">
-                        <h3 class="font-bold text-xs uppercase tracking-widest text-base-content/40 flex items-center gap-2">
+                        <h3
+                            class="font-bold text-xs uppercase tracking-widest text-base-content/40 flex items-center gap-2">
                             <span class="mdi mdi-information-outline"></span>
                             {{ _('Project Details') }}
                         </h3>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label for="category-mobile" class="label-text text-xs font-bold uppercase text-base-content/50">
+                                <label for="category-mobile"
+                                    class="label-text text-xs font-bold uppercase text-base-content/50">
                                     {{ _('Category') }}
                                 </label>
                                 <select name="category" class="select select-bordered select-sm w-full mt-1">
                                     <option value="">{{ _('Select a category') }}</option>
                                     {% for category in categories %}
-                                    <option value="{{ category }}" {% if project and project.category==category %}selected{% endif %}>
+                                    <option value="{{ category }}" {% if project and project.category==category
+                                        %}selected{% endif %}>
                                         {{ category }}
                                     </option>
                                     {% endfor %}
@@ -223,12 +154,18 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
-                                    <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Gauge St.') }}</label>
-                                    <input type="number" name="gauge_stitches" value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}" class="input input-bordered input-sm w-full mt-1">
+                                    <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
+                                        _('Gauge St.') }}</label>
+                                    <input type="number" name="gauge_stitches"
+                                        value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
+                                        class="input input-bordered input-sm w-full mt-1">
                                 </div>
                                 <div>
-                                    <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Gauge Rows') }}</label>
-                                    <input type="number" name="gauge_rows" value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}" class="input input-bordered input-sm w-full mt-1">
+                                    <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
+                                        _('Gauge Rows') }}</label>
+                                    <input type="number" name="gauge_rows"
+                                        value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
+                                        class="input input-bordered input-sm w-full mt-1">
                                 </div>
                             </div>
                         </div>
@@ -249,7 +186,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             </div>
 
             <!-- Gallery Card -->
-            <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
+            <div
+                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
                 <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
                     <span class="mdi mdi-image-multiple text-primary"></span>
                     {{ _('Gallery') }}
@@ -261,7 +199,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         <img src="{{ image.thumbnail_url }}" alt="{{ image.alt_text }}"
                             class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
                             data-lightbox-group="title-{{ project.id }}" data-lightbox-src="{{ image.url }}"
-                            data-lightbox-alt="{{ image.alt_text }}" draggable="true" ondragstart="handleImageDragStart(event)">
+                            data-lightbox-alt="{{ image.alt_text }}" draggable="true"
+                            ondragstart="handleImageDragStart(event)">
                         <button type="button" onclick="deleteImage({{ image.id }})"
                             class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
                             <span class="mdi mdi-close"></span>
@@ -286,7 +225,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             </div>
 
             <!-- Steps Card -->
-            <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
+            <div
+                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
                 <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
                     <span class="mdi mdi-format-list-text text-primary"></span>
                     {{ _('Steps') }}
@@ -297,32 +237,29 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         data-step-id="{{ step.id }}" data-step-number="{{ step.step_number }}">
                         <!-- Step Item Content (Keep as is but adjust colors if needed) -->
                         <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span class="step-number">{{
+                            <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span
+                                    class="step-number">{{
                                     step.step_number }}</span></h4>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="moveStepUp(this)"
-                                    class="btn btn-xs btn-ghost gap-1"
+                                <button type="button" onclick="moveStepUp(this)" class="btn btn-xs btn-ghost gap-1"
                                     title="{{ _('Move Up') }}">
                                     <span class="mdi mdi-arrow-up"></span>
                                     <span class="hidden sm:inline">{{ _('Move Up') }}</span>
                                 </button>
-                                <button type="button" onclick="moveStepDown(this)"
-                                    class="btn btn-xs btn-ghost gap-1"
+                                <button type="button" onclick="moveStepDown(this)" class="btn btn-xs btn-ghost gap-1"
                                     title="{{ _('Move Down') }}">
                                     <span class="mdi mdi-arrow-down"></span>
                                     <span class="hidden sm:inline">{{ _('Move Down') }}</span>
                                 </button>
                                 {% if project %}
-                                <button type="button" onclick="saveStep(this)"
-                                    class="btn btn-xs btn-primary gap-1"
+                                <button type="button" onclick="saveStep(this)" class="btn btn-xs btn-primary gap-1"
                                     title="{{ _('Save') }}">
                                     <span class="mdi mdi-content-save"></span>
                                     <span class="hidden sm:inline">{{ _('Save') }}</span>
                                 </button>
                                 {% endif %}
                                 <button type="button" onclick="removeStep(this)"
-                                    class="btn btn-xs btn-error text-white gap-1"
-                                    title="{{ _('Remove Step') }}">
+                                    class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
                                     <span class="mdi mdi-delete"></span>
                                     <span class="hidden sm:inline">{{ _('Remove') }}</span>
                                 </button>
@@ -357,8 +294,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     </div>
                     {% endfor %}
                 </div>
-                <button type="button" onclick="addStep()"
-                    class="btn btn-success text-white mt-4 gap-2">
+                <button type="button" onclick="addStep()" class="btn btn-success text-white mt-4 gap-2">
                     <span class="mdi mdi-playlist-plus text-xl"></span>
                     {{ _('Add Step') }}
                 </button>
@@ -369,7 +305,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         <div class="space-y-6">
             <!-- Project Details Card -->
             <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 hidden lg:block">
-                <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                <h3
+                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                     <span class="mdi mdi-information-outline"></span>
                     {{ _('Project Details') }}
                 </h3>
@@ -380,16 +317,16 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             <label for="category" class="label-text text-xs font-bold uppercase text-base-content/50">
                                 {{ _('Category') }}
                             </label>
-                            <a href="/projects/categories"
-                                class="btn btn-link btn-xs p-0 h-auto min-h-0" target="_blank"
-                                rel="noreferrer">
+                            <a href="/projects/categories" class="btn btn-link btn-xs p-0 h-auto min-h-0"
+                                target="_blank" rel="noreferrer">
                                 {{ _('Manage') }}
                             </a>
                         </div>
                         <select id="category" name="category" class="select select-bordered select-sm w-full">
                             <option value="">{{ _('Select a category') }}</option>
                             {% for category in categories %}
-                            <option value="{{ category }}" {% if project and project.category==category %}selected{% endif %}>
+                            <option value="{{ category }}" {% if project and project.category==category %}selected{%
+                                endif %}>
                                 {{ category }}
                             </option>
                             {% endfor %}
@@ -399,7 +336,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     <div class="divider my-2"></div>
 
                     <div>
-                        <label for="needles" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                        <label for="needles"
+                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Used Needles') }}
                         </label>
                         <input type="text" id="needles" name="needles"
@@ -408,7 +346,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     </div>
 
                     <div>
-                        <label for="recommended_needles" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                        <label for="recommended_needles"
+                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Recommended Size') }}
                         </label>
                         <input type="text" id="recommended_needles" name="recommended_needles"
@@ -420,7 +359,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="gauge_stitches" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            <label for="gauge_stitches"
+                                class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                                 {{ _('Gauge St.') }}
                             </label>
                             <input type="number" id="gauge_stitches" name="gauge_stitches"
@@ -428,7 +368,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                 class="input input-bordered input-sm w-full" placeholder="20" min="1">
                         </div>
                         <div>
-                            <label for="gauge_rows" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            <label for="gauge_rows"
+                                class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                                 {{ _('Gauge Rows') }}
                             </label>
                             <input type="number" id="gauge_rows" name="gauge_rows"
@@ -440,7 +381,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     <div class="divider my-2"></div>
 
                     <div>
-                        <label for="link" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                        <label for="link"
+                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Pattern Source') }}
                         </label>
                         <input type="url" id="link" name="link" value="{{ project.link or '' }}"
@@ -450,9 +392,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             </div>
 
             <!-- Yarns Card -->
-            <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-5">
+            <div
+                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-5">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
+                    <h3
+                        class="font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
                         <span class="mdi mdi-sheep"></span>
                         {{ _('Yarns Used') }}
                     </h3>
@@ -467,12 +411,15 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     <div class="relative">
                         <input type="text" id="yarn_search" placeholder="{{ _('Search yarns...') }}"
                             class="input input-bordered input-sm w-full pl-8" autocomplete="off">
-                        <span class="mdi mdi-magnify absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/60"></span>
+                        <span
+                            class="mdi mdi-magnify absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/60"></span>
                     </div>
 
-                    <div id="yarn_dropdown" class="hidden absolute z-20 w-64 max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
+                    <div id="yarn_dropdown"
+                        class="hidden absolute z-20 w-64 max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
                         {% for yarn in yarns %}
-                        <button type="button" class="yarn-option w-full text-left px-3 py-2 hover:bg-base-200 border-b border-base-200 last:border-b-0 text-sm"
+                        <button type="button"
+                            class="yarn-option w-full text-left px-3 py-2 hover:bg-base-200 border-b border-base-200 last:border-b-0 text-sm"
                             data-yarn-id="{{ yarn.id }}" data-yarn-name="{{ yarn.name }}"
                             data-yarn-brand="{{ yarn.brand or '' }}" data-yarn-colorway="{{ yarn.colorway or '' }}"
                             data-yarn-dye-lot="{{ yarn.dye_lot or '' }}"
@@ -480,7 +427,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             <div class="flex items-center gap-2">
                                 <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center shrink-0">
                                     {% if yarn.photos and yarn.photos[0] %}
-                                    <img src="{{ yarn.photos[0].filename }}" alt="" class="w-full h-full rounded object-cover">
+                                    <img src="{{ yarn.photos[0].filename }}" alt=""
+                                        class="w-full h-full rounded object-cover">
                                     {% else %}
                                     <span class="mdi mdi-sheep text-sm opacity-50"></span>
                                     {% endif %}
@@ -502,13 +450,15 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
             <!-- Danger Zone -->
             {% if project %}
-            <div class="bg-red-50 dark:bg-red-900/10 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-red-100 dark:border-red-900/30 p-3 sm:p-5">
-                <h3 class="font-bold text-base text-red-800 dark:text-red-400 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+            <div
+                class="bg-red-50 dark:bg-red-900/10 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-red-100 dark:border-red-900/30 p-3 sm:p-5">
+                <h3
+                    class="font-bold text-base text-red-800 dark:text-red-400 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                     <span class="mdi mdi-alert-outline"></span>
                     {{ _('Danger Zone') }}
                 </h3>
                 {{ buttons.danger(_('Delete Project'), icon='mdi-delete-outline',
-                    attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"', class="w-full") }}
+                attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"', class="w-full") }}
             </div>
             {% endif %}
         </div>
