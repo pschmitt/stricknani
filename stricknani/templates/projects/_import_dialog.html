@@ -1,3 +1,4 @@
+{% import "macros/dialogs.html" as dialogs %}
 <dialog id="importDialog" class="modal">
     <div class="modal-box max-w-2xl">
         <h3 class="font-bold text-lg mb-4">{{ _('Import Pattern') }}</h3>
@@ -76,8 +77,8 @@
             </div>
 
             <div class="modal-action">
-                {{ buttons.secondary(_('Cancel'), icon='mdi-close', attrs='onclick="importDialog.close()"') }}
-                {{ buttons.primary(_('Import'), icon='mdi-download', type='submit') }}
+                {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'importDialog\').close()"') }}
+                {{ dialogs.dialog_primary(_('Import'), icon='mdi-download', type='submit') }}
             </div>
         </form>
         <div id="importLoading" class="hidden text-center py-8">
@@ -87,9 +88,7 @@
             <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ _('This may take 10-30 seconds') }}</p>
         </div>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>{{ _('Close') }}</button>
-    </form>
+    {{ dialogs.modal_backdrop() }}
 </dialog>
 
 <script>

@@ -118,7 +118,7 @@ flex-1 sm:flex-none') }}
     document.addEventListener('DOMContentLoaded', () => {
         const toastKey = new URLSearchParams(window.location.search).get('toast');
         if (toastKey === 'project_deleted') {
-            window.showToast?.('{{ _("Project deleted.") }}', 'success');
+            window.showToast?.('{{ _("Project deleted") }}', 'success');
             const url = new URL(window.location.href);
             url.searchParams.delete('toast');
             window.history.replaceState({}, '', url.toString());

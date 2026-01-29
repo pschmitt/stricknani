@@ -1,0 +1,31 @@
+{# Dialog action buttons – always include icons. Use for modal-action footers. #}
+
+{% macro dialog_cancel(text, type='button', id=None, class='', attrs='') %}
+<button type="{{ type }}" class="btn btn-ghost gap-2 {{ class }}" {% if id %}id="{{ id }}"{% endif %} {{ attrs|safe }}>
+    <span class="mdi mdi-close"></span>
+    {{ text }}
+</button>
+{% endmacro %}
+
+{% macro dialog_primary(text, icon='mdi-check', type='button', id=None, class='', attrs='') %}
+<button type="{{ type }}" class="btn btn-primary gap-2 {{ class }}" {% if id %}id="{{ id }}"{% endif %} {{ attrs|safe }}>
+    <span class="mdi {{ icon }}"></span>
+    {{ text }}
+</button>
+{% endmacro %}
+
+{% macro dialog_danger(text, icon='mdi-delete-forever', type='button', id=None, class='', attrs='') %}
+<button type="{{ type }}" class="btn btn-error text-white gap-2 {{ class }}" {% if id %}id="{{ id }}"{% endif %} {{ attrs|safe }}>
+    <span class="mdi {{ icon }}"></span>
+    {{ text }}
+</button>
+{% endmacro %}
+
+{% macro modal_backdrop() %}
+<form method="dialog" class="modal-backdrop">
+    <button type="submit" class="btn btn-ghost btn-sm gap-1">
+        <span class="mdi mdi-close"></span>
+        {{ _('close') }}
+    </button>
+</form>
+{% endmacro %}

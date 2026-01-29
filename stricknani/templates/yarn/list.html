@@ -57,7 +57,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const toastKey = new URLSearchParams(window.location.search).get('toast');
     if (toastKey === 'yarn_deleted') {
-        window.showToast?.('{{ _("Yarn deleted.") }}', 'success');
+        window.showToast?.('{{ _("Yarn deleted") }}', 'success');
         const url = new URL(window.location.href);
         url.searchParams.delete('toast');
         window.history.replaceState({}, '', url.toString());

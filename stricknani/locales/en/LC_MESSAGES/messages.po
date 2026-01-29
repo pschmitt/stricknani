@@ -23,11 +23,23 @@ msgstr "Imported images will be downloaded after you save the project."
 msgid "This project was imported from an external source. Please review all fields carefully and click \"Save\" to keep it."
 msgstr "This project was imported from an external source. Please review all fields carefully and click \"Save\" to keep it."
 
-msgid "Project deleted."
-msgstr "Project deleted."
+msgid "Project deleted"
+msgstr "Project deleted"
 
-msgid "Yarn deleted."
-msgstr "Yarn deleted."
+msgid "Yarn deleted"
+msgstr "Yarn deleted"
+
+msgid "Category created"
+msgstr "Category created"
+
+msgid "Category updated"
+msgstr "Category updated"
+
+msgid "Category deleted"
+msgstr "Category deleted"
+
+msgid "This category is used by %(num)s project(s). They will be uncategorized. Delete anyway?"
+msgstr "This category is used by %(num)s project(s). They will be uncategorized. Delete anyway?"
 
 msgid "e.g. 80% Merino, 20% Nylon"
 msgstr "e.g. 80% Merino, 20% Nylon"

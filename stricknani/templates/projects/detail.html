@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% import "macros/buttons.html" as buttons %}
 {% import "macros/cards.html" as cards %}
+{% import "macros/dialogs.html" as dialogs %}
 
 {% block title %}{{ project.name }} - Stricknani{% endblock %}
 
@@ -472,18 +473,13 @@
             </p>
             <div class="flex justify-end gap-2">
                 <form method="dialog">
-                    <button class="btn btn-ghost">{{ _('Cancel') }}</button>
+                    {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
                 </form>
-                <button onclick="deleteProject()" class="btn btn-error text-white">
-                    <span class="mdi mdi-delete"></span>
-                    {{ _('Delete Project') }}
-                </button>
+                {{ dialogs.dialog_danger(_('Delete Project'), attrs='onclick="deleteProject()"') }}
             </div>
         </div>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>{{ _('close') }}</button>
-    </form>
+    {{ dialogs.modal_backdrop() }}
 </dialog>
 
 <script>

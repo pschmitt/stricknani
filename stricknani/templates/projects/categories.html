@@ -61,23 +61,17 @@
                     {{ buttons.secondary(_('Save'), type='submit', icon='mdi-content-save-outline', class='btn-sm
                     btn-ghost gap-2', attrs='title="' + _('Save changes') + '"') }}
 
-                    {% if category.project_count == 0 %}
-                    <button type="submit" formaction="/projects/categories/{{ category.id }}/delete"
-                        class="btn btn-sm btn-ghost text-error"
-                        onclick="return confirm('{{ _('Are you sure you want to delete this category?') }}')"
+                    <button type="button" class="btn btn-sm btn-ghost text-error"
+                        data-category-id="{{ category.id }}"
+                        data-category-name="{{ category.name }}"
+                        data-project-count="{{ category.project_count }}"
                         title="{{ _('Delete category') }}" aria-label="{{ _('Delete category') }}">
                         <span class="mdi mdi-trash-can-outline text-lg"></span>
                     </button>
-                    {% else %}
-                    <div class="tooltip tooltip-left"
-                        data-tip="{{ _('Cannot delete category with associated projects') }}">
-                        <button type="button" class="btn btn-sm btn-ghost btn-disabled opacity-50">
-                            <span class="mdi mdi-trash-can-outline text-lg"></span>
-                        </button>
-                    </div>
-                    {% endif %}
                 </div>
             </form>
+            <form id="delete-category-{{ category.id }}" action="/projects/categories/{{ category.id }}/delete"
+                method="post" class="hidden" aria-hidden="true"></form>
         </div>
     </div>
     {% else %}
@@ -87,4 +81,35 @@
     </div>
     {% endfor %}
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    {% if error %}
+    window.showToast?.({{ error | tojson }}, 'error');
+    {% endif %}
+
+    const deleteConfirmTitle = {{ _('Delete category') | tojson }};
+    const deleteConfirmMessage = {{ _('Are you sure you want to delete this category?') | tojson }};
+    const deleteConfirmInUseMessage = {{ _('This category is used by %(num)s project(s). They will be uncategorized. Delete anyway?') | tojson }};
+
+    document.querySelectorAll('[data-category-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-category-id');
+            const count = parseInt(btn.getAttribute('data-project-count') || '0', 10);
+            const form = document.getElementById('delete-category-' + id);
+            if (!form) return;
+
+            const message = count > 0
+                ? deleteConfirmInUseMessage.replace('%(num)s', String(count))
+                : deleteConfirmMessage;
+
+            window.confirmAction(deleteConfirmTitle, message, () => {
+                form.submit();
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

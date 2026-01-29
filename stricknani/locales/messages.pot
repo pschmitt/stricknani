@@ -186,7 +186,7 @@ msgid "Dismiss message"
 msgstr ""
 
 #: stricknani/templates/base.html:658 stricknani/templates/base.html:1066
-msgid "Something went wrong. Please try again."
+msgid "Something went wrong. Please try again"
 msgstr ""
 
 #: stricknani/templates/base.html:955
@@ -596,7 +596,7 @@ msgstr ""
 
 #: stricknani/templates/macros/image_upload.html:41
 #: stricknani/templates/projects/form.html:911
-msgid "Save the project before adding images to this step."
+msgid "Save the project before adding images to this step"
 msgstr ""
 
 #: stricknani/templates/projects/_empty_state.html:2
@@ -704,6 +704,23 @@ msgstr ""
 
 #: stricknani/templates/projects/categories.html:96
 msgid "Delete category"
+msgstr ""
+
+#: stricknani/templates/base.html
+msgid "Category created"
+msgstr ""
+
+#: stricknani/templates/base.html
+msgid "Category updated"
+msgstr ""
+
+#: stricknani/templates/base.html
+msgid "Category deleted"
+msgstr ""
+
+#: stricknani/templates/projects/categories.html
+#, python-format
+msgid "This category is used by %(num)s project(s). They will be uncategorized. Delete anyway?"
 msgstr ""
 
 #: stricknani/templates/projects/categories.html:100
@@ -1075,7 +1092,7 @@ msgid "No yarns selected"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:831
-msgid "Save the project to create this step before uploading images."
+msgid "Save the project to create this step before uploading images"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:867
@@ -1087,23 +1104,23 @@ msgid "Image uploaded!"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:912
-msgid "Image upload failed. Please try again."
+msgid "Image upload failed. Please try again"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:913
-msgid "Network error while uploading image."
+msgid "Network error while uploading image"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:914
-msgid "Only image files are supported."
+msgid "Only image files are supported"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:915
-msgid "Failed to delete the image. Please try again."
+msgid "Failed to delete the image. Please try again"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:916
-msgid "Network error while deleting image."
+msgid "Network error while deleting image"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:917
@@ -1155,7 +1172,7 @@ msgid "AI extraction failed - using basic parser"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:1648
-msgid "Imported images will be previewed in the gallery."
+msgid "Imported images will be previewed in the gallery"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:1689
@@ -1199,7 +1216,7 @@ msgid "Edit %(name)s"
 msgstr ""
 
 #: stricknani/templates/projects/list.html:161
-msgid "Project deleted."
+msgid "Project deleted"
 msgstr ""
 
 #: stricknani/templates/shared/list_base.html:15
@@ -1423,11 +1440,11 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/yarn/form.html:283
-msgid "Failed to delete the photo. Please try again."
+msgid "Failed to delete the photo. Please try again"
 msgstr ""
 
 #: stricknani/templates/yarn/form.html:284
-msgid "Network error while deleting photo."
+msgid "Network error while deleting photo"
 msgstr ""
 
 #: stricknani/templates/yarn/form.html:288
@@ -1455,5 +1472,5 @@ msgid "Search yarn..."
 msgstr ""
 
 #: stricknani/templates/yarn/list.html:47
-msgid "Yarn deleted."
+msgid "Yarn deleted"
 msgstr ""

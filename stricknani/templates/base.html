@@ -70,6 +70,7 @@
     </style>
 </head>
 <body class="min-h-screen bg-base-100">
+{% import "macros/dialogs.html" as dialogs %}
     <div class="drawer">
         <input id="main-drawer" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content flex flex-col min-h-screen">
@@ -345,17 +346,18 @@
     {% if current_user %}
     <!-- Profile Image Upload Tools -->
     <input type="file" id="profile-image-input" class="hidden" accept="image/*">
-    <dialog id="crop-modal" class="modal">
+    <dialog id="crop-modal" class="modal modal-bottom sm:modal-middle">
         <div class="modal-box max-w-lg">
             <h3 class="font-bold text-lg mb-4">{{ _('Crop Profile Picture') }}</h3>
             <div class="relative h-96 w-full rounded-lg bg-base-300 overflow-hidden">
                 <img id="crop-image" src="" alt="Image to crop" class="max-h-full max-w-full">
             </div>
             <div class="modal-action">
-                <button type="button" id="crop-cancel" class="btn btn-ghost">{{ _('Cancel') }}</button>
-                <button type="button" id="crop-save" class="btn btn-primary">{{ _('Save & Upload') }}</button>
+                {{ dialogs.dialog_cancel(_('Cancel'), id='crop-cancel') }}
+                {{ dialogs.dialog_primary(_('Save & Upload'), icon='mdi-cloud-upload', id='crop-save') }}
             </div>
         </div>
+        {{ dialogs.modal_backdrop() }}
     </dialog>
 
     <script>
@@ -563,14 +565,12 @@
             <p class="py-4" id="confirmationMessage">{{ _('Are you sure you want to proceed?') }}</p>
             <div class="modal-action">
                 <form method="dialog">
-                    <button class="btn btn-ghost" id="confirmationCancel">{{ _('Cancel') }}</button>
-                    <button class="btn btn-error text-white" id="confirmationConfirm">{{ _('Confirm') }}</button>
+                    {{ dialogs.dialog_cancel(_('Cancel'), type='submit', id='confirmationCancel') }}
+                    {{ dialogs.dialog_danger(_('Confirm'), icon='mdi-trash-can-outline', type='button', id='confirmationConfirm') }}
                 </form>
             </div>
         </div>
-        <form method="dialog" class="modal-backdrop">
-            <button>{{ _('close') }}</button>
-        </form>
+        {{ dialogs.modal_backdrop() }}
     </dialog>
 
     <script>
@@ -655,7 +655,7 @@
         };
 
         const extractErrorMessage = async (response, fallback) => {
-            const defaultMessage = fallback || "{{ _('Something went wrong. Please try again.') }}";
+            const defaultMessage = fallback || "{{ _('Something went wrong. Please try again') }}";
             if (!response) {
                 return defaultMessage;
             }
@@ -1004,6 +1004,9 @@
                     'yarn_updated': '{{ _("Yarn updated successfully") }}',
                     'yarn_deleted': '{{ _("Yarn deleted") }}',
                     'profile_updated': '{{ _("Profile updated successfully") }}',
+                    'category_created': '{{ _("Category created") }}',
+                    'category_updated': '{{ _("Category updated") }}',
+                    'category_deleted': '{{ _("Category deleted") }}',
                 };
 
                 const message = toastMessages[toastKey];
@@ -1108,7 +1111,7 @@
         });
 
         document.body.addEventListener("htmx:responseError", async (event) => {
-            const fallback = "{{ _('Something went wrong. Please try again.') }}";
+            const fallback = "{{ _('Something went wrong. Please try again') }}";
             const message = await extractErrorMessage(event.detail.xhr, fallback);
             showToast(message, "error");
         });

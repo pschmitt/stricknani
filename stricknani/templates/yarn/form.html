@@ -1,5 +1,6 @@
 {% extends "shared/form_base.html" %}
 {% import "macros/buttons.html" as buttons %}
+{% import "macros/dialogs.html" as dialogs %}
 {% import "macros/image_upload.html" as image_upload %}
 
 {% block title %}{{ yarn.name if yarn else _('Add Yarn') }} - {{ _('Yarn') }}{% endblock %}
@@ -261,23 +262,24 @@
 </form>
 
 {% if yarn %}
-<dialog id="deleteYarnDialog" class="rounded-lg shadow-xl border border-base-300 bg-base-100 p-6 backdrop:bg-black/50">
-    <div class="max-w-md space-y-4">
-        <h3 class="text-lg font-bold text-red-600 flex items-center gap-2">
+<dialog id="deleteYarnDialog" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg text-error flex items-center gap-2">
             <span class="mdi mdi-alert-circle"></span>
             {{ _('Delete Yarn') }}
         </h3>
-        <p>{{ _('Are you sure you want to delete this yarn?') }}</p>
+        <p class="py-4 text-base-content/80">{{ _('Are you sure you want to delete this yarn?') }}</p>
         <p class="text-sm text-base-content/70">{{ _('This will also delete all photos associated with this yarn. This action cannot be undone.') }}</p>
-        <div class="modal-action flex gap-2 mt-6">
+        <div class="modal-action">
             <form method="dialog">
-                {{ buttons.secondary(_('Cancel')) }}
+                {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
             </form>
             <form action="/yarn/{{ yarn.id }}/delete" method="post">
-                {{ buttons.danger(_('Delete Forever'), type='submit', icon='mdi-delete-forever') }}
+                {{ dialogs.dialog_danger(_('Delete Forever'), type='submit') }}
             </form>
         </div>
     </div>
+    {{ dialogs.modal_backdrop() }}
 </dialog>
 {% endif %}
 
@@ -286,8 +288,8 @@
 {% block page_scripts %}
 <script>
     const yarnId = {{ (yarn.id if yarn else none) | tojson }};
-    const deleteErrorMessage = '{{ _("Failed to delete the photo. Please try again.") }}';
-    const deleteNetworkErrorMessage = '{{ _("Network error while deleting photo.") }}';
+    const deleteErrorMessage = '{{ _("Failed to delete the photo. Please try again") }}';
+    const deleteNetworkErrorMessage = '{{ _("Network error while deleting photo") }}';
 
     async function deleteYarnPhoto(photoId) {
         window.confirmAction(

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "macros/buttons.html" as buttons %}
+{% import "macros/dialogs.html" as dialogs %}
 {% import "macros/image_upload.html" as uploads %}
 
 {% block content %}
@@ -83,17 +84,12 @@
             </div>
 
             <div class="modal-action">
-                <button type="button" class="btn btn-ghost" onclick="document.getElementById('editUserDialog').close()">{{ _('Cancel') }}</button>
-                <button type="submit" class="btn btn-primary gap-2">
-                    <span class="mdi mdi-content-save"></span>
-                    {{ _('Save Changes') }}
-                </button>
+                {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'editUserDialog\').close()"') }}
+                {{ dialogs.dialog_primary(_('Save Changes'), icon='mdi-content-save', type='submit') }}
             </div>
         </form>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>{{ _('close') }}</button>
-    </form>
+    {{ dialogs.modal_backdrop() }}
 </dialog>
 
 <dialog id="resetPasswordDialog"
@@ -127,17 +123,12 @@
                 />
             </div>
             <div class="modal-action">
-                <button type="button" class="btn btn-ghost" onclick="document.getElementById('resetPasswordDialog').close()">{{ _('Cancel') }}</button>
-                <button type="submit" class="btn btn-primary gap-2">
-                    <span class="mdi mdi-key-variant"></span>
-                    {{ _('Reset password') }}
-                </button>
+                {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'resetPasswordDialog\').close()"') }}
+                {{ dialogs.dialog_primary(_('Reset password'), icon='mdi-key-variant', type='submit') }}
             </div>
         </form>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>{{ _('close') }}</button>
-    </form>
+    {{ dialogs.modal_backdrop() }}
 </dialog>
 
 <dialog id="createUserDialog" class="modal modal-bottom sm:modal-middle">
@@ -193,17 +184,12 @@
                 </label>
             </div>
             <div class="modal-action">
-                <button type="button" class="btn btn-ghost" onclick="document.getElementById('createUserDialog').close()">{{ _('Cancel') }}</button>
-                <button type="submit" class="btn btn-primary gap-2">
-                    <span class="mdi mdi-account-plus"></span>
-                    {{ _('Create User') }}
-                </button>
+                {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'createUserDialog\').close()"') }}
+                {{ dialogs.dialog_primary(_('Create User'), icon='mdi-account-plus', type='submit') }}
             </div>
         </form>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>{{ _('close') }}</button>
-    </form>
+    {{ dialogs.modal_backdrop() }}
 </dialog>
 
 <dialog id="deleteUserDialog" class="modal modal-bottom sm:modal-middle">
@@ -218,7 +204,7 @@
             <span class="text-sm opacity-70">{{ _('This will permanently remove their projects and yarn.') }}</span>
         </p>
         <div class="modal-action">
-            <button type="button" class="btn btn-ghost" onclick="document.getElementById('deleteUserDialog').close()">{{ _('Cancel') }}</button>
+            {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'deleteUserDialog\').close()"') }}
             <form
                 id="deleteUserForm"
                 method="post"
@@ -228,16 +214,11 @@
                 data-dialog-close="deleteUserDialog"
                 hx-swap="outerHTML"
             >
-                <button type="submit" class="btn btn-error text-white gap-2">
-                    <span class="mdi mdi-delete-forever"></span>
-                    {{ _('Delete Forever') }}
-                </button>
+                {{ dialogs.dialog_danger(_('Delete Forever'), type='submit') }}
             </form>
         </div>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>{{ _('close') }}</button>
-    </form>
+    {{ dialogs.modal_backdrop() }}
 </dialog>
 
 <script>

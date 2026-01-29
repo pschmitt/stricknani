@@ -1016,7 +1016,7 @@ async def create_category(
     cleaned = name.strip()
     if not cleaned:
         return await _render_categories_page(
-            request, db, current_user, error="Category name cannot be empty."
+            request, db, current_user, error="Category name cannot be empty"
         )
 
     existing = await db.execute(
@@ -1027,14 +1027,15 @@ async def create_category(
     )
     if existing.scalar_one_or_none():
         return await _render_categories_page(
-            request, db, current_user, error="Category already exists."
+            request, db, current_user, error="Category already exists"
         )
 
     db.add(Category(name=cleaned, user_id=current_user.id))
     await db.commit()
 
-    return await _render_categories_page(
-        request, db, current_user, message="Category created."
+    return RedirectResponse(
+        url="/projects/categories?toast=category_created",
+        status_code=status.HTTP_303_SEE_OTHER,
     )
 
 
@@ -1053,7 +1054,7 @@ async def rename_category(
     cleaned = name.strip()
     if not cleaned:
         return await _render_categories_page(
-            request, db, current_user, error="Category name cannot be empty."
+            request, db, current_user, error="Category name cannot be empty"
         )
 
     conflict = await db.execute(
@@ -1068,7 +1069,7 @@ async def rename_category(
             request,
             db,
             current_user,
-            error="Another category already uses that name.",
+            error="Another category already uses that name",
         )
 
     old_name = category.name
@@ -1082,8 +1083,9 @@ async def rename_category(
     )
     await db.commit()
 
-    return await _render_categories_page(
-        request, db, current_user, message="Category updated."
+    return RedirectResponse(
+        url="/projects/categories?toast=category_updated",
+        status_code=status.HTTP_303_SEE_OTHER,
     )
 
 
@@ -1093,32 +1095,25 @@ async def delete_category(
     category_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
-) -> HTMLResponse:
+) -> RedirectResponse:
     category = await db.get(Category, category_id)
     if category is None or category.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    in_use = await db.execute(
-        select(func.count())
-        .select_from(Project)
+    await db.execute(
+        update(Project)
         .where(
             Project.owner_id == current_user.id,
             Project.category == category.name,
         )
+        .values(category=None)
     )
-    if in_use.scalar_one() > 0:
-        return await _render_categories_page(
-            request,
-            db,
-            current_user,
-            error="Cannot delete a category that is still assigned to projects.",
-        )
-
     await db.delete(category)
     await db.commit()
 
-    return await _render_categories_page(
-        request, db, current_user, message="Category deleted."
+    return RedirectResponse(
+        url="/projects/categories?toast=category_deleted",
+        status_code=status.HTTP_303_SEE_OTHER,
     )
 
 
