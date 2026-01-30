@@ -36,9 +36,7 @@ def _admin_users_redirect(toast_key: str) -> RedirectResponse:
     )
 
 
-def _admin_error_response(
-    request: Request, toast_key: str, message: str
-) -> Response:
+def _admin_error_response(request: Request, toast_key: str, message: str) -> Response:
     if request.headers.get("HX-Request"):
         language = get_language(request)
         return PlainTextResponse(
@@ -79,9 +77,7 @@ def _render_user_deleted_response(
         request=request,
         user_count=user_count,
     )
-    placeholder = (
-        f'<div id="user-card-{user_id}" data-user-card class="hidden"></div>'
-    )
+    placeholder = f'<div id="user-card-{user_id}" data-user-card class="hidden"></div>'
     return HTMLResponse(placeholder + count_html)
 
 
@@ -307,6 +303,7 @@ async def edit_user_admin(
         user_count = int(result.scalar_one())
         return _render_user_card_response(request, user, current_user, user_count)
     return _admin_users_redirect("user_updated")
+
 
 @router.post("/users/{user_id}/profile-image", response_class=HTMLResponse)
 async def profile_image_upload_admin(

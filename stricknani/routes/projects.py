@@ -429,9 +429,7 @@ async def _get_user_yarns(db: AsyncSession, user_id: int) -> Sequence[Yarn]:
     yarns = result.scalars().all()
     for yarn in yarns:
         for photo in yarn.photos:
-            photo.filename = get_thumbnail_url(
-                photo.filename, yarn.id, subdir="yarns"
-            )
+            photo.filename = get_thumbnail_url(photo.filename, yarn.id, subdir="yarns")
     return yarns
 
 

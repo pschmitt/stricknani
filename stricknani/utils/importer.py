@@ -206,18 +206,10 @@ class PatternImporter:
             soup.find(["div", "section"], class_="instructions"),
             soup.find(["div", "section"], id="instructions"),
             soup.find(["div", "section"], id="pattern-instructions"),
-
             # Regex matches (stricter)
-            soup.find(
-                ["div", "section"], class_=re.compile(r"instruction(s)?$", re.I)
-            ),
-            soup.find(
-                ["div", "section"], id=re.compile(r"pattern[_-]?text", re.I)
-            ),
-            soup.find(
-                ["div", "section"], class_=re.compile(r"pattern[_-]?text", re.I)
-            ),
-
+            soup.find(["div", "section"], class_=re.compile(r"instruction(s)?$", re.I)),
+            soup.find(["div", "section"], id=re.compile(r"pattern[_-]?text", re.I)),
+            soup.find(["div", "section"], class_=re.compile(r"pattern[_-]?text", re.I)),
             # Fallbacks
             soup.find("article"),
             soup.find("main"),
@@ -332,7 +324,7 @@ class PatternImporter:
                     flush()
                     current_title = text.rstrip(":").strip()
                 else:
-                    if set(text) <= {"-", "_"}: # Separator lines
+                    if set(text) <= {"-", "_"}:  # Separator lines
                         return
                     current_lines.append(text)
                 return
@@ -344,7 +336,7 @@ class PatternImporter:
                 if node.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                     flush()
                     current_title = node.get_text(strip=True)
-                    return # Don't process children (text is already title)
+                    return  # Don't process children (text is already title)
 
                 if node.name == "br":
                     pass

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import logging
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
 from stricknani.config import config
 from stricknani.models import Category, Image, ImageType, Project, Yarn
 from stricknani.utils.files import create_thumbnail, delete_file, save_bytes
@@ -56,9 +58,7 @@ async def sync_project_categories(db: AsyncSession, user_id: int) -> None:
     categories = {
         category.name
         for category in (
-            await db.execute(
-                select(Category).where(Category.user_id == user_id)
-            )
+            await db.execute(select(Category).where(Category.user_id == user_id))
         ).scalars()
     }
     for project in projects:

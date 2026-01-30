@@ -21,6 +21,8 @@ from sqlalchemy.orm import selectinload
 from stricknani.config import config
 from stricknani.database import AsyncSessionLocal, init_db
 from stricknani.models import Project, Step, User, Yarn
+from stricknani.utils.auth import get_password_hash, get_user_by_email
+from stricknani.utils.importer import PatternImporter
 from stricknani.utils.project_import import (
     build_ai_hints,
     import_images_from_urls,
@@ -28,9 +30,6 @@ from stricknani.utils.project_import import (
     serialize_tags,
     sync_project_categories,
 )
-from stricknani.utils.auth import get_password_hash, get_user_by_email
-from stricknani.utils.importer import PatternImporter
-
 
 console = Console()
 error_console = Console(stderr=True)
@@ -313,9 +312,7 @@ async def delete_yarn(yarn_id: int, owner_email: str | None) -> None:
     async with AsyncSessionLocal() as session:
         yarn = await session.get(Yarn, yarn_id)
         if not yarn:
-            error_console.print(
-                f"[red]Yarn [cyan]{yarn_id}[/cyan] not found.[/red]"
-            )
+            error_console.print(f"[red]Yarn [cyan]{yarn_id}[/cyan] not found.[/red]")
             return
 
         if owner_email:
@@ -624,11 +621,7 @@ def prompt_password(confirm: bool = True) -> str:
 
 
 def main() -> None:
-    raw_args = [
-        arg
-        for arg in sys.argv[1:]
-        if arg not in ("--json", "--verbose")
-    ]
+    raw_args = [arg for arg in sys.argv[1:] if arg not in ("--json", "--verbose")]
     global JSON_OUTPUT, VERBOSE
     JSON_OUTPUT = "--json" in sys.argv[1:]
     VERBOSE = "--verbose" in sys.argv[1:]
@@ -697,9 +690,7 @@ def main() -> None:
     project_add_parser.add_argument("--category", help="Project category")
     project_add_parser.add_argument("--yarn", help="Yarn description")
     project_add_parser.add_argument("--needles", help="Needle size")
-    project_add_parser.add_argument(
-        "--recommended-needles", help="Recommended needles"
-    )
+    project_add_parser.add_argument("--recommended-needles", help="Recommended needles")
     project_add_parser.add_argument(
         "--gauge-stitches", type=int, help="Gauge stitches per 10cm"
     )
@@ -755,9 +746,7 @@ def main() -> None:
     yarn_add_parser.add_argument("--notes", help="Notes")
     yarn_add_parser.add_argument("--link", help="Link")
     yarn_delete_parser = yarn_subparsers.add_parser("delete", help="Delete a yarn")
-    yarn_delete_parser.add_argument(
-        "--id", type=int, required=True, help="Yarn ID"
-    )
+    yarn_delete_parser.add_argument("--id", type=int, required=True, help="Yarn ID")
     yarn_delete_parser.add_argument(
         "--owner-email", help="Ensure the yarn belongs to this user"
     )

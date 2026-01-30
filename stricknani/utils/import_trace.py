@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
 import json
 import traceback
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -27,7 +27,7 @@ class ImportTrace:
     data: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def create(cls, trace_dir: Path, *, max_chars: int) -> "ImportTrace":
+    def create(cls, trace_dir: Path, *, max_chars: int) -> ImportTrace:
         trace_id = uuid4().hex
         trace_dir.mkdir(parents=True, exist_ok=True)
         path = trace_dir / f"{trace_id}.json"

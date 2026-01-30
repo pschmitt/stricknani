@@ -29,9 +29,7 @@ class Yarn(Base):
     dye_lot: Mapped[str | None] = mapped_column(String(120), nullable=True)
     fiber_content: Mapped[str | None] = mapped_column(String(255), nullable=True)
     weight_category: Mapped[str | None] = mapped_column(String(80), nullable=True)
-    recommended_needles: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
+    recommended_needles: Mapped[str | None] = mapped_column(String(255), nullable=True)
     weight_grams: Mapped[int | None] = mapped_column(Integer, nullable=True)
     length_meters: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)

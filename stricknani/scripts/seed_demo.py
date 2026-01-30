@@ -1,7 +1,7 @@
 """Seed demo data for development."""
 
-import asyncio
 import argparse
+import asyncio
 import json
 import shutil
 from pathlib import Path
@@ -93,14 +93,14 @@ async def _ensure_thumbnails(db: AsyncSession, demo_user: User) -> None:
                 / f"thumb_{Path(image.filename).stem}.jpg"
             )
             if source_path.exists() and not thumb_path.exists():
-                await _maybe_create_thumbnail(source_path, project.id, subdir="projects")
+                await _maybe_create_thumbnail(
+                    source_path, project.id, subdir="projects"
+                )
 
     for yarn in demo_user.yarns:
         await db.refresh(yarn, ["photos"])
         for photo in yarn.photos:
-            source_path = (
-                config.MEDIA_ROOT / "yarns" / str(yarn.id) / photo.filename
-            )
+            source_path = config.MEDIA_ROOT / "yarns" / str(yarn.id) / photo.filename
             thumb_path = (
                 config.MEDIA_ROOT
                 / "thumbnails"
@@ -276,9 +276,7 @@ async def seed_demo_data(reset: bool = False) -> None:
             else:
                 print(f"Yarn already exists: {yarn_data['name']}")
 
-        result = await db.execute(
-            select(Yarn).where(Yarn.owner_id == demo_user.id)
-        )
+        result = await db.execute(select(Yarn).where(Yarn.owner_id == demo_user.id))
         yarn_by_name = {yarn.name: yarn for yarn in result.scalars().all()}
 
         # Create some demo projects

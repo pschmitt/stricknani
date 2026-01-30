@@ -91,11 +91,7 @@ def _resolve_project_preview(project: Project) -> dict[str, str | None]:
     image = candidates[0]
     thumb_name = f"thumb_{Path(image.filename).stem}.jpg"
     thumb_path = (
-        config.MEDIA_ROOT
-        / "thumbnails"
-        / "projects"
-        / str(project.id)
-        / thumb_name
+        config.MEDIA_ROOT / "thumbnails" / "projects" / str(project.id) / thumb_name
     )
     url = None
     if thumb_path.exists():

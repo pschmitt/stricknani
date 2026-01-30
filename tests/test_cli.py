@@ -187,9 +187,7 @@ async def test_cli_imports_project_url(
         )
         project = project_result.scalar_one()
         steps_result = await session.execute(
-            select(Step)
-            .where(Step.project_id == project.id)
-            .order_by(Step.step_number)
+            select(Step).where(Step.project_id == project.id).order_by(Step.step_number)
         )
 
     steps = steps_result.scalars().all()

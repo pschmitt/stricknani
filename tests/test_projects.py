@@ -266,4 +266,3 @@ async def test_delete_image_removes_file_and_record(
     # Verify deletion from DB
     images = await _fetch_images(session_factory, project_id)
     assert len(images) == 0
-
