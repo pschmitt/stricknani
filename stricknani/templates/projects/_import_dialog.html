@@ -13,22 +13,22 @@
             <input type="hidden" name="type" id="importType" value="url">
 
             <div id="tab-url" class="import-tab-content">
-                <div class="form-control">
+                <div class="space-y-2">
                     <label class="label">
-                        <span class="label-text">{{ _('Pattern URL') }}</span>
+                        <span class="text-sm">{{ _('Pattern URL') }}</span>
                     </label>
                     <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
-                        class="input input-bordered" />
+                        class="input" />
                     <label class="label">
-                        <span class="label-text-alt">{{ _('Enter the URL of the knitting pattern') }}</span>
+                        <span class="text-xs opacity-60">{{ _('Enter the URL of the knitting pattern') }}</span>
                     </label>
                 </div>
             </div>
 
             <div id="tab-file" class="import-tab-content hidden">
-                <div class="form-control">
+                <div class="space-y-2">
                     <label class="label">
-                        <span class="label-text">{{ _('Pattern File') }}</span>
+                        <span class="text-sm">{{ _('Pattern File') }}</span>
                     </label>
 
                     <div id="dropZone"
@@ -53,26 +53,26 @@
                     </div>
 
                     <label class="label">
-                        <span class="label-text-alt">{{ _('Supports PDF, TXT, MD, JPG, PNG, GIF') }}</span>
+                        <span class="text-xs opacity-60">{{ _('Supports PDF, TXT, MD, JPG, PNG, GIF') }}</span>
                     </label>
                 </div>
             </div>
 
             <div id="tab-text" class="import-tab-content hidden">
-                <div class="form-control">
+                <div class="space-y-2">
                     <label class="label">
-                        <span class="label-text">{{ _('Pattern Text') }}</span>
+                        <span class="text-sm">{{ _('Pattern Text') }}</span>
                     </label>
                     <textarea id="importText" name="text" rows="10"
                         placeholder="{{ _('Paste pattern instructions here...') }}"
-                        class="textarea textarea-bordered"></textarea>
+                        class="textarea"></textarea>
                     <label class="label">
-                        <span class="label-text-alt">{{ _('Paste the pattern text directly') }}</span>
+                        <span class="text-xs opacity-60">{{ _('Paste the pattern text directly') }}</span>
                     </label>
                 </div>
             </div>
 
-            <div class="form-control mt-4 hidden">
+            <div class="mt-4 hidden space-y-2">
                 <input type="checkbox" name="use_ai" value="true" {% if has_openai_key %}checked{% endif %}>
             </div>
 

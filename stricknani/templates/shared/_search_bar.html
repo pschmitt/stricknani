@@ -1,6 +1,6 @@
 <div class="w-full" id="{{ wrapper_id }}">
     <div class="relative">
-        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50">
+        <div class="absolute inset-y-0 left-0 z-10 flex items-center pl-3 pointer-events-none text-base-content/50">
             <span class="mdi mdi-magnify text-lg"></span>
         </div>
         {% set filters = extra_filters
@@ -21,19 +21,21 @@
             )
         %}
         {% set inline_filters = filters|length == 1 %}
-        <input
-            type="text"
-            id="{{ search_id }}"
-            name="{{ search_name }}"
-            value="{{ search_value }}"
-            placeholder="{{ search_placeholder }}"
-            class="input input-bordered w-full pl-10{% if inline_filters %} pr-10 sm:pr-32{% endif %}"
-            hx-get="{{ search_url }}"
-            hx-target="{{ search_target }}"
-            hx-trigger="keyup changed delay:500ms"
-            hx-replace-url="true"
-            {% if filters %}hx-include=".search-filter-input"{% endif %}
-        >
+        <label class="input relative z-0 w-full flex items-center gap-2 pl-10{% if inline_filters %} pr-10 sm:pr-32{% endif %}">
+            <input
+                type="text"
+                id="{{ search_id }}"
+                name="{{ search_name }}"
+                value="{{ search_value }}"
+                placeholder="{{ search_placeholder }}"
+                class="grow"
+                hx-get="{{ search_url }}"
+                hx-target="{{ search_target }}"
+                hx-trigger="keyup changed delay:500ms"
+                hx-replace-url="true"
+                {% if filters %}hx-include=".search-filter-input"{% endif %}
+            >
+        </label>
         {% if filters %}
         {% for filter in filters %}
         <input
@@ -47,7 +49,7 @@
         {% if inline_filters %}
         {% set filter = filters[0] %}
         <div class="absolute inset-y-0 right-0 hidden sm:flex items-center pr-2">
-            <div class="badge badge-outline gap-1">
+            <div class="badge badge-outline badge-md gap-1 px-3">
                 <span class="mdi {{ filter.icon }}" aria-hidden="true"></span>
                 <span class="truncate max-w-[6rem] sm:max-w-[10rem]">
                     {{ filter.label }}: {{ filter.label_value }}
@@ -68,7 +70,7 @@
     {% if filters %}
     <div class="mt-2 flex flex-wrap items-center gap-2 text-xs {% if inline_filters %}sm:hidden{% endif %}">
         {% for filter in filters %}
-        <span class="badge badge-outline gap-1 min-w-0">
+        <span class="badge badge-outline badge-md gap-1 min-w-0 px-3">
             <span class="mdi {{ filter.icon }}" aria-hidden="true"></span>
             <span class="truncate">
                 {{ filter.label }}: {{ filter.label_value }}

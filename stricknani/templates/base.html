@@ -43,8 +43,8 @@
             }
         }
     </script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
         .cropper-view-box,
@@ -90,21 +90,21 @@
                     <div class="hidden md:flex space-x-4">
                         {% set current_path = request.url.path %}
                         {% if current_user %}
-                        <a href="/projects" class="btn btn-ghost {% if current_path.startswith('/projects') %}btn-active{% endif %}">
+                        <a href="/projects" class="btn btn-ghost {% if current_path.startswith('/projects') %}btn-active bg-primary/10 text-primary font-semibold{% endif %}">
                             <span class="mdi mdi-folder-outline"></span>
                             {{ _('Projects') }}
                         </a>
-                        <a href="/yarn" class="btn btn-ghost {% if current_path.startswith('/yarn') %}btn-active{% endif %}">
+                        <a href="/yarn" class="btn btn-ghost {% if current_path.startswith('/yarn') %}btn-active bg-primary/10 text-primary font-semibold{% endif %}">
                             <span class="mdi mdi-sheep"></span>
                             {{ _('Yarns') }}
                         </a>
                         {% endif %}
-                        <a href="/gauge" class="btn btn-ghost {% if current_path.startswith('/gauge') %}btn-active{% endif %}">
+                        <a href="/gauge" class="btn btn-ghost {% if current_path.startswith('/gauge') %}btn-active bg-primary/10 text-primary font-semibold{% endif %}">
                             <span class="mdi mdi-ruler"></span>
                             {{ _('Gauge Calculator') }}
                         </a>
                         {% if current_user and current_user.is_admin %}
-                        <a href="/admin/users" class="btn btn-ghost {% if current_path.startswith('/admin') %}btn-active{% endif %}">
+                        <a href="/admin/users" class="btn btn-ghost {% if current_path.startswith('/admin') %}btn-active bg-primary/10 text-primary font-semibold{% endif %}">
                             <span class="mdi mdi-shield-account"></span>
                             {{ _('Admin') }}
                         </a>
@@ -113,12 +113,10 @@
                 </div>
                 <div class="flex items-center">
                     {% if current_user %}
-                    <div class="dropdown dropdown-end" data-user-menu>
-                        <button
-                            type="button"
-                            class="btn btn-ghost btn-circle avatar"
-                            data-user-menu-trigger
-                            tabindex="0"
+                    <details class="dropdown dropdown-end" data-user-menu>
+                        <summary
+                            class="btn btn-ghost btn-circle avatar list-none"
+                            aria-label="{{ _('Open user menu') }}"
                         >
                             {% if current_user_avatar_thumbnail %}
                             <div class="w-10 rounded-full">
@@ -127,11 +125,9 @@
                             {% else %}
                             <span class="mdi mdi-account-circle text-3xl"></span>
                             {% endif %}
-                        </button>
+                        </summary>
                         <div
                             class="dropdown-content menu bg-base-100 rounded-box z-50 w-72 p-0 shadow-xl border border-base-300"
-                            data-user-menu-panel
-                            tabindex="0"
                         >
                             <div class="flex items-center gap-3 border-b border-base-300 px-4 py-3">
                                 <div class="avatar">
@@ -156,7 +152,7 @@
                             <div class="space-y-4 border-b border-base-300 px-4 py-4">
                                 <div class="space-y-2">
                                     <label class="label">
-                                        <span class="label-text text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
+                                        <span class="text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
                                             <span class="mdi mdi-translate"></span>
                                             {{ _('Language') }}
                                         </span>
@@ -180,7 +176,7 @@
                                 </div>
                                 <div class="space-y-2">
                                     <label class="label">
-                                        <span class="label-text text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
+                                        <span class="text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
                                             <span class="mdi mdi-theme-light-dark"></span>
                                             {{ _('Theme') }}
                                         </span>
@@ -200,19 +196,19 @@
                                 </form>
                             </div>
                         </div>
-                    </div>
+                    </details>
                     {% else %}
                     <div class="hidden md:flex items-center space-x-2">
                         <button type="button" onclick="toggleTheme()" class="btn btn-ghost btn-circle" title="{{ _('Toggle theme') }}">
                             <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
                         </button>
-                        <div class="dropdown dropdown-end">
-                            <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1 px-2">
+                        <details class="dropdown dropdown-end">
+                            <summary class="btn btn-ghost btn-sm gap-1 px-2 list-none">
                                 <span class="mdi mdi-translate text-lg"></span>
                                 <span class="uppercase font-semibold text-xs">{{ current_language }}</span>
                                 <span class="mdi mdi-chevron-down text-xs opacity-50"></span>
-                            </div>
-                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
+                            </summary>
+                            <ul class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
                                 <li>
                                     <form action="/auth/set-language" method="post" class="block p-0">
                                         <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
@@ -240,7 +236,7 @@
                                     </form>
                                 </li>
                             </ul>
-                        </div>
+                        </details>
                         <a href="/login" class="btn btn-ghost">
                             <span class="mdi mdi-login"></span>
                             {{ _('Login') }}
@@ -278,26 +274,26 @@
 
             {% if current_user %}
             <li>
-                <a href="/projects" class="{% if current_path.startswith('/projects') %}active{% endif %}">
+                <a href="/projects" class="{% if current_path.startswith('/projects') %}menu-active text-primary bg-primary/10 font-semibold{% endif %}">
                     <span class="mdi mdi-folder-outline text-lg"></span>{{ _('Projects') }}
                 </a>
             </li>
             <li>
-                <a href="/yarn" class="{% if current_path.startswith('/yarn') %}active{% endif %}">
+                <a href="/yarn" class="{% if current_path.startswith('/yarn') %}menu-active text-primary bg-primary/10 font-semibold{% endif %}">
                     <span class="mdi mdi-sheep text-lg"></span>{{ _('Yarns') }}
                 </a>
             </li>
             {% endif %}
 
             <li>
-                <a href="/gauge" class="{% if current_path.startswith('/gauge') %}active{% endif %}">
+                <a href="/gauge" class="{% if current_path.startswith('/gauge') %}menu-active text-primary bg-primary/10 font-semibold{% endif %}">
                     <span class="mdi mdi-ruler text-lg"></span>{{ _('Gauge Calculator') }}
                 </a>
             </li>
 
             {% if current_user and current_user.is_admin %}
             <li>
-                <a href="/admin/users" class="{% if current_path.startswith('/admin') %}active{% endif %}">
+                <a href="/admin/users" class="{% if current_path.startswith('/admin') %}menu-active text-primary bg-primary/10 font-semibold{% endif %}">
                     <span class="mdi mdi-shield-account text-lg"></span>{{ _('Admin') }}
                 </a>
             </li>
@@ -305,7 +301,7 @@
 
             {% if not current_user %}
             <li>
-                <a href="/login" class="">
+                <a href="/login">
                     <span class="mdi mdi-login text-lg"></span>{{ _('Login') }}
                 </a>
             </li>
@@ -568,8 +564,7 @@
             toast.setAttribute("role", "status");
             toast.innerHTML = `
                 <div class="flex items-start gap-3">
-                    <span class="mdi ${
-                        variant === "success"
+                    <span class="mdi ${ variant ==="success"
                             ? "mdi-check-circle"
                             : variant === "error"
                               ? "mdi-alert-circle"
@@ -697,45 +692,6 @@
                     const url = new URL(window.location.href);
                     url.searchParams.delete('toast');
                     window.history.replaceState({}, '', url.toString());
-                }
-            }
-
-            // DaisyUI handles dropdown automatically via focus/blur, no custom JS needed
-            // Just handle escape key for accessibility
-            const menuRoot = document.querySelector("[data-user-menu]");
-            if (menuRoot) {
-                const trigger = menuRoot.querySelector("[data-user-menu-trigger]");
-                const panel = menuRoot.querySelector("[data-user-menu-panel]");
-
-                if (trigger && panel) {
-                    // Make dropdown work properly
-                    trigger.addEventListener("click", (e) => {
-                        e.stopPropagation();
-                        // Toggle visibility by managing focus
-                        if (panel.classList.contains('hidden')) {
-                            panel.classList.remove('hidden');
-                            panel.focus();
-                        } else {
-                            panel.classList.add('hidden');
-                        }
-                    });
-
-                    // Close on outside click
-                    document.addEventListener("click", (event) => {
-                        if (!menuRoot.contains(event.target)) {
-                            panel.classList.add('hidden');
-                        }
-                    });
-
-                    // Close on escape
-                    document.addEventListener("keydown", (event) => {
-                        if (event.key === "Escape") {
-                            panel.classList.add('hidden');
-                        }
-                    });
-
-                    // Start hidden
-                    panel.classList.add('hidden');
                 }
             }
 

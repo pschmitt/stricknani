@@ -81,7 +81,7 @@
                 </a>
             </h3>
             {% if project.category and project.category != 'None' %}
-            <a href="/projects?category={{ project.category }}" class="badge badge-primary shrink-0 ml-2">
+            <a href="/projects?category={{ project.category }}" class="badge badge-primary badge-md shrink-0 ml-2 px-3">
                 {{ _(project.category) }}
             </a>
             {% endif %}
@@ -98,7 +98,7 @@
             {% endif %}
             {% set unused = params.items.append('tag=' + (tag|urlencode)) %}
             {% set tag_url = "/projects" + ('?' + (params.items|join('&'))) %}
-            <a href="{{ tag_url }}" class="badge badge-outline">#{{ tag }}</a>
+            <a href="{{ tag_url }}" class="badge badge-outline badge-md px-3">#{{ tag }}</a>
             {% endfor %}
         </div>
         {% endif %}

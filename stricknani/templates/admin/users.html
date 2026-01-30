@@ -55,9 +55,9 @@
             hx-target="#admin-user-list"
             hx-swap="outerHTML"
         >
-            <div class="form-control w-full">
+            <div class="w-full space-y-2">
                 <label class="label">
-                    <span class="label-text font-medium">{{ _('Email') }}</span>
+                    <span class="font-medium">{{ _('Email') }}</span>
                 </label>
                 <input
                     id="edit-user-email"
@@ -65,13 +65,13 @@
                     type="email"
                     required
                     autocomplete="email"
-                    class="input input-bordered w-full"
+                    class="input w-full"
                 />
             </div>
 
-            <div class="form-control w-full">
+            <div class="w-full space-y-2">
                 <label class="label">
-                    <span class="label-text font-medium">{{ _('Profile Image') }}</span>
+                    <span class="font-medium">{{ _('Profile Image') }}</span>
                 </label>
                 <button
                     type="button"
@@ -109,16 +109,16 @@
             data-dialog-close="resetPasswordDialog"
             hx-swap="none"
         >
-            <div class="form-control w-full">
+            <div class="w-full space-y-2">
                 <label class="label">
-                    <span class="label-text font-medium">{{ _('New password') }}</span>
+                    <span class="font-medium">{{ _('New password') }}</span>
                 </label>
                 <input
                     id="reset-password-input"
                     name="password"
                     type="password"
                     autocomplete="new-password"
-                    class="input input-bordered w-full"
+                    class="input w-full"
                     required
                 />
             </div>
@@ -147,9 +147,9 @@
             hx-target="#admin-user-list"
             hx-swap="afterbegin"
         >
-            <div class="form-control w-full">
+            <div class="w-full space-y-2">
                 <label class="label">
-                    <span class="label-text font-medium">{{ _('Email') }}</span>
+                    <span class="font-medium">{{ _('Email') }}</span>
                 </label>
                 <input
                     id="create-user-email"
@@ -157,13 +157,13 @@
                     type="email"
                     required
                     autocomplete="email"
-                    class="input input-bordered w-full"
+                    class="input w-full"
                     placeholder="user@example.com"
                 />
             </div>
-            <div class="form-control w-full">
+            <div class="w-full space-y-2">
                 <label class="label">
-                    <span class="label-text font-medium">{{ _('Password') }}</span>
+                    <span class="font-medium">{{ _('Password') }}</span>
                 </label>
                 <input
                     id="create-user-password"
@@ -171,15 +171,15 @@
                     type="password"
                     required
                     autocomplete="new-password"
-                    class="input input-bordered w-full"
+                    class="input w-full"
                 />
             </div>
-            <div class="form-control">
+            <div class="space-y-2">
                 <label class="label cursor-pointer justify-start gap-4 p-4 border border-base-200 rounded-lg bg-base-100 hover:bg-base-200 transition-colors">
                     <input type="checkbox" name="is_admin" class="checkbox checkbox-primary" />
                     <div class="flex-1">
-                        <span class="label-text font-bold block">{{ _('Grant admin access') }}</span>
-                        <span class="label-text-alt block">{{ _('Allow this user to manage accounts and settings.') }}</span>
+                        <span class="font-bold block">{{ _('Grant admin access') }}</span>
+                        <span class="block text-xs opacity-60">{{ _('Allow this user to manage accounts and settings.') }}</span>
                     </div>
                 </label>
             </div>
