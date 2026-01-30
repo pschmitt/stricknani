@@ -4,6 +4,8 @@ import inspect
 import json as json_module
 import logging
 import os
+import re
+from urllib.parse import urlparse
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -23,6 +25,47 @@ IMPORT_HEADERS = {
     "User-Agent": "Stricknani Importer/0.1",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
+
+
+def _is_garnstudio_url(url: str) -> bool:
+    parsed = urlparse(url)
+    host = (parsed.netloc or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host.endswith(
+        (
+            "garnstudio.com",
+            "garnstudio.no",
+            "dropsdesign.com",
+            "dropsdesign.no",
+        )
+    )
+
+
+def _looks_like_image_url(url: str) -> bool:
+    lower = url.lower()
+    if any(token in lower for token in ["diagram", "chart", "schema", "schem"]):
+        return True
+    path = urlparse(lower).path
+    return path.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp"))
+
+
+def _extract_garnstudio_text(soup: BeautifulSoup) -> str:
+    candidates = [
+        soup.find(["div", "section"], class_=re.compile(r"pattern-instructions", re.I)),
+        soup.find(["div", "section"], id=re.compile(r"pattern-instructions", re.I)),
+        soup.find(["div", "section"], id=re.compile(r"pattern[_-]?text", re.I)),
+        soup.find(["div", "section"], class_=re.compile(r"pattern[_-]?text", re.I)),
+        soup.find("article"),
+        soup.find("main"),
+    ]
+
+    for container in [c for c in candidates if c]:
+        text = container.get_text(separator="\n", strip=True)
+        if text:
+            return text
+
+    return soup.get_text(separator="\n", strip=True)
 
 if TYPE_CHECKING:
     from stricknani.utils.import_trace import ImportTrace
@@ -255,19 +298,22 @@ class AIPatternImporter:
 
         # Get text content using Trafilatura if available
         text_content = ""
+        if _is_garnstudio_url(self.url):
+            text_content = _extract_garnstudio_text(soup)
         try:
             import trafilatura
 
             # Trafilatura needs the raw HTML string, which we have in response.text
-            text_content = (
-                trafilatura.extract(
-                    response.text,
-                    include_comments=False,
-                    include_tables=False,
-                    no_fallback=False,
+            if not text_content:
+                text_content = (
+                    trafilatura.extract(
+                        response.text,
+                        include_comments=False,
+                        include_tables=False,
+                        no_fallback=False,
+                    )
+                    or ""
                 )
-                or ""
-            )
         except ImportError:
             pass
 
@@ -374,7 +420,8 @@ class AIPatternImporter:
             if width and height:
                 try:
                     if int(str(width)) < 128 or int(str(height)) < 128:
-                        continue
+                        if not self._allow_small_image(img, candidates):
+                            continue
                 except (ValueError, TypeError):
                     pass
 
@@ -397,6 +444,19 @@ class AIPatternImporter:
                 ):
                     continue
 
+                images.append(resolved)
+                seen.add(resolved)
+
+        if _is_garnstudio_url(self.url):
+            for anchor in soup.find_all("a"):
+                href = anchor.get("href")
+                if not href or not isinstance(href, str):
+                    continue
+                if not _looks_like_image_url(href):
+                    continue
+                resolved = self._resolve_image_url(href)
+                if not resolved or resolved in seen:
+                    continue
                 images.append(resolved)
                 seen.add(resolved)
 
@@ -440,6 +500,26 @@ class AIPatternImporter:
             return None
 
         return max(candidates, key=lambda item: item[0])[1]
+
+    def _allow_small_image(self, img: Any, candidates: list[str]) -> bool:
+        if not _is_garnstudio_url(self.url):
+            return False
+
+        attr_bits: list[str] = []
+        for key in ["class", "id", "alt", "title"]:
+            value = img.get(key)
+            if not value:
+                continue
+            if isinstance(value, list):
+                attr_bits.extend([str(item) for item in value])
+            else:
+                attr_bits.append(str(value))
+
+        combined = " ".join(attr_bits + candidates).lower()
+        return any(
+            token in combined
+            for token in ["diagram", "chart", "schema", "schem", "muster", "pattern"]
+        )
 
     async def _ai_extract(
         self,

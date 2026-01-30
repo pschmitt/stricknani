@@ -3,12 +3,28 @@
 import logging
 import re
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
 from bs4.element import AttributeValueList, NavigableString, Tag
 
 logger = logging.getLogger("stricknani.imports")
+
+
+def _is_garnstudio_url(url: str) -> bool:
+    parsed = urlparse(url)
+    host = (parsed.netloc or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host.endswith(
+        (
+            "garnstudio.com",
+            "garnstudio.no",
+            "dropsdesign.com",
+            "dropsdesign.no",
+        )
+    )
 
 
 class PatternImporter:
@@ -18,6 +34,8 @@ class PatternImporter:
         """Initialize with URL to import."""
         self.url = url
         self.timeout = timeout
+        self.is_garnstudio = _is_garnstudio_url(url)
+        self._garnstudio_gauge_cache: tuple[int | None, int | None] | None = None
 
     async def fetch_and_parse(self) -> dict[str, Any]:
         """Fetch URL and extract pattern data."""
@@ -51,13 +69,22 @@ class PatternImporter:
 
         steps = self._extract_steps(soup)
         images = self._extract_images(soup)
+        comment = self._extract_description(soup)
+        if self.is_garnstudio:
+            garnstudio_notes = self._extract_garnstudio_notes(soup)
+            if garnstudio_notes:
+                if comment:
+                    if garnstudio_notes not in comment:
+                        comment = f"{comment}\n\n{garnstudio_notes}"
+                else:
+                    comment = garnstudio_notes
         data = {
             "title": self._extract_title(soup),
             "needles": self._extract_needles(soup),
             "yarn": self._extract_yarn(soup),
             "gauge_stitches": self._extract_gauge_stitches(soup),
             "gauge_rows": self._extract_gauge_rows(soup),
-            "comment": self._extract_description(soup),
+            "comment": comment,
             "steps": steps,
             "link": self.url,
             "image_urls": images,
@@ -131,10 +158,16 @@ class PatternImporter:
 
     def _extract_gauge_stitches(self, soup: BeautifulSoup) -> int | None:
         """Extract gauge stitches per 10cm."""
+        if self.is_garnstudio:
+            stitches, _rows = self._get_garnstudio_gauge(soup)
+            if stitches:
+                return stitches
         patterns = [
             r"(\d+)\s*st(?:itches?)?\s*(?:per|in|over|=)\s*10\s*cm",
             r"(\d+)\s*st(?:itches?)?\s+in\s+width",
             r"gauge[:\s]+(\d+)\s*st",
+            r"(\d+)\s*(?:m|maschen)\s*(?:pro|per|in|auf|über)?\s*10\s*cm",
+            r"maschenprobe[^\d]*(\d+)\s*m",
         ]
 
         text = soup.get_text()
@@ -150,10 +183,16 @@ class PatternImporter:
 
     def _extract_gauge_rows(self, soup: BeautifulSoup) -> int | None:
         """Extract gauge rows per 10cm."""
+        if self.is_garnstudio:
+            _stitches, rows = self._get_garnstudio_gauge(soup)
+            if rows:
+                return rows
         patterns = [
             r"(\d+)\s*row[s]?\s*(?:per|in|over|=)\s*10\s*cm",
             r"(\d+)\s*row[s]?\s+in\s+height",
             r"gauge[:\s]+\d+\s*st[^,]+,\s*(\d+)\s*row",
+            r"(\d+)\s*(?:r|reihen)\s*(?:pro|per|in|auf|über)?\s*10\s*cm",
+            r"maschenprobe[^\d]*(?:\d+\s*m[^\d]+)?(\d+)\s*r",
         ]
 
         text = soup.get_text()
@@ -194,6 +233,94 @@ class PatternImporter:
                         return text
 
         return None
+
+    def _get_garnstudio_gauge(
+        self, soup: BeautifulSoup
+    ) -> tuple[int | None, int | None]:
+        if self._garnstudio_gauge_cache is not None:
+            return self._garnstudio_gauge_cache
+
+        text = soup.get_text(separator=" ", strip=True)
+        patterns = [
+            r"(\d+)\s*(?:m|maschen)\s*[x×]\s*(\d+)\s*(?:r|reihen)\s*=\s*10\s*(?:x\s*10\s*)?cm",
+            r"(\d+)\s*sts?\s*[x×]\s*(\d+)\s*rows?\s*=\s*10\s*(?:x\s*10\s*)?cm",
+            r"(\d+)\s*stitches?\s*[x×]\s*(\d+)\s*rows?\s*(?:per|in|over|=)\s*10\s*cm",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text, re.I)
+            if match:
+                try:
+                    stitches = int(match.group(1))
+                    rows = int(match.group(2))
+                except ValueError:
+                    continue
+                self._garnstudio_gauge_cache = (stitches, rows)
+                return self._garnstudio_gauge_cache
+
+        self._garnstudio_gauge_cache = (None, None)
+        return self._garnstudio_gauge_cache
+
+    def _extract_garnstudio_notes(self, soup: BeautifulSoup) -> str | None:
+        text = self._extract_garnstudio_text(soup)
+        if not text:
+            return None
+
+        dashed_block = re.search(
+            r"(-{5,}\s*\n\s*HINWEISE\s+ZUR\s+ANLEITUNG:?\s*\n-{5,}.*?)(?=\n-{5,}|\Z)",
+            text,
+            re.I | re.S,
+        )
+        if dashed_block:
+            return dashed_block.group(1).strip()
+
+        note_headings = [
+            "HINWEISE ZUR ANLEITUNG",
+            "HINWEISE ZU ANLEITUNG",
+            "HINWEIS ZUR ANLEITUNG",
+            "PATTERN NOTES",
+            "NOTES FOR THE PATTERN",
+            "NOTES FOR INSTRUCTIONS",
+        ]
+
+        lines = [line.rstrip() for line in text.splitlines()]
+        start_index: int | None = None
+        for idx, line in enumerate(lines):
+            upper = line.strip().upper()
+            if any(heading in upper for heading in note_headings):
+                start_index = idx
+                break
+
+        if start_index is None:
+            return None
+
+        stop_headings = {
+            "GRÖSSEN",
+            "GROESSEN",
+            "SIZE",
+            "SIZES",
+            "MATERIAL",
+            "MATERIALS",
+            "GARN",
+            "YARN",
+            "NADELN",
+            "NEEDLES",
+            "MASCHENPROBE",
+            "GAUGE",
+            "ABMESSUNGEN",
+            "MEASUREMENTS",
+        }
+
+        collected: list[str] = []
+        for line in lines[start_index:]:
+            stripped = line.strip()
+            if stripped:
+                label = stripped[:-1] if stripped.endswith(":") else stripped
+                if label.isupper() and label in stop_headings:
+                    break
+            collected.append(line)
+
+        notes = "\n".join(collected).strip()
+        return notes or None
 
     def _extract_steps(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract pattern instructions as steps."""
@@ -465,7 +592,8 @@ class PatternImporter:
             if width and height:
                 try:
                     if int(str(width)) < 128 or int(str(height)) < 128:
-                        continue
+                        if not self._allow_small_image(img, candidates):
+                            continue
                 except (ValueError, TypeError):
                     pass
 
@@ -492,4 +620,69 @@ class PatternImporter:
                 images.append(resolved)
                 seen.add(resolved)
 
+        if self.is_garnstudio:
+            for anchor in soup.find_all("a"):
+                href = anchor.get("href")
+                if not href or not isinstance(href, str):
+                    continue
+                if not self._looks_like_image_url(href):
+                    continue
+                resolved = self._resolve_image_url(href)
+                if not resolved or resolved in seen:
+                    continue
+                images.append(resolved)
+                seen.add(resolved)
+
         return images[:10]  # Limit to 10 images
+
+    def _allow_small_image(self, img: Tag, candidates: list[str]) -> bool:
+        if not self.is_garnstudio:
+            return False
+
+        attr_bits: list[str] = []
+        for key in ["class", "id", "alt", "title"]:
+            value = img.get(key)
+            if not value:
+                continue
+            if isinstance(value, list):
+                attr_bits.extend([str(item) for item in value])
+            else:
+                attr_bits.append(str(value))
+
+        combined = " ".join(attr_bits + candidates).lower()
+        return any(
+            token in combined
+            for token in ["diagram", "chart", "schema", "schem", "muster", "pattern"]
+        )
+
+    def _looks_like_image_url(self, url: str) -> bool:
+        lower = url.lower()
+        if any(token in lower for token in ["diagram", "chart", "schema", "schem"]):
+            return True
+        path = urlparse(lower).path
+        return path.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp"))
+
+    def _extract_garnstudio_text(self, soup: BeautifulSoup) -> str:
+        candidates = [
+            soup.find(["div", "section"], class_=re.compile(r"pattern-instructions", re.I)),
+            soup.find(["div", "section"], id=re.compile(r"pattern-instructions", re.I)),
+            soup.find(["div", "section"], id=re.compile(r"pattern[_-]?text", re.I)),
+            soup.find(["div", "section"], class_=re.compile(r"pattern[_-]?text", re.I)),
+            soup.find("article"),
+            soup.find("main"),
+        ]
+
+        for container in [c for c in candidates if c]:
+            text = container.get_text(separator="\n", strip=True)
+            if text:
+                return text
+
+        return soup.get_text(separator="\n", strip=True)
+
+
+class GarnstudioPatternImporter(PatternImporter):
+    """Importer with Garnstudio-specific extraction rules."""
+
+    def __init__(self, url: str, timeout: int = 10) -> None:
+        super().__init__(url, timeout)
+        self.is_garnstudio = True

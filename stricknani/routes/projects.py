@@ -136,6 +136,44 @@ def _is_valid_import_url(url: str) -> bool:
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
+def _is_garnstudio_url(url: str) -> bool:
+    parsed = urlparse(url)
+    host = (parsed.netloc or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host.endswith(
+        (
+            "garnstudio.com",
+            "garnstudio.no",
+            "dropsdesign.com",
+            "dropsdesign.no",
+        )
+    )
+
+
+def _extract_garnstudio_notes_block(comment: str) -> str | None:
+    if not comment:
+        return None
+
+    dashed_block = re.search(
+        r"(-{5,}\s*\n\s*HINWEISE\s+ZUR\s+ANLEITUNG:?\s*\n-{5,}.*?)(?=\n-{5,}|\Z)",
+        comment,
+        re.I | re.S,
+    )
+    if dashed_block:
+        return dashed_block.group(1).strip()
+
+    heading_match = re.search(
+        r"(HINWEISE\s+ZUR\s+ANLEITUNG:?.*)",
+        comment,
+        re.I | re.S,
+    )
+    if heading_match:
+        return heading_match.group(1).strip()
+
+    return None
+
+
 def _is_allowed_import_image(content_type: str | None, url: str) -> bool:
     """Validate content type or file extension for image imports."""
     if content_type:
@@ -754,9 +792,15 @@ async def import_pattern(
             ai_failed = False
             basic_data: dict[str, Any]
 
-            from stricknani.utils.importer import PatternImporter
+            from stricknani.utils.importer import (
+                GarnstudioPatternImporter,
+                PatternImporter,
+            )
 
-            basic_importer = PatternImporter(url)
+            if _is_garnstudio_url(url):
+                basic_importer = GarnstudioPatternImporter(url)
+            else:
+                basic_importer = PatternImporter(url)
             basic_data = await basic_importer.fetch_and_parse()
             data = basic_data
             if trace:
@@ -817,7 +861,21 @@ async def import_pattern(
                         ai_data["image_urls"] = basic_data["image_urls"]
                         logger.info("AI found fewer images, using basic parser images")
 
-                    # 3. Check if name/title is actually set
+                    # 3. Garnstudio notes: keep the detailed notes block if missing
+                    if _is_garnstudio_url(url):
+                        basic_comment = basic_data.get("comment") or ""
+                        notes_block = _extract_garnstudio_notes_block(basic_comment)
+                        if notes_block:
+                            ai_comment = ai_data.get("comment")
+                            if ai_comment:
+                                if notes_block not in ai_comment:
+                                    ai_data["comment"] = (
+                                        f"{ai_comment}\n\n{notes_block}"
+                                    )
+                            else:
+                                ai_data["comment"] = notes_block
+
+                    # 4. Check if name/title is actually set
                     if (
                         not ai_data.get("name")
                         and not ai_data.get("title")
