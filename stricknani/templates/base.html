@@ -68,6 +68,71 @@
             color: color-mix(in srgb, currentColor 55%, transparent);
             font-style: italic;
         }
+        .prose {
+            line-height: 1.6;
+        }
+        .prose > * + * {
+            margin-top: 0.75rem;
+        }
+        .prose h1,
+        .prose h2,
+        .prose h3,
+        .prose h4,
+        .prose h5,
+        .prose h6 {
+            font-weight: 700;
+            line-height: 1.25;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        .prose h1 { font-size: 1.35rem; }
+        .prose h2 { font-size: 1.2rem; }
+        .prose h3 { font-size: 1.05rem; }
+        .prose h4 { font-size: 0.95rem; }
+        .prose h5 { font-size: 0.9rem; }
+        .prose h6 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .prose ul,
+        .prose ol {
+            padding-left: 1.25rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .prose ul {
+            list-style: disc;
+        }
+        .prose ol {
+            list-style: decimal;
+        }
+        .prose li + li {
+            margin-top: 0.25rem;
+        }
+        .prose blockquote {
+            border-left: 3px solid color-mix(in srgb, currentColor 20%, transparent);
+            padding-left: 0.75rem;
+            font-style: italic;
+            color: color-mix(in srgb, currentColor 80%, transparent);
+        }
+        .prose code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.9em;
+            background: color-mix(in srgb, currentColor 8%, transparent);
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.35rem;
+        }
+        .prose pre {
+            background: color-mix(in srgb, currentColor 8%, transparent);
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            overflow-x: auto;
+        }
+        .prose pre code {
+            background: transparent;
+            padding: 0;
+        }
+        .prose a {
+            color: color-mix(in srgb, currentColor 85%, #1d4ed8);
+            text-decoration: underline;
+        }
         .pswp__thumbs {
             position: absolute;
             left: 0;
