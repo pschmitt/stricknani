@@ -326,6 +326,11 @@ class PatternImporter:
         """Extract pattern instructions as steps."""
         steps: list[dict[str, Any]] = []
 
+        if self.is_garnstudio:
+            steps = self._extract_garnstudio_steps(soup)
+            if steps:
+                return steps
+
         # Look for numbered lists or instruction sections
         candidates = [
             # Specific ID/Class matches first (Garnstudio uses pattern-instructions)
@@ -484,6 +489,79 @@ class PatternImporter:
         process_node(container)
         flush()
 
+        return steps
+
+    def _extract_garnstudio_steps(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
+        text = self._extract_garnstudio_text(soup)
+        if not text:
+            return []
+
+        lines = [line.rstrip() for line in text.splitlines()]
+        paragraphs: list[str] = []
+        current: list[str] = []
+
+        def flush() -> None:
+            nonlocal current
+            if current:
+                paragraph = " ".join(current).strip()
+                if paragraph:
+                    paragraphs.append(paragraph)
+            current = []
+
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                flush()
+                continue
+
+            if current:
+                prev = current[-1]
+                if prev.endswith("-"):
+                    current[-1] = prev[:-1]
+                    current.append(stripped)
+                    continue
+                if stripped.startswith("(") or stripped[:1].islower():
+                    current.append(stripped)
+                    continue
+                if prev.endswith("("):
+                    current.append(stripped)
+                    continue
+
+            current.append(stripped)
+
+        flush()
+
+        merged: list[str] = []
+        index = 0
+        while index < len(paragraphs):
+            paragraph = paragraphs[index]
+            if index + 1 < len(paragraphs):
+                next_paragraph = paragraphs[index + 1]
+                if (
+                    paragraph.isupper()
+                    and len(paragraph) < 40
+                    and (
+                        next_paragraph.startswith("(")
+                        or next_paragraph[:1].islower()
+                        or len(next_paragraph) < 40
+                    )
+                ):
+                    merged.append(f"{paragraph} {next_paragraph}".strip())
+                    index += 2
+                    continue
+            merged.append(paragraph)
+            index += 1
+
+        steps: list[dict[str, Any]] = []
+        for i, paragraph in enumerate(merged, 1):
+            steps.append(
+                {
+                    "step_number": i,
+                    "title": f"Step {i}",
+                    "description": paragraph,
+                    "images": [],
+                }
+            )
         return steps
 
     def _resolve_image_url(self, src: str | AttributeValueList) -> str | None:

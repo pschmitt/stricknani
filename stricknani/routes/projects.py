@@ -1297,17 +1297,19 @@ async def get_project(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    # Prepare title images
+    # Prepare project-level images (exclude step images)
     title_images = [
         {
             "id": img.id,
             "url": get_file_url(img.filename, project.id),
             "thumbnail_url": get_thumbnail_url(img.filename, project.id),
             "alt_text": img.alt_text,
+            "is_title_image": img.is_title_image,
         }
         for img in project.images
-        if img.is_title_image
+        if img.step_id is None
     ]
+    title_images.sort(key=lambda item: (not item["is_title_image"], item["id"]))
 
     # Prepare steps with images
     base_steps: list[dict[str, object]] = []
@@ -1428,10 +1430,12 @@ async def edit_project_form(
             "url": get_file_url(img.filename, project.id),
             "thumbnail_url": get_thumbnail_url(img.filename, project.id),
             "alt_text": img.alt_text,
+            "is_title_image": img.is_title_image,
         }
         for img in project.images
-        if img.is_title_image
+        if img.step_id is None
     ]
+    title_images.sort(key=lambda item: (not item["is_title_image"], item["id"]))
 
     steps_data = []
     for step in sorted(project.steps, key=lambda s: s.step_number):
