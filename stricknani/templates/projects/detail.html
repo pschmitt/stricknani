@@ -221,6 +221,17 @@
                                 <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                                 {{ project.link }}
                             </a>
+                            {% if project.link_archive %}
+                            <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer" class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
+                                <span class="mdi mdi-archive-outline"></span>
+                                {{ _('Archived snapshot') }}
+                            </a>
+                            {% elif project.archive_pending %}
+                            <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                                <span class="mdi mdi-clock-outline"></span>
+                                {{ _('Archive requested - check back soon') }}
+                            </div>
+                            {% endif %}
                             {% else %}
                             <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
                             {% endif %}
@@ -437,6 +448,17 @@
                             <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                             {{ project.link }}
                         </a>
+                        {% if project.link_archive %}
+                        <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer" class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
+                            <span class="mdi mdi-archive-outline"></span>
+                            {{ _('Archived snapshot') }}
+                        </a>
+                        {% elif project.archive_pending %}
+                        <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                            <span class="mdi mdi-clock-outline"></span>
+                            {{ _('Archive requested - check back soon') }}
+                        </div>
+                        {% endif %}
                         {% else %}
                         <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
                         {% endif %}

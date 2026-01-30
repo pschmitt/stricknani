@@ -95,6 +95,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 <form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post"
     class="space-y-6">
     <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
+    <input type="hidden" id="archive_on_save" name="archive_on_save" value="">
     <input type="hidden" id="stepsData" name="steps_data">
 
     <div id="importWarning"
@@ -592,6 +593,10 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
                 if (importImagesField) {
                     importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
+                }
+                const archiveField = document.getElementById('archive_on_save');
+                if (archiveField) {
+                    archiveField.value = '1';
                 }
 
                 // Render pending images for preview
@@ -1782,6 +1787,10 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
                         if (importImagesField) {
                             importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
+                        }
+                        const archiveField = document.getElementById('archive_on_save');
+                        if (archiveField) {
+                            archiveField.value = '1';
                         }
 
                         if (imageUrls.length > 0) {

@@ -1,13 +1,15 @@
 """Project routes."""
 
+import asyncio
 import json
 import logging
 import re
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Annotated, Any
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import httpx
 from fastapi import (
@@ -27,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from stricknani.config import config
-from stricknani.database import get_db
+from stricknani.database import AsyncSessionLocal, get_db
 from stricknani.main import get_language, render_template, templates
 from stricknani.models import (
     Category,
@@ -70,6 +72,74 @@ IMPORT_ALLOWED_IMAGE_TYPES = {
     "image/gif",
 }
 IMPORT_ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+WAYBACK_SAVE_TIMEOUT = 15
+
+
+def _should_request_archive(raw: str | None) -> bool:
+    if raw is None:
+        return False
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+
+async def _request_wayback_snapshot(url: str) -> str | None:
+    if not _is_valid_import_url(url):
+        return None
+    save_url = f"https://web.archive.org/save/{quote(url, safe='')}"
+    logger = logging.getLogger("stricknani.imports")
+    async with httpx.AsyncClient(timeout=WAYBACK_SAVE_TIMEOUT) as client:
+        try:
+            response = await client.get(save_url)
+            archive_url: str | None = None
+            content_location = response.headers.get("content-location")
+            location = response.headers.get("location")
+            for candidate in [content_location, location]:
+                if not candidate:
+                    continue
+                if candidate.startswith("/"):
+                    archive_url = f"https://web.archive.org{candidate}"
+                    break
+                if candidate.startswith("http"):
+                    archive_url = candidate
+                    break
+            logger.info(
+                "Wayback snapshot request %s -> %s",
+                url,
+                response.status_code,
+            )
+            if not archive_url:
+                try:
+                    availability = await client.get(
+                        "https://archive.org/wayback/available",
+                        params={"url": url},
+                    )
+                    if availability.status_code == 200:
+                        payload = availability.json()
+                        closest = (
+                            payload.get("archived_snapshots", {})
+                            .get("closest", {})
+                        )
+                        if isinstance(closest, dict):
+                            archive_url = closest.get("url")
+                except (httpx.HTTPError, ValueError, TypeError) as exc:
+                    logger.info("Wayback availability check failed for %s: %s", url, exc)
+            return archive_url
+        except httpx.HTTPError as exc:
+            logger.info("Wayback snapshot request failed for %s: %s", url, exc)
+    return None
+
+
+async def _store_wayback_snapshot(project_id: int, url: str) -> None:
+    logger = logging.getLogger("stricknani.imports")
+    async with AsyncSessionLocal() as session:
+        project = await session.get(Project, project_id)
+        if not project or project.link_archive:
+            return
+        archive_url = await _request_wayback_snapshot(url)
+        if archive_url:
+            project.link_archive = archive_url
+            await session.commit()
+        else:
+            logger.info("Wayback snapshot not available for %s", url)
 
 
 def _parse_import_image_urls(raw: str | None) -> list[str]:
@@ -1395,6 +1465,12 @@ async def get_project(
         if project.comment
         else None,
         "link": project.link,
+        "link_archive": project.link_archive,
+        "archive_pending": bool(
+            project.link
+            and not project.link_archive
+            and project.link_archive_requested_at
+        ),
         "created_at": project.created_at.isoformat(),
         "updated_at": project.updated_at.isoformat(),
         "title_images": title_images,
@@ -1510,6 +1586,12 @@ async def edit_project_form(
         "gauge_rows": project.gauge_rows,
         "comment": project.comment or "",
         "link": project.link,
+        "link_archive": project.link_archive,
+        "archive_pending": bool(
+            project.link
+            and not project.link_archive
+            and project.link_archive_requested_at
+        ),
         "title_images": title_images,
         "steps": steps_data,
         "tags": project.tag_list(),
@@ -1547,6 +1629,7 @@ async def create_project(
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[str | None, Form()] = None,
+    archive_on_save: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
@@ -1579,6 +1662,8 @@ async def create_project(
         owner_id=current_user.id,
         tags=_serialize_tags(normalized_tags),
     )
+    if project.link and _should_request_archive(archive_on_save):
+        project.link_archive_requested_at = datetime.now(UTC)
     project.yarns = list(await _load_owned_yarns(db, current_user.id, parsed_yarn_ids))
     project.yarn = project.yarns[0].name if project.yarns else None
     db.add(project)
@@ -1607,6 +1692,9 @@ async def create_project(
     await db.commit()
     await db.refresh(project)
 
+    if project.link and _should_request_archive(archive_on_save):
+        asyncio.create_task(_store_wayback_snapshot(project.id, project.link))
+
     return RedirectResponse(
         url=f"/projects/{project.id}?toast=project_created",
         status_code=status.HTTP_303_SEE_OTHER,
@@ -1628,6 +1716,7 @@ async def update_project(
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[str | None, Form()] = None,
+    archive_on_save: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
@@ -1672,6 +1761,8 @@ async def update_project(
     project.comment = comment.strip() if comment else None
     project.link = link.strip() if link else None
     project.tags = _serialize_tags(_normalize_tags(tags))
+    if project.link and _should_request_archive(archive_on_save):
+        project.link_archive_requested_at = datetime.now(UTC)
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
@@ -1715,6 +1806,9 @@ async def update_project(
                     await _import_step_images(db, step, step_images)
 
     await db.commit()
+
+    if project.link and _should_request_archive(archive_on_save):
+        asyncio.create_task(_store_wayback_snapshot(project.id, project.link))
 
     return RedirectResponse(
         url=f"/projects/{project.id}?toast=project_updated",

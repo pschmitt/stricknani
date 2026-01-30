@@ -2527,3 +2527,9 @@ msgstr "Bist du sicher, dass du fortfahren möchtest?"
 
 #~ msgid "Browse yarn stash"
 #~ msgstr "Wollvorrat durchsuchen"
+
+msgid "Archived snapshot"
+msgstr "Archivierter Snapshot"
+
+msgid "Archive requested - check back soon"
+msgstr "Archivierung angefragt - bitte später prüfen"

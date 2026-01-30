@@ -8,6 +8,7 @@ import getpass
 import json
 import logging
 import sys
+from datetime import datetime
 from types import ModuleType
 
 import httpx
@@ -15,6 +16,7 @@ from rich import print_json
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -89,6 +91,44 @@ def output_table(
     console.print(table)
 
 
+def _serialize_value(value: object) -> object:
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
+
+
+def serialize_columns(obj: object) -> dict[str, object]:
+    mapper = sa_inspect(obj).mapper
+    return {
+        column.key: _serialize_value(getattr(obj, column.key))
+        for column in mapper.columns
+    }
+
+
+def serialize_project(project: Project) -> dict[str, object]:
+    data = serialize_columns(project)
+    data["tags_list"] = project.tag_list()
+    data["owner"] = serialize_columns(project.owner) if project.owner else None
+    data["images"] = [serialize_columns(img) for img in project.images]
+    data["steps"] = [
+        {
+            **serialize_columns(step),
+            "images": [serialize_columns(img) for img in step.images],
+        }
+        for step in project.steps
+    ]
+    data["yarns"] = [serialize_columns(yarn) for yarn in project.yarns]
+    return data
+
+
+def serialize_yarn(yarn: Yarn) -> dict[str, object]:
+    data = serialize_columns(yarn)
+    data["owner"] = serialize_columns(yarn.owner) if yarn.owner else None
+    data["photos"] = [serialize_columns(photo) for photo in yarn.photos]
+    data["projects"] = [serialize_columns(project) for project in yarn.projects]
+    return data
+
+
 async def upsert_user(email: str, password: str, is_admin: bool | None) -> None:
     """Create or update a user with the given credentials."""
     await init_db()
@@ -128,15 +168,7 @@ async def list_users() -> None:
         if JSON_OUTPUT:
             output_json(
                 {
-                    "users": [
-                        {
-                            "id": user.id,
-                            "email": user.email,
-                            "is_active": user.is_active,
-                            "is_admin": user.is_admin,
-                        }
-                        for user in users
-                    ]
+                    "users": [serialize_columns(user) for user in users]
                 }
             )
             return
@@ -173,7 +205,12 @@ async def list_projects(owner_email: str | None) -> None:
 
         query = (
             select(Project)
-            .options(selectinload(Project.owner))
+            .options(
+                selectinload(Project.owner),
+                selectinload(Project.images),
+                selectinload(Project.steps).selectinload(Step.images),
+                selectinload(Project.yarns),
+            )
             .order_by(Project.created_at.desc())
         )
         if owner_id is not None:
@@ -184,17 +221,7 @@ async def list_projects(owner_email: str | None) -> None:
         if JSON_OUTPUT:
             output_json(
                 {
-                    "projects": [
-                        {
-                            "id": project.id,
-                            "name": project.name,
-                            "category": project.category,
-                            "owner_email": project.owner.email
-                            if project.owner
-                            else None,
-                        }
-                        for project in projects
-                    ]
+                    "projects": [serialize_project(project) for project in projects]
                 }
             )
             return
@@ -264,7 +291,11 @@ async def list_yarns(owner_email: str | None) -> None:
 
         query = (
             select(Yarn)
-            .options(selectinload(Yarn.owner))
+            .options(
+                selectinload(Yarn.owner),
+                selectinload(Yarn.photos),
+                selectinload(Yarn.projects),
+            )
             .order_by(Yarn.created_at.desc())
         )
         if owner_id is not None:
@@ -275,16 +306,7 @@ async def list_yarns(owner_email: str | None) -> None:
         if JSON_OUTPUT:
             output_json(
                 {
-                    "yarns": [
-                        {
-                            "id": yarn.id,
-                            "name": yarn.name,
-                            "brand": yarn.brand,
-                            "colorway": yarn.colorway,
-                            "owner_email": yarn.owner.email if yarn.owner else None,
-                        }
-                        for yarn in yarns
-                    ]
+                    "yarns": [serialize_yarn(yarn) for yarn in yarns]
                 }
             )
             return

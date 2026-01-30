@@ -94,6 +94,8 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
             "steps",
             "yarns",
             "link",  # Skip link as we set it manually from the URL
+            "link_archive",
+            "link_archive_requested_at",
         }:
             continue
 

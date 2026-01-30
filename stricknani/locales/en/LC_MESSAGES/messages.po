@@ -728,3 +728,9 @@ msgstr "per 10cm"
 
 #~ msgid "requires API key"
 #~ msgstr "requires API key"
+
+msgid "Archived snapshot"
+msgstr "Archived snapshot"
+
+msgid "Archive requested - check back soon"
+msgstr "Archive requested - check back soon"
