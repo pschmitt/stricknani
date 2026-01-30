@@ -4,6 +4,7 @@ import json
 import logging
 import re
 from collections.abc import Sequence
+from io import BytesIO
 from pathlib import Path
 from typing import Annotated, Any
 from urllib.parse import urlparse
@@ -57,6 +58,7 @@ router: APIRouter = APIRouter(prefix="/projects", tags=["projects"])
 IMPORT_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 IMPORT_IMAGE_MAX_COUNT = 10
 IMPORT_IMAGE_TIMEOUT = 10
+IMPORT_IMAGE_MIN_DIMENSION = 64
 IMPORT_IMAGE_HEADERS = {
     "User-Agent": "Stricknani Importer/0.1",
     "Accept": "image/*",
@@ -244,6 +246,25 @@ async def _import_images_from_urls(
             if len(response.content) > IMPORT_IMAGE_MAX_BYTES:
                 logger.info("Skipping large image %s", image_url)
                 continue
+            try:
+                from PIL import Image as PilImage
+
+                with PilImage.open(BytesIO(response.content)) as img:
+                    width, height = img.size
+                    if (
+                        width < IMPORT_IMAGE_MIN_DIMENSION
+                        or height < IMPORT_IMAGE_MIN_DIMENSION
+                    ):
+                        logger.info(
+                            "Skipping small image %s (%sx%s)",
+                            image_url,
+                            width,
+                            height,
+                        )
+                        continue
+            except Exception as exc:
+                logger.info("Skipping unreadable image %s: %s", image_url, exc)
+                continue
 
             original_filename = build_import_filename(image_url, content_type)
             filename = ""
@@ -325,6 +346,25 @@ async def _import_step_images(
                     pass
 
             if not response.content or len(response.content) > IMPORT_IMAGE_MAX_BYTES:
+                continue
+            try:
+                from PIL import Image as PilImage
+
+                with PilImage.open(BytesIO(response.content)) as img:
+                    width, height = img.size
+                    if (
+                        width < IMPORT_IMAGE_MIN_DIMENSION
+                        or height < IMPORT_IMAGE_MIN_DIMENSION
+                    ):
+                        logger.info(
+                            "Skipping small step image %s (%sx%s)",
+                            image_url,
+                            width,
+                            height,
+                        )
+                        continue
+            except Exception as exc:
+                logger.info("Skipping unreadable step image %s: %s", image_url, exc)
                 continue
 
             original_filename = build_import_filename(image_url, content_type)
