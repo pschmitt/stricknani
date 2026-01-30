@@ -604,6 +604,26 @@
             }, 5000);
         };
 
+        window.openPhotoSwipeIndex = (trigger) => {
+            if (!trigger) {
+                return;
+            }
+            const gallery = trigger.closest('[data-pswp-gallery]');
+            if (!gallery) {
+                return;
+            }
+            const raw = trigger.getAttribute('data-pswp-open-index') || '0';
+            const index = Number.parseInt(raw, 10);
+            const targetIndex = Number.isNaN(index) ? 0 : index;
+            const anchors = Array.from(
+                gallery.querySelectorAll('a[data-pswp-width]'),
+            );
+            const target = anchors[targetIndex];
+            if (target) {
+                target.click();
+            }
+        };
+
         const extractErrorMessage = async (response, fallback) => {
             const defaultMessage = fallback || "{{ _('Something went wrong. Please try again') }}";
             if (!response) {
@@ -881,7 +901,13 @@
         window.refreshPhotoSwipeGallery = (gallery) => {
             const instance = initGallery(gallery);
             if (instance) {
-                instance.refresh();
+                if (typeof instance.refresh === 'function') {
+                    instance.refresh();
+                } else if (typeof instance.destroy === 'function') {
+                    instance.destroy();
+                    lightboxes.delete(gallery);
+                    return initGallery(gallery);
+                }
             }
             return instance;
         };
@@ -892,24 +918,43 @@
             });
         };
 
+        const openAtIndex = (trigger) => {
+            const gallery = trigger.closest('[data-pswp-gallery]');
+            if (!gallery) {
+                return;
+            }
+            const raw = trigger.getAttribute('data-pswp-open-index') || '0';
+            const index = Number.parseInt(raw, 10);
+            const targetIndex = Number.isNaN(index) ? 0 : index;
+            const anchors = Array.from(
+                gallery.querySelectorAll('a[data-pswp-width]'),
+            );
+            const target = anchors[targetIndex];
+            if (target) {
+                target.click();
+                return;
+            }
+            const lightbox = window.refreshPhotoSwipeGallery(gallery);
+            if (lightbox) {
+                lightbox.loadAndOpen(0, gallery);
+            }
+        };
+
+        window.openPhotoSwipeIndex = (trigger) => {
+            if (!trigger) {
+                return;
+            }
+            openAtIndex(trigger);
+        };
+
         document.addEventListener('click', (event) => {
             const trigger = event.target.closest('[data-pswp-open-index]');
             if (!trigger) {
                 return;
             }
-            const gallery = trigger.closest('[data-pswp-gallery]');
-            if (!gallery) {
-                return;
-            }
             event.preventDefault();
             event.stopPropagation();
-            const raw = trigger.getAttribute('data-pswp-open-index') || '0';
-            const index = Number.parseInt(raw, 10);
-            const targetIndex = Number.isNaN(index) ? 0 : index;
-            const lightbox = window.refreshPhotoSwipeGallery(gallery);
-            if (lightbox) {
-                lightbox.loadAndOpen(targetIndex, gallery);
-            }
+            openAtIndex(trigger);
         });
 
         document.addEventListener('DOMContentLoaded', () => {

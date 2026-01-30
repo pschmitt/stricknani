@@ -78,7 +78,7 @@
                         <div class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200">
                             <a
                                 href="{{ image.url }}"
-                                class="block h-full w-full"
+                                class="block h-full w-full{% if loop.last and gallery_count > 3 %} pointer-events-none{% endif %}"
                                 data-pswp-width="{{ image.width or 1200 }}"
                                 data-pswp-height="{{ image.height or 1200 }}"
                                 data-pswp-caption="{{ image.alt_text }}"
@@ -91,14 +91,17 @@
                                 >
                             </a>
                             {% if loop.last and gallery_count > 3 %}
-                            <button
-                                type="button"
-                                class="absolute inset-0 z-10 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold"
+                            <div
+                                class="absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
                                 data-pswp-open-index="3"
+                                role="button"
+                                tabindex="0"
                                 aria-label="{{ _('Open gallery') }}"
+                                onclick="window.openPhotoSwipeIndex?.(this)"
+                                onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openPhotoSwipeIndex?.(this); }"
                             >
                                 +{{ gallery_count - 3 }}
-                            </button>
+                            </div>
                             {% endif %}
                         </div>
                         {% endfor %}
