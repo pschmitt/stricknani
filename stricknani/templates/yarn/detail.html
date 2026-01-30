@@ -141,18 +141,18 @@
                 <div class="space-y-4">
                     <!-- Badge Info -->
                     {% if yarn.brand %}
-                    <div class="flex items-center justify-between py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Brand') }}</span>
-                        <a href="/yarn?brand={{ yarn.brand|urlencode }}" class="text-sm font-medium text-primary hover:underline flex items-center gap-1 max-w-[12rem]">
+                    <div class="py-1">
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Brand') }}</span>
+                        <a href="/yarn?brand={{ yarn.brand|urlencode }}" class="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 max-w-[12rem]">
                             <span class="mdi mdi-factory text-sm"></span>
                             <span class="truncate">{{ yarn.brand }}</span>
                         </a>
                     </div>
                     {% endif %}
 
-                    <div class="flex items-center justify-between py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Added') }}</span>
-                        <span class="text-xs font-medium text-base-content/70 flex items-center gap-1">
+                    <div class="py-1">
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Added') }}</span>
+                        <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
                             <span class="mdi mdi-calendar-plus"></span>
                             {{ metadata.created }}
                         </span>
@@ -160,20 +160,25 @@
 
                     <div class="divider my-2"></div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        {% if yarn.colorway %}
-                        <div class="bg-base-200/50 rounded-xl p-3">
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Colorway') }}</span>
-                            <div class="font-medium text-sm">{{ yarn.colorway }}</div>
+                    {% if yarn.colorway %}
+                    <div>
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Colorway') }}</span>
+                        <div class="flex items-center gap-2 text-sm font-medium">
+                            <span class="mdi mdi-palette text-base-content/60"></span>
+                            {{ yarn.colorway }}
                         </div>
-                        {% endif %}
-                        {% if yarn.dye_lot %}
-                        <div class="bg-base-200/50 rounded-xl p-3">
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Dye Lot') }}</span>
-                            <div class="font-medium text-sm">{{ yarn.dye_lot }}</div>
-                        </div>
-                        {% endif %}
                     </div>
+                    {% endif %}
+
+                    {% if yarn.dye_lot %}
+                    <div>
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Dye Lot') }}</span>
+                        <div class="flex items-center gap-2 text-sm font-medium">
+                            <span class="mdi mdi-identifier text-base-content/60"></span>
+                            {{ yarn.dye_lot }}
+                        </div>
+                    </div>
+                    {% endif %}
 
                     {% if yarn.fiber_content %}
                     <div>

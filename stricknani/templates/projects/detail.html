@@ -101,9 +101,9 @@
                     <div class="space-y-4">
                         <!-- Badges Info -->
                         {% if project.category and project.category != 'None' %}
-                        <div class="flex items-center justify-between py-1">
-                            <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Category') }}</span>
-                            <a href="/projects?category={{ project.category }}" class="text-sm font-medium text-primary hover:underline flex items-center gap-1 max-w-[12rem]">
+                        <div class="py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Category') }}</span>
+                            <a href="/projects?category={{ project.category }}" class="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 max-w-[12rem]">
                                 <span class="mdi mdi-shape-outline text-sm"></span>
                                 <span class="truncate">{{ _(project.category) }}</span>
                             </a>
@@ -115,15 +115,16 @@
                             <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Tags') }}</span>
                             <div class="flex flex-wrap gap-1.5">
                                 {% for tag in project.tags %}
-                                <span class="badge badge-ghost badge-xs text-[10px] py-2 px-2">#{{ tag }}</span>
+                                <a href="/projects?tag={{ tag|urlencode }}"
+                                    class="badge badge-ghost badge-sm text-xs px-2.5 py-2.5 hover:badge-outline">#{{ tag }}</a>
                                 {% endfor %}
                             </div>
                         </div>
                         {% endif %}
 
-                        <div class="flex items-center justify-between py-1">
-                            <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Created') }}</span>
-                            <span class="text-xs font-medium text-base-content/70 flex items-center gap-1">
+                        <div class="py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created') }}</span>
+                            <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
                                 <span class="mdi mdi-calendar-plus"></span>
                                 {{ project.created_at[:10] }}
                             </span>
@@ -316,9 +317,9 @@
                 <div class="space-y-4">
                     <!-- Badges Info -->
                     {% if project.category and project.category != 'None' %}
-                    <div class="flex items-center justify-between py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Category') }}</span>
-                        <a href="/projects?category={{ project.category }}" class="text-sm font-medium text-primary hover:underline flex items-center gap-1 max-w-[12rem]">
+                    <div class="py-1">
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Category') }}</span>
+                        <a href="/projects?category={{ project.category }}" class="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 max-w-[12rem]">
                             <span class="mdi mdi-shape-outline text-sm"></span>
                             <span class="truncate">{{ _(project.category) }}</span>
                         </a>
@@ -330,15 +331,16 @@
                         <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Tags') }}</span>
                         <div class="flex flex-wrap gap-1.5">
                             {% for tag in project.tags %}
-                            <span class="badge badge-ghost badge-xs text-[10px] py-2 px-2">#{{ tag }}</span>
+                            <a href="/projects?tag={{ tag|urlencode }}"
+                                class="badge badge-ghost badge-sm text-xs px-2.5 py-2.5 hover:badge-outline">#{{ tag }}</a>
                             {% endfor %}
                         </div>
                     </div>
                     {% endif %}
 
-                    <div class="flex items-center justify-between py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Created') }}</span>
-                        <span class="text-xs font-medium text-base-content/70 flex items-center gap-1">
+                    <div class="py-1">
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created') }}</span>
+                        <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
                             <span class="mdi mdi-calendar-plus"></span>
                             {{ project.created_at[:10] }}
                         </span>
