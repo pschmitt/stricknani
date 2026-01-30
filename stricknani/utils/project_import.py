@@ -6,7 +6,9 @@ import json
 import logging
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
+import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -14,7 +16,6 @@ from sqlalchemy.orm import selectinload
 from stricknani.config import config
 from stricknani.models import Category, Image, ImageType, Project, Yarn
 from stricknani.utils.files import create_thumbnail, delete_file, save_bytes
-from stricknani.utils.importer import PatternImporter
 
 
 def normalize_tags(raw_tags: str | None) -> list[str]:
@@ -93,37 +94,62 @@ async def import_images_from_urls(
         return
 
     logger = logging.getLogger("stricknani.cli")
-    importer = PatternImporter(config.MEDIA_ROOT / "projects" / str(project.id))
-    imported_images = await importer.download_images(image_urls)
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        )
+    }
 
-    for image_path, original_name in imported_images:
-        filename, original_filename = save_bytes(
-            Path(image_path).read_bytes(),
-            original_name,
-            project.id,
-            subdir="projects",
-        )
-        file_path = config.MEDIA_ROOT / "projects" / str(project.id) / filename
-        try:
-            await create_thumbnail(file_path, project.id)
-        except Exception as exc:
-            delete_file(filename, project.id)
-            logger.warning(
-                "Failed to create thumbnail for %s: %s",
-                original_filename,
-                exc,
+    async with httpx.AsyncClient(
+        timeout=20,
+        follow_redirects=True,
+        headers=headers,
+    ) as client:
+        for index, image_url in enumerate(image_urls, 1):
+            try:
+                response = await client.get(image_url)
+                response.raise_for_status()
+            except Exception as exc:
+                logger.warning("Failed to download image %s: %s", image_url, exc)
+                continue
+
+            content = response.content
+            if not content:
+                logger.warning("Downloaded image %s was empty", image_url)
+                continue
+
+            parsed = urlparse(image_url)
+            original_name = Path(parsed.path).name or f"imported-image-{index}.jpg"
+
+            filename, original_filename = save_bytes(
+                content,
+                original_name,
+                project.id,
+                subdir="projects",
             )
-            continue
-        db.add(
-            Image(
-                filename=filename,
-                original_filename=original_filename,
-                image_type=ImageType.PHOTO.value,
-                alt_text=project.name,
-                is_title_image=False,
-                project_id=project.id,
+            file_path = config.MEDIA_ROOT / "projects" / str(project.id) / filename
+            try:
+                await create_thumbnail(file_path, project.id)
+            except Exception as exc:
+                delete_file(filename, project.id)
+                logger.warning(
+                    "Failed to create thumbnail for %s: %s",
+                    original_filename,
+                    exc,
+                )
+                continue
+            db.add(
+                Image(
+                    filename=filename,
+                    original_filename=original_filename,
+                    image_type=ImageType.PHOTO.value,
+                    alt_text=project.name,
+                    is_title_image=False,
+                    project_id=project.id,
+                )
             )
-        )
 
 
 async def link_yarns_by_name(

@@ -239,9 +239,9 @@ async def seed_demo_data(reset: bool = False) -> None:
                     Yarn.owner_id == demo_user.id,
                 )
             )
-            existing = result.scalar_one_or_none()
+            existing_yarn = result.scalar_one_or_none()
 
-            if not existing:
+            if not existing_yarn:
                 yarn = Yarn(**yarn_data, owner_id=demo_user.id)
                 db.add(yarn)
                 await db.flush()  # Get yarn ID
@@ -276,8 +276,12 @@ async def seed_demo_data(reset: bool = False) -> None:
             else:
                 print(f"Yarn already exists: {yarn_data['name']}")
 
-        result = await db.execute(select(Yarn).where(Yarn.owner_id == demo_user.id))
-        yarn_by_name = {yarn.name: yarn for yarn in result.scalars().all()}
+        yarn_result = await db.execute(
+            select(Yarn).where(Yarn.owner_id == demo_user.id)
+        )
+        yarn_by_name = {
+            yarn.name: yarn for yarn in yarn_result.scalars().all()
+        }
 
         # Create some demo projects
         demo_projects = [
@@ -492,16 +496,16 @@ async def seed_demo_data(reset: bool = False) -> None:
                 linked_yarns = []
 
             # Check if project already exists
-            result = await db.execute(
+            project_result = await db.execute(
                 select(Project).where(
                     Project.name == project_data["name"],
                     Project.owner_id == demo_user.id,
                 )
             )
-            existing = result.scalar_one_or_none()
+            existing_project = project_result.scalar_one_or_none()
 
-            project = existing
-            if not existing:
+            project: Project | None = existing_project
+            if project is None:
                 project = Project(**project_data, owner_id=demo_user.id)
                 db.add(project)
                 await db.flush()  # Get project ID
@@ -587,17 +591,22 @@ async def seed_demo_data(reset: bool = False) -> None:
             else:
                 print(f"Project already exists: {project_data['name']}")
 
-            if project and linked_yarns:
+            if project is None:
+                continue
+
+            if linked_yarns:
                 await db.refresh(project, ["yarns"])
                 for yarn_name in linked_yarns:
-                    yarn = yarn_by_name.get(yarn_name)
-                    if yarn and yarn not in project.yarns:
-                        project.yarns.append(yarn)
+                    linked_yarn = yarn_by_name.get(yarn_name)
+                    if linked_yarn and linked_yarn not in project.yarns:
+                        project.yarns.append(linked_yarn)
 
-        result = await db.execute(
+        project_result = await db.execute(
             select(Project).where(Project.owner_id == demo_user.id)
         )
-        project_by_name = {project.name: project for project in result.scalars().all()}
+        project_by_name = {
+            project.name: project for project in project_result.scalars().all()
+        }
 
         await db.refresh(demo_user, ["favorite_projects", "favorite_yarns"])
 
@@ -607,9 +616,12 @@ async def seed_demo_data(reset: bool = False) -> None:
             "Lace Headband",
         ]
         for project_name in favorite_project_names:
-            project = project_by_name.get(project_name)
-            if project and project not in demo_user.favorite_projects:
-                demo_user.favorite_projects.append(project)
+            favorite_project = project_by_name.get(project_name)
+            if (
+                favorite_project
+                and favorite_project not in demo_user.favorite_projects
+            ):
+                demo_user.favorite_projects.append(favorite_project)
 
         favorite_yarn_names = [
             "Highland Tweed",
@@ -617,9 +629,9 @@ async def seed_demo_data(reset: bool = False) -> None:
             "Sock Delight",
         ]
         for yarn_name in favorite_yarn_names:
-            yarn = yarn_by_name.get(yarn_name)
-            if yarn and yarn not in demo_user.favorite_yarns:
-                demo_user.favorite_yarns.append(yarn)
+            favorite_yarn = yarn_by_name.get(yarn_name)
+            if favorite_yarn and favorite_yarn not in demo_user.favorite_yarns:
+                demo_user.favorite_yarns.append(favorite_yarn)
 
         await _ensure_thumbnails(db, demo_user)
 

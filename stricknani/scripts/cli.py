@@ -98,7 +98,10 @@ def _serialize_value(value: object) -> object:
 
 
 def serialize_columns(obj: object) -> dict[str, object]:
-    mapper = sa_inspect(obj).mapper
+    inspected = sa_inspect(obj, raiseerr=False)
+    if inspected is None:
+        return {}
+    mapper = inspected.mapper
     return {
         column.key: _serialize_value(getattr(obj, column.key))
         for column in mapper.columns

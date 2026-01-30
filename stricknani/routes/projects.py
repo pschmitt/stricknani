@@ -925,6 +925,7 @@ async def import_pattern(
                 PatternImporter,
             )
 
+            basic_importer: PatternImporter
             if _is_garnstudio_url(url):
                 basic_importer = GarnstudioPatternImporter(url)
             else:
@@ -1288,7 +1289,7 @@ async def create_category(
     name: Annotated[str, Form()],
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
-) -> HTMLResponse:
+) -> Response:
     cleaned = name.strip()
     if not cleaned:
         return await _render_categories_page(
@@ -1322,7 +1323,7 @@ async def rename_category(
     name: Annotated[str, Form()],
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
-) -> HTMLResponse:
+) -> Response:
     category = await db.get(Category, category_id)
     if category is None or category.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
