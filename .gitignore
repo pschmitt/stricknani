@@ -46,7 +46,7 @@ htmlcov/
 media/
 
 # Environment
-.env
+.env*
 
 # Nix
 result
