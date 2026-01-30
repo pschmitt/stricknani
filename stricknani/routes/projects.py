@@ -12,7 +12,6 @@ from typing import Annotated, Any
 from urllib.parse import quote, urlparse
 
 import httpx
-from PIL import Image as PilImage
 from fastapi import (
     APIRouter,
     Depends,
@@ -25,6 +24,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from PIL import Image as PilImage
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
@@ -115,14 +115,15 @@ async def _request_wayback_snapshot(url: str) -> str | None:
                     )
                     if availability.status_code == 200:
                         payload = availability.json()
-                        closest = (
-                            payload.get("archived_snapshots", {})
-                            .get("closest", {})
+                        closest = payload.get("archived_snapshots", {}).get(
+                            "closest", {}
                         )
                         if isinstance(closest, dict):
                             archive_url = closest.get("url")
                 except (httpx.HTTPError, ValueError, TypeError) as exc:
-                    logger.info("Wayback availability check failed for %s: %s", url, exc)
+                    logger.info(
+                        "Wayback availability check failed for %s: %s", url, exc
+                    )
             return archive_url
         except httpx.HTTPError as exc:
             logger.info("Wayback snapshot request failed for %s: %s", url, exc)

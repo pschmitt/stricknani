@@ -774,7 +774,9 @@ class PatternImporter:
 
     def _extract_garnstudio_text(self, soup: BeautifulSoup) -> str:
         candidates = [
-            soup.find(["div", "section"], class_=re.compile(r"pattern-instructions", re.I)),
+            soup.find(
+                ["div", "section"], class_=re.compile(r"pattern-instructions", re.I)
+            ),
             soup.find(["div", "section"], id=re.compile(r"pattern-instructions", re.I)),
             soup.find(["div", "section"], id=re.compile(r"pattern[_-]?text", re.I)),
             soup.find(["div", "section"], class_=re.compile(r"pattern[_-]?text", re.I)),

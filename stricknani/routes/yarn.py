@@ -2,7 +2,6 @@
 
 from collections.abc import Iterable
 from pathlib import Path
-from PIL import Image as PilImage
 from typing import Annotated
 
 from fastapi import (
@@ -17,6 +16,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from PIL import Image as PilImage
 from sqlalchemy import delete, func, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload

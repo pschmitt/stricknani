@@ -21,7 +21,9 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """Add archive link column to projects table."""
     with op.batch_alter_table("projects", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("link_archive", sa.String(length=2048), nullable=True))
+        batch_op.add_column(
+            sa.Column("link_archive", sa.String(length=2048), nullable=True)
+        )
 
 
 def downgrade() -> None:

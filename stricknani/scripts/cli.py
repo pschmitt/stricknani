@@ -166,11 +166,7 @@ async def list_users() -> None:
         result = await session.execute(select(User))
         users = result.scalars().all()
         if JSON_OUTPUT:
-            output_json(
-                {
-                    "users": [serialize_columns(user) for user in users]
-                }
-            )
+            output_json({"users": [serialize_columns(user) for user in users]})
             return
 
         rows = [
@@ -220,9 +216,7 @@ async def list_projects(owner_email: str | None) -> None:
         projects = result.scalars().all()
         if JSON_OUTPUT:
             output_json(
-                {
-                    "projects": [serialize_project(project) for project in projects]
-                }
+                {"projects": [serialize_project(project) for project in projects]}
             )
             return
 
@@ -304,11 +298,7 @@ async def list_yarns(owner_email: str | None) -> None:
         result = await session.execute(query)
         yarns = result.scalars().all()
         if JSON_OUTPUT:
-            output_json(
-                {
-                    "yarns": [serialize_yarn(yarn) for yarn in yarns]
-                }
-            )
+            output_json({"yarns": [serialize_yarn(yarn) for yarn in yarns]})
             return
 
         rows = [

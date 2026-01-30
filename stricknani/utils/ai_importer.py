@@ -5,8 +5,8 @@ import json as json_module
 import logging
 import os
 import re
-from urllib.parse import urlparse
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -66,6 +66,7 @@ def _extract_garnstudio_text(soup: BeautifulSoup) -> str:
             return text
 
     return soup.get_text(separator="\n", strip=True)
+
 
 if TYPE_CHECKING:
     from stricknani.utils.import_trace import ImportTrace
