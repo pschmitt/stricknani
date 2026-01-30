@@ -92,6 +92,12 @@ msgstr "You have unsaved changes. Save before leaving?"
 msgid "Discard changes"
 msgstr "Discard changes"
 
+msgid "Gallery thumbnails"
+msgstr "Gallery thumbnails"
+
+msgid "Open image"
+msgstr "Open image"
+
 # Navigation and General
 #~ msgid "Stricknani"
 #~ msgstr "Stricknani"

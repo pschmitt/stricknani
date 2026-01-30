@@ -68,6 +68,56 @@
             color: color-mix(in srgb, currentColor 55%, transparent);
             font-style: italic;
         }
+        .pswp__thumbs {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            overflow-x: auto;
+            pointer-events: auto;
+            z-index: 15;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.35) 100%);
+        }
+        .pswp__thumbs::-webkit-scrollbar {
+            height: 6px;
+        }
+        .pswp__thumbs::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .pswp__thumbs::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 999px;
+        }
+        .pswp__thumb {
+            width: 3.25rem;
+            height: 3.25rem;
+            border-radius: 0.6rem;
+            border: 2px solid transparent;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 0;
+            flex: 0 0 auto;
+            transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+        }
+        .pswp__thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .pswp__thumb:focus-visible {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+        .pswp__thumb.is-active {
+            border-color: #fff;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.4);
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body class="min-h-screen bg-base-100">
@@ -878,6 +928,8 @@
 
         const lightboxes = window.pswpLightboxes || new Map();
         window.pswpLightboxes = lightboxes;
+        const pswpThumbsLabel = "{{ _('Gallery thumbnails') }}";
+        const pswpThumbActionLabel = "{{ _('Open image') }}";
 
         const initGallery = (gallery) => {
             if (!gallery) {
@@ -891,6 +943,70 @@
                 gallery,
                 children: 'a[data-pswp-width]',
                 pswpModule: () => import('https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.esm.min.js'),
+            });
+            lightbox.on('uiRegister', () => {
+                if (!lightbox.pswp?.ui) {
+                    return;
+                }
+                lightbox.pswp.ui.registerElement({
+                    name: 'thumbs',
+                    order: 9,
+                    isButton: false,
+                    appendTo: 'root',
+                    onInit: (el, pswp) => {
+                        el.classList.add('pswp__thumbs');
+                        el.setAttribute('aria-label', pswpThumbsLabel);
+                        el.setAttribute('role', 'toolbar');
+
+                        const buildItems = () => {
+                            const count = typeof pswp.getNumItems === 'function'
+                                ? pswp.getNumItems()
+                                : (pswp.options?.dataSource?.length || pswp.options?.dataSource?.items?.length || 0);
+                            el.innerHTML = '';
+                            if (!count || count <= 1) {
+                                return;
+                            }
+                            const fragment = document.createDocumentFragment();
+                            for (let index = 0; index < count; index += 1) {
+                                const item = typeof pswp.getItemData === 'function'
+                                    ? pswp.getItemData(index)
+                                    : pswp.options?.dataSource?.[index]
+                                        || pswp.options?.dataSource?.items?.[index]
+                                        || {};
+                                const thumbSrc = item?.msrc || item?.src;
+                                if (!thumbSrc) {
+                                    continue;
+                                }
+                                const button = document.createElement('button');
+                                button.type = 'button';
+                                button.className = 'pswp__thumb';
+                                button.setAttribute('aria-label', `${pswpThumbActionLabel} ${index + 1}`);
+                                button.setAttribute('data-pswp-thumb-index', `${index}`);
+                                const img = document.createElement('img');
+                                img.src = thumbSrc;
+                                img.alt = item?.alt || item?.title || '';
+                                button.appendChild(img);
+                                button.addEventListener('click', () => {
+                                    pswp.goTo(index);
+                                });
+                                fragment.appendChild(button);
+                            }
+                            el.appendChild(fragment);
+                        };
+
+                        const updateActive = () => {
+                            const activeIndex = pswp.currIndex || 0;
+                            el.querySelectorAll('[data-pswp-thumb-index]').forEach((button) => {
+                                const buttonIndex = Number.parseInt(button.getAttribute('data-pswp-thumb-index') || '0', 10);
+                                button.classList.toggle('is-active', buttonIndex === activeIndex);
+                            });
+                        };
+
+                        buildItems();
+                        updateActive();
+                        pswp.on('change', updateActive);
+                    },
+                });
             });
             lightbox.init();
             lightboxes.set(gallery, lightbox);

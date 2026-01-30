@@ -1539,6 +1539,12 @@ msgstr "Sie haben ungespeicherte Änderungen. Vor dem Verlassen speichern?"
 msgid "Discard changes"
 msgstr "Änderungen verwerfen"
 
+msgid "Gallery thumbnails"
+msgstr "Galerie-Miniaturen"
+
+msgid "Open image"
+msgstr "Bild öffnen"
+
 # Navigation and General
 #~ msgid "Stricknani"
 #~ msgstr "Stricknani"
