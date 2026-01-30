@@ -496,14 +496,15 @@ class PatternImporter:
         if not text:
             return []
 
-        lines = [line.rstrip() for line in text.splitlines()]
+        normalized_text = self._normalize_garnstudio_text(text)
+        lines = [line.rstrip() for line in normalized_text.splitlines()]
         paragraphs: list[str] = []
         current: list[str] = []
 
         def flush() -> None:
             nonlocal current
             if current:
-                paragraph = " ".join(current).strip()
+                paragraph = "\n".join(current).strip()
                 if paragraph:
                     paragraphs.append(paragraph)
             current = []
@@ -517,14 +518,13 @@ class PatternImporter:
             if current:
                 prev = current[-1]
                 if prev.endswith("-"):
-                    current[-1] = prev[:-1]
-                    current.append(stripped)
+                    current[-1] = prev[:-1] + stripped
                     continue
                 if stripped.startswith("(") or stripped[:1].islower():
-                    current.append(stripped)
+                    current[-1] = f"{current[-1]} {stripped}".strip()
                     continue
                 if prev.endswith("("):
-                    current.append(stripped)
+                    current[-1] = f"{current[-1]} {stripped}".strip()
                     continue
 
             current.append(stripped)
@@ -546,7 +546,7 @@ class PatternImporter:
                         or len(next_paragraph) < 40
                     )
                 ):
-                    merged.append(f"{paragraph} {next_paragraph}".strip())
+                    merged.append(f"{paragraph}\n{next_paragraph}".strip())
                     index += 2
                     continue
             merged.append(paragraph)
@@ -563,6 +563,38 @@ class PatternImporter:
                 }
             )
         return steps
+
+    def _normalize_garnstudio_text(self, text: str) -> str:
+        normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+        headings = [
+            "HINWEISE ZUR ANLEITUNG",
+            "HINWEISE ZU ANLEITUNG",
+            "HINWEIS ZUR ANLEITUNG",
+            "MUSTER",
+            "ZUNAHMETIPP",
+            "ABNAHMETIPP",
+            "MASCHENPROBE",
+            "GROESSEN",
+            "GRÖSSEN",
+            "GARN",
+            "MATERIAL",
+            "NADELN",
+            "RIPPEN",
+            "ABNAHMEN",
+            "ZUNAHMEN",
+            "ARM",
+            "RAGLAN",
+        ]
+
+        for heading in headings:
+            normalized = re.sub(
+                rf"\\s*({re.escape(heading)}\\s*:)",
+                r"\n\n\\1",
+                normalized,
+                flags=re.I,
+            )
+
+        return normalized
 
     def _resolve_image_url(self, src: str | AttributeValueList) -> str | None:
         if isinstance(src, list):
