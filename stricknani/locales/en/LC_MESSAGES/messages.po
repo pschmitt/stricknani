@@ -320,6 +320,23 @@ msgstr "Tag"
 msgid "Clear tag"
 msgstr "Clear tag"
 
+#: stricknani/templates/projects/detail.html:123
+#: stricknani/templates/projects/detail.html:338
+#: stricknani/templates/projects/form.html:159
+#: stricknani/templates/projects/form.html:225
+msgid "Tags"
+msgstr "Tags"
+
+#: stricknani/templates/projects/form.html:170
+#: stricknani/templates/projects/form.html:237
+msgid "Add a tag..."
+msgstr "Add a tag..."
+
+#: stricknani/templates/projects/form.html:179
+#: stricknani/templates/projects/form.html:246
+msgid "Press Enter or choose a suggestion."
+msgstr "Press Enter or choose a suggestion."
+
 #: stricknani/templates/projects/_empty_state.html:6
 msgid "Start a project to track photos, gauge notes, and progress."
 msgstr "Start a project to track photos, gauge notes, and progress."

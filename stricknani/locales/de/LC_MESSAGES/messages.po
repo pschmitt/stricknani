@@ -820,6 +820,16 @@ msgstr "Erstellt"
 msgid "Tags"
 msgstr "Tags"
 
+#: stricknani/templates/projects/form.html:170
+#: stricknani/templates/projects/form.html:237
+msgid "Add a tag..."
+msgstr "Tag hinzufügen..."
+
+#: stricknani/templates/projects/form.html:179
+#: stricknani/templates/projects/form.html:246
+msgid "Press Enter or choose a suggestion."
+msgstr "Enter drücken oder Vorschlag wählen."
+
 #: stricknani/templates/projects/detail.html:184
 msgid "Gauge (10cm)"
 msgstr "Maschenprobe (10 cm)"

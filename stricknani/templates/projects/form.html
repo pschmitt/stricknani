@@ -153,6 +153,32 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                     {% endfor %}
                                 </select>
                             </div>
+                            <div class="sm:col-span-2">
+                                <label for="tags_input_mobile"
+                                    class="label-text text-xs font-bold uppercase text-base-content/50">
+                                    {{ _('Tags') }}
+                                </label>
+                                <input type="hidden" id="tags" name="tags"
+                                    value="{{ project.tags | join(', ') if project and project.tags else '' }}">
+                                <div id="tags_chips_mobile" class="flex flex-wrap gap-2 mt-2"></div>
+                                <div class="relative mt-2">
+                                    <input type="text" id="tags_input_mobile"
+                                        class="input input-bordered input-sm w-full" autocomplete="off"
+                                        placeholder="{{ _('Add a tag...') }}">
+                                    <div id="tags_suggestions_mobile"
+                                        class="hidden absolute z-30 w-full mt-1 max-h-48 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
+                                        {% for tag in tag_suggestions %}
+                                        <button type="button"
+                                            class="tag-suggestion w-full text-left px-3 py-2 hover:bg-base-200 text-sm"
+                                            data-tag="{{ tag }}">
+                                            #{{ tag }}
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a suggestion.') }}
+                                </p>
+                            </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
@@ -332,6 +358,30 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             </option>
                             {% endfor %}
                         </select>
+                    </div>
+
+                    <div>
+                        <label for="tags_input" class="label-text text-xs font-bold uppercase text-base-content/50">
+                            {{ _('Tags') }}
+                        </label>
+                        <div id="tags_chips" class="flex flex-wrap gap-2 mt-2"></div>
+                        <div class="relative mt-2">
+                            <input type="text" id="tags_input"
+                                class="input input-bordered input-sm w-full" autocomplete="off"
+                                placeholder="{{ _('Add a tag...') }}">
+                            <div id="tags_suggestions"
+                                class="hidden absolute z-30 w-full mt-1 max-h-48 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
+                                {% for tag in tag_suggestions %}
+                                <button type="button"
+                                    class="tag-suggestion w-full text-left px-3 py-2 hover:bg-base-200 text-sm"
+                                    data-tag="{{ tag }}">
+                                    #{{ tag }}
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a suggestion.') }}
+                        </p>
                     </div>
 
                     <div class="divider my-2"></div>
@@ -603,7 +653,146 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         });
 
         initYarnSelector();
+        initTagEditor();
     });
+
+    function initTagEditor() {
+        const hiddenInput = document.getElementById('tags');
+        if (!hiddenInput) return;
+
+        const desktop = {
+            input: document.getElementById('tags_input'),
+            chips: document.getElementById('tags_chips'),
+            suggestions: document.getElementById('tags_suggestions'),
+        };
+        const mobile = {
+            input: document.getElementById('tags_input_mobile'),
+            chips: document.getElementById('tags_chips_mobile'),
+            suggestions: document.getElementById('tags_suggestions_mobile'),
+        };
+        const views = [desktop, mobile].filter(view => view.input && view.chips);
+
+        const normalizeTag = (raw) => raw.replace(/^#/, '').trim();
+        const splitTags = (raw) => raw.split(/[,#\\s]+/).map(normalizeTag).filter(Boolean);
+
+        const tags = [];
+        const tagIndex = new Set();
+
+        const addTag = (tag) => {
+            const normalized = normalizeTag(tag);
+            if (!normalized) return;
+            const key = normalized.toLowerCase();
+            if (tagIndex.has(key)) return;
+            tagIndex.add(key);
+            tags.push(normalized);
+            renderChips();
+            syncHidden();
+        };
+
+        const removeTag = (tag) => {
+            const key = tag.toLowerCase();
+            if (!tagIndex.has(key)) return;
+            tagIndex.delete(key);
+            const index = tags.findIndex(item => item.toLowerCase() === key);
+            if (index >= 0) tags.splice(index, 1);
+            renderChips();
+            syncHidden();
+        };
+
+        const syncHidden = () => {
+            hiddenInput.value = tags.join(', ');
+        };
+
+        const renderChips = () => {
+            views.forEach(view => {
+                view.chips.innerHTML = '';
+                tags.forEach(tag => {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'badge badge-outline gap-1';
+                    chip.setAttribute('data-tag', tag);
+                    chip.innerHTML = `#${tag}<span class="mdi mdi-close text-[10px]"></span>`;
+                    chip.addEventListener('click', () => removeTag(tag));
+                    view.chips.appendChild(chip);
+                });
+            });
+            refreshSuggestions();
+        };
+
+        const refreshSuggestions = () => {
+            const selected = new Set(tags.map(tag => tag.toLowerCase()));
+            views.forEach(view => {
+                if (!view.suggestions) return;
+                view.suggestions.querySelectorAll('.tag-suggestion').forEach(button => {
+                    const tag = button.dataset.tag || '';
+                    const isHidden = selected.has(tag.toLowerCase());
+                    button.classList.toggle('hidden', isHidden);
+                });
+            });
+        };
+
+        const addFromInput = (input) => {
+            const raw = input.value;
+            splitTags(raw).forEach(addTag);
+            input.value = '';
+            refreshSuggestions();
+        };
+
+        const handleInput = (event, view) => {
+            if (!view.suggestions) return;
+            const query = event.target.value.trim().toLowerCase();
+            const hasQuery = query.length > 0;
+            let anyVisible = false;
+            view.suggestions.querySelectorAll('.tag-suggestion').forEach(button => {
+                const tag = (button.dataset.tag || '').toLowerCase();
+                const matches = !query || tag.includes(query);
+                const isSelected = tagIndex.has(tag);
+                const shouldShow = matches && !isSelected;
+                button.classList.toggle('hidden', !shouldShow);
+                if (shouldShow) anyVisible = true;
+            });
+            view.suggestions.classList.toggle('hidden', !hasQuery || !anyVisible);
+        };
+
+        const handleKeydown = (event, view) => {
+            if (event.key === 'Enter' || event.key === 'Tab') {
+                if (event.target.value.trim()) {
+                    event.preventDefault();
+                    addFromInput(event.target);
+                    view.suggestions?.classList.add('hidden');
+                }
+            }
+            if (event.key === 'Escape') {
+                view.suggestions?.classList.add('hidden');
+            }
+        };
+
+        const handleBlur = (view) => {
+            setTimeout(() => {
+                view.suggestions?.classList.add('hidden');
+                if (view.input && view.input.value.trim()) {
+                    addFromInput(view.input);
+                }
+            }, 100);
+        };
+
+        const bindView = (view) => {
+            if (!view.input) return;
+            view.input.addEventListener('input', (event) => handleInput(event, view));
+            view.input.addEventListener('keydown', (event) => handleKeydown(event, view));
+            view.input.addEventListener('blur', () => handleBlur(view));
+            view.suggestions?.querySelectorAll('.tag-suggestion').forEach(button => {
+                button.addEventListener('click', () => {
+                    addTag(button.dataset.tag || '');
+                    view.suggestions?.classList.add('hidden');
+                });
+            });
+        };
+
+        splitTags(hiddenInput.value).forEach(addTag);
+        views.forEach(bindView);
+        refreshSuggestions();
+    }
 
     function initYarnSelector() {
         const searchInput = document.getElementById('yarn_search');

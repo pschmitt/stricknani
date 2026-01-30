@@ -435,6 +435,19 @@ async def _get_user_yarns(db: AsyncSession, user_id: int) -> Sequence[Yarn]:
     return yarns
 
 
+async def _get_user_tags(db: AsyncSession, user_id: int) -> list[str]:
+    """Return a sorted list of unique tags for a user."""
+
+    result = await db.execute(select(Project.tags).where(Project.owner_id == user_id))
+    tag_map: dict[str, str] = {}
+    for (raw_tags,) in result:
+        for tag in _deserialize_tags(raw_tags):
+            key = tag.casefold()
+            if key not in tag_map:
+                tag_map[key] = tag
+    return sorted(tag_map.values(), key=str.casefold)
+
+
 async def _load_owned_yarns(
     db: AsyncSession, user_id: int, yarn_ids: list[int]
 ) -> Sequence[Yarn]:
@@ -654,6 +667,7 @@ async def new_project_form(
 
     categories = await _get_user_categories(db, current_user.id)
     yarn_options = await _get_user_yarns(db, current_user.id)
+    tag_suggestions = await _get_user_tags(db, current_user.id)
 
     # Check if OpenAI API key is available for AI import
     has_openai_key = bool(os.getenv("OPENAI_API_KEY"))
@@ -666,6 +680,7 @@ async def new_project_form(
             "project": None,
             "categories": categories,
             "yarns": yarn_options,
+            "tag_suggestions": tag_suggestions,
             "has_openai_key": has_openai_key,
         },
     )
@@ -1403,6 +1418,7 @@ async def edit_project_form(
 
     categories = await _get_user_categories(db, current_user.id)
     yarn_options = await _get_user_yarns(db, current_user.id)
+    tag_suggestions = await _get_user_tags(db, current_user.id)
 
     return render_template(
         "projects/form.html",
@@ -1412,6 +1428,7 @@ async def edit_project_form(
             "project": project_data,
             "categories": categories,
             "yarns": yarn_options,
+            "tag_suggestions": tag_suggestions,
         },
     )
 

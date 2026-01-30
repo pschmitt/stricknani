@@ -110,14 +110,6 @@
                         </div>
                         {% endif %}
 
-                        <div class="flex items-center justify-between py-1">
-                            <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Created') }}</span>
-                            <span class="text-xs font-medium text-base-content/70 flex items-center gap-1">
-                                <span class="mdi mdi-calendar-plus"></span>
-                                {{ project.created_at[:10] }}
-                            </span>
-                        </div>
-
                         {% if project.tags %}
                         <div class="py-1">
                             <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Tags') }}</span>
@@ -128,6 +120,14 @@
                             </div>
                         </div>
                         {% endif %}
+
+                        <div class="flex items-center justify-between py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Created') }}</span>
+                            <span class="text-xs font-medium text-base-content/70 flex items-center gap-1">
+                                <span class="mdi mdi-calendar-plus"></span>
+                                {{ project.created_at[:10] }}
+                            </span>
+                        </div>
 
                         <div class="divider my-2"></div>
 
@@ -325,14 +325,6 @@
                     </div>
                     {% endif %}
 
-                    <div class="flex items-center justify-between py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Created') }}</span>
-                        <span class="text-xs font-medium text-base-content/70 flex items-center gap-1">
-                            <span class="mdi mdi-calendar-plus"></span>
-                            {{ project.created_at[:10] }}
-                        </span>
-                    </div>
-
                     {% if project.tags %}
                     <div class="py-1">
                         <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Tags') }}</span>
@@ -343,6 +335,14 @@
                         </div>
                     </div>
                     {% endif %}
+
+                    <div class="flex items-center justify-between py-1">
+                        <span class="text-xs font-bold uppercase text-base-content/50">{{ _('Created') }}</span>
+                        <span class="text-xs font-medium text-base-content/70 flex items-center gap-1">
+                            <span class="mdi mdi-calendar-plus"></span>
+                            {{ project.created_at[:10] }}
+                        </span>
+                    </div>
 
                     <div class="divider my-2"></div>
 
