@@ -71,18 +71,45 @@
                 </div>
                 <div class="p-2 bg-base-200/50">
                     {% if photos %}
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {% for photo in photos %}
-                        <div class="relative group aspect-[4/3] rounded-xl overflow-hidden bg-base-100 shadow-sm border border-base-200">
-                            <img
-                                src="{{ photo.thumbnail_url }}"
-                                alt="{{ photo.alt_text or yarn.name }}"
-                                class="h-full w-full object-contain p-1 cursor-zoom-in transition duration-300 group-hover:scale-105"
-                                data-lightbox-group="yarn-{{ yarn.id }}"
-                                data-lightbox-src="{{ photo.full_url }}"
-                                data-lightbox-alt="{{ photo.alt_text or yarn.name }}"
+                    {% set photo_count = photos|length %}
+                    {% set photo_preview = photos[:3] %}
+                    <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
+                        {% for photo in photo_preview %}
+                        <div class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200">
+                            <a
+                                href="{{ photo.full_url }}"
+                                class="block h-full w-full"
+                                data-pswp-width="{{ photo.width or 1200 }}"
+                                data-pswp-height="{{ photo.height or 1200 }}"
+                                data-pswp-caption="{{ photo.alt_text or yarn.name }}"
                             >
+                                <img
+                                    src="{{ photo.thumbnail_url }}"
+                                    alt="{{ photo.alt_text or yarn.name }}"
+                                    class="h-full w-full object-cover cursor-zoom-in transition duration-300 hover:scale-105"
+                                    loading="lazy"
+                                >
+                            </a>
+                            {% if loop.last and photo_count > 3 %}
+                            <button
+                                type="button"
+                                class="absolute inset-0 z-10 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold"
+                                data-pswp-open-index="3"
+                                aria-label="{{ _('Open gallery') }}"
+                            >
+                                +{{ photo_count - 3 }}
+                            </button>
+                            {% endif %}
                         </div>
+                        {% endfor %}
+                        {% for photo in photos[3:] %}
+                        <a
+                            href="{{ photo.full_url }}"
+                            class="hidden"
+                            data-pswp-width="{{ photo.width or 1200 }}"
+                            data-pswp-height="{{ photo.height or 1200 }}"
+                            data-pswp-caption="{{ photo.alt_text or yarn.name }}"
+                        ></a>
                         {% endfor %}
                     </div>
                     {% else %}

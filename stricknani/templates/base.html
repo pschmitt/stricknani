@@ -8,6 +8,7 @@
     <link rel="icon" type="image/svg+xml" href="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.css">
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
     <script>
         // Theme initialization - MUST run before page renders
@@ -508,57 +509,6 @@
         aria-atomic="true"
     ></div>
 
-    <dialog
-        id="imageLightbox"
-        class="fixed inset-0 z-[9999] h-screen w-screen max-w-none max-h-none m-0 p-0 border-0 bg-slate-950 text-white backdrop:bg-transparent"
-        aria-label="{{ _('Image viewer') }}"
-    >
-        <div class="flex h-full w-full">
-            <div class="relative flex flex-1 flex-col items-center justify-center p-4">
-                <button
-                    type="button"
-                    class="absolute right-16 top-4 rounded-full bg-white/10 p-3 text-white transition-all duration-300 hover:bg-white/20 z-10"
-                    data-lightbox-zoom
-                    aria-label="{{ _('Toggle zoom') }}"
-                >
-                    <span class="mdi mdi-magnify-plus text-xl"></span>
-                </button>
-                <button
-                    type="button"
-                    class="absolute right-4 top-4 rounded-full bg-white/10 p-3 text-white transition-all duration-300 hover:bg-white/20 z-10"
-                    data-lightbox-close
-                    aria-label="{{ _('Close image viewer') }}"
-                >
-                    <span class="mdi mdi-close text-xl"></span>
-                </button>
-                <button
-                    type="button"
-                    class="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-4 text-white transition-all duration-300 hover:bg-white/20 z-10 hidden sm:flex"
-                    data-lightbox-prev
-                    aria-label="{{ _('Previous image') }}"
-                >
-                    <span class="mdi mdi-chevron-left text-3xl"></span>
-                </button>
-                <div class="flex max-h-full w-full max-w-4xl flex-col items-center justify-center overflow-hidden" data-zoom-container>
-                    <img src="" alt="" class="max-h-[75vh] max-w-full rounded-lg object-contain shadow-lg transition-transform duration-200 origin-center cursor-zoom-in" data-lightbox-image>
-                    <p class="mt-4 text-center text-sm text-white/80 transition-opacity duration-300" data-lightbox-caption></p>
-                </div>
-                <button
-                    type="button"
-                    class="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-4 text-white transition-all duration-300 hover:bg-white/20 z-10 hidden sm:flex"
-                    data-lightbox-next
-                    aria-label="{{ _('Next image') }}"
-                >
-                    <span class="mdi mdi-chevron-right text-3xl"></span>
-                </button>
-            </div>
-            <div class="hidden w-80 flex-col border-l border-slate-800 bg-slate-900/50 p-4 lg:flex overflow-y-auto">
-                <h3 class="mb-4 text-sm font-medium text-slate-400">{{ _('Gallery') }}</h3>
-                <div class="grid grid-cols-2 gap-2" data-lightbox-thumbnails></div>
-            </div>
-        </div>
-    </dialog>
-
     <dialog id="confirmationDialog" class="modal modal-bottom sm:modal-middle">
         <div class="modal-box">
             <h3 class="font-bold text-lg" id="confirmationTitle">{{ _('Confirm Action') }}</h3>
@@ -704,294 +654,6 @@
             return defaultMessage;
         };
 
-        const initLightbox = () => {
-            const lightbox = document.getElementById("imageLightbox");
-            if (!lightbox) {
-                return;
-            }
-
-            const image = lightbox.querySelector("[data-lightbox-image]");
-            const caption = lightbox.querySelector("[data-lightbox-caption]");
-            const closeButton = lightbox.querySelector("[data-lightbox-close]");
-            const zoomButton = lightbox.querySelector("[data-lightbox-zoom]");
-            const prevButton = lightbox.querySelector("[data-lightbox-prev]");
-            const nextButton = lightbox.querySelector("[data-lightbox-next]");
-            const thumbnailsContainer = lightbox.querySelector("[data-lightbox-thumbnails]");
-            const zoomContainer = lightbox.querySelector("[data-zoom-container]");
-
-            let currentIndex = 0;
-            let currentItems = [];
-            let touchStartX = null;
-            let isZoomed = false;
-
-            const updateNavigationState = () => {
-                const hasMultiple = currentItems.length > 1;
-                if (hasMultiple) {
-                    prevButton.classList.remove("opacity-50", "pointer-events-none");
-                    nextButton.classList.remove("opacity-50", "pointer-events-none");
-                } else {
-                    prevButton.classList.add("opacity-50", "pointer-events-none");
-                    nextButton.classList.add("opacity-50", "pointer-events-none");
-                }
-            };
-
-            const toggleZoom = () => {
-                isZoomed = !isZoomed;
-                if (isZoomed) {
-                    image.style.transform = "scale(2.5)";
-                    image.classList.remove("cursor-zoom-in");
-                    image.classList.add("cursor-zoom-out");
-                    if (zoomButton) {
-                        zoomButton.querySelector("span").classList.replace("mdi-magnify-plus", "mdi-magnify-minus");
-                        zoomButton.classList.add("bg-white/30");
-                    }
-                    if (zoomContainer) zoomContainer.style.overflow = "auto";
-                } else {
-                    image.style.transform = "";
-                    image.classList.remove("cursor-zoom-out");
-                    image.classList.add("cursor-zoom-in");
-                    if (zoomButton) {
-                        zoomButton.querySelector("span").classList.replace("mdi-magnify-minus", "mdi-magnify-plus");
-                        zoomButton.classList.remove("bg-white/30");
-                    }
-                    if (zoomContainer) {
-                        zoomContainer.style.overflow = "hidden";
-                        zoomContainer.scrollTop = 0;
-                        zoomContainer.scrollLeft = 0;
-                    }
-                }
-            };
-
-            const renderThumbnails = () => {
-                if (!thumbnailsContainer) {
-                    return;
-                }
-                thumbnailsContainer.innerHTML = "";
-                currentItems.forEach((item, index) => {
-                    const button = document.createElement("button");
-                    button.type = "button";
-                    button.className = `relative aspect-square w-full overflow-hidden rounded-lg border-2 transition ${
-                        index === currentIndex
-                            ? "border-blue-500 ring-2 ring-blue-500/20"
-                            : "border-transparent hover:border-slate-600"
-                    }`;
-                    button.onclick = () => {
-                        currentIndex = index;
-                        render();
-                    };
-
-                    const img = document.createElement("img");
-                    img.src = item.src;
-                    img.alt = item.alt;
-                    img.className = "h-full w-full object-cover";
-
-                    button.appendChild(img);
-                    thumbnailsContainer.appendChild(button);
-                });
-            };
-
-            const render = () => {
-                const active = currentItems[currentIndex];
-                if (!active) {
-                    return;
-                }
-                // Reset zoom on slide change
-                if (isZoomed) toggleZoom();
-
-                image.src = active.src;
-                image.alt = active.alt;
-                caption.textContent = active.alt || "";
-                updateNavigationState();
-                renderThumbnails();
-            };
-
-            const close = () => {
-                lightbox.close();
-                document.body.classList.remove("overflow-hidden");
-                document.removeEventListener("keydown", handleKeydown);
-            };
-
-            const show = (group, trigger) => {
-                const allElements = Array.from(
-                    document.querySelectorAll(`[data-lightbox-group="${group}"]`),
-                );
-
-                const uniqueItems = [];
-                const seenSrcs = new Set();
-
-                allElements.forEach((el) => {
-                    const src = el.getAttribute("data-lightbox-src") || el.currentSrc || el.src;
-                    if (!seenSrcs.has(src)) {
-                        seenSrcs.add(src);
-                        uniqueItems.push({
-                            src: src,
-                            alt: el.getAttribute("data-lightbox-alt") || el.alt || "",
-                            element: el,
-                            group,
-                        });
-                    }
-                });
-
-                currentItems = uniqueItems;
-
-                if (!currentItems.length) {
-                    return;
-                }
-
-                const triggerSrc = trigger.getAttribute("data-lightbox-src") || trigger.currentSrc || trigger.src;
-                let index = currentItems.findIndex((item) => item.src === triggerSrc);
-                if (index === -1) {
-                    index = 0;
-                }
-                currentIndex = index;
-
-                lightbox.showModal();
-                // Ensure flex display for content layout
-                lightbox.style.display = "flex";
-                document.body.classList.add("overflow-hidden");
-                render();
-                document.addEventListener("keydown", handleKeydown);
-            };
-
-            const showNext = () => {
-                if (!currentItems.length) {
-                    return;
-                }
-                currentIndex = (currentIndex + 1) % currentItems.length;
-                render();
-            };
-
-            const showPrev = () => {
-                if (!currentItems.length) {
-                    return;
-                }
-                currentIndex = (currentIndex - 1 + currentItems.length) % currentItems.length;
-                render();
-            };
-
-            const handleKeydown = (event) => {
-                if (!lightbox.open) {
-                    return;
-                }
-                if (event.key === "Escape") {
-                    event.preventDefault(); // Prevent default escape behavior to handle cleanup
-                    close();
-                } else if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-                    showNext();
-                } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-                    showPrev();
-                }
-            };
-
-            document.addEventListener("click", (event) => {
-                const trigger = event.target.closest("[data-lightbox-group]");
-                if (!trigger) {
-                    return;
-                }
-                event.preventDefault();
-                const group = trigger.getAttribute("data-lightbox-group");
-                show(group, trigger);
-            });
-
-            lightbox.addEventListener("click", (event) => {
-                if (event.target === lightbox) {
-                    close();
-                }
-            });
-
-            // Handle native close event (e.g. via Escape if not prevented)
-            lightbox.addEventListener("close", () => {
-                document.body.classList.remove("overflow-hidden");
-                document.removeEventListener("keydown", handleKeydown);
-                lightbox.style.display = ""; // Reset display style
-            });
-
-            closeButton.addEventListener("click", () => close());
-            if (zoomButton) zoomButton.addEventListener("click", () => toggleZoom());
-            // Mobile-friendly tap handler
-            let lastTap = 0;
-            let tapTimeout;
-
-            const toggleControls = () => {
-                const controls = [closeButton, zoomButton, caption];
-                const navControls = [prevButton, nextButton];
-
-                if (!closeButton) return;
-
-                // Check if currently hidden (check closeButton as proxy)
-                const isHidden = closeButton.classList.contains("opacity-0");
-
-                if (isHidden) {
-                    // Show
-                    controls.forEach(el => {
-                        if (el) el.classList.remove("opacity-0", "pointer-events-none");
-                    });
-                    navControls.forEach(el => {
-                         if (el) el.classList.remove("opacity-0");
-                    });
-                    // Re-apply correct state for nav buttons
-                    updateNavigationState();
-                } else {
-                    // Hide
-                    [...controls, ...navControls].forEach(el => {
-                        if (el) el.classList.add("opacity-0", "pointer-events-none");
-                    });
-                }
-            };
-
-            image.addEventListener("click", (e) => {
-                e.stopPropagation();
-                const now = Date.now();
-                const timeDiff = now - lastTap;
-
-                if (timeDiff < 300 && timeDiff > 0) {
-                    // Double tap
-                    if (tapTimeout) clearTimeout(tapTimeout);
-                    toggleZoom();
-                } else {
-                    // Single tap
-                    tapTimeout = setTimeout(() => {
-                        toggleControls();
-                    }, 300);
-                }
-                lastTap = now;
-            });
-
-            nextButton.addEventListener("click", () => showNext());
-            prevButton.addEventListener("click", () => showPrev());
-
-            lightbox.addEventListener("pointerdown", (event) => {
-                if (event.pointerType === "touch" || event.pointerType === "pen") {
-                    touchStartX = event.clientX;
-                }
-            });
-
-            lightbox.addEventListener("pointerup", (event) => {
-                if (touchStartX === null || isZoomed) {
-                    return;
-                }
-                const deltaX = event.clientX - touchStartX;
-                if (Math.abs(deltaX) > 50) {
-                    if (deltaX < 0) {
-                        showNext();
-                    } else {
-                        showPrev();
-                    }
-                }
-                touchStartX = null;
-            });
-
-            lightbox.addEventListener("pointercancel", () => {
-                touchStartX = null;
-            });
-
-            window.addEventListener("resize", () => {
-                if (!lightbox.classList.contains("hidden")) {
-                    render();
-                }
-            });
-        };
-
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
             const toastKey = urlParams.get('toast');
@@ -1056,8 +718,6 @@
                     panel.classList.add('hidden');
                 }
             }
-
-            initLightbox();
 
             // Mobile menu logic handled by DaisyUI drawer (CSS only)
         });
@@ -1192,6 +852,69 @@
 
         window.openDialog = openDialog;
         window.closeDialog = closeDialog;
+    </script>
+    <script type="module">
+        import PhotoSwipeLightbox from 'https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.min.js';
+
+        const lightboxes = window.pswpLightboxes || new Map();
+        window.pswpLightboxes = lightboxes;
+
+        const initGallery = (gallery) => {
+            if (!gallery) {
+                return null;
+            }
+            const existing = lightboxes.get(gallery);
+            if (existing) {
+                return existing;
+            }
+            const lightbox = new PhotoSwipeLightbox({
+                gallery,
+                children: 'a[data-pswp-width]',
+                pswpModule: () => import('https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.esm.min.js'),
+            });
+            lightbox.init();
+            lightboxes.set(gallery, lightbox);
+            return lightbox;
+        };
+
+        window.initPhotoSwipeGallery = initGallery;
+        window.refreshPhotoSwipeGallery = (gallery) => {
+            const instance = initGallery(gallery);
+            if (instance) {
+                instance.refresh();
+            }
+            return instance;
+        };
+
+        const initAll = () => {
+            document.querySelectorAll('[data-pswp-gallery]').forEach((gallery) => {
+                initGallery(gallery);
+            });
+        };
+
+        document.addEventListener('click', (event) => {
+            const trigger = event.target.closest('[data-pswp-open-index]');
+            if (!trigger) {
+                return;
+            }
+            const gallery = trigger.closest('[data-pswp-gallery]');
+            if (!gallery) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            const raw = trigger.getAttribute('data-pswp-open-index') || '0';
+            const index = Number.parseInt(raw, 10);
+            const targetIndex = Number.isNaN(index) ? 0 : index;
+            const lightbox = window.refreshPhotoSwipeGallery(gallery);
+            if (lightbox) {
+                lightbox.loadAndOpen(targetIndex, gallery);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initAll();
+        });
     </script>
 </body>
 </html>

@@ -17,6 +17,10 @@ Use this file as the single source of truth for how to work in the Stricknani re
 - Tests: `uv run pytest -v`
 - Trim trailing whitespace in all edited files.
 
+### UI Consistency (Projects & Yarns)
+- The projects and yarn pages should maintain a consistent UI/UX and visual theme.
+- Layout or styling changes applied to project views should also be applied to the corresponding yarn views (and vice versa).
+
 ### Release/CI Parity
 - `just check` runs `lint`, `test`, and `i18n-check`.
 - When touching build/deploy or release paths, also run:

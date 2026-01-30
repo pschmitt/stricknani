@@ -2533,3 +2533,6 @@ msgstr "Archivierter Snapshot"
 
 msgid "Archive requested - check back soon"
 msgstr "Archivierung angefragt - bitte später prüfen"
+
+msgid "Open gallery"
+msgstr "Galerie öffnen"

@@ -12,6 +12,7 @@ from typing import Annotated, Any
 from urllib.parse import quote, urlparse
 
 import httpx
+from PIL import Image as PilImage
 from fastapi import (
     APIRouter,
     Depends,
@@ -171,6 +172,22 @@ def _resolve_yarn_preview(yarn: Yarn) -> dict[str, str | None]:
         ),
         "preview_alt": first.alt_text or yarn.name,
     }
+
+
+def _get_image_dimensions(
+    filename: str,
+    entity_id: int,
+    subdir: str = "projects",
+) -> tuple[int | None, int | None]:
+    image_path = config.MEDIA_ROOT / subdir / str(entity_id) / filename
+    if not image_path.exists():
+        return None, None
+    try:
+        with PilImage.open(image_path) as img:
+            width, height = img.size
+            return int(width), int(height)
+    except (OSError, ValueError):
+        return None, None
 
 
 def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
@@ -1408,32 +1425,41 @@ async def get_project(
         )
 
     # Prepare project-level images (exclude step images)
-    title_images = [
-        {
-            "id": img.id,
-            "url": get_file_url(img.filename, project.id),
-            "thumbnail_url": get_thumbnail_url(img.filename, project.id),
-            "alt_text": img.alt_text,
-            "is_title_image": img.is_title_image,
-        }
-        for img in project.images
-        if img.step_id is None
-    ]
-    title_images.sort(key=lambda item: (not item["is_title_image"], item["id"]))
-
-    # Prepare steps with images
-    base_steps: list[dict[str, object]] = []
-    for step in sorted(project.steps, key=lambda s: s.step_number):
-        step_images = [
+    title_images = []
+    for img in project.images:
+        if img.step_id is not None:
+            continue
+        width, height = _get_image_dimensions(img.filename, project.id)
+        title_images.append(
             {
                 "id": img.id,
                 "url": get_file_url(img.filename, project.id),
                 "thumbnail_url": get_thumbnail_url(img.filename, project.id),
                 "alt_text": img.alt_text,
-                "step_info": f"Step {step.step_number}: {step.title}",
+                "is_title_image": img.is_title_image,
+                "width": width,
+                "height": height,
             }
-            for img in step.images
-        ]
+        )
+    title_images.sort(key=lambda item: (not item["is_title_image"], item["id"]))
+
+    # Prepare steps with images
+    base_steps: list[dict[str, object]] = []
+    for step in sorted(project.steps, key=lambda s: s.step_number):
+        step_images = []
+        for img in step.images:
+            width, height = _get_image_dimensions(img.filename, project.id)
+            step_images.append(
+                {
+                    "id": img.id,
+                    "url": get_file_url(img.filename, project.id),
+                    "thumbnail_url": get_thumbnail_url(img.filename, project.id),
+                    "alt_text": img.alt_text,
+                    "step_info": f"Step {step.step_number}: {step.title}",
+                    "width": width,
+                    "height": height,
+                }
+            )
         base_steps.append(
             {
                 "id": step.id,
@@ -1540,31 +1566,40 @@ async def edit_project_form(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    title_images = [
-        {
-            "id": img.id,
-            "url": get_file_url(img.filename, project.id),
-            "thumbnail_url": get_thumbnail_url(img.filename, project.id),
-            "alt_text": img.alt_text,
-            "is_title_image": img.is_title_image,
-        }
-        for img in project.images
-        if img.step_id is None
-    ]
-    title_images.sort(key=lambda item: (not item["is_title_image"], item["id"]))
-
-    steps_data = []
-    for step in sorted(project.steps, key=lambda s: s.step_number):
-        step_images = [
+    title_images = []
+    for img in project.images:
+        if img.step_id is not None:
+            continue
+        width, height = _get_image_dimensions(img.filename, project.id)
+        title_images.append(
             {
                 "id": img.id,
                 "url": get_file_url(img.filename, project.id),
                 "thumbnail_url": get_thumbnail_url(img.filename, project.id),
                 "alt_text": img.alt_text,
-                "step_info": f"Step {step.step_number}: {step.title}",
+                "is_title_image": img.is_title_image,
+                "width": width,
+                "height": height,
             }
-            for img in step.images
-        ]
+        )
+    title_images.sort(key=lambda item: (not item["is_title_image"], item["id"]))
+
+    steps_data = []
+    for step in sorted(project.steps, key=lambda s: s.step_number):
+        step_images = []
+        for img in step.images:
+            width, height = _get_image_dimensions(img.filename, project.id)
+            step_images.append(
+                {
+                    "id": img.id,
+                    "url": get_file_url(img.filename, project.id),
+                    "thumbnail_url": get_thumbnail_url(img.filename, project.id),
+                    "alt_text": img.alt_text,
+                    "step_info": f"Step {step.step_number}: {step.title}",
+                    "width": width,
+                    "height": height,
+                }
+            )
         steps_data.append(
             {
                 "id": step.id,

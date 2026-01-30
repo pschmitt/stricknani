@@ -734,3 +734,6 @@ msgstr "Archived snapshot"
 
 msgid "Archive requested - check back soon"
 msgstr "Archive requested - check back soon"
+
+msgid "Open gallery"
+msgstr "Open gallery"

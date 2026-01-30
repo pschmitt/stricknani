@@ -2,6 +2,7 @@
 
 from collections.abc import Iterable
 from pathlib import Path
+from PIL import Image as PilImage
 from typing import Annotated
 
 from fastapi import (
@@ -111,11 +112,24 @@ def _resolve_project_preview(project: Project) -> dict[str, str | None]:
     return {"preview_url": url, "preview_alt": image.alt_text or project.name}
 
 
+def _get_photo_dimensions(yarn_id: int, filename: str) -> tuple[int | None, int | None]:
+    image_path = config.MEDIA_ROOT / "yarns" / str(yarn_id) / filename
+    if not image_path.exists():
+        return None, None
+    try:
+        with PilImage.open(image_path) as img:
+            width, height = img.size
+            return int(width), int(height)
+    except (OSError, ValueError):
+        return None, None
+
+
 def _serialize_photos(yarn: Yarn) -> list[dict[str, object]]:
     """Prepare photo metadata for templates."""
 
     payload: list[dict[str, object]] = []
     for photo in yarn.photos:
+        width, height = _get_photo_dimensions(yarn.id, photo.filename)
         payload.append(
             {
                 "id": photo.id,
@@ -130,6 +144,8 @@ def _serialize_photos(yarn: Yarn) -> list[dict[str, object]]:
                     subdir="yarns",
                 ),
                 "alt_text": photo.alt_text,
+                "width": width,
+                "height": height,
             }
         )
     return payload
