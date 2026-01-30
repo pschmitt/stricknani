@@ -131,7 +131,7 @@
                     <span class="mdi mdi-text-box-outline"></span>
                     {{ _('Description') }}
                 </h3>
-                <div class="prose prose-sm max-w-none text-base-content/90">
+                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
                     {% if description_html %}
                         {{ description_html | safe }}
                     {% else %}
@@ -148,7 +148,7 @@
                     <span class="mdi mdi-notebook-outline"></span>
                     {{ _('Notes') }}
                 </h3>
-                <div class="prose prose-sm max-w-none text-base-content/90">
+                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
                     {% if notes_html %}
                         {{ notes_html | safe }}
                     {% else %}

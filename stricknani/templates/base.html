@@ -133,6 +133,28 @@
             color: color-mix(in srgb, currentColor 85%, #1d4ed8);
             text-decoration: underline;
         }
+        .prose-compact {
+            font-size: 0.95rem;
+        }
+        .prose-compact > * + * {
+            margin-top: 0.6rem;
+        }
+        .prose-compact h1,
+        .prose-compact h2,
+        .prose-compact h3,
+        .prose-compact h4,
+        .prose-compact h5,
+        .prose-compact h6 {
+            margin-top: 1rem;
+        }
+        .prose-compact ul,
+        .prose-compact ol {
+            margin-top: 0.4rem;
+            margin-bottom: 0.4rem;
+        }
+        .prose-compact pre {
+            padding: 0.6rem 0.8rem;
+        }
         .pswp__thumbs {
             position: absolute;
             left: 0;

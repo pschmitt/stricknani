@@ -276,7 +276,7 @@
                         <span class="mdi mdi-notebook-outline"></span>
                         {{ _('Notes') }}
                     </h3>
-                    <div class="prose prose-sm max-w-none text-base-content/90">
+                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
                         {{ project.comment_html | safe }}
                     </div>
                 </div>
@@ -312,7 +312,7 @@
                             </div>
 
                             {% if step.description_html %}
-                            <div class="prose prose-sm max-w-none text-base-content/80 mb-4">
+                            <div class="prose prose-sm prose-compact max-w-none text-base-content/80 mb-4">
                                 {{ step.description_html | safe }}
                             </div>
                             {% endif %}
@@ -507,7 +507,7 @@
                     <span class="mdi mdi-notebook-outline"></span>
                     {{ _('Notes') }}
                 </h3>
-                <div class="prose prose-sm max-w-none text-base-content/90">
+                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
                     {{ project.comment_html | safe }}
                 </div>
             </div>
