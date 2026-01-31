@@ -1127,6 +1127,14 @@ msgstr ""
 msgid "Uploading…"
 msgstr ""
 
+#: stricknani/templates/projects/form.html:1139
+msgid "Failed to initialize project"
+msgstr ""
+
+#: stricknani/templates/projects/form.html:1144
+msgid "Network error"
+msgstr ""
+
 #: stricknani/templates/projects/form.html:1144
 msgid "Remove Image"
 msgstr ""

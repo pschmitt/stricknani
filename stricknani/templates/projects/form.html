@@ -40,7 +40,7 @@ attrs='data-unsaved-confirm="true"') }}
 {% endblock %}
 
 {% block form_header_class %}
-md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-lg
+md:sticky md:top-0 md:z-50 bg-base-100 py-4 px-4 -mx-4 shadow-none
 {% endblock %}
 
 {% block form_actions %}
@@ -57,14 +57,14 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class=save_classes) }}
 
 {% if project %}
-<div class="dropdown dropdown-end dropdown-top fixed bottom-6 right-6 z-50 md:hidden">
-    <div tabindex="0" role="button"
-        class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10"
+<details class="dropdown dropdown-end dropdown-top fixed bottom-6 right-6 z-50 md:hidden">
+    <summary tabindex="0" role="button"
+        class="btn btn-circle btn-primary shadow-xl h-14 w-14 min-h-0 p-0 flex items-center justify-center list-none appearance-none"
         aria-label="{{ _('More actions') }}">
-        <span class="mdi mdi-dots-vertical text-2xl md:text-xl"></span>
-    </div>
+        <span class="mdi mdi-dots-vertical text-2xl"></span>
+    </summary>
     <ul tabindex="0"
-        class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2 md:mb-0">
+        class="dropdown-content z-[51] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2">
         <li class="md:hidden">
             <button type="submit" form="projectForm">
                 <span class="mdi mdi-content-save text-lg"></span>
@@ -84,7 +84,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             </button>
         </li>
     </ul>
-</div>
+</details>
 {% else %}
 <!-- Mobile FAB for New Project -->
 {{ buttons.fab('mdi-content-save', type='submit', attrs='form="projectForm"', class='md:hidden', label=_('Save')) }}
@@ -181,7 +181,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                         {% endfor %}
                                     </div>
                                 </div>
-                                <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a suggestion.') }}
+                                <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a
+                                    suggestion.') }}
                                 </p>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
@@ -224,21 +225,17 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     <span class="mdi mdi-image-multiple text-primary"></span>
                     {{ _('Gallery') }}
                 </h3>
-                <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery" data-pswp-gallery>
+                <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery"
+                    data-pswp-gallery>
                     {% if project %}
                     {% for image in project.title_images %}
                     <div class="relative" data-image-id="{{ image.id }}">
-                        <a
-                            href="{{ image.url }}"
-                            data-pswp-width="{{ image.width or 1200 }}"
-                            data-pswp-height="{{ image.height or 1200 }}"
-                            data-pswp-caption="{{ image.alt_text }}"
-                            class="block"
-                        >
+                        <a href="{{ image.url }}" data-pswp-width="{{ image.width or 1200 }}"
+                            data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}"
+                            class="block">
                             <img src="{{ image.thumbnail_url }}" alt="{{ image.alt_text }}"
                                 class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
-                                draggable="true"
-                                ondragstart="handleImageDragStart(event)">
+                                draggable="true" ondragstart="handleImageDragStart(event)">
                         </a>
                         <button type="button" onclick="deleteImage({{ image.id }})"
                             class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
@@ -249,18 +246,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     {% endif %}
                 </div>
 
-                <div id="titleImageUploadContainer" class="{% if not project %}hidden{% endif %}">
+                <div id="titleImageUploadContainer">
                     {{ image_upload.upload_dropzone(
                     input_id='titleImageInput',
                     container_id='titleImageDropZone'
                     ) }}
                 </div>
-                {% if not project %}
-                <div class="alert alert-info text-sm">
-                    <span class="mdi mdi-information"></span>
-                    {{ _('Save the project to enable image uploads.') }}
-                </div>
-                {% endif %}
             </div>
 
             <!-- Steps Card -->
@@ -290,13 +281,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                     <span class="mdi mdi-arrow-down"></span>
                                     <span class="hidden sm:inline">{{ _('Move Down') }}</span>
                                 </button>
-                                {% if project %}
                                 <button type="button" onclick="saveStep(this)" class="btn btn-xs btn-primary gap-1"
                                     title="{{ _('Save') }}">
                                     <span class="mdi mdi-content-save"></span>
                                     <span class="hidden sm:inline">{{ _('Save') }}</span>
                                 </button>
-                                {% endif %}
                                 <button type="button" onclick="removeStep(this)"
                                     class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
                                     <span class="mdi mdi-delete"></span>
@@ -314,17 +303,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         <div class="step-images grid grid-cols-3 gap-2 mb-2 pswp-gallery" data-pswp-gallery>
                             {% for image in step.images %}
                             <div class="relative" data-image-id="{{ image.id }}">
-                                <a
-                                    href="{{ image.url }}"
-                                    data-pswp-width="{{ image.width or 1200 }}"
+                                <a href="{{ image.url }}" data-pswp-width="{{ image.width or 1200 }}"
                                     data-pswp-height="{{ image.height or 1200 }}"
-                                    data-pswp-caption="{{ image.alt_text }}"
-                                    class="block"
-                                >
+                                    data-pswp-caption="{{ image.alt_text }}" class="block">
                                     <img src="{{ image.thumbnail_url }}" alt="{{ image.alt_text }}"
                                         class="w-full h-20 cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
-                                        draggable="true"
-                                        ondragstart="handleImageDragStart(event)">
+                                        draggable="true" ondragstart="handleImageDragStart(event)">
                                 </a>
                                 <button type="button" onclick="deleteImage({{ image.id }})"
                                     class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
@@ -385,9 +369,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         </label>
                         <div id="tags_chips" class="flex flex-wrap gap-2 mt-2"></div>
                         <div class="relative mt-2">
-                            <input type="text" id="tags_input"
-                                class="input input-bordered input-sm w-full" autocomplete="off"
-                                placeholder="{{ _('Add a tag...') }}">
+                            <input type="text" id="tags_input" class="input input-bordered input-sm w-full"
+                                autocomplete="off" placeholder="{{ _('Add a tag...') }}">
                             <div id="tags_suggestions"
                                 class="hidden absolute z-30 w-full mt-1 max-h-48 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
                                 {% for tag in tag_suggestions %}
@@ -668,11 +651,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             autoResize(el);
             el.addEventListener('input', () => autoResize(el));
 
-            {% if project %}
-            if (typeof projectId !== 'undefined' && projectId) {
-                setupTextareaDrop(el);
-            }
-            {% endif %}
+            setupTextareaDrop(el);
         });
 
         initYarnSelector();
@@ -992,15 +971,19 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 if (imageFiles.length === 0) return;
 
                 const stepItem = textarea.closest('.step-item');
-                const stepId = stepItem ? stepItem.getAttribute('data-step-id') : null;
+                let sid = stepItem ? stepItem.getAttribute('data-step-id') : null;
 
-                if (stepItem && !stepId) {
-                    window.showToast?.('{{ _("Save the project to create this step before uploading images") }}', 'info');
-                    return;
+                if (stepItem && !sid) {
+                    sid = await ensureStepId(stepItem);
+                    if (!sid) return;
+                }
+
+                if (!sid && !projectId) {
+                    if (!(await ensureProjectId())) return;
                 }
 
                 for (const file of imageFiles) {
-                    await uploadAndInsertImage(file, textarea, stepId);
+                    await uploadAndInsertImage(file, textarea, sid);
                 }
                 return;
             }
@@ -1023,6 +1006,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     }
 
     async function uploadAndInsertImage(file, textarea, stepId) {
+        if (!stepId && !(await ensureProjectId())) return;
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('alt_text', file.name);
@@ -1043,6 +1028,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 const markdown = `![${data.alt_text}](${data.url})`;
                 insertAtCursor(textarea, markdown);
                 window.showToast?.('{{ _("Image uploaded!") }}', 'success');
+                window.unsavedChanges?.setDirty(true);
 
                 if (stepId) {
                     const stepItem = document.querySelector(`.step-item[data-step-id="${stepId}"]`);
@@ -1074,7 +1060,92 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 </script>
 
 <script>
-    const projectId = {{ (project.id if project else none) | tojson }};
+    let projectId = {{ (project.id if project else none) | tojson }};
+    let wasSilentlyCreated = false;
+
+    // Initialize discard hook
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.unsavedChanges) {
+            window.unsavedChanges.onBeforeDiscard = async () => {
+                if (wasSilentlyCreated && projectId) {
+                    console.log('Discarding silent project:', projectId);
+                    try {
+                        const response = await fetch(`/projects/${projectId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'HX-Request': 'true' // Trigger HTMX-like response if needed, although we are navigating away
+                            }
+                        });
+                        if (!response.ok) {
+                            console.error('Failed to delete silent project');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting silent project:', error);
+                    }
+                }
+            };
+        }
+    });
+
+    /**
+     * Ensures the project exists before performing actions that require a projectId.
+     * If project doesn't exist, it performs a minimal save to get an ID.
+     */
+    async function ensureProjectId() {
+        if (projectId) return true;
+
+        const nameInput = document.getElementById('name');
+        if (nameInput && !nameInput.value.trim()) {
+            const now = new Date();
+            const dateStr = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0');
+            nameInput.value = `{{ _("New Project") }} ${dateStr}`;
+        }
+
+        const formData = new FormData(document.getElementById('projectForm'));
+
+        try {
+            const response = await fetch('/projects', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                projectId = data.id;
+                wasSilentlyCreated = true;
+                window.unsavedChanges?.setDirty(true);
+
+                // Update form action and other links
+                const form = document.getElementById('projectForm');
+                if (form) {
+                    form.action = `/projects/${projectId}`;
+                }
+
+                // Update back button link
+                const backBtn = document.querySelector('[data-unsaved-confirm]');
+                if (backBtn && backBtn.tagName.toLowerCase() === 'a') {
+                    backBtn.href = '/projects';
+                }
+
+                // Update browser URL without reloading
+                window.history.replaceState({}, '', `/projects/${projectId}/edit`);
+                return true;
+            } else {
+                window.showToast?.('{{ _("Failed to initialize project") }}', 'error');
+                return false;
+            }
+        } catch (error) {
+            console.error('Project initialization failed', error);
+            window.showToast?.('{{ _("Network error") }}', 'error');
+            return false;
+        }
+    }
+
     const uploadInstructionsText = '{{ _("Drag and drop images here or click to upload") }}';
     const stepUploadDisabledMessage = '{{ _("Save the project before adding images to this step") }}';
     const uploadErrorMessage = '{{ _("Image upload failed. Please try again") }}';
@@ -1252,6 +1323,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     setupImageUploadWidget(titleImageInput, titleImageDropZone, uploadTitleImage);
 
     async function uploadTitleImage(file) {
+        if (!(await ensureProjectId())) return false;
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('alt_text', file.name);
@@ -1276,6 +1349,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
         const data = await response.json();
         addTitleImageToGallery(data);
+        window.unsavedChanges?.setDirty(true);
         return true;
     }
 
@@ -1373,12 +1447,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             const instructions = dropzone?.querySelector('.upload-instructions');
             const stepId = stepItem.getAttribute('data-step-id');
 
-            if (!dropzone || !input) {
-                return;
-            }
-
-            if (!stepId) {
-                bindPendingStepDropzone(dropzone, input, instructions);
+            if (!dropzone || !input || dropzone.dataset.initialized === 'true') {
                 return;
             }
 
@@ -1389,18 +1458,28 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 'pointer-events-none',
             );
             dropzone.removeAttribute('aria-disabled');
-            dropzone.dataset.stepId = stepId;
             if (instructions) {
                 instructions.textContent = instructions.dataset.enabledText || uploadInstructionsText;
             }
 
             setupImageUploadWidget(input, dropzone, async (file) => {
-                const data = await uploadStepImage(stepId, file);
-                if (data) {
-                    addStepImagePreview(stepItem, data);
+                const sid = await ensureStepId(stepItem);
+                if (sid) {
+                    const data = await uploadStepImage(sid, file);
+                    if (data) {
+                        addStepImagePreview(stepItem, data);
+                    }
                 }
             });
         });
+    }
+
+    async function ensureStepId(stepItem) {
+        if (!(await ensureProjectId())) return null;
+        let stepId = stepItem.getAttribute('data-step-id');
+        if (stepId) return stepId;
+
+        return await saveStepInternal(stepItem);
     }
 
     async function uploadStepImage(stepId, file) {
@@ -1426,7 +1505,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             return null;
         }
 
-        return response.json();
+        const data = await response.json();
+        window.unsavedChanges?.setDirty(true);
+        return data;
     }
 
     function addStepImagePreview(stepItem, imageData) {
@@ -1471,11 +1552,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 <button type="button" onclick="moveStepDown(this)" class="inline-flex items-center gap-1 rounded bg-slate-200 px-2 py-1 text-sm text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" title="{{ _('Move Down') }}">
                     <span class="mdi mdi-arrow-down"></span><span class="hidden sm:inline">{{ _('Move Down') }}</span>
                 </button>
-                {% if project %}
                 <button type="button" onclick="saveStep(this)" class="inline-flex items-center gap-1 rounded bg-blue-600 px-2 py-1 text-sm text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500" title="{{ _('Save') }}">
                     <span class="mdi mdi-content-save"></span><span class="hidden sm:inline">{{ _('Save') }}</span>
                 </button>
-                {% endif %}
                 <button type="button" onclick="removeStep(this)" class="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 text-sm text-white hover:bg-red-700 dark:hover:bg-red-500" title="{{ _('Remove Step') }}">
                     <span class="mdi mdi-delete"></span><span class="hidden sm:inline">{{ _('Remove') }}</span>
                 </button>
@@ -1508,12 +1587,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             </label>
         </div>
     `;
-    container.appendChild(div);
-    initStepImageUploaders();
-    const newStepGallery = div.querySelector('.step-images');
-    if (newStepGallery) {
-        window.refreshPhotoSwipeGallery?.(newStepGallery);
-    }
+        container.appendChild(div);
+        initStepImageUploaders();
+        const newStepGallery = div.querySelector('.step-images');
+        if (newStepGallery) {
+            window.refreshPhotoSwipeGallery?.(newStepGallery);
+        }
 
         const newTextarea = div.querySelector('textarea');
         if (newTextarea) {
@@ -1556,14 +1635,25 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
     async function saveStep(button) {
         const stepItem = button.closest('.step-item');
+        button.disabled = true;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="mdi mdi-loading mdi-spin"></span> {{ _("Saving...") }}';
+
+        try {
+            await saveStepInternal(stepItem);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+
+    async function saveStepInternal(stepItem) {
         const stepId = stepItem.getAttribute('data-step-id');
         const title = stepItem.querySelector('.step-title').value;
         const description = stepItem.querySelector('.step-description').value;
         const stepNumber = parseInt(stepItem.getAttribute('data-step-number')) || 1;
 
-        button.disabled = true;
-        const originalText = button.innerHTML;
-        button.innerHTML = '<span class="mdi mdi-loading mdi-spin"></span> {{ _("Saving...") }}';
+        if (!(await ensureProjectId())) return null;
 
         try {
             const url = stepId
@@ -1595,15 +1685,21 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 const fileInput = stepItem.querySelector('.step-image-input');
                 if (dropzone) dropzone.setAttribute('data-step-id', data.id);
                 if (fileInput) fileInput.setAttribute('data-step-id', data.id);
+
+                // Also add visual confirmation of "Save" button if it exists
+                const saveBtn = stepItem.querySelector('button[onclick="saveStep(this)"]');
+                if (!saveBtn && !projectId) {
+                    // Logic to add save button if it was hidden?
+                }
             }
 
             window.showToast?.('{{ _("Step saved successfully") }}', 'success');
+            window.unsavedChanges?.setDirty(true);
+            return data.id;
         } catch (error) {
-            console.error('Error saving step:', error);
+            console.error('Save step failed', error);
             window.showToast?.('{{ _("Failed to save step") }}', 'error');
-        } finally {
-            button.disabled = false;
-            button.innerHTML = originalText;
+            return null;
         }
     }
 </script>
@@ -1869,6 +1965,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     if (typeof hideFilePreview === 'function') hideFilePreview();
 
                     window.showToast?.('{{ _("Pattern imported successfully") }}', 'success');
+                    window.unsavedChanges?.setDirty(true);
 
                     document.getElementById('name').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
@@ -1894,7 +1991,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             <strong class="text-base-content">{{ project.name }}</strong>
         </p>
         <div class="modal-action">
-            {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'deleteProjectDialog\').close()"') }}
+            {{ dialogs.dialog_cancel(_('Cancel'),
+            attrs='onclick="document.getElementById(\'deleteProjectDialog\').close()"') }}
             {{ dialogs.dialog_danger(_('Delete'), attrs='onclick="deleteProject()"') }}
         </div>
     </div>

@@ -4,9 +4,11 @@
 {% block content %}
 {% block form_styles %}{% endblock %}
 {% block form_before %}{% endblock %}
-<div class="{% block form_container_class %}max-w-7xl{% endblock %} mx-auto px-0 sm:px-6 lg:px-8 py-2 md:py-8 space-y-4 md:space-y-6">
+<div
+    class="{% block form_container_class %}max-w-7xl{% endblock %} mx-auto px-0 sm:px-6 lg:px-8 py-2 md:py-8 space-y-4 md:space-y-6">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 {% block form_header_class %}{% endblock %}">
+    <div
+        class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 {% block form_header_class %}{% endblock %}">
         <div class="flex-1 min-w-0">
             <div class="flex items-center gap-3">
                 {% block form_nav %}{% endblock %}
@@ -38,23 +40,42 @@
 {% block page_scripts %}{% endblock %}
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const form = document.querySelector('main form');
-        if (!form) return;
+    // Initialize as soon as possible to avoid race conditions with other scripts
+    // Ensure we don't clobber if child template already set something (like hooks)
+    window.unsavedChanges = {
+        _isDirty: false,
+        setDirty: function (value = true) { this._isDirty = value; },
+        isDirty: function () { return this._isDirty; },
+        onBeforeDiscard: null, // Async hook
+        ...window.unsavedChanges
+    };
 
-        let isDirty = false;
+    document.addEventListener('DOMContentLoaded', () => {
         const dialog = document.getElementById('unsavedChangesDialog');
         const cancelButton = dialog?.querySelector('[data-unsaved-cancel]');
         const leaveButton = dialog?.querySelector('[data-unsaved-leave]');
         const saveButton = dialog?.querySelector('[data-unsaved-save]');
         let pendingNavigation = null;
 
-        // Track changes
-        form.addEventListener('input', () => isDirty = true);
-        form.addEventListener('change', () => isDirty = true);
+        // Track changes on any form element within main
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('main form')) {
+                window.unsavedChanges.setDirty(true);
+            }
+        });
+
+        document.addEventListener('change', (e) => {
+            if (e.target.closest('main form')) {
+                window.unsavedChanges.setDirty(true);
+            }
+        });
 
         // Allow submission without warning
-        form.addEventListener('submit', () => isDirty = false);
+        document.addEventListener('submit', (e) => {
+            if (e.target.closest('main form')) {
+                window.unsavedChanges.setDirty(false);
+            }
+        });
 
         const showUnsavedDialog = (href) => {
             if (!dialog) return;
@@ -63,22 +84,36 @@
         };
 
         const handleConfirmNav = (event) => {
-            if (!isDirty) return;
+            if (!window.unsavedChanges.isDirty()) return;
             event.preventDefault();
-            showUnsavedDialog(event.currentTarget.getAttribute('href'));
+            const target = event.currentTarget.getAttribute('href') || event.currentTarget.dataset.href;
+            showUnsavedDialog(target);
         };
 
-        document.querySelectorAll('[data-unsaved-confirm]').forEach((link) => {
-            if (link.tagName.toLowerCase() !== 'a') return;
-            link.addEventListener('click', handleConfirmNav);
+        // Delegate click listener for all elements with data-unsaved-confirm
+        document.addEventListener('click', (e) => {
+            const confirmElem = e.target.closest('[data-unsaved-confirm]');
+            if (confirmElem && (confirmElem.tagName.toLowerCase() === 'a' || confirmElem.dataset.href)) {
+                handleConfirmNav({
+                    preventDefault: () => e.preventDefault(),
+                    currentTarget: confirmElem
+                });
+            }
         });
 
         cancelButton?.addEventListener('click', () => {
             dialog?.close();
         });
 
-        leaveButton?.addEventListener('click', () => {
-            isDirty = false;
+        leaveButton?.addEventListener('click', async () => {
+            if (window.unsavedChanges.onBeforeDiscard) {
+                try {
+                    await window.unsavedChanges.onBeforeDiscard();
+                } catch (err) {
+                    console.error('Error in onBeforeDiscard hook:', err);
+                }
+            }
+            window.unsavedChanges.setDirty(false);
             dialog?.close();
             const target = pendingNavigation;
             pendingNavigation = null;
@@ -90,6 +125,8 @@
         });
 
         saveButton?.addEventListener('click', () => {
+            const form = document.querySelector('main form');
+            if (!form) return;
             if (form.requestSubmit) {
                 form.requestSubmit();
             } else {
@@ -103,7 +140,7 @@
 
         // Warn before leaving
         window.addEventListener('beforeunload', (e) => {
-            if (isDirty) {
+            if (window.unsavedChanges.isDirty()) {
                 e.preventDefault();
                 e.returnValue = ''; // Required for Chrome/modern browsers
             }

@@ -279,9 +279,7 @@ async def seed_demo_data(reset: bool = False) -> None:
         yarn_result = await db.execute(
             select(Yarn).where(Yarn.owner_id == demo_user.id)
         )
-        yarn_by_name = {
-            yarn.name: yarn for yarn in yarn_result.scalars().all()
-        }
+        yarn_by_name = {yarn.name: yarn for yarn in yarn_result.scalars().all()}
 
         # Create some demo projects
         demo_projects = [
@@ -617,10 +615,7 @@ async def seed_demo_data(reset: bool = False) -> None:
         ]
         for project_name in favorite_project_names:
             favorite_project = project_by_name.get(project_name)
-            if (
-                favorite_project
-                and favorite_project not in demo_user.favorite_projects
-            ):
+            if favorite_project and favorite_project not in demo_user.favorite_projects:
                 demo_user.favorite_projects.append(favorite_project)
 
         favorite_yarn_names = [

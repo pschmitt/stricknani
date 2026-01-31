@@ -1654,6 +1654,7 @@ async def edit_project_form(
 
 @router.post("/")
 async def create_project(
+    request: Request,
     name: Annotated[str, Form()],
     category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
@@ -1669,7 +1670,7 @@ async def create_project(
     archive_on_save: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
-) -> RedirectResponse:
+) -> Response:
     """Create a new project."""
     # Parse comma-separated yarn IDs
     parsed_yarn_ids = []
@@ -1731,6 +1732,16 @@ async def create_project(
 
     if project.link and _should_request_archive(archive_on_save):
         asyncio.create_task(_store_wayback_snapshot(project.id, project.link))
+
+    if request.headers.get("accept") == "application/json":
+        return JSONResponse(
+            {
+                "id": project.id,
+                "url": f"/projects/{project.id}",
+                "name": project.name,
+            },
+            status_code=status.HTTP_201_CREATED,
+        )
 
     return RedirectResponse(
         url=f"/projects/{project.id}?toast=project_created",

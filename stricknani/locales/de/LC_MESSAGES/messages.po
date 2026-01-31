@@ -1179,6 +1179,14 @@ msgstr "Netzwerkfehler beim Löschen des Bildes"
 msgid "Uploading…"
 msgstr "Wird hochgeladen..."
 
+#: stricknani/templates/projects/form.html:1139
+msgid "Failed to initialize project"
+msgstr "Projekt konnte nicht initialisiert werden"
+
+#: stricknani/templates/projects/form.html:1144
+msgid "Network error"
+msgstr "Netzwerkfehler"
+
 #: stricknani/templates/projects/form.html:1144
 msgid "Remove Image"
 msgstr "Bild entfernen"

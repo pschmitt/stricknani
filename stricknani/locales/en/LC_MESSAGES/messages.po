@@ -98,6 +98,12 @@ msgstr "Gallery thumbnails"
 msgid "Open image"
 msgstr "Open image"
 
+msgid "Failed to initialize project"
+msgstr "Failed to initialize project"
+
+msgid "Network error"
+msgstr "Network error"
+
 # Navigation and General
 #~ msgid "Stricknani"
 #~ msgstr "Stricknani"
