@@ -158,6 +158,21 @@ def _parse_import_image_urls(raw: str | None) -> list[str]:
     return cleaned
 
 
+def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
+    """Extract a prefix token (with optional quotes) and remaining text."""
+
+    pattern = rf"(?i)(?:^|\s){re.escape(prefix)}(?:\"([^\"]+)\"|'([^']+)'|(\S+))"
+    match = re.search(pattern, search)
+    if not match:
+        return None, search
+    token = next((group for group in match.groups() if group), None)
+    if token is None:
+        return None, search
+    start, end = match.span()
+    remaining = (search[:start] + search[end:]).strip()
+    return token.strip(), remaining
+
+
 def _resolve_yarn_preview(yarn: Yarn) -> dict[str, str | None]:
     """Return preview image data for a yarn if a photo exists."""
 
@@ -721,16 +736,18 @@ async def list_projects(
     query = select(Project).where(Project.owner_id == current_user.id)
 
     if search:
-        search_lower = search.lower()
-        if search_lower.startswith("cat:"):
-            category = search[4:].strip()
-            search = None
-        elif search_lower.startswith("tag:"):
-            tag = search[4:].strip()
-            search = None
-        elif search_lower.startswith("#"):
-            tag = search[1:].strip()
-            search = None
+        category_token, remaining = _extract_search_token(search, "cat:")
+        if category_token:
+            category = category_token
+            search = remaining or None
+        tag_token, remaining = _extract_search_token(search or "", "tag:")
+        if tag_token:
+            tag = tag_token
+            search = remaining or None
+        hash_token, remaining = _extract_search_token(search or "", "#")
+        if hash_token:
+            tag = hash_token
+            search = remaining or None
 
     if category:
         query = query.where(Project.category == category)

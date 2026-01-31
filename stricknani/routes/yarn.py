@@ -51,7 +51,7 @@ def _strip_wrapping_quotes(value: str) -> str:
 def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
     """Extract a prefix token (with optional quotes) and remaining text."""
 
-    pattern = rf"(?i)(?:^|\\s){prefix}(?:\"([^\"]+)\"|'([^']+)'|(\\S+))"
+    pattern = rf"(?i)(?:^|\s){re.escape(prefix)}(?:\"([^\"]+)\"|'([^']+)'|(\S+))"
     match = re.search(pattern, search)
     if not match:
         return None, search
