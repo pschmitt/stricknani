@@ -186,6 +186,32 @@ def _serialize_yarn_cards(
     ]
 
 
+@router.get("/search-suggestions")
+async def search_suggestions(
+    type: str,
+    q: str = "",
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> JSONResponse:
+    """Return search suggestions for brands."""
+    if type == "brand":
+        result = await db.execute(
+            select(Yarn.brand)
+            .where(
+                Yarn.owner_id == current_user.id,
+                Yarn.brand.ilike(f"%{q}%"),
+            )
+            .distinct()
+            .order_by(Yarn.brand)
+            .limit(10)
+        )
+        suggestions = [row[0] for row in result if row[0]]
+    else:
+        suggestions = []
+
+    return JSONResponse(suggestions)
+
+
 @router.get("/", response_class=HTMLResponse)
 async def list_yarns(
     request: Request,
@@ -208,6 +234,11 @@ async def list_yarns(
         .options(selectinload(Yarn.photos), selectinload(Yarn.projects))
         .order_by(Yarn.created_at.desc())
     )
+
+    if search:
+        if search.lower().startswith("brand:"):
+            brand = search[6:].strip()
+            search = None
 
     if brand:
         query = query.where(Yarn.brand.ilike(f"%{brand}%"))

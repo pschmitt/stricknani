@@ -677,6 +677,34 @@ def _render_favorite_toggle(
     )
 
 
+@router.get("/search-suggestions")
+async def search_suggestions(
+    type: str,
+    q: str = "",
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> JSONResponse:
+    """Return search suggestions for categories or tags."""
+    if type == "cat":
+        result = await db.execute(
+            select(Category.name)
+            .where(
+                Category.user_id == current_user.id,
+                Category.name.ilike(f"%{q}%"),
+            )
+            .order_by(Category.name)
+            .limit(10)
+        )
+        suggestions = [row[0] for row in result]
+    elif type == "tag":
+        all_tags = await _get_user_tags(db, current_user.id)
+        suggestions = [t for t in all_tags if q.lower() in t.lower()][:10]
+    else:
+        suggestions = []
+
+    return JSONResponse(suggestions)
+
+
 @router.get("/", response_class=HTMLResponse)
 async def list_projects(
     request: Request,
@@ -691,6 +719,21 @@ async def list_projects(
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     query = select(Project).where(Project.owner_id == current_user.id)
+
+    if search:
+        search_lower = search.lower()
+        if search_lower.startswith("cat:"):
+            category = search[4:].strip()
+            search = None
+        elif search_lower.startswith("brand:"): # Added brand detection
+            brand = search[6:].strip()
+            search = None
+        elif search_lower.startswith("tag:"):
+            tag = search[4:].strip()
+            search = None
+        elif search_lower.startswith("#"):
+            tag = search[1:].strip()
+            search = None
 
     if category:
         query = query.where(Project.category == category)

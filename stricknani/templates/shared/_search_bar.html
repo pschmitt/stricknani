@@ -4,45 +4,32 @@
             <span class="mdi mdi-magnify text-lg"></span>
         </div>
         {% set filters = extra_filters
-            if extra_filters is defined
-            else (
-                [{
-                    'id': extra_filter_id,
-                    'name': extra_filter_name,
-                    'value': extra_filter_value,
-                    'label': extra_filter_label,
-                    'label_value': extra_filter_value_label|default(extra_filter_value),
-                    'icon': extra_filter_icon,
-                    'clear_url': extra_filter_clear_url,
-                    'clear_label': extra_filter_clear_label,
-                }]
-                if extra_filter_value is defined and extra_filter_value
-                else []
-            )
+        if extra_filters is defined
+        else (
+        [{
+        'id': extra_filter_id,
+        'name': extra_filter_name,
+        'value': extra_filter_value,
+        'label': extra_filter_label,
+        'label_value': extra_filter_value_label|default(extra_filter_value),
+        'icon': extra_filter_icon,
+        'clear_url': extra_filter_clear_url,
+        'clear_label': extra_filter_clear_label,
+        }]
+        if extra_filter_value is defined and extra_filter_value
+        else []
+        )
         %}
         {% set inline_filters = filters|length == 1 %}
-        <input
-            type="text"
-            id="{{ search_id }}"
-            name="{{ search_name }}"
-            value="{{ search_value }}"
+        <input type="text" id="{{ search_id }}" name="{{ search_name }}" value="{{ search_value }}"
             placeholder="{{ search_placeholder }}"
             class="input input-bordered w-full pl-10{% if inline_filters %} pr-10 sm:pr-32{% endif %}"
-            hx-get="{{ search_url }}"
-            hx-target="{{ search_target }}"
-            hx-trigger="keyup changed delay:500ms"
-            hx-replace-url="true"
-            {% if filters %}hx-include=".search-filter-input"{% endif %}
-        >
+            hx-get="{{ search_url }}" hx-target="{{ search_target }}" hx-trigger="keyup changed delay:500ms"
+            hx-replace-url="true" {% if filters %}hx-include=".search-filter-input" {% endif %}>
         {% if filters %}
         {% for filter in filters %}
-        <input
-            type="hidden"
-            id="{{ filter.id }}"
-            name="{{ filter.name }}"
-            value="{{ filter.value }}"
-            class="search-filter-input"
-        >
+        <input type="hidden" id="{{ filter.id }}" name="{{ filter.name }}" value="{{ filter.value }}"
+            class="search-filter-input">
         {% endfor %}
         {% if inline_filters %}
         {% set filter = filters[0] %}
@@ -52,11 +39,7 @@
                 <span class="truncate max-w-[6rem] sm:max-w-[10rem]">
                     {{ filter.label }}: {{ filter.label_value }}
                 </span>
-                <a
-                    href="{{ filter.clear_url }}"
-                    class="ml-1 inline-flex items-center"
-                    title="{{ filter.clear_label }}"
-                >
+                <a href="{{ filter.clear_url }}" class="ml-1 inline-flex items-center" title="{{ filter.clear_label }}">
                     <span class="mdi mdi-close" aria-hidden="true"></span>
                     <span class="sr-only">{{ filter.clear_label }}</span>
                 </a>
@@ -64,6 +47,10 @@
         </div>
         {% endif %}
         {% endif %}
+        <div id="{{ search_id }}-suggestions"
+            class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-box shadow-xl hidden overflow-hidden">
+            <ul class="menu p-1" id="{{ search_id }}-suggestion-list"></ul>
+        </div>
     </div>
     {% if filters %}
     <div class="mt-2 flex flex-wrap items-center gap-2 text-xs {% if inline_filters %}sm:hidden{% endif %}">
@@ -74,15 +61,144 @@
                 {{ filter.label }}: {{ filter.label_value }}
             </span>
         </span>
-        <a
-            href="{{ filter.clear_url }}"
-            class="btn btn-ghost btn-xs ml-auto"
-            title="{{ filter.clear_label }}"
-        >
+        <a href="{{ filter.clear_url }}" class="btn btn-ghost btn-xs ml-auto" title="{{ filter.clear_label }}">
             <span class="mdi mdi-close" aria-hidden="true"></span>
             <span class="sr-only">{{ filter.clear_label }}</span>
         </a>
         {% endfor %}
     </div>
     {% endif %}
+    <script>
+        (function () {
+            const searchInput = document.getElementById('{{ search_id }}');
+            const suggestionContainer = document.getElementById('{{ search_id }}-suggestions');
+            const suggestionList = document.getElementById('{{ search_id }}-suggestion-list');
+            let currentPrefix = '';
+            let activeIndex = -1;
+
+            const prefixes = [
+                { prefix: 'cat:', type: 'cat', icon: 'mdi-tag-outline' },
+                { prefix: 'tag:', type: 'tag', icon: 'mdi-tag-multiple-outline' },
+                { prefix: '#', type: 'tag', icon: 'mdi-tag-multiple-outline' },
+                { prefix: 'brand:', type: 'brand', icon: 'mdi-label-outline' },
+            ];
+            const activeClass = 'bg-base-200';
+
+            const clearActiveState = () => {
+                activeIndex = -1;
+                suggestionList.querySelectorAll('[data-suggestion-index]').forEach((item) => {
+                    item.classList.remove(activeClass);
+                });
+            };
+
+            const updateActiveItem = (nextIndex) => {
+                const items = suggestionList.querySelectorAll('[data-suggestion-index]');
+                if (!items.length) {
+                    clearActiveState();
+                    return;
+                }
+                const clampedIndex = Math.max(0, Math.min(nextIndex, items.length - 1));
+                items.forEach((item) => item.classList.remove(activeClass));
+                activeIndex = clampedIndex;
+                const activeItem = items[activeIndex];
+                activeItem.classList.add(activeClass);
+                activeItem.scrollIntoView({ block: 'nearest' });
+            };
+
+            const closeSuggestions = () => {
+                suggestionContainer.classList.add('hidden');
+                clearActiveState();
+            };
+
+            const openSuggestions = () => {
+                suggestionContainer.classList.remove('hidden');
+            };
+
+            searchInput.addEventListener('input', async (e) => {
+                const val = e.target.value;
+                const match = prefixes.find(p => val.toLowerCase().startsWith(p.prefix));
+
+                if (match) {
+                    currentPrefix = match.prefix;
+                    const q = val.substring(match.prefix.length).trim();
+                    const type = match.type;
+                    const baseUrl = '{{ search_url }}'.replace(/\/+$/, '');
+
+                    try {
+                        const response = await fetch(`${baseUrl}/search-suggestions?type=${type}&q=${encodeURIComponent(q)}`);
+                        const suggestions = await response.json();
+
+                        if (suggestions.length > 0) {
+                            suggestionList.innerHTML = suggestions.map((s, index) => `
+                                <li>
+                                    <button type="button" data-suggestion-index="${index}" class="py-2 px-4 hover:bg-base-200 text-left w-full transition-colors flex items-center gap-2" onclick="window.selectSearchSuggestion('{{ search_id }}', '${match.prefix}${s.replace(/'/g, "\\'")}')">
+                                        <span class="mdi ${match.icon} text-base-content/50"></span>
+                                        <span>${s}</span>
+                                    </button>
+                                </li>
+                            `).join('');
+                            openSuggestions();
+                            clearActiveState();
+                        } else {
+                            closeSuggestions();
+                        }
+                    } catch (err) {
+                        console.error('Failed to fetch suggestions:', err);
+                        closeSuggestions();
+                    }
+                } else {
+                    closeSuggestions();
+                }
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (suggestionContainer.classList.contains('hidden')) {
+                    return;
+                }
+                const items = suggestionList.querySelectorAll('[data-suggestion-index]');
+                if (!items.length) {
+                    return;
+                }
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const nextIndex = activeIndex === -1 ? 0 : activeIndex + 1;
+                    updateActiveItem(nextIndex);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const nextIndex = activeIndex <= 0 ? 0 : activeIndex - 1;
+                    updateActiveItem(nextIndex);
+                } else if (e.key === 'Enter') {
+                    if (activeIndex >= 0) {
+                        e.preventDefault();
+                        const activeItem = items[activeIndex];
+                        activeItem.click();
+                    }
+                } else if (e.key === 'Escape') {
+                    closeSuggestions();
+                }
+            });
+
+            // Close suggestions on click outside
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !suggestionContainer.contains(e.target)) {
+                    closeSuggestions();
+                }
+            });
+
+            window.selectSearchSuggestion = (id, val) => {
+                const input = document.getElementById(id);
+                const container = document.getElementById(id + '-suggestions');
+                input.value = val;
+                container.classList.add('hidden');
+                clearActiveState();
+                input.focus();
+
+                // Trigger HTMX search by simulating the events it listens to
+                const event = new Event('input', { bubbles: true });
+                input.dispatchEvent(event);
+                const keyupEvent = new KeyboardEvent('keyup', { bubbles: true });
+                input.dispatchEvent(keyupEvent);
+            };
+        })();
+    </script>
 </div>

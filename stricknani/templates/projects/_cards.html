@@ -81,7 +81,7 @@
                 </a>
             </h3>
             {% if project.category and project.category != 'None' %}
-            <a href="/projects?category={{ project.category }}" class="badge badge-primary shrink-0 ml-2">
+            <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}" class="badge badge-primary shrink-0 ml-2">
                 {{ _(project.category) }}
             </a>
             {% endif %}
@@ -89,16 +89,7 @@
         {% if project.tags %}
         <div class="mb-4 flex flex-wrap gap-2">
             {% for tag in project.tags %}
-            {% set params = namespace(items=[]) %}
-            {% if search %}
-            {% set unused = params.items.append('search=' + (search|urlencode)) %}
-            {% endif %}
-            {% if selected_category %}
-            {% set unused = params.items.append('category=' + (selected_category|urlencode)) %}
-            {% endif %}
-            {% set unused = params.items.append('tag=' + (tag|urlencode)) %}
-            {% set tag_url = "/projects" + ('?' + (params.items|join('&'))) %}
-            <a href="{{ tag_url }}" class="badge badge-outline">#{{ tag }}</a>
+            <a href="/projects?search={{ ('#' ~ tag)|urlencode }}" class="badge badge-outline">#{{ tag }}</a>
             {% endfor %}
         </div>
         {% endif %}
