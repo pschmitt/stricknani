@@ -19,7 +19,7 @@
         <p class="py-4">{{ _('You have unsaved changes. Save before leaving?') }}</p>
         <div class="modal-action">
             {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-unsaved-cancel') }}
-            {{ dialogs.dialog_danger(_('Discard changes'), icon='mdi-trash-can-outline', attrs='data-unsaved-leave') }}
+            {{ dialogs.dialog_danger(_('Discard'), icon='mdi-trash-can-outline', attrs='data-unsaved-leave') }}
             {{ dialogs.dialog_primary(_('Save'), icon='mdi-content-save', attrs='data-unsaved-save') }}
         </div>
     </div>

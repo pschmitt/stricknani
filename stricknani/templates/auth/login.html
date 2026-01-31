@@ -3,6 +3,10 @@
 
 {% block title %}{{ _('Login') }} - {{ _('Stricknani') }}{% endblock %}
 
+{% block navbar %}
+{% include "shared/unified_navbar.html" %}
+{% endblock %}
+
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6">
     <div class="card bg-base-200 shadow-xl">
@@ -12,112 +16,93 @@
                 {{ _('Welcome to Stricknani') }}
             </h2>
 
-        {% if login_error %}
-        <div class="alert alert-error">
-            <span class="mdi mdi-alert-decagram text-xl"></span>
-            <div>
-                <h3 class="font-bold">{{ _('Login failed') }}</h3>
-                <div class="text-sm">{{ _('We could not sign you in with those details. Please review them and try again.') }}</div>
-                <div class="mt-2 space-y-1 text-xs">
-                    <div>• {{ _('Check for typos or extra spaces in your email and password.') }}</div>
-                    <div>• {{ _('Make sure Caps Lock is off before you retry.') }}</div>
-                    <div>• {{ _('If you lost access, reach out to your instance admin to reset your password.') }}</div>
+            {% if login_error %}
+            <div class="alert alert-error">
+                <span class="mdi mdi-alert-decagram text-xl"></span>
+                <div>
+                    <h3 class="font-bold">{{ _('Login failed') }}</h3>
+                    <div class="text-sm">{{ _('We could not sign you in with those details. Please review them and try
+                        again.') }}</div>
+                    <div class="mt-2 space-y-1 text-xs">
+                        <div>• {{ _('Check for typos or extra spaces in your email and password.') }}</div>
+                        <div>• {{ _('Make sure Caps Lock is off before you retry.') }}</div>
+                        <div>• {{ _('If you lost access, reach out to your instance admin to reset your password.') }}
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        {% endif %}
+            {% endif %}
 
-        <!-- Login Form -->
-        <div id="login-form" class="space-y-6">
-            <form action="/auth/login" method="post" class="space-y-4">
-                <div class="form-control">
-                    <label for="login-email" class="label">
-                        <span class="label-text">{{ _('Email') }}</span>
-                    </label>
-                    <input
-                        type="email"
-                        id="login-email"
-                        name="email"
-                        required
-                        autocomplete="username"
-                        aria-invalid="{{ 'true' if login_error else 'false' }}"
-                        class="input input-bordered w-full {{ 'input-error' if login_error else '' }}"
-                        placeholder="your@email.com"
-                        value="{{ login_email|default('') }}"
-                    >
+            <!-- Login Form -->
+            <div id="login-form" class="space-y-6">
+                <form action="/auth/login" method="post" class="space-y-4">
+                    <div class="form-control">
+                        <label for="login-email" class="label">
+                            <span class="label-text">{{ _('Email') }}</span>
+                        </label>
+                        <input type="email" id="login-email" name="email" required autocomplete="username"
+                            aria-invalid="{{ 'true' if login_error else 'false' }}"
+                            class="input input-bordered w-full {{ 'input-error' if login_error else '' }}"
+                            placeholder="your@email.com" value="{{ login_email|default('') }}">
+                    </div>
+                    <div class="form-control">
+                        <label for="login-password" class="label">
+                            <span class="label-text">{{ _('Password') }}</span>
+                        </label>
+                        <input type="password" id="login-password" name="password" required
+                            autocomplete="current-password" aria-invalid="{{ 'true' if login_error else 'false' }}"
+                            class="input input-bordered w-full {{ 'input-error' if login_error else '' }}"
+                            placeholder="••••••••">
+                    </div>
+                    {{ buttons.primary(_('Login'), type='submit', icon='mdi-login', class='w-full text-lg') }}
+                </form>
+
+                {% if signup_enabled %}
+                <div class="text-center">
+                    {{ buttons.ghost(_("Don't have an account? Sign up"), icon='mdi-account-plus', class='btn-sm',
+                    attrs='onclick="document.getElementById(\'login-form\').classList.add(\'hidden\');
+                    document.getElementById(\'signup-form\').classList.remove(\'hidden\')"') }}
                 </div>
-                <div class="form-control">
-                    <label for="login-password" class="label">
-                        <span class="label-text">{{ _('Password') }}</span>
-                    </label>
-                    <input
-                        type="password"
-                        id="login-password"
-                        name="password"
-                        required
-                        autocomplete="current-password"
-                        aria-invalid="{{ 'true' if login_error else 'false' }}"
-                        class="input input-bordered w-full {{ 'input-error' if login_error else '' }}"
-                        placeholder="••••••••"
-                    >
-                </div>
-                {{ buttons.primary(_('Login'), type='submit', icon='mdi-login', class='w-full text-lg') }}
-            </form>
+                {% endif %}
+            </div>
 
             {% if signup_enabled %}
-            <div class="text-center">
-                {{ buttons.ghost(_("Don't have an account? Sign up"), icon='mdi-account-plus', class='btn-sm', attrs='onclick="document.getElementById(\'login-form\').classList.add(\'hidden\'); document.getElementById(\'signup-form\').classList.remove(\'hidden\')"') }}
+            <!-- Signup Form -->
+            <div id="signup-form" class="space-y-6 hidden">
+                <h3 class="text-xl font-semibold flex items-center gap-2">
+                    <span class="mdi mdi-account-plus text-success"></span>
+                    {{ _('Sign Up') }}
+                </h3>
+                <form action="/auth/signup" method="post" class="space-y-4">
+                    <div class="form-control">
+                        <label for="signup-email" class="label">
+                            <span class="label-text">{{ _('Email') }}</span>
+                        </label>
+                        <input type="email" id="signup-email" name="email" required class="input input-bordered w-full"
+                            placeholder="your@email.com">
+                    </div>
+                    <div class="form-control">
+                        <label for="signup-password" class="label">
+                            <span class="label-text">{{ _('Password') }}</span>
+                        </label>
+                        <input type="password" id="signup-password" name="password" required minlength="8"
+                            class="input input-bordered w-full" placeholder="••••••••">
+                        <label class="label">
+                            <span class="label-text-alt">{{ _('At least 8 characters') }}</span>
+                        </label>
+                    </div>
+                    {{ buttons.primary(_('Sign Up'), type='submit', icon='mdi-account-check', class='w-full text-lg
+                    bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:hover:bg-green-500') }}
+                </form>
+
+                <div class="text-center">
+                    {{ buttons.ghost(_('Already have an account? Login'), icon='mdi-login', class='btn-sm',
+                    attrs='onclick="document.getElementById(\'signup-form\').classList.add(\'hidden\');
+                    document.getElementById(\'login-form\').classList.remove(\'hidden\')"') }}
+                </div>
             </div>
             {% endif %}
         </div>
-
-        {% if signup_enabled %}
-        <!-- Signup Form -->
-        <div id="signup-form" class="space-y-6 hidden">
-            <h3 class="text-xl font-semibold flex items-center gap-2">
-                <span class="mdi mdi-account-plus text-success"></span>
-                {{ _('Sign Up') }}
-            </h3>
-            <form action="/auth/signup" method="post" class="space-y-4">
-                <div class="form-control">
-                    <label for="signup-email" class="label">
-                        <span class="label-text">{{ _('Email') }}</span>
-                    </label>
-                    <input
-                        type="email"
-                        id="signup-email"
-                        name="email"
-                        required
-                        class="input input-bordered w-full"
-                        placeholder="your@email.com"
-                    >
-                </div>
-                <div class="form-control">
-                    <label for="signup-password" class="label">
-                        <span class="label-text">{{ _('Password') }}</span>
-                    </label>
-                    <input
-                        type="password"
-                        id="signup-password"
-                        name="password"
-                        required
-                        minlength="8"
-                        class="input input-bordered w-full"
-                        placeholder="••••••••"
-                    >
-                    <label class="label">
-                        <span class="label-text-alt">{{ _('At least 8 characters') }}</span>
-                    </label>
-                </div>
-                {{ buttons.primary(_('Sign Up'), type='submit', icon='mdi-account-check', class='w-full text-lg bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:hover:bg-green-500') }}
-            </form>
-
-            <div class="text-center">
-                {{ buttons.ghost(_('Already have an account? Login'), icon='mdi-login', class='btn-sm', attrs='onclick="document.getElementById(\'signup-form\').classList.add(\'hidden\'); document.getElementById(\'login-form\').classList.remove(\'hidden\')"') }}
-            </div>
-        </div>
-        {% endif %}
     </div>
-</div>
 </div>
 {% endblock %}
