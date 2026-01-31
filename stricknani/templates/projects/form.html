@@ -954,8 +954,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         const selectedYarns = new Map();
 
         {% if project and project.yarn_ids %}
-        const preSelectedIds = {{ project.yarn_ids | tojson
-    }};
+        const preSelectedIds = {{ project.yarn_ids | tojson }};
     yarnOptions.forEach(option => {
         const yarnId = parseInt(option.dataset.yarnId);
         if (preSelectedIds.includes(yarnId)) {
@@ -1261,12 +1260,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             console.error('Upload failed', error);
             window.showToast?.('{{ _("Upload failed") }}', 'error');
         }
-
+    }
 </script>
 
 <script>
-        let projectId = {{ (project.id if project else none) | tojson
-    }};
+    let projectId = {{ (project.id if project else none) | tojson }};
     let wasSilentlyCreated = false;
 
     // Initialize discard hook

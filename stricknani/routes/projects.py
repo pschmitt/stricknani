@@ -1869,6 +1869,9 @@ async def update_project(
             for img in images_to_delete_result.scalars():
                 delete_file(img.filename, project_id)
 
+            # Explicitly delete image records from DB since bulk Step delete
+            # doesn't trigger ORM cascades
+            await db.execute(delete(Image).where(Image.step_id.in_(steps_to_delete)))
             await db.execute(delete(Step).where(Step.id.in_(steps_to_delete)))
 
         # Update or create steps
@@ -1963,7 +1966,7 @@ async def delete_project(
     import shutil
 
     project_media_dir = config.MEDIA_ROOT / "projects" / str(project_id)
-    project_thumb_dir = config.MEDIA_ROOT / "thumbnails" / str(project_id)
+    project_thumb_dir = config.MEDIA_ROOT / "thumbnails" / "projects" / str(project_id)
 
     if project_media_dir.exists():
         shutil.rmtree(project_media_dir)

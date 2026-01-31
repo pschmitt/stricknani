@@ -320,16 +320,39 @@
                 {% endif %}
             </div>
 
-            {% if project.stitch_sample_html %}
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+            {% if project.stitch_sample_html or project.stitch_sample_images %}
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5" id="stitch-sample-card">
                 <h3
                     class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                     <span class="mdi mdi-grid"></span>
                     {{ _('Stitch Sample') }}
                 </h3>
-                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                {% if project.stitch_sample_html %}
+                <div class="prose prose-sm prose-compact max-w-none text-base-content/90 mb-4" id="stitch-sample-text">
                     {{ project.stitch_sample_html | safe }}
                 </div>
+                {% endif %}
+
+                {% if project.stitch_sample_images %}
+                <div class="mt-4 pt-4 border-t border-base-100" id="stitch-sample-photos">
+                    <h4
+                        class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <span class="mdi mdi-image-outline"></span> {{ _('Stitch Sample Photos') }}
+                    </h4>
+                    <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
+                        {% for image in project.stitch_sample_images %}
+                        <a href="{{ image.url }}"
+                            class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
+                            data-pswp-width="{{ image.width or 1200 }}" data-pswp-height="{{ image.height or 1200 }}"
+                            data-pswp-caption="{{ image.alt_text }} ({{ _('Stitch Sample') }})">
+                            <img src="{{ image.url }}" alt="{{ image.alt_text }}"
+                                class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
+                                loading="lazy">
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             {% endif %}
 
@@ -355,7 +378,7 @@
 
                         <!-- Content Card -->
                         <div
-                            class="flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 transition hover:shadow-md hover:border-primary/20">
+                            class="step-card flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 transition hover:shadow-md hover:border-primary/20">
                             <div class="flex items-center gap-3 mb-2">
                                 <!-- Mobile Step Number -->
                                 <div
@@ -366,13 +389,14 @@
                             </div>
 
                             {% if step.description_html %}
-                            <div class="prose prose-sm prose-compact max-w-none text-base-content/80 mb-4">
+                            <div
+                                class="step-description prose prose-sm prose-compact max-w-none text-base-content/80 mb-4">
                                 {{ step.description_html | safe }}
                             </div>
                             {% endif %}
 
                             {% if step.images %}
-                            <div class="mt-4 pt-4 border-t border-base-100">
+                            <div class="step-photos-section mt-4 pt-4 border-t border-base-100">
                                 <h4
                                     class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
                                     <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
@@ -623,6 +647,63 @@
 {% endcall %}
 
 <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        function updateDetailImageVisibility() {
+            // Check stitch sample
+            const stitchSampleCard = document.getElementById('stitch-sample-card');
+            if (stitchSampleCard) {
+                const textSection = document.getElementById('stitch-sample-text');
+                const photoSection = document.getElementById('stitch-sample-photos');
+                if (textSection && photoSection) {
+                    processSection(textSection, photoSection);
+                }
+            }
+
+            // Check steps
+            document.querySelectorAll('.step-card').forEach(card => {
+                const textSection = card.querySelector('.step-description');
+                const photoSection = card.querySelector('.step-photos-section');
+                if (textSection && photoSection) {
+                    processSection(textSection, photoSection);
+                }
+            });
+        }
+
+        function processSection(textContainer, photoContainer) {
+            const imagesInText = Array.from(textContainer.querySelectorAll('img.markdown-inline-image'))
+                .map(img => img.getAttribute('data-lightbox-src') || img.src);
+
+            const galleryLinks = photoContainer.querySelectorAll('.pswp-gallery a');
+            let visibleCount = 0;
+
+            galleryLinks.forEach(link => {
+                const url = link.getAttribute('href');
+                const isUsed = imagesInText.some(u => {
+                    try {
+                        return u === url || decodeURI(u) === url || u.endsWith(url);
+                    } catch (e) {
+                        return u === url || u.endsWith(url);
+                    }
+                });
+
+                if (isUsed) {
+                    link.classList.add('hidden');
+                } else {
+                    link.classList.remove('hidden');
+                    visibleCount++;
+                }
+            });
+
+            if (visibleCount === 0) {
+                photoContainer.classList.add('hidden');
+            } else {
+                photoContainer.classList.remove('hidden');
+            }
+        }
+
+        updateDetailImageVisibility();
+    });
+
     function deleteProject() {
         const btn = document.querySelector('#deleteProjectDialog .btn-error');
         btn.disabled = true;
