@@ -11,7 +11,8 @@
     <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4 md:mb-8">
         <div class="space-y-2">
             <div class="flex items-center gap-3">
-                <a href="/projects" class="btn btn-circle btn-ghost btn-sm text-base-content/60" aria-label="{{ _('Back to projects') }}">
+                <a href="/projects" class="btn btn-circle btn-ghost btn-sm text-base-content/60"
+                    aria-label="{{ _('Back to projects') }}">
                     <span class="mdi mdi-arrow-left text-xl"></span>
                 </a>
                 <h1 class="text-3xl md:text-4xl font-extrabold text-base-content tracking-tight">{{ project.name }}</h1>
@@ -22,7 +23,7 @@
             <!-- Desktop Actions -->
             <div class="hidden md:flex items-center gap-2">
                 {% with project_id=project.id, is_favorite=project.is_favorite, variant='card' %}
-                    {% include "projects/_favorite_toggle.html" %}
+                {% include "projects/_favorite_toggle.html" %}
                 {% endwith %}
                 <a href="/projects/{{ project.id }}/edit" class="btn btn-primary gap-2">
                     <span class="mdi mdi-pencil"></span>
@@ -30,14 +31,19 @@
                 </a>
             </div>
 
-            <div class="dropdown dropdown-end dropdown-top md:dropdown-bottom fixed bottom-6 right-6 z-50 md:static md:z-auto md:hidden">
-                <div tabindex="0" role="button" class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10" aria-label="{{ _('More actions') }}">
+            <div
+                class="dropdown dropdown-end dropdown-top md:dropdown-bottom fixed bottom-6 right-6 z-50 md:static md:z-auto md:hidden">
+                <div tabindex="0" role="button"
+                    class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10"
+                    aria-label="{{ _('More actions') }}">
                     <span class="mdi mdi-dots-vertical text-2xl md:text-xl"></span>
                 </div>
-                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2 md:mb-0">
+                <ul tabindex="0"
+                    class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2 md:mb-0">
                     <li data-favorite-toggle>
-                        {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
-                            {% include "projects/_favorite_toggle.html" %}
+                        {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail',
+                        extra_classes='flex justify-start gap-2' %}
+                        {% include "projects/_favorite_toggle.html" %}
                         {% endwith %}
                     </li>
                     <li>
@@ -47,7 +53,8 @@
                         </a>
                     </li>
                     <li>
-                        <button onclick="document.getElementById('deleteProjectDialog').showModal()" class="text-error hover:bg-error/10 hover:text-error">
+                        <button onclick="document.getElementById('deleteProjectDialog').showModal()"
+                            class="text-error hover:bg-error/10 hover:text-error">
                             <span class="mdi mdi-delete-outline text-lg"></span>
                             {{ _('Delete') }}
                         </button>
@@ -68,51 +75,38 @@
                         <span class="mdi mdi-image-multiple text-primary"></span>
                         {{ _('Gallery') }}
                     </h2>
-                    <span class="text-xs font-medium text-base-content/50">{{ project.title_images|length }} {{ _('images') }}</span>
+                    <span class="text-xs font-medium text-base-content/50">{{ project.title_images|length }} {{
+                        _('images') }}</span>
                 </div>
                 <div class="p-2 bg-base-200/50">
                     {% set gallery_count = project.title_images|length %}
                     {% set gallery_preview = project.title_images[:3] %}
-                    <div class="grid grid-cols-3 gap-2 pswp-gallery" id="project-gallery-{{ project.id }}" data-pswp-gallery>
+                    <div class="grid grid-cols-3 gap-2 pswp-gallery" id="project-gallery-{{ project.id }}"
+                        data-pswp-gallery>
                         {% for image in gallery_preview %}
-                        <div class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200">
-                            <a
-                                href="{{ image.url }}"
+                        <div
+                            class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200">
+                            <a href="{{ image.url }}"
                                 class="block h-full w-full{% if loop.last and gallery_count > 3 %} pointer-events-none{% endif %}"
                                 data-pswp-width="{{ image.width or 1200 }}"
-                                data-pswp-height="{{ image.height or 1200 }}"
-                                data-pswp-caption="{{ image.alt_text }}"
-                            >
-                                <img
-                                    src="{{ image.url }}"
-                                    alt="{{ image.alt_text }}"
+                                data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}">
+                                <img src="{{ image.url }}" alt="{{ image.alt_text }}"
                                     class="h-full w-full object-cover cursor-zoom-in transition duration-300 hover:scale-105"
-                                    loading="lazy"
-                                >
+                                    loading="lazy">
                             </a>
                             {% if loop.last and gallery_count > 3 %}
-                            <div
-                                class="absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
-                                data-pswp-open-index="3"
-                                role="button"
-                                tabindex="0"
-                                aria-label="{{ _('Open gallery') }}"
+                            <div class="absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
+                                data-pswp-open-index="2" role="button" tabindex="0" aria-label="{{ _('Open gallery') }}"
                                 onclick="window.openPhotoSwipeIndex?.(this)"
-                                onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openPhotoSwipeIndex?.(this); }"
-                            >
+                                onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openPhotoSwipeIndex?.(this); }">
                                 +{{ gallery_count - 3 }}
                             </div>
                             {% endif %}
                         </div>
                         {% endfor %}
                         {% for image in project.title_images[3:] %}
-                        <a
-                            href="{{ image.url }}"
-                            class="hidden"
-                            data-pswp-width="{{ image.width or 1200 }}"
-                            data-pswp-height="{{ image.height or 1200 }}"
-                            data-pswp-caption="{{ image.alt_text }}"
-                        ></a>
+                        <a href="{{ image.url }}" class="hidden" data-pswp-width="{{ image.width or 1200 }}"
+                            data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}"></a>
                         {% endfor %}
                     </div>
                 </div>
@@ -123,7 +117,8 @@
             <div class="space-y-6 lg:hidden">
                 <!-- Details Card -->
                 <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                    <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                    <h3
+                        class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Project Details') }}
                     </h3>
@@ -132,8 +127,10 @@
                         <!-- Badges Info -->
                         {% if project.category and project.category != 'None' %}
                         <div class="py-1">
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Category') }}</span>
-                            <a href="/projects?category={{ project.category }}" class="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 max-w-[12rem]">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Category')
+                                }}</span>
+                            <a href="/projects?category={{ project.category }}"
+                                class="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 max-w-[12rem]">
                                 <span class="mdi mdi-shape-outline text-sm"></span>
                                 <span class="truncate">{{ _(project.category) }}</span>
                             </a>
@@ -142,18 +139,21 @@
 
                         {% if project.tags %}
                         <div class="py-1">
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Tags') }}</span>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Tags')
+                                }}</span>
                             <div class="flex flex-wrap gap-1.5">
                                 {% for tag in project.tags %}
                                 <a href="/projects?tag={{ tag|urlencode }}"
-                                    class="badge badge-ghost badge-sm text-xs px-2.5 py-2.5 hover:badge-outline">#{{ tag }}</a>
+                                    class="badge badge-ghost badge-sm text-xs px-2.5 py-2.5 hover:badge-outline">#{{ tag
+                                    }}</a>
                                 {% endfor %}
                             </div>
                         </div>
                         {% endif %}
 
                         <div class="py-1">
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created') }}</span>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created')
+                                }}</span>
                             <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
                                 <span class="mdi mdi-calendar-plus"></span>
                                 {{ project.created_at[:10] }}
@@ -167,7 +167,8 @@
                         <div class="bg-base-200/50 rounded-xl p-3">
                             <div class="flex items-center gap-2 mb-1.5">
                                 <span class="mdi mdi-ruler-square text-primary"></span>
-                                <span class="text-xs font-bold uppercase text-base-content/70">{{ _('Gauge (10cm)') }}</span>
+                                <span class="text-xs font-bold uppercase text-base-content/70">{{ _('Gauge (10cm)')
+                                    }}</span>
                             </div>
                             <div class="flex items-baseline gap-1 text-sm">
                                 <strong class="text-base-content text-lg">{{ project.gauge_stitches or '-' }}</strong>
@@ -182,13 +183,17 @@
                         <!-- Linked Yarns (compact) -->
                         {% if project.linked_yarns %}
                         <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used') }}</span>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used')
+                                }}</span>
                             <div class="space-y-2">
                                 {% for yarn in project.linked_yarns %}
-                                <a href="/yarn/{{ yarn.id }}" class="flex items-center gap-2 rounded-lg border border-base-200 bg-base-100 px-2.5 py-2 text-sm transition hover:border-base-300 hover:bg-base-200/40">
-                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
+                                <a href="/yarn/{{ yarn.id }}"
+                                    class="flex items-center gap-2 rounded-lg border border-base-200 bg-base-100 px-2.5 py-2 text-sm transition hover:border-base-300 hover:bg-base-200/40">
+                                    <div
+                                        class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
                                         {% if yarn.preview_url %}
-                                        <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}" class="h-full w-full object-cover">
+                                        <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}"
+                                            class="h-full w-full object-cover">
                                         {% else %}
                                         <span class="mdi mdi-sheep text-base-content/40"></span>
                                         {% endif %}
@@ -207,10 +212,13 @@
                         </div>
                         {% else %}
                         <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used') }}</span>
-                            <div class="flex items-center justify-between rounded-lg border border-dashed border-base-300 bg-base-200/30 px-3 py-2 text-sm text-base-content/60">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used')
+                                }}</span>
+                            <div
+                                class="flex items-center justify-between rounded-lg border border-dashed border-base-300 bg-base-200/30 px-3 py-2 text-sm text-base-content/60">
                                 <span>{{ _('No yarns linked') }}</span>
-                                <a href="/projects/{{ project.id }}/edit" class="text-primary hover:underline">{{ _('Link yarn') }}</a>
+                                <a href="/projects/{{ project.id }}/edit" class="text-primary hover:underline">{{
+                                    _('Link yarn') }}</a>
                             </div>
                         </div>
                         {% endif %}
@@ -218,25 +226,27 @@
                         <!-- Needles -->
                         <div class="space-y-3">
                             <div>
-                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Used Needles') }}</span>
+                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Used
+                                    Needles') }}</span>
                                 {% if project.needles %}
-                                    <div class="flex items-center gap-2 text-sm font-medium">
-                                        <span class="mdi mdi-needle text-primary/70"></span>
-                                        {{ project.needles }}
-                                    </div>
+                                <div class="flex items-center gap-2 text-sm font-medium">
+                                    <span class="mdi mdi-needle text-primary/70"></span>
+                                    {{ project.needles }}
+                                </div>
                                 {% else %}
-                                    <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
+                                <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
                                 {% endif %}
                             </div>
                             <div>
-                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Recommended needle size') }}</span>
+                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{
+                                    _('Recommended needle size') }}</span>
                                 {% if project.recommended_needles %}
-                                    <div class="flex items-center gap-2 text-sm font-medium">
-                                        <span class="mdi mdi-needle text-base-content/40"></span>
-                                        {{ project.recommended_needles }}
-                                    </div>
+                                <div class="flex items-center gap-2 text-sm font-medium">
+                                    <span class="mdi mdi-needle text-base-content/40"></span>
+                                    {{ project.recommended_needles }}
+                                </div>
                                 {% else %}
-                                    <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
+                                <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -245,19 +255,23 @@
 
                         <!-- Source Link -->
                         <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern
+                                Source') }}</span>
                             {% if project.link %}
-                            <a href="{{ project.link }}" target="_blank" rel="noreferrer" class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
+                            <a href="{{ project.link }}" target="_blank" rel="noreferrer"
+                                class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
                                 <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                                 {{ project.link }}
                             </a>
                             {% if project.link_archive %}
-                            <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer" class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
+                            <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
+                                class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
                                 <span class="mdi mdi-archive-outline"></span>
                                 {{ _('Archived snapshot') }}
                             </a>
                             {% elif project.archive_pending %}
-                            <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                            <div
+                                class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
                                 <span class="mdi mdi-clock-outline"></span>
                                 {{ _('Archive requested - check back soon') }}
                             </div>
@@ -271,8 +285,10 @@
 
                 <!-- Notes Card -->
                 {% if project.comment_html %}
-                <div class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
-                    <h3 class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                <div
+                    class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
+                    <h3
+                        class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                         <span class="mdi mdi-notebook-outline"></span>
                         {{ _('Notes') }}
                     </h3>
@@ -291,21 +307,25 @@
                     {{ _('Instructions') }}
                 </h2>
 
-                <div class="space-y-6 relative md:before:absolute md:before:inset-0 md:before:mx-auto md:before:translate-x-0 md:before:h-full md:before:w-0.5 md:before:bg-gradient-to-b md:before:from-transparent md:before:via-base-300 md:before:to-transparent">
+                <div
+                    class="space-y-6 relative md:before:absolute md:before:inset-0 md:before:mx-auto md:before:translate-x-0 md:before:h-full md:before:w-0.5 md:before:bg-gradient-to-b md:before:from-transparent md:before:via-base-300 md:before:to-transparent">
                     {% for step in project.steps %}
                     <div class="relative flex items-start group">
                         <!-- Timeline Node (Desktop) -->
                         <div class="hidden md:flex relative md:mr-8 flex-col items-center">
-                            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-base-100 border-4 border-base-200 shadow-sm z-10 group-hover:border-primary/50 transition-colors">
+                            <div
+                                class="flex h-12 w-12 items-center justify-center rounded-full bg-base-100 border-4 border-base-200 shadow-sm z-10 group-hover:border-primary/50 transition-colors">
                                 <span class="font-bold text-base-content/70">{{ step.step_number }}</span>
                             </div>
                         </div>
 
                         <!-- Content Card -->
-                        <div class="flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 transition hover:shadow-md hover:border-primary/20">
+                        <div
+                            class="flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 transition hover:shadow-md hover:border-primary/20">
                             <div class="flex items-center gap-3 mb-2">
                                 <!-- Mobile Step Number -->
-                                <div class="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20">
+                                <div
+                                    class="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20">
                                     <span class="font-bold text-sm">{{ step.step_number }}</span>
                                 </div>
                                 <h3 class="text-lg font-bold text-base-content">{{ step.title }}</h3>
@@ -319,24 +339,20 @@
 
                             {% if step.images %}
                             <div class="mt-4 pt-4 border-t border-base-100">
-                                <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                <h4
+                                    class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
                                     <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
                                 </h4>
                                 <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
                                     {% for image in step.images %}
-                                    <a
-                                        href="{{ image.url }}"
+                                    <a href="{{ image.url }}"
                                         class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
                                         data-pswp-width="{{ image.width or 1200 }}"
                                         data-pswp-height="{{ image.height or 1200 }}"
-                                        data-pswp-caption="{{ image.alt_text }} ({{ step.title }})"
-                                    >
-                                        <img
-                                            src="{{ image.url }}"
-                                            alt="{{ image.alt_text }}"
+                                        data-pswp-caption="{{ image.alt_text }} ({{ step.title }})">
+                                        <img src="{{ image.url }}" alt="{{ image.alt_text }}"
                                             class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
-                                            loading="lazy"
-                                        >
+                                            loading="lazy">
                                     </a>
                                     {% endfor %}
                                 </div>
@@ -354,7 +370,8 @@
         <div class="space-y-6 hidden lg:block">
             <!-- Details Card -->
             <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                <h3
+                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                     <span class="mdi mdi-information-outline"></span>
                     {{ _('Project Details') }}
                 </h3>
@@ -363,8 +380,10 @@
                     <!-- Badges Info -->
                     {% if project.category and project.category != 'None' %}
                     <div class="py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Category') }}</span>
-                        <a href="/projects?category={{ project.category }}" class="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 max-w-[12rem]">
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Category')
+                            }}</span>
+                        <a href="/projects?category={{ project.category }}"
+                            class="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 max-w-[12rem]">
                             <span class="mdi mdi-shape-outline text-sm"></span>
                             <span class="truncate">{{ _(project.category) }}</span>
                         </a>
@@ -377,14 +396,16 @@
                         <div class="flex flex-wrap gap-1.5">
                             {% for tag in project.tags %}
                             <a href="/projects?tag={{ tag|urlencode }}"
-                                class="badge badge-ghost badge-sm text-xs px-2.5 py-2.5 hover:badge-outline">#{{ tag }}</a>
+                                class="badge badge-ghost badge-sm text-xs px-2.5 py-2.5 hover:badge-outline">#{{ tag
+                                }}</a>
                             {% endfor %}
                         </div>
                     </div>
                     {% endif %}
 
                     <div class="py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created') }}</span>
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created')
+                            }}</span>
                         <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
                             <span class="mdi mdi-calendar-plus"></span>
                             {{ project.created_at[:10] }}
@@ -398,7 +419,8 @@
                     <div class="bg-base-200/50 rounded-xl p-3">
                         <div class="flex items-center gap-2 mb-1.5">
                             <span class="mdi mdi-ruler-square text-primary"></span>
-                            <span class="text-xs font-bold uppercase text-base-content/70">{{ _('Gauge (10cm)') }}</span>
+                            <span class="text-xs font-bold uppercase text-base-content/70">{{ _('Gauge (10cm)')
+                                }}</span>
                         </div>
                         <div class="flex items-baseline gap-1 text-sm">
                             <strong class="text-base-content text-lg">{{ project.gauge_stitches or '-' }}</strong>
@@ -413,13 +435,17 @@
                     <!-- Linked Yarns (compact) -->
                     {% if project.linked_yarns %}
                     <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used') }}</span>
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used')
+                            }}</span>
                         <div class="space-y-2">
                             {% for yarn in project.linked_yarns %}
-                            <a href="/yarn/{{ yarn.id }}" class="flex items-center gap-2 rounded-lg border border-base-200 bg-base-100 px-2.5 py-2 text-sm transition hover:border-base-300 hover:bg-base-200/40">
-                                <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
+                            <a href="/yarn/{{ yarn.id }}"
+                                class="flex items-center gap-2 rounded-lg border border-base-200 bg-base-100 px-2.5 py-2 text-sm transition hover:border-base-300 hover:bg-base-200/40">
+                                <div
+                                    class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
                                     {% if yarn.preview_url %}
-                                    <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}" class="h-full w-full object-cover">
+                                    <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}"
+                                        class="h-full w-full object-cover">
                                     {% else %}
                                     <span class="mdi mdi-sheep text-base-content/40"></span>
                                     {% endif %}
@@ -438,10 +464,13 @@
                     </div>
                     {% else %}
                     <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used') }}</span>
-                        <div class="flex items-center justify-between rounded-lg border border-dashed border-base-300 bg-base-200/30 px-3 py-2 text-sm text-base-content/60">
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used')
+                            }}</span>
+                        <div
+                            class="flex items-center justify-between rounded-lg border border-dashed border-base-300 bg-base-200/30 px-3 py-2 text-sm text-base-content/60">
                             <span>{{ _('No yarns linked') }}</span>
-                            <a href="/projects/{{ project.id }}/edit" class="text-primary hover:underline">{{ _('Link yarn') }}</a>
+                            <a href="/projects/{{ project.id }}/edit" class="text-primary hover:underline">{{ _('Link
+                                yarn') }}</a>
                         </div>
                     </div>
                     {% endif %}
@@ -449,25 +478,27 @@
                     <!-- Needles -->
                     <div class="space-y-3">
                         <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Used Needles') }}</span>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Used
+                                Needles') }}</span>
                             {% if project.needles %}
-                                <div class="flex items-center gap-2 text-sm font-medium">
-                                    <span class="mdi mdi-needle text-primary/70"></span>
-                                    {{ project.needles }}
-                                </div>
+                            <div class="flex items-center gap-2 text-sm font-medium">
+                                <span class="mdi mdi-needle text-primary/70"></span>
+                                {{ project.needles }}
+                            </div>
                             {% else %}
-                                <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
+                            <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
                             {% endif %}
                         </div>
                         <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Recommended needle size') }}</span>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Recommended
+                                needle size') }}</span>
                             {% if project.recommended_needles %}
-                                <div class="flex items-center gap-2 text-sm font-medium">
-                                    <span class="mdi mdi-needle text-base-content/40"></span>
-                                    {{ project.recommended_needles }}
-                                </div>
+                            <div class="flex items-center gap-2 text-sm font-medium">
+                                <span class="mdi mdi-needle text-base-content/40"></span>
+                                {{ project.recommended_needles }}
+                            </div>
                             {% else %}
-                                <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
+                            <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -476,19 +507,23 @@
 
                     <!-- Source Link -->
                     <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source')
+                            }}</span>
                         {% if project.link %}
-                        <a href="{{ project.link }}" target="_blank" rel="noreferrer" class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
+                        <a href="{{ project.link }}" target="_blank" rel="noreferrer"
+                            class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
                             <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                             {{ project.link }}
                         </a>
                         {% if project.link_archive %}
-                        <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer" class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
+                        <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
+                            class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
                             <span class="mdi mdi-archive-outline"></span>
                             {{ _('Archived snapshot') }}
                         </a>
                         {% elif project.archive_pending %}
-                        <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                        <div
+                            class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
                             <span class="mdi mdi-clock-outline"></span>
                             {{ _('Archive requested - check back soon') }}
                         </div>
@@ -502,8 +537,10 @@
 
             <!-- Notes Card -->
             {% if project.comment_html %}
-            <div class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
-                <h3 class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+            <div
+                class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
+                <h3
+                    class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                     <span class="mdi mdi-notebook-outline"></span>
                     {{ _('Notes') }}
                 </h3>
@@ -527,7 +564,8 @@
         </div>
         <div class="p-6">
             <p class="mb-6 text-base-content/80">
-                {{ _('Are you sure you want to delete') }} <strong class="text-base-content">{{ project.name }}</strong>?
+                {{ _('Are you sure you want to delete') }} <strong class="text-base-content">{{ project.name
+                    }}</strong>?
             </p>
             <div class="flex justify-end gap-2">
                 <form method="dialog">
@@ -541,25 +579,25 @@
 </dialog>
 
 <script>
-function deleteProject() {
-    const btn = document.querySelector('#deleteProjectDialog .btn-error');
-    btn.disabled = true;
-    btn.classList.add('loading');
+    function deleteProject() {
+        const btn = document.querySelector('#deleteProjectDialog .btn-error');
+        btn.disabled = true;
+        btn.classList.add('loading');
 
-    fetch('/projects/{{ project.id }}', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    }).then(response => {
-        if (response.ok) {
-            window.location.href = '/projects?toast=project_deleted';
-        } else {
-            btn.disabled = false;
-            btn.classList.remove('loading');
-            alert("{{ _('Failed to delete project') }}");
-        }
-    });
-}
+        fetch('/projects/{{ project.id }}', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.href = '/projects?toast=project_deleted';
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+                alert("{{ _('Failed to delete project') }}");
+            }
+        });
+    }
 </script>
 {% endblock %}
