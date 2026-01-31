@@ -97,7 +97,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
 {% block form_body %}
 <form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post"
-    class="space-y-6">
+    data-primary-form="true" class="space-y-6">
     <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
     <input type="hidden" id="archive_on_save" name="archive_on_save" value="">
     <input type="hidden" id="stepsData" name="steps_data">

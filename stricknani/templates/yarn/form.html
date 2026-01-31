@@ -75,7 +75,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 {% endblock %}
 
 {% block form_body %}
-<form id="yarnForm" action="{{ '/yarn/' ~ yarn.id ~ '/edit' if yarn else '/yarn/' }}" method="post" enctype="multipart/form-data" class="space-y-6">
+<form id="yarnForm" action="{{ '/yarn/' ~ yarn.id ~ '/edit' if yarn else '/yarn/' }}" method="post" enctype="multipart/form-data" data-primary-form="true" class="space-y-6">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <!-- Main Content Column -->
         <div class="lg:col-span-2 space-y-6">

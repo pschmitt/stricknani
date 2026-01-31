@@ -125,7 +125,8 @@
         });
 
         saveButton?.addEventListener('click', () => {
-            const form = document.querySelector('main form');
+            const form = document.querySelector('main form[data-primary-form="true"]')
+                || document.querySelector('main form');
             if (!form) return;
             if (form.requestSubmit) {
                 form.requestSubmit();
