@@ -58,21 +58,19 @@ from stricknani.utils.markdown import render_markdown
 
 router: APIRouter = APIRouter(prefix="/projects", tags=["projects"])
 
-IMPORT_IMAGE_MAX_BYTES = 5 * 1024 * 1024
-IMPORT_IMAGE_MAX_COUNT = 10
-IMPORT_IMAGE_TIMEOUT = 10
-IMPORT_IMAGE_MIN_DIMENSION = 64
-IMPORT_IMAGE_HEADERS = {
-    "User-Agent": "Stricknani Importer/0.1",
-    "Accept": "image/*",
-}
-IMPORT_ALLOWED_IMAGE_TYPES = {
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-}
-IMPORT_ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+from stricknani.utils.importer import (
+    IMPORT_ALLOWED_IMAGE_EXTENSIONS,
+    IMPORT_ALLOWED_IMAGE_TYPES,
+    IMPORT_IMAGE_HEADERS,
+    IMPORT_IMAGE_MAX_BYTES,
+    IMPORT_IMAGE_MAX_COUNT,
+    IMPORT_IMAGE_MIN_DIMENSION,
+    IMPORT_IMAGE_TIMEOUT,
+    _is_allowed_import_image,
+    _is_garnstudio_url,
+    _is_valid_import_url,
+)
+
 WAYBACK_SAVE_TIMEOUT = 15
 
 
@@ -144,18 +142,36 @@ async def _store_wayback_snapshot(project_id: int, url: str) -> None:
             logger.info("Wayback snapshot not available for %s", url)
 
 
-def _parse_import_image_urls(raw: str | None) -> list[str]:
+def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
     """Parse image URLs sent from the import form."""
     if not raw:
         return []
+
+    if isinstance(raw, list):
+        urls = []
+        for item in raw:
+            if not item:
+                continue
+            try:
+                data = json.loads(item)
+                if isinstance(data, list):
+                    urls.extend([str(u).strip() for u in data if u])
+                else:
+                    urls.append(str(data).strip())
+            except (ValueError, TypeError):
+                urls.append(item.strip())
+        return [u for u in urls if u.startswith("http")]
+
     try:
         data = json.loads(raw)
+        if isinstance(data, list):
+            return [str(item).strip() for item in data if str(item).strip()]
     except (ValueError, TypeError):
-        return []
-    if not isinstance(data, list):
-        return []
-    cleaned = [str(item).strip() for item in data if str(item).strip()]
-    return cleaned
+        pass
+
+    if raw and raw.startswith("http"):
+        return [s.strip() for s in raw.split(",") if s.strip()]
+    return []
 
 
 def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
@@ -235,25 +251,7 @@ def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
     return hints
 
 
-def _is_valid_import_url(url: str) -> bool:
-    """Ensure the import URL uses http(s) and has a host."""
-    parsed = urlparse(url)
-    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
-
-def _is_garnstudio_url(url: str) -> bool:
-    parsed = urlparse(url)
-    host = (parsed.netloc or "").lower()
-    if host.startswith("www."):
-        host = host[4:]
-    return host.endswith(
-        (
-            "garnstudio.com",
-            "garnstudio.no",
-            "dropsdesign.com",
-            "dropsdesign.no",
-        )
-    )
 
 
 def _extract_garnstudio_notes_block(comment: str) -> str | None:
@@ -279,14 +277,7 @@ def _extract_garnstudio_notes_block(comment: str) -> str | None:
     return None
 
 
-def _is_allowed_import_image(content_type: str | None, url: str) -> bool:
-    """Validate content type or file extension for image imports."""
-    if content_type:
-        normalized = content_type.split(";", 1)[0].strip().lower()
-        if normalized in IMPORT_ALLOWED_IMAGE_TYPES:
-            return True
-    extension = Path(urlparse(url).path).suffix.lower()
-    return extension in IMPORT_ALLOWED_IMAGE_EXTENSIONS
+
 
 
 async def _import_images_from_urls(
@@ -1723,7 +1714,7 @@ async def create_project(
     link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
-    import_image_urls: Annotated[str | None, Form()] = None,
+    import_image_urls: Annotated[list[str] | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
@@ -1820,7 +1811,7 @@ async def update_project(
     link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
-    import_image_urls: Annotated[str | None, Form()] = None,
+    import_image_urls: Annotated[list[str] | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),

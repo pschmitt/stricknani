@@ -27,6 +27,43 @@ def _is_garnstudio_url(url: str) -> bool:
     )
 
 
+def _is_valid_import_url(url: str) -> bool:
+    """Ensure the import URL uses http(s) and has a host."""
+    parsed = urlparse(url)
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+# Image import related constants
+IMPORT_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+IMPORT_IMAGE_MAX_COUNT = 10
+IMPORT_IMAGE_TIMEOUT = 10
+IMPORT_IMAGE_MIN_DIMENSION = 64
+IMPORT_IMAGE_HEADERS = {
+    "User-Agent": "Stricknani Importer/0.1",
+    "Accept": "image/*",
+}
+IMPORT_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+}
+IMPORT_ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
+def _is_allowed_import_image(content_type: str | None, url: str) -> bool:
+    """Validate content type or file extension for image imports."""
+    from pathlib import Path
+
+    if content_type:
+        normalized = content_type.split(";", 1)[0].strip().lower()
+        if normalized in IMPORT_ALLOWED_IMAGE_TYPES:
+            return True
+    extension = Path(urlparse(url).path).suffix.lower()
+    return extension in IMPORT_ALLOWED_IMAGE_EXTENSIONS
+
+
+
 class PatternImporter:
     """Extract knitting pattern data from URLs."""
 
@@ -82,6 +119,11 @@ class PatternImporter:
             "title": self._extract_title(soup),
             "needles": self._extract_needles(soup),
             "yarn": self._extract_yarn(soup),
+            "brand": self._extract_brand(soup),
+            "fiber_content": self._extract_fiber_content(soup),
+            "colorway": self._extract_colorway(soup),
+            "weight_grams": self._extract_weight_grams(soup),
+            "length_meters": self._extract_length_meters(soup),
             "gauge_stitches": self._extract_gauge_stitches(soup),
             "gauge_rows": self._extract_gauge_rows(soup),
             "comment": comment,
@@ -154,6 +196,113 @@ class PatternImporter:
                     continue
                 return yarn_text
 
+        # Try to use product name if we are on a yarn product page
+        title = self._extract_title(soup)
+        if title and any(x in title.lower() for x in ["yarn", "garn", "wolle"]):
+            return title
+
+        return None
+
+    def _extract_brand(self, soup: BeautifulSoup) -> str | None:
+        """Extract brand/manufacturer information."""
+        patterns = [
+            r"(?:brand|manufacturer|hersteller|marke)\s*[:：]\s*([^\n<]+)",
+        ]
+        text = soup.get_text()
+        for pattern in patterns:
+            match = re.search(pattern, text, re.I)
+            if match:
+                return match.group(1).strip()
+
+        # Try meta
+        meta_brand = soup.find("meta", property="product:brand")
+        if meta_brand:
+            content = meta_brand.get("content")
+            if isinstance(content, str):
+                return content.strip()
+
+        # Look in the title for common brands if nothing found
+        # (This could be expanded with a list of known brands)
+        return None
+
+    def _extract_fiber_content(self, soup: BeautifulSoup) -> str | None:
+        """Extract fiber content / composition."""
+        patterns = [
+            r"(?:fiber content|composition|zusammensetzung)\s*[:：]\s*([^\n<]+)",
+        ]
+        text = soup.get_text()
+        for pattern in patterns:
+            match = re.search(pattern, text, re.I)
+            if match:
+                return match.group(1).strip()
+        return None
+
+    def _extract_colorway(self, soup: BeautifulSoup) -> str | None:
+        """Extract colorway/color information."""
+        patterns = [
+            r"(?:colorway|color|farbe)\s*[:：]\s*([^\n<]+)",
+        ]
+        text = soup.get_text()
+        for pattern in patterns:
+            match = re.search(pattern, text, re.I)
+            if match:
+                return match.group(1).strip()
+
+        # Try to extract from title if it has bars or separators
+        title = self._extract_title(soup)
+        if title and "|" in title:
+            parts = [p.strip() for p in title.split("|")]
+            if len(parts) >= 2:
+                # Often it's Name | Color | ID
+                return parts[1]
+
+        return None
+
+    def _extract_weight_grams(self, soup: BeautifulSoup) -> int | None:
+        """Extract weight in grams."""
+        text = soup.get_text()
+        
+        # Look for patterns like "300m / 100g"
+        complex_pattern = r"(\d+)\s*m\s*/\s*(\d+)\s*g"
+        match = re.search(complex_pattern, text, re.I)
+        if match:
+            return int(match.group(2))
+
+        patterns = [
+            r"(\d+)\s*g(?:\s|/|$)",
+            r"weight\s*[:：]\s*(\d+)\s*g",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text, re.I)
+            if match:
+                try:
+                    return int(match.group(1))
+                except ValueError:
+                    pass
+        return None
+
+    def _extract_length_meters(self, soup: BeautifulSoup) -> int | None:
+        """Extract length in meters."""
+        text = soup.get_text()
+
+        # Look for patterns like "300m / 100g"
+        complex_pattern = r"(\d+)\s*m\s*/\s*(\d+)\s*g"
+        match = re.search(complex_pattern, text, re.I)
+        if match:
+            return int(match.group(1))
+
+        patterns = [
+            r"(\d+)\s*m(?:\s|/|$)",
+            r"length\s*[:：]\s*(\d+)\s*m",
+            r"lauflänge\s*[:：]\s*(\d+)\s*m",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text, re.I)
+            if match:
+                try:
+                    return int(match.group(1))
+                except ValueError:
+                    pass
         return None
 
     def _extract_gauge_stitches(self, soup: BeautifulSoup) -> int | None:

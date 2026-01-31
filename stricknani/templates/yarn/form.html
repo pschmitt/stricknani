@@ -13,7 +13,8 @@
 {% if yarn %}
 {{ buttons.back_circle('/yarn/' + yarn.id|string, label=_('Back to yarn'), attrs='data-unsaved-confirm="true"') }}
 {% else %}
-{{ buttons.back_circle('/yarn', label=_('Back to yarns'), attrs='data-unsaved-confirm="true"') }}
+{{ buttons.secondary(_('Import'), icon='mdi-download',
+attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='hidden md:inline-flex') }}
 {% endif %}
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"') }}
 {% endset %}
@@ -374,13 +375,85 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 </dialog>
 {% endif %}
 
+{% include "yarn/_import_dialog.html" %}
 {% endblock %}
 
 {% block page_scripts %}
 <script>
-    const yarnId = {{ (yarn.id if yarn else none) | tojson }};
+    const yarnId = parseInt("{{ yarn.id if yarn else 0 }}");
+    const isEditing = "{{ 'true' if yarn else 'false' }}" === "true";
     const deleteErrorMessage = '{{ _("Failed to delete the photo. Please try again") }}';
     const deleteNetworkErrorMessage = '{{ _("Network error while deleting photo") }}';
+
+    window.populateYarnForm = function (data) {
+        if (!data) return;
+
+        const fields = {
+            'name': data.name,
+            'brand': data.brand,
+            'colorway': data.colorway,
+            'dye_lot': data.dye_lot,
+            'fiber_content': data.fiber_content,
+            'weight_category': data.weight_category,
+            'recommended_needles': data.recommended_needles,
+            'weight_grams': data.weight_grams,
+            'length_meters': data.length_meters,
+            'link': data.link,
+            'description': data.description,
+            'notes': data.notes
+        };
+
+        for (const [id, value] of Object.entries(fields)) {
+            const input = document.getElementById(id) || document.getElementsByName(id)[0];
+            if (input && value !== undefined && value !== null) {
+                input.value = value;
+                // Trigger change event for unsaved changes detection
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+
+        // Handle images if any
+        if (data.image_urls && data.image_urls.length > 0) {
+            data.image_urls.forEach(url => {
+                addPendingImageToGallery(url);
+            });
+        }
+
+        window.showToast?.('{{ _("Data imported successfully!") }}', 'success');
+    };
+
+    function addPendingImageToGallery(url) {
+        const container = document.getElementById('image-preview-container');
+        container.classList.remove('hidden');
+
+        const div = document.createElement('div');
+        div.className = 'relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 group';
+
+        // We use hidden inputs to send these URLs to the backend.
+        // The backend expects a list of URLs and will download/process them.
+
+        div.innerHTML = `
+            <img src="${url}" class="h-full w-full object-cover">
+            <input type="hidden" name="import_image_urls" value="${url}">
+            <button type="button" onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
+                <span class="mdi mdi-close"></span>
+            </button>
+        `;
+        container.appendChild(div);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const importedData = sessionStorage.getItem('importedYarnData');
+        if (importedData) {
+            try {
+                const data = JSON.parse(importedData);
+                window.populateYarnForm(data);
+                sessionStorage.removeItem('importedYarnData');
+            } catch (err) {
+                console.error('Failed to parse imported yarn data', err);
+            }
+        }
+    });
 
     async function deleteYarnPhoto(photoId) {
         window.confirmAction(

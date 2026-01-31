@@ -9,6 +9,22 @@
 {% set page_title %}{{ _('Yarns') }}{% endset %}
 {% set page_actions %}
 {{ buttons.primary(_('New Yarn'), icon='mdi-plus-circle-outline', href='/yarn/new', class='hidden md:inline-flex') }}
+
+<div class="dropdown dropdown-end">
+    <button tabindex="0" role="button" class="btn btn-square btn-ghost" aria-label="{{ _('More options') }}">
+        <span class="mdi mdi-dots-vertical text-xl"></span>
+    </button>
+    <ul tabindex="0"
+        class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
+        <li>
+            <button type="button" onclick="importDialog.showModal()">
+                <span class="mdi mdi-download"></span>
+                {{ _('Import Yarn') }}
+            </button>
+        </li>
+    </ul>
+</div>
+
 {{ buttons.fab('mdi-plus', href='/yarn/new', class='md:hidden', label=_('New Yarn')) }}
 {% endset %}
 
@@ -44,6 +60,10 @@
 
 {% block list_content %}
 {% include "yarn/_list_partial.html" %}
+{% endblock %}
+
+{% block list_extra %}
+{% include "yarn/_import_dialog.html" %}
 {% endblock %}
 
 {% block page_scripts %}

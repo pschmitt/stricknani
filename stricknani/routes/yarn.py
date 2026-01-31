@@ -1,9 +1,16 @@
 """Yarn stash routes."""
 
+import json
+import logging
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
+from io import BytesIO
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
+from urllib.parse import urlparse
+
+import httpx
+
 
 from fastapi import (
     APIRouter,
@@ -28,15 +35,146 @@ from stricknani.main import render_template
 from stricknani.models import Project, User, Yarn, YarnImage, user_favorite_yarns
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
+    build_import_filename,
     create_thumbnail,
     delete_file,
     get_file_url,
     get_thumbnail_url,
+    save_bytes,
     save_uploaded_file,
+)
+from stricknani.utils.importer import (
+    IMPORT_IMAGE_HEADERS,
+    IMPORT_IMAGE_MAX_BYTES,
+    IMPORT_IMAGE_MAX_COUNT,
+    IMPORT_IMAGE_MIN_DIMENSION,
+    IMPORT_IMAGE_TIMEOUT,
+    _is_allowed_import_image,
+    _is_valid_import_url,
 )
 from stricknani.utils.markdown import render_markdown
 
+
 router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
+
+
+async def _import_yarn_images_from_urls(
+    db: AsyncSession, yarn: Yarn, image_urls: Sequence[str]
+) -> int:
+    """Download and attach imported images to a yarn."""
+    if not image_urls:
+        return 0
+
+    logger = logging.getLogger("stricknani.imports")
+    imported = 0
+
+    headers = dict(IMPORT_IMAGE_HEADERS)
+    if yarn.link:
+        headers["Referer"] = yarn.link
+
+    async with httpx.AsyncClient(
+        timeout=IMPORT_IMAGE_TIMEOUT,
+        follow_redirects=True,
+        headers=headers,
+    ) as client:
+        for image_url in image_urls:
+            if imported >= IMPORT_IMAGE_MAX_COUNT:
+                break
+            if not _is_valid_import_url(image_url):
+                logger.info("Skipping invalid image URL: %s", image_url)
+                continue
+
+            try:
+                response = await client.get(image_url)
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                logger.warning("Failed to download image %s: %s", image_url, exc)
+                continue
+
+            content_type = response.headers.get("content-type")
+            if not _is_allowed_import_image(content_type, image_url):
+                logger.info("Skipping non-image URL: %s", image_url)
+                continue
+
+            if not response.content or len(response.content) > IMPORT_IMAGE_MAX_BYTES:
+                logger.info("Skipping empty or large image %s", image_url)
+                continue
+
+            try:
+                with PilImage.open(BytesIO(response.content)) as img:
+                    width, height = img.size
+                    if (
+                        width < IMPORT_IMAGE_MIN_DIMENSION
+                        or height < IMPORT_IMAGE_MIN_DIMENSION
+                    ):
+                        logger.info(
+                            "Skipping small image %s (%sx%s)",
+                            image_url,
+                            width,
+                            height,
+                        )
+                        continue
+            except Exception as exc:
+                logger.info("Skipping unreadable image %s: %s", image_url, exc)
+                continue
+
+            original_filename = build_import_filename(image_url, content_type)
+            filename = ""
+            try:
+                filename, original_filename = save_bytes(
+                    response.content, original_filename, yarn.id, subdir="yarns"
+                )
+                file_path = config.MEDIA_ROOT / "yarns" / str(yarn.id) / filename
+                await create_thumbnail(file_path, yarn.id, subdir="yarns")
+            except Exception as exc:
+                if filename:
+                    delete_file(filename, yarn.id, subdir="yarns")
+                logger.warning("Failed to store image %s: %s", image_url, exc)
+                continue
+
+            photo = YarnImage(
+                filename=filename,
+                original_filename=original_filename,
+                alt_text=yarn.name or original_filename,
+                yarn_id=yarn.id,
+            )
+            db.add(photo)
+            imported += 1
+
+    return imported
+
+
+def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
+    """Parse image URLs sent from the import form."""
+    if not raw:
+        return []
+
+    if isinstance(raw, list):
+        urls = []
+        for item in raw:
+            if not item:
+                continue
+            try:
+                data = json.loads(item)
+                if isinstance(data, list):
+                    urls.extend([str(u).strip() for u in data if u])
+                else:
+                    urls.append(str(data).strip())
+            except (ValueError, TypeError):
+                urls.append(item.strip())
+        return [u for u in urls if u.startswith("http")]
+
+    try:
+        data = json.loads(raw)
+        if isinstance(data, list):
+            return [str(item).strip() for item in data if str(item).strip()]
+    except (ValueError, TypeError):
+        pass
+
+    if raw and raw.startswith("http"):
+        return [s.strip() for s in raw.split(",") if s.strip()]
+    return []
+
 
 
 def _strip_wrapping_quotes(value: str) -> str:
@@ -211,6 +349,70 @@ def _serialize_yarn_cards(
     ]
 
 
+@router.post("/import")
+async def import_yarn(
+    url: Annotated[str, Form()],
+    current_user: User = Depends(require_auth),
+) -> JSONResponse:
+    """Import yarn data from URL."""
+    import logging
+    from stricknani.utils.importer import (
+        GarnstudioPatternImporter,
+        PatternImporter,
+        _is_garnstudio_url,
+    )
+
+    logger = logging.getLogger(__name__)
+
+    if not url or not url.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="URL is required",
+        )
+
+    url = url.strip()
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid URL format",
+        )
+
+    try:
+        importer: PatternImporter
+        if _is_garnstudio_url(url):
+            importer = GarnstudioPatternImporter(url)
+        else:
+            importer = PatternImporter(url)
+
+        data = await importer.fetch_and_parse()
+
+        # Map pattern data to yarn fields
+        yarn_data = {
+            "name": data.get("title"),
+            "brand": data.get("brand"),
+            "colorway": data.get("colorway"),
+            "weight_grams": data.get("weight_grams"),
+            "length_meters": data.get("length_meters"),
+            "fiber_content": data.get("fiber_content"),
+            "recommended_needles": data.get("needles"),
+            "gauge_stitches": data.get("gauge_stitches"),
+            "gauge_rows": data.get("gauge_rows"),
+            "description": data.get("yarn"),
+            "link": url,
+            "image_urls": data.get("image_urls", [])[:5],
+            "notes": data.get("comment"),
+        }
+
+        return JSONResponse(content=yarn_data)
+
+    except Exception as e:
+        logger.error(f"Yarn import failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to import: {str(e)}",
+        ) from e
+
+
 @router.get("/search-suggestions")
 async def search_suggestions(
     type: str,
@@ -375,6 +577,7 @@ async def create_yarn(
     length_meters: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
     link: Annotated[str | None, Form()] = None,
+    import_image_urls: Annotated[list[str] | None, Form()] = None,
     photos: Annotated[list[UploadFile | str] | None, File()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
@@ -405,7 +608,15 @@ async def create_yarn(
     await db.flush()
 
     await _handle_photo_uploads(photos, yarn, db)
+
+    # Handle imported image URLs
+    if import_image_urls:
+        urls = _parse_import_image_urls(import_image_urls)
+        if urls:
+            await _import_yarn_images_from_urls(db, yarn, urls)
+
     await db.commit()
+
 
     return RedirectResponse(
         url=f"/yarn/{yarn.id}?toast=yarn_created",
@@ -503,6 +714,7 @@ async def update_yarn(
     length_meters: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
     link: Annotated[str | None, Form()] = None,
+    import_image_urls: Annotated[list[str] | None, Form()] = None,
     new_photos: Annotated[list[UploadFile | str] | None, File()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
@@ -531,7 +743,15 @@ async def update_yarn(
     yarn.link = link.strip() if link else None
 
     await _handle_photo_uploads(new_photos, yarn, db)
+
+    # Handle imported image URLs
+    if import_image_urls:
+        urls = _parse_import_image_urls(import_image_urls)
+        if urls:
+            await _import_yarn_images_from_urls(db, yarn, urls)
+
     await db.commit()
+
 
     return RedirectResponse(
         url=f"/yarn/{yarn.id}?toast=yarn_updated",

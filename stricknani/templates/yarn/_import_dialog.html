@@ -1,0 +1,82 @@
+{% import "macros/dialogs.html" as dialogs %}
+{% call dialogs.modal('importDialog', title=_('Import Yarn'), box_class='max-w-2xl') %}
+<form id="importYarnForm" action="/yarn/import" method="POST">
+    <div role="tablist" class="tabs tabs-boxed mb-4">
+        <a role="tab" class="tab tab-active">{{ _('From URL') }}</a>
+    </div>
+
+    <div id="tab-url" class="import-tab-content">
+        <div class="form-control">
+            <label class="label">
+                <span class="label-text">{{ _('Yarn/Pattern URL') }}</span>
+            </label>
+            <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
+                class="input input-bordered" />
+            <label class="label">
+                <span class="label-text-alt">{{ _('Enter the URL to extract yarn information from') }}</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="modal-action">
+        {{ dialogs.dialog_cancel(_('Cancel'),
+        attrs='onclick="document.getElementById(\'importDialog\').close()"') }}
+        {{ dialogs.dialog_primary(_('Import'), icon='mdi-download', type='submit') }}
+    </div>
+</form>
+<div id="importLoading" class="hidden text-center py-8">
+    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent">
+    </div>
+    <p class="mt-4 text-base font-medium text-slate-700 dark:text-slate-300">{{ _('Importing yarn data...') }}</p>
+    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ _('This may take 10-30 seconds') }}</p>
+</div>
+{% endcall %}
+
+<script>
+    document.getElementById('importYarnForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const loading = document.getElementById('importLoading');
+
+        // Simple UI toggle
+        form.style.display = 'none';
+        loading.classList.remove('hidden');
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                // If we are on the form page, populate it directly
+                if (typeof window.populateYarnForm === 'function') {
+                    window.populateYarnForm(data);
+                    document.getElementById('importDialog').close();
+                    // Reset UI for next time
+                    form.style.display = 'block';
+                    loading.classList.add('hidden');
+                } else {
+                    // Store data for the new yarn form
+                    sessionStorage.setItem('importedYarnData', JSON.stringify(data));
+                    // Redirect to new yarn page
+                    window.location.href = '/yarn/new';
+                }
+            } else {
+                const error = await response.json();
+                alert('Import failed: ' + (error.detail || 'Unknown error'));
+                form.style.display = 'block';
+                loading.classList.add('hidden');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Import failed: ' + err.message);
+            form.style.display = 'block';
+            loading.classList.add('hidden');
+        }
+    });
+</script>
