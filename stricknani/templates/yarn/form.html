@@ -12,10 +12,8 @@
 {% set back_url = '/yarn/' + yarn.id|string if yarn else '/yarn' %}
 {% set back_label = _('Back to yarns') %}
 {% set page_actions %}
-{% if not yarn %}
 {{ buttons.secondary(_('Import'), icon='mdi-download',
 attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='hidden md:inline-flex') }}
-{% endif %}
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"') }}
 {% endset %}
 
@@ -64,6 +62,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 {% block form_body %}
 <form id="yarnForm" action="{{ '/yarn/' ~ yarn.id ~ '/edit' if yarn else '/yarn/' }}" method="post"
     enctype="multipart/form-data" data-primary-form="true" class="space-y-6">
+    <input type="hidden" id="archive_on_save" name="archive_on_save" value="">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <!-- Main Content Column -->
         <div class="lg:col-span-2 space-y-6">
@@ -154,6 +153,11 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                                     Link') }}</label>
                                 <input type="url" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
                                     class="input input-bordered input-sm w-full mt-1" placeholder="https://...">
+                                <label class="label cursor-pointer justify-start gap-2 mt-2">
+                                    <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
+                                        checked>
+                                    <span class="label-text text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -342,6 +346,11 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                         </label>
                         <input type="url" id="link" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
                             class="input input-bordered input-sm w-full" placeholder="https://...">
+                        <label class="label cursor-pointer justify-start gap-2 mt-2">
+                            <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
+                                checked>
+                            <span class="label-text text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -428,6 +437,11 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             data.image_urls.forEach(url => {
                 addPendingImageToGallery(url);
             });
+        }
+
+        const archiveField = document.getElementById('archive_on_save');
+        if (archiveField) {
+            archiveField.value = '1';
         }
 
         window.unsavedChanges?.setDirty(true);
@@ -539,6 +553,11 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             } catch (err) {
                 console.error('Failed to parse imported yarn data', err);
             }
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('import') === '1') {
+            document.getElementById('importDialog')?.showModal();
         }
     });
 

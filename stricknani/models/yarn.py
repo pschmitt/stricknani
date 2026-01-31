@@ -34,6 +34,11 @@ class Yarn(Base):
     length_meters: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     link: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    link_archive: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    link_archive_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True
+    )
+    link_archive_failed: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), index=True, nullable=False
     )
@@ -43,6 +48,16 @@ class Yarn(Base):
         onupdate=lambda: datetime.now(UTC),
         nullable=False,
     )
+
+    @property
+    def archive_pending(self) -> bool:
+        """Check if an archive is requested but not yet available."""
+        return bool(
+            self.link
+            and self.link_archive_requested_at
+            and not self.link_archive
+            and not self.link_archive_failed
+        )
 
     owner_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True

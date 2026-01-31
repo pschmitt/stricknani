@@ -71,75 +71,10 @@ from stricknani.utils.importer import (
     _is_valid_import_url,
 )
 
-WAYBACK_SAVE_TIMEOUT = 15
-
-
-def _should_request_archive(raw: str | None) -> bool:
-    if raw is None:
-        return False
-    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
-
-
-async def _request_wayback_snapshot(url: str) -> str | None:
-    if not _is_valid_import_url(url):
-        return None
-    save_url = f"https://web.archive.org/save/{quote(url, safe='')}"
-    logger = logging.getLogger("stricknani.imports")
-    async with httpx.AsyncClient(timeout=WAYBACK_SAVE_TIMEOUT) as client:
-        try:
-            response = await client.get(save_url)
-            archive_url: str | None = None
-            content_location = response.headers.get("content-location")
-            location = response.headers.get("location")
-            for candidate in [content_location, location]:
-                if not candidate:
-                    continue
-                if candidate.startswith("/"):
-                    archive_url = f"https://web.archive.org{candidate}"
-                    break
-                if candidate.startswith("http"):
-                    archive_url = candidate
-                    break
-            logger.info(
-                "Wayback snapshot request %s -> %s",
-                url,
-                response.status_code,
-            )
-            if not archive_url:
-                try:
-                    availability = await client.get(
-                        "https://archive.org/wayback/available",
-                        params={"url": url},
-                    )
-                    if availability.status_code == 200:
-                        payload = availability.json()
-                        closest = payload.get("archived_snapshots", {}).get(
-                            "closest", {}
-                        )
-                        if isinstance(closest, dict):
-                            archive_url = closest.get("url")
-                except (httpx.HTTPError, ValueError, TypeError) as exc:
-                    logger.info(
-                        "Wayback availability check failed for %s: %s", url, exc
-                    )
-            return archive_url
-        except httpx.HTTPError as exc:
-            logger.info("Wayback snapshot request failed for %s: %s", url, exc)
-    return None
-
-
-async def _store_wayback_snapshot(project_id: int, url: str) -> None:
-    logger = logging.getLogger("stricknani.imports")
-    async with AsyncSessionLocal() as session:
-        project = await session.get(Project, project_id)
-        if not project or project.link_archive:
-            return
-        archive_url = await _request_wayback_snapshot(url)
-        if archive_url:
-            project.link_archive = archive_url
-            await session.commit()
-        else:
-            logger.info("Wayback snapshot not available for %s", url)
+from stricknani.utils.wayback import (
+    _should_request_archive,
+    store_wayback_snapshot,
+)
 
 
 def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
@@ -1792,7 +1727,7 @@ async def create_project(
     await db.refresh(project)
 
     if project.link and _should_request_archive(archive_on_save):
-        asyncio.create_task(_store_wayback_snapshot(project.id, project.link))
+        asyncio.create_task(store_wayback_snapshot(Project, project.id, project.link))
 
     if request.headers.get("accept") == "application/json":
         return JSONResponse(
@@ -1917,10 +1852,38 @@ async def update_project(
     await db.commit()
 
     if project.link and _should_request_archive(archive_on_save):
-        asyncio.create_task(_store_wayback_snapshot(project.id, project.link))
+        asyncio.create_task(store_wayback_snapshot(Project, project.id, project.link))
 
     return RedirectResponse(
         url=f"/projects/{project.id}?toast=project_updated",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+@router.post("/{project_id}/retry-archive", response_class=Response)
+async def retry_project_archive(
+    project_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> Response:
+    """Retry requesting a wayback snapshot for a project."""
+    result = await db.execute(
+        select(Project).where(
+            Project.id == project_id,
+            Project.owner_id == current_user.id,
+        )
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if project.link:
+        project.link_archive_failed = False
+        project.link_archive_requested_at = datetime.now(UTC)
+        await db.commit()
+        asyncio.create_task(store_wayback_snapshot(Project, project.id, project.link))
+
+    return RedirectResponse(
+        url=f"/projects/{project.id}",
         status_code=status.HTTP_303_SEE_OTHER,
     )
 

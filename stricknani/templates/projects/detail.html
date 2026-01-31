@@ -28,6 +28,12 @@
             {% endwith %}
         </li>
         <li>
+            <a href="/projects/{{ project.id }}/edit?import=1" class="hover:bg-primary/10">
+                <span class="mdi mdi-download text-lg"></span>
+                {{ _('Re-import') }}
+            </a>
+        </li>
+        <li>
             <button onclick="document.getElementById('deleteProjectDialog').showModal()"
                 class="text-error hover:bg-error/10 hover:text-error">
                 <span class="mdi mdi-delete-outline text-lg"></span>
@@ -253,6 +259,20 @@
                                 <span class="mdi mdi-archive-outline"></span>
                                 {{ _('Archived snapshot') }}
                             </a>
+                            {% elif project.link_archive_failed %}
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <div
+                                    class="inline-flex items-center gap-2 rounded-full bg-error/10 px-3 py-1 text-xs font-semibold text-error">
+                                    <span class="mdi mdi-alert-circle-outline"></span>
+                                    {{ _('Archive request failed') }}
+                                </div>
+                                <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
+                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                        <span class="mdi mdi-refresh"></span>
+                                        {{ _('Retry') }}
+                                    </button>
+                                </form>
+                            </div>
                             {% elif project.archive_pending %}
                             <div
                                 class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
@@ -505,6 +525,20 @@
                             <span class="mdi mdi-archive-outline"></span>
                             {{ _('Archived snapshot') }}
                         </a>
+                        {% elif project.link_archive_failed %}
+                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                            <div
+                                class="inline-flex items-center gap-2 rounded-full bg-error/10 px-3 py-1 text-xs font-semibold text-error">
+                                <span class="mdi mdi-alert-circle-outline"></span>
+                                {{ _('Archive request failed') }}
+                            </div>
+                            <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
+                                <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                    <span class="mdi mdi-refresh"></span>
+                                    {{ _('Retry') }}
+                                </button>
+                            </form>
+                        </div>
                         {% elif project.archive_pending %}
                         <div
                             class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">

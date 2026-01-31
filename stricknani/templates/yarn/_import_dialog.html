@@ -11,7 +11,7 @@
                 <span class="label-text">{{ _('Yarn/Pattern URL') }}</span>
             </label>
             <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
-                class="input input-bordered" />
+                value="{{ yarn.link if yarn and yarn.link else '' }}" class="input input-bordered" />
             <label class="label">
                 <span class="label-text-alt">{{ _('Enter the URL to extract yarn information from') }}</span>
             </label>

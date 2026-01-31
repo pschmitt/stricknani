@@ -13,7 +13,7 @@
                 <span class="label-text">{{ _('Pattern URL') }}</span>
             </label>
             <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
-                class="input input-bordered" />
+                value="{{ project.link if project and project.link else '' }}" class="input input-bordered" />
             <label class="label">
                 <span class="label-text-alt">{{ _('Enter the URL of the knitting pattern') }}</span>
             </label>

@@ -37,9 +37,20 @@ class Project(Base):
     link_archive_requested_at: Mapped[datetime | None] = mapped_column(
         DateTime, nullable=True
     )
+    link_archive_failed: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), index=True
     )
+
+    @property
+    def archive_pending(self) -> bool:
+        """Check if an archive is requested but not yet available."""
+        return bool(
+            self.link
+            and self.link_archive_requested_at
+            and not self.link_archive
+            and not self.link_archive_failed
+        )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.now(UTC),

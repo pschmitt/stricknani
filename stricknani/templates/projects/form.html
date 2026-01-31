@@ -10,10 +10,8 @@
 {% set back_url = '/projects/' + project.id|string if project else '/projects' %}
 {% set back_label = _('Back to projects') %}
 {% set page_actions %}
-{% if not project %}
 {{ buttons.secondary(_('Import'), icon='mdi-download',
 attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='hidden md:inline-flex') }}
-{% endif %}
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"') }}
 {% endset %}
 
@@ -214,6 +212,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                     Source') }}</label>
                                 <input type="url" name="link" value="{{ project.link or '' }}"
                                     class="input input-bordered input-sm w-full mt-1" placeholder="https://...">
+                                <label class="label cursor-pointer justify-start gap-2 mt-2">
+                                    <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
+                                        checked>
+                                    <span class="label-text text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -460,6 +463,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         </label>
                         <input type="url" id="link" name="link" value="{{ project.link or '' }}"
                             class="input input-bordered input-sm w-full" placeholder="https://...">
+                        <label class="label cursor-pointer justify-start gap-2 mt-2">
+                            <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
+                                checked>
+                            <span class="label-text text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -677,6 +685,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
         initYarnSelector();
         initTagEditor();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('import') === '1') {
+            document.getElementById('importDialog')?.showModal();
+        }
     });
 
     function initTagEditor() {

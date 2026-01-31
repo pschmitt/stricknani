@@ -7,6 +7,7 @@ from collections.abc import Iterable, Sequence
 from io import BytesIO
 from pathlib import Path
 from typing import Annotated, Any
+from datetime import UTC, datetime
 from urllib.parse import urlparse
 
 import httpx
@@ -53,6 +54,11 @@ from stricknani.utils.importer import (
     _is_valid_import_url,
 )
 from stricknani.utils.markdown import render_markdown
+from stricknani.utils.wayback import (
+    _should_request_archive,
+    store_wayback_snapshot,
+)
+import asyncio
 
 
 router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
@@ -594,6 +600,7 @@ async def create_yarn(
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     import_primary_image_url: Annotated[str | None, Form()] = None,
     photos: Annotated[list[UploadFile | str] | None, File()] = None,
+    archive_on_save: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -633,6 +640,11 @@ async def create_yarn(
             )
 
     await db.commit()
+    await db.refresh(yarn)
+
+    if yarn.link and _should_request_archive(archive_on_save):
+        asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
+
 
 
     return RedirectResponse(
@@ -734,6 +746,7 @@ async def update_yarn(
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     import_primary_image_url: Annotated[str | None, Form()] = None,
     new_photos: Annotated[list[UploadFile | str] | None, File()] = None,
+    archive_on_save: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -771,10 +784,38 @@ async def update_yarn(
             )
 
     await db.commit()
+    await db.refresh(yarn)
+
+    if yarn.link and _should_request_archive(archive_on_save):
+        asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
+
 
 
     return RedirectResponse(
         url=f"/yarn/{yarn.id}?toast=yarn_updated",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.post("/{yarn_id}/retry-archive", response_class=Response)
+async def retry_yarn_archive(
+    yarn_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> Response:
+    """Retry requesting a wayback snapshot for a yarn."""
+    yarn = await _fetch_yarn(db, yarn_id, current_user.id)
+    if yarn is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.link:
+        yarn.link_archive_failed = False
+        yarn.link_archive_requested_at = datetime.now(UTC)
+        await db.commit()
+        asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
+
+    return RedirectResponse(
+        url=f"/yarn/{yarn.id}",
         status_code=status.HTTP_303_SEE_OTHER,
     )
 
