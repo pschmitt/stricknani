@@ -6,8 +6,11 @@
 {# Set variables for the unified navbar #}
 {% set page_title %}{{ _('Admin') }}{% endset %}
 {% set page_actions %}
-{{ buttons.primary(_('Create User'), type='button', icon='mdi-account-plus', attrs='onclick="openCreateUserDialog()"')
-}}
+{{ buttons.primary(_('New User'), type='button', icon='mdi-account-plus', class='hidden md:inline-flex',
+attrs='onclick="openCreateUserDialog()"') }}
+<!-- Mobile FAB -->
+{{ buttons.fab('mdi-plus', type='button', label=_('New User'), class='md:hidden',
+attrs='onclick="openCreateUserDialog()"') }}
 {% endset %}
 
 {% block navbar %}
@@ -27,7 +30,7 @@
     </div>
 </div>
 
-<dialog id="editUserDialog" class="modal modal-bottom sm:modal-middle">
+<dialog id="editUserDialog" class="modal modal-top sm:modal-middle">
     <div class="modal-box">
         <h3 class="font-bold text-lg mb-2">{{ _('Edit profile') }}</h3>
         <p class="text-sm opacity-70 mb-6">
@@ -65,7 +68,7 @@
     {{ dialogs.modal_backdrop() }}
 </dialog>
 
-<dialog id="resetPasswordDialog" class="modal modal-bottom sm:modal-middle">
+<dialog id="resetPasswordDialog" class="modal modal-top sm:modal-middle">
     <div class="modal-box">
         <h3 class="font-bold text-lg mb-2">{{ _('Reset password') }}</h3>
         <p class="text-sm opacity-70 mb-6">
@@ -91,7 +94,7 @@
     {{ dialogs.modal_backdrop() }}
 </dialog>
 
-<dialog id="createUserDialog" class="modal modal-bottom sm:modal-middle">
+<dialog id="createUserDialog" class="modal modal-top sm:modal-middle">
     <div class="modal-box">
         <h3 class="font-bold text-lg mb-2">{{ _('Create user') }}</h3>
         <p class="text-sm opacity-70 mb-6">{{ _('Add a new account with a temporary password.') }}</p>
@@ -134,7 +137,7 @@
     {{ dialogs.modal_backdrop() }}
 </dialog>
 
-<dialog id="deleteUserDialog" class="modal modal-bottom sm:modal-middle">
+<dialog id="deleteUserDialog" class="modal modal-top sm:modal-middle">
     <div class="modal-box">
         <h3 class="font-bold text-lg text-error flex items-center gap-2 mb-2">
             <span class="mdi mdi-alert-circle"></span>

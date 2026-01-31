@@ -1,5 +1,5 @@
 {% import "macros/dialogs.html" as dialogs %}
-<dialog id="importDialog" class="modal">
+<dialog id="importDialog" class="modal modal-top sm:modal-middle">
     <div class="modal-box max-w-2xl">
         <h3 class="font-bold text-lg mb-4">{{ _('Import Pattern') }}</h3>
         <form id="importForm" action="/projects/import" method="POST" enctype="multipart/form-data">
@@ -77,7 +77,8 @@
             </div>
 
             <div class="modal-action">
-                {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'importDialog\').close()"') }}
+                {{ dialogs.dialog_cancel(_('Cancel'),
+                attrs='onclick="document.getElementById(\'importDialog\').close()"') }}
                 {{ dialogs.dialog_primary(_('Import'), icon='mdi-download', type='submit') }}
             </div>
         </form>
