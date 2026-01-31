@@ -40,6 +40,8 @@
         const leaveButton = dialog?.querySelector('[data-unsaved-leave]');
         const saveButton = dialog?.querySelector('[data-unsaved-save]');
         let pendingNavigation = null;
+        let ignoreNextPopstate = false;
+        let hasHistoryGuard = false;
 
         // Track changes on any form element within main
         document.addEventListener('input', (e) => {
@@ -60,6 +62,15 @@
                 window.unsavedChanges.setDirty(false);
             }
         });
+
+        const ensureHistoryGuard = () => {
+            if (window.history.state?.unsavedGuard) {
+                hasHistoryGuard = true;
+                return;
+            }
+            window.history.pushState({ unsavedGuard: true }, '');
+            hasHistoryGuard = true;
+        };
 
         const showUnsavedDialog = (href) => {
             if (!dialog) return;
@@ -85,6 +96,26 @@
             }
         });
 
+        ensureHistoryGuard();
+
+        window.addEventListener('popstate', () => {
+            if (!hasHistoryGuard) {
+                return;
+            }
+            if (ignoreNextPopstate) {
+                ignoreNextPopstate = false;
+                return;
+            }
+            if (window.unsavedChanges.isDirty()) {
+                pendingNavigation = 'history-back';
+                showUnsavedDialog(null);
+                window.history.pushState({ unsavedGuard: true }, '');
+                return;
+            }
+            ignoreNextPopstate = true;
+            window.history.back();
+        });
+
         cancelButton?.addEventListener('click', () => {
             dialog?.close();
         });
@@ -102,7 +133,12 @@
             const target = pendingNavigation;
             pendingNavigation = null;
             if (target) {
-                window.location.href = target;
+                if (target === 'history-back') {
+                    ignoreNextPopstate = true;
+                    window.history.go(-2);
+                } else {
+                    window.location.href = target;
+                }
             } else {
                 window.history.back();
             }

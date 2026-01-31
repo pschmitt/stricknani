@@ -125,6 +125,7 @@ class PatternImporter:
             "colorway": self._extract_colorway(soup),
             "weight_grams": self._extract_weight_grams(soup),
             "length_meters": self._extract_length_meters(soup),
+            "weight_category": self._extract_weight_category(soup),
             "gauge_stitches": self._extract_gauge_stitches(soup),
             "gauge_rows": self._extract_gauge_rows(soup),
             "comment": comment,
@@ -132,6 +133,16 @@ class PatternImporter:
             "link": self.url,
             "image_urls": images,
         }
+
+        logger.info(
+            "Import extracted title=%s needles=%s yarn=%s category=%s steps=%s images=%s",
+            data.get("title"),
+            data.get("needles"),
+            data.get("yarn"),
+            data.get("weight_category"),
+            len(steps),
+            len(images),
+        )
 
         # Decode HTML entities in all string fields
         return self._unescape_data(data)
@@ -175,8 +186,13 @@ class PatternImporter:
 
     def _extract_needles(self, soup: BeautifulSoup) -> str | None:
         """Extract needle information."""
+        # Try finding by label first
+        val = self._find_info_by_label(soup, ["nadelstärke", "needles", "needle size", "nadeln"])
+        if val:
+            return val
+
         patterns = [
-            r"needle[s]?\s*[:：]\s*([^\n]+)",
+            r"(?:needle[s]?|nadelstärke|nadeln)\s*[:：]\s*([^\n]+)",
             r"([0-9.]+\s*mm)",
             r"(US\s*\d+)",
         ]
@@ -246,6 +262,30 @@ class PatternImporter:
 
     def _extract_brand(self, soup: BeautifulSoup) -> str | None:
         """Extract brand/manufacturer information."""
+        # 1. Try to find known brands in the title first.
+        # This is extremely reliable for shop product pages.
+        title = self._extract_title(soup)
+        if title:
+            known_brands = [
+                "Rico Design",
+                "Drops",
+                "Garnstudio",
+                "Lana Grossa",
+                "Lang Yarns",
+                "Sandnes Garn",
+                "Schachenmayr",
+                "Pascuali",
+                "Rosy Green Wool",
+            ]
+            for brand in known_brands:
+                if brand.lower() in title.lower():
+                    return brand
+
+        # 2. Try technical info labels
+        val = self._find_info_by_label(soup, ["brand", "manufacturer", "hersteller", "marke"])
+        if val:
+            return val
+
         patterns = [
             r"(?:brand|manufacturer|hersteller|marke)\s*[:：]\s*([^\n<]+)",
         ]
@@ -253,23 +293,27 @@ class PatternImporter:
         for pattern in patterns:
             match = re.search(pattern, text, re.I)
             if match:
-                return match.group(1).strip()
+                res = match.group(1).strip()
+                if not self._is_ui_text(res):
+                    return res
 
-        # Try meta
+        # 3. Try meta
         meta_brand = soup.find("meta", property="product:brand")
         if meta_brand:
             content = meta_brand.get("content")
-            if isinstance(content, str):
+            if isinstance(content, str) and not self._is_ui_text(content):
                 return content.strip()
 
-        # Look in the title for common brands if nothing found
-        # (This could be expanded with a list of known brands)
         return None
 
     def _extract_fiber_content(self, soup: BeautifulSoup) -> str | None:
         """Extract fiber content / composition."""
+        val = self._find_info_by_label(soup, ["zusammensetzung", "fiber content", "composition", "material"])
+        if val:
+            return val
+
         patterns = [
-            r"(?:fiber content|composition|zusammensetzung)\s*[:：]\s*([^\n<]+)",
+            r"(?:fiber content|composition|zusammensetzung|material)\s*[:：]\s*([^\n<]+)",
         ]
         text = soup.get_text()
         for pattern in patterns:
@@ -280,8 +324,12 @@ class PatternImporter:
 
     def _extract_colorway(self, soup: BeautifulSoup) -> str | None:
         """Extract colorway/color information."""
+        val = self._find_info_by_label(soup, ["colorway", "color", "farbe", "farbbezeichnung"])
+        if val:
+            return val
+
         patterns = [
-            r"(?:colorway|color|farbe)\s*[:：]\s*([^\n<]+)",
+            r"(?:colorway|color|farbe|farbbezeichnung)\s*[:：]\s*([^\n<]+)",
         ]
         text = soup.get_text()
         for pattern in patterns:
@@ -301,13 +349,21 @@ class PatternImporter:
 
     def _extract_weight_grams(self, soup: BeautifulSoup) -> int | None:
         """Extract weight in grams."""
+        # Try labeled search first
+        val = self._find_info_by_label(soup, ["gewicht", "ball weight", "weight"])
+        if val:
+            match = re.search(r"(\d+)", val)
+            if match:
+                return int(match.group(1))
+
         text = soup.get_text()
-        
-        # Look for patterns like "300m / 100g"
-        complex_pattern = r"(\d+)\s*m\s*/\s*(\d+)\s*g"
-        match = re.search(complex_pattern, text, re.I)
-        if match:
-            return int(match.group(2))
+
+        # Look for patterns like "300m / 100g" or "300m pro 100g"
+        complex_patterns = [r"(\d+)\s*m\s*/\s*(\d+)\s*g", r"(\d+)\s*m\s*pro\s*(\d+)\s*g"]
+        for p in complex_patterns:
+            match = re.search(p, text, re.I)
+            if match:
+                return int(match.group(2))
 
         patterns = [
             r"(\d+)\s*g(?:\s|/|$)",
@@ -324,18 +380,27 @@ class PatternImporter:
 
     def _extract_length_meters(self, soup: BeautifulSoup) -> int | None:
         """Extract length in meters."""
+        # Try labeled search first
+        val = self._find_info_by_label(soup, ["lauflänge", "yardage", "length", "laufweite"])
+        if val:
+            match = re.search(r"(\d+)", val)
+            if match:
+                return int(match.group(1))
+
         text = soup.get_text()
 
         # Look for patterns like "300m / 100g"
-        complex_pattern = r"(\d+)\s*m\s*/\s*(\d+)\s*g"
-        match = re.search(complex_pattern, text, re.I)
-        if match:
-            return int(match.group(1))
+        complex_patterns = [r"(\d+)\s*m\s*/\s*(\d+)\s*g", r"(\d+)\s*m\s*pro\s*(\d+)\s*g"]
+        for p in complex_patterns:
+            match = re.search(p, text, re.I)
+            if match:
+                return int(match.group(1))
 
         patterns = [
             r"(\d+)\s*m(?:\s|/|$)",
             r"length\s*[:：]\s*(\d+)\s*m",
             r"lauflänge\s*[:：]\s*(\d+)\s*m",
+            r"laufweite\s*[:：]\s*(\d+)\s*m",
         ]
         for pattern in patterns:
             match = re.search(pattern, text, re.I)
@@ -352,6 +417,15 @@ class PatternImporter:
             stitches, _rows = self._get_garnstudio_gauge(soup)
             if stitches:
                 return stitches
+
+        # Try finding by label first
+        val = self._find_info_by_label(soup, ["maschenprobe", "gauge", "tension"])
+        if val:
+            # 22 M und 28 R = 10 x 10 cm
+            match = re.search(r"(\d+)\s*(?:m|maschen|sts|stitches)", val, re.I)
+            if match:
+                return int(match.group(1))
+
         patterns = [
             r"(\d+)\s*st(?:itches?)?\s*(?:per|in|over|=)\s*10\s*cm",
             r"(\d+)\s*st(?:itches?)?\s+in\s+width",
@@ -377,6 +451,19 @@ class PatternImporter:
             _stitches, rows = self._get_garnstudio_gauge(soup)
             if rows:
                 return rows
+
+        # Try finding by label first
+        val = self._find_info_by_label(soup, ["maschenprobe", "gauge", "tension"])
+        if val:
+            # 22 M und 28 R = 10 x 10 cm
+            match = re.search(r"und\s*(\d+)\s*(?:r|reihen|rows)", val, re.I)
+            if match:
+                return int(match.group(1))
+            # Fallback if it's just '28 R' or similar
+            match = re.search(r"(\d+)\s*(?:r|reihen|rows)", val, re.I)
+            if match:
+                return int(match.group(1))
+
         patterns = [
             r"(\d+)\s*row[s]?\s*(?:per|in|over|=)\s*10\s*cm",
             r"(\d+)\s*row[s]?\s+in\s+height",
@@ -396,31 +483,171 @@ class PatternImporter:
 
         return None
 
+    def _is_ui_text(self, text: str | None) -> bool:
+        """Check if text looks like UI labels/icons rather than actual data."""
+        if not text:
+            return False
+        ui_hints = [
+            "pfeil nach unten",
+            "pfeil nach oben",
+            "dropdown",
+            "toggle",
+            "menü",
+            "menu",
+            "suche",
+            "search",
+            "warenkorb",
+            "login",
+            "anmelden",
+        ]
+        lower_text = text.lower()
+        return any(hint in lower_text for hint in ui_hints) or len(text) < 1
+
+    def _find_info_by_label(self, soup: BeautifulSoup, labels: list[str]) -> str | None:
+        """Find value associated with labels in the page text/structure."""
+        # 1. Search for Label: Value in flat text
+        text = soup.get_text(separator="\n", strip=True)
+        for label in labels:
+            # Match label optionally followed by colon and then capture until end of line
+            pattern = rf"(?:{label})\s*[:：]?\s*([^\n]+)"
+            match = re.search(pattern, text, re.I)
+            if match:
+                val = match.group(1).strip()
+                if val and not self._is_ui_text(val):
+                    return val
+
+        # 2. Search for Label followed by Value in DT/DD or Tables or next siblings
+        for label in labels:
+            # Find element containing label precisely
+            target = soup.find(
+                lambda t: t.name in ["th", "td", "dt", "span", "div", "b", "strong", "label"]
+                and label.lower() == t.get_text().strip().rstrip(":").lower()
+            )
+            if not target:
+                continue
+
+            # If it's a TH/TD, look for next TD
+            if target.name == "th":
+                val = target.find_next_sibling("td")
+                if val:
+                    val_text = val.get_text().strip()
+                    if not self._is_ui_text(val_text):
+                        return val_text
+
+            # If it's a DT, look for next DD
+            if target.name == "dt":
+                val = target.find_next_sibling("dd")
+                if val:
+                    val_text = val.get_text().strip()
+                    if not self._is_ui_text(val_text):
+                        return val_text
+
+            # If it's a generic tag, check next meaningful sibling or child of parent
+            # Some shops like Wolle Roedel put labels in a header/button and value in a following div
+            nxt = target.find_next()
+            if nxt and nxt != target:
+                val_text = nxt.get_text().strip()
+                # If the next element is short, it's likely the value
+                if val_text and len(val_text) < 255:
+                    if not self._is_ui_text(val_text):
+                        return val_text
+
+        return None
+
     def _extract_description(self, soup: BeautifulSoup) -> str | None:
         """Extract pattern description."""
-        # Try meta description first
-        meta_desc = soup.find("meta", {"name": "description"})
+        # Try finding a description heading first
+        description_headings = [
+            "produktbeschreibung",
+            "beschreibung",
+            "description",
+            "product description",
+            "über das produkt",
+        ]
+        for heading_tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "strong", "span"]):
+            h_text = heading_tag.get_text().strip().lower()
+            if any(h_text == h for h in description_headings):
+                # Try to find the next meaningful sibling
+                curr = heading_tag
+                # Go up a few levels if needed to find siblings
+                for _ in range(3):
+                    next_node = curr.find_next_sibling(["div", "p", "section"])
+                    if next_node:
+                        text = next_node.get_text("\n", strip=True)
+                        if len(text) > 100:
+                            return text
+                    # If no direct sibling, look at children of parent
+                    if curr.parent:
+                        curr = curr.parent
+
+        # Try meta description next - but ONLY if it looks complete
+        meta_desc = soup.find("meta", {"name": "description"}) or soup.find(
+            "meta", property="og:description"
+        )
         if meta_desc:
             content = meta_desc.get("content")
-            if isinstance(content, str):
+            if (
+                isinstance(content, str)
+                and len(content) > 50
+                and not content.endswith("...")
+                and not content.endswith("…")
+            ):
                 return content.strip()
 
-        # Try og:description
-        og_desc = soup.find("meta", property="og:description")
-        if og_desc:
-            content = og_desc.get("content")
-            if isinstance(content, str):
-                return content.strip()
-
-        # Try first paragraph in article or main content
+        # Try first long paragraph in article or main content
         for tag in ["article", "main", "div"]:
-            container = soup.find(tag, class_=re.compile(r"description|content", re.I))
+            container = soup.find(tag, class_=re.compile(r"description|content|product-info", re.I))
             if container:
-                p = container.find("p")
-                if p:
+                p_tags = container.find_all("p")
+                for p in p_tags:
                     text = p.get_text(strip=True)
-                    if len(text) > 20:
+                    if len(text) > 150:
                         return text
+
+        # Fallback to meta if it's all we have and it's not too short
+        if meta_desc:
+            content = meta_desc.get("content")
+            if isinstance(content, str) and len(content) > 30:
+                return content.strip()
+
+        return None
+
+    def _extract_weight_category(self, soup: BeautifulSoup) -> str | None:
+        """Extract yarn weight category (e.g. DK, Aran, Lace)."""
+        # Look in title first as DK is common there
+        title = self._extract_title(soup)
+        if title:
+            # Common yarn weight terms
+            weights = [
+                "lace",
+                "fingering",
+                "sport",
+                "dk",
+                "worsted",
+                "aran",
+                "bulky",
+                "super bulky",
+                "jumbo",
+                "sock",
+                "baby",
+            ]
+            for weight in weights:
+                # Search with word boundaries for short terms like DK
+                if re.search(fr"\b{weight}\b", title, re.I):
+                    return weight.upper()
+
+        # Look for explicit labels
+        text = soup.get_text(separator=" ", strip=True)
+        patterns = [
+            r"(?:garnstärke|yarn\s*weight|weight|category)\s*[:：]?\s*(\b[a-z0-9-]{1,15}\b)",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text, re.I)
+            if match:
+                val = match.group(1).strip().upper()
+                # Validate it's likely a weight term
+                if val in ["DK", "ARAN", "LACE", "SPORT", "WORSTED", "BULKY", "JUMBO", "FINGERING"]:
+                    return val
 
         return None
 

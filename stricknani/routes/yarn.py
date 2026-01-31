@@ -406,6 +406,7 @@ async def import_yarn(
             "colorway": data.get("colorway"),
             "weight_grams": data.get("weight_grams"),
             "length_meters": data.get("length_meters"),
+            "weight_category": data.get("weight_category"),
             "fiber_content": data.get("fiber_content"),
             "recommended_needles": data.get("needles"),
             "gauge_stitches": data.get("gauge_stitches"),

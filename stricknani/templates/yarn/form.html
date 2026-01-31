@@ -198,12 +198,14 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                         class="relative group aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
                         <a href="{{ photo.full_url }}" data-pswp-width="{{ photo.width or 1200 }}"
                             data-pswp-height="{{ photo.height or 1200 }}" data-pswp-caption="{{ photo.alt_text }}"
+                            data-pswp-promote="true" data-pswp-delete="true"
+                            data-pswp-is-primary="{{ 'true' if photo.is_primary else 'false' }}"
                             class="block h-full w-full">
                             <img src="{{ photo.thumbnail_url }}" alt="{{ photo.alt_text }}"
                                 class="h-full w-full object-cover cursor-zoom-in">
                         </a>
                         <button type="button" onclick="promoteYarnPhoto({{ photo.id }})"
-                            class="absolute top-2 left-2 z-10 rounded-full p-1.5 shadow-sm transition-all {{ 'bg-amber-400 text-white' if photo.is_primary else 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500' }} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+                            class="yarn-promote-btn absolute top-2 left-2 z-10 rounded-full p-1.5 shadow-sm transition-all {{ 'bg-amber-400 text-white' if photo.is_primary else 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500' }} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
                             title="{{ _('Make primary photo') }}">
                             <span class="mdi {{ 'mdi-star' if photo.is_primary else 'mdi-star-outline' }}"></span>
                         </button>
@@ -225,7 +227,8 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 ) }}
                 <input type="hidden" id="import_primary_image_url" name="import_primary_image_url" value="">
                 <div id="importWarning"></div>
-                <div id="image-preview-container" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 hidden"></div>
+                <div id="image-preview-container" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 hidden pswp-gallery"
+                    data-pswp-gallery></div>
                 <p class="text-xs text-base-content/70 mt-1">{{ _('Supported: JPG, PNG, GIF. Thumbnails are generated
                     automatically.') }}</p>
             </div>
@@ -427,6 +430,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             });
         }
 
+        window.unsavedChanges?.setDirty(true);
         window.showToast?.('{{ _("Data imported successfully!") }}', 'success');
     };
 
@@ -436,16 +440,19 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 
         const div = document.createElement('div');
         div.className = 'relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 group';
+        div.setAttribute('data-pending-url', url);
 
         div.innerHTML = `
-            <img src="${url}" class="h-full w-full object-cover">
+            <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false" class="block h-full w-full">
+                <img src="${url}" class="h-full w-full object-cover cursor-zoom-in">
+            </a>
             <input type="hidden" name="import_image_urls" value="${url}">
             <button type="button" onclick="promotePendingYarnImage(this, '${url}')"
                 class="promote-pending-yarn-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
                 title="{{ _('Make primary photo') }}">
                 <span class="mdi mdi-star-outline text-sm"></span>
             </button>
-            <button type="button" onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
+            <button type="button" onclick="removePendingYarnImage(this)" class="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
                 <span class="mdi mdi-close"></span>
             </button>
         `;
@@ -456,6 +463,8 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         if (!currentPrimaryUrl) {
             promotePendingYarnImage(div.querySelector('.promote-pending-yarn-btn'), url);
         }
+
+        window.refreshPhotoSwipeGallery?.(container);
     }
 
     function promotePendingYarnImage(btn, url) {
@@ -472,6 +481,10 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 star.classList.remove('mdi-star');
                 star.classList.add('mdi-star-outline');
             }
+            const anchor = b.closest('[data-pending-url]')?.querySelector('a[data-pswp-promote]');
+            if (anchor) {
+                anchor.setAttribute('data-pswp-is-primary', 'false');
+            }
         });
 
         if (btn) {
@@ -482,7 +495,38 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 star.classList.remove('mdi-star-outline');
                 star.classList.add('mdi-star');
             }
+            const anchor = btn.closest('[data-pending-url]')?.querySelector('a[data-pswp-promote]');
+            if (anchor) {
+                anchor.setAttribute('data-pswp-is-primary', 'true');
+            }
         }
+        window.unsavedChanges?.setDirty(true);
+    }
+
+    function removePendingYarnImage(button) {
+        const container = button?.closest('[data-pending-url]');
+        if (!container) {
+            return;
+        }
+        const url = container.getAttribute('data-pending-url');
+        const wasPrimary = document.getElementById('import_primary_image_url')?.value === url;
+        container.remove();
+        if (wasPrimary) {
+            const remaining = Array.from(document.querySelectorAll('[data-pending-url]'))
+                .map(el => el.getAttribute('data-pending-url'))
+                .filter(Boolean);
+            if (remaining.length > 0) {
+                const nextUrl = remaining[0];
+                const nextBtn = document.querySelector(`[data-pending-url="${CSS.escape(nextUrl)}"] .promote-pending-yarn-btn`);
+                promotePendingYarnImage(nextBtn, nextUrl);
+            } else {
+                const input = document.getElementById('import_primary_image_url');
+                if (input) {
+                    input.value = '';
+                }
+            }
+        }
+        window.unsavedChanges?.setDirty(true);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -527,6 +571,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 if (element) {
                     element.remove();
                 }
+                window.unsavedChanges?.setDirty(true);
                 window.showToast?.('{{ _("Photo deleted") }}', 'success');
             }
         );
@@ -544,7 +589,13 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             });
 
             if (response.ok) {
-                window.location.reload();
+                // Close PhotoSwipe if open
+                if (window.pswpLightboxes) {
+                    for (const lb of window.pswpLightboxes.values()) {
+                        if (lb.pswp) lb.pswp.close();
+                    }
+                }
+                setPrimaryYarnPhoto(photoId);
             } else {
                 console.error('Failed to promote photo');
             }
@@ -552,6 +603,106 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             console.error('Error promoting photo:', error);
         }
     }
+
+    function setPrimaryYarnPhoto(photoId) {
+        document.querySelectorAll('[id^="photo-card-"]').forEach((card) => {
+            const anchor = card.querySelector('a[data-pswp-promote]');
+            if (anchor) {
+                anchor.setAttribute('data-pswp-is-primary', 'false');
+            }
+            const button = card.querySelector('.yarn-promote-btn');
+            if (button) {
+                button.classList.remove('bg-amber-400', 'text-white', 'opacity-100');
+                button.classList.add('bg-white/90', 'text-slate-400', 'opacity-0');
+                const icon = button.querySelector('span');
+                if (icon) {
+                    icon.classList.remove('mdi-star');
+                    icon.classList.add('mdi-star-outline');
+                }
+            }
+        });
+
+        const target = document.getElementById(`photo-card-${photoId}`);
+        if (!target) {
+            return;
+        }
+        const targetAnchor = target.querySelector('a[data-pswp-promote]');
+        if (targetAnchor) {
+            targetAnchor.setAttribute('data-pswp-is-primary', 'true');
+        }
+        const targetButton = target.querySelector('.yarn-promote-btn');
+        if (targetButton) {
+            targetButton.classList.add('bg-amber-400', 'text-white', 'opacity-100');
+            targetButton.classList.remove('bg-white/90', 'text-slate-400', 'opacity-0');
+            const icon = targetButton.querySelector('span');
+            if (icon) {
+                icon.classList.add('mdi-star');
+                icon.classList.remove('mdi-star-outline');
+            }
+        }
+        window.unsavedChanges?.setDirty(true);
+    }
+
+    // Add event listeners for PhotoSwipe managed actions
+    document.addEventListener('pswp:promote', (e) => {
+        const anchor = e.detail.element;
+        const container = anchor.closest('[id^="photo-card-"]');
+        if (container) {
+            const photoId = container.id.replace('photo-card-', '');
+            if (photoId && yarnId) {
+                promoteYarnPhoto(photoId);
+            }
+        }
+    });
+
+    document.addEventListener('pswp:delete', (e) => {
+        const anchor = e.detail.element;
+        const container = anchor.closest('[id^="photo-card-"]');
+        if (container) {
+            const photoId = container.id.replace('photo-card-', '');
+            if (photoId) {
+                // Close PhotoSwipe before showing confirmation
+                if (window.pswpLightboxes) {
+                    for (const lb of window.pswpLightboxes.values()) {
+                        if (lb.pswp) lb.pswp.close();
+                    }
+                }
+                deleteYarnPhoto(photoId);
+            }
+        } else {
+            // Handle pending previews
+            const previewContainer = anchor.closest('[data-preview-index]');
+            if (previewContainer) {
+                const index = parseInt(previewContainer.dataset.previewIndex);
+                if (!isNaN(index)) {
+                    if (window.pswpLightboxes) {
+                        for (const lb of window.pswpLightboxes.values()) {
+                            if (lb.pswp) lb.pswp.close();
+                        }
+                    }
+                    removeYarnFile(index);
+                    return;
+                }
+            }
+
+            // Handle pending imported images
+            const pendingContainer = anchor.closest('[data-pending-url]');
+            if (pendingContainer) {
+                if (window.pswpLightboxes) {
+                    for (const lb of window.pswpLightboxes.values()) {
+                        if (lb.pswp) lb.pswp.close();
+                    }
+                }
+                const removeButton = pendingContainer.querySelector('button[onclick^="removePendingYarnImage"]');
+                if (removeButton) {
+                    removePendingYarnImage(removeButton);
+                } else {
+                    pendingContainer.remove();
+                    window.unsavedChanges?.setDirty(true);
+                }
+            }
+        }
+    });
 
     const parseErrorMessage =
         typeof extractErrorMessage === 'function'
@@ -615,16 +766,20 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 reader.onload = function (e) {
                     const div = document.createElement('div');
                     div.className = 'relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 group';
+                    div.setAttribute('data-preview-index', index);
                     div.innerHTML = `
-                    <img src="${e.target.result}" class="h-full w-full object-cover opacity-90 transition group-hover:opacity-100">
-                    <button type="button" onclick="removeYarnFile(${index})" class="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700" aria-label="{{ _('Remove image') }}">
+                    <a href="${e.target.result}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-delete="true" class="block h-full w-full">
+                        <img src="${e.target.result}" class="h-full w-full object-cover opacity-90 transition group-hover:opacity-100 cursor-zoom-in">
+                    </a>
+                    <button type="button" onclick="removeYarnFile(${index})" class="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-100 transition-opacity hover:bg-red-700 z-20" aria-label="{{ _('Remove image') }}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
-                `;
+                    `;
                     container.appendChild(div);
                 }
                 reader.readAsDataURL(file);
             });
+            window.refreshPhotoSwipeGallery?.(container);
         } else {
             container.classList.add('hidden');
         }
@@ -647,6 +802,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             input.files = yarnFiles.files;
             previewImages(input);
         }
+        window.unsavedChanges?.setDirty(true);
     }
 </script>
 {% endblock %}

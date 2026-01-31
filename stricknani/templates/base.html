@@ -263,9 +263,33 @@
             transform: scale(1.05);
         }
 
-        .badge {
-            padding-left: 0.7rem;
-            padding-right: 0.7rem;
+        /* PhotoSwipe Custom Button Styling */
+        .pswp__button--promote-button,
+        .pswp__button--delete-button,
+        .pswp__button--download-button {
+            overflow: visible !important;
+        }
+
+        .pswp__button--promote-button.is-primary .pswp__icn {
+            color: #fbbf24 !important;
+            /* amber-400 */
+        }
+
+        .pswp__button--delete-button .pswp__icn {
+            color: #ef4444 !important;
+            /* red-500 */
+        }
+
+        .pswp__button .pswp__icn.mdi {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.85;
+        }
+
+        .pswp__button:hover .pswp__icn.mdi {
+            opacity: 1;
         }
     </style>
 </head>
@@ -315,149 +339,161 @@
             const image = document.getElementById('crop-image');
             const saveBtn = document.getElementById('crop-save');
             const cancelBtn = document.getElementById('crop-cancel');
-            let targetUserId = {{ current_user.id }};
+            let targetUserId = {{ current_user.id }}
+        }
+        }
+        };
 
-            if (!input || !modal || !image || !saveBtn || !cancelBtn) {
+        if (!input || !modal || !image || !saveBtn || !cancelBtn) {
+            return;
+        }
+
+        window.triggerProfileImageUpload = function (userId) {
+            targetUserId = userId || {{ current_user.id }}
+        }
+        }
+        };
+        input.click();
+            };
+
+        input.addEventListener('change', function (e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = function (readerEvent) {
+                    image.src = readerEvent.target.result;
+                    modal.showModal();
+
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    cropper = new Cropper(image, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 1,
+                        restore: false,
+                        guides: false,
+                        center: false,
+                        highlight: false,
+                        cropBoxMovable: false,
+                        cropBoxResizable: false,
+                        toggleDragModeOnDblclick: false,
+                        zoomable: true,
+                        zoomOnTouch: true,
+                        zoomOnWheel: true,
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        cancelBtn.addEventListener('click', function () {
+            modal.close();
+            input.value = '';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
+        saveBtn.addEventListener('click', function () {
+            if (!cropper) {
                 return;
             }
 
-            window.triggerProfileImageUpload = function (userId) {
-                targetUserId = userId || {{ current_user.id }};
-                input.click();
-            };
-
-            input.addEventListener('change', function (e) {
-                const files = e.target.files;
-                if (files && files.length > 0) {
-                    const file = files[0];
-                    const reader = new FileReader();
-                    reader.onload = function (readerEvent) {
-                        image.src = readerEvent.target.result;
-                        modal.showModal();
-
-                        if (cropper) {
-                            cropper.destroy();
-                        }
-                        cropper = new Cropper(image, {
-                            aspectRatio: 1,
-                            viewMode: 1,
-                            dragMode: 'move',
-                            autoCropArea: 1,
-                            restore: false,
-                            guides: false,
-                            center: false,
-                            highlight: false,
-                            cropBoxMovable: false,
-                            cropBoxResizable: false,
-                            toggleDragModeOnDblclick: false,
-                            zoomable: true,
-                            zoomOnTouch: true,
-                            zoomOnWheel: true,
-                        });
-                    };
-                    reader.readAsDataURL(file);
-                }
+            const canvas = cropper.getCroppedCanvas({
+                width: 400,
+                height: 400,
             });
 
-            cancelBtn.addEventListener('click', function () {
-                modal.close();
-                input.value = '';
-                if (cropper) {
-                    cropper.destroy();
-                    cropper = null;
-                }
-            });
-
-            saveBtn.addEventListener('click', function () {
-                if (!cropper) {
+            canvas.toBlob(function (blob) {
+                if (!blob) {
+                    showToast('{{ _("Failed to upload image") }}', 'error');
                     return;
                 }
 
-                const canvas = cropper.getCroppedCanvas({
-                    width: 400,
-                    height: 400,
-                });
+                const formData = new FormData();
+                formData.append('file', blob, 'avatar.png');
 
-                canvas.toBlob(function (blob) {
-                    if (!blob) {
-                        showToast('{{ _("Failed to upload image") }}', 'error');
-                        return;
-                    }
+                // Show loading state
+                const originalText = saveBtn.textContent;
+                saveBtn.textContent = '{{ _("Uploading...") }}';
+                saveBtn.disabled = true;
 
-                    const formData = new FormData();
-                    formData.append('file', blob, 'avatar.png');
+                const url = targetUserId === {{ current_user.id }}
+            }
+            }
+            }
+            ?'/user/profile-image'
+            : `/admin/users/${targetUserId}/profile-image`;
 
-                    // Show loading state
-                    const originalText = saveBtn.textContent;
-                    saveBtn.textContent = '{{ _("Uploading...") }}';
-                    saveBtn.disabled = true;
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'HX-Request': 'true'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+                return response.text();
+            })
+            .then(html => {
+                if (targetUserId === {{ current_user.id }}
+            }
+            }
+                }) {
+            window.location.reload();
+            return;
+        }
 
-                    const url = targetUserId === {{ current_user.id }}
-                        ? '/user/profile-image'
-                        : `/admin/users/${targetUserId}/profile-image`;
+        // Admin case: update user card
+        const card = document.getElementById(`user-card-${targetUserId}`);
+        if (card) {
+            // Parse the response to handle OOB swaps manually
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
 
-                    fetch(url, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'HX-Request': 'true'
-                        }
-                    })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Upload failed');
-                            }
-                            return response.text();
-                        })
-                        .then(html => {
-                            if (targetUserId === {{ current_user.id }}) {
-                                window.location.reload();
-                                return;
-                            }
+            // Update user card
+            const newCard = doc.getElementById(`user-card-${targetUserId}`);
+            if (newCard) {
+                card.replaceWith(newCard);
+                // Re-initialize HTMX on the new content
+                if (window.htmx) {
+                    window.htmx.process(newCard);
+                }
+            }
 
-                            // Admin case: update user card
-                            const card = document.getElementById(`user-card-${targetUserId}`);
-                            if (card) {
-                                // Parse the response to handle OOB swaps manually
-                                const parser = new DOMParser();
-                                const doc = parser.parseFromString(html, 'text/html');
+            // Update user count (OOB swap)
+            const newCount = doc.getElementById('user-count');
+            const currentCount = document.getElementById('user-count');
+            if (newCount && currentCount) {
+                currentCount.replaceWith(newCount);
+            }
+        }
 
-                                // Update user card
-                                const newCard = doc.getElementById(`user-card-${targetUserId}`);
-                                if (newCard) {
-                                    card.replaceWith(newCard);
-                                    // Re-initialize HTMX on the new content
-                                    if (window.htmx) {
-                                        window.htmx.process(newCard);
-                                    }
-                                }
+        modal.close();
 
-                                // Update user count (OOB swap)
-                                const newCount = doc.getElementById('user-count');
-                                const currentCount = document.getElementById('user-count');
-                                if (newCount && currentCount) {
-                                    currentCount.replaceWith(newCount);
-                                }
-                            }
+        // Close the edit user dialog if it's open
+        const editUserDialog = document.getElementById('editUserDialog');
+        if (editUserDialog && editUserDialog.open) {
+            editUserDialog.close();
+        }
 
-                            modal.close();
-
-                            // Close the edit user dialog if it's open
-                            const editUserDialog = document.getElementById('editUserDialog');
-                            if (editUserDialog && editUserDialog.open) {
-                                editUserDialog.close();
-                            }
-
-                            showToast('{{ _("Profile picture updated successfully") }}', 'success');
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            showToast('{{ _("Failed to upload image") }}', 'error');
-                        })
-                        .finally(() => {
-                            saveBtn.textContent = originalText;
-                            saveBtn.disabled = false;
-                        });
+        showToast('{{ _("Profile picture updated successfully") }}', 'success');
+        })
+            .catch (err => {
+            console.error(err);
+            showToast('{{ _("Failed to upload image") }}', 'error');
+        })
+            .finally(() => {
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        });
                 }, 'image/png');
             });
         });
@@ -856,7 +892,10 @@
                 if (!lightbox.pswp?.ui) {
                     return;
                 }
-                lightbox.pswp.ui.registerElement({
+                const pswp = lightbox.pswp;
+
+                // Register Thumbs
+                pswp.ui.registerElement({
                     name: 'thumbs',
                     order: 9,
                     isButton: false,
@@ -914,6 +953,91 @@
                         updateActive();
                         pswp.on('change', updateActive);
                     },
+                });
+
+                // Register "Set as primary" button
+                pswp.ui.registerElement({
+                    name: 'promote-button',
+                    ariaLabel: '{{ _("Set as primary") }}',
+                    order: 9,
+                    isButton: true,
+                    html: '<span class="pswp__icn mdi mdi-star"></span>',
+                    appendTo: 'bar',
+                    onClick: (event, el) => {
+                        const item = pswp.currItem;
+                        const element = item?.element || item?.data?.element || pswp.currSlide?.data?.element;
+                        if (element) {
+                            const customEvent = new CustomEvent('pswp:promote', {
+                                detail: { element },
+                                bubbles: true
+                            });
+                            element.dispatchEvent(customEvent);
+                        }
+                    },
+                    onInit: (el, pswp) => {
+                        const update = () => {
+                            const item = pswp.currItem;
+                            const element = item?.element || item?.data?.element || pswp.currSlide?.data?.element;
+                            const isPromotable = element?.hasAttribute('data-pswp-promote');
+                            const isAlreadyPrimary = element?.getAttribute('data-pswp-is-primary') === 'true';
+
+                            el.style.display = isPromotable ? 'inline-flex' : 'none';
+                            el.classList.toggle('is-primary', isAlreadyPrimary);
+                        };
+                        pswp.on('change', update);
+                        pswp.on('afterInit', update);
+                    }
+                });
+
+                // Register Delete button
+                pswp.ui.registerElement({
+                    name: 'delete-button',
+                    ariaLabel: '{{ _("Delete image") }}',
+                    order: 8,
+                    isButton: true,
+                    html: '<span class="pswp__icn mdi mdi-delete"></span>',
+                    appendTo: 'bar',
+                    onClick: (event, el) => {
+                        const item = pswp.currItem;
+                        const element = item?.element || item?.data?.element || pswp.currSlide?.data?.element;
+                        if (element) {
+                            const customEvent = new CustomEvent('pswp:delete', {
+                                detail: { element },
+                                bubbles: true
+                            });
+                            element.dispatchEvent(customEvent);
+                        }
+                    },
+                    onInit: (el, pswp) => {
+                        const update = () => {
+                            const item = pswp.currItem;
+                            const element = item?.element || item?.data?.element || pswp.currSlide?.data?.element;
+                            const isDeletable = element?.hasAttribute('data-pswp-delete');
+                            el.style.display = isDeletable ? 'inline-flex' : 'none';
+                        };
+                        pswp.on('change', update);
+                        pswp.on('afterInit', update);
+                    }
+                });
+
+                // Register Download button
+                pswp.ui.registerElement({
+                    name: 'download-button',
+                    ariaLabel: '{{ _("Download image") }}',
+                    order: 7,
+                    isButton: true,
+                    tagName: 'a',
+                    html: '<span class="pswp__icn mdi mdi-download"></span>',
+                    appendTo: 'bar',
+                    onInit: (el, pswp) => {
+                        el.setAttribute('download', '');
+                        el.setAttribute('target', '_blank');
+                        el.setAttribute('rel', 'noopener');
+
+                        pswp.on('change', () => {
+                            el.href = pswp.currSlide.data.src;
+                        });
+                    }
                 });
             });
             lightbox.init();
