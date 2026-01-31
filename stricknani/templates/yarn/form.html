@@ -149,10 +149,20 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                             </div>
 
                             <div class="col-span-2">
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Source
-                                    Link') }}</label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
+                                        _('Source
+                                        Link') }}</label>
+                                    <button type="button" id="reimport-btn-mobile"
+                                        class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not yarn.link else '' }}"
+                                        onclick="importFromUrl(document.getElementById('link').value)">
+                                        <span class="mdi mdi-download"></span>
+                                        {{ _('Re-import') }}
+                                    </button>
+                                </div>
                                 <input type="url" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
-                                    class="input input-bordered input-sm w-full mt-1" placeholder="https://...">
+                                    class="input input-bordered input-sm w-full" placeholder="https://..."
+                                    oninput="syncLinkInputs(this)">
                                 <label class="label cursor-pointer justify-start gap-2 mt-2">
                                     <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
                                         checked>
@@ -340,12 +350,20 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                     <div class="divider my-2"></div>
 
                     <div>
-                        <label for="link"
-                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
-                            {{ _('Source Link') }}
-                        </label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="link" class="label-text text-xs font-bold uppercase text-base-content/50">
+                                {{ _('Source Link') }}
+                            </label>
+                            <button type="button" id="reimport-btn"
+                                class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not yarn.link else '' }}"
+                                onclick="importFromUrl(document.getElementById('link').value)">
+                                <span class="mdi mdi-download"></span>
+                                {{ _('Re-import') }}
+                            </button>
+                        </div>
                         <input type="url" id="link" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
-                            class="input input-bordered input-sm w-full" placeholder="https://...">
+                            class="input input-bordered input-sm w-full" placeholder="https://..."
+                            oninput="syncLinkInputs(this)">
                         <label class="label cursor-pointer justify-start gap-2 mt-2">
                             <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
                                 checked>
@@ -543,6 +561,59 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         window.unsavedChanges?.setDirty(true);
     }
 
+    let initialLink = document.getElementById('link')?.value.trim() || '';
+    let isImportPrompted = false;
+
+    function syncLinkInputs(el) {
+        const value = el.value;
+        document.querySelectorAll('input[name="link"]').forEach(input => {
+            if (input !== el) input.value = value;
+        });
+        document.getElementById('reimport-btn')?.classList.toggle('hidden', !value);
+        document.getElementById('reimport-btn-mobile')?.classList.toggle('hidden', !value);
+    }
+
+    async function importFromUrl(url) {
+        if (!url) return;
+
+        const importDialog = document.getElementById('importDialog');
+        const importForm = document.getElementById('importYarnForm');
+        const importLoading = document.getElementById('importLoading');
+
+        if (!importDialog || !importForm || !importLoading) return;
+
+        // Reset and show loading state
+        importDialog.showModal();
+        importForm.classList.add('hidden');
+        importLoading.classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('url', url);
+
+        try {
+            const response = await fetch('/yarn/import', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Import failed');
+            }
+
+            const data = await response.json();
+            window.populateYarnForm(data);
+
+            importDialog.close();
+        } catch (error) {
+            console.error('Import failed:', error);
+            window.showToast?.('{{ _("Failed to import yarn data") }}', 'error');
+            importDialog.close();
+        } finally {
+            importForm.classList.remove('hidden');
+            importLoading.classList.add('hidden');
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const importedData = sessionStorage.getItem('importedYarnData');
         if (importedData) {
@@ -557,7 +628,38 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('import') === '1') {
-            document.getElementById('importDialog')?.showModal();
+            const currentUrl = document.getElementById('link')?.value;
+            if (currentUrl) {
+                importFromUrl(currentUrl);
+            } else {
+                document.getElementById('importDialog')?.showModal();
+            }
+        }
+    });
+
+    document.getElementById('yarnForm').addEventListener('submit', function (e) {
+        const currentLink = document.getElementById('link')?.value.trim() || '';
+
+        // If a link was added to a yarn that didn't have one, prompt for import
+        if (!initialLink && currentLink && !isImportPrompted) {
+            e.preventDefault();
+            window.confirmAction(
+                '{{ _("Import Data?") }}',
+                '{{ _("You added a source link. Would you like to import details from this URL before saving?") }}',
+                () => {
+                    isImportPrompted = true;
+                    importFromUrl(currentLink);
+                },
+                () => {
+                    isImportPrompted = true;
+                    this.submit();
+                },
+                {
+                    confirmText: '{{ _("Import") }}',
+                    cancelText: '{{ _("Just Save") }}'
+                }
+            );
+            return;
         }
     });
 

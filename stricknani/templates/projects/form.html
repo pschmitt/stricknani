@@ -208,10 +208,19 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             </div>
 
                             <div class="sm:col-span-2">
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Pattern
-                                    Source') }}</label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
+                                        _('Pattern Source') }}</label>
+                                    <button type="button" id="reimport-btn-mobile"
+                                        class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
+                                        onclick="importFromUrl(document.getElementById('link').value)">
+                                        <span class="mdi mdi-download"></span>
+                                        {{ _('Re-import') }}
+                                    </button>
+                                </div>
                                 <input type="url" name="link" value="{{ project.link or '' }}"
-                                    class="input input-bordered input-sm w-full mt-1" placeholder="https://...">
+                                    class="input input-bordered input-sm w-full" placeholder="https://..."
+                                    oninput="syncLinkInputs(this)">
                                 <label class="label cursor-pointer justify-start gap-2 mt-2">
                                     <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
                                         checked>
@@ -223,13 +232,27 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
                     <div>
                         <div class="flex items-center justify-between mb-1">
+                            <label for="description"
+                                class="label-text text-sm font-medium inline-flex items-center gap-2">
+                                <span class="mdi mdi-text-box-outline text-base-content/70"></span>
+                                {{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
+                                    }}</span>
+                            </label>
+                        </div>
+                        <textarea id="description" name="description" rows="4" class="textarea textarea-bordered w-full"
+                            placeholder="{{ _('Brief description of this project...') }}">{{ project.description if project and project.description else '' }}</textarea>
+                        <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
                             <label for="comment" class="label-text text-sm font-medium inline-flex items-center gap-2">
                                 <span class="mdi mdi-note-text-outline text-base-content/70"></span>
                                 {{ _('Notes') }}
                             </label>
                         </div>
                         <textarea id="comment" name="comment" rows="6" class="textarea textarea-bordered w-full"
-                            placeholder="Personal notes about this project...">{{ project.comment if project and project.comment else '' }}</textarea>
+                            placeholder="{{ _('Personal notes about this project...') }}">{{ project.comment if project and project.comment else '' }}</textarea>
                         <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
                     </div>
                 </div>
@@ -457,12 +480,20 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     <div class="divider my-2"></div>
 
                     <div>
-                        <label for="link"
-                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
-                            {{ _('Pattern Source') }}
-                        </label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="link" class="label-text text-xs font-bold uppercase text-base-content/50">
+                                {{ _('Pattern Source') }}
+                            </label>
+                            <button type="button" id="reimport-btn"
+                                class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
+                                onclick="importFromUrl(document.getElementById('link').value)">
+                                <span class="mdi mdi-download"></span>
+                                {{ _('Re-import') }}
+                            </button>
+                        </div>
                         <input type="url" id="link" name="link" value="{{ project.link or '' }}"
-                            class="input input-bordered input-sm w-full" placeholder="https://...">
+                            class="input input-bordered input-sm w-full" placeholder="https://..."
+                            oninput="syncLinkInputs(this)">
                         <label class="label cursor-pointer justify-start gap-2 mt-2">
                             <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
                                 checked>
@@ -595,6 +626,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 const setFieldValue = (id, value) => {
                     const el = document.getElementById(id);
                     if (el && value !== undefined && value !== null) {
+                        if (id === 'comment' && el.value.trim().length > 0) return false;
                         el.value = value;
                         if (typeof autoResize === 'function') autoResize(el);
                         return true;
@@ -612,6 +644,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 setFieldValue('yarn_search', data.yarn);
                 setFieldValue('gauge_stitches', data.gauge_stitches);
                 setFieldValue('gauge_rows', data.gauge_rows);
+                setFieldValue('description', data.description);
                 setFieldValue('category', data.category);
                 setFieldValue('tags', data.tags);
                 setFieldValue('comment', data.comment);
@@ -688,7 +721,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('import') === '1') {
-            document.getElementById('importDialog')?.showModal();
+            const currentUrl = document.getElementById('link')?.value;
+            if (currentUrl) {
+                importFromUrl(currentUrl);
+            } else {
+                document.getElementById('importDialog')?.showModal();
+            }
         }
     });
 
@@ -1951,7 +1989,142 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
 
 <script>
-    document.getElementById('projectForm').addEventListener('submit', (e) => {
+    let initialLink = document.getElementById('link')?.value.trim() || '';
+    let isImportPrompted = false;
+
+    function syncLinkInputs(el) {
+        const value = el.value;
+        document.querySelectorAll('input[name="link"]').forEach(input => {
+            if (input !== el) input.value = value;
+        });
+        document.getElementById('reimport-btn')?.classList.toggle('hidden', !value);
+        document.getElementById('reimport-btn-mobile')?.classList.toggle('hidden', !value);
+    }
+
+    async function importFromUrl(url) {
+        if (!url) return;
+
+        const importDialog = document.getElementById('importDialog');
+        const importForm = document.getElementById('importForm');
+        const importLoading = document.getElementById('importLoading');
+
+        if (!importDialog || !importForm || !importLoading) return;
+
+        // Reset and show loading state
+        importDialog.showModal();
+        importForm.classList.add('hidden');
+        importLoading.classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('url', url);
+        formData.append('type', 'url');
+
+        try {
+            const response = await fetch('/projects/import', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Import failed');
+            }
+
+            const data = await response.json();
+            populateProjectForm(data);
+
+            importDialog.close();
+        } catch (error) {
+            console.error('Import failed:', error);
+            window.showToast?.('{{ _("Failed to import pattern") }}', 'error');
+            importDialog.close();
+        } finally {
+            importForm.classList.remove('hidden');
+            importLoading.classList.add('hidden');
+        }
+    }
+
+    function populateProjectForm(data) {
+        // Map fields helper
+        const setFieldValue = (id, value) => {
+            const el = document.getElementById(id);
+            if (el && value) {
+                if (id === 'comment' && el.value.trim().length > 0) return false;
+                el.value = value;
+                if (typeof autoResize === 'function') autoResize(el);
+                return true;
+            }
+            return false;
+        };
+
+        // Metadata
+        setFieldValue('name', data.title || data.name);
+        setFieldValue('needles', data.needles);
+        setFieldValue('recommended_needles', data.recommended_needles);
+        setFieldValue('yarn_search', data.yarn);
+        setFieldValue('gauge_stitches', data.gauge_stitches);
+        setFieldValue('gauge_rows', data.gauge_rows);
+        setFieldValue('description', data.description);
+        setFieldValue('comment', data.comment);
+        setFieldValue('link', data.link);
+
+        // Project Image Previews
+        const importImagesField = document.getElementById('import_image_urls');
+        const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
+        if (importImagesField) {
+            importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
+        }
+
+        if (imageUrls.length > 0) {
+            imageUrls.forEach(url => {
+                if (typeof addPendingTitleImageToGallery === 'function') {
+                    addPendingTitleImageToGallery(url);
+                }
+            });
+        }
+
+        // Steps
+        if (data.steps && data.steps.length > 0) {
+            const stepsContainer = document.getElementById('stepsContainer');
+            if (stepsContainer) {
+                stepsContainer.innerHTML = '';
+                data.steps.forEach((step, index) => {
+                    if (typeof addStep === 'function') {
+                        addStep(step.title || `Step ${index + 1}`, step.description || '', step.images || []);
+                    }
+                });
+            }
+        }
+
+        window.showToast?.('{{ _("Pattern imported successfully") }}', 'success');
+        window.unsavedChanges?.setDirty(true);
+        document.getElementById('name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    document.getElementById('projectForm').addEventListener('submit', function (e) {
+        const currentLink = document.getElementById('link')?.value.trim() || '';
+
+        // If a link was added to a project that didn't have one, prompt for import
+        if (!initialLink && currentLink && !isImportPrompted) {
+            e.preventDefault();
+            window.confirmAction(
+                '{{ _("Import Data?") }}',
+                '{{ _("You added a pattern source. Would you like to import details (notes, steps, etc.) from this URL before saving?") }}',
+                () => {
+                    isImportPrompted = true;
+                    importFromUrl(currentLink);
+                },
+                () => {
+                    isImportPrompted = true;
+                    this.submit();
+                },
+                {
+                    confirmText: '{{ _("Import") }}',
+                    cancelText: '{{ _("Just Save") }}'
+                }
+            );
+            return;
+        }
+
         const steps = [];
         document.querySelectorAll('.step-item').forEach((item, index) => {
             const pendingImages = Array.from(item.querySelectorAll('[data-pending-url]')).map(img => img.dataset.pendingUrl);
@@ -2130,6 +2303,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     const setFieldValue = (id, value) => {
                         const el = document.getElementById(id);
                         if (el && value) {
+                            if (id === 'comment' && el.value.trim().length > 0) return false;
                             el.value = value;
                             if (typeof autoResize === 'function') autoResize(el);
                             return true;
@@ -2145,6 +2319,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         setFieldValue('yarn_search', data.yarn); // Populate autocomplete search
                         setFieldValue('gauge_stitches', data.gauge_stitches);
                         setFieldValue('gauge_rows', data.gauge_rows);
+                        setFieldValue('description', data.description);
                         setFieldValue('comment', data.comment);
 
                         if (currentTab === 'url' && !data.link) {

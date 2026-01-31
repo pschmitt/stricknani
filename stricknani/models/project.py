@@ -30,6 +30,7 @@ class Project(Base):
     recommended_needles: Mapped[str | None] = mapped_column(String(255), nullable=True)
     gauge_stitches: Mapped[int | None] = mapped_column(Integer, nullable=True)
     gauge_rows: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)
     link: Mapped[str | None] = mapped_column(String(2048), nullable=True)

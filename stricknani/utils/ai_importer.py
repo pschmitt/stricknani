@@ -136,8 +136,10 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
             description = "Recommended needle size from the pattern"
         elif name == "yarn":
             description = "Yarn name and weight"
+        elif name == "description":
+            description = "A brief summary or description of the pattern"
         elif name == "comment":
-            description = "A brief description or notes about the pattern"
+            description = "Additional notes or details about the pattern"
         elif name == "category":
             description = "Project category (e.g. 'Pullover', 'Schal', 'Mütze')"
         elif name == "name":
@@ -183,8 +185,10 @@ def _build_example_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
             example[field] = 20
         elif field == "gauge_rows":
             example[field] = 28
-        elif field == "comment":
+        elif field == "description":
             example[field] = "A simple beginner-friendly scarf pattern"
+        elif field == "comment":
+            example[field] = "Remember to use a softer yarn for the edges"
         elif field == "category":
             example[field] = "Schal"
         elif field == "steps":
@@ -345,6 +349,16 @@ class AIPatternImporter:
 
         # Use AI to parse the content
         extracted_data = await self._ai_extract(text_content, images[:5], self.hints)
+
+        # Move extracted comment to description if applicable
+        ai_comment = extracted_data.get("comment")
+        ai_description = extracted_data.get("description")
+        if ai_comment:
+            if ai_description:
+                extracted_data["description"] = f"{ai_description}\n\n{ai_comment}"
+            else:
+                extracted_data["description"] = ai_comment
+        extracted_data["comment"] = None
 
         # Add the source URL
         extracted_data["link"] = self.url
@@ -581,10 +595,11 @@ class AIPatternImporter:
                 "yarn": None,
                 "gauge_stitches": None,
                 "gauge_rows": None,
-                "comment": (
+                "description": (
                     f"Imported from {self.url}\n\n"
                     "(AI extraction failed - please fill in manually)"
                 ),
+                "comment": None,
                 "steps": [],
             }
 

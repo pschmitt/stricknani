@@ -985,17 +985,17 @@ async def import_pattern(
 
                     # 3. Garnstudio notes: keep the detailed notes block if missing
                     if _is_garnstudio_url(url):
-                        basic_comment = basic_data.get("comment") or ""
-                        notes_block = _extract_garnstudio_notes_block(basic_comment)
+                        basic_desc = basic_data.get("description") or ""
+                        notes_block = _extract_garnstudio_notes_block(basic_desc)
                         if notes_block:
-                            ai_comment = ai_data.get("comment")
-                            if ai_comment:
-                                if notes_block not in ai_comment:
-                                    ai_data["comment"] = (
-                                        f"{ai_comment}\n\n{notes_block}"
+                            ai_desc = ai_data.get("description")
+                            if ai_desc:
+                                if notes_block not in ai_desc:
+                                    ai_data["description"] = (
+                                        f"{ai_desc}\n\n{notes_block}"
                                     )
                             else:
-                                ai_data["comment"] = notes_block
+                                ai_data["description"] = notes_block
 
                     # 4. Check if name/title is actually set
                     if (
@@ -1013,7 +1013,7 @@ async def import_pattern(
                     if all(
                         v is None or v == [] or v == ""
                         for k, v in data.items()
-                        if k not in {"link", "image_urls", "comment", "steps"}
+                        if k not in {"link", "image_urls", "description", "comment", "steps"}
                     ):
                         ai_failed = True
                         data = basic_data
@@ -1031,13 +1031,13 @@ async def import_pattern(
             # Add flag if AI failed
             if ai_failed:
                 data["ai_fallback"] = True
-                if data.get("comment"):
-                    data["comment"] = (
-                        data.get("comment", "")
+                if data.get("description"):
+                    data["description"] = (
+                        data.get("description", "")
                         + "\n\n(Note: AI extraction failed, used basic parser)"
                     )
                 else:
-                    data["comment"] = "(Note: AI extraction failed, used basic parser)"
+                    data["description"] = "(Note: AI extraction failed, used basic parser)"
             else:
                 # Even if not fully failed, if we used basic steps, tag the comment
                 if (
@@ -1045,13 +1045,13 @@ async def import_pattern(
                     and use_ai_enabled
                     and data is not basic_data
                 ):
-                    if data.get("comment"):
-                        data["comment"] = (
-                            data.get("comment", "")
+                    if data.get("description"):
+                        data["description"] = (
+                            data.get("description", "")
                             + "\n\n(Note: AI used for metadata, basic parser for steps)"
                         )
                     else:
-                        data["comment"] = (
+                        data["description"] = (
                             "(Note: AI used for metadata, basic parser for steps)"
                         )
 
@@ -1169,8 +1169,8 @@ async def import_pattern(
                     if trace:
                         trace.record_ai_response(raw_content)
                     data = json.loads(raw_content or "{}")
-                    if not data.get("comment"):
-                        data["comment"] = content_text[:2000]
+                    if not data.get("description"):
+                        data["description"] = content_text[:2000]
                     if source_url:
                         data["link"] = source_url
                     if data.get("title") and not data.get("name"):
@@ -1193,7 +1193,8 @@ async def import_pattern(
             "yarn": None,
             "gauge_stitches": None,
             "gauge_rows": None,
-            "comment": content_text[:2000] if content_text else None,
+            "description": content_text[:2000] if content_text else None,
+            "comment": None,
             "steps": [],
             "link": source_url,
         }
@@ -1481,6 +1482,10 @@ async def get_project(
         "recommended_needles": project.recommended_needles,
         "gauge_stitches": project.gauge_stitches,
         "gauge_rows": project.gauge_rows,
+        "description": project.description or "",
+        "description_html": render_markdown(project.description, f"project-{project.id}")
+        if project.description
+        else None,
         "comment": project.comment or "",
         "comment_html": render_markdown(project.comment, f"project-{project.id}")
         if project.comment
@@ -1614,6 +1619,7 @@ async def edit_project_form(
         "recommended_needles": project.recommended_needles,
         "gauge_stitches": project.gauge_stitches,
         "gauge_rows": project.gauge_rows,
+        "description": project.description or "",
         "comment": project.comment or "",
         "link": project.link,
         "link_archive": project.link_archive,
@@ -1655,6 +1661,7 @@ async def create_project(
     gauge_stitches: Annotated[str | None, Form()] = None,
     gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
+    description: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
     link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
@@ -1689,6 +1696,7 @@ async def create_project(
         ),
         gauge_stitches=gauge_stitches_value,
         gauge_rows=gauge_rows_value,
+        description=description.strip() if description else None,
         comment=comment.strip() if comment else None,
         link=link.strip() if link else None,
         owner_id=current_user.id,
@@ -1755,6 +1763,7 @@ async def update_project(
     gauge_stitches: Annotated[str | None, Form()] = None,
     gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
+    description: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
     link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
@@ -1802,6 +1811,7 @@ async def update_project(
     )
     project.gauge_stitches = _parse_optional_int("gauge_stitches", gauge_stitches)
     project.gauge_rows = _parse_optional_int("gauge_rows", gauge_rows)
+    project.description = description.strip() if description else None
     project.comment = comment.strip() if comment else None
     project.link = link.strip() if link else None
     project.tags = _serialize_tags(_normalize_tags(tags))

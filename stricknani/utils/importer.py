@@ -107,15 +107,15 @@ class PatternImporter:
 
         steps = self._extract_steps(soup)
         images = self._extract_images(soup)
-        comment = self._extract_description(soup)
+        description = self._extract_description(soup)
         if self.is_garnstudio:
-            garnstudio_notes = self._extract_garnstudio_notes(soup)
-            if garnstudio_notes:
-                if comment:
-                    if garnstudio_notes not in comment:
-                        comment = f"{comment}\n\n{garnstudio_notes}"
+            garn_notes = self._extract_garnstudio_notes(soup)
+            if garn_notes:
+                if description:
+                    description = f"{description}\n\n{garn_notes}"
                 else:
-                    comment = garnstudio_notes
+                    description = garn_notes
+        comment = None
         data = {
             "title": self._extract_title(soup),
             "needles": self._extract_needles(soup),
@@ -128,6 +128,7 @@ class PatternImporter:
             "weight_category": self._extract_weight_category(soup),
             "gauge_stitches": self._extract_gauge_stitches(soup),
             "gauge_rows": self._extract_gauge_rows(soup),
+            "description": description,
             "comment": comment,
             "steps": steps,
             "link": self.url,
