@@ -1,21 +1,23 @@
 {# Dialog action buttons – always include icons. Use for modal-action footers. #}
 
 {% macro dialog_cancel(text, type='button', id=None, class='', attrs='') %}
-<button type="{{ type }}" class="btn btn-ghost gap-2 {{ class }}" {% if id %}id="{{ id }}"{% endif %} {{ attrs|safe }}>
+<button type="{{ type }}" class="btn btn-ghost gap-2 {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{ attrs|safe }}>
     <span class="mdi mdi-close"></span>
     {{ text }}
 </button>
 {% endmacro %}
 
 {% macro dialog_primary(text, icon='mdi-check', type='button', id=None, class='', attrs='') %}
-<button type="{{ type }}" class="btn btn-primary gap-2 {{ class }}" {% if id %}id="{{ id }}"{% endif %} {{ attrs|safe }}>
+<button type="{{ type }}" class="btn btn-primary gap-2 {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{ attrs|safe
+    }}>
     <span class="mdi {{ icon }}"></span>
     {{ text }}
 </button>
 {% endmacro %}
 
 {% macro dialog_danger(text, icon='mdi-delete-forever', type='button', id=None, class='', attrs='') %}
-<button type="{{ type }}" class="btn btn-error text-white gap-2 {{ class }}" {% if id %}id="{{ id }}"{% endif %} {{ attrs|safe }}>
+<button type="{{ type }}" class="btn btn-error text-white gap-2 {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{
+    attrs|safe }}>
     <span class="mdi {{ icon }}"></span>
     {{ text }}
 </button>
@@ -28,4 +30,21 @@
         {{ _('close') }}
     </button>
 </form>
+{% endmacro %}
+
+{% macro modal(id, title=None, class='', box_class='') %}
+<dialog id="{{ id }}" class="modal modal-top sm:modal-middle {{ class }}">
+    <div class="modal-box {{ box_class }}">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                <span class="mdi mdi-close text-xl"></span>
+            </button>
+        </form>
+        {% if title %}
+        <h3 class="font-bold text-lg mb-4">{{ title }}</h3>
+        {% endif %}
+        {{ caller() }}
+    </div>
+    {{ modal_backdrop() }}
+</dialog>
 {% endmacro %}

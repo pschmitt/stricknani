@@ -1,100 +1,90 @@
 {% import "macros/dialogs.html" as dialogs %}
-<dialog id="importDialog" class="modal modal-top sm:modal-middle">
-    <div class="modal-box max-w-2xl">
-        <form method="dialog">
-            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"><span
-                    class="mdi mdi-close text-xl"></span></button>
-        </form>
-        <h3 class="font-bold text-lg mb-4">{{ _('Import Pattern') }}</h3>
-        <form id="importForm" action="/projects/import" method="POST" enctype="multipart/form-data">
-            <div role="tablist" class="tabs tabs-boxed mb-4">
-                <a role="tab" class="tab tab-active" data-tab="url" onclick="switchTab(this, 'url')">{{ _('From URL')
-                    }}</a>
-                <a role="tab" class="tab" data-tab="file" onclick="switchTab(this, 'file')">{{ _('From File') }}</a>
-                <a role="tab" class="tab" data-tab="text" onclick="switchTab(this, 'text')">{{ _('From Text') }}</a>
-            </div>
+{% call dialogs.modal('importDialog', title=_('Import Pattern'), box_class='max-w-2xl') %}
+<form id="importForm" action="/projects/import" method="POST" enctype="multipart/form-data">
+    <div role="tablist" class="tabs tabs-boxed mb-4">
+        <a role="tab" class="tab tab-active" data-tab="url" onclick="switchTab(this, 'url')">{{ _('From URL')
+            }}</a>
+        <a role="tab" class="tab" data-tab="file" onclick="switchTab(this, 'file')">{{ _('From File') }}</a>
+        <a role="tab" class="tab" data-tab="text" onclick="switchTab(this, 'text')">{{ _('From Text') }}</a>
+    </div>
 
-            <input type="hidden" name="type" id="importType" value="url">
+    <input type="hidden" name="type" id="importType" value="url">
 
-            <div id="tab-url" class="import-tab-content">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">{{ _('Pattern URL') }}</span>
-                    </label>
-                    <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
-                        class="input input-bordered" />
-                    <label class="label">
-                        <span class="label-text-alt">{{ _('Enter the URL of the knitting pattern') }}</span>
-                    </label>
-                </div>
-            </div>
-
-            <div id="tab-file" class="import-tab-content hidden">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">{{ _('Pattern File') }}</span>
-                    </label>
-
-                    <div id="dropZone"
-                        class="border-2 border-dashed border-base-300 rounded-lg p-4 sm:p-8 text-center hover:border-primary hover:bg-base-200 transition-colors cursor-pointer"
-                        onclick="document.getElementById('importFile').click()">
-                        <input type="file" id="importFile" name="file" accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.gif"
-                            class="hidden" onchange="handleFileSelect(this)" />
-                        <div id="dropZoneContent">
-                            <span class="mdi mdi-cloud-upload text-5xl text-base-content opacity-50"></span>
-                            <p class="mt-4 text-base font-medium">{{ _('Click to upload or drag and drop') }}</p>
-                            <p class="mt-2 text-sm text-base-content opacity-60">{{ _('PDF, text file, or image') }}</p>
-                        </div>
-                        <div id="filePreview" class="hidden">
-                            <span class="mdi mdi-file-document text-5xl text-primary"></span>
-                            <p id="fileName" class="mt-4 text-base font-medium"></p>
-                            <button type="button" id="removeFile" class="btn btn-sm btn-ghost mt-2"
-                                onclick="clearFile(event)">
-                                <span class="mdi mdi-close"></span>
-                                {{ _('Remove') }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <label class="label">
-                        <span class="label-text-alt">{{ _('Supports PDF, TXT, MD, JPG, PNG, GIF') }}</span>
-                    </label>
-                </div>
-            </div>
-
-            <div id="tab-text" class="import-tab-content hidden">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">{{ _('Pattern Text') }}</span>
-                    </label>
-                    <textarea id="importText" name="text" rows="10"
-                        placeholder="{{ _('Paste pattern instructions here...') }}"
-                        class="textarea textarea-bordered"></textarea>
-                    <label class="label">
-                        <span class="label-text-alt">{{ _('Paste the pattern text directly') }}</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="form-control mt-4 hidden">
-                <input type="checkbox" name="use_ai" value="true" {% if has_openai_key %}checked{% endif %}>
-            </div>
-
-            <div class="modal-action">
-                {{ dialogs.dialog_cancel(_('Cancel'),
-                attrs='onclick="document.getElementById(\'importDialog\').close()"') }}
-                {{ dialogs.dialog_primary(_('Import'), icon='mdi-download', type='submit') }}
-            </div>
-        </form>
-        <div id="importLoading" class="hidden text-center py-8">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent">
-            </div>
-            <p class="mt-4 text-base font-medium text-slate-700 dark:text-slate-300">{{ _('Importing pattern...') }}</p>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ _('This may take 10-30 seconds') }}</p>
+    <div id="tab-url" class="import-tab-content">
+        <div class="form-control">
+            <label class="label">
+                <span class="label-text">{{ _('Pattern URL') }}</span>
+            </label>
+            <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
+                class="input input-bordered" />
+            <label class="label">
+                <span class="label-text-alt">{{ _('Enter the URL of the knitting pattern') }}</span>
+            </label>
         </div>
     </div>
-    {{ dialogs.modal_backdrop() }}
-</dialog>
+
+    <div id="tab-file" class="import-tab-content hidden">
+        <div class="form-control">
+            <label class="label">
+                <span class="label-text">{{ _('Pattern File') }}</span>
+            </label>
+
+            <div id="dropZone"
+                class="border-2 border-dashed border-base-300 rounded-lg p-4 sm:p-8 text-center hover:border-primary hover:bg-base-200 transition-colors cursor-pointer"
+                onclick="document.getElementById('importFile').click()">
+                <input type="file" id="importFile" name="file" accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.gif"
+                    class="hidden" onchange="handleFileSelect(this)" />
+                <div id="dropZoneContent">
+                    <span class="mdi mdi-cloud-upload text-5xl text-base-content opacity-50"></span>
+                    <p class="mt-4 text-base font-medium">{{ _('Click to upload or drag and drop') }}</p>
+                    <p class="mt-2 text-sm text-base-content opacity-60">{{ _('PDF, text file, or image') }}</p>
+                </div>
+                <div id="filePreview" class="hidden">
+                    <span class="mdi mdi-file-document text-5xl text-primary"></span>
+                    <p id="fileName" class="mt-4 text-base font-medium"></p>
+                    <button type="button" id="removeFile" class="btn btn-sm btn-ghost mt-2" onclick="clearFile(event)">
+                        <span class="mdi mdi-close"></span>
+                        {{ _('Remove') }}
+                    </button>
+                </div>
+            </div>
+
+            <label class="label">
+                <span class="label-text-alt">{{ _('Supports PDF, TXT, MD, JPG, PNG, GIF') }}</span>
+            </label>
+        </div>
+    </div>
+
+    <div id="tab-text" class="import-tab-content hidden">
+        <div class="form-control">
+            <label class="label">
+                <span class="label-text">{{ _('Pattern Text') }}</span>
+            </label>
+            <textarea id="importText" name="text" rows="10" placeholder="{{ _('Paste pattern instructions here...') }}"
+                class="textarea textarea-bordered"></textarea>
+            <label class="label">
+                <span class="label-text-alt">{{ _('Paste the pattern text directly') }}</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="form-control mt-4 hidden">
+        <input type="checkbox" name="use_ai" value="true" {% if has_openai_key %}checked{% endif %}>
+    </div>
+
+    <div class="modal-action">
+        {{ dialogs.dialog_cancel(_('Cancel'),
+        attrs='onclick="document.getElementById(\'importDialog\').close()"') }}
+        {{ dialogs.dialog_primary(_('Import'), icon='mdi-download', type='submit') }}
+    </div>
+</form>
+<div id="importLoading" class="hidden text-center py-8">
+    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent">
+    </div>
+    <p class="mt-4 text-base font-medium text-slate-700 dark:text-slate-300">{{ _('Importing pattern...') }}</p>
+    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ _('This may take 10-30 seconds') }}</p>
+</div>
+{% endcall %}
 
 <script>
     function switchTab(el, tabName) {

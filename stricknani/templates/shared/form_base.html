@@ -13,18 +13,14 @@
     <!-- Form Content -->
     {% block form_body %}{% endblock %}
 </div>
-<dialog id="unsavedChangesDialog" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg">{{ _('Unsaved changes') }}</h3>
-        <p class="py-4">{{ _('You have unsaved changes. Save before leaving?') }}</p>
-        <div class="modal-action">
-            {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-unsaved-cancel') }}
-            {{ dialogs.dialog_danger(_('Discard'), icon='mdi-trash-can-outline', attrs='data-unsaved-leave') }}
-            {{ dialogs.dialog_primary(_('Save'), icon='mdi-content-save', attrs='data-unsaved-save') }}
-        </div>
-    </div>
-    {{ dialogs.modal_backdrop() }}
-</dialog>
+{% call dialogs.modal('unsavedChangesDialog', title=_('Unsaved changes')) %}
+<p class="py-4">{{ _('You have unsaved changes. Save before leaving?') }}</p>
+<div class="modal-action">
+    {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-unsaved-cancel') }}
+    {{ dialogs.dialog_danger(_('Discard'), icon='mdi-trash-can-outline', attrs='data-unsaved-leave') }}
+    {{ dialogs.dialog_primary(_('Save'), icon='mdi-content-save', attrs='data-unsaved-save') }}
+</div>
+{% endcall %}
 {% block page_scripts %}{% endblock %}
 
 <script>

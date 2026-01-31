@@ -84,7 +84,12 @@ or ('#' ~ selected_tag if selected_tag else '') %}
     document.addEventListener('DOMContentLoaded', () => {
         const toastKey = new URLSearchParams(window.location.search).get('toast');
         if (toastKey === 'project_deleted') {
-            window.showToast?.('{{ _("Project deleted") }}', 'success');
+            setTimeout(() => {
+                if (window.showToast) {
+                    window.showToast('{{ _("Project deleted") }}', 'success');
+                }
+            }, 100);
+
             const url = new URL(window.location.href);
             url.searchParams.delete('toast');
             window.history.replaceState({}, '', url.toString());

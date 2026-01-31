@@ -537,30 +537,26 @@
     </div>
 </div>
 
-<dialog id="deleteProjectDialog" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box p-0 overflow-hidden">
-        <div class="bg-error/10 p-6 flex items-center gap-4 text-error">
-            <span class="mdi mdi-alert-circle text-4xl"></span>
-            <div>
-                <h3 class="font-bold text-lg">{{ _('Delete Project') }}</h3>
-                <p class="text-sm opacity-90">{{ _('This action cannot be undone.') }}</p>
-            </div>
-        </div>
-        <div class="p-6">
-            <p class="mb-6 text-base-content/80">
-                {{ _('Are you sure you want to delete') }} <strong class="text-base-content">{{ project.name
-                    }}</strong>?
-            </p>
-            <div class="flex justify-end gap-2">
-                <form method="dialog">
-                    {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
-                </form>
-                {{ dialogs.dialog_danger(_('Delete Project'), attrs='onclick="deleteProject()"') }}
-            </div>
-        </div>
+{% call dialogs.modal('deleteProjectDialog', box_class='p-0 overflow-hidden') %}
+<div class="bg-error/10 p-6 flex items-center gap-4 text-error">
+    <span class="mdi mdi-alert-circle text-4xl"></span>
+    <div>
+        <h3 class="font-bold text-lg">{{ _('Delete Project') }}</h3>
+        <p class="text-sm opacity-90">{{ _('This action cannot be undone.') }}</p>
     </div>
-    {{ dialogs.modal_backdrop() }}
-</dialog>
+</div>
+<div class="p-6">
+    <p class="mb-6 text-base-content/80">
+        {{ _('Are you sure you want to delete') }} <strong class="text-base-content">{{ project.name }}</strong>?
+    </p>
+    <div class="flex justify-end gap-2">
+        <form method="dialog">
+            {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
+        </form>
+        {{ dialogs.dialog_danger(_('Delete Project'), attrs='onclick="deleteProject()"') }}
+    </div>
+</div>
+{% endcall %}
 
 <script>
     function deleteProject() {
