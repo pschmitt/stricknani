@@ -630,6 +630,10 @@ msgstr "Keine passenden Ergebnisse"
 msgid "Clear filters"
 msgstr "Filter löschen"
 
+#: stricknani/templates/shared/_search_bar.html:23
+msgid "Clear search"
+msgstr "Suche löschen"
+
 #: stricknani/templates/projects/list.html:49
 msgid "Clear category"
 msgstr "Kategorie entfernen"

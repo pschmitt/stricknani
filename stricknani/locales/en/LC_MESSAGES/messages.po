@@ -308,6 +308,10 @@ msgstr "No matching results"
 msgid "Clear filters"
 msgstr "Clear filters"
 
+#: stricknani/templates/shared/_search_bar.html:23
+msgid "Clear search"
+msgstr "Clear search"
+
 #: stricknani/templates/projects/list.html:46
 msgid "Category"
 msgstr "Category"

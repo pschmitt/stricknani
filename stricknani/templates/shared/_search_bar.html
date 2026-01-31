@@ -23,9 +23,14 @@
         {% set inline_filters = filters|length == 1 %}
         <input type="text" id="{{ search_id }}" name="{{ search_name }}" value="{{ search_value }}"
             placeholder="{{ search_placeholder }}"
-            class="input input-bordered w-full pl-10{% if inline_filters %} pr-10 sm:pr-32{% endif %}"
+            class="input input-bordered w-full pl-10 pr-10{% if inline_filters %} sm:pr-32{% endif %}"
             hx-get="{{ search_url }}" hx-target="{{ search_target }}" hx-trigger="keyup changed delay:500ms"
             hx-replace-url="true" {% if filters %}hx-include=".search-filter-input" {% endif %}>
+        <button type="button"
+            class="btn btn-ghost btn-sm btn-circle absolute inset-y-0 right-2 my-auto hidden"
+            data-search-clear aria-label="{{ _('Clear search') }}" title="{{ _('Clear search') }}">
+            <span class="mdi mdi-close text-lg"></span>
+        </button>
         {% if filters %}
         {% for filter in filters %}
         <input type="hidden" id="{{ filter.id }}" name="{{ filter.name }}" value="{{ filter.value }}"
@@ -73,6 +78,7 @@
             const searchInput = document.getElementById('{{ search_id }}');
             const suggestionContainer = document.getElementById('{{ search_id }}-suggestions');
             const suggestionList = document.getElementById('{{ search_id }}-suggestion-list');
+            const clearButton = document.querySelector('#{{ wrapper_id }} [data-search-clear]');
             let currentPrefix = '';
             let activeIndex = -1;
 
@@ -121,8 +127,27 @@
                 suggestionContainer.classList.remove('hidden');
             };
 
+            const updateClearButton = () => {
+                if (!clearButton) {
+                    return;
+                }
+                if (searchInput.value.trim()) {
+                    clearButton.classList.remove('hidden');
+                } else {
+                    clearButton.classList.add('hidden');
+                }
+            };
+
+            const triggerSearch = () => {
+                const event = new Event('input', { bubbles: true });
+                searchInput.dispatchEvent(event);
+                const keyupEvent = new KeyboardEvent('keyup', { bubbles: true });
+                searchInput.dispatchEvent(keyupEvent);
+            };
+
             searchInput.addEventListener('input', async (e) => {
                 const val = e.target.value;
+                updateClearButton();
                 const match = prefixes.find(p => val.toLowerCase().startsWith(p.prefix));
 
                 if (match) {
@@ -211,14 +236,24 @@
                 input.value = val;
                 container.classList.add('hidden');
                 clearActiveState();
+                updateClearButton();
                 input.focus();
 
                 // Trigger HTMX search by simulating the events it listens to
-                const event = new Event('input', { bubbles: true });
-                input.dispatchEvent(event);
-                const keyupEvent = new KeyboardEvent('keyup', { bubbles: true });
-                input.dispatchEvent(keyupEvent);
+                triggerSearch();
             };
+
+            if (clearButton) {
+                clearButton.addEventListener('click', () => {
+                    searchInput.value = '';
+                    closeSuggestions();
+                    updateClearButton();
+                    searchInput.focus();
+                    triggerSearch();
+                });
+            }
+
+            updateClearButton();
         })();
     </script>
 </div>
