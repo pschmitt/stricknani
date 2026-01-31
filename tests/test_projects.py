@@ -105,7 +105,7 @@ async def test_update_project_manages_steps(
 
 def _generate_image_bytes(color: str = "blue") -> BytesIO:
     stream = BytesIO()
-    image = PILImage.new("RGB", (32, 32), color=color)
+    image = PILImage.new("RGB", (128, 128), color=color)
     image.save(stream, format="PNG")
     stream.seek(0)
     return stream
