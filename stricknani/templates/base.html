@@ -315,142 +315,149 @@
             const image = document.getElementById('crop-image');
             const saveBtn = document.getElementById('crop-save');
             const cancelBtn = document.getElementById('crop-cancel');
-            let targetUserId = {{ current_user.id }}
-        };
+            let targetUserId = {{ current_user.id }};
 
-        window.triggerProfileImageUpload = function (userId) {
-            targetUserId = userId || {{ current_user.id }}
-        };
-        input.click();
-            };
-        });
-
-        input.addEventListener('change', function (e) {
-            const files = e.target.files;
-            if (files && files.length > 0) {
-                const file = files[0];
-                const reader = new FileReader();
-                reader.onload = function (readerEvent) {
-                    image.src = readerEvent.target.result;
-                    modal.showModal();
-
-                    if (cropper) {
-                        cropper.destroy();
-                    }
-                    cropper = new Cropper(image, {
-                        aspectRatio: 1,
-                        viewMode: 1,
-                        dragMode: 'move',
-                        autoCropArea: 1,
-                        restore: false,
-                        guides: false,
-                        center: false,
-                        highlight: false,
-                        cropBoxMovable: false,
-                        cropBoxResizable: false,
-                        toggleDragModeOnDblclick: false,
-                        zoomable: true,
-                        zoomOnTouch: true,
-                        zoomOnWheel: true,
-                    });
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        cancelBtn.addEventListener('click', function () {
-            modal.close();
-            input.value = '';
-            if (cropper) {
-                cropper.destroy();
-                cropper = null;
-            }
-        });
-
-        saveBtn.addEventListener('click', function () {
-            if (!cropper) {
+            if (!input || !modal || !image || !saveBtn || !cancelBtn) {
                 return;
             }
 
-            const canvas = cropper.getCroppedCanvas({
-                width: 400,
-                height: 400,
-            });
+            window.triggerProfileImageUpload = function (userId) {
+                targetUserId = userId || {{ current_user.id }};
+                input.click();
+            };
 
-            canvas.toBlob(function (blob) {
-                const formData = new FormData();
-                formData.append('file', blob, 'avatar.png');
+            input.addEventListener('change', function (e) {
+                const files = e.target.files;
+                if (files && files.length > 0) {
+                    const file = files[0];
+                    const reader = new FileReader();
+                    reader.onload = function (readerEvent) {
+                        image.src = readerEvent.target.result;
+                        modal.showModal();
 
-                // Show loading state
-                const originalText = saveBtn.textContent;
-                saveBtn.textContent = '{{ _("Uploading...") }}';
-                saveBtn.disabled = true;
-
-                const url = (targetUserId === {{ current_user.id }}
-            })
-                ? '/user/profile-image'
-                : `/admin/users/${targetUserId}/profile-image`;
-
-            fetch(url, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'HX-Request': 'true'
-                }
-            })
-                .then(response => {
-                    if (!response.ok) throw new Error('Upload failed');
-                    return response.text();
-                })
-                .then(html => {
-                    if (targetUserId === {{ current_user.id }}
-                }) {
-                // Refresh page or update avatars
-                window.location.reload();
-            } else {
-                // Admin case: update user card
-                const card = document.getElementById(`user-card-${targetUserId}`);
-                if (card) {
-                    // Parse the response to handle OOB swaps manually
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-
-                    // Update user card
-                    const newCard = doc.getElementById(`user-card-${targetUserId}`);
-                    if (newCard) {
-                        card.replaceWith(newCard);
-                        // Re-initialize HTMX on the new content
-                        if (window.htmx) {
-                            window.htmx.process(newCard);
+                        if (cropper) {
+                            cropper.destroy();
                         }
-                    }
-
-                    // Update user count (OOB swap)
-                    const newCount = doc.getElementById('user-count');
-                    const currentCount = document.getElementById('user-count');
-                    if (newCount && currentCount) {
-                        currentCount.replaceWith(newCount);
-                    }
+                        cropper = new Cropper(image, {
+                            aspectRatio: 1,
+                            viewMode: 1,
+                            dragMode: 'move',
+                            autoCropArea: 1,
+                            restore: false,
+                            guides: false,
+                            center: false,
+                            highlight: false,
+                            cropBoxMovable: false,
+                            cropBoxResizable: false,
+                            toggleDragModeOnDblclick: false,
+                            zoomable: true,
+                            zoomOnTouch: true,
+                            zoomOnWheel: true,
+                        });
+                    };
+                    reader.readAsDataURL(file);
                 }
-                modal.close();
-
-                // Close the edit user dialog if it's open
-                const editUserDialog = document.getElementById('editUserDialog');
-                if (editUserDialog && editUserDialog.open) {
-                    editUserDialog.close();
-                }
-
-                showToast('{{ _("Profile picture updated successfully") }}', 'success');
-            }
-        })
-            .catch(err => {
-                console.error(err);
-                showToast('{{ _("Failed to upload image") }}', 'error');
-            })
-            .finally(() => {
-                saveBtn.textContent = originalText;
-                saveBtn.disabled = false;
             });
+
+            cancelBtn.addEventListener('click', function () {
+                modal.close();
+                input.value = '';
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+            });
+
+            saveBtn.addEventListener('click', function () {
+                if (!cropper) {
+                    return;
+                }
+
+                const canvas = cropper.getCroppedCanvas({
+                    width: 400,
+                    height: 400,
+                });
+
+                canvas.toBlob(function (blob) {
+                    if (!blob) {
+                        showToast('{{ _("Failed to upload image") }}', 'error');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('file', blob, 'avatar.png');
+
+                    // Show loading state
+                    const originalText = saveBtn.textContent;
+                    saveBtn.textContent = '{{ _("Uploading...") }}';
+                    saveBtn.disabled = true;
+
+                    const url = targetUserId === {{ current_user.id }}
+                        ? '/user/profile-image'
+                        : `/admin/users/${targetUserId}/profile-image`;
+
+                    fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'HX-Request': 'true'
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Upload failed');
+                            }
+                            return response.text();
+                        })
+                        .then(html => {
+                            if (targetUserId === {{ current_user.id }}) {
+                                window.location.reload();
+                                return;
+                            }
+
+                            // Admin case: update user card
+                            const card = document.getElementById(`user-card-${targetUserId}`);
+                            if (card) {
+                                // Parse the response to handle OOB swaps manually
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+
+                                // Update user card
+                                const newCard = doc.getElementById(`user-card-${targetUserId}`);
+                                if (newCard) {
+                                    card.replaceWith(newCard);
+                                    // Re-initialize HTMX on the new content
+                                    if (window.htmx) {
+                                        window.htmx.process(newCard);
+                                    }
+                                }
+
+                                // Update user count (OOB swap)
+                                const newCount = doc.getElementById('user-count');
+                                const currentCount = document.getElementById('user-count');
+                                if (newCount && currentCount) {
+                                    currentCount.replaceWith(newCount);
+                                }
+                            }
+
+                            modal.close();
+
+                            // Close the edit user dialog if it's open
+                            const editUserDialog = document.getElementById('editUserDialog');
+                            if (editUserDialog && editUserDialog.open) {
+                                editUserDialog.close();
+                            }
+
+                            showToast('{{ _("Profile picture updated successfully") }}', 'success');
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            showToast('{{ _("Failed to upload image") }}', 'error');
+                        })
+                        .finally(() => {
+                            saveBtn.textContent = originalText;
+                            saveBtn.disabled = false;
+                        });
                 }, 'image/png');
             });
         });

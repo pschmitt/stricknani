@@ -25,7 +25,7 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from PIL import Image as PilImage
-from sqlalchemy import delete, func, insert, select
+from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -59,7 +59,11 @@ router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
 
 
 async def _import_yarn_images_from_urls(
-    db: AsyncSession, yarn: Yarn, image_urls: Sequence[str]
+    db: AsyncSession,
+    yarn: Yarn,
+    image_urls: Sequence[str],
+    *,
+    primary_url: str | None = None,
 ) -> int:
     """Download and attach imported images to a yarn."""
     if not image_urls:
@@ -132,11 +136,19 @@ async def _import_yarn_images_from_urls(
                 logger.warning("Failed to store image %s: %s", image_url, exc)
                 continue
 
+            if primary_url:
+                is_primary = image_url == primary_url
+            else:
+                # If no primary_url is provided, the first imported photo becomes primary
+                # if there are no existing photos.
+                is_primary = imported == 0 and not yarn.photos
+
             photo = YarnImage(
                 filename=filename,
                 original_filename=original_filename,
                 alt_text=yarn.name or original_filename,
                 yarn_id=yarn.id,
+                is_primary=is_primary,
             )
             db.add(photo)
             imported += 1
@@ -307,6 +319,7 @@ def _serialize_photos(yarn: Yarn) -> list[dict[str, object]]:
                     subdir="yarns",
                 ),
                 "alt_text": photo.alt_text,
+                "is_primary": photo.is_primary,
                 "width": width,
                 "height": height,
             }
@@ -388,7 +401,7 @@ async def import_yarn(
 
         # Map pattern data to yarn fields
         yarn_data = {
-            "name": data.get("title"),
+            "name": data.get("yarn") or data.get("title"),
             "brand": data.get("brand"),
             "colorway": data.get("colorway"),
             "weight_grams": data.get("weight_grams"),
@@ -397,10 +410,10 @@ async def import_yarn(
             "recommended_needles": data.get("needles"),
             "gauge_stitches": data.get("gauge_stitches"),
             "gauge_rows": data.get("gauge_rows"),
-            "description": data.get("yarn"),
+            "description": data.get("comment"),
             "link": url,
             "image_urls": data.get("image_urls", [])[:5],
-            "notes": data.get("comment"),
+            "notes": None,
         }
 
         return JSONResponse(content=yarn_data)
@@ -578,6 +591,7 @@ async def create_yarn(
     notes: Annotated[str | None, Form()] = None,
     link: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
+    import_primary_image_url: Annotated[str | None, Form()] = None,
     photos: Annotated[list[UploadFile | str] | None, File()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
@@ -613,7 +627,9 @@ async def create_yarn(
     if import_image_urls:
         urls = _parse_import_image_urls(import_image_urls)
         if urls:
-            await _import_yarn_images_from_urls(db, yarn, urls)
+            await _import_yarn_images_from_urls(
+                db, yarn, urls, primary_url=import_primary_image_url
+            )
 
     await db.commit()
 
@@ -715,6 +731,7 @@ async def update_yarn(
     notes: Annotated[str | None, Form()] = None,
     link: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
+    import_primary_image_url: Annotated[str | None, Form()] = None,
     new_photos: Annotated[list[UploadFile | str] | None, File()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
@@ -748,7 +765,9 @@ async def update_yarn(
     if import_image_urls:
         urls = _parse_import_image_urls(import_image_urls)
         if urls:
-            await _import_yarn_images_from_urls(db, yarn, urls)
+            await _import_yarn_images_from_urls(
+                db, yarn, urls, primary_url=import_primary_image_url
+            )
 
     await db.commit()
 
@@ -819,6 +838,36 @@ async def toggle_favorite(
         url=request.headers.get("referer") or "/yarn",
         status_code=status.HTTP_303_SEE_OTHER,
     )
+
+
+@router.post("/{yarn_id}/photos/{photo_id}/promote", response_class=Response)
+async def promote_yarn_photo(
+    yarn_id: int,
+    photo_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> Response:
+    """Promote a photo to be the primary image for a yarn."""
+    yarn = await _fetch_yarn(db, yarn_id, current_user.id)
+    if yarn is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    # Set all photos for this yarn to non-primary
+    await db.execute(
+        update(YarnImage)
+        .where(YarnImage.yarn_id == yarn_id)
+        .values(is_primary=False)
+    )
+
+    # Set selected photo to primary
+    await db.execute(
+        update(YarnImage)
+        .where(YarnImage.id == photo_id, YarnImage.yarn_id == yarn_id)
+        .values(is_primary=True)
+    )
+
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{yarn_id}/delete", response_class=Response)

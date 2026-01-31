@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from stricknani.models.associations import project_yarns, user_favorite_yarns
@@ -53,7 +53,7 @@ class Yarn(Base):
         "YarnImage",
         back_populates="yarn",
         cascade="all, delete-orphan",
-        order_by=lambda: YarnImage.created_at.desc(),
+        order_by=lambda: (YarnImage.is_primary.desc(), YarnImage.created_at.desc()),
     )
     projects: Mapped[list[Project]] = relationship(
         "Project",
@@ -76,6 +76,7 @@ class YarnImage(Base):
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
     alt_text: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC)
     )

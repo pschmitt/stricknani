@@ -80,6 +80,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 <form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post"
     data-primary-form="true" class="space-y-6">
     <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
+    <input type="hidden" id="import_title_image_url" name="import_title_image_url" value="">
     <input type="hidden" id="archive_on_save" name="archive_on_save" value="">
     <input type="hidden" id="stepsData" name="steps_data">
 
@@ -242,7 +243,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     data-pswp-gallery>
                     {% if project %}
                     {% for image in project.title_images %}
-                    <div class="relative" data-image-id="{{ image.id }}">
+                    <div class="relative group" data-image-id="{{ image.id }}">
                         <a href="{{ image.url }}" data-pswp-width="{{ image.width or 1200 }}"
                             data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}"
                             class="block">
@@ -250,8 +251,13 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                 class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
                                 draggable="true" ondragstart="handleImageDragStart(event)">
                         </a>
+                        <button type="button" onclick="promoteImage({{ project.id }}, {{ image.id }})"
+                            class="absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all {{ 'bg-amber-400 text-white' if image.is_title_image else 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500' }} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+                            title="{{ _('Make title image') }}">
+                            <span class="mdi {{ 'mdi-star' if image.is_title_image else 'mdi-star-outline' }}"></span>
+                        </button>
                         <button type="button" onclick="deleteImage({{ image.id }})"
-                            class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
+                            class="absolute top-1 right-1 z-10 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm">
                             <span class="mdi mdi-close"></span>
                         </button>
                     </div>
@@ -1375,8 +1381,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         <a href="${imageData.url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="${imageData.alt_text}" class="block">
             <img src="${imageData.thumbnail_url}" alt="${imageData.alt_text}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" draggable="true" ondragstart="handleImageDragStart(event)">
         </a>
-        <button type="button" onclick="deleteImage(${imageData.id})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <button type="button" onclick="promoteImage(${projectId}, ${imageData.id})" class="absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-amber-50 hover:text-amber-600 dark:bg-slate-900/90 dark:text-slate-500" title="{{ _('Make title image') }}">
+            <span class="mdi mdi-star-outline"></span>
+        </button>
+        <button type="button" onclick="deleteImage(${imageData.id})" class="absolute top-1 right-1 z-10 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm">
+            <span class="mdi mdi-close"></span>
         </button>
     `;
         container.appendChild(div);
@@ -1386,18 +1395,57 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     function addPendingTitleImageToGallery(url) {
         const container = document.getElementById('titleImagesContainer');
         const div = document.createElement('div');
-        div.className = 'relative';
+        div.className = 'relative group';
         div.setAttribute('data-pending-url', url);
         div.innerHTML = `
         <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" class="block">
             <img src="${url}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
         </a>
-        <button type="button" onclick="deletePendingImage(this, '${url}')" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <button type="button" onclick="promotePendingImage(this, '${url}')"
+            class="promote-pending-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+            title="{{ _('Make title image') }}">
+            <span class="mdi mdi-star-outline"></span>
+        </button>
+        <button type="button" onclick="deletePendingImage(this, '${url}')" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm">
+            <span class="mdi mdi-close"></span>
         </button>
     `;
         container.appendChild(div);
+
+        // If this is the first image, automatically promote it
+        const currentTitleUrl = document.getElementById('import_title_image_url').value;
+        if (!currentTitleUrl) {
+            promotePendingImage(div.querySelector('.promote-pending-btn'), url);
+        }
+
         window.refreshPhotoSwipeGallery?.(container);
+    }
+
+    function promotePendingImage(btn, url) {
+        // Update hidden field
+        const input = document.getElementById('import_title_image_url');
+        if (input) input.value = url;
+
+        // Visual update
+        document.querySelectorAll('.promote-pending-btn').forEach(b => {
+            b.classList.remove('bg-amber-400', 'text-white', 'opacity-100');
+            b.classList.add('bg-white/90', 'text-slate-400', 'opacity-0');
+            const star = b.querySelector('span');
+            if (star) {
+                star.classList.remove('mdi-star');
+                star.classList.add('mdi-star-outline');
+            }
+        });
+
+        if (btn) {
+            btn.classList.add('bg-amber-400', 'text-white', 'opacity-100');
+            btn.classList.remove('bg-white/90', 'text-slate-400', 'opacity-0');
+            const star = btn.querySelector('span');
+            if (star) {
+                star.classList.remove('mdi-star-outline');
+                star.classList.add('mdi-star');
+            }
+        }
     }
 
     function deletePendingImage(button, url) {
@@ -1451,6 +1499,25 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 }
             }
         );
+    }
+
+    async function promoteImage(pId, imageId) {
+        try {
+            const response = await fetch(`/projects/${pId}/images/${imageId}/promote`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                console.error('Failed to promote image');
+            }
+        } catch (error) {
+            console.error('Error promoting image:', error);
+        }
     }
 
     function initStepImageUploaders() {

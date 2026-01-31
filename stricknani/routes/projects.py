@@ -281,7 +281,11 @@ def _extract_garnstudio_notes_block(comment: str) -> str | None:
 
 
 async def _import_images_from_urls(
-    db: AsyncSession, project: Project, image_urls: Sequence[str]
+    db: AsyncSession,
+    project: Project,
+    image_urls: Sequence[str],
+    *,
+    title_url: str | None = None,
 ) -> int:
     """Download and attach imported images to a project."""
     if not image_urls:
@@ -379,17 +383,23 @@ async def _import_images_from_urls(
                 if project.name
                 else original_filename
             )
+            if title_url:
+                is_title = image_url == title_url
+            else:
+                is_title = title_available
+
             image = Image(
                 filename=filename,
                 original_filename=original_filename,
                 image_type=ImageType.PHOTO.value,
                 alt_text=alt_text,
-                is_title_image=title_available,
+                is_title_image=is_title,
                 project_id=project.id,
             )
             db.add(image)
             imported += 1
-            title_available = False
+            if is_title:
+                title_available = False
 
     return imported
 
@@ -1715,6 +1725,7 @@ async def create_project(
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
+    import_title_image_url: Annotated[str | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
@@ -1773,7 +1784,9 @@ async def create_project(
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
-        await _import_images_from_urls(db, project, image_urls)
+        await _import_images_from_urls(
+            db, project, image_urls, title_url=import_title_image_url
+        )
 
     await db.commit()
     await db.refresh(project)
@@ -2190,6 +2203,40 @@ async def delete_image(
     await db.commit()
 
     return {"message": "Image deleted"}
+
+
+@router.post("/{project_id}/images/{image_id}/promote", response_class=Response)
+async def promote_project_image(
+    project_id: int,
+    image_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> Response:
+    """Promote an image to be the title image for a project."""
+    # Ensure project exists and belongs to user
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.owner_id == current_user.id)
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    # Set all images for this project to non-title
+    await db.execute(
+        update(Image)
+        .where(Image.project_id == project_id)
+        .values(is_title_image=False)
+    )
+
+    # Set selected image to title
+    await db.execute(
+        update(Image)
+        .where(Image.id == image_id, Image.project_id == project_id)
+        .values(is_title_image=True)
+    )
+
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{project_id}/steps", response_class=JSONResponse)

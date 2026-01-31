@@ -142,7 +142,7 @@ class PatternImporter:
         return data
 
     def _extract_title(self, soup: BeautifulSoup) -> str | None:
-        """Extract pattern title."""
+        """Extract pattern title or yarn name."""
         # Try various title patterns
         patterns = [
             soup.find("h1", class_=re.compile(r"pattern|title|name", re.I)),
@@ -151,17 +151,22 @@ class PatternImporter:
             soup.find("title"),
         ]
 
+        title = None
         for pattern in patterns:
             if pattern:
                 if hasattr(pattern, "name") and pattern.name == "meta":
                     content = pattern.get("content")
                     if isinstance(content, str):
-                        return content
+                        title = content
+                        break
                 text = pattern.get_text(strip=True)
                 if text and len(text) > 3:
-                    return text
+                    title = text
+                    break
 
-        return None
+        if title and any(x in title.lower() for x in ["yarn", "garn", "wolle", "ball"]):
+            return self._clean_yarn_name(title)
+        return title
 
     def _extract_needles(self, soup: BeautifulSoup) -> str | None:
         """Extract needle information."""
@@ -187,21 +192,52 @@ class PatternImporter:
         ]
 
         text = soup.get_text()
+        yarn_text = None
         for pattern in patterns:
             match = re.search(pattern, text, re.I)
             if match:
                 yarn_text = match.group(1).strip()
                 # If the match looks like a whole paragraph, skip it.
                 if len(yarn_text) > 150:
+                    yarn_text = None
                     continue
-                return yarn_text
+                break
 
-        # Try to use product name if we are on a yarn product page
-        title = self._extract_title(soup)
-        if title and any(x in title.lower() for x in ["yarn", "garn", "wolle"]):
-            return title
+        if not yarn_text:
+            # Try to use product name if we are on a yarn product page
+            title = self._extract_title(soup)
+            if title and any(x in title.lower() for x in ["yarn", "garn", "wolle", "ball"]):
+                yarn_text = title
 
-        return None
+        return self._clean_yarn_name(yarn_text)
+
+    def _clean_yarn_name(self, name: str | None) -> str | None:
+        """Strip weight and length specs from yarn name."""
+        if not name:
+            return name
+
+        # Remove patterns like "100g", "300m", "50 g", "100 g", "300 m"
+        # Also handles "100g/300m" or similar
+        # \b doesn't always work with / so we use a more inclusive pattern
+        patterns = [
+            r"\d+\s*g\b",
+            r"\d+\s*m\b",
+            r"\d+\s*oz\b",
+            r"\d+\s*yds?\b",
+            r"\d+\s*yards\b",
+        ]
+
+        cleaned = name
+        for p in patterns:
+            cleaned = re.sub(p, "", cleaned, flags=re.I)
+
+        # Handle leftover separators like / or - at the end or mid-string
+        cleaned = re.sub(r"\s*[/|:-]\s*", " ", cleaned)
+        # Final trim of any remaining punctuation at the end
+        cleaned = re.sub(r"[\s/|:-]+$", "", cleaned)
+
+        # Clean up whitespace
+        return " ".join(cleaned.split()).strip()
 
     def _extract_brand(self, soup: BeautifulSoup) -> str | None:
         """Extract brand/manufacturer information."""
