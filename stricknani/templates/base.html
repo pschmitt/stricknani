@@ -1047,6 +1047,55 @@
             });
         };
 
+        const markdownLightboxes = new Map();
+        const openMarkdownLightbox = (image) => {
+            if (!image) {
+                return;
+            }
+            const group = image.getAttribute('data-lightbox-group') || 'markdown';
+            const images = Array.from(
+                document.querySelectorAll(`img.markdown-inline-image[data-lightbox-group="${group}"]`),
+            );
+            if (!images.length) {
+                return;
+            }
+
+            const items = images.map((img) => {
+                const src = img.getAttribute('data-lightbox-src') || img.src;
+                const alt = img.getAttribute('data-lightbox-alt') || img.alt || '';
+                const width = img.naturalWidth || 1200;
+                const height = img.naturalHeight || 1200;
+                return {
+                    src,
+                    msrc: img.src,
+                    width,
+                    height,
+                    alt,
+                    title: alt,
+                    element: img,
+                };
+            });
+
+            const index = Math.max(0, images.indexOf(image));
+            const existing = markdownLightboxes.get(group);
+            if (existing) {
+                existing.destroy();
+                markdownLightboxes.delete(group);
+            }
+
+            const lightbox = new PhotoSwipeLightbox({
+                dataSource: items,
+                pswpModule: () => import('https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.esm.min.js'),
+            });
+            lightbox.on('close', () => {
+                lightbox.destroy();
+                markdownLightboxes.delete(group);
+            });
+            lightbox.init();
+            markdownLightboxes.set(group, lightbox);
+            lightbox.loadAndOpen(index);
+        };
+
         const openAtIndex = (trigger) => {
             const gallery = trigger.closest('[data-pswp-gallery]');
             if (!gallery) {
@@ -1077,6 +1126,13 @@
         };
 
         document.addEventListener('click', (event) => {
+            const markdownImage = event.target.closest('img.markdown-inline-image');
+            if (markdownImage) {
+                event.preventDefault();
+                event.stopPropagation();
+                openMarkdownLightbox(markdownImage);
+                return;
+            }
             const trigger = event.target.closest('[data-pswp-open-index]');
             if (!trigger) {
                 return;

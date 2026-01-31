@@ -630,6 +630,38 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
      */
     function updateImageVisibility(textarea) {
         if (!textarea) return;
+        let container;
+        let label;
+        const stepItem = textarea.closest('.step-item');
+        const isStepDescription = Boolean(stepItem);
+        if (textarea.id === 'stitch_sample') {
+            container = document.getElementById('stitchSampleImagesContainer');
+            label = document.getElementById('stitchSamplePhotosLabel');
+        } else if (isStepDescription) {
+            container = stepItem.querySelector('.step-images');
+            label = stepItem.querySelector('.step-photos-label');
+        }
+
+        if (!container) return;
+
+        const images = container.querySelectorAll('[data-image-id], [data-pending-url]');
+        if (textarea.id === 'stitch_sample' || isStepDescription) {
+            images.forEach(imgWrapper => {
+                imgWrapper.classList.remove('hidden');
+                imgWrapper.querySelectorAll('.hidden').forEach(child => {
+                    child.classList.remove('hidden');
+                });
+            });
+            if (images.length === 0) {
+                container.classList.add('hidden');
+                if (label) label.classList.add('hidden');
+            } else {
+                container.classList.remove('hidden');
+                if (label) label.classList.remove('hidden');
+            }
+            return;
+        }
+
         const text = textarea.value;
         const urlsInText = [];
         const regex = /!\[.*?\]\((.*?)\)/g;
@@ -638,23 +670,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             urlsInText.push(match[1]);
         }
 
-        let container;
-        let label;
-        if (textarea.id === 'stitch_sample') {
-            container = document.getElementById('stitchSampleImagesContainer');
-            label = document.getElementById('stitchSamplePhotosLabel');
-        } else if (textarea.classList.contains('step-description')) {
-            const stepItem = textarea.closest('.step-item');
-            if (stepItem) {
-                container = stepItem.querySelector('.step-images');
-                label = stepItem.querySelector('.step-photos-label');
-            }
-        }
-
-        if (!container) return;
-
         let visibleCount = 0;
-        const images = container.querySelectorAll('[data-image-id], [data-pending-url]');
         images.forEach(imgWrapper => {
             const anchor = imgWrapper.querySelector('a');
             if (!anchor) return;
