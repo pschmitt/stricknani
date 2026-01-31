@@ -11,12 +11,12 @@
 <a href="/projects" class="btn btn-ghost btn-circle" aria-label="{{ _('Back to projects') }}">
     <span class="mdi mdi-arrow-left text-xl"></span>
 </a>
-<a href="/projects/{{ project.id }}/edit" class="btn btn-primary gap-2 hidden md:inline-flex">
+<a href="/projects/{{ project.id }}/edit" class="btn btn-primary gap-2">
     <span class="mdi mdi-pencil"></span>
     {{ _('Edit') }}
 </a>
 
-<div class="dropdown dropdown-end">
+<div class="dropdown dropdown-end hidden md:block">
     <div tabindex="0" role="button" class="btn btn-ghost btn-circle" aria-label="{{ _('More actions') }}">
         <span class="mdi mdi-dots-vertical text-xl"></span>
     </div>
@@ -75,6 +75,7 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
+    <h1 class="text-2xl font-bold mb-4 md:hidden">{{ project.name }}</h1>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <!-- Main Content Column -->

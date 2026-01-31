@@ -1,15 +1,74 @@
 {% set current_path = request.url.path %}
+{# Check if page_actions contains a back button (looking for mdi-arrow-left) #}
+{% set has_back_button = page_actions and 'mdi-arrow-left' in page_actions %}
 
-<nav class="navbar bg-base-200 shadow-sm border-b border-base-300 sticky top-0 z-[80]">
+<nav class="navbar bg-base-200 shadow-sm border-b border-base-300 sticky top-0 z-[80] min-h-12">
     <div class="max-w-none mx-auto px-4 w-full">
-        <div class="flex items-center justify-between h-16 w-full gap-4">
-            {# Left side: Favicon + Title with dropdown #}
+        <div class="flex items-center justify-between h-12 w-full gap-4">
+            {# Left side: Back button OR Favicon + Title with dropdown #}
             <div class="flex items-center gap-3 min-w-0 flex-1">
+                {% if has_back_button %}
+                {# Extract and show just the back button from page_actions using split #}
+                {% set parts = page_actions.split('</a>', 1) %}
+                {% if parts|length > 1 %}
+                <div class="w-8 h-8 flex items-center justify-center shrink-0">
+                    {{ parts[0]|safe }}</a>
+                </div>
+                {% endif %}
+
+                {# Page Title - hidden on mobile when back button exists #}
+                <div class="dropdown dropdown-hover hidden md:block">
+                    <button tabindex="0" role="button"
+                        class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
+                        <span class="truncate">{% if page_title %}{{ page_title }}{% else %}{{ _('Stricknani') }}{%
+                            endif %}</span>
+                        <span
+                            class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity"></span>
+                    </button>
+                    <ul tabindex="0"
+                        class="dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
+                        {% if current_user %}
+                        <li>
+                            <a href="/projects"
+                                class="{% if current_path.startswith('/projects') %}bg-primary/10 text-primary font-medium{% endif %}">
+                                <span class="mdi mdi-folder-outline text-lg"></span>
+                                {{ _('Projects') }}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/yarn"
+                                class="{% if current_path.startswith('/yarn') %}bg-primary/10 text-primary font-medium{% endif %}">
+                                <span class="mdi mdi-sheep text-lg"></span>
+                                {{ _('Yarns') }}
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li>
+                            <a href="/gauge"
+                                class="{% if current_path.startswith('/gauge') %}bg-primary/10 text-primary font-medium{% endif %}">
+                                <span class="mdi mdi-ruler text-lg"></span>
+                                {{ _('Gauge Calculator') }}
+                            </a>
+                        </li>
+                        {% if current_user and current_user.is_admin %}
+                        <li>
+                            <a href="/admin/users"
+                                class="{% if current_path.startswith('/admin') %}bg-primary/10 text-primary font-medium{% endif %}">
+                                <span class="mdi mdi-shield-account text-lg"></span>
+                                {{ _('Admin') }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% else %}
                 {# Favicon - links to home #}
-                <a href="/" class="shrink-0 hover:opacity-80 transition-opacity" aria-label="{{ _('Home') }}">
-                    <img src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}"
-                        alt="" class="h-8 w-8" />
-                </a>
+                <div class="w-8 h-8 flex items-center justify-center shrink-0">
+                    <a href="/" class="block hover:opacity-80 transition-opacity" aria-label="{{ _('Home') }}">
+                        <img src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}"
+                            alt="" class="h-8 w-8" />
+                    </a>
+                </div>
 
                 {# Page Title with Navigation Dropdown #}
                 <div class="dropdown dropdown-hover">
@@ -56,11 +115,21 @@
                         {% endif %}
                     </ul>
                 </div>
+                {% endif %}
             </div>
 
-            {# Center/Right: Page-specific actions #}
+            {# Center/Right: Page-specific actions (excluding back button if present) #}
             <div class="flex items-center gap-2 shrink-0">
-                {% if page_actions %}{{ page_actions|safe }}{% endif %}
+                {% if page_actions %}
+                {% if has_back_button %}
+                {% set parts = page_actions.split('</a>', 1) %}
+                {% if parts|length > 1 %}
+                {{ parts[1]|safe }}
+                {% endif %}
+                {% else %}
+                {{ page_actions|safe }}
+                {% endif %}
+                {% endif %}
             </div>
 
             {# Right side: User menu or Login #}

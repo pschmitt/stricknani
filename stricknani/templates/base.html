@@ -270,7 +270,7 @@
     </style>
 </head>
 
-<body class="min-h-screen bg-base-100">
+<body class="min-h-screen bg-base-100 flex flex-col">
     {% import "macros/dialogs.html" as dialogs %}
 
     {% block navbar %}
@@ -323,6 +323,7 @@
         };
         input.click();
             };
+        });
 
         input.addEventListener('change', function (e) {
             const files = e.target.files;

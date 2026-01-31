@@ -14,10 +14,7 @@ attrs='data-unsaved-confirm="true"') }}
 {{ buttons.secondary(_('Import'), icon='mdi-download',
 attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='hidden md:inline-flex') }}
 {% endif %}
-{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class='hidden
-md:inline-flex') }}
-<!-- Mobile FAB for Project Save -->
-{{ buttons.fab('mdi-content-save', type='submit', attrs='form="projectForm"', class='md:hidden', label=_('Save')) }}
+{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"') }}
 {% endset %}
 
 {% block form_styles %}

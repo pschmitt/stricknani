@@ -18,7 +18,7 @@
 
 {# Set variables for the unified navbar #}
 {% set page_icon %}<span class="mdi mdi-folder-multiple-outline text-primary"></span>{% endset %}
-{% set page_title %}{{ _('My Projects') }}{% endset %}
+{% set page_title %}{{ _('Projects') }}{% endset %}
 {% set page_actions %}
 {{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='hidden
 md:inline-flex') }}
@@ -53,7 +53,7 @@ md:inline-flex') }}
 <span class="mdi mdi-folder-multiple-outline text-primary"></span>
 {% endblock %}
 
-{% block list_title %}{{ _('My Projects') }}{% endblock %}
+{% block list_title %}{{ _('Projects') }}{% endblock %}
 
 
 {% block list_filters %}
@@ -62,7 +62,7 @@ md:inline-flex') }}
 {% set search_value = search
 or ('cat:' ~ selected_category if selected_category else '')
 or ('#' ~ selected_tag if selected_tag else '') %}
-{% set search_placeholder = _('Search (use cat:, #, or tag: for filters)...') %}
+{% set search_placeholder = _('Search') %}
 {% set search_url = "/projects" %}
 {% set search_target = "#projects-list" %}
 {% set wrapper_id = "project-search" %}

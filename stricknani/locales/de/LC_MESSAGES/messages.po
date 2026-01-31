@@ -1253,7 +1253,7 @@ msgstr "Bist du sicher, dass du dieses Projekt löschen möchtest?"
 
 #: stricknani/templates/projects/list.html:24
 msgid "My Projects"
-msgstr "Meine Projekte"
+msgstr "Projekte"
 
 #: stricknani/templates/projects/list.html:35
 msgid "Search projects..."

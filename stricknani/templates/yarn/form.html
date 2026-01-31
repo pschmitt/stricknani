@@ -15,10 +15,7 @@
 {% else %}
 {{ buttons.back_circle('/yarn', label=_('Back to yarns'), attrs='data-unsaved-confirm="true"') }}
 {% endif %}
-{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"', class='hidden
-md:inline-flex') }}
-<!-- Mobile FAB for Yarn Save -->
-{{ buttons.fab('mdi-content-save', type='submit', attrs='form="yarnForm"', class='md:hidden', label=_('Save')) }}
+{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"') }}
 {% endset %}
 
 {% block form_before %}

@@ -1196,7 +1196,7 @@ msgid "Are you sure you want to delete this project?"
 msgstr ""
 
 #: stricknani/templates/projects/list.html:24
-msgid "My Projects"
+msgid "Projects"
 msgstr ""
 
 #: stricknani/templates/projects/list.html:35
