@@ -7,6 +7,20 @@
 
 {% block form_container_class %}max-w-5xl{% endblock %}
 
+{# Set variables for the unified navbar #}
+{% set page_title %}{{ yarn.name if yarn else _('New Yarn') }}{% endset %}
+{% set page_actions %}
+{% if yarn %}
+{{ buttons.back_circle('/yarn/' + yarn.id|string, label=_('Back to yarn'), attrs='data-unsaved-confirm="true"') }}
+{% else %}
+{{ buttons.back_circle('/yarn', label=_('Back to yarns'), attrs='data-unsaved-confirm="true"') }}
+{% endif %}
+{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"', class='hidden
+md:inline-flex') }}
+<!-- Mobile FAB for Yarn Save -->
+{{ buttons.fab('mdi-content-save', type='submit', attrs='form="yarnForm"', class='md:hidden', label=_('Save')) }}
+{% endset %}
+
 {% block form_before %}
 <dialog id="previewDialog"
     class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-2xl">

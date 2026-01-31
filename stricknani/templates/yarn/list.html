@@ -4,18 +4,20 @@
 
 {% block title %}{{ _('Yarn') }} - {{ _('Stricknani') }}{% endblock %}
 
+{# Set variables for the unified navbar #}
+{% set page_icon %}<span class="mdi mdi-sheep text-primary"></span>{% endset %}
+{% set page_title %}{{ _('Yarns') }}{% endset %}
+{% set page_actions %}
+{{ buttons.primary(_('New Yarn'), icon='mdi-plus-circle-outline', href='/yarn/new', class='hidden md:inline-flex') }}
+{{ buttons.fab('mdi-plus', href='/yarn/new', class='md:hidden', label=_('New Yarn')) }}
+{% endset %}
+
+{# Keep for backwards compatibility #}
 {% block list_icon %}
 <span class="mdi mdi-sheep text-primary"></span>
 {% endblock %}
 
 {% block list_title %}{{ _('Yarns') }}{% endblock %}
-
-{% block list_actions %}
-{{ buttons.primary(_('New Yarn'), icon='mdi-plus-circle-outline', href='/yarn/new', class='hidden md:inline-flex flex-1 sm:flex-none') }}
-
-<!-- Mobile FAB -->
-{{ buttons.fab('mdi-plus', href='/yarn/new', class='md:hidden', label=_('New Yarn')) }}
-{% endblock %}
 
 {% block list_filters %}
 {% set search_id = "search" %}

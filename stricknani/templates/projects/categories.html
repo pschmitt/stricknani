@@ -3,6 +3,14 @@
 
 {% block title %}{{ _('Manage Categories') }} - Stricknani{% endblock %}
 
+{# Set variables for the unified navbar #}
+{% set page_icon %}<span class="mdi mdi-shape-outline text-primary"></span>{% endset %}
+{% set page_title %}{{ _('Manage Categories') }}{% endset %}
+{% set page_actions %}
+{{ buttons.back_circle('/projects', label=_('Back to Projects')) }}
+{% endset %}
+
+{# Keep for backwards compatibility #}
 {% block list_icon %}
 <span class="mdi mdi-shape-outline text-primary"></span>
 {% endblock %}
@@ -15,9 +23,6 @@
 
 {% block list_nav %}
 {{ buttons.back_circle('/projects', label=_('Back to Projects')) }}
-{% endblock %}
-
-{% block list_actions %}
 {% endblock %}
 
 {% block list_filters_container %}
@@ -61,10 +66,8 @@
                     {{ buttons.secondary(_('Save'), type='submit', icon='mdi-content-save-outline', class='btn-sm
                     btn-ghost gap-2', attrs='title="' + _('Save changes') + '"') }}
 
-                    <button type="button" class="btn btn-sm btn-ghost text-error"
-                        data-category-id="{{ category.id }}"
-                        data-category-name="{{ category.name }}"
-                        data-project-count="{{ category.project_count }}"
+                    <button type="button" class="btn btn-sm btn-ghost text-error" data-category-id="{{ category.id }}"
+                        data-category-name="{{ category.name }}" data-project-count="{{ category.project_count }}"
                         title="{{ _('Delete category') }}" aria-label="{{ _('Delete category') }}">
                         <span class="mdi mdi-trash-can-outline text-lg"></span>
                     </button>
@@ -85,9 +88,9 @@
 
 {% block page_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    {% if error %}
-    window.showToast?.({{ error | tojson }}, 'error');
+    document.addEventListener('DOMContentLoaded', () => {
+        {% if error %}
+        window.showToast?.({{ error | tojson }}, 'error');
     {% endif %}
 
     const deleteConfirmTitle = {{ _('Delete category') | tojson }};

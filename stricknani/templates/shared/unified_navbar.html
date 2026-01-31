@@ -1,0 +1,215 @@
+{% set current_path = request.url.path %}
+
+<nav class="navbar bg-base-200 shadow-sm border-b border-base-300 sticky top-0 z-[80]">
+    <div class="max-w-none mx-auto px-4 w-full">
+        <div class="flex items-center justify-between h-16 w-full gap-4">
+            {# Left side: Favicon + Title with dropdown #}
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                {# Favicon - links to home #}
+                <a href="/" class="shrink-0 hover:opacity-80 transition-opacity" aria-label="{{ _('Home') }}">
+                    <img src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}"
+                        alt="" class="h-8 w-8" />
+                </a>
+
+                {# Page Title with Navigation Dropdown #}
+                <div class="dropdown dropdown-hover">
+                    <button tabindex="0" role="button"
+                        class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
+                        <span class="truncate">{% if page_title %}{{ page_title }}{% else %}{{ _('Stricknani') }}{%
+                            endif %}</span>
+                        <span
+                            class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity"></span>
+                    </button>
+                    <ul tabindex="0"
+                        class="dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
+                        {% if current_user %}
+                        <li>
+                            <a href="/projects"
+                                class="{% if current_path.startswith('/projects') %}bg-primary/10 text-primary font-medium{% endif %}">
+                                <span class="mdi mdi-folder-outline text-lg"></span>
+                                {{ _('Projects') }}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/yarn"
+                                class="{% if current_path.startswith('/yarn') %}bg-primary/10 text-primary font-medium{% endif %}">
+                                <span class="mdi mdi-sheep text-lg"></span>
+                                {{ _('Yarns') }}
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li>
+                            <a href="/gauge"
+                                class="{% if current_path.startswith('/gauge') %}bg-primary/10 text-primary font-medium{% endif %}">
+                                <span class="mdi mdi-ruler text-lg"></span>
+                                {{ _('Gauge Calculator') }}
+                            </a>
+                        </li>
+                        {% if current_user and current_user.is_admin %}
+                        <li>
+                            <a href="/admin/users"
+                                class="{% if current_path.startswith('/admin') %}bg-primary/10 text-primary font-medium{% endif %}">
+                                <span class="mdi mdi-shield-account text-lg"></span>
+                                {{ _('Admin') }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            {# Center/Right: Page-specific actions #}
+            <div class="flex items-center gap-2 shrink-0">
+                {% if page_actions %}{{ page_actions|safe }}{% endif %}
+            </div>
+
+            {# Right side: User menu or Login #}
+            <div class="flex items-center shrink-0">
+                {% if current_user %}
+                <div class="dropdown dropdown-end" data-user-menu>
+                    <button type="button" class="btn btn-ghost btn-circle avatar" data-user-menu-trigger tabindex="0">
+                        {% if current_user_avatar_thumbnail %}
+                        <div class="w-10 rounded-full">
+                            <img src="{{ current_user_avatar_thumbnail }}"
+                                alt="{{ _('Profile picture for %(email)s') % {'email': current_user.email} }}" />
+                        </div>
+                        {% else %}
+                        <span class="mdi mdi-account-circle text-3xl"></span>
+                        {% endif %}
+                    </button>
+                    <div class="dropdown-content menu bg-base-100 rounded-box z-[90] w-72 p-0 shadow-xl border border-base-300"
+                        data-user-menu-panel tabindex="0">
+                        <div class="flex items-center gap-3 border-b border-base-300 px-4 py-3">
+                            <div class="avatar">
+                                <div class="w-12 rounded-full cursor-pointer hover:ring-2 hover:ring-primary transition-all group relative"
+                                    onclick="document.getElementById('profile-image-input').click()">
+                                    {% if current_user_avatar_thumbnail %}
+                                    <img src="{{ current_user_avatar_thumbnail }}"
+                                        alt="{{ _('Profile picture for %(email)s') % {'email': current_user.email} }}" />
+                                    {% else %}
+                                    <div class="flex h-full w-full items-center justify-center bg-base-300">
+                                        <span class="mdi mdi-account text-2xl"></span>
+                                    </div>
+                                    {% endif %}
+                                    <div
+                                        class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                                        <span class="mdi mdi-camera text-white text-lg"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold">{{ current_user.email }}</p>
+                                <p class="text-xs opacity-60">{{ _('Signed in') }}</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4 border-b border-base-300 px-4 py-4">
+                            <div class="space-y-2">
+                                <label class="label">
+                                    <span
+                                        class="label-text text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
+                                        <span class="mdi mdi-translate"></span>
+                                        {{ _('Language') }}
+                                    </span>
+                                </label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <form action="/auth/set-language" method="post" class="block">
+                                        <input type="hidden" name="next"
+                                            value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                                        <input type="hidden" name="language" value="en">
+                                        <button type="submit"
+                                            class="btn btn-sm w-full {% if current_language == 'en' %}btn-primary{% else %}btn-outline{% endif %}">
+                                            🇬🇧 EN
+                                        </button>
+                                    </form>
+                                    <form action="/auth/set-language" method="post" class="block">
+                                        <input type="hidden" name="next"
+                                            value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                                        <input type="hidden" name="language" value="de">
+                                        <button type="submit"
+                                            class="btn btn-sm w-full {% if current_language == 'de' %}btn-primary{% else %}btn-outline{% endif %}">
+                                            🇩🇪 DE
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="label">
+                                    <span
+                                        class="label-text text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
+                                        <span class="mdi mdi-theme-light-dark"></span>
+                                        {{ _('Theme') }}
+                                    </span>
+                                </label>
+                                <button type="button" onclick="toggleTheme()"
+                                    class="btn btn-outline w-full justify-between">
+                                    <span id="theme-label">{{ _('Dark') }}</span>
+                                    <span id="theme-icon" class="mdi mdi-weather-night text-lg"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-2 px-4 py-4">
+                            <form action="/auth/logout" method="post">
+                                <button type="submit" class="btn btn-ghost w-full justify-start text-error">
+                                    <span class="mdi mdi-logout text-lg"></span>
+                                    {{ _('Logout') }}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="toggleTheme()" class="btn btn-ghost btn-circle"
+                        title="{{ _('Toggle theme') }}">
+                        <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
+                    </button>
+                    <div class="dropdown dropdown-end">
+                        <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1 px-2">
+                            <span class="mdi mdi-translate text-lg"></span>
+                            <span class="uppercase font-semibold text-xs">{{ current_language }}</span>
+                            <span class="mdi mdi-chevron-down text-xs opacity-50"></span>
+                        </div>
+                        <ul tabindex="0"
+                            class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
+                            <li>
+                                <form action="/auth/set-language" method="post" class="block p-0">
+                                    <input type="hidden" name="next"
+                                        value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                                    <input type="hidden" name="language" value="en">
+                                    <button type="submit"
+                                        class="flex w-full items-center gap-3 py-3 px-4 {% if current_language == 'en' %}bg-primary/10 text-primary font-medium{% endif %} hover:bg-base-200">
+                                        <span class="text-xl leading-none">🇬🇧</span>
+                                        <span class="text-base">{{ _('English') }}</span>
+                                        {% if current_language == 'en' %}
+                                        <span class="mdi mdi-check ml-auto text-primary"></span>
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <form action="/auth/set-language" method="post" class="block p-0">
+                                    <input type="hidden" name="next"
+                                        value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                                    <input type="hidden" name="language" value="de">
+                                    <button type="submit"
+                                        class="flex w-full items-center gap-3 py-3 px-4 {% if current_language == 'de' %}bg-primary/10 text-primary font-medium{% endif %} hover:bg-base-200">
+                                        <span class="text-xl leading-none">🇩🇪</span>
+                                        <span class="text-base">{{ _('German') }}</span>
+                                        {% if current_language == 'de' %}
+                                        <span class="mdi mdi-check ml-auto text-primary"></span>
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    <a href="/login" class="btn btn-ghost">
+                        <span class="mdi mdi-login"></span>
+                        {{ _('Login') }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>

@@ -5,6 +5,21 @@
 
 {% block title %}{{ _('Edit') if project else _('New') }} {{ _('Project') }} - Stricknani{% endblock %}
 
+{# Set variables for the unified navbar #}
+{% set page_title %}{{ project.name if project else _('New Project') }}{% endset %}
+{% set page_actions %}
+{{ buttons.back_circle('/projects/' + project.id|string if project else '/projects', label=_('Back to projects'),
+attrs='data-unsaved-confirm="true"') }}
+{% if not project %}
+{{ buttons.secondary(_('Import'), icon='mdi-download',
+attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='hidden md:inline-flex') }}
+{% endif %}
+{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class='hidden
+md:inline-flex') }}
+<!-- Mobile FAB for Project Save -->
+{{ buttons.fab('mdi-content-save', type='submit', attrs='form="projectForm"', class='md:hidden', label=_('Save')) }}
+{% endset %}
+
 {% block form_styles %}
 <style>
     .tab-content {

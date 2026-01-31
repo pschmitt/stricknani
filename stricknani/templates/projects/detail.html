@@ -5,85 +5,76 @@
 
 {% block title %}{{ project.name }} - Stricknani{% endblock %}
 
+{# Set variables for the unified navbar #}
+{% set page_title %}{{ project.name }}{% endset %}
+{% set page_actions %}
+<a href="/projects" class="btn btn-ghost btn-circle" aria-label="{{ _('Back to projects') }}">
+    <span class="mdi mdi-arrow-left text-xl"></span>
+</a>
+<a href="/projects/{{ project.id }}/edit" class="btn btn-primary gap-2 hidden md:inline-flex">
+    <span class="mdi mdi-pencil"></span>
+    {{ _('Edit') }}
+</a>
+
+<div class="dropdown dropdown-end">
+    <div tabindex="0" role="button" class="btn btn-ghost btn-circle" aria-label="{{ _('More actions') }}">
+        <span class="mdi mdi-dots-vertical text-xl"></span>
+    </div>
+    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
+        <li data-favorite-toggle>
+            {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail', extra_classes='flex
+            justify-start gap-2' %}
+            {% include "projects/_favorite_toggle.html" %}
+            {% endwith %}
+        </li>
+        <li>
+            <button onclick="document.getElementById('deleteProjectDialog').showModal()"
+                class="text-error hover:bg-error/10 hover:text-error">
+                <span class="mdi mdi-delete-outline text-lg"></span>
+                {{ _('Delete') }}
+            </button>
+        </li>
+    </ul>
+</div>
+
+<!-- Mobile FAB -->
+<details class="dropdown dropdown-end dropdown-top md:hidden fixed bottom-6 right-6 z-50">
+    <summary tabindex="0" role="button"
+        class="btn btn-circle btn-primary shadow-xl h-14 w-14 min-h-0 p-0 flex items-center justify-center list-none appearance-none"
+        aria-label="{{ _('More actions') }}">
+        <span class="mdi mdi-dots-vertical text-2xl"></span>
+    </summary>
+    <ul tabindex="0"
+        class="dropdown-content z-[51] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2">
+        <li data-favorite-toggle>
+            {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail', extra_classes='flex
+            justify-start gap-2' %}
+            {% include "projects/_favorite_toggle.html" %}
+            {% endwith %}
+        </li>
+        <li>
+            <a href="/projects/{{ project.id }}/edit">
+                <span class="mdi mdi-pencil text-lg"></span>
+                {{ _('Edit') }}
+            </a>
+        </li>
+        <li>
+            <button onclick="document.getElementById('deleteProjectDialog').showModal()"
+                class="text-error hover:bg-error/10 hover:text-error">
+                <span class="mdi mdi-delete-outline text-lg"></span>
+                {{ _('Delete') }}
+            </button>
+        </li>
+    </ul>
+</details>
+{% endset %}
+
+{% block navbar %}
+{% include "shared/unified_navbar.html" %}
+{% endblock %}
+
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
-    <!-- Header Section -->
-    <div
-        class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4 md:mb-8 sticky top-0 z-50 bg-base-100 py-4 shadow-none">
-        <div class="space-y-2">
-            <div class="flex items-center gap-3">
-                <a href="/projects" class="btn btn-circle btn-ghost btn-sm text-base-content/60"
-                    aria-label="{{ _('Back to projects') }}">
-                    <span class="mdi mdi-arrow-left text-xl"></span>
-                </a>
-                <h1 class="text-3xl md:text-4xl font-extrabold text-base-content tracking-tight">{{ project.name }}</h1>
-            </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-            <!-- Desktop Actions -->
-            <div class="hidden md:flex items-center gap-2">
-                <a href="/projects/{{ project.id }}/edit" class="btn btn-primary gap-2">
-                    <span class="mdi mdi-pencil"></span>
-                    {{ _('Edit') }}
-                </a>
-
-                <div class="dropdown dropdown-end">
-                    <div tabindex="0" role="button" class="btn btn-ghost btn-circle"
-                        aria-label="{{ _('More actions') }}">
-                        <span class="mdi mdi-dots-vertical text-xl"></span>
-                    </div>
-                    <ul tabindex="0"
-                        class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
-                        <li data-favorite-toggle>
-                            {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail',
-                            extra_classes='flex justify-start gap-2' %}
-                            {% include "projects/_favorite_toggle.html" %}
-                            {% endwith %}
-                        </li>
-                        <li>
-                            <button onclick="document.getElementById('deleteProjectDialog').showModal()"
-                                class="text-error hover:bg-error/10 hover:text-error">
-                                <span class="mdi mdi-delete-outline text-lg"></span>
-                                {{ _('Delete') }}
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Mobile actions dropdown (FAB-style) -->
-            <details class="dropdown dropdown-end dropdown-top md:hidden fixed bottom-6 right-6 z-50">
-                <summary tabindex="0" role="button"
-                    class="btn btn-circle btn-primary shadow-xl h-14 w-14 min-h-0 p-0 flex items-center justify-center list-none appearance-none"
-                    aria-label="{{ _('More actions') }}">
-                    <span class="mdi mdi-dots-vertical text-2xl"></span>
-                </summary>
-                <ul tabindex="0"
-                    class="dropdown-content z-[51] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2">
-                    <li data-favorite-toggle>
-                        {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail',
-                        extra_classes='flex justify-start gap-2' %}
-                        {% include "projects/_favorite_toggle.html" %}
-                        {% endwith %}
-                    </li>
-                    <li>
-                        <a href="/projects/{{ project.id }}/edit">
-                            <span class="mdi mdi-pencil text-lg"></span>
-                            {{ _('Edit') }}
-                        </a>
-                    </li>
-                    <li>
-                        <button onclick="document.getElementById('deleteProjectDialog').showModal()"
-                            class="text-error hover:bg-error/10 hover:text-error">
-                            <span class="mdi mdi-delete-outline text-lg"></span>
-                            {{ _('Delete') }}
-                        </button>
-                    </li>
-                </ul>
-            </details>
-        </div>
-    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <!-- Main Content Column -->

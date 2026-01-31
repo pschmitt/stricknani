@@ -272,301 +272,23 @@
 
 <body class="min-h-screen bg-base-100">
     {% import "macros/dialogs.html" as dialogs %}
-    <div class="drawer">
-        <input id="main-drawer" type="checkbox" class="drawer-toggle" />
-        <div class="drawer-content flex flex-col min-h-screen">
-            <nav class="navbar bg-base-200 shadow-sm border-b border-base-300 relative z-[80]">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-                    <div class="flex justify-between h-16 w-full">
-                        <div class="flex items-center space-x-2 md:space-x-8">
-                            <label for="main-drawer" class="btn btn-ghost drawer-button md:hidden"
-                                aria-label="{{ _('Open main menu') }}">
-                                <span class="mdi mdi-menu text-2xl"></span>
-                            </label>
-                            <a href="/" class="text-xl font-bold hover:text-primary inline-flex items-center gap-2">
-                                <img src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}"
-                                    alt="" class="h-6 w-6" />
-                                <span class="mdi mdi-yarn text-primary"></span>
-                                {{ _('Stricknani') }}
-                            </a>
-                            <div class="hidden md:flex space-x-4">
-                                {% set current_path = request.url.path %}
-                                {% if current_user %}
-                                <a href="/projects"
-                                    class="btn btn-ghost {% if current_path.startswith('/projects') %}btn-active{% endif %}">
-                                    <span class="mdi mdi-folder-outline"></span>
-                                    {{ _('Projects') }}
-                                </a>
-                                <a href="/yarn"
-                                    class="btn btn-ghost {% if current_path.startswith('/yarn') %}btn-active{% endif %}">
-                                    <span class="mdi mdi-sheep"></span>
-                                    {{ _('Yarns') }}
-                                </a>
-                                {% endif %}
-                                <a href="/gauge"
-                                    class="btn btn-ghost {% if current_path.startswith('/gauge') %}btn-active{% endif %}">
-                                    <span class="mdi mdi-ruler"></span>
-                                    {{ _('Gauge Calculator') }}
-                                </a>
-                                {% if current_user and current_user.is_admin %}
-                                <a href="/admin/users"
-                                    class="btn btn-ghost {% if current_path.startswith('/admin') %}btn-active{% endif %}">
-                                    <span class="mdi mdi-shield-account"></span>
-                                    {{ _('Admin') }}
-                                </a>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="flex items-center">
-                            {% if current_user %}
-                            <div class="dropdown dropdown-end" data-user-menu>
-                                <button type="button" class="btn btn-ghost btn-circle avatar" data-user-menu-trigger
-                                    tabindex="0">
-                                    {% if current_user_avatar_thumbnail %}
-                                    <div class="w-10 rounded-full">
-                                        <img src="{{ current_user_avatar_thumbnail }}"
-                                            alt="{{ _('Profile picture for %(email)s') % {'email': current_user.email} }}" />
-                                    </div>
-                                    {% else %}
-                                    <span class="mdi mdi-account-circle text-3xl"></span>
-                                    {% endif %}
-                                </button>
-                                <div class="dropdown-content menu bg-base-100 rounded-box z-[90] w-72 p-0 shadow-xl border border-base-300"
-                                    data-user-menu-panel tabindex="0">
-                                    <div class="flex items-center gap-3 border-b border-base-300 px-4 py-3">
-                                        <div class="avatar">
-                                            <div class="w-12 rounded-full cursor-pointer hover:ring-2 hover:ring-primary transition-all group relative"
-                                                onclick="document.getElementById('profile-image-input').click()">
-                                                {% if current_user_avatar_thumbnail %}
-                                                <img src="{{ current_user_avatar_thumbnail }}"
-                                                    alt="{{ _('Profile picture for %(email)s') % {'email': current_user.email} }}" />
-                                                {% else %}
-                                                <div class="flex h-full w-full items-center justify-center bg-base-300">
-                                                    <span class="mdi mdi-account text-2xl"></span>
-                                                </div>
-                                                {% endif %}
-                                                <div
-                                                    class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                                                    <span class="mdi mdi-camera text-white text-lg"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-semibold">{{ current_user.email }}</p>
-                                            <p class="text-xs opacity-60">{{ _('Signed in') }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-4 border-b border-base-300 px-4 py-4">
-                                        <div class="space-y-2">
-                                            <label class="label">
-                                                <span
-                                                    class="label-text text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
-                                                    <span class="mdi mdi-translate"></span>
-                                                    {{ _('Language') }}
-                                                </span>
-                                            </label>
-                                            <div class="grid grid-cols-2 gap-2">
-                                                <form action="/auth/set-language" method="post" class="block">
-                                                    <input type="hidden" name="next"
-                                                        value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                                    <input type="hidden" name="language" value="en">
-                                                    <button type="submit"
-                                                        class="btn btn-sm w-full {% if current_language == 'en' %}btn-primary{% else %}btn-outline{% endif %}">
-                                                        🇬🇧 EN
-                                                    </button>
-                                                </form>
-                                                <form action="/auth/set-language" method="post" class="block">
-                                                    <input type="hidden" name="next"
-                                                        value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                                    <input type="hidden" name="language" value="de">
-                                                    <button type="submit"
-                                                        class="btn btn-sm w-full {% if current_language == 'de' %}btn-primary{% else %}btn-outline{% endif %}">
-                                                        🇩🇪 DE
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                        <div class="space-y-2">
-                                            <label class="label">
-                                                <span
-                                                    class="label-text text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
-                                                    <span class="mdi mdi-theme-light-dark"></span>
-                                                    {{ _('Theme') }}
-                                                </span>
-                                            </label>
-                                            <button type="button" onclick="toggleTheme()"
-                                                class="btn btn-outline w-full justify-between">
-                                                <span id="theme-label">{{ _('Dark') }}</span>
-                                                <span id="theme-icon" class="mdi mdi-weather-night text-lg"></span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-2 px-4 py-4">
-                                        <form action="/auth/logout" method="post">
-                                            <button type="submit" class="btn btn-ghost w-full justify-start text-error">
-                                                <span class="mdi mdi-logout text-lg"></span>
-                                                {{ _('Logout') }}
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                            {% else %}
-                            <div class="hidden md:flex items-center space-x-2">
-                                <button type="button" onclick="toggleTheme()" class="btn btn-ghost btn-circle"
-                                    title="{{ _('Toggle theme') }}">
-                                    <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
-                                </button>
-                                <div class="dropdown dropdown-end">
-                                    <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1 px-2">
-                                        <span class="mdi mdi-translate text-lg"></span>
-                                        <span class="uppercase font-semibold text-xs">{{ current_language }}</span>
-                                        <span class="mdi mdi-chevron-down text-xs opacity-50"></span>
-                                    </div>
-                                    <ul tabindex="0"
-                                        class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
-                                        <li>
-                                            <form action="/auth/set-language" method="post" class="block p-0">
-                                                <input type="hidden" name="next"
-                                                    value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                                <input type="hidden" name="language" value="en">
-                                                <button type="submit"
-                                                    class="flex w-full items-center gap-3 py-3 px-4 {% if current_language == 'en' %}bg-primary/10 text-primary font-medium{% endif %} hover:bg-base-200">
-                                                    <span class="text-xl leading-none">🇬🇧</span>
-                                                    <span class="text-base">{{ _('English') }}</span>
-                                                    {% if current_language == 'en' %}
-                                                    <span class="mdi mdi-check ml-auto text-primary"></span>
-                                                    {% endif %}
-                                                </button>
-                                            </form>
-                                        </li>
-                                        <li>
-                                            <form action="/auth/set-language" method="post" class="block p-0">
-                                                <input type="hidden" name="next"
-                                                    value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                                <input type="hidden" name="language" value="de">
-                                                <button type="submit"
-                                                    class="flex w-full items-center gap-3 py-3 px-4 {% if current_language == 'de' %}bg-primary/10 text-primary font-medium{% endif %} hover:bg-base-200">
-                                                    <span class="text-xl leading-none">🇩🇪</span>
-                                                    <span class="text-base">{{ _('German') }}</span>
-                                                    {% if current_language == 'de' %}
-                                                    <span class="mdi mdi-check ml-auto text-primary"></span>
-                                                    {% endif %}
-                                                </button>
-                                            </form>
-                                        </li>
-                                    </ul>
-                                </div>
-                                <a href="/login" class="btn btn-ghost">
-                                    <span class="mdi mdi-login"></span>
-                                    {{ _('Login') }}
-                                </a>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </nav>
 
-            <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-                {% block content %}{% endblock %}
-            </main>
+    {% block navbar %}
+    {# Default navbar - pages can override this block #}
+    {% endblock %}
 
-            <footer class="mt-8 py-4 text-center text-sm text-base-content/70 bg-base-200 border-t border-base-300">
-                <span class="mdi mdi-yarn mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0 | {{ _('GPL-3.0-only')
-                }}
-                <a href="https://github.com/pschmitt/stricknani" target="_blank" rel="noopener noreferrer"
-                    class="ml-2 text-base-content/70 hover:text-base-content" aria-label="GitHub">
-                    <span class="mdi mdi-github text-lg align-middle"></span>
-                </a>
-            </footer>
-        </div>
-        <div class="drawer-side z-[9999]">
-            <label for="main-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-            <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
-                <!-- Sidebar content here -->
-                {% set current_path = request.url.path %}
-                <li class="mb-4">
-                    <a href="/" class="text-xl font-bold gap-2 hover:bg-transparent">
-                        <img src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}"
-                            alt="" class="h-8 w-8" />
-                        <span class="mdi mdi-yarn text-primary"></span>
-                        {{ _('Stricknani') }}
-                    </a>
-                </li>
+    <main class="flex-grow w-full">
+        {% block content %}{% endblock %}
+    </main>
 
-                {% if current_user %}
-                <li>
-                    <a href="/projects" class="{% if current_path.startswith('/projects') %}active{% endif %}">
-                        <span class="mdi mdi-folder-outline text-lg"></span>{{ _('Projects') }}
-                    </a>
-                </li>
-                <li>
-                    <a href="/yarn" class="{% if current_path.startswith('/yarn') %}active{% endif %}">
-                        <span class="mdi mdi-sheep text-lg"></span>{{ _('Yarns') }}
-                    </a>
-                </li>
-                {% endif %}
-
-                <li>
-                    <a href="/gauge" class="{% if current_path.startswith('/gauge') %}active{% endif %}">
-                        <span class="mdi mdi-ruler text-lg"></span>{{ _('Gauge Calculator') }}
-                    </a>
-                </li>
-
-                {% if current_user and current_user.is_admin %}
-                <li>
-                    <a href="/admin/users" class="{% if current_path.startswith('/admin') %}active{% endif %}">
-                        <span class="mdi mdi-shield-account text-lg"></span>{{ _('Admin') }}
-                    </a>
-                </li>
-                {% endif %}
-
-                {% if not current_user %}
-                <li>
-                    <a href="/login" class="">
-                        <span class="mdi mdi-login text-lg"></span>{{ _('Login') }}
-                    </a>
-                </li>
-                {% endif %}
-
-                <div class="divider"></div>
-                <li class="menu-title">{{ _('Settings') }}</li>
-                <li>
-                    <button type="button" onclick="toggleTheme()" class="justify-between">
-                        <span class="flex items-center gap-2">
-                            <span class="mdi mdi-theme-light-dark"></span> {{ _('Theme') }}
-                        </span>
-                        <span class="mdi mdi-weather-night text-lg"></span>
-                    </button>
-                </li>
-                <li>
-                    <div
-                        class="flex items-center justify-between py-2 active:bg-transparent hover:bg-transparent cursor-default">
-                        <span class="flex items-center gap-2">
-                            <span class="mdi mdi-translate"></span> {{ _('Language') }}
-                        </span>
-                        <div class="join">
-                            <form action="/auth/set-language" method="post" class="inline">
-                                <input type="hidden" name="next"
-                                    value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                <input type="hidden" name="language" value="en">
-                                <button type="submit"
-                                    class="join-item btn btn-sm {% if current_language == 'en' %}btn-primary{% else %}btn-ghost{% endif %}">🇬🇧</button>
-                            </form>
-                            <form action="/auth/set-language" method="post" class="inline">
-                                <input type="hidden" name="next"
-                                    value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                <input type="hidden" name="language" value="de">
-                                <button type="submit"
-                                    class="join-item btn btn-sm {% if current_language == 'de' %}btn-primary{% else %}btn-ghost{% endif %}">🇩🇪</button>
-                            </form>
-                        </div>
-                    </div>
-                </li>
-            </ul>
-        </div>
-    </div>
+    <footer class="mt-8 py-4 text-center text-sm text-base-content/70 bg-base-200 border-t border-base-300">
+        <span class="mdi mdi-yarn mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0 | {{ _('GPL-3.0-only')
+        }}
+        <a href="https://github.com/pschmitt/stricknani" target="_blank" rel="noopener noreferrer"
+            class="ml-2 text-base-content/70 hover:text-base-content" aria-label="GitHub">
+            <span class="mdi mdi-github text-lg align-middle"></span>
+        </a>
+    </footer>
 
     {% if current_user %}
     <!-- Profile Image Upload Tools -->
@@ -593,137 +315,141 @@
             const image = document.getElementById('crop-image');
             const saveBtn = document.getElementById('crop-save');
             const cancelBtn = document.getElementById('crop-cancel');
-            let targetUserId = {{ current_user.id }};
+            let targetUserId = {{ current_user.id }}
+        };
 
-            window.triggerProfileImageUpload = function (userId) {
-                targetUserId = userId || {{ current_user.id }};
-                input.click();
+        window.triggerProfileImageUpload = function (userId) {
+            targetUserId = userId || {{ current_user.id }}
+        };
+        input.click();
             };
 
-            input.addEventListener('change', function (e) {
-                const files = e.target.files;
-                if (files && files.length > 0) {
-                    const file = files[0];
-                    const reader = new FileReader();
-                    reader.onload = function (readerEvent) {
-                        image.src = readerEvent.target.result;
-                        modal.showModal();
+        input.addEventListener('change', function (e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = function (readerEvent) {
+                    image.src = readerEvent.target.result;
+                    modal.showModal();
 
-                        if (cropper) {
-                            cropper.destroy();
-                        }
-                        cropper = new Cropper(image, {
-                            aspectRatio: 1,
-                            viewMode: 1,
-                            dragMode: 'move',
-                            autoCropArea: 1,
-                            restore: false,
-                            guides: false,
-                            center: false,
-                            highlight: false,
-                            cropBoxMovable: false,
-                            cropBoxResizable: false,
-                            toggleDragModeOnDblclick: false,
-                            zoomable: true,
-                            zoomOnTouch: true,
-                            zoomOnWheel: true,
-                        });
-                    };
-                    reader.readAsDataURL(file);
-                }
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    cropper = new Cropper(image, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 1,
+                        restore: false,
+                        guides: false,
+                        center: false,
+                        highlight: false,
+                        cropBoxMovable: false,
+                        cropBoxResizable: false,
+                        toggleDragModeOnDblclick: false,
+                        zoomable: true,
+                        zoomOnTouch: true,
+                        zoomOnWheel: true,
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        cancelBtn.addEventListener('click', function () {
+            modal.close();
+            input.value = '';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
+        saveBtn.addEventListener('click', function () {
+            if (!cropper) {
+                return;
+            }
+
+            const canvas = cropper.getCroppedCanvas({
+                width: 400,
+                height: 400,
             });
 
-            cancelBtn.addEventListener('click', function () {
+            canvas.toBlob(function (blob) {
+                const formData = new FormData();
+                formData.append('file', blob, 'avatar.png');
+
+                // Show loading state
+                const originalText = saveBtn.textContent;
+                saveBtn.textContent = '{{ _("Uploading...") }}';
+                saveBtn.disabled = true;
+
+                const url = (targetUserId === {{ current_user.id }}
+            })
+                ? '/user/profile-image'
+                : `/admin/users/${targetUserId}/profile-image`;
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'HX-Request': 'true'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Upload failed');
+                    return response.text();
+                })
+                .then(html => {
+                    if (targetUserId === {{ current_user.id }}
+                }) {
+                // Refresh page or update avatars
+                window.location.reload();
+            } else {
+                // Admin case: update user card
+                const card = document.getElementById(`user-card-${targetUserId}`);
+                if (card) {
+                    // Parse the response to handle OOB swaps manually
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Update user card
+                    const newCard = doc.getElementById(`user-card-${targetUserId}`);
+                    if (newCard) {
+                        card.replaceWith(newCard);
+                        // Re-initialize HTMX on the new content
+                        if (window.htmx) {
+                            window.htmx.process(newCard);
+                        }
+                    }
+
+                    // Update user count (OOB swap)
+                    const newCount = doc.getElementById('user-count');
+                    const currentCount = document.getElementById('user-count');
+                    if (newCount && currentCount) {
+                        currentCount.replaceWith(newCount);
+                    }
+                }
                 modal.close();
-                input.value = '';
-                if (cropper) {
-                    cropper.destroy();
-                    cropper = null;
+
+                // Close the edit user dialog if it's open
+                const editUserDialog = document.getElementById('editUserDialog');
+                if (editUserDialog && editUserDialog.open) {
+                    editUserDialog.close();
                 }
+
+                showToast('{{ _("Profile picture updated successfully") }}', 'success');
+            }
+        })
+            .catch(err => {
+                console.error(err);
+                showToast('{{ _("Failed to upload image") }}', 'error');
+            })
+            .finally(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
             });
-
-            saveBtn.addEventListener('click', function () {
-                if (!cropper) {
-                    return;
-                }
-
-                const canvas = cropper.getCroppedCanvas({
-                    width: 400,
-                    height: 400,
-                });
-
-                canvas.toBlob(function (blob) {
-                    const formData = new FormData();
-                    formData.append('file', blob, 'avatar.png');
-
-                    // Show loading state
-                    const originalText = saveBtn.textContent;
-                    saveBtn.textContent = '{{ _("Uploading...") }}';
-                    saveBtn.disabled = true;
-
-                    const url = (targetUserId === {{ current_user.id }})
-                        ? '/user/profile-image'
-                        : `/admin/users/${targetUserId}/profile-image`;
-
-                    fetch(url, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'HX-Request': 'true'
-                        }
-                    })
-                        .then(response => {
-                            if (!response.ok) throw new Error('Upload failed');
-                            return response.text();
-                        })
-                        .then(html => {
-                            if (targetUserId === {{ current_user.id }}) {
-                                // Refresh page or update avatars
-                                window.location.reload();
-                            } else {
-                                // Admin case: update user card
-                                const card = document.getElementById(`user-card-${targetUserId}`);
-                                if (card) {
-                                    // Parse the response to handle OOB swaps manually
-                                    const parser = new DOMParser();
-                                    const doc = parser.parseFromString(html, 'text/html');
-
-                                    // Update user card
-                                    const newCard = doc.getElementById(`user-card-${targetUserId}`);
-                                    if (newCard) {
-                                        card.replaceWith(newCard);
-                                        // Re-initialize HTMX on the new content
-                                        if (window.htmx) {
-                                            window.htmx.process(newCard);
-                                        }
-                                    }
-
-                                    // Update user count (OOB swap)
-                                    const newCount = doc.getElementById('user-count');
-                                    const currentCount = document.getElementById('user-count');
-                                    if (newCount && currentCount) {
-                                        currentCount.replaceWith(newCount);
-                                    }
-                                }
-                                modal.close();
-
-                                // Close the edit user dialog if it's open
-                                const editUserDialog = document.getElementById('editUserDialog');
-                                if (editUserDialog && editUserDialog.open) {
-                                    editUserDialog.close();
-                                }
-
-                                showToast('{{ _("Profile picture updated successfully") }}', 'success');
-                            }
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            showToast('{{ _("Failed to upload image") }}', 'error');
-                        })
-                        .finally(() => {
-                            saveBtn.textContent = originalText;
-                            saveBtn.disabled = false;
-                        });
                 }, 'image/png');
             });
         });

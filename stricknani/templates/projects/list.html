@@ -16,14 +16,12 @@
 </style>
 {% endblock %}
 
-{% block list_icon %}
-<span class="mdi mdi-folder-multiple-outline text-primary"></span>
-{% endblock %}
-
-{% block list_title %}{{ _('My Projects') }}{% endblock %}
-
-{% block list_actions %}
-{{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='hidden md:inline-flex flex-1 sm:flex-none') }}
+{# Set variables for the unified navbar #}
+{% set page_icon %}<span class="mdi mdi-folder-multiple-outline text-primary"></span>{% endset %}
+{% set page_title %}{{ _('My Projects') }}{% endset %}
+{% set page_actions %}
+{{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='hidden
+md:inline-flex') }}
 
 <div class="dropdown dropdown-end">
     <button tabindex="0" role="button" class="btn btn-square btn-ghost" aria-label="{{ _('More options') }}">
@@ -48,14 +46,22 @@
 
 <!-- Mobile FAB -->
 {{ buttons.fab('mdi-plus', href='/projects/new', class='md:hidden', label=_('New Project')) }}
+{% endset %}
+
+{# Keep these for backwards compatibility but they won't be used #}
+{% block list_icon %}
+<span class="mdi mdi-folder-multiple-outline text-primary"></span>
 {% endblock %}
+
+{% block list_title %}{{ _('My Projects') }}{% endblock %}
+
 
 {% block list_filters %}
 {% set search_id = "search" %}
 {% set search_name = "search" %}
 {% set search_value = search
-    or ('cat:' ~ selected_category if selected_category else '')
-    or ('#' ~ selected_tag if selected_tag else '') %}
+or ('cat:' ~ selected_category if selected_category else '')
+or ('#' ~ selected_tag if selected_tag else '') %}
 {% set search_placeholder = _('Search (use cat:, #, or tag: for filters)...') %}
 {% set search_url = "/projects" %}
 {% set search_target = "#projects-list" %}

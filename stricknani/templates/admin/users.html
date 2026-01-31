@@ -3,35 +3,25 @@
 {% import "macros/dialogs.html" as dialogs %}
 {% import "macros/image_upload.html" as uploads %}
 
+{# Set variables for the unified navbar #}
+{% set page_title %}{{ _('Admin') }}{% endset %}
+{% set page_actions %}
+{{ buttons.primary(_('Create User'), type='button', icon='mdi-account-plus', attrs='onclick="openCreateUserDialog()"')
+}}
+{% endset %}
+
+{% block navbar %}
+{% include "shared/unified_navbar.html" %}
+{% endblock %}
+
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex flex-col gap-8">
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div class="space-y-1">
-                <h1 class="text-3xl font-extrabold text-base-content flex items-center gap-3 tracking-tight">
-                    <span class="mdi mdi-shield-account text-primary"></span>
-                    {{ _('User Management') }}
-                </h1>
-                <p class="text-base font-medium text-base-content/60">
-                    {{ _('Manage accounts, roles, and access for your instance.') }}
-                </p>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                <div class="px-4 py-2 rounded-lg bg-base-100 border border-base-200 text-sm font-medium shadow-sm flex items-center gap-2">
-                    <span class="mdi mdi-account-group text-base-content/50 text-lg"></span>
-                    <span>{{ _('Total Users') }}:</span>
-                    <span id="user-count" class="text-primary font-bold">{{ users | length }}</span>
-                </div>
-                {{ buttons.primary(_('Create User'), type='button', icon='mdi-account-plus', attrs='onclick="openCreateUserDialog()"') }}
-            </div>
-        </div>
 
         <!-- User List -->
         <div class="space-y-4" id="admin-user-list">
             {% for user in users %}
-                {% include "admin/_user_card.html" %}
+            {% include "admin/_user_card.html" %}
             {% endfor %}
         </div>
     </div>
@@ -43,48 +33,31 @@
         <p class="text-sm opacity-70 mb-6">
             {{ _('Update profile details for') }} <strong id="editUserEmailTitle" class="text-base-content"></strong>.
         </p>
-        <form
-            id="editUserForm"
-            method="post"
-            action="/admin/users/0/edit"
-            class="space-y-4"
-            data-toast-message="{{ _('Profile updated') }}"
-            data-toast-variant="success"
-            data-dialog-close="editUserDialog"
-            hx-post="/admin/users/0/edit"
-            hx-target="#admin-user-list"
-            hx-swap="outerHTML"
-        >
+        <form id="editUserForm" method="post" action="/admin/users/0/edit" class="space-y-4"
+            data-toast-message="{{ _('Profile updated') }}" data-toast-variant="success"
+            data-dialog-close="editUserDialog" hx-post="/admin/users/0/edit" hx-target="#admin-user-list"
+            hx-swap="outerHTML">
             <div class="form-control w-full">
                 <label class="label">
                     <span class="label-text font-medium">{{ _('Email') }}</span>
                 </label>
-                <input
-                    id="edit-user-email"
-                    name="email"
-                    type="email"
-                    required
-                    autocomplete="email"
-                    class="input input-bordered w-full"
-                />
+                <input id="edit-user-email" name="email" type="email" required autocomplete="email"
+                    class="input input-bordered w-full" />
             </div>
 
             <div class="form-control w-full">
                 <label class="label">
                     <span class="label-text font-medium">{{ _('Profile Image') }}</span>
                 </label>
-                <button
-                    type="button"
-                    class="btn btn-outline gap-2"
-                    onclick="triggerEditUserImageUpload()"
-                >
+                <button type="button" class="btn btn-outline gap-2" onclick="triggerEditUserImageUpload()">
                     <span class="mdi mdi-camera"></span>
                     {{ _('Change Photo') }}
                 </button>
             </div>
 
             <div class="modal-action">
-                {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'editUserDialog\').close()"') }}
+                {{ dialogs.dialog_cancel(_('Cancel'),
+                attrs='onclick="document.getElementById(\'editUserDialog\').close()"') }}
                 {{ dialogs.dialog_primary(_('Save Changes'), icon='mdi-content-save', type='submit') }}
             </div>
         </form>
@@ -92,38 +65,25 @@
     {{ dialogs.modal_backdrop() }}
 </dialog>
 
-<dialog id="resetPasswordDialog"
- class="modal modal-bottom sm:modal-middle">
+<dialog id="resetPasswordDialog" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box">
         <h3 class="font-bold text-lg mb-2">{{ _('Reset password') }}</h3>
         <p class="text-sm opacity-70 mb-6">
             {{ _('Set a new password for') }} <strong id="resetPasswordEmail" class="text-base-content"></strong>.
         </p>
-        <form
-            id="resetPasswordForm"
-            method="post"
-            action="/admin/users/0/reset-password"
-            class="space-y-4"
-            data-toast-message="{{ _('Password reset') }}"
-            data-toast-variant="success"
-            data-dialog-close="resetPasswordDialog"
-            hx-swap="none"
-        >
+        <form id="resetPasswordForm" method="post" action="/admin/users/0/reset-password" class="space-y-4"
+            data-toast-message="{{ _('Password reset') }}" data-toast-variant="success"
+            data-dialog-close="resetPasswordDialog" hx-swap="none">
             <div class="form-control w-full">
                 <label class="label">
                     <span class="label-text font-medium">{{ _('New password') }}</span>
                 </label>
-                <input
-                    id="reset-password-input"
-                    name="password"
-                    type="password"
-                    autocomplete="new-password"
-                    class="input input-bordered w-full"
-                    required
-                />
+                <input id="reset-password-input" name="password" type="password" autocomplete="new-password"
+                    class="input input-bordered w-full" required />
             </div>
             <div class="modal-action">
-                {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'resetPasswordDialog\').close()"') }}
+                {{ dialogs.dialog_cancel(_('Cancel'),
+                attrs='onclick="document.getElementById(\'resetPasswordDialog\').close()"') }}
                 {{ dialogs.dialog_primary(_('Reset password'), icon='mdi-key-variant', type='submit') }}
             </div>
         </form>
@@ -135,56 +95,38 @@
     <div class="modal-box">
         <h3 class="font-bold text-lg mb-2">{{ _('Create user') }}</h3>
         <p class="text-sm opacity-70 mb-6">{{ _('Add a new account with a temporary password.') }}</p>
-        <form
-            id="createUserForm"
-            method="post"
-            action="/admin/users/create"
-            class="space-y-4"
-            data-toast-message="{{ _('User created') }}"
-            data-toast-variant="success"
-            data-dialog-close="createUserDialog"
-            hx-post="/admin/users/create"
-            hx-target="#admin-user-list"
-            hx-swap="afterbegin"
-        >
+        <form id="createUserForm" method="post" action="/admin/users/create" class="space-y-4"
+            data-toast-message="{{ _('User created') }}" data-toast-variant="success"
+            data-dialog-close="createUserDialog" hx-post="/admin/users/create" hx-target="#admin-user-list"
+            hx-swap="afterbegin">
             <div class="form-control w-full">
                 <label class="label">
                     <span class="label-text font-medium">{{ _('Email') }}</span>
                 </label>
-                <input
-                    id="create-user-email"
-                    name="email"
-                    type="email"
-                    required
-                    autocomplete="email"
-                    class="input input-bordered w-full"
-                    placeholder="user@example.com"
-                />
+                <input id="create-user-email" name="email" type="email" required autocomplete="email"
+                    class="input input-bordered w-full" placeholder="user@example.com" />
             </div>
             <div class="form-control w-full">
                 <label class="label">
                     <span class="label-text font-medium">{{ _('Password') }}</span>
                 </label>
-                <input
-                    id="create-user-password"
-                    name="password"
-                    type="password"
-                    required
-                    autocomplete="new-password"
-                    class="input input-bordered w-full"
-                />
+                <input id="create-user-password" name="password" type="password" required autocomplete="new-password"
+                    class="input input-bordered w-full" />
             </div>
             <div class="form-control">
-                <label class="label cursor-pointer justify-start gap-4 p-4 border border-base-200 rounded-lg bg-base-100 hover:bg-base-200 transition-colors">
+                <label
+                    class="label cursor-pointer justify-start gap-4 p-4 border border-base-200 rounded-lg bg-base-100 hover:bg-base-200 transition-colors">
                     <input type="checkbox" name="is_admin" class="checkbox checkbox-primary" />
                     <div class="flex-1">
                         <span class="label-text font-bold block">{{ _('Grant admin access') }}</span>
-                        <span class="label-text-alt block">{{ _('Allow this user to manage accounts and settings.') }}</span>
+                        <span class="label-text-alt block">{{ _('Allow this user to manage accounts and settings.')
+                            }}</span>
                     </div>
                 </label>
             </div>
             <div class="modal-action">
-                {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'createUserDialog\').close()"') }}
+                {{ dialogs.dialog_cancel(_('Cancel'),
+                attrs='onclick="document.getElementById(\'createUserDialog\').close()"') }}
                 {{ dialogs.dialog_primary(_('Create User'), icon='mdi-account-plus', type='submit') }}
             </div>
         </form>
@@ -204,16 +146,11 @@
             <span class="text-sm opacity-70">{{ _('This will permanently remove their projects and yarn.') }}</span>
         </p>
         <div class="modal-action">
-            {{ dialogs.dialog_cancel(_('Cancel'), attrs='onclick="document.getElementById(\'deleteUserDialog\').close()"') }}
-            <form
-                id="deleteUserForm"
-                method="post"
-                action="/admin/users/0/delete"
-                data-toast-message="{{ _('User deleted') }}"
-                data-toast-variant="success"
-                data-dialog-close="deleteUserDialog"
-                hx-swap="outerHTML"
-            >
+            {{ dialogs.dialog_cancel(_('Cancel'),
+            attrs='onclick="document.getElementById(\'deleteUserDialog\').close()"') }}
+            <form id="deleteUserForm" method="post" action="/admin/users/0/delete"
+                data-toast-message="{{ _('User deleted') }}" data-toast-variant="success"
+                data-dialog-close="deleteUserDialog" hx-swap="outerHTML">
                 {{ dialogs.dialog_danger(_('Delete Forever'), type='submit') }}
             </form>
         </div>
@@ -222,119 +159,119 @@
 </dialog>
 
 <script>
-function openCreateUserDialog() {
-    const dialog = document.getElementById('createUserDialog');
-    const form = document.getElementById('createUserForm');
+    function openCreateUserDialog() {
+        const dialog = document.getElementById('createUserDialog');
+        const form = document.getElementById('createUserForm');
 
-    if (!dialog || !form) {
-        return;
+        if (!dialog || !form) {
+            return;
+        }
+
+        form.reset();
+        dialog.showModal();
     }
 
-    form.reset();
-    dialog.showModal();
-}
+    let currentEditingUserId = null;
 
-let currentEditingUserId = null;
-
-function triggerEditUserImageUpload() {
-    if (currentEditingUserId) {
-        window.triggerProfileImageUpload(currentEditingUserId);
-    }
-}
-
-function openEditUserDialog(button) {
-    const userId = button.dataset.userId;
-    const userEmail = button.dataset.userEmail || '';
-    const dialog = document.getElementById('editUserDialog');
-    const form = document.getElementById('editUserForm');
-    const emailTitle = document.getElementById('editUserEmailTitle');
-    const emailInput = document.getElementById('edit-user-email');
-
-    if (!dialog || !form || !emailInput || !userId) {
-        return;
+    function triggerEditUserImageUpload() {
+        if (currentEditingUserId) {
+            window.triggerProfileImageUpload(currentEditingUserId);
+        }
     }
 
-    currentEditingUserId = userId;
-    form.action = `/admin/users/${userId}/edit`;
-    form.setAttribute('hx-post', `/admin/users/${userId}/edit`);
-    form.setAttribute('hx-target', `#user-card-${userId}`);
-    emailTitle.textContent = userEmail;
-    emailInput.value = userEmail;
+    function openEditUserDialog(button) {
+        const userId = button.dataset.userId;
+        const userEmail = button.dataset.userEmail || '';
+        const dialog = document.getElementById('editUserDialog');
+        const form = document.getElementById('editUserForm');
+        const emailTitle = document.getElementById('editUserEmailTitle');
+        const emailInput = document.getElementById('edit-user-email');
 
-    // Refresh HTMX to pick up the new hx-post and hx-target
-    htmx.process(form);
+        if (!dialog || !form || !emailInput || !userId) {
+            return;
+        }
 
-    dialog.showModal();
-}
+        currentEditingUserId = userId;
+        form.action = `/admin/users/${userId}/edit`;
+        form.setAttribute('hx-post', `/admin/users/${userId}/edit`);
+        form.setAttribute('hx-target', `#user-card-${userId}`);
+        emailTitle.textContent = userEmail;
+        emailInput.value = userEmail;
 
-function openResetPasswordDialog(button) {
-    const userId = button.dataset.userId;
-    const userEmail = button.dataset.userEmail || '';
-    const dialog = document.getElementById('resetPasswordDialog');
-    const form = document.getElementById('resetPasswordForm');
-    const emailTarget = document.getElementById('resetPasswordEmail');
-    const input = document.getElementById('reset-password-input');
+        // Refresh HTMX to pick up the new hx-post and hx-target
+        htmx.process(form);
 
-    if (!dialog || !form || !emailTarget || !input || !userId) {
-        return;
+        dialog.showModal();
     }
 
-    form.action = `/admin/users/${userId}/reset-password`;
-    form.setAttribute('hx-post', `/admin/users/${userId}/reset-password`);
-    emailTarget.textContent = userEmail;
-    input.value = '';
-    dialog.showModal();
-}
+    function openResetPasswordDialog(button) {
+        const userId = button.dataset.userId;
+        const userEmail = button.dataset.userEmail || '';
+        const dialog = document.getElementById('resetPasswordDialog');
+        const form = document.getElementById('resetPasswordForm');
+        const emailTarget = document.getElementById('resetPasswordEmail');
+        const input = document.getElementById('reset-password-input');
 
-function openDeleteUserDialog(button) {
-    const userId = button.dataset.userId;
-    const userEmail = button.dataset.userEmail || '';
-    const dialog = document.getElementById('deleteUserDialog');
-    const form = document.getElementById('deleteUserForm');
-    const emailTarget = document.getElementById('deleteUserEmail');
+        if (!dialog || !form || !emailTarget || !input || !userId) {
+            return;
+        }
 
-    if (!dialog || !form || !emailTarget || !userId) {
-        return;
+        form.action = `/admin/users/${userId}/reset-password`;
+        form.setAttribute('hx-post', `/admin/users/${userId}/reset-password`);
+        emailTarget.textContent = userEmail;
+        input.value = '';
+        dialog.showModal();
     }
 
-    form.action = `/admin/users/${userId}/delete`;
-    form.setAttribute('hx-post', `/admin/users/${userId}/delete`);
-    form.setAttribute('hx-target', `#user-card-${userId}`);
-    form.setAttribute('hx-swap', 'outerHTML');
-    emailTarget.textContent = userEmail;
-    dialog.showModal();
-}
+    function openDeleteUserDialog(button) {
+        const userId = button.dataset.userId;
+        const userEmail = button.dataset.userEmail || '';
+        const dialog = document.getElementById('deleteUserDialog');
+        const form = document.getElementById('deleteUserForm');
+        const emailTarget = document.getElementById('deleteUserEmail');
 
-const adminToastMessages = {
-    admin_granted: { message: '{{ _("Admin access granted") }}', variant: 'success' },
-    admin_revoked: { message: '{{ _("Admin access revoked") }}', variant: 'success' },
-    user_activated: { message: '{{ _("User activated") }}', variant: 'success' },
-    user_deactivated: { message: '{{ _("User disabled") }}', variant: 'success' },
-    user_deleted: { message: '{{ _("User deleted") }}', variant: 'success' },
-    user_created: { message: '{{ _("User created") }}', variant: 'success' },
-    user_updated: { message: '{{ _("Profile updated") }}', variant: 'success' },
-    password_reset: { message: '{{ _("Password reset") }}', variant: 'success' },
-    user_not_found: { message: '{{ _("User not found") }}', variant: 'error' },
-    upload_failed: { message: '{{ _("Upload failed") }}', variant: 'error' },
-    cannot_remove_last_admin: { message: '{{ _("Cannot remove the last admin") }}', variant: 'error' },
-    cannot_remove_own_admin: { message: '{{ _("Cannot remove your own admin access") }}', variant: 'error' },
-    cannot_deactivate_self: { message: '{{ _("You cannot disable your own account") }}', variant: 'error' },
-    cannot_delete_self: { message: '{{ _("You cannot delete your own account") }}', variant: 'error' },
-    cannot_delete_last_admin: { message: '{{ _("Cannot delete the last admin") }}', variant: 'error' },
-    email_empty: { message: '{{ _("Email cannot be empty") }}', variant: 'error' },
-    password_empty: { message: '{{ _("Password cannot be empty") }}', variant: 'error' },
-    email_exists: { message: '{{ _("Email already registered") }}', variant: 'error' },
-};
+        if (!dialog || !form || !emailTarget || !userId) {
+            return;
+        }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const toastKey = new URLSearchParams(window.location.search).get('toast');
-    if (toastKey && adminToastMessages[toastKey]) {
-        const toast = adminToastMessages[toastKey];
-        window.showToast?.(toast.message, toast.variant);
-        const url = new URL(window.location.href);
-        url.searchParams.delete('toast');
-        window.history.replaceState({}, '', url.toString());
+        form.action = `/admin/users/${userId}/delete`;
+        form.setAttribute('hx-post', `/admin/users/${userId}/delete`);
+        form.setAttribute('hx-target', `#user-card-${userId}`);
+        form.setAttribute('hx-swap', 'outerHTML');
+        emailTarget.textContent = userEmail;
+        dialog.showModal();
     }
-});
+
+    const adminToastMessages = {
+        admin_granted: { message: '{{ _("Admin access granted") }}', variant: 'success' },
+        admin_revoked: { message: '{{ _("Admin access revoked") }}', variant: 'success' },
+        user_activated: { message: '{{ _("User activated") }}', variant: 'success' },
+        user_deactivated: { message: '{{ _("User disabled") }}', variant: 'success' },
+        user_deleted: { message: '{{ _("User deleted") }}', variant: 'success' },
+        user_created: { message: '{{ _("User created") }}', variant: 'success' },
+        user_updated: { message: '{{ _("Profile updated") }}', variant: 'success' },
+        password_reset: { message: '{{ _("Password reset") }}', variant: 'success' },
+        user_not_found: { message: '{{ _("User not found") }}', variant: 'error' },
+        upload_failed: { message: '{{ _("Upload failed") }}', variant: 'error' },
+        cannot_remove_last_admin: { message: '{{ _("Cannot remove the last admin") }}', variant: 'error' },
+        cannot_remove_own_admin: { message: '{{ _("Cannot remove your own admin access") }}', variant: 'error' },
+        cannot_deactivate_self: { message: '{{ _("You cannot disable your own account") }}', variant: 'error' },
+        cannot_delete_self: { message: '{{ _("You cannot delete your own account") }}', variant: 'error' },
+        cannot_delete_last_admin: { message: '{{ _("Cannot delete the last admin") }}', variant: 'error' },
+        email_empty: { message: '{{ _("Email cannot be empty") }}', variant: 'error' },
+        password_empty: { message: '{{ _("Password cannot be empty") }}', variant: 'error' },
+        email_exists: { message: '{{ _("Email already registered") }}', variant: 'error' },
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const toastKey = new URLSearchParams(window.location.search).get('toast');
+        if (toastKey && adminToastMessages[toastKey]) {
+            const toast = adminToastMessages[toastKey];
+            window.showToast?.(toast.message, toast.variant);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('toast');
+            window.history.replaceState({}, '', url.toString());
+        }
+    });
 </script>
 {% endblock %}
