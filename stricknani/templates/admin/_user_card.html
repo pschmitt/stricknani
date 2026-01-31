@@ -9,7 +9,7 @@
                     alt="{{ _('Profile picture for %(email)s') % {'email': user.email} }}"
                     class="h-full w-full rounded-full object-cover bg-base-200">
                 {% if user.is_admin %}
-                <div class="absolute -bottom-1 -right-1 bg-primary text-primary-content rounded-full p-0.5 border-2 border-base-100"
+                <div class="absolute -bottom-1 -right-1 bg-primary text-primary-content rounded-full w-6 h-6 flex items-center justify-center border-2 border-base-100"
                     title="{{ _('Admin') }}">
                     <span class="mdi mdi-shield-account text-xs"></span>
                 </div>
