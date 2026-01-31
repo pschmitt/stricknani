@@ -31,11 +31,13 @@ async def test_cli_lists_projects_and_yarns(
 
     await cli.list_projects("tester@example.com")
     output = capsys.readouterr().out
-    assert f"ID: {project_id}" in output
+    assert str(project_id) in output
+    assert "Sample Project" in output
 
     await cli.list_yarns("tester@example.com")
     output = capsys.readouterr().out
-    assert f"ID: {yarn_id}" in output
+    assert str(yarn_id) in output
+    assert "CLI Yarn" in output
 
 
 @pytest.mark.asyncio
