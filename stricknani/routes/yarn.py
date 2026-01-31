@@ -1,5 +1,6 @@
 """Yarn stash routes."""
 
+import re
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Annotated
@@ -36,6 +37,30 @@ from stricknani.utils.files import (
 from stricknani.utils.markdown import render_markdown
 
 router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
+
+
+def _strip_wrapping_quotes(value: str) -> str:
+    """Strip wrapping single or double quotes from a search token."""
+
+    cleaned = value.strip()
+    if len(cleaned) >= 2 and cleaned[0] == cleaned[-1] and cleaned[0] in {'"', "'"}:
+        return cleaned[1:-1].strip()
+    return cleaned
+
+
+def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
+    """Extract a prefix token (with optional quotes) and remaining text."""
+
+    pattern = rf"(?i)(?:^|\\s){prefix}(?:\"([^\"]+)\"|'([^']+)'|(\\S+))"
+    match = re.search(pattern, search)
+    if not match:
+        return None, search
+    token = next((group for group in match.groups() if group), None)
+    if token is None:
+        return None, search
+    start, end = match.span()
+    remaining = (search[:start] + search[end:]).strip()
+    return token.strip(), remaining
 
 
 def _parse_optional_int(field_name: str, value: str | None) -> int | None:
@@ -236,11 +261,13 @@ async def list_yarns(
     )
 
     if search:
-        if search.lower().startswith("brand:"):
-            brand = search[6:].strip()
-            search = None
+        extracted_brand, remaining = _extract_search_token(search, "brand:")
+        if extracted_brand:
+            brand = extracted_brand
+            search = remaining or None
 
     if brand:
+        brand = _strip_wrapping_quotes(brand)
         query = query.where(Yarn.brand.ilike(f"%{brand}%"))
 
     if search:

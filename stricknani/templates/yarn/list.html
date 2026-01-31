@@ -20,7 +20,17 @@
 {% block list_filters %}
 {% set search_id = "search" %}
 {% set search_name = "search" %}
-{% set search_value = search or ('brand:' ~ selected_brand if selected_brand else '') %}
+{% if search %}
+{% set search_value = search %}
+{% elif selected_brand %}
+{% if ' ' in selected_brand %}
+{% set search_value = 'brand:"' ~ selected_brand ~ '"' %}
+{% else %}
+{% set search_value = 'brand:' ~ selected_brand %}
+{% endif %}
+{% else %}
+{% set search_value = '' %}
+{% endif %}
 {% set search_placeholder = _('Search (use brand: for filter)...') %}
 {% set search_url = "/yarn" %}
 {% set search_target = "#yarn-content" %}

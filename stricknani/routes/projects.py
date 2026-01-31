@@ -725,9 +725,6 @@ async def list_projects(
         if search_lower.startswith("cat:"):
             category = search[4:].strip()
             search = None
-        elif search_lower.startswith("brand:"): # Added brand detection
-            brand = search[6:].strip()
-            search = None
         elif search_lower.startswith("tag:"):
             tag = search[4:].strip()
             search = None
