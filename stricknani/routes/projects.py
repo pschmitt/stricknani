@@ -1422,21 +1422,35 @@ async def get_project(
 
     # Prepare project-level images (exclude step images)
     title_images = []
+    stitch_sample_images = []
     for img in project.images:
         if img.step_id is not None:
             continue
+
         width, height = _get_image_dimensions(img.filename, project.id)
-        title_images.append(
-            {
-                "id": img.id,
-                "url": get_file_url(img.filename, project.id),
-                "thumbnail_url": get_thumbnail_url(img.filename, project.id),
-                "alt_text": img.alt_text,
-                "is_title_image": img.is_title_image,
-                "width": width,
-                "height": height,
-            }
-        )
+        if img.is_stitch_sample:
+            stitch_sample_images.append(
+                {
+                    "id": img.id,
+                    "url": get_file_url(img.filename, project.id),
+                    "thumbnail_url": get_thumbnail_url(img.filename, project.id),
+                    "alt_text": img.alt_text,
+                    "width": width,
+                    "height": height,
+                }
+            )
+        else:
+            title_images.append(
+                {
+                    "id": img.id,
+                    "url": get_file_url(img.filename, project.id),
+                    "thumbnail_url": get_thumbnail_url(img.filename, project.id),
+                    "alt_text": img.alt_text,
+                    "is_title_image": img.is_title_image,
+                    "width": width,
+                    "height": height,
+                }
+            )
     title_images.sort(key=lambda item: (not item["is_title_image"], item["id"]))
 
     # Prepare steps with images
@@ -1486,6 +1500,10 @@ async def get_project(
         "description_html": render_markdown(project.description, f"project-{project.id}")
         if project.description
         else None,
+        "stitch_sample": project.stitch_sample or "",
+        "stitch_sample_html": render_markdown(project.stitch_sample, f"project-{project.id}")
+        if project.stitch_sample
+        else None,
         "comment": project.comment or "",
         "comment_html": render_markdown(project.comment, f"project-{project.id}")
         if project.comment
@@ -1500,6 +1518,7 @@ async def get_project(
         "created_at": project.created_at.isoformat(),
         "updated_at": project.updated_at.isoformat(),
         "title_images": title_images,
+        "stitch_sample_images": stitch_sample_images,
         "steps": [
             {
                 **step,
@@ -1567,21 +1586,25 @@ async def edit_project_form(
         )
 
     title_images = []
+    stitch_sample_images = []
     for img in project.images:
         if img.step_id is not None:
             continue
         width, height = _get_image_dimensions(img.filename, project.id)
-        title_images.append(
-            {
-                "id": img.id,
-                "url": get_file_url(img.filename, project.id),
-                "thumbnail_url": get_thumbnail_url(img.filename, project.id),
-                "alt_text": img.alt_text,
-                "is_title_image": img.is_title_image,
-                "width": width,
-                "height": height,
-            }
-        )
+        img_data = {
+            "id": img.id,
+            "url": get_file_url(img.filename, project.id),
+            "thumbnail_url": get_thumbnail_url(img.filename, project.id),
+            "alt_text": img.alt_text,
+            "is_title_image": img.is_title_image,
+            "width": width,
+            "height": height,
+        }
+        if img.is_stitch_sample:
+            stitch_sample_images.append(img_data)
+        else:
+            title_images.append(img_data)
+
     title_images.sort(key=lambda item: (not item["is_title_image"], item["id"]))
 
     steps_data = []
@@ -1619,6 +1642,7 @@ async def edit_project_form(
         "recommended_needles": project.recommended_needles,
         "gauge_stitches": project.gauge_stitches,
         "gauge_rows": project.gauge_rows,
+        "stitch_sample": project.stitch_sample or "",
         "description": project.description or "",
         "comment": project.comment or "",
         "link": project.link,
@@ -1629,6 +1653,7 @@ async def edit_project_form(
             and project.link_archive_requested_at
         ),
         "title_images": title_images,
+        "stitch_sample_images": stitch_sample_images,
         "steps": steps_data,
         "tags": project.tag_list(),
         "yarn_ids": [y.id for y in project.yarns],
@@ -1661,6 +1686,7 @@ async def create_project(
     gauge_stitches: Annotated[str | None, Form()] = None,
     gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
+    stitch_sample: Annotated[str | None, Form()] = None,
     description: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
     link: Annotated[str | None, Form()] = None,
@@ -1696,6 +1722,7 @@ async def create_project(
         ),
         gauge_stitches=gauge_stitches_value,
         gauge_rows=gauge_rows_value,
+        stitch_sample=stitch_sample.strip() if stitch_sample else None,
         description=description.strip() if description else None,
         comment=comment.strip() if comment else None,
         link=link.strip() if link else None,
@@ -1763,6 +1790,7 @@ async def update_project(
     gauge_stitches: Annotated[str | None, Form()] = None,
     gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
+    stitch_sample: Annotated[str | None, Form()] = None,
     description: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
     link: Annotated[str | None, Form()] = None,
@@ -1811,6 +1839,7 @@ async def update_project(
     )
     project.gauge_stitches = _parse_optional_int("gauge_stitches", gauge_stitches)
     project.gauge_rows = _parse_optional_int("gauge_rows", gauge_rows)
+    project.stitch_sample = stitch_sample.strip() if stitch_sample else None
     project.description = description.strip() if description else None
     project.comment = comment.strip() if comment else None
     project.link = link.strip() if link else None
@@ -1833,6 +1862,13 @@ async def update_project(
         # Delete removed steps
         steps_to_delete = existing_step_ids - new_step_ids
         if steps_to_delete:
+            # Fetch images for these steps to delete files from disk
+            images_to_delete_result = await db.execute(
+                select(Image).where(Image.step_id.in_(steps_to_delete))
+            )
+            for img in images_to_delete_result.scalars():
+                delete_file(img.filename, project_id)
+
             await db.execute(delete(Step).where(Step.id.in_(steps_to_delete)))
 
         # Update or create steps
@@ -2078,6 +2114,53 @@ async def upload_title_image(
         image_type=ImageType.PHOTO.value,
         alt_text=alt_text or original_filename,
         is_title_image=True,
+        project_id=project_id,
+    )
+    db.add(image)
+    await db.commit()
+    await db.refresh(image)
+
+    return JSONResponse(
+        {
+            "id": image.id,
+            "url": get_file_url(filename, project_id),
+            "thumbnail_url": get_thumbnail_url(filename, project_id),
+            "alt_text": image.alt_text,
+        }
+    )
+
+
+@router.post("/{project_id}/images/stitch-sample")
+async def upload_stitch_sample_image(
+    project_id: int,
+    file: UploadFile = File(...),
+    alt_text: Annotated[str, Form()] = "",
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> JSONResponse:
+    """Upload a stitch sample image for a project."""
+    # Verify project ownership
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+
+    if not project or project.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+    # Save file
+    filename, original_filename = await save_uploaded_file(file, project_id)
+
+    # Create thumbnail
+    file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
+    await create_thumbnail(file_path, project_id)
+
+    # Create database record
+    image = Image(
+        filename=filename,
+        original_filename=original_filename,
+        image_type=ImageType.PHOTO.value,
+        alt_text=alt_text or original_filename,
+        is_title_image=False,
+        is_stitch_sample=True,
         project_id=project_id,
     )
     db.add(image)

@@ -128,6 +128,7 @@ class PatternImporter:
             "weight_category": self._extract_weight_category(soup),
             "gauge_stitches": self._extract_gauge_stitches(soup),
             "gauge_rows": self._extract_gauge_rows(soup),
+            "stitch_sample": self._extract_stitch_sample(soup),
             "description": description,
             "comment": comment,
             "steps": steps,
@@ -554,6 +555,36 @@ class PatternImporter:
                         return val_text
 
         return None
+
+    def _extract_stitch_sample(self, soup: BeautifulSoup) -> str | None:
+        """Extract stitch sample / gauge info."""
+        # Try finding a stitch sample heading
+        headings = [
+            "maschenprobe",
+            "gauge",
+            "stitch sample",
+            "tension",
+        ]
+        for heading_tag in soup.find_all(
+            ["h1", "h2", "h3", "h4", "h5", "h6", "strong", "span"]
+        ):
+            h_text = heading_tag.get_text().strip().lower()
+            if any(h_text == h for h in headings):
+                # Try to find the next meaningful sibling
+                curr = heading_tag
+                # Go up a few levels if needed to find siblings
+                for _ in range(3):
+                    next_node = curr.find_next_sibling(["div", "p", "section"])
+                    if next_node:
+                        text = next_node.get_text(" ", strip=True)
+                        if len(text) > 20:
+                            return text
+                    # If no direct sibling, look at children of parent
+                    if curr.parent:
+                        curr = curr.parent
+
+        # Fallback to label search
+        return self._find_info_by_label(soup, headings)
 
     def _extract_description(self, soup: BeautifulSoup) -> str | None:
         """Extract pattern description."""

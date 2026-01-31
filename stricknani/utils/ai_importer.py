@@ -140,6 +140,8 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
             description = "A brief summary or description of the pattern"
         elif name == "comment":
             description = "Additional notes or details about the pattern"
+        elif name == "stitch_sample":
+            description = "Information about the stitch sample or gauge swatch (e.g. 21 sts x 28 rows = 10 x 10 cm)"
         elif name == "category":
             description = "Project category (e.g. 'Pullover', 'Schal', 'Mütze')"
         elif name == "name":

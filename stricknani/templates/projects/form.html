@@ -230,6 +230,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         </div>
                     </div>
 
+
+
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label for="description"
@@ -269,25 +271,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     data-pswp-gallery>
                     {% if project %}
                     {% for image in project.title_images %}
-                    <div class="relative group" data-image-id="{{ image.id }}">
-                        <a href="{{ image.url }}" data-pswp-width="{{ image.width or 1200 }}"
-                            data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}"
-                            data-pswp-promote="true" data-pswp-delete="true"
-                            data-pswp-is-primary="{{ 'true' if image.is_title_image else 'false' }}" class="block">
-                            <img src="{{ image.thumbnail_url }}" alt="{{ image.alt_text }}"
-                                class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
-                                draggable="true" ondragstart="handleImageDragStart(event)">
-                        </a>
-                        <button type="button" onclick="promoteImage({{ project.id }}, {{ image.id }})"
-                            class="title-promote-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all {{ 'bg-amber-400 text-white' if image.is_title_image else 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500' }} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
-                            title="{{ _('Make title image') }}">
-                            <span class="mdi {{ 'mdi-star' if image.is_title_image else 'mdi-star-outline' }}"></span>
-                        </button>
-                        <button type="button" onclick="deleteImage({{ image.id }})"
-                            class="absolute top-1 right-1 z-10 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm">
-                            <span class="mdi mdi-close"></span>
-                        </button>
-                    </div>
+                    {{ image_upload.image_preview(image, project_id=project.id, show_promote=true) }}
                     {% endfor %}
                     {% endif %}
                 </div>
@@ -297,6 +281,39 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     input_id='titleImageInput',
                     container_id='titleImageDropZone'
                     ) }}
+                </div>
+            </div>
+
+            <!-- Stitch Sample Card -->
+            <div
+                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
+                <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
+                    <span class="mdi mdi-grid text-primary"></span>
+                    {{ _('Stitch Sample') }}
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <textarea id="stitch_sample" name="stitch_sample" rows="4"
+                            class="textarea textarea-bordered w-full"
+                            placeholder="{{ _('Describe your stitch sample / gauge swatch...') }}">{{ project.stitch_sample if project and project.stitch_sample else '' }}</textarea>
+                        <p class="text-xs text-base-content/70 mt-1 mb-2">{{ _('Supports Markdown formatting and image
+                            drops') }}</p>
+
+                        <h4 id="stitchSamplePhotosLabel"
+                            class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not project or not project.stitch_sample_images %} hidden{% endif %}">
+                            <span class="mdi mdi-image-outline"></span> {{ _('Stitch Sample Photos') }}
+                        </h4>
+                        <div id="stitchSampleImagesContainer"
+                            class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery" data-pswp-gallery>
+                            {% if project and project.stitch_sample_images %}
+                            {% for image in project.stitch_sample_images %}
+                            {{ image_upload.image_preview(image) }}
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                        {{ image_upload.upload_dropzone('stitchSampleImageInput', container_id='stitchSampleDropzone')
+                        }}
+                    </div>
                 </div>
             </div>
 
@@ -346,21 +363,13 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         <textarea class="step-description textarea textarea-bordered w-full mb-2" rows="3"
                             placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
                         <p class="text-xs text-base-content/70 mb-2">{{ _('Supports Markdown formatting') }}</p>
+                        <h4
+                            class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not step.images %} hidden{% endif %}">
+                            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
+                        </h4>
                         <div class="step-images grid grid-cols-3 gap-2 mb-2 pswp-gallery" data-pswp-gallery>
                             {% for image in step.images %}
-                            <div class="relative" data-image-id="{{ image.id }}">
-                                <a href="{{ image.url }}" data-pswp-width="{{ image.width or 1200 }}"
-                                    data-pswp-height="{{ image.height or 1200 }}"
-                                    data-pswp-caption="{{ image.alt_text }}" data-pswp-delete="true" class="block">
-                                    <img src="{{ image.thumbnail_url }}" alt="{{ image.alt_text }}"
-                                        class="w-full h-20 cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30"
-                                        draggable="true" ondragstart="handleImageDragStart(event)">
-                                </a>
-                                <button type="button" onclick="deleteImage({{ image.id }})"
-                                    class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
-                                    <span class="mdi mdi-close"></span>
-                                </button>
-                            </div>
+                            {{ image_upload.image_preview(image, class='aspect-video overflow-hidden') }}
                             {% endfor %}
                         </div>
                         {{ image_upload.step_upload_dropzone(
@@ -616,6 +625,68 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         }
     }
 
+    /**
+     * Update image visibility in galleries based on their presence in the Markdown text.
+     */
+    function updateImageVisibility(textarea) {
+        if (!textarea) return;
+        const text = textarea.value;
+        const urlsInText = [];
+        const regex = /!\[.*?\]\((.*?)\)/g;
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+            urlsInText.push(match[1]);
+        }
+
+        let container;
+        let label;
+        if (textarea.id === 'stitch_sample') {
+            container = document.getElementById('stitchSampleImagesContainer');
+            label = document.getElementById('stitchSamplePhotosLabel');
+        } else if (textarea.classList.contains('step-description')) {
+            const stepItem = textarea.closest('.step-item');
+            if (stepItem) {
+                container = stepItem.querySelector('.step-images');
+                label = stepItem.querySelector('.step-photos-label');
+            }
+        }
+
+        if (!container) return;
+
+        let visibleCount = 0;
+        const images = container.querySelectorAll('[data-image-id], [data-pending-url]');
+        images.forEach(imgWrapper => {
+            const anchor = imgWrapper.querySelector('a');
+            if (!anchor) return;
+            const url = anchor.getAttribute('href');
+
+            // Check if URL (decoded or literal) is in the text
+            const isUsed = urlsInText.some(u => {
+                try {
+                    return u === url || decodeURI(u) === url || u.endsWith(url);
+                } catch (e) {
+                    return u === url || u.endsWith(url);
+                }
+            });
+
+            if (isUsed) {
+                imgWrapper.classList.add('hidden');
+            } else {
+                imgWrapper.classList.remove('hidden');
+                visibleCount++;
+            }
+        });
+
+        // Hide section if no images or all are used in text
+        if (images.length === 0 || visibleCount === 0) {
+            container.classList.add('hidden');
+            if (label) label.classList.add('hidden');
+        } else {
+            container.classList.remove('hidden');
+            if (label) label.classList.remove('hidden');
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const importedData = sessionStorage.getItem('importedData');
         if (importedData) {
@@ -644,6 +715,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 setFieldValue('yarn_search', data.yarn);
                 setFieldValue('gauge_stitches', data.gauge_stitches);
                 setFieldValue('gauge_rows', data.gauge_rows);
+                setFieldValue('stitch_sample', data.stitch_sample);
                 setFieldValue('description', data.description);
                 setFieldValue('category', data.category);
                 setFieldValue('tags', data.tags);
@@ -711,7 +783,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         document.querySelectorAll('textarea').forEach(el => {
             el.style.overflowY = 'hidden';
             autoResize(el);
-            el.addEventListener('input', () => autoResize(el));
+            updateImageVisibility(el);
+            el.addEventListener('input', () => {
+                autoResize(el);
+                updateImageVisibility(el);
+            });
 
             setupTextareaDrop(el);
         });
@@ -1068,13 +1144,81 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     }
 
     function handleImageDragStart(event) {
-        const img = event.target;
-        const anchor = img.closest('a');
-        const src = anchor?.getAttribute('href') || img.src;
-        const alt = anchor?.getAttribute('data-pswp-caption') || img.alt;
+        // Find the anchor element (either target itself or parent)
+        const anchor = event.target.tagName === 'A' ? event.target : event.target.closest('a');
+        if (!anchor) return;
+
+        const src = anchor.getAttribute('href');
+        const alt = anchor.getAttribute('data-pswp-caption') || (anchor.querySelector('img')?.alt) || "";
         const markdown = `![${alt}](${src})`;
+
+        // Debug
+        console.log('Dragging image as markdown:', markdown);
+
+        // Set data
         event.dataTransfer.setData('text/plain', markdown);
         event.dataTransfer.effectAllowed = 'copy';
+
+        // Important: set dropEffect in dragover/drop handlers, here we just set effectAllowed
+    }
+    function insertAtCursor(textarea, text) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const val = textarea.value;
+        textarea.value = val.substring(0, start) + text + val.substring(end);
+        textarea.selectionStart = textarea.selectionEnd = start + text.length;
+        textarea.focus();
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        autoResize(textarea);
+    }
+    /**
+     * Helper to create a unified image preview card in JavaScript.
+     * Matches the image_preview Jinja macro.
+     */
+    function createImagePreviewHTML(imageData, options = {}) {
+        const {
+            showPromote = false,
+            showDelete = true,
+            isPrimary = false,
+            projectId = window.projectId,
+            imageClass = 'h-32'
+        } = options;
+
+        const pswpWidth = imageData.width || 1200;
+        const pswpHeight = imageData.height || 1200;
+        const altText = imageData.alt_text || "";
+        const thumbUrl = imageData.thumbnail_url || imageData.url;
+
+        return `
+        <div class="relative group" data-image-id="${imageData.id}">
+            <a href="${imageData.url}" 
+               data-pswp-width="${pswpWidth}"
+               data-pswp-height="${pswpHeight}" 
+               data-pswp-caption="${altText}" 
+               ${showPromote ? 'data-pswp-promote="true"' : ''}
+               ${showDelete ? 'data-pswp-delete="true"' : ''}
+               data-pswp-is-primary="${isPrimary ? 'true' : 'false'}"
+               draggable="true" ondragstart="handleImageDragStart(event)"
+               class="block">
+                <img src="${thumbUrl}" 
+                     alt="${altText}" 
+                     class="${imageClass} w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
+            </a>
+            ${showPromote ? `
+            <button type="button" onclick="promoteImage(${projectId}, ${imageData.id})"
+                class="title-promote-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all ${isPrimary ? 'bg-amber-400 text-white' : 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500'} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+                title="{{ _('Make title image') }}">
+                <span class="mdi ${isPrimary ? 'mdi-star' : 'mdi-star-outline'}"></span>
+            </button>
+            ` : ''}
+            ${showDelete ? `
+            <button type="button" onclick="deleteImage(${imageData.id})"
+                class="absolute top-1 right-1 z-10 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                <span class="mdi mdi-delete"></span>
+            </button>
+            ` : ''}
+        </div>
+        `;
     }
 
     async function uploadAndInsertImage(file, textarea, stepId) {
@@ -1117,22 +1261,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             console.error('Upload failed', error);
             window.showToast?.('{{ _("Upload failed") }}', 'error');
         }
-    }
 
-    function insertAtCursor(textarea, text) {
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const before = textarea.value.substring(0, start);
-        const after = textarea.value.substring(end);
-        textarea.value = before + text + after;
-        textarea.selectionStart = textarea.selectionEnd = start + text.length;
-        textarea.focus();
-        autoResize(textarea);
-    }
 </script>
 
 <script>
-    let projectId = {{ (project.id if project else none) | tojson }};
+        let projectId = {{ (project.id if project else none) | tojson
+    }};
     let wasSilentlyCreated = false;
 
     // Initialize discard hook
@@ -1427,22 +1561,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
     function addTitleImageToGallery(imageData) {
         const container = document.getElementById('titleImagesContainer');
-        const div = document.createElement('div');
-        div.className = 'relative';
-        div.setAttribute('data-image-id', imageData.id);
-        div.innerHTML = `
-        <a href="${imageData.url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="${imageData.alt_text}" 
-            data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false" class="block">
-            <img src="${imageData.thumbnail_url}" alt="${imageData.alt_text}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" draggable="true" ondragstart="handleImageDragStart(event)">
-        </a>
-        <button type="button" onclick="promoteImage(${projectId}, ${imageData.id})" class="title-promote-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-amber-50 hover:text-amber-600 dark:bg-slate-900/90 dark:text-slate-500" title="{{ _('Make title image') }}">
-            <span class="mdi mdi-star-outline"></span>
-        </button>
-        <button type="button" onclick="deleteImage(${imageData.id})" class="absolute top-1 right-1 z-10 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm">
-            <span class="mdi mdi-close"></span>
-        </button>
-    `;
-        container.appendChild(div);
+        if (!container) return;
+
+        container.insertAdjacentHTML('beforeend', createImagePreviewHTML(imageData, {
+            showPromote: true,
+            isPrimary: false
+        }));
         window.refreshPhotoSwipeGallery?.(container);
     }
 
@@ -1453,7 +1577,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         div.setAttribute('data-pending-url', url);
         div.innerHTML = `
         <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" 
-            data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false" class="block">
+            data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false" 
+            draggable="true" ondragstart="handleImageDragStart(event)"
+            class="block">
             <img src="${url}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
         </a>
         <button type="button" onclick="promotePendingImage(this, '${url}')"
@@ -1461,8 +1587,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             title="{{ _('Make title image') }}">
             <span class="mdi mdi-star-outline"></span>
         </button>
-        <button type="button" onclick="deletePendingImage(this, '${url}')" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm">
-            <span class="mdi mdi-close"></span>
+        <button type="button" onclick="deletePendingImage(this, '${url}')" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+            <span class="mdi mdi-delete"></span>
         </button>
     `;
         container.appendChild(div);
@@ -1781,29 +1907,67 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
     function addStepImagePreview(stepItem, imageData) {
         const imagesContainer = stepItem.querySelector('.step-images');
-        if (!imagesContainer) {
+        if (!imagesContainer) return;
+
+        imagesContainer.insertAdjacentHTML('beforeend', createImagePreviewHTML(imageData, {
+            imageClass: 'h-20'
+        }));
+        window.refreshPhotoSwipeGallery?.(imagesContainer);
+        const textarea = stepItem.querySelector('.step-description');
+        if (textarea) updateImageVisibility(textarea);
+    }
+
+    function initStitchSampleImageUploader() {
+        const dropzone = document.getElementById('stitchSampleDropzone');
+        const input = document.getElementById('stitchSampleImageInput');
+
+        if (!dropzone || !input || dropzone.dataset.initialized === 'true') {
             return;
         }
 
-        const stepId = stepItem.getAttribute('data-step-id');
+        setupImageUploadWidget(input, dropzone, async (file) => {
+            if (!(await ensureProjectId())) return;
 
-        const div = document.createElement('div');
-        div.className = 'relative';
-        div.setAttribute('data-image-id', imageData.id);
-        div.innerHTML = `
-        <a href="${imageData.url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="${imageData.alt_text}" 
-            data-pswp-delete="true" class="block">
-            <img src="${imageData.thumbnail_url}" alt="${imageData.alt_text}" class="h-20 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" draggable="true" ondragstart="handleImageDragStart(event)">
-        </a>
-        <button type="button" onclick="deleteImage(${imageData.id})" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-    `;
-        imagesContainer.appendChild(div);
-        window.refreshPhotoSwipeGallery?.(imagesContainer);
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('alt_text', file.name);
+
+            try {
+                const response = await fetch(`/projects/${projectId}/images/stitch-sample`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const message = await parseErrorMessage(response, uploadErrorMessage);
+                    window.showToast?.(message, 'error');
+                    return;
+                }
+
+                const data = await response.json();
+                addStitchSampleImagePreview(data);
+                window.unsavedChanges?.setDirty(true);
+            } catch (error) {
+                console.error('Stitch sample image upload failed', error);
+                window.showToast?.(uploadNetworkErrorMessage, 'error');
+            }
+        });
+    }
+
+    function addStitchSampleImagePreview(imageData) {
+        const container = document.getElementById('stitchSampleImagesContainer');
+        if (!container) return;
+
+        container.insertAdjacentHTML('beforeend', createImagePreviewHTML(imageData));
+        if (window.refreshPhotoSwipeGallery) {
+            window.refreshPhotoSwipeGallery(container);
+        }
+        const textarea = document.getElementById('stitch_sample');
+        if (textarea) updateImageVisibility(textarea);
     }
 
     initStepImageUploaders();
+    initStitchSampleImageUploader();
 
     function addStep(title = '', description = '', stepImages = []) {
         const container = document.getElementById('stepsContainer');
@@ -1835,6 +1999,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         </div>
         <textarea class="textarea textarea-bordered w-full mb-2 step-description" rows="3" placeholder="{{ _('Step Description') }}">${description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
         <p class="mb-2 text-xs text-slate-500 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>
+        <h4 class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100 hidden">
+            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
+        </h4>
         <div class="step-images mb-2 grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
             ${stepImages.map(url => `
             <div class="relative" data-pending-url="${url}">
@@ -1868,7 +2035,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         if (newTextarea) {
             newTextarea.style.overflowY = 'hidden';
             autoResize(newTextarea);
-            newTextarea.addEventListener('input', () => autoResize(newTextarea));
+            updateImageVisibility(newTextarea);
+            newTextarea.addEventListener('input', () => {
+                autoResize(newTextarea);
+                updateImageVisibility(newTextarea);
+            });
+            setupTextareaDrop(newTextarea);
         }
         window.unsavedChanges?.setDirty(true);
     }
@@ -2051,6 +2223,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 if (id === 'comment' && el.value.trim().length > 0) return false;
                 el.value = value;
                 if (typeof autoResize === 'function') autoResize(el);
+                if (typeof updateImageVisibility === 'function') updateImageVisibility(el);
                 return true;
             }
             return false;
@@ -2063,6 +2236,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         setFieldValue('yarn_search', data.yarn);
         setFieldValue('gauge_stitches', data.gauge_stitches);
         setFieldValue('gauge_rows', data.gauge_rows);
+        setFieldValue('stitch_sample', data.stitch_sample);
         setFieldValue('description', data.description);
         setFieldValue('comment', data.comment);
         setFieldValue('link', data.link);
@@ -2319,6 +2493,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         setFieldValue('yarn_search', data.yarn); // Populate autocomplete search
                         setFieldValue('gauge_stitches', data.gauge_stitches);
                         setFieldValue('gauge_rows', data.gauge_rows);
+                        setFieldValue('stitch_sample', data.stitch_sample);
                         setFieldValue('description', data.description);
                         setFieldValue('comment', data.comment);
 

@@ -30,6 +30,7 @@ class Project(Base):
     recommended_needles: Mapped[str | None] = mapped_column(String(255), nullable=True)
     gauge_stitches: Mapped[int | None] = mapped_column(Integer, nullable=True)
     gauge_rows: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    stitch_sample: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -130,6 +131,7 @@ class Image(Base):
     image_type: Mapped[str] = mapped_column(String(20))
     alt_text: Mapped[str] = mapped_column(String(255))
     is_title_image: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_stitch_sample: Mapped[bool | None] = mapped_column(Boolean, default=False, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC)
     )

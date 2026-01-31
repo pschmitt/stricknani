@@ -320,6 +320,19 @@
                 {% endif %}
             </div>
 
+            {% if project.stitch_sample_html %}
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+                <h3
+                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                    <span class="mdi mdi-grid"></span>
+                    {{ _('Stitch Sample') }}
+                </h3>
+                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                    {{ project.stitch_sample_html | safe }}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Steps Section -->
             {% if project.steps %}
             <div class="space-y-4">
