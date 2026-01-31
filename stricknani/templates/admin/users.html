@@ -32,6 +32,10 @@ attrs='onclick="openCreateUserDialog()"') }}
 
 <dialog id="editUserDialog" class="modal modal-top sm:modal-middle">
     <div class="modal-box">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"><span
+                    class="mdi mdi-close text-xl"></span></button>
+        </form>
         <h3 class="font-bold text-lg mb-2">{{ _('Edit profile') }}</h3>
         <p class="text-sm opacity-70 mb-6">
             {{ _('Update profile details for') }} <strong id="editUserEmailTitle" class="text-base-content"></strong>.
@@ -70,6 +74,10 @@ attrs='onclick="openCreateUserDialog()"') }}
 
 <dialog id="resetPasswordDialog" class="modal modal-top sm:modal-middle">
     <div class="modal-box">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"><span
+                    class="mdi mdi-close text-xl"></span></button>
+        </form>
         <h3 class="font-bold text-lg mb-2">{{ _('Reset password') }}</h3>
         <p class="text-sm opacity-70 mb-6">
             {{ _('Set a new password for') }} <strong id="resetPasswordEmail" class="text-base-content"></strong>.
@@ -96,6 +104,10 @@ attrs='onclick="openCreateUserDialog()"') }}
 
 <dialog id="createUserDialog" class="modal modal-top sm:modal-middle">
     <div class="modal-box">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"><span
+                    class="mdi mdi-close text-xl"></span></button>
+        </form>
         <h3 class="font-bold text-lg mb-2">{{ _('Create user') }}</h3>
         <p class="text-sm opacity-70 mb-6">{{ _('Add a new account with a temporary password.') }}</p>
         <form id="createUserForm" method="post" action="/admin/users/create" class="space-y-4"
@@ -139,6 +151,10 @@ attrs='onclick="openCreateUserDialog()"') }}
 
 <dialog id="deleteUserDialog" class="modal modal-top sm:modal-middle">
     <div class="modal-box">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"><span
+                    class="mdi mdi-close text-xl"></span></button>
+        </form>
         <h3 class="font-bold text-lg text-error flex items-center gap-2 mb-2">
             <span class="mdi mdi-alert-circle"></span>
             {{ _('Delete user') }}

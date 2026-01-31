@@ -1,6 +1,10 @@
 {% import "macros/dialogs.html" as dialogs %}
 <dialog id="importDialog" class="modal modal-top sm:modal-middle">
     <div class="modal-box max-w-2xl">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"><span
+                    class="mdi mdi-close text-xl"></span></button>
+        </form>
         <h3 class="font-bold text-lg mb-4">{{ _('Import Pattern') }}</h3>
         <form id="importForm" action="/projects/import" method="POST" enctype="multipart/form-data">
             <div role="tablist" class="tabs tabs-boxed mb-4">
