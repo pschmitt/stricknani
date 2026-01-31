@@ -243,14 +243,20 @@
                         <div>
                             <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Weight')
                                 }}</span>
-                            <div class="text-sm font-medium">{{ yarn.weight_grams }}g</div>
+                            <div class="flex items-center gap-2 text-sm font-medium">
+                                <span class="mdi mdi-scale text-base-content/60"></span>
+                                {{ yarn.weight_grams }}g
+                            </div>
                         </div>
                         {% endif %}
                         {% if yarn.length_meters %}
                         <div>
                             <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Length')
                                 }}</span>
-                            <div class="text-sm font-medium">{{ yarn.length_meters }}m</div>
+                            <div class="flex items-center gap-2 text-sm font-medium">
+                                <span class="mdi mdi-ruler text-base-content/60"></span>
+                                {{ yarn.length_meters }}m
+                            </div>
                         </div>
                         {% endif %}
                     </div>
