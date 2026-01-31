@@ -8,9 +8,13 @@
     {% block head %}{% endblock %}
     <link rel="icon" type="image/svg+xml"
         href="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}">
+    <!-- renovate: datasource=npm depName=@mdi/font -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
+    <!-- renovate: datasource=npm depName=cropperjs -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
+    <!-- renovate: datasource=npm depName=photoswipe -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.css">
+    <!-- renovate: datasource=npm depName=cropperjs -->
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
     <script>
         // Theme initialization - MUST run before page renders
@@ -45,8 +49,11 @@
             }
         }
     </script>
+    <!-- renovate: datasource=npm depName=daisyui -->
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- renovate: datasource=npm depName=tailwindcss -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <!-- renovate: datasource=npm depName=htmx.org -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
         .cropper-view-box,

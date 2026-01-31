@@ -1,0 +1,47 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended"
+    ],
+    "packageRules": [
+        {
+            "matchUpdateTypes": [
+                "minor",
+                "patch",
+                "pin",
+                "digest"
+            ],
+            "automerge": true
+        },
+        {
+            "matchPackageNames": [
+                "daisyui",
+                "tailwindcss",
+                "htmx.org"
+            ],
+            "groupName": "frontend dependencies"
+        }
+    ],
+    "customManagers": [
+        {
+            "customType": "regex",
+            "description": "Update CDN links in HTML files",
+            "fileMatch": [
+                "\\.html$"
+            ],
+            "matchStrings": [
+                "<!-- renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?) -->\\s+.*?/(?<packageName>@?[^@\\s]+)@(?<currentValue>[^/\\s\"']+)"
+            ]
+        }
+    ],
+    "pep621": {
+        "enabled": true
+    },
+    "nix": {
+        "enabled": true
+    },
+    "lockFileMaintenance": {
+        "enabled": true,
+        "automerge": true
+    }
+}
