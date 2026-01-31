@@ -1,6 +1,6 @@
 {% set current_path = request.url.path %}
-{# Check if page_actions contains a back button (looking for mdi-arrow-left) #}
-{% set has_back_button = page_actions and 'mdi-arrow-left' in page_actions %}
+{# Check if page_actions contains a back button (looking for mdi-arrow-left) or if back_url is provided #}
+{% set has_back_button = back_url or (page_actions and 'mdi-arrow-left' in page_actions) %}
 
 <nav class="navbar bg-base-200 shadow-sm border-b border-base-300 sticky top-0 z-[80] min-h-12">
     <div class="max-w-none mx-auto px-4 w-full">
@@ -8,12 +8,21 @@
             {# Left side: Back button OR Favicon + Title with dropdown #}
             <div class="flex items-center gap-3 min-w-0 flex-1">
                 {% if has_back_button %}
+                {% if back_url %}
+                <div class="w-8 h-8 flex items-center justify-center shrink-0">
+                    <a href="{{ back_url }}" class="btn btn-circle btn-ghost btn-sm text-base-content/60"
+                        aria-label="{{ back_label or _('Back') }}" data-unsaved-confirm="true">
+                        <span class="mdi mdi-arrow-left text-xl"></span>
+                    </a>
+                </div>
+                {% else %}
                 {# Extract and show just the back button from page_actions using split #}
                 {% set parts = page_actions.split('</a>', 1) %}
                 {% if parts|length > 1 %}
                 <div class="w-8 h-8 flex items-center justify-center shrink-0">
                     {{ parts[0]|safe }}</a>
                 </div>
+                {% endif %}
                 {% endif %}
 
                 {# Page Title - hidden on mobile when back button exists #}
@@ -118,13 +127,18 @@
                 {% endif %}
             </div>
 
-            {# Center/Right: Page-specific actions (excluding back button if present) #}
             <div class="flex items-center gap-2 shrink-0">
                 {% if page_actions %}
-                {% if has_back_button %}
+                {% if back_url %}
+                {# If back_url is handled explicitly, just show all page_actions #}
+                {{ page_actions|safe }}
+                {% elif has_back_button %}
+                {# Back button was extracted from page_actions #}
                 {% set parts = page_actions.split('</a>', 1) %}
                 {% if parts|length > 1 %}
                 {{ parts[1]|safe }}
+                {% else %}
+                {{ page_actions|safe }}
                 {% endif %}
                 {% else %}
                 {{ page_actions|safe }}

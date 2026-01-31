@@ -9,9 +9,9 @@
 
 {# Set variables for the unified navbar #}
 {% set page_title %}{{ yarn.name if yarn else _('New Yarn') }}{% endset %}
+{% set back_url = '/yarn/' + yarn.id|string if yarn else '/yarn' %}
+{% set back_label = _('Back to yarns') %}
 {% set page_actions %}
-{{ buttons.back_circle('/yarn/' + yarn.id|string if yarn else '/yarn', label=_('Back to yarns'),
-attrs='data-unsaved-confirm="true"') }}
 {% if not yarn %}
 {{ buttons.secondary(_('Import'), icon='mdi-download',
 attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='hidden md:inline-flex') }}

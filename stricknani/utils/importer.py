@@ -1,5 +1,6 @@
 """URL import utilities for extracting knitting pattern data."""
 
+import html
 import logging
 import re
 from typing import Any
@@ -131,14 +132,18 @@ class PatternImporter:
             "link": self.url,
             "image_urls": images,
         }
-        logger.info(
-            "Import extracted title=%s needles=%s yarn=%s steps=%s images=%s",
-            data.get("title"),
-            data.get("needles"),
-            data.get("yarn"),
-            len(steps),
-            len(images),
-        )
+
+        # Decode HTML entities in all string fields
+        return self._unescape_data(data)
+
+    def _unescape_data(self, data: Any) -> Any:
+        """Recursively unescape HTML entities in data."""
+        if isinstance(data, str):
+            return html.unescape(data)
+        if isinstance(data, list):
+            return [self._unescape_data(item) for item in data]
+        if isinstance(data, dict):
+            return {k: self._unescape_data(v) for k, v in data.items()}
         return data
 
     def _extract_title(self, soup: BeautifulSoup) -> str | None:
