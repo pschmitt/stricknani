@@ -33,8 +33,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+            type=sha
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -47,7 +50,7 @@ jobs:
       - name: Verify image
         run: |
           docker run -d -p 7674:7674 --name stricknani-test \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
           sleep 10
           curl -f http://localhost:7674/healthz
 
