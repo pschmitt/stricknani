@@ -56,39 +56,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class=save_classes) }}
 
-{% if project %}
-<details class="dropdown dropdown-end dropdown-top fixed bottom-6 right-6 z-50 md:hidden">
-    <summary tabindex="0" role="button"
-        class="btn btn-circle btn-primary shadow-xl h-14 w-14 min-h-0 p-0 flex items-center justify-center list-none appearance-none"
-        aria-label="{{ _('More actions') }}">
-        <span class="mdi mdi-dots-vertical text-2xl"></span>
-    </summary>
-    <ul tabindex="0"
-        class="dropdown-content z-[51] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2">
-        <li class="md:hidden">
-            <button type="submit" form="projectForm">
-                <span class="mdi mdi-content-save text-lg"></span>
-                {{ _('Save') }}
-            </button>
-        </li>
-        <li data-favorite-toggle>
-            {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail' %}
-            {% include "projects/_favorite_toggle.html" %}
-            {% endwith %}
-        </li>
-        <li>
-            <button type="button" onclick="document.getElementById('deleteProjectDialog').showModal()"
-                class="text-error hover:bg-error/10 hover:text-error">
-                <span class="mdi mdi-delete-outline text-lg"></span>
-                {{ _('Delete') }}
-            </button>
-        </li>
-    </ul>
-</details>
-{% else %}
-<!-- Mobile FAB for New Project -->
+<!-- Mobile FAB for Project Save -->
 {{ buttons.fab('mdi-content-save', type='submit', attrs='form="projectForm"', class='md:hidden', label=_('Save')) }}
-{% endif %}
 {% endblock %}
 
 {% block form_title %}
