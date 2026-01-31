@@ -144,10 +144,16 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label for="category-mobile"
-                                    class="label-text text-xs font-bold uppercase text-base-content/50">
-                                    {{ _('Category') }}
-                                </label>
+                                <div class="flex items-center justify-between">
+                                    <label for="category-mobile"
+                                        class="label-text text-xs font-bold uppercase text-base-content/50">
+                                        {{ _('Category') }}
+                                    </label>
+                                    <a href="/projects/categories" class="text-[10px] text-primary hover:underline"
+                                        target="_blank" rel="noreferrer">
+                                        {{ _('Manage') }}
+                                    </a>
+                                </div>
                                 <select name="category" class="select select-bordered select-sm w-full mt-1">
                                     <option value="">{{ _('Select a category') }}</option>
                                     {% for category in categories %}
@@ -185,21 +191,47 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                     suggestion.') }}
                                 </p>
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
+
+                            <div>
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Used
+                                    Needles') }}</label>
+                                <input type="text" name="needles"
+                                    value="{{ project.needles if project and project.needles else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1"
+                                    placeholder="{{ _('e.g. 4.0mm circular') }}">
+                            </div>
+
+                            <div>
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
+                                    _('Recommended Size') }}</label>
+                                <input type="text" name="recommended_needles"
+                                    value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1"
+                                    placeholder="{{ _('e.g. 3.5mm') }}">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 sm:col-span-2">
                                 <div>
                                     <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
                                         _('Gauge St.') }}</label>
                                     <input type="number" name="gauge_stitches"
                                         value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
-                                        class="input input-bordered input-sm w-full mt-1">
+                                        class="input input-bordered input-sm w-full mt-1" placeholder="20">
                                 </div>
                                 <div>
                                     <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
                                         _('Gauge Rows') }}</label>
                                     <input type="number" name="gauge_rows"
                                         value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
-                                        class="input input-bordered input-sm w-full mt-1">
+                                        class="input input-bordered input-sm w-full mt-1" placeholder="28">
                                 </div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Pattern
+                                    Source') }}</label>
+                                <input type="url" name="link" value="{{ project.link or '' }}"
+                                    class="input input-bordered input-sm w-full mt-1" placeholder="https://...">
                             </div>
                         </div>
                     </div>

@@ -8,10 +8,12 @@
 {% block form_container_class %}max-w-5xl{% endblock %}
 
 {% block form_before %}
-<dialog id="previewDialog" class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-2xl">
+<dialog id="previewDialog"
+    class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-2xl">
     <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
         <h3 class="text-lg font-semibold">{{ _('Preview') }}</h3>
-        <button onclick="document.getElementById('previewDialog').close()" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+        <button onclick="document.getElementById('previewDialog').close()"
+            class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
             <span class="mdi mdi-close text-xl"></span>
         </button>
     </div>
@@ -33,18 +35,21 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 
 {% block form_actions %}
 {# Save button logic:
-   - Always hidden on mobile (moved to FAB)
-   - Visible on desktop #}
+- Always hidden on mobile (moved to FAB)
+- Visible on desktop #}
 {% set save_classes = 'hidden md:inline-flex flex-1 sm:flex-none md:btn-wide' %}
 
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"', class=save_classes) }}
 
 {% if yarn %}
 <div class="dropdown dropdown-end dropdown-top fixed bottom-6 right-6 z-50 md:hidden">
-    <div tabindex="0" role="button" class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10" aria-label="{{ _('More actions') }}">
+    <div tabindex="0" role="button"
+        class="btn btn-circle btn-primary md:btn-ghost md:text-base-content md:bg-transparent md:border-transparent md:shadow-none shadow-xl h-14 w-14 min-h-0 md:h-12 md:w-12 p-0 flex items-center justify-center md:hover:bg-base-content/10"
+        aria-label="{{ _('More actions') }}">
         <span class="mdi mdi-dots-vertical text-2xl md:text-xl"></span>
     </div>
-    <ul tabindex="0" class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2 md:mb-0">
+    <ul tabindex="0"
+        class="dropdown-content z-[20] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200 mb-2 md:mb-0">
         <li class="md:hidden">
             <button type="submit" form="yarnForm">
                 <span class="mdi mdi-content-save text-lg"></span>
@@ -53,11 +58,12 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         </li>
         <li data-favorite-toggle>
             {% with yarn_id=yarn.id, is_favorite=is_favorite, variant='detail' %}
-                {% include "yarn/_favorite_toggle.html" %}
+            {% include "yarn/_favorite_toggle.html" %}
             {% endwith %}
         </li>
         <li>
-            <button type="button" onclick="document.getElementById('deleteYarnDialog').showModal()" class="text-error hover:bg-error/10 hover:text-error">
+            <button type="button" onclick="document.getElementById('deleteYarnDialog').showModal()"
+                class="text-error hover:bg-error/10 hover:text-error">
                 <span class="mdi mdi-delete-outline text-lg"></span>
                 {{ _('Delete') }}
             </button>
@@ -75,7 +81,8 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 {% endblock %}
 
 {% block form_body %}
-<form id="yarnForm" action="{{ '/yarn/' ~ yarn.id ~ '/edit' if yarn else '/yarn/' }}" method="post" enctype="multipart/form-data" data-primary-form="true" class="space-y-6">
+<form id="yarnForm" action="{{ '/yarn/' ~ yarn.id ~ '/edit' if yarn else '/yarn/' }}" method="post"
+    enctype="multipart/form-data" data-primary-form="true" class="space-y-6">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <!-- Main Content Column -->
         <div class="lg:col-span-2 space-y-6">
@@ -87,36 +94,100 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                             <span class="mdi mdi-sheep text-base-content/70"></span>
                             {{ _('Name') }}
                         </label>
-                        <input type="text" id="name" name="name" required value="{{ yarn.name if yarn and yarn.name else '' }}" class="input input-bordered w-full">
+                        <input type="text" id="name" name="name" required
+                            value="{{ yarn.name if yarn and yarn.name else '' }}" class="input input-bordered w-full">
                     </div>
 
                     <!-- Mobile Details Card -->
                     <div class="lg:hidden p-4 bg-base-200/30 rounded-xl border border-base-200 space-y-4">
-                        <h3 class="font-bold text-xs uppercase tracking-widest text-base-content/40 flex items-center gap-2">
+                        <h3
+                            class="font-bold text-xs uppercase tracking-widest text-base-content/40 flex items-center gap-2">
                             <span class="mdi mdi-information-outline"></span>
                             {{ _('Yarn Details') }}
                         </h3>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+                            <div class="col-span-2">
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Brand')
+                                    }}</label>
+                                <input type="text" name="brand" value="{{ yarn.brand if yarn and yarn.brand else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1">
+                            </div>
+
                             <div>
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Brand') }}</label>
-                                <input type="text" name="brand" value="{{ yarn.brand if yarn and yarn.brand else '' }}" class="input input-bordered input-sm w-full mt-1">
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
+                                    _('Colorway') }}</label>
+                                <input type="text" name="colorway"
+                                    value="{{ yarn.colorway if yarn and yarn.colorway else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1">
                             </div>
                             <div>
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Fiber content') }}</label>
-                                <input type="text" name="fiber_content" value="{{ yarn.fiber_content if yarn and yarn.fiber_content else '' }}" class="input input-bordered input-sm w-full mt-1">
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Dye
+                                    Lot') }}</label>
+                                <input type="text" name="dye_lot"
+                                    value="{{ yarn.dye_lot if yarn and yarn.dye_lot else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1">
+                            </div>
+
+                            <div class="col-span-2">
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Fiber
+                                    content') }}</label>
+                                <input type="text" name="fiber_content"
+                                    value="{{ yarn.fiber_content if yarn and yarn.fiber_content else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1">
+                            </div>
+
+                            <div>
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Weight
+                                    (g)') }}</label>
+                                <input type="number" name="weight_grams" min="0"
+                                    value="{{ yarn.weight_grams if yarn and yarn.weight_grams is not none else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1">
+                            </div>
+                            <div>
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Length
+                                    (m)') }}</label>
+                                <input type="number" name="length_meters" min="0"
+                                    value="{{ yarn.length_meters if yarn and yarn.length_meters is not none else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1">
+                            </div>
+
+                            <div class="col-span-2">
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Weight
+                                    category') }}</label>
+                                <input type="text" name="weight_category" placeholder="{{ _('e.g. Fingering, DK...') }}"
+                                    value="{{ yarn.weight_category if yarn and yarn.weight_category else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1">
+                            </div>
+
+                            <div class="col-span-2">
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
+                                    _('Recommended Needles') }}</label>
+                                <input type="text" name="recommended_needles"
+                                    value="{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1" placeholder="4.0mm">
+                            </div>
+
+                            <div class="col-span-2">
+                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Source
+                                    Link') }}</label>
+                                <input type="url" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
+                                    class="input input-bordered input-sm w-full mt-1" placeholder="https://...">
                             </div>
                         </div>
                     </div>
 
                     <div>
                         <div class="flex items-center justify-between mb-1">
-                            <label for="description" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                            <label for="description"
+                                class="label-text text-sm font-medium inline-flex items-center gap-2">
                                 <span class="mdi mdi-text-box-outline text-base-content/70"></span>
-                                {{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                                {{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
+                                    }}</span>
                             </label>
                         </div>
-                        <textarea id="description" name="description" rows="4" class="textarea textarea-bordered w-full">{{ yarn.description if yarn and yarn.description else '' }}</textarea>
+                        <textarea id="description" name="description" rows="4"
+                            class="textarea textarea-bordered w-full">{{ yarn.description if yarn and yarn.description else '' }}</textarea>
                     </div>
 
                     <div>
@@ -126,7 +197,8 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                                 {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
                             </label>
                         </div>
-                        <textarea id="notes" name="notes" rows="4" class="textarea textarea-bordered w-full">{{ yarn.notes if yarn and yarn.notes else '' }}</textarea>
+                        <textarea id="notes" name="notes" rows="4"
+                            class="textarea textarea-bordered w-full">{{ yarn.notes if yarn and yarn.notes else '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -141,21 +213,17 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 {% if photos %}
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 pswp-gallery" data-pswp-gallery>
                     {% for photo in photos %}
-                    <div id="photo-card-{{ photo.id }}" class="relative group aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
-                        <a
-                            href="{{ photo.full_url }}"
-                            data-pswp-width="{{ photo.width or 1200 }}"
-                            data-pswp-height="{{ photo.height or 1200 }}"
-                            data-pswp-caption="{{ photo.alt_text }}"
-                            class="block h-full w-full"
-                        >
-                            <img
-                                src="{{ photo.thumbnail_url }}"
-                                alt="{{ photo.alt_text }}"
-                                class="h-full w-full object-cover cursor-zoom-in"
-                            >
+                    <div id="photo-card-{{ photo.id }}"
+                        class="relative group aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
+                        <a href="{{ photo.full_url }}" data-pswp-width="{{ photo.width or 1200 }}"
+                            data-pswp-height="{{ photo.height or 1200 }}" data-pswp-caption="{{ photo.alt_text }}"
+                            class="block h-full w-full">
+                            <img src="{{ photo.thumbnail_url }}" alt="{{ photo.alt_text }}"
+                                class="h-full w-full object-cover cursor-zoom-in">
                         </a>
-                        <button type="button" onclick="deleteYarnPhoto({{ photo.id }})" class="absolute top-2 right-2 bg-white/90 text-red-600 rounded-full p-1.5 hover:bg-red-50 shadow-sm transition-colors dark:bg-slate-900/90 dark:text-red-400 dark:hover:bg-red-900/50" title="{{ _('Delete photo') }}">
+                        <button type="button" onclick="deleteYarnPhoto({{ photo.id }})"
+                            class="absolute top-2 right-2 bg-white/90 text-red-600 rounded-full p-1.5 hover:bg-red-50 shadow-sm transition-colors dark:bg-slate-900/90 dark:text-red-400 dark:hover:bg-red-900/50"
+                            title="{{ _('Delete photo') }}">
                             <span class="mdi mdi-trash-can-outline"></span>
                         </button>
                     </div>
@@ -164,12 +232,13 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 {% endif %}
 
                 {{ image_upload.upload_dropzone(
-                    input_id='photos',
-                    input_name='new_photos' if yarn else 'photos',
-                    onchange='previewImages(this)'
+                input_id='photos',
+                input_name='new_photos' if yarn else 'photos',
+                onchange='previewImages(this)'
                 ) }}
                 <div id="image-preview-container" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 hidden"></div>
-                <p class="text-xs text-base-content/70 mt-1">{{ _('Supported: JPG, PNG, GIF. Thumbnails are generated automatically.') }}</p>
+                <p class="text-xs text-base-content/70 mt-1">{{ _('Supported: JPG, PNG, GIF. Thumbnails are generated
+                    automatically.') }}</p>
             </div>
         </div>
 
@@ -177,93 +246,125 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         <div class="space-y-6">
             <!-- Yarn Details Card -->
             <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 hidden lg:block">
-                <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                <h3
+                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                     <span class="mdi mdi-information-outline"></span>
                     {{ _('Yarn Details') }}
                 </h3>
 
                 <div class="space-y-4">
                     <div>
-                        <label for="brand" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                        <label for="brand"
+                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Brand') }}
                         </label>
-                        <input type="text" id="brand" name="brand" value="{{ yarn.brand if yarn and yarn.brand else '' }}" class="input input-bordered input-sm w-full">
+                        <input type="text" id="brand" name="brand"
+                            value="{{ yarn.brand if yarn and yarn.brand else '' }}"
+                            class="input input-bordered input-sm w-full">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="colorway" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            <label for="colorway"
+                                class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                                 {{ _('Colorway') }}
                             </label>
-                            <input type="text" id="colorway" name="colorway" value="{{ yarn.colorway if yarn and yarn.colorway else '' }}" class="input input-bordered input-sm w-full">
+                            <input type="text" id="colorway" name="colorway"
+                                value="{{ yarn.colorway if yarn and yarn.colorway else '' }}"
+                                class="input input-bordered input-sm w-full">
                         </div>
                         <div>
-                            <label for="dye_lot" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            <label for="dye_lot"
+                                class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                                 {{ _('Dye Lot') }}
                             </label>
-                            <input type="text" id="dye_lot" name="dye_lot" value="{{ yarn.dye_lot if yarn and yarn.dye_lot else '' }}" class="input input-bordered input-sm w-full">
+                            <input type="text" id="dye_lot" name="dye_lot"
+                                value="{{ yarn.dye_lot if yarn and yarn.dye_lot else '' }}"
+                                class="input input-bordered input-sm w-full">
                         </div>
                     </div>
 
                     <div class="divider my-2"></div>
 
                     <div>
-                        <label for="fiber_content" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                        <label for="fiber_content"
+                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Fiber content') }}
                         </label>
-                        <input type="text" id="fiber_content" name="fiber_content" placeholder="{{ _('e.g. 80% Merino...') }}" value="{{ yarn.fiber_content if yarn and yarn.fiber_content else '' }}" class="input input-bordered input-sm w-full">
+                        <input type="text" id="fiber_content" name="fiber_content"
+                            placeholder="{{ _('e.g. 80% Merino...') }}"
+                            value="{{ yarn.fiber_content if yarn and yarn.fiber_content else '' }}"
+                            class="input input-bordered input-sm w-full">
                     </div>
 
                     <div>
-                        <label for="weight_category" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                        <label for="weight_category"
+                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Weight category') }}
                         </label>
-                        <input type="text" id="weight_category" name="weight_category" placeholder="{{ _('e.g. Fingering, DK...') }}" value="{{ yarn.weight_category if yarn and yarn.weight_category else '' }}" class="input input-bordered input-sm w-full">
+                        <input type="text" id="weight_category" name="weight_category"
+                            placeholder="{{ _('e.g. Fingering, DK...') }}"
+                            value="{{ yarn.weight_category if yarn and yarn.weight_category else '' }}"
+                            class="input input-bordered input-sm w-full">
                     </div>
 
                     <div>
-                        <label for="recommended_needles" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                        <label for="recommended_needles"
+                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Recommended Needles') }}
                         </label>
-                        <input type="text" id="recommended_needles" name="recommended_needles" value="{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}" class="input input-bordered input-sm w-full" placeholder="4.0mm">
+                        <input type="text" id="recommended_needles" name="recommended_needles"
+                            value="{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}"
+                            class="input input-bordered input-sm w-full" placeholder="4.0mm">
                     </div>
 
                     <div class="divider my-2"></div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="weight_grams" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            <label for="weight_grams"
+                                class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                                 {{ _('Weight (g)') }}
                             </label>
-                            <input type="number" id="weight_grams" name="weight_grams" min="0" value="{{ yarn.weight_grams if yarn and yarn.weight_grams is not none else '' }}" class="input input-bordered input-sm w-full">
+                            <input type="number" id="weight_grams" name="weight_grams" min="0"
+                                value="{{ yarn.weight_grams if yarn and yarn.weight_grams is not none else '' }}"
+                                class="input input-bordered input-sm w-full">
                         </div>
                         <div>
-                            <label for="length_meters" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            <label for="length_meters"
+                                class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                                 {{ _('Length (m)') }}
                             </label>
-                            <input type="number" id="length_meters" name="length_meters" min="0" value="{{ yarn.length_meters if yarn and yarn.length_meters is not none else '' }}" class="input input-bordered input-sm w-full">
+                            <input type="number" id="length_meters" name="length_meters" min="0"
+                                value="{{ yarn.length_meters if yarn and yarn.length_meters is not none else '' }}"
+                                class="input input-bordered input-sm w-full">
                         </div>
                     </div>
 
                     <div class="divider my-2"></div>
 
                     <div>
-                        <label for="link" class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                        <label for="link"
+                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Source Link') }}
                         </label>
-                        <input type="url" id="link" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}" class="input input-bordered input-sm w-full" placeholder="https://...">
+                        <input type="url" id="link" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
+                            class="input input-bordered input-sm w-full" placeholder="https://...">
                     </div>
                 </div>
             </div>
 
             <!-- Danger Zone -->
             {% if yarn %}
-            <div class="bg-red-50 dark:bg-red-900/10 rounded-2xl shadow-sm border border-red-100 dark:border-red-900/30 p-5">
-                <h3 class="font-bold text-base text-red-800 dark:text-red-400 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+            <div
+                class="bg-red-50 dark:bg-red-900/10 rounded-2xl shadow-sm border border-red-100 dark:border-red-900/30 p-5">
+                <h3
+                    class="font-bold text-base text-red-800 dark:text-red-400 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                     <span class="mdi mdi-alert-outline"></span>
                     {{ _('Danger Zone') }}
                 </h3>
-                {{ buttons.danger(_('Delete Yarn'), icon='mdi-delete-outline', attrs='onclick="document.getElementById(\'deleteYarnDialog\').showModal()"', class="w-full") }}
+                {{ buttons.danger(_('Delete Yarn'), icon='mdi-delete-outline',
+                attrs='onclick="document.getElementById(\'deleteYarnDialog\').showModal()"', class="w-full") }}
             </div>
             {% endif %}
         </div>
@@ -278,7 +379,8 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             {{ _('Delete Yarn') }}
         </h3>
         <p class="py-4 text-base-content/80">{{ _('Are you sure you want to delete this yarn?') }}</p>
-        <p class="text-sm text-base-content/70">{{ _('This will also delete all photos associated with this yarn. This action cannot be undone.') }}</p>
+        <p class="text-sm text-base-content/70">{{ _('This will also delete all photos associated with this yarn. This
+            action cannot be undone.') }}</p>
         <div class="modal-action">
             <form method="dialog">
                 {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
@@ -339,95 +441,95 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             ? extractErrorMessage
             : async (_response, fallback) => fallback;
 
-async function previewMarkdown(source) {
-    const textarea = typeof source === 'string' ? document.getElementById(source) : source;
-    if (!textarea) return;
+    async function previewMarkdown(source) {
+        const textarea = typeof source === 'string' ? document.getElementById(source) : source;
+        if (!textarea) return;
 
-    const content = textarea.value;
-    if (!content.trim()) {
-        window.showToast?.('{{ _("Nothing to preview") }}', 'info');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('content', content);
-
-    try {
-        const response = await fetch('/utils/preview/markdown', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (response.ok) {
-            const html = await response.text();
-            const dialog = document.getElementById('previewDialog');
-            const contentDiv = document.getElementById('previewContent');
-            contentDiv.innerHTML = html;
-            dialog.showModal();
+        const content = textarea.value;
+        if (!content.trim()) {
+            window.showToast?.('{{ _("Nothing to preview") }}', 'info');
+            return;
         }
-    } catch (error) {
-        console.error('Preview failed', error);
-    }
-}
 
-const yarnFiles = new DataTransfer();
+        const formData = new FormData();
+        formData.append('content', content);
 
-function previewImages(input) {
-    const container = document.getElementById('image-preview-container');
+        try {
+            const response = await fetch('/utils/preview/markdown', {
+                method: 'POST',
+                body: formData
+            });
 
-    if (input.files && input.files.length > 0) {
-        Array.from(input.files).forEach(file => {
-            const exists = Array.from(yarnFiles.files).some(f =>
-                f.name === file.name && f.size === file.size && f.lastModified === file.lastModified
-            );
-            if (!exists) {
-                yarnFiles.items.add(file);
+            if (response.ok) {
+                const html = await response.text();
+                const dialog = document.getElementById('previewDialog');
+                const contentDiv = document.getElementById('previewContent');
+                contentDiv.innerHTML = html;
+                dialog.showModal();
             }
-        });
-        input.files = yarnFiles.files;
+        } catch (error) {
+            console.error('Preview failed', error);
+        }
     }
 
-    container.innerHTML = '';
+    const yarnFiles = new DataTransfer();
 
-    if (yarnFiles.files.length > 0) {
-        container.classList.remove('hidden');
-        Array.from(yarnFiles.files).forEach((file, index) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const div = document.createElement('div');
-                div.className = 'relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 group';
-                div.innerHTML = `
+    function previewImages(input) {
+        const container = document.getElementById('image-preview-container');
+
+        if (input.files && input.files.length > 0) {
+            Array.from(input.files).forEach(file => {
+                const exists = Array.from(yarnFiles.files).some(f =>
+                    f.name === file.name && f.size === file.size && f.lastModified === file.lastModified
+                );
+                if (!exists) {
+                    yarnFiles.items.add(file);
+                }
+            });
+            input.files = yarnFiles.files;
+        }
+
+        container.innerHTML = '';
+
+        if (yarnFiles.files.length > 0) {
+            container.classList.remove('hidden');
+            Array.from(yarnFiles.files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const div = document.createElement('div');
+                    div.className = 'relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 group';
+                    div.innerHTML = `
                     <img src="${e.target.result}" class="h-full w-full object-cover opacity-90 transition group-hover:opacity-100">
                     <button type="button" onclick="removeYarnFile(${index})" class="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700" aria-label="{{ _('Remove image') }}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 `;
-                container.appendChild(div);
-            }
-            reader.readAsDataURL(file);
-        });
-    } else {
-        container.classList.add('hidden');
-    }
-}
-
-function removeYarnFile(index) {
-    const input = document.getElementById('photos');
-    const newDt = new DataTransfer();
-
-    Array.from(yarnFiles.files).forEach((file, i) => {
-        if (i !== index) {
-            newDt.items.add(file);
+                    container.appendChild(div);
+                }
+                reader.readAsDataURL(file);
+            });
+        } else {
+            container.classList.add('hidden');
         }
-    });
-
-    yarnFiles.items.clear();
-    Array.from(newDt.files).forEach(file => yarnFiles.items.add(file));
-
-    if (input) {
-        input.files = yarnFiles.files;
-        previewImages(input);
     }
-}
+
+    function removeYarnFile(index) {
+        const input = document.getElementById('photos');
+        const newDt = new DataTransfer();
+
+        Array.from(yarnFiles.files).forEach((file, i) => {
+            if (i !== index) {
+                newDt.items.add(file);
+            }
+        });
+
+        yarnFiles.items.clear();
+        Array.from(newDt.files).forEach(file => yarnFiles.items.add(file));
+
+        if (input) {
+            input.files = yarnFiles.files;
+            previewImages(input);
+        }
+    }
 </script>
 {% endblock %}
