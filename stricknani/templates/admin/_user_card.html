@@ -16,8 +16,8 @@
                 {% endif %}
             </div>
 
-            <div class="min-w-0">
-                <div class="flex items-center gap-2 mb-0.5">
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 mb-0.5 w-full">
                     <p class="font-bold text-base text-base-content truncate">{{ user.email }}</p>
                     {% if user.id == current_user.id %}
                     <span class="badge badge-xs badge-info">{{ _('You') }}</span>
@@ -36,9 +36,81 @@
                     {% endif %}
                 </div>
             </div>
+
+            <div class="dropdown dropdown-end md:hidden ml-auto">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
+                    <span class="mdi mdi-dots-vertical text-lg"></span>
+                </div>
+                <ul tabindex="0"
+                    class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
+                    <li class="{% if user.id == current_user.id %}disabled opacity-50{% endif %}">
+                        <form
+                            method="post"
+                            action="/admin/users/{{ user.id }}/toggle-active"
+                            hx-post="/admin/users/{{ user.id }}/toggle-active"
+                            hx-target="#user-card-{{ user.id }}"
+                            hx-swap="outerHTML"
+                            class="w-full p-0"
+                            data-toast-message="{{ _('User disabled') if user.is_active else _('User activated') }}"
+                            data-toast-variant="success"
+                        >
+                            {% if user.is_active %}
+                                <button type="submit" class="w-full text-left flex items-center gap-2 py-2 px-4" {% if user.id == current_user.id %}disabled style="cursor: not-allowed"{% endif %}>
+                                    <span class="mdi mdi-account-off"></span>
+                                    {{ _('Disable') }}
+                                </button>
+                            {% else %}
+                                <button type="submit" class="w-full text-left flex items-center gap-2 py-2 px-4 text-success hover:text-success-content hover:bg-success/10">
+                                    <span class="mdi mdi-account-check"></span>
+                                    {{ _('Enable') }}
+                                </button>
+                            {% endif %}
+                        </form>
+                    </li>
+                    <li>
+                        <button type="button" onclick="openEditUserDialog(this)" data-user-id="{{ user.id }}" data-user-email="{{ user.email }}">
+                            <span class="mdi mdi-account-edit"></span> {{ _('Edit profile') }}
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" onclick="openResetPasswordDialog(this)" data-user-id="{{ user.id }}" data-user-email="{{ user.email }}">
+                            <span class="mdi mdi-key-variant"></span> {{ _('Reset password') }}
+                        </button>
+                    </li>
+                    <li class="{% if user.id == current_user.id %}disabled opacity-50{% endif %}">
+                        <form
+                            method="post"
+                            action="/admin/users/{{ user.id }}/toggle-admin"
+                            hx-post="/admin/users/{{ user.id }}/toggle-admin"
+                            hx-target="#user-card-{{ user.id }}"
+                            hx-swap="outerHTML"
+                            class="w-full p-0"
+                            data-toast-message="{{ _('Admin access revoked') if user.is_admin else _('Admin access granted') }}"
+                            data-toast-variant="success"
+                        >
+                            <button type="submit" class="w-full text-left flex items-center gap-2 py-2 px-4" {% if user.id == current_user.id %}disabled style="cursor: not-allowed" text-base-content/50{% endif %}>
+                                <span class="mdi {{ 'mdi-shield-off' if user.is_admin else 'mdi-shield-plus' }}"></span>
+                                {{ _('Revoke admin') if user.is_admin else _('Make admin') }}
+                            </button>
+                        </form>
+                    </li>
+                    <li class="{% if user.id == current_user.id %}disabled opacity-50{% endif %}">
+                        <button
+                            type="button"
+                            class="text-error hover:bg-error/10"
+                            {% if user.id == current_user.id %}disabled style="cursor: not-allowed"{% endif %}
+                            data-user-id="{{ user.id }}"
+                            data-user-email="{{ user.email }}"
+                            onclick="openDeleteUserDialog(this)"
+                        >
+                            <span class="mdi mdi-delete"></span> {{ _('Delete user') }}
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 pt-2 lg:pt-0 border-t border-base-100 lg:border-0">
+        <div class="hidden md:flex flex-wrap items-center gap-2 pt-2 lg:pt-0 border-t border-base-100 lg:border-0">
             <form
                 method="post"
                 action="/admin/users/{{ user.id }}/toggle-active"
@@ -47,6 +119,7 @@
                 hx-swap="outerHTML"
                 data-toast-message="{{ _('User disabled') if user.is_active else _('User activated') }}"
                 data-toast-variant="success"
+                class="hidden md:block"
             >
                 {% if user.is_active %}
                     {{ buttons.secondary(_('Disable'), type='submit', icon='mdi-account-off', class='btn-xs sm:btn-sm', attrs='disabled' if user.id == current_user.id else '') }}
@@ -55,7 +128,7 @@
                 {% endif %}
             </form>
 
-            <div class="dropdown dropdown-end">
+            <div class="dropdown dropdown-end hidden md:block">
                 <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
                     <span class="mdi mdi-dots-vertical text-lg"></span>
                 </div>
