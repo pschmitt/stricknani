@@ -8,19 +8,19 @@
     <input type="hidden" name="type" id="importType" value="url">
 
     <div id="tab-url" class="import-tab-content">
-        <div class="form-control">
-            <label class="label">
-                <span class="label-text">{{ _('Pattern URL') }}</span>
+        <div class="mb-4">
+            <label class="block mb-1">
+                <span class="text-sm font-medium">{{ _('Pattern URL') }}</span>
             </label>
             <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
-                value="{{ project.link if project and project.link else '' }}" class="input input-bordered" />
-            <label class="label">
-                <span class="label-text-alt">{{ _('Enter the URL of the knitting pattern') }}</span>
+                value="{{ project.link if project and project.link else '' }}" class="input " />
+            <label class="block mb-1">
+                <span class="text-xs opacity-70">{{ _('Enter the URL of the knitting pattern') }}</span>
             </label>
         </div>
     </div>
 
-    <div class="form-control mt-4 hidden">
+    <div class="mb-4 mt-4 hidden">
         <input type="checkbox" name="use_ai" value="true" {% if has_openai_key %}checked{% endif %}>
     </div>
 

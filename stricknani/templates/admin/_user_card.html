@@ -38,12 +38,12 @@
             </div>
 
             <div class="dropdown dropdown-end md:hidden ml-auto">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square" popovertarget="user-card-mobile-popover-{{ user.id }}" style="anchor-name: --user-card-mobile-{{ user.id }}">
                     <span class="mdi mdi-dots-vertical text-lg"></span>
                 </div>
-                <ul tabindex="0"
+                <ul tabindex="0" popover id="user-card-mobile-popover-{{ user.id }}" style="position-anchor: --user-card-mobile-{{ user.id }}"
                     class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
-                    <li class="{% if user.id == current_user.id %}disabled opacity-50{% endif %}">
+                    <li class="{% if user.id == current_user.id %}menu-disabled opacity-50{% endif %}">
                         <form method="post" action="/admin/users/{{ user.id }}/toggle-active"
                             hx-post="/admin/users/{{ user.id }}/toggle-active" hx-target="#user-card-{{ user.id }}"
                             hx-swap="outerHTML" class="w-full p-0"
@@ -76,7 +76,7 @@
                             <span class="mdi mdi-key-variant"></span> {{ _('Reset password') }}
                         </button>
                     </li>
-                    <li class="{% if user.id == current_user.id %}disabled opacity-50{% endif %}">
+                    <li class="{% if user.id == current_user.id %}menu-disabled opacity-50{% endif %}">
                         <form method="post" action="/admin/users/{{ user.id }}/toggle-admin"
                             hx-post="/admin/users/{{ user.id }}/toggle-admin" hx-target="#user-card-{{ user.id }}"
                             hx-swap="outerHTML" class="w-full p-0"
@@ -90,7 +90,7 @@
                             </button>
                         </form>
                     </li>
-                    <li class="{% if user.id == current_user.id %}disabled opacity-50{% endif %}">
+                    <li class="{% if user.id == current_user.id %}menu-disabled opacity-50{% endif %}">
                         <button type="button" class="text-error hover:bg-error/10" {% if user.id==current_user.id
                             %}disabled style="cursor: not-allowed" {% endif %} data-user-id="{{ user.id }}"
                             data-user-email="{{ user.email }}" onclick="openDeleteUserDialog(this)">
@@ -117,10 +117,10 @@
             </form>
 
             <div class="dropdown dropdown-end hidden md:block">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square" popovertarget="user-card-popover-{{ user.id }}" style="anchor-name: --user-card-{{ user.id }}">
                     <span class="mdi mdi-dots-vertical text-lg"></span>
                 </div>
-                <ul tabindex="0"
+                <ul tabindex="0" popover id="user-card-popover-{{ user.id }}" style="position-anchor: --user-card-{{ user.id }}"
                     class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
                     <li>
                         <button type="button" onclick="openEditUserDialog(this)" data-user-id="{{ user.id }}"
@@ -134,7 +134,7 @@
                             <span class="mdi mdi-key-variant"></span> {{ _('Reset password') }}
                         </button>
                     </li>
-                    <li class="{% if user.id == current_user.id %}disabled opacity-50{% endif %}">
+                    <li class="{% if user.id == current_user.id %}menu-disabled opacity-50{% endif %}">
                         <form method="post" action="/admin/users/{{ user.id }}/toggle-admin"
                             hx-post="/admin/users/{{ user.id }}/toggle-admin" hx-target="#user-card-{{ user.id }}"
                             hx-swap="outerHTML" class="w-full p-0"
@@ -148,7 +148,7 @@
                             </button>
                         </form>
                     </li>
-                    <li class="{% if user.id == current_user.id %}disabled opacity-50{% endif %}">
+                    <li class="{% if user.id == current_user.id %}menu-disabled opacity-50{% endif %}">
                         <button type="button" class="text-error hover:bg-error/10" {% if user.id==current_user.id
                             %}disabled style="cursor: not-allowed" {% endif %} data-user-id="{{ user.id }}"
                             data-user-email="{{ user.email }}" onclick="openDeleteUserDialog(this)">

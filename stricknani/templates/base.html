@@ -35,24 +35,12 @@
         })();
     </script>
 
-    <script>
-        // Configure Tailwind and DaisyUI BEFORE loading them
-        window.tailwind = window.tailwind || {};
-        window.tailwind.config = {
-            darkMode: 'class',
-            daisyui: {
-                themes: ["light", "dark"],
-                darkTheme: "dark",
-                base: true,
-                styled: true,
-                utils: true,
-            }
-        }
-    </script>
+
     <!-- renovate: datasource=npm depName=daisyui -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.5.16/daisyui.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.5.16/themes.css" rel="stylesheet" type="text/css" />
     <!-- renovate: datasource=npm depName=tailwindcss -->
-    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://unpkg.com/@tailwindcss/browser@4.1.18"></script>
     <!-- renovate: datasource=npm depName=htmx.org -->
     <script src="https://unpkg.com/htmx.org@2.0.7"></script>
     <style>

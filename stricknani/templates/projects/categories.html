@@ -38,7 +38,7 @@
             <div class="flex-grow">
                 <label for="new-category-name" class="sr-only">{{ _('Category Name') }}</label>
                 <input type="text" id="new-category-name" name="name" required
-                    placeholder="{{ _('e.g., Socks, Shawl, Amigurumi') }}" class="input input-bordered w-full">
+                    placeholder="{{ _('e.g., Socks, Shawl, Amigurumi') }}" class="input  w-full">
             </div>
             {{ buttons.primary(_('Create'), type='submit', icon='mdi-plus', class='flex-none') }}
         </form>
@@ -54,7 +54,7 @@
                 <div class="flex-grow">
                     <label for="category-{{ category.id }}" class="sr-only">{{ _('Category Name') }}</label>
                     <input type="text" id="category-{{ category.id }}" name="name" value="{{ category.name }}" required
-                        class="input input-ghost w-full font-medium focus:input-bordered text-lg px-2 -ml-2 h-auto py-1">
+                        class="input input-ghost w-full font-medium focus: text-lg px-2 -ml-2 h-auto py-1">
                     <p class="text-xs text-base-content/60 mt-1 px-2">
                         {{ ngettext('%(num)d project', '%(num)d projects', category.project_count) % {'num':
                         category.project_count} }}

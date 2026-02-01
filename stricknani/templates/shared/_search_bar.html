@@ -1,6 +1,6 @@
 <div class="w-full" id="{{ wrapper_id }}">
     <div class="relative">
-        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50 z-10">
             <span class="mdi mdi-magnify text-lg"></span>
         </div>
         {% set filters = extra_filters
@@ -23,7 +23,7 @@
         {% set inline_filters = filters|length == 1 %}
         <input type="text" id="{{ search_id }}" name="{{ search_name }}" value="{{ search_value }}"
             placeholder="{{ search_placeholder }}"
-            class="input input-bordered w-full pl-10 pr-10{% if inline_filters %} sm:pr-32{% endif %}"
+            class="input  w-full pl-10 pr-10{% if inline_filters %} sm:pr-32{% endif %}"
             hx-get="{{ search_url }}" hx-target="{{ search_target }}" hx-trigger="keyup changed delay:500ms"
             hx-replace-url="true" {% if filters %}hx-include=".search-filter-input" {% endif %}>
         <button type="button"

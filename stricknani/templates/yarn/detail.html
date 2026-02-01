@@ -16,11 +16,12 @@
     {{ _('Edit') }}
 </a>
 
-<div class="dropdown dropdown-end">
+<div class="dropdown dropdown-end dropdown-bottom">
     <div tabindex="0" role="button" class="btn btn-ghost btn-circle" aria-label="{{ _('More actions') }}">
         <span class="mdi mdi-dots-vertical text-xl"></span>
     </div>
-    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
+    <ul tabindex="0"
+        class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
         <li data-favorite-toggle>
             {% with yarn_id=yarn.id, is_favorite=is_favorite, variant='detail', extra_classes='flex justify-start gap-2'
             %}

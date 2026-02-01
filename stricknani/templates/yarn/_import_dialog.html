@@ -6,14 +6,14 @@
     </div>
 
     <div id="tab-url" class="import-tab-content">
-        <div class="form-control">
-            <label class="label">
-                <span class="label-text">{{ _('Yarn/Pattern URL') }}</span>
+        <div class="mb-4">
+            <label class="block mb-1">
+                <span class="text-sm font-medium">{{ _('Yarn/Pattern URL') }}</span>
             </label>
             <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
-                value="{{ yarn.link if yarn and yarn.link else '' }}" class="input input-bordered" />
-            <label class="label">
-                <span class="label-text-alt">{{ _('Enter the URL to extract yarn information from') }}</span>
+                value="{{ yarn.link if yarn and yarn.link else '' }}" class="input " />
+            <label class="block mb-1">
+                <span class="text-xs opacity-70">{{ _('Enter the URL to extract yarn information from') }}</span>
             </label>
         </div>
     </div>

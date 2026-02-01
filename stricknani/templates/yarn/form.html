@@ -12,9 +12,23 @@
 {% set back_url = '/yarn/' + yarn.id|string if yarn else '/yarn' %}
 {% set back_label = _('Back to yarns') %}
 {% set page_actions %}
-{{ buttons.secondary(_('Import'), icon='mdi-download',
-attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='hidden md:inline-flex') }}
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"') }}
+{% if not yarn %}
+<div class="dropdown dropdown-end dropdown-bottom hidden md:inline-flex">
+    <button type="button" class="btn btn-square btn-ghost" aria-label="{{ _('More options') }}">
+        <span class="mdi mdi-dots-vertical text-xl"></span>
+    </button>
+    <ul tabindex="0"
+        class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
+        <li>
+            <button type="button" onclick="document.getElementById('importDialog').showModal()">
+                <span class="mdi mdi-download"></span>
+                {{ _('Import') }}
+            </button>
+        </li>
+    </ul>
+</div>
+{% endif %}
 {% endset %}
 
 {% block form_before %}
@@ -70,12 +84,12 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 sm:p-6">
                 <div class="space-y-6">
                     <div>
-                        <label for="name" class="label-text text-sm font-medium mb-1 inline-flex items-center gap-2">
+                        <label for="name" class=" text-sm font-medium mb-1 inline-flex items-center gap-2">
                             <span class="mdi mdi-sheep text-base-content/70"></span>
                             {{ _('Name') }}
                         </label>
                         <input type="text" id="name" name="name" required
-                            value="{{ yarn.name if yarn and yarn.name else '' }}" class="input input-bordered w-full">
+                            value="{{ yarn.name if yarn and yarn.name else '' }}" class="input  w-full">
                     </div>
 
                     <!-- Mobile Details Card -->
@@ -88,69 +102,69 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 
                         <div class="grid grid-cols-2 gap-x-4 gap-y-3">
                             <div class="col-span-2">
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Brand')
+                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Brand')
                                     }}</label>
                                 <input type="text" name="brand" value="{{ yarn.brand if yarn and yarn.brand else '' }}"
-                                    class="input input-bordered input-sm w-full mt-1">
+                                    class="input  input-sm w-full mt-1">
                             </div>
 
                             <div>
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
+                                <label class=" text-xs font-bold uppercase text-base-content/50">{{
                                     _('Colorway') }}</label>
                                 <input type="text" name="colorway"
                                     value="{{ yarn.colorway if yarn and yarn.colorway else '' }}"
-                                    class="input input-bordered input-sm w-full mt-1">
+                                    class="input  input-sm w-full mt-1">
                             </div>
                             <div>
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Dye
+                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Dye
                                     Lot') }}</label>
                                 <input type="text" name="dye_lot"
                                     value="{{ yarn.dye_lot if yarn and yarn.dye_lot else '' }}"
-                                    class="input input-bordered input-sm w-full mt-1">
+                                    class="input  input-sm w-full mt-1">
                             </div>
 
                             <div class="col-span-2">
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Fiber
+                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Fiber
                                     content') }}</label>
                                 <input type="text" name="fiber_content"
                                     value="{{ yarn.fiber_content if yarn and yarn.fiber_content else '' }}"
-                                    class="input input-bordered input-sm w-full mt-1">
+                                    class="input  input-sm w-full mt-1">
                             </div>
 
                             <div>
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Weight
+                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Weight
                                     (g)') }}</label>
                                 <input type="number" name="weight_grams" min="0"
                                     value="{{ yarn.weight_grams if yarn and yarn.weight_grams is not none else '' }}"
-                                    class="input input-bordered input-sm w-full mt-1">
+                                    class="input  input-sm w-full mt-1">
                             </div>
                             <div>
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Length
+                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Length
                                     (m)') }}</label>
                                 <input type="number" name="length_meters" min="0"
                                     value="{{ yarn.length_meters if yarn and yarn.length_meters is not none else '' }}"
-                                    class="input input-bordered input-sm w-full mt-1">
+                                    class="input  input-sm w-full mt-1">
                             </div>
 
                             <div class="col-span-2">
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Weight
+                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Weight
                                     category') }}</label>
                                 <input type="text" name="weight_category" placeholder="{{ _('e.g. Fingering, DK...') }}"
                                     value="{{ yarn.weight_category if yarn and yarn.weight_category else '' }}"
-                                    class="input input-bordered input-sm w-full mt-1">
+                                    class="input  input-sm w-full mt-1">
                             </div>
 
                             <div class="col-span-2">
-                                <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
+                                <label class=" text-xs font-bold uppercase text-base-content/50">{{
                                     _('Recommended Needles') }}</label>
                                 <input type="text" name="recommended_needles"
                                     value="{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}"
-                                    class="input input-bordered input-sm w-full mt-1" placeholder="4.0mm">
+                                    class="input  input-sm w-full mt-1" placeholder="4.0mm">
                             </div>
 
                             <div class="col-span-2">
                                 <div class="flex items-center justify-between mb-1">
-                                    <label class="label-text text-xs font-bold uppercase text-base-content/50">{{
+                                    <label class=" text-xs font-bold uppercase text-base-content/50">{{
                                         _('Source
                                         Link') }}</label>
                                     <button type="button" id="reimport-btn-mobile"
@@ -161,12 +175,12 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                                     </button>
                                 </div>
                                 <input type="url" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
-                                    class="input input-bordered input-sm w-full" placeholder="https://..."
+                                    class="input  input-sm w-full" placeholder="https://..."
                                     oninput="syncLinkInputs(this)">
                                 <label class="label cursor-pointer justify-start gap-2 mt-2">
                                     <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
                                         checked>
-                                    <span class="label-text text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                                    <span class=" text-xs">{{ _('Archive on Wayback Machine') }}</span>
                                 </label>
                             </div>
                         </div>
@@ -175,25 +189,25 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label for="description"
-                                class="label-text text-sm font-medium inline-flex items-center gap-2">
+                                class=" text-sm font-medium inline-flex items-center gap-2">
                                 <span class="mdi mdi-text-box-outline text-base-content/70"></span>
                                 {{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
                                     }}</span>
                             </label>
                         </div>
                         <textarea id="description" name="description" rows="4"
-                            class="textarea textarea-bordered w-full">{{ yarn.description if yarn and yarn.description else '' }}</textarea>
+                            class="textarea  w-full">{{ yarn.description if yarn and yarn.description else '' }}</textarea>
                     </div>
 
                     <div>
                         <div class="flex items-center justify-between mb-1">
-                            <label for="notes" class="label-text text-sm font-medium inline-flex items-center gap-2">
+                            <label for="notes" class=" text-sm font-medium inline-flex items-center gap-2">
                                 <span class="mdi mdi-note-text-outline text-base-content/70"></span>
                                 {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
                             </label>
                         </div>
                         <textarea id="notes" name="notes" rows="4"
-                            class="textarea textarea-bordered w-full">{{ yarn.notes if yarn and yarn.notes else '' }}</textarea>
+                            class="textarea  w-full">{{ yarn.notes if yarn and yarn.notes else '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -261,32 +275,32 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 <div class="space-y-4">
                     <div>
                         <label for="brand"
-                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Brand') }}
                         </label>
                         <input type="text" id="brand" name="brand"
                             value="{{ yarn.brand if yarn and yarn.brand else '' }}"
-                            class="input input-bordered input-sm w-full">
+                            class="input  input-sm w-full">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label for="colorway"
-                                class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                                class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
                                 {{ _('Colorway') }}
                             </label>
                             <input type="text" id="colorway" name="colorway"
                                 value="{{ yarn.colorway if yarn and yarn.colorway else '' }}"
-                                class="input input-bordered input-sm w-full">
+                                class="input  input-sm w-full">
                         </div>
                         <div>
                             <label for="dye_lot"
-                                class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                                class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
                                 {{ _('Dye Lot') }}
                             </label>
                             <input type="text" id="dye_lot" name="dye_lot"
                                 value="{{ yarn.dye_lot if yarn and yarn.dye_lot else '' }}"
-                                class="input input-bordered input-sm w-full">
+                                class="input  input-sm w-full">
                         </div>
                     </div>
 
@@ -294,34 +308,34 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 
                     <div>
                         <label for="fiber_content"
-                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Fiber content') }}
                         </label>
                         <input type="text" id="fiber_content" name="fiber_content"
                             placeholder="{{ _('e.g. 80% Merino...') }}"
                             value="{{ yarn.fiber_content if yarn and yarn.fiber_content else '' }}"
-                            class="input input-bordered input-sm w-full">
+                            class="input  input-sm w-full">
                     </div>
 
                     <div>
                         <label for="weight_category"
-                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Weight category') }}
                         </label>
                         <input type="text" id="weight_category" name="weight_category"
                             placeholder="{{ _('e.g. Fingering, DK...') }}"
                             value="{{ yarn.weight_category if yarn and yarn.weight_category else '' }}"
-                            class="input input-bordered input-sm w-full">
+                            class="input  input-sm w-full">
                     </div>
 
                     <div>
                         <label for="recommended_needles"
-                            class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                            class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Recommended Needles') }}
                         </label>
                         <input type="text" id="recommended_needles" name="recommended_needles"
                             value="{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}"
-                            class="input input-bordered input-sm w-full" placeholder="4.0mm">
+                            class="input  input-sm w-full" placeholder="4.0mm">
                     </div>
 
                     <div class="divider my-2"></div>
@@ -329,21 +343,21 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label for="weight_grams"
-                                class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                                class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
                                 {{ _('Weight (g)') }}
                             </label>
                             <input type="number" id="weight_grams" name="weight_grams" min="0"
                                 value="{{ yarn.weight_grams if yarn and yarn.weight_grams is not none else '' }}"
-                                class="input input-bordered input-sm w-full">
+                                class="input  input-sm w-full">
                         </div>
                         <div>
                             <label for="length_meters"
-                                class="label-text text-xs font-bold uppercase text-base-content/50 block mb-1">
+                                class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
                                 {{ _('Length (m)') }}
                             </label>
                             <input type="number" id="length_meters" name="length_meters" min="0"
                                 value="{{ yarn.length_meters if yarn and yarn.length_meters is not none else '' }}"
-                                class="input input-bordered input-sm w-full">
+                                class="input  input-sm w-full">
                         </div>
                     </div>
 
@@ -351,7 +365,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 
                     <div>
                         <div class="flex items-center justify-between mb-1">
-                            <label for="link" class="label-text text-xs font-bold uppercase text-base-content/50">
+                            <label for="link" class=" text-xs font-bold uppercase text-base-content/50">
                                 {{ _('Source Link') }}
                             </label>
                             <button type="button" id="reimport-btn"
@@ -362,12 +376,12 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                             </button>
                         </div>
                         <input type="url" id="link" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
-                            class="input input-bordered input-sm w-full" placeholder="https://..."
+                            class="input  input-sm w-full" placeholder="https://..."
                             oninput="syncLinkInputs(this)">
                         <label class="label cursor-pointer justify-start gap-2 mt-2">
                             <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
                                 checked>
-                            <span class="label-text text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                            <span class=" text-xs">{{ _('Archive on Wayback Machine') }}</span>
                         </label>
                     </div>
                 </div>

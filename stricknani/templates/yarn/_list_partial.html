@@ -112,15 +112,6 @@
         {% endif %}
     </div>
 
-    {% if yarn.project_count > 0 %}
-    <div class="mt-3 flex flex-wrap gap-2 text-xs mb-4">
-        <span class="badge badge-success gap-1">
-            <span class="mdi mdi-folder-multiple-outline"></span>
-            {{ yarn.project_count }}
-        </span>
-    </div>
-    {% endif %}
-
     <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
     {% endif %}
     {% endcall %}

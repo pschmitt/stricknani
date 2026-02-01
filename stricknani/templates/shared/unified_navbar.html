@@ -27,14 +27,14 @@
 
                 {# Page Title - hidden on mobile when back button exists #}
                 <div class="dropdown dropdown-hover hidden md:block">
-                    <button tabindex="0" role="button"
+                    <button tabindex="0" role="button" popovertarget="title-menu-popover-1" style="anchor-name: --title-menu-1"
                         class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
                         <span class="truncate">{% if page_title %}{{ page_title }}{% else %}{{ _('Stricknani') }}{%
                             endif %}</span>
                         <span
                             class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity"></span>
                     </button>
-                    <ul tabindex="0"
+                    <ul tabindex="0" popover id="title-menu-popover-1" style="position-anchor: --title-menu-1"
                         class="dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
                         {% if current_user %}
                         <li>
@@ -81,14 +81,14 @@
 
                 {# Page Title with Navigation Dropdown #}
                 <div class="dropdown dropdown-hover">
-                    <button tabindex="0" role="button"
+                    <button tabindex="0" role="button" popovertarget="title-menu-popover-2" style="anchor-name: --title-menu-2"
                         class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
                         <span class="truncate">{% if page_title %}{{ page_title }}{% else %}{{ _('Stricknani') }}{%
                             endif %}</span>
                         <span
                             class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity"></span>
                     </button>
-                    <ul tabindex="0"
+                    <ul tabindex="0" popover id="title-menu-popover-2" style="position-anchor: --title-menu-2"
                         class="dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
                         {% if current_user %}
                         <li>
@@ -150,7 +150,7 @@
             <div class="flex items-center shrink-0">
                 {% if current_user %}
                 <div class="dropdown dropdown-end" data-user-menu>
-                    <button type="button" class="btn btn-ghost btn-circle avatar" data-user-menu-trigger tabindex="0">
+                    <button type="button" class="btn btn-ghost btn-circle avatar" data-user-menu-trigger>
                         {% if current_user_avatar_thumbnail %}
                         <div class="w-10 rounded-full">
                             <img src="{{ current_user_avatar_thumbnail }}"
@@ -187,9 +187,9 @@
                         </div>
                         <div class="space-y-4 border-b border-base-300 px-4 py-4">
                             <div class="space-y-2">
-                                <label class="label">
+                                <label class="block mb-1">
                                     <span
-                                        class="label-text text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
+                                        class="text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
                                         <span class="mdi mdi-translate"></span>
                                         {{ _('Language') }}
                                     </span>
@@ -216,9 +216,9 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <label class="label">
+                                <label class="block mb-1">
                                     <span
-                                        class="label-text text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
+                                        class="text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
                                         <span class="mdi mdi-theme-light-dark"></span>
                                         {{ _('Theme') }}
                                     </span>
@@ -247,12 +247,12 @@
                         <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
                     </button>
                     <div class="dropdown dropdown-end">
-                        <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1 px-2">
+                        <button type="button" class="btn btn-ghost btn-sm gap-1 px-2" popovertarget="lang-menu-popover-public" style="anchor-name: --lang-menu-public">
                             <span class="mdi mdi-translate text-lg"></span>
                             <span class="uppercase font-semibold text-xs">{{ current_language }}</span>
                             <span class="mdi mdi-chevron-down text-xs opacity-50"></span>
-                        </div>
-                        <ul tabindex="0"
+                        </button>
+                        <ul popover id="lang-menu-popover-public" style="position-anchor: --lang-menu-public"
                             class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
                             <li>
                                 <form action="/auth/set-language" method="post" class="block p-0">

@@ -36,22 +36,22 @@
             <!-- Login Form -->
             <div id="login-form" class="space-y-6">
                 <form action="/auth/login" method="post" class="space-y-4">
-                    <div class="form-control">
-                        <label for="login-email" class="label">
-                            <span class="label-text">{{ _('Email') }}</span>
+                    <div class="mb-4">
+                        <label for="login-email" class="block mb-1">
+                            <span class="text-sm font-medium">{{ _('Email') }}</span>
                         </label>
                         <input type="email" id="login-email" name="email" required autocomplete="username"
                             aria-invalid="{{ 'true' if login_error else 'false' }}"
-                            class="input input-bordered w-full {{ 'input-error' if login_error else '' }}"
+                            class="input  w-full {{ 'input-error' if login_error else '' }}"
                             placeholder="your@email.com" value="{{ login_email|default('') }}">
                     </div>
-                    <div class="form-control">
-                        <label for="login-password" class="label">
-                            <span class="label-text">{{ _('Password') }}</span>
+                    <div class="mb-4">
+                        <label for="login-password" class="block mb-1">
+                            <span class="text-sm font-medium">{{ _('Password') }}</span>
                         </label>
                         <input type="password" id="login-password" name="password" required
                             autocomplete="current-password" aria-invalid="{{ 'true' if login_error else 'false' }}"
-                            class="input input-bordered w-full {{ 'input-error' if login_error else '' }}"
+                            class="input  w-full {{ 'input-error' if login_error else '' }}"
                             placeholder="••••••••">
                     </div>
                     {{ buttons.primary(_('Login'), type='submit', icon='mdi-login', class='w-full text-lg') }}
@@ -74,21 +74,21 @@
                     {{ _('Sign Up') }}
                 </h3>
                 <form action="/auth/signup" method="post" class="space-y-4">
-                    <div class="form-control">
-                        <label for="signup-email" class="label">
-                            <span class="label-text">{{ _('Email') }}</span>
+                    <div class="mb-4">
+                        <label for="signup-email" class="block mb-1">
+                            <span class="text-sm font-medium">{{ _('Email') }}</span>
                         </label>
-                        <input type="email" id="signup-email" name="email" required class="input input-bordered w-full"
+                        <input type="email" id="signup-email" name="email" required class="input  w-full"
                             placeholder="your@email.com">
                     </div>
-                    <div class="form-control">
-                        <label for="signup-password" class="label">
-                            <span class="label-text">{{ _('Password') }}</span>
+                    <div class="mb-4">
+                        <label for="signup-password" class="block mb-1">
+                            <span class="text-sm font-medium">{{ _('Password') }}</span>
                         </label>
                         <input type="password" id="signup-password" name="password" required minlength="8"
-                            class="input input-bordered w-full" placeholder="••••••••">
-                        <label class="label">
-                            <span class="label-text-alt">{{ _('At least 8 characters') }}</span>
+                            class="input  w-full" placeholder="••••••••">
+                        <label class="block mb-1">
+                            <span class="text-xs opacity-70">{{ _('At least 8 characters') }}</span>
                         </label>
                     </div>
                     {{ buttons.primary(_('Sign Up'), type='submit', icon='mdi-account-check', class='w-full text-lg
