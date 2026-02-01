@@ -192,47 +192,54 @@
                         </div>
                         <div class="space-y-4 border-b border-base-300 px-4 py-4">
                             <div class="space-y-2">
-                                <label class="block mb-1">
+                                <label class="block mb-1 px-1">
                                     <span
-                                        class="text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
-                                        <span class="mdi mdi-translate"></span>
+                                        class="text-[10px] font-bold uppercase tracking-[0.1em] opacity-50 flex items-center gap-2">
+                                        <span class="mdi mdi-translate text-xs"></span>
                                         {{ _('Language') }}
                                     </span>
                                 </label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <form action="/auth/set-language" method="post" class="block">
+                                <div class="join w-full bg-base-200 p-1 rounded-xl">
+                                    <form action="/auth/set-language" method="post" class="flex-1">
                                         <input type="hidden" name="next"
                                             value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
                                         <input type="hidden" name="language" value="en">
                                         <button type="submit"
-                                            class="btn btn-sm w-full {% if current_language == 'en' %}btn-primary{% else %}btn-outline{% endif %}">
+                                            class="btn btn-sm w-full border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold {% if current_language == 'en' %}bg-base-100 shadow-sm text-primary{% else %}btn-ghost opacity-60 hover:opacity-100{% endif %}">
                                             🇬🇧 EN
                                         </button>
                                     </form>
-                                    <form action="/auth/set-language" method="post" class="block">
+                                    <form action="/auth/set-language" method="post" class="flex-1">
                                         <input type="hidden" name="next"
                                             value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
                                         <input type="hidden" name="language" value="de">
                                         <button type="submit"
-                                            class="btn btn-sm w-full {% if current_language == 'de' %}btn-primary{% else %}btn-outline{% endif %}">
+                                            class="btn btn-sm w-full border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold {% if current_language == 'de' %}bg-base-100 shadow-sm text-primary{% else %}btn-ghost opacity-60 hover:opacity-100{% endif %}">
                                             🇩🇪 DE
                                         </button>
                                     </form>
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <label class="block mb-1">
+                                <label class="block mb-1 px-1">
                                     <span
-                                        class="text-xs font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
-                                        <span class="mdi mdi-theme-light-dark"></span>
-                                        {{ _('Theme') }}
+                                        class="text-[10px] font-bold uppercase tracking-[0.1em] opacity-50 flex items-center gap-2">
+                                        <span class="mdi mdi-palette-swatch text-xs"></span>
+                                        {{ _('Appearance') }}
                                     </span>
                                 </label>
-                                <button type="button" onclick="toggleTheme()"
-                                    class="btn btn-outline w-full justify-between">
-                                    <span id="theme-label">{{ _('Dark') }}</span>
-                                    <span id="theme-icon" class="mdi mdi-weather-night text-lg"></span>
-                                </button>
+                                <div class="join w-full bg-base-200 p-1 rounded-xl">
+                                    <button type="button" id="theme-btn-light" onclick="setTheme('light')"
+                                        class="btn btn-sm flex-1 border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold gap-2">
+                                        <span class="mdi mdi-weather-sunny"></span>
+                                        {{ _('Light') }}
+                                    </button>
+                                    <button type="button" id="theme-btn-dark" onclick="setTheme('dark')"
+                                        class="btn btn-sm flex-1 border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold gap-2">
+                                        <span class="mdi mdi-weather-night"></span>
+                                        {{ _('Dark') }}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="space-y-2 px-4 py-4">
@@ -246,28 +253,48 @@
                     </div>
                 </div>
                 {% else %}
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="toggleTheme()" class="btn btn-ghost btn-circle"
+                <div class="flex items-center gap-1 sm:gap-2">
+                    <button type="button" onclick="toggleTheme()" class="btn btn-ghost btn-circle hover:bg-base-300 transition-all duration-300"
                         title="{{ _('Toggle theme') }}">
                         <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
                     </button>
-                    <div class="dropdown dropdown-end">
-                        <button tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1 px-2">
+                    
+                    <div class="join bg-base-300/50 p-0.5 rounded-full hidden sm:flex border border-base-300">
+                        <form action="/auth/set-language" method="post" class="join-item">
+                            <input type="hidden" name="next"
+                                value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                            <input type="hidden" name="language" value="en">
+                            <button type="submit"
+                                class="btn btn-xs rounded-full border-none h-7 min-h-7 px-3 text-[10px] font-black transition-all {% if current_language == 'en' %}bg-base-100 shadow-sm text-primary{% else %}btn-ghost text-base-content/40 hover:text-base-content{% endif %}">
+                                EN
+                            </button>
+                        </form>
+                        <form action="/auth/set-language" method="post" class="join-item">
+                            <input type="hidden" name="next"
+                                value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+                            <input type="hidden" name="language" value="de">
+                            <button type="submit"
+                                class="btn btn-xs rounded-full border-none h-7 min-h-7 px-3 text-[10px] font-black transition-all {% if current_language == 'de' %}bg-base-100 shadow-sm text-primary{% else %}btn-ghost text-base-content/40 hover:text-base-content{% endif %}">
+                                DE
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="dropdown dropdown-end sm:hidden">
+                        <button tabindex="0" role="button" class="btn btn-ghost btn-circle btn-sm">
                             <span class="mdi mdi-translate text-lg"></span>
-                            <span class="uppercase font-semibold text-xs">{{ current_language }}</span>
-                            <span class="mdi mdi-chevron-down text-xs opacity-50"></span>
                         </button>
                         <ul tabindex="0"
-                            class="dropdown-content navbar-dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
+                            class="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-48 border border-base-300 gap-1 mt-2 z-[90]">
                             <li>
                                 <form action="/auth/set-language" method="post" class="block p-0">
                                     <input type="hidden" name="next"
                                         value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
                                     <input type="hidden" name="language" value="en">
                                     <button type="submit"
-                                        class="flex w-full items-center gap-3 py-3 px-4 {% if current_language == 'en' %}bg-primary/10 text-primary font-medium{% endif %} hover:bg-base-200">
+                                        class="flex w-full items-center gap-3 py-3 px-4 rounded-lg {% if current_language == 'en' %}bg-primary/10 text-primary font-bold{% endif %} hover:bg-base-200">
                                         <span class="text-xl leading-none">🇬🇧</span>
-                                        <span class="text-base">{{ _('English') }}</span>
+                                        <span class="text-sm">{{ _('English') }}</span>
                                         {% if current_language == 'en' %}
                                         <span class="mdi mdi-check ml-auto text-primary"></span>
                                         {% endif %}
@@ -280,9 +307,9 @@
                                         value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
                                     <input type="hidden" name="language" value="de">
                                     <button type="submit"
-                                        class="flex w-full items-center gap-3 py-3 px-4 {% if current_language == 'de' %}bg-primary/10 text-primary font-medium{% endif %} hover:bg-base-200">
+                                        class="flex w-full items-center gap-3 py-3 px-4 rounded-lg {% if current_language == 'de' %}bg-primary/10 text-primary font-bold{% endif %} hover:bg-base-200">
                                         <span class="text-xl leading-none">🇩🇪</span>
-                                        <span class="text-base">{{ _('German') }}</span>
+                                        <span class="text-sm">{{ _('German') }}</span>
                                         {% if current_language == 'de' %}
                                         <span class="mdi mdi-check ml-auto text-primary"></span>
                                         {% endif %}
@@ -291,9 +318,10 @@
                             </li>
                         </ul>
                     </div>
-                    <a href="/login" class="btn btn-ghost">
-                        <span class="mdi mdi-login"></span>
-                        {{ _('Login') }}
+                    
+                    <a href="/login" class="btn btn-ghost btn-sm sm:btn-md gap-2">
+                        <span class="mdi mdi-login text-lg"></span>
+                        <span class="hidden sm:inline">{{ _('Login') }}</span>
                     </a>
                 </div>
                 {% endif %}

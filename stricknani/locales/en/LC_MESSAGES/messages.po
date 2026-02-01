@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-01 18:49+0100\n"
+"POT-Creation-Date: 2026-02-01 19:11+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -18,25 +18,25 @@ msgstr ""
 "Generated-By: Babel 2.17.0\n"
 
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
-#: stricknani/templates/base.html:337
+#: stricknani/templates/base.html:418
 #: stricknani/templates/shared/unified_navbar.html:5
 #: stricknani/templates/yarn/list.html:5
 msgid "Stricknani"
 msgstr ""
 
-#: stricknani/templates/base.html:337
+#: stricknani/templates/base.html:418
 msgid "GPL-3.0-only"
 msgstr ""
 
-#: stricknani/templates/base.html:350
+#: stricknani/templates/base.html:431
 msgid "Crop Profile Picture"
 msgstr ""
 
 #: stricknani/templates/admin/users.html:65
 #: stricknani/templates/admin/users.html:87
 #: stricknani/templates/admin/users.html:125
-#: stricknani/templates/admin/users.html:143 stricknani/templates/base.html:355
-#: stricknani/templates/base.html:522
+#: stricknani/templates/admin/users.html:143 stricknani/templates/base.html:436
+#: stricknani/templates/base.html:603
 #: stricknani/templates/projects/_import_dialog.html:45
 #: stricknani/templates/projects/detail.html:724
 #: stricknani/templates/projects/form.html:2620
@@ -47,111 +47,110 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: stricknani/templates/base.html:356
+#: stricknani/templates/base.html:437
 msgid "Save & Upload"
 msgstr ""
 
-#: stricknani/templates/base.html:435 stricknani/templates/base.html:500
+#: stricknani/templates/base.html:516 stricknani/templates/base.html:581
 msgid "Failed to upload image"
 msgstr ""
 
-#: stricknani/templates/base.html:443
+#: stricknani/templates/base.html:524
 msgid "Uploading..."
 msgstr ""
 
-#: stricknani/templates/base.html:496
+#: stricknani/templates/base.html:577
 msgid "Profile picture updated successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:518
+#: stricknani/templates/base.html:599
 msgid "Confirm Action"
 msgstr ""
 
-#: stricknani/templates/base.html:519
+#: stricknani/templates/base.html:600
 #, fuzzy
 msgid "Are you sure you want to proceed?"
 msgstr "Are you sure you want to delete this yarn?"
 
-#: stricknani/templates/base.html:523
+#: stricknani/templates/base.html:604
 msgid "Confirm"
 msgstr ""
 
-#: stricknani/templates/base.html:582
+#: stricknani/templates/base.html:663
 msgid "Dismiss message"
 msgstr ""
 
-#: stricknani/templates/base.html:631 stricknani/templates/base.html:798
+#: stricknani/templates/base.html:712 stricknani/templates/base.html:898
 msgid "Something went wrong. Please try again"
 msgstr ""
 
-#: stricknani/templates/base.html:685
+#: stricknani/templates/base.html:766
 msgid "Project created successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:686
+#: stricknani/templates/base.html:767
 msgid "Project updated successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:687
+#: stricknani/templates/base.html:768
 #: stricknani/templates/projects/list.html:89
 msgid "Project deleted"
 msgstr "Project deleted"
 
-#: stricknani/templates/base.html:688
+#: stricknani/templates/base.html:769
 msgid "Yarn created successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:689
+#: stricknani/templates/base.html:770
 msgid "Yarn updated successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:690 stricknani/templates/yarn/list.html:74
+#: stricknani/templates/base.html:771 stricknani/templates/yarn/list.html:74
 msgid "Yarn deleted"
 msgstr "Yarn deleted"
 
-#: stricknani/templates/base.html:691
+#: stricknani/templates/base.html:772
 msgid "Profile updated successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:692
+#: stricknani/templates/base.html:773
 msgid "Category created"
 msgstr "Category created"
 
-#: stricknani/templates/base.html:693
+#: stricknani/templates/base.html:774
 msgid "Category updated"
 msgstr "Category updated"
 
-#: stricknani/templates/base.html:694
+#: stricknani/templates/base.html:775
 msgid "Category deleted"
 msgstr "Category deleted"
 
-#: stricknani/templates/base.html:777
-#: stricknani/templates/shared/unified_navbar.html:233
-msgid "Dark"
+#: stricknani/templates/base.html:862
+msgid "Dark Mode"
 msgstr ""
 
-#: stricknani/templates/base.html:777
-msgid "Light"
+#: stricknani/templates/base.html:862
+msgid "Light Mode"
 msgstr ""
 
-#: stricknani/templates/base.html:885
+#: stricknani/templates/base.html:985
 msgid "Gallery thumbnails"
 msgstr "Gallery thumbnails"
 
-#: stricknani/templates/base.html:886
+#: stricknani/templates/base.html:986
 msgid "Open image"
 msgstr "Open image"
 
-#: stricknani/templates/base.html:971
+#: stricknani/templates/base.html:1071
 msgid "Set as primary"
 msgstr ""
 
-#: stricknani/templates/base.html:1005
+#: stricknani/templates/base.html:1105
 #, fuzzy
 msgid "Delete image"
 msgstr "Delete Yarn"
 
-#: stricknani/templates/base.html:1036
+#: stricknani/templates/base.html:1136
 #, fuzzy
 msgid "Download image"
 msgstr "Open image"
@@ -400,7 +399,7 @@ msgstr ""
 
 #: stricknani/templates/auth/login.html:4
 #: stricknani/templates/auth/login.html:56
-#: stricknani/templates/shared/unified_navbar.html:296
+#: stricknani/templates/shared/unified_navbar.html:324
 msgid "Login"
 msgstr ""
 
@@ -1404,22 +1403,30 @@ msgid "Language"
 msgstr ""
 
 #: stricknani/templates/shared/unified_navbar.html:228
-msgid "Theme"
+msgid "Appearance"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:242
+#: stricknani/templates/shared/unified_navbar.html:235
+msgid "Light"
+msgstr ""
+
+#: stricknani/templates/shared/unified_navbar.html:240
+msgid "Dark"
+msgstr ""
+
+#: stricknani/templates/shared/unified_navbar.html:249
 msgid "Logout"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:251
+#: stricknani/templates/shared/unified_navbar.html:258
 msgid "Toggle theme"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:270
+#: stricknani/templates/shared/unified_navbar.html:297
 msgid "English"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:285
+#: stricknani/templates/shared/unified_navbar.html:312
 msgid "German"
 msgstr ""
 
@@ -1790,7 +1797,7 @@ msgstr "Open image"
 #~ msgstr "Control how Stricknani looks and feels for your account."
 
 #~ msgid "Theme"
-#~ msgstr "Theme"
+#~ msgstr ""
 
 #~ msgid "Choose theme"
 #~ msgstr "Choose theme"
@@ -1805,10 +1812,10 @@ msgstr "Open image"
 #~ "or dark mode."
 
 #~ msgid "Light"
-#~ msgstr "Light"
+#~ msgstr ""
 
 #~ msgid "Dark"
-#~ msgstr "Dark"
+#~ msgstr ""
 
 #~ msgid "System"
 #~ msgstr "System"

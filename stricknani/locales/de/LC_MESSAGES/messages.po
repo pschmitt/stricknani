@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-01 18:49+0100\n"
+"POT-Creation-Date: 2026-02-01 19:11+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -18,25 +18,25 @@ msgstr ""
 "Generated-By: Babel 2.17.0\n"
 
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
-#: stricknani/templates/base.html:337
+#: stricknani/templates/base.html:418
 #: stricknani/templates/shared/unified_navbar.html:5
 #: stricknani/templates/yarn/list.html:5
 msgid "Stricknani"
 msgstr "Stricknani"
 
-#: stricknani/templates/base.html:337
+#: stricknani/templates/base.html:418
 msgid "GPL-3.0-only"
 msgstr "GPL-3.0-only"
 
-#: stricknani/templates/base.html:350
+#: stricknani/templates/base.html:431
 msgid "Crop Profile Picture"
 msgstr "Profilbild zuschneiden"
 
 #: stricknani/templates/admin/users.html:65
 #: stricknani/templates/admin/users.html:87
 #: stricknani/templates/admin/users.html:125
-#: stricknani/templates/admin/users.html:143 stricknani/templates/base.html:355
-#: stricknani/templates/base.html:522
+#: stricknani/templates/admin/users.html:143 stricknani/templates/base.html:436
+#: stricknani/templates/base.html:603
 #: stricknani/templates/projects/_import_dialog.html:45
 #: stricknani/templates/projects/detail.html:724
 #: stricknani/templates/projects/form.html:2620
@@ -47,109 +47,108 @@ msgstr "Profilbild zuschneiden"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: stricknani/templates/base.html:356
+#: stricknani/templates/base.html:437
 msgid "Save & Upload"
 msgstr "Speichern & Hochladen"
 
-#: stricknani/templates/base.html:435 stricknani/templates/base.html:500
+#: stricknani/templates/base.html:516 stricknani/templates/base.html:581
 msgid "Failed to upload image"
 msgstr "Bild konnte nicht hochgeladen werden"
 
-#: stricknani/templates/base.html:443
+#: stricknani/templates/base.html:524
 msgid "Uploading..."
 msgstr "Wird hochgeladen..."
 
-#: stricknani/templates/base.html:496
+#: stricknani/templates/base.html:577
 msgid "Profile picture updated successfully"
 msgstr "Profilbild erfolgreich aktualisiert"
 
-#: stricknani/templates/base.html:518
+#: stricknani/templates/base.html:599
 msgid "Confirm Action"
 msgstr "Aktion bestätigen"
 
-#: stricknani/templates/base.html:519
+#: stricknani/templates/base.html:600
 msgid "Are you sure you want to proceed?"
 msgstr "Bist du sicher, dass du fortfahren möchtest?"
 
-#: stricknani/templates/base.html:523
+#: stricknani/templates/base.html:604
 msgid "Confirm"
 msgstr "Bestätigen"
 
-#: stricknani/templates/base.html:582
+#: stricknani/templates/base.html:663
 msgid "Dismiss message"
 msgstr "Nachricht schließen"
 
-#: stricknani/templates/base.html:631 stricknani/templates/base.html:798
+#: stricknani/templates/base.html:712 stricknani/templates/base.html:898
 msgid "Something went wrong. Please try again"
 msgstr "Etwas ist schiefgelaufen. Bitte versuche es erneut"
 
-#: stricknani/templates/base.html:685
+#: stricknani/templates/base.html:766
 msgid "Project created successfully"
 msgstr "Projekt erfolgreich erstellt"
 
-#: stricknani/templates/base.html:686
+#: stricknani/templates/base.html:767
 msgid "Project updated successfully"
 msgstr "Projekt erfolgreich aktualisiert"
 
-#: stricknani/templates/base.html:687
+#: stricknani/templates/base.html:768
 #: stricknani/templates/projects/list.html:89
 msgid "Project deleted"
 msgstr "Projekt gelöscht"
 
-#: stricknani/templates/base.html:688
+#: stricknani/templates/base.html:769
 msgid "Yarn created successfully"
 msgstr "Garn erfolgreich erstellt"
 
-#: stricknani/templates/base.html:689
+#: stricknani/templates/base.html:770
 msgid "Yarn updated successfully"
 msgstr "Garn erfolgreich aktualisiert"
 
-#: stricknani/templates/base.html:690 stricknani/templates/yarn/list.html:74
+#: stricknani/templates/base.html:771 stricknani/templates/yarn/list.html:74
 msgid "Yarn deleted"
 msgstr "Garn gelöscht"
 
-#: stricknani/templates/base.html:691
+#: stricknani/templates/base.html:772
 msgid "Profile updated successfully"
 msgstr "Profil erfolgreich aktualisiert"
 
-#: stricknani/templates/base.html:692
+#: stricknani/templates/base.html:773
 msgid "Category created"
 msgstr "Kategorie erstellt"
 
-#: stricknani/templates/base.html:693
+#: stricknani/templates/base.html:774
 msgid "Category updated"
 msgstr "Kategorie aktualisiert"
 
-#: stricknani/templates/base.html:694
+#: stricknani/templates/base.html:775
 msgid "Category deleted"
 msgstr "Kategorie gelöscht"
 
-#: stricknani/templates/base.html:777
-#: stricknani/templates/shared/unified_navbar.html:233
-msgid "Dark"
-msgstr "Dunkel"
+#: stricknani/templates/base.html:862
+msgid "Dark Mode"
+msgstr "Dunkler Modus"
 
-#: stricknani/templates/base.html:777
-msgid "Light"
-msgstr "Hell"
+#: stricknani/templates/base.html:862
+msgid "Light Mode"
+msgstr "Heller Modus"
 
-#: stricknani/templates/base.html:885
+#: stricknani/templates/base.html:985
 msgid "Gallery thumbnails"
 msgstr "Galerie-Miniaturen"
 
-#: stricknani/templates/base.html:886
+#: stricknani/templates/base.html:986
 msgid "Open image"
 msgstr "Bild öffnen"
 
-#: stricknani/templates/base.html:971
+#: stricknani/templates/base.html:1071
 msgid "Set as primary"
 msgstr "Als Titelbild festlegen"
 
-#: stricknani/templates/base.html:1005
+#: stricknani/templates/base.html:1105
 msgid "Delete image"
 msgstr "Bild löschen"
 
-#: stricknani/templates/base.html:1036
+#: stricknani/templates/base.html:1136
 msgid "Download image"
 msgstr "Bild herunterladen"
 
@@ -388,7 +387,7 @@ msgstr "E-Mail bereits registriert"
 
 #: stricknani/templates/auth/login.html:4
 #: stricknani/templates/auth/login.html:56
-#: stricknani/templates/shared/unified_navbar.html:296
+#: stricknani/templates/shared/unified_navbar.html:324
 msgid "Login"
 msgstr "Anmelden"
 
@@ -1383,22 +1382,30 @@ msgid "Language"
 msgstr "Sprache"
 
 #: stricknani/templates/shared/unified_navbar.html:228
-msgid "Theme"
-msgstr "Design"
+msgid "Appearance"
+msgstr "Erscheinungsbild"
 
-#: stricknani/templates/shared/unified_navbar.html:242
+#: stricknani/templates/shared/unified_navbar.html:235
+msgid "Light"
+msgstr "Hell"
+
+#: stricknani/templates/shared/unified_navbar.html:240
+msgid "Dark"
+msgstr "Dunkel"
+
+#: stricknani/templates/shared/unified_navbar.html:249
 msgid "Logout"
 msgstr "Abmelden"
 
-#: stricknani/templates/shared/unified_navbar.html:251
+#: stricknani/templates/shared/unified_navbar.html:258
 msgid "Toggle theme"
 msgstr "Design umschalten"
 
-#: stricknani/templates/shared/unified_navbar.html:270
+#: stricknani/templates/shared/unified_navbar.html:297
 msgid "English"
 msgstr "Englisch"
 
-#: stricknani/templates/shared/unified_navbar.html:285
+#: stricknani/templates/shared/unified_navbar.html:312
 msgid "German"
 msgstr "Deutsch"
 

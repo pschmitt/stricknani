@@ -827,25 +827,25 @@
                 
         });
 
-        // Theme toggle functionality
-        function toggleTheme() {
+        // Theme management functionality
+        function setTheme(newTheme) {
             const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme') || 'light';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
 
-            // Toggle dark class for Tailwind
             if (newTheme === 'dark') {
                 html.classList.add('dark');
             } else {
                 html.classList.remove('dark');
             }
 
-            console.log('Theme toggled to:', newTheme, 'HTML classes:', html.className);
-
             updateThemeUI(newTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
         }
 
         function updateThemeUI(theme) {
@@ -853,19 +853,38 @@
             const label = document.getElementById('theme-label');
             const icon = document.getElementById('theme-icon');
             const iconPublic = document.getElementById('theme-icon-public');
+            
+            // Update segmented control buttons if they exist
+            const lightBtn = document.getElementById('theme-btn-light');
+            const darkBtn = document.getElementById('theme-btn-dark');
 
             if (label) {
-                label.textContent = isDark ? '{{ _('Dark') }}' : '{{ _('Light') }}';
+                label.textContent = isDark ? '{{ _('Dark Mode') }}' : '{{ _('Light Mode') }}';
             }
 
             const iconClass = isDark ? 'mdi-weather-night' : 'mdi-weather-sunny';
+            const iconColor = isDark ? 'text-blue-400' : 'text-amber-500';
 
             if (icon) {
-                icon.className = `mdi ${iconClass} text-lg`;
+                icon.className = `mdi ${iconClass} text-xl transition-all duration-300 ${iconColor}`;
             }
 
             if (iconPublic) {
-                iconPublic.className = `mdi ${iconClass} text-xl`;
+                iconPublic.className = `mdi ${iconClass} text-xl transition-all duration-300 ${iconColor}`;
+            }
+
+            if (lightBtn && darkBtn) {
+                if (isDark) {
+                    darkBtn.classList.add('bg-base-100', 'shadow-sm', 'text-primary');
+                    darkBtn.classList.remove('btn-ghost', 'opacity-60');
+                    lightBtn.classList.remove('bg-base-100', 'shadow-sm', 'text-primary');
+                    lightBtn.classList.add('btn-ghost', 'opacity-60');
+                } else {
+                    lightBtn.classList.add('bg-base-100', 'shadow-sm', 'text-primary');
+                    lightBtn.classList.remove('btn-ghost', 'opacity-60');
+                    darkBtn.classList.remove('bg-base-100', 'shadow-sm', 'text-primary');
+                    darkBtn.classList.add('btn-ghost', 'opacity-60');
+                }
             }
         }
 
