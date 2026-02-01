@@ -31,6 +31,8 @@
           httptools
           jinja2
           markdown
+          nh3
+          openai
           pillow
           python-dotenv
           python-jose
@@ -40,8 +42,10 @@
           sqlalchemy
           trafilatura
           uvicorn
+          weasyprint
           uvloop
           watchfiles
+          weasyprint
           websockets
         ];
       in

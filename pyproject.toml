@@ -28,6 +28,8 @@ dependencies = [
     "rich>=13.9.4",
     "sentry-sdk[fastapi]>=2.20.0",
     "trafilatura>=1.12.0",
+    "openai>=1.57.0",
+    "weasyprint>=60.0",
 ]
 
 [project.optional-dependencies]
@@ -37,12 +39,6 @@ dev = [
     "ruff>=0.6.9",
     "mypy>=1.11.2",
     "types-markdown>=3.7.0.20240822",
-]
-ai = [
-    "openai>=1.57.0",
-]
-pdf = [
-    "weasyprint>=60.0",
 ]
 
 [project.scripts]
