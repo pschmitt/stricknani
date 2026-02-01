@@ -770,7 +770,7 @@
 
             toastContainer.replaceChildren();
             const toast = document.createElement("div");
-            toast.className = `rounded-lg px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 hover:translate-y-1 ${toastVariants[variant] || toastVariants.info
+            toast.className = `rounded-lg px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 hover:translate-y-1 cursor-pointer ${toastVariants[variant] || toastVariants.info
                 }`;
             toast.setAttribute("role", "status");
             toast.innerHTML = `
@@ -788,11 +788,12 @@
                 </div>
             `;
 
-            const closeButton = toast.querySelector("button");
-            closeButton?.addEventListener("click", () => {
+            const dismiss = () => {
                 toast.classList.add("opacity-0", "translate-y-2");
                 setTimeout(() => toast.remove(), 200);
-            });
+            };
+
+            toast.addEventListener("click", dismiss);
 
             toastContainer.appendChild(toast);
             requestAnimationFrame(() => {

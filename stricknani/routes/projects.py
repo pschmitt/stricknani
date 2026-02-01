@@ -1717,6 +1717,7 @@ async def edit_project_form(
             "yarns": yarn_options,
             "tag_suggestions": tag_suggestions,
             "is_ai_enhanced": project.is_ai_enhanced,
+            "has_openai_key": bool(config.OPENAI_API_KEY),
         },
     )
 

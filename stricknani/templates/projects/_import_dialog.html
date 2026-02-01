@@ -34,9 +34,12 @@
         <input type="hidden" name="type" value="url">
 
         {% if has_openai_key %}
-        <div class="flex items-center gap-2 px-1">
-            <input type="checkbox" name="use_ai" value="true" checked class="checkbox checkbox-xs checkbox-primary">
-            <span class="text-xs opacity-70">{{ _('Use AI to enhance data extraction') }}</span>
+        <div class="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/10">
+            <span class="mdi mdi-information-outline text-primary text-sm"></span>
+            <span class="text-[10px] uppercase font-bold tracking-wider text-primary/70">
+                {{ _('AI-powered extraction enabled') }}
+            </span>
+            <input type="hidden" name="use_ai" value="true">
         </div>
         {% endif %}
     </div>
