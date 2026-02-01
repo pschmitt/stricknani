@@ -590,6 +590,128 @@
     </script>
     {% endif %}
 
+    {% if current_user %}
+    <dialog id="globalSearchModal" class="modal sm:modal-middle backdrop:bg-base-300/80 backdrop:backdrop-blur-sm">
+        <div class="modal-box max-w-2xl p-0 overflow-hidden shadow-2xl border border-base-300 bg-base-100 rounded-2xl">
+            <div class="relative flex items-center border-b border-base-300 px-4 py-2 bg-base-200/50">
+                <span class="mdi mdi-magnify text-2xl opacity-40 mr-3"></span>
+                <input type="text" id="globalSearchInput" 
+                    name="q"
+                    placeholder="{{ _('Search projects, yarns...') }}" 
+                    class="input border-none bg-transparent w-full focus:outline-none focus:ring-0 px-0 h-12 text-lg font-medium"
+                    hx-get="/search/global"
+                    hx-trigger="keyup changed delay:300ms"
+                    hx-target="#globalSearchResults"
+                    hx-indicator="#globalSearchIndicator"
+                    autocomplete="off">
+                <div id="globalSearchIndicator" class="htmx-indicator ml-2">
+                    <span class="loading loading-spinner loading-sm opacity-40"></span>
+                </div>
+                <div class="flex items-center gap-1 ml-auto shrink-0 pl-4">
+                    <kbd class="kbd kbd-sm bg-base-300 border-base-content/10 font-bold opacity-60">ESC</kbd>
+                </div>
+            </div>
+            <div id="globalSearchResults" class="max-h-[60vh] overflow-y-auto">
+                <div class="py-12 text-center text-base-content/30 italic">
+                    <span class="mdi mdi-keyboard-outline text-4xl block mb-2"></span>
+                    <p>{{ _('Start typing to search...') }}</p>
+                </div>
+            </div>
+            <div class="bg-base-200/50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest opacity-40 flex justify-between border-t border-base-300">
+                <span>{{ _('↑↓ to navigate') }}</span>
+                <span>{{ _('Enter to select') }}</span>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
+
+    <script>
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+K or Cmd+K
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const modal = document.getElementById('globalSearchModal');
+                const input = document.getElementById('globalSearchInput');
+                if (modal && !modal.open) {
+                    modal.showModal();
+                    setTimeout(() => input.focus(), 50);
+                } else if (modal && modal.open) {
+                    modal.close();
+                }
+            }
+        });
+
+        // 2-finger swipe down to open search on mobile
+        (function() {
+            let touchStartY = 0;
+            let isTwoFinger = false;
+
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 2) {
+                    isTwoFinger = true;
+                    touchStartY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+                } else {
+                    isTwoFinger = false;
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchend', function(e) {
+                if (isTwoFinger) {
+                    const touchEndY = (e.changedTouches[0].pageY + (e.changedTouches[1] ? e.changedTouches[1].pageY : e.changedTouches[0].pageY)) / 2;
+                    const swipeDistance = touchEndY - touchStartY;
+                    
+                    // If swiped down more than 100px
+                    if (swipeDistance > 100) {
+                        const modal = document.getElementById('globalSearchModal');
+                        const input = document.getElementById('globalSearchInput');
+                        if (modal && !modal.open) {
+                            modal.showModal();
+                            setTimeout(() => input.focus(), 50);
+                        }
+                    }
+                }
+                isTwoFinger = false;
+            }, { passive: true });
+        })();
+
+        // Focus search input when modal is opened via other means (if any)
+        document.getElementById('globalSearchModal')?.addEventListener('show', () => {
+            setTimeout(() => document.getElementById('globalSearchInput')?.focus(), 50);
+        });
+
+        // Navigation within search results using arrow keys
+        document.getElementById('globalSearchInput')?.addEventListener('keydown', function(e) {
+            if (['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) {
+                const results = document.querySelectorAll('#globalSearchResults a');
+                if (results.length === 0) return;
+
+                let activeIndex = Array.from(results).findIndex(el => el.classList.contains('bg-primary/10'));
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    results.forEach(el => el.classList.remove('bg-primary/10'));
+                    activeIndex = (activeIndex + 1) % results.length;
+                    results[activeIndex].classList.add('bg-primary/10');
+                    results[activeIndex].scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    results.forEach(el => el.classList.remove('bg-primary/10'));
+                    activeIndex = (activeIndex - 1 + results.length) % results.length;
+                    results[activeIndex].classList.add('bg-primary/10');
+                    results[activeIndex].scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'Enter') {
+                    if (activeIndex >= 0) {
+                        e.preventDefault();
+                        results[activeIndex].click();
+                    }
+                }
+            }
+        });
+    </script>
+    {% endif %}
+
     <div id="toastContainer"
         class="fixed inset-x-4 top-4 z-[10000] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-4 sm:w-80"
         aria-live="polite" aria-atomic="true"></div>
