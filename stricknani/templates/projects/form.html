@@ -2001,23 +2001,23 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         const container = document.getElementById('stepsContainer');
         const stepNumber = container.children.length + 1;
         const div = document.createElement('div');
-        div.className = 'step-item border rounded-lg p-2 md:p-4 bg-slate-100 border-slate-200 dark:bg-slate-900/60 dark:border-slate-700';
+        div.className = 'step-item border rounded-lg p-2 md:p-4 bg-base-200 border-base-300 dark:bg-base-300/50 dark:border-base-700';
         div.setAttribute('data-step-number', stepNumber);
         const inputId = `newStepImageInput${Date.now()}`;
         div.innerHTML = `
         <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span class="step-number">${stepNumber}</span></h4>
             <div class="flex flex-wrap gap-2">
-                <button type="button" onclick="moveStepUp(this)" class="inline-flex items-center gap-1 rounded bg-slate-200 px-2 py-1 text-sm text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" title="{{ _('Move Up') }}">
+                <button type="button" onclick="moveStepUp(this)" class="btn btn-xs btn-ghost gap-1" title="{{ _('Move Up') }}">
                     <span class="mdi mdi-arrow-up"></span><span class="hidden sm:inline">{{ _('Move Up') }}</span>
                 </button>
-                <button type="button" onclick="moveStepDown(this)" class="inline-flex items-center gap-1 rounded bg-slate-200 px-2 py-1 text-sm text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" title="{{ _('Move Down') }}">
+                <button type="button" onclick="moveStepDown(this)" class="btn btn-xs btn-ghost gap-1" title="{{ _('Move Down') }}">
                     <span class="mdi mdi-arrow-down"></span><span class="hidden sm:inline">{{ _('Move Down') }}</span>
                 </button>
-                <button type="button" onclick="saveStep(this)" class="inline-flex items-center gap-1 rounded bg-blue-600 px-2 py-1 text-sm text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500" title="{{ _('Save') }}">
+                <button type="button" onclick="saveStep(this)" class="btn btn-xs btn-primary gap-1" title="{{ _('Save') }}">
                     <span class="mdi mdi-content-save"></span><span class="hidden sm:inline">{{ _('Save') }}</span>
                 </button>
-                <button type="button" onclick="removeStep(this)" class="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 text-sm text-white hover:bg-red-700 dark:hover:bg-red-500" title="{{ _('Remove Step') }}">
+                <button type="button" onclick="removeStep(this)" class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
                     <span class="mdi mdi-delete"></span><span class="hidden sm:inline">{{ _('Remove') }}</span>
                 </button>
             </div>

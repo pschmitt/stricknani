@@ -87,8 +87,8 @@ def category_color_filter(category_name: str | None) -> str:
 
     base, dark = palette[hash_val % len(palette)]
     return (
-        f"bg-{base}-100 text-{base}-700 dark:bg-{dark}-900/30 "
-        f"dark:text-{dark}-300 border-{base}-200 dark:border-{dark}-800"
+        f"bg-{base}-200 text-{base}-950 border-{base}-300 "
+        f"dark:bg-{dark}-950/60 dark:text-{dark}-200 dark:border-{dark}-700"
     )
 
 
