@@ -23,7 +23,7 @@
         {% set inline_filters = filters|length == 1 %}
         <input type="text" id="{{ search_id }}" name="{{ search_name }}" value="{{ search_value }}"
             placeholder="{{ search_placeholder }}"
-            class="input w-full pl-10 pr-10{% if inline_filters %} sm:pr-32{% endif %} relative z-20 bg-base-100/90 dark:bg-base-200/70 border border-base-300/70 dark:border-base-100/30 focus:border-primary"
+            class="input w-full pl-10 pr-10{% if inline_filters %} sm:pr-32{% endif %} relative z-20 border border-primary/70 dark:border-primary/80 focus:border-primary"
             hx-get="{{ search_url }}" hx-target="{{ search_target }}" hx-trigger="keyup changed delay:500ms"
             hx-replace-url="true" {% if filters %}hx-include=".search-filter-input" {% endif %}>
         <button type="button"
