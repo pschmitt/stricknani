@@ -532,6 +532,66 @@ async def import_project_url(
         )
 
 
+async def export_project_pdf(
+    project_id: int,
+    output_path: str,
+    api_url: str,
+    email: str,
+    password: str,
+) -> None:
+    """Export a project to PDF."""
+    try:
+        from weasyprint import HTML
+    except ImportError:
+        error_console.print(
+            "[red]WeasyPrint not installed. "
+            "Install with 'pip install stricknani[pdf]'[/red]"
+        )
+        sys.exit(1)
+
+    async with httpx.AsyncClient() as client:
+        # Login
+        login_resp = await client.post(
+            f"{api_url}/auth/login",
+            data={"email": email, "password": password},
+            follow_redirects=False,
+        )
+
+        if (
+            login_resp.status_code not in (302, 303)
+            and "session_token" not in login_resp.cookies
+        ):
+            error_console.print("[red]Login failed.[/red]")
+            sys.exit(1)
+
+        cookies = login_resp.cookies
+
+        # Fetch Project Page
+        console.print(f"Fetching project {project_id} from {api_url}...")
+        resp = await client.get(f"{api_url}/projects/{project_id}", cookies=cookies)
+
+        if resp.status_code != 200:
+            error_console.print(
+                f"[red]Failed to fetch project: {resp.status_code}[/red]"
+            )
+            error_console.print(resp.text[:500])  # Show some context
+            sys.exit(1)
+
+        html_content = resp.text
+
+        # Generate PDF
+        console.print("Generating PDF...")
+        try:
+            HTML(string=html_content, base_url=api_url).write_pdf(output_path)
+            output_ok(
+                f"[green]Exported project[/green] to [cyan]{output_path}[/cyan]",
+                {"path": output_path},
+            )
+        except Exception as e:
+            error_console.print(f"[red]PDF generation failed: {e}[/red]")
+            sys.exit(1)
+
+
 async def delete_user(email: str) -> None:
     """Delete a user."""
     await init_db()
@@ -741,6 +801,24 @@ def main() -> None:
     project_delete_parser.add_argument(
         "--owner-email", help="Ensure the project belongs to this user"
     )
+    project_export_parser = project_subparsers.add_parser(
+        "export", help="Export a project to PDF"
+    )
+    project_export_parser.add_argument(
+        "--id", type=int, required=True, help="Project ID"
+    )
+    project_export_parser.add_argument(
+        "-o", "--output", help="Output PDF path (default: project_ID.pdf)"
+    )
+    project_export_parser.add_argument(
+        "--url", default="http://localhost:7674", help="API URL"
+    )
+    project_export_parser.add_argument(
+        "--email", required=True, help="User email"
+    )
+    project_export_parser.add_argument(
+        "--password", help="User password (omit to prompt)"
+    )
 
     # Yarn management
     yarn_parser = subparsers.add_parser("yarn", help="Manage yarns")
@@ -839,6 +917,18 @@ def main() -> None:
             )
         elif args.project_command == "delete":
             asyncio.run(delete_project(args.id, args.owner_email))
+        elif args.project_command == "export":
+            password = args.password or prompt_password(confirm=False)
+            output = args.output or f"project_{args.id}.pdf"
+            asyncio.run(
+                export_project_pdf(
+                    args.id,
+                    output,
+                    args.url,
+                    args.email,
+                    password,
+                )
+            )
     elif args.command == "yarn":
         if args.yarn_command == "list":
             asyncio.run(list_yarns(args.owner_email))

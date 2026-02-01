@@ -28,6 +28,12 @@
             {% endwith %}
         </li>
         <li>
+            <button onclick="window.print()" class="hover:bg-primary/10">
+                <span class="mdi mdi-printer text-lg"></span>
+                {{ _('Print') }}
+            </button>
+        </li>
+        <li>
             <a href="/projects/{{ project.id }}/edit?import=1" class="hover:bg-primary/10">
                 <span class="mdi mdi-download text-lg"></span>
                 {{ _('Re-import') }}
@@ -45,6 +51,91 @@
 
 
 {% endset %}
+
+{% block head %}
+<style>
+    @media print {
+
+        /* Hide UI elements */
+        .navbar,
+        .footer,
+        .btn,
+        .dropdown,
+        .toast-container,
+        .mdi-arrow-left,
+        .mdi-dots-vertical,
+        nav,
+        header,
+        aside,
+        button,
+        input,
+        .no-print,
+        .step-photos-section,
+        #stitch-sample-photos {
+            display: none !important;
+        }
+
+        /* Reset background and text colors */
+        body {
+            background: white !important;
+            color: black !important;
+        }
+
+        /* Main layout linearization */
+        .grid {
+            display: block !important;
+        }
+
+        .col-span-2,
+        .lg\:col-span-3,
+        .lg\:col-span-2 {
+            width: 100% !important;
+        }
+
+        /* Force mobile details view, hide sidebar */
+        .lg\:hidden {
+            display: block !important;
+        }
+
+        .hidden.lg\:block {
+            display: none !important;
+        }
+
+        /* Gallery tweaks */
+        .pswp-gallery {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 1rem !important;
+        }
+
+        .pswp-gallery>div,
+        .pswp-gallery>a {
+            display: block !important;
+            aspect-ratio: auto !important;
+            height: auto !important;
+            break-inside: avoid;
+        }
+
+        .pswp-gallery img {
+            object-fit: contain !important;
+            height: auto !important;
+            max-height: 400px !important;
+            width: 100% !important;
+            border-radius: 4px !important;
+        }
+
+        /* Expand text */
+        .prose {
+            max-width: none !important;
+        }
+
+        /* Hide the "more images" overlay */
+        .absolute.inset-0.bg-slate-900\/60 {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block navbar %}
 {% include "shared/unified_navbar.html" %}
@@ -70,22 +161,20 @@
                 </div>
                 <div class="p-2 bg-base-200/50">
                     {% set gallery_count = project.title_images|length %}
-                    {% set gallery_preview = project.title_images[:3] %}
                     <div class="grid grid-cols-3 gap-2 pswp-gallery" id="project-gallery-{{ project.id }}"
                         data-pswp-gallery>
-                        {% for image in gallery_preview %}
+                        {% for image in project.title_images %}
                         <div
-                            class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200">
-                            <a href="{{ image.url }}"
-                                class="block h-full w-full{% if loop.last and gallery_count > 3 %} pointer-events-none{% endif %}"
+                            class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200 {% if loop.index > 3 %}hidden print:block{% endif %}">
+                            <a href="{{ image.url }}" class="block h-full w-full"
                                 data-pswp-width="{{ image.width or 1200 }}"
                                 data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}">
                                 <img src="{{ image.url }}" alt="{{ image.alt_text }}"
                                     class="h-full w-full object-cover cursor-zoom-in transition duration-300 hover:scale-105"
                                     loading="lazy">
                             </a>
-                            {% if loop.last and gallery_count > 3 %}
-                            <div class="absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
+                            {% if loop.index == 3 and gallery_count > 3 %}
+                            <div class="print:hidden absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
                                 data-pswp-open-index="2" role="button" tabindex="0" aria-label="{{ _('Open gallery') }}"
                                 onclick="window.openPhotoSwipeIndex?.(this)"
                                 onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openPhotoSwipeIndex?.(this); }">
@@ -93,10 +182,6 @@
                             </div>
                             {% endif %}
                         </div>
-                        {% endfor %}
-                        {% for image in project.title_images[3:] %}
-                        <a href="{{ image.url }}" class="hidden" data-pswp-width="{{ image.width or 1200 }}"
-                            data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}"></a>
                         {% endfor %}
                     </div>
                 </div>
