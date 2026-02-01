@@ -639,7 +639,11 @@ async def create_yarn(
     await db.commit()
     await db.refresh(yarn)
 
-    if yarn.link and _should_request_archive(archive_on_save):
+    if (
+        config.FEATURE_WAYBACK_ENABLED
+        and yarn.link
+        and _should_request_archive(archive_on_save)
+    ):
         asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
 
 
@@ -783,7 +787,11 @@ async def update_yarn(
     await db.commit()
     await db.refresh(yarn)
 
-    if yarn.link and _should_request_archive(archive_on_save):
+    if (
+        config.FEATURE_WAYBACK_ENABLED
+        and yarn.link
+        and _should_request_archive(archive_on_save)
+    ):
         asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
 
 
@@ -805,7 +813,7 @@ async def retry_yarn_archive(
     if yarn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    if yarn.link:
+    if config.FEATURE_WAYBACK_ENABLED and yarn.link:
         yarn.link_archive_failed = False
         yarn.link_archive_requested_at = datetime.now(UTC)
         await db.commit()

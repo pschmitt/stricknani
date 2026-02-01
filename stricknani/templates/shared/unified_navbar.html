@@ -26,15 +26,15 @@
                 {% endif %}
 
                 {# Page Title - hidden on mobile when back button exists #}
-                <div class="dropdown dropdown-hover hidden md:block">
-                    <button tabindex="0" role="button" popovertarget="title-menu-popover-1" style="anchor-name: --title-menu-1"
+                <div class="dropdown dropdown-end md:dropdown-start">
+                    <button tabindex="0" role="button"
                         class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
                         <span class="truncate">{% if page_title %}{{ page_title }}{% else %}{{ _('Stricknani') }}{%
                             endif %}</span>
                         <span
                             class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity"></span>
                     </button>
-                    <ul tabindex="0" popover id="title-menu-popover-1" style="position-anchor: --title-menu-1"
+                    <ul tabindex="0"
                         class="dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
                         {% if current_user %}
                         <li>
@@ -80,15 +80,15 @@
                 </div>
 
                 {# Page Title with Navigation Dropdown #}
-                <div class="dropdown dropdown-hover">
-                    <button tabindex="0" role="button" popovertarget="title-menu-popover-2" style="anchor-name: --title-menu-2"
+                <div class="dropdown dropdown-end md:dropdown-start">
+                    <button tabindex="0" role="button"
                         class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
                         <span class="truncate">{% if page_title %}{{ page_title }}{% else %}{{ _('Stricknani') }}{%
                             endif %}</span>
                         <span
                             class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity"></span>
                     </button>
-                    <ul tabindex="0" popover id="title-menu-popover-2" style="position-anchor: --title-menu-2"
+                    <ul tabindex="0"
                         class="dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
                         {% if current_user %}
                         <li>
@@ -149,8 +149,8 @@
             {# Right side: User menu or Login #}
             <div class="flex items-center shrink-0">
                 {% if current_user %}
-                <div class="dropdown dropdown-end" data-user-menu>
-                    <button type="button" class="btn btn-ghost btn-circle avatar" data-user-menu-trigger>
+                <div class="dropdown dropdown-end">
+                    <button tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
                         {% if current_user_avatar_thumbnail %}
                         <div class="w-10 rounded-full">
                             <img src="{{ current_user_avatar_thumbnail }}"
@@ -160,12 +160,13 @@
                         <span class="mdi mdi-account-circle text-3xl"></span>
                         {% endif %}
                     </button>
-                    <div class="dropdown-content menu bg-base-100 rounded-box z-[90] w-72 p-0 shadow-xl border border-base-300"
-                        data-user-menu-panel tabindex="0">
+                    <div tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[90] w-72 p-0 shadow-xl border border-base-300 mt-2 invisible opacity-0">
                         <div class="flex items-center gap-3 border-b border-base-300 px-4 py-3">
                             <div class="avatar">
-                                <div class="w-12 rounded-full cursor-pointer hover:ring-2 hover:ring-primary transition-all group relative"
-                                    onclick="document.getElementById('profile-image-input').click()">
+                                <button type="button"
+                                    class="w-12 rounded-full cursor-pointer hover:ring-2 hover:ring-primary transition-all group relative overflow-hidden"
+                                    onclick="document.getElementById('profile-image-input').click()"
+                                    aria-label="{{ _('Change profile picture') }}">
                                     {% if current_user_avatar_thumbnail %}
                                     <img src="{{ current_user_avatar_thumbnail }}"
                                         alt="{{ _('Profile picture for %(email)s') % {'email': current_user.email} }}" />
@@ -175,13 +176,13 @@
                                     </div>
                                     {% endif %}
                                     <div
-                                        class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                                        class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <span class="mdi mdi-camera text-white text-lg"></span>
                                     </div>
-                                </div>
+                                </button>
                             </div>
                             <div>
-                                <p class="text-sm font-semibold">{{ current_user.email }}</p>
+                                <p class="text-sm font-semibold truncate max-w-[12rem]">{{ current_user.email }}</p>
                                 <p class="text-xs opacity-60">{{ _('Signed in') }}</p>
                             </div>
                         </div>
@@ -247,13 +248,13 @@
                         <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
                     </button>
                     <div class="dropdown dropdown-end">
-                        <button type="button" class="btn btn-ghost btn-sm gap-1 px-2" popovertarget="lang-menu-popover-public" style="anchor-name: --lang-menu-public">
+                        <button tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1 px-2">
                             <span class="mdi mdi-translate text-lg"></span>
                             <span class="uppercase font-semibold text-xs">{{ current_language }}</span>
                             <span class="mdi mdi-chevron-down text-xs opacity-50"></span>
                         </button>
-                        <ul popover id="lang-menu-popover-public" style="position-anchor: --lang-menu-public"
-                            class="dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
+                        <ul tabindex="0"
+                            class="dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
                             <li>
                                 <form action="/auth/set-language" method="post" class="block p-0">
                                     <input type="hidden" name="next"

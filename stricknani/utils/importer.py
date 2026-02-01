@@ -148,7 +148,8 @@ class PatternImporter:
         )
 
         # Decode HTML entities in all string fields
-        return self._unescape_data(data)
+        from typing import cast
+        return cast(dict[str, Any], self._unescape_data(data))
 
     def _unescape_data(self, data: Any) -> Any:
         """Recursively unescape HTML entities in data."""

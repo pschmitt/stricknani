@@ -2,6 +2,7 @@
 
 import logging
 from datetime import UTC, datetime
+from typing import Any
 from urllib.parse import quote
 
 import httpx
@@ -67,7 +68,7 @@ async def _request_wayback_snapshot(url: str) -> str | None:
     return None
 
 
-async def store_wayback_snapshot(model_class: type, entity_id: int, url: str) -> None:
+async def store_wayback_snapshot(model_class: Any, entity_id: int, url: str) -> None:
     """Request and store a wayback snapshot for a given entity."""
     async with AsyncSessionLocal() as session:
         entity = await session.get(model_class, entity_id)

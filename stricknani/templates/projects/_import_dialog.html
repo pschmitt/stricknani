@@ -1,73 +1,70 @@
 {% import "macros/dialogs.html" as dialogs %}
-{% call dialogs.modal('importDialog', title=_('Import Pattern'), box_class='max-w-2xl') %}
-<form id="importForm" action="/projects/import" method="POST" enctype="multipart/form-data">
-    <div role="tablist" class="tabs tabs-boxed mb-4">
-        <a role="tab" class="tab tab-active">{{ _('From URL') }}</a>
-    </div>
-
-    <input type="hidden" name="type" id="importType" value="url">
-
-    <div id="tab-url" class="import-tab-content">
-        <div class="mb-4">
-            <label class="block mb-1">
-                <span class="text-sm font-medium">{{ _('Pattern URL') }}</span>
-            </label>
-            <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
-                value="{{ project.link if project and project.link else '' }}" class="input " />
-            <label class="block mb-1">
-                <span class="text-xs opacity-70">{{ _('Enter the URL of the knitting pattern') }}</span>
-            </label>
+{% call dialogs.modal('importDialog', title=_('Import Pattern'), box_class='max-w-xl') %}
+<form id="importForm" action="/projects/import" method="POST">
+    <div class="space-y-6 py-2">
+        <!-- Magic Header -->
+        <div class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl">
+                <span class="mdi mdi-auto-fix text-2xl"></span>
+            </div>
+            <div>
+                <h4 class="font-bold text-base">{{ _('Magic Import') }}</h4>
+                <p class="text-xs opacity-70 leading-relaxed">
+                    {{ _('Paste a URL from Ravelry, a blog, or any knitting site. We\'ll try to extract all the details for you.') }}
+                </p>
+            </div>
         </div>
+
+        <!-- URL Input -->
+        <div class="form-control w-full">
+            <label class="label pt-0">
+                <span class="label-text font-semibold">{{ _('Pattern URL') }}</span>
+            </label>
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/40 group-focus-within:text-primary transition-colors">
+                    <span class="mdi mdi-link-variant text-xl"></span>
+                </div>
+                <input type="url" id="importUrl" name="url" required
+                    placeholder="{{ _('e.g. https://www.ravelry.com/patterns/library/...') }}"
+                    value="{{ project.link if project and project.link else '' }}"
+                    class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 transition-all border-base-content/10 focus:border-primary" />
+            </div>
+        </div>
+
+        <input type="hidden" name="type" value="url">
+
+        {% if has_openai_key %}
+        <div class="flex items-center gap-2 px-1">
+            <input type="checkbox" name="use_ai" value="true" checked class="checkbox checkbox-xs checkbox-primary">
+            <span class="text-xs opacity-70">{{ _('Use AI to enhance data extraction') }}</span>
+        </div>
+        {% endif %}
     </div>
 
-    <div class="mb-4 mt-4 hidden">
-        <input type="checkbox" name="use_ai" value="true" {% if has_openai_key %}checked{% endif %}>
-    </div>
-
-    <div class="modal-action">
+    <div class="modal-action mt-8">
         {{ dialogs.dialog_cancel(_('Cancel'),
         attrs='onclick="document.getElementById(\'importDialog\').close()"') }}
-        {{ dialogs.dialog_primary(_('Import'), icon='mdi-download', type='submit') }}
+        {{ dialogs.dialog_primary(_('Import Pattern'), icon='mdi-auto-fix', type='submit', class='btn-wide') }}
     </div>
 </form>
-<div id="importLoading" class="hidden text-center py-8">
-    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent">
+
+<!-- Loading State -->
+<div id="importLoading" class="hidden text-center py-12 space-y-4">
+    <div class="relative inline-block">
+        <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+            <span class="mdi mdi-auto-fix text-primary text-xl animate-pulse"></span>
+        </div>
     </div>
-    <p class="mt-4 text-base font-medium text-slate-700 dark:text-slate-300">{{ _('Importing pattern...') }}</p>
-    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ _('This may take 10-30 seconds') }}</p>
+    <div class="space-y-1">
+        <p class="text-lg font-bold">{{ _('Working some magic...') }}</p>
+        <p class="text-sm opacity-60 max-w-xs mx-auto">
+            {{ _('We are analyzing the pattern and extracting details. This usually takes 10-20 seconds.') }}
+        </p>
+    </div>
 </div>
-{% endcall %}
 
 <script>
-    function switchTab(el, tabName) {
-        // Update tabs
-        document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('tab-active'));
-        el.classList.add('tab-active');
-
-        // Update content
-        document.querySelectorAll('.import-tab-content').forEach(c => c.classList.add('hidden'));
-        document.getElementById('tab-' + tabName).classList.remove('hidden');
-
-        // Update hidden input
-        document.getElementById('importType').value = tabName;
-    }
-
-    function handleFileSelect(input) {
-        if (input.files && input.files[0]) {
-            document.getElementById('dropZoneContent').classList.add('hidden');
-            document.getElementById('filePreview').classList.remove('hidden');
-            document.getElementById('fileName').textContent = input.files[0].name;
-        }
-    }
-
-    function clearFile(e) {
-        e.stopPropagation();
-        const input = document.getElementById('importFile');
-        input.value = '';
-        document.getElementById('dropZoneContent').classList.remove('hidden');
-        document.getElementById('filePreview').classList.add('hidden');
-    }
-
     // Handle form submission (list page only). The project form page
     // wires its own inline import handler.
     if (!document.getElementById('projectForm')) {
@@ -77,10 +74,9 @@
             const form = e.target;
             const formData = new FormData(form);
             const loading = document.getElementById('importLoading');
-            const formContent = form; // We might want to hide the form or just disable
 
-            // Simple UI toggle
-            form.style.display = 'none';
+            // Hide form and show loading
+            form.classList.add('hidden');
             loading.classList.remove('hidden');
 
             try {
@@ -91,66 +87,23 @@
 
                 if (response.ok) {
                     const data = await response.json();
-
                     // Store data for the new project form
                     sessionStorage.setItem('importedData', JSON.stringify(data));
-
                     // Redirect to new project page
                     window.location.href = '/projects/new';
                 } else {
                     const error = await response.json();
                     alert('Import failed: ' + (error.detail || 'Unknown error'));
-                    form.style.display = 'block';
+                    form.classList.remove('hidden');
                     loading.classList.add('hidden');
                 }
             } catch (err) {
                 console.error(err);
                 alert('Import failed: ' + err.message);
-                form.style.display = 'block';
+                form.classList.remove('hidden');
                 loading.classList.add('hidden');
             }
         });
     }
-
-    // Drag and drop support
-    const dropZone = document.getElementById('dropZone');
-    if (dropZone) {
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, highlight, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight(e) {
-            dropZone.classList.add('border-primary', 'bg-base-200');
-        }
-
-        function unhighlight(e) {
-            dropZone.classList.remove('border-primary', 'bg-base-200');
-        }
-
-        dropZone.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            document.getElementById('importFile').files = files;
-            handleFileSelect(document.getElementById('importFile'));
-
-            // Switch to file tab if not already
-            const fileTab = document.querySelector('[data-tab="file"]');
-            if (fileTab) switchTab(fileTab, 'file');
-        }
-    }
 </script>
+{% endcall %}

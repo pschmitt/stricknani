@@ -1,12 +1,13 @@
 """Tests for yarn import functionality."""
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 
 @pytest.mark.asyncio
-async def test_import_yarn_wolle_roedel(test_client) -> None:
+async def test_import_yarn_wolle_roedel(test_client: Any) -> None:
     """Test importing yarn from Wolle Roedel."""
     client, _, _, _, _ = test_client
 

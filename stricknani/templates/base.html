@@ -654,55 +654,56 @@
                     'category_deleted': '{{ _("Category deleted") }}',
                 };
 
-                const message = toastMessages[toastKey];
-                if (message) {
-                    window.showToast?.(message, 'success');
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('toast');
-                    window.history.replaceState({}, '', url.toString());
-                }
-            }
+                                const message = toastMessages[toastKey];
 
-            // DaisyUI handles dropdown automatically via focus/blur, no custom JS needed
-            // Just handle escape key for accessibility
-            const menuRoot = document.querySelector("[data-user-menu]");
-            if (menuRoot) {
-                const trigger = menuRoot.querySelector("[data-user-menu-trigger]");
-                const panel = menuRoot.querySelector("[data-user-menu-panel]");
+                                if (message) {
 
-                if (trigger && panel) {
-                    // Make dropdown work properly
-                    trigger.addEventListener("click", (e) => {
-                        e.stopPropagation();
-                        // Toggle visibility by managing focus
-                        if (panel.classList.contains('hidden')) {
-                            panel.classList.remove('hidden');
-                            panel.focus();
-                        } else {
-                            panel.classList.add('hidden');
-                        }
-                    });
+                                    window.showToast?.(message, 'success');
 
-                    // Close on outside click
-                    document.addEventListener("click", (event) => {
-                        if (!menuRoot.contains(event.target)) {
-                            panel.classList.add('hidden');
-                        }
-                    });
+                                    const url = new URL(window.location.href);
 
-                    // Close on escape
-                    document.addEventListener("keydown", (event) => {
-                        if (event.key === "Escape") {
-                            panel.classList.add('hidden');
-                        }
-                    });
+                                    url.searchParams.delete('toast');
 
-                    // Start hidden
-                    panel.classList.add('hidden');
-                }
-            }
+                                    window.history.replaceState({}, '', url.toString());
 
-            // Mobile menu logic handled by DaisyUI drawer (CSS only)
+                                }
+
+                            }
+
+                
+
+                            const closeDropdowns = () => {
+                                document.querySelectorAll('.dropdown').forEach(d => {
+                                    d.blur();
+                                });
+
+                                if (document.activeElement instanceof HTMLElement) {
+                                    const activeDropdown = document.activeElement.closest('.dropdown');
+                                    if (activeDropdown) {
+                                        document.activeElement.blur();
+                                    }
+                                }
+                            };
+
+                            // Close all daisyUI dropdowns on escape
+                            document.addEventListener('keydown', (e) => {
+                                if (e.key === 'Escape') {
+                                    closeDropdowns();
+                                }
+                            });
+
+                            // Close dropdowns when clicking outside
+                            document.addEventListener('click', (e) => {
+                                if (!e.target.closest('.dropdown')) {
+                                    closeDropdowns();
+                                }
+                            });
+
+                
+
+                            // Mobile menu logic handled by DaisyUI drawer (CSS only)
+
+                
         });
 
         // Theme toggle functionality

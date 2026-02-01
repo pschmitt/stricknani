@@ -1,36 +1,61 @@
 {% import "macros/dialogs.html" as dialogs %}
-{% call dialogs.modal('importDialog', title=_('Import Yarn'), box_class='max-w-2xl') %}
+{% call dialogs.modal('importDialog', title=_('Import Yarn'), box_class='max-w-xl') %}
 <form id="importYarnForm" action="/yarn/import" method="POST">
-    <div role="tablist" class="tabs tabs-boxed mb-4">
-        <a role="tab" class="tab tab-active">{{ _('From URL') }}</a>
-    </div>
-
-    <div id="tab-url" class="import-tab-content">
-        <div class="mb-4">
-            <label class="block mb-1">
-                <span class="text-sm font-medium">{{ _('Yarn/Pattern URL') }}</span>
-            </label>
-            <input type="url" id="importUrl" name="url" placeholder="{{ _('e.g. https://...') }}"
-                value="{{ yarn.link if yarn and yarn.link else '' }}" class="input " />
-            <label class="block mb-1">
-                <span class="text-xs opacity-70">{{ _('Enter the URL to extract yarn information from') }}</span>
-            </label>
+    <div class="space-y-6 py-2">
+        <!-- Magic Header -->
+        <div class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl">
+                <span class="mdi mdi-auto-fix text-2xl"></span>
+            </div>
+            <div>
+                <h4 class="font-bold text-base">{{ _('Magic Import') }}</h4>
+                <p class="text-xs opacity-70 leading-relaxed">
+                    {{ _('Paste a URL from a yarn shop, manufacturer, or Ravelry. We\'ll try to extract all the details for you.') }}
+                </p>
+            </div>
         </div>
+
+        <!-- URL Input -->
+        <div class="form-control w-full">
+            <label class="label pt-0">
+                <span class="label-text font-semibold">{{ _('Yarn URL') }}</span>
+            </label>
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/40 group-focus-within:text-primary transition-colors">
+                    <span class="mdi mdi-link-variant text-xl"></span>
+                </div>
+                <input type="url" id="importUrl" name="url" required
+                    placeholder="{{ _('e.g. https://www.ravelry.com/yarns/library/...') }}"
+                    value="{{ yarn.link if yarn and yarn.link else '' }}"
+                    class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 transition-all border-base-content/10 focus:border-primary" />
+            </div>
+        </div>
+
+        <input type="hidden" name="type" value="url">
     </div>
 
-    <div class="modal-action">
+    <div class="modal-action mt-8">
         {{ dialogs.dialog_cancel(_('Cancel'),
         attrs='onclick="document.getElementById(\'importDialog\').close()"') }}
-        {{ dialogs.dialog_primary(_('Import'), icon='mdi-download', type='submit') }}
+        {{ dialogs.dialog_primary(_('Import Yarn'), icon='mdi-auto-fix', type='submit', class='btn-wide') }}
     </div>
 </form>
-<div id="importLoading" class="hidden text-center py-8">
-    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent">
+
+<!-- Loading State -->
+<div id="importLoading" class="hidden text-center py-12 space-y-4">
+    <div class="relative inline-block">
+        <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+            <span class="mdi mdi-auto-fix text-primary text-xl animate-pulse"></span>
+        </div>
     </div>
-    <p class="mt-4 text-base font-medium text-slate-700 dark:text-slate-300">{{ _('Importing yarn data...') }}</p>
-    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ _('This may take 10-30 seconds') }}</p>
+    <div class="space-y-1">
+        <p class="text-lg font-bold">{{ _('Working some magic...') }}</p>
+        <p class="text-sm opacity-60 max-w-xs mx-auto">
+            {{ _('We are analyzing the source and extracting yarn details. This usually takes 10-20 seconds.') }}
+        </p>
+    </div>
 </div>
-{% endcall %}
 
 <script>
     document.getElementById('importYarnForm').addEventListener('submit', async function (e) {
@@ -40,8 +65,8 @@
         const formData = new FormData(form);
         const loading = document.getElementById('importLoading');
 
-        // Simple UI toggle
-        form.style.display = 'none';
+        // Hide form and show loading
+        form.classList.add('hidden');
         loading.classList.remove('hidden');
 
         try {
@@ -58,7 +83,7 @@
                     window.populateYarnForm(data);
                     document.getElementById('importDialog').close();
                     // Reset UI for next time
-                    form.style.display = 'block';
+                    form.classList.remove('hidden');
                     loading.classList.add('hidden');
                 } else {
                     // Store data for the new yarn form
@@ -69,14 +94,15 @@
             } else {
                 const error = await response.json();
                 alert('Import failed: ' + (error.detail || 'Unknown error'));
-                form.style.display = 'block';
+                form.classList.remove('hidden');
                 loading.classList.add('hidden');
             }
         } catch (err) {
             console.error(err);
             alert('Import failed: ' + err.message);
-            form.style.display = 'block';
+            form.classList.remove('hidden');
             loading.classList.add('hidden');
         }
     });
 </script>
+{% endcall %}

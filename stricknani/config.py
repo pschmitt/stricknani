@@ -48,7 +48,10 @@ class Config:
 
     # Features
     FEATURE_SIGNUP_ENABLED: bool = (
-        os.getenv("FEATURE_SIGNUP_ENABLED", "true").lower() == "true"
+        os.getenv("FEATURE_SIGNUP_ENABLED", "false").lower() == "true"
+    )
+    FEATURE_WAYBACK_ENABLED: bool = (
+        os.getenv("FEATURE_WAYBACK_ENABLED", "false").lower() == "true"
     )
 
     # AI/OpenAI

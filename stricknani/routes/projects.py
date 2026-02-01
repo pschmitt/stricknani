@@ -1769,7 +1769,11 @@ async def create_project(
     await db.commit()
     await db.refresh(project)
 
-    if project.link and _should_request_archive(archive_on_save):
+    if (
+        config.FEATURE_WAYBACK_ENABLED
+        and project.link
+        and _should_request_archive(archive_on_save)
+    ):
         asyncio.create_task(store_wayback_snapshot(Project, project.id, project.link))
 
     if request.headers.get("accept") == "application/json":
@@ -1908,7 +1912,11 @@ async def update_project(
 
     await db.commit()
 
-    if project.link and _should_request_archive(archive_on_save):
+    if (
+        config.FEATURE_WAYBACK_ENABLED
+        and project.link
+        and _should_request_archive(archive_on_save)
+    ):
         asyncio.create_task(store_wayback_snapshot(Project, project.id, project.link))
 
     return RedirectResponse(
@@ -1933,7 +1941,7 @@ async def retry_project_archive(
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    if project.link:
+    if config.FEATURE_WAYBACK_ENABLED and project.link:
         project.link_archive_failed = False
         project.link_archive_requested_at = datetime.now(UTC)
         await db.commit()
