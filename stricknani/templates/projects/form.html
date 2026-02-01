@@ -589,6 +589,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
 {% block page_scripts %}
 <script>
+    let initialLink = document.getElementById('link')?.value.trim() || '';
+    let isImportPrompted = false;
+
     function autoResize(el) {
         el.style.height = 'auto';
         el.style.height = el.scrollHeight + 'px';
@@ -709,6 +712,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             try {
                 const data = JSON.parse(importedData);
                 console.log('[DEBUG] Loading imported data from storage:', data);
+
+                // Prevent re-prompting on save
+                isImportPrompted = true;
 
                 const setFieldValue = (id, value) => {
                     const el = document.getElementById(id);
@@ -2171,12 +2177,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             return null;
         }
     }
-</script>
-
-
-<script>
-    let initialLink = document.getElementById('link')?.value.trim() || '';
-    let isImportPrompted = false;
 
     function syncLinkInputs(el) {
         const value = el.value;
@@ -2185,6 +2185,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         });
         document.getElementById('reimport-btn')?.classList.toggle('hidden', !value);
         document.getElementById('reimport-btn-mobile')?.classList.toggle('hidden', !value);
+
+        // If the user manually changes the link, we might want to prompt for import again
+        if (value !== initialLink) {
+            isImportPrompted = false;
+        }
     }
 
     async function importFromUrl(url) {
@@ -2329,9 +2334,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         });
         document.getElementById('stepsData').value = JSON.stringify(steps);
     });
-</script>
 
-<script>
     document.addEventListener('DOMContentLoaded', function () {
         const importDialog = document.getElementById('importDialog');
         const importForm = document.getElementById('importForm');
@@ -2485,6 +2488,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
                     const data = await response.json();
                     console.log('Import successful, data:', data);
+
+                    // Prevent re-prompting on save
+                    isImportPrompted = true;
 
                     if (data.ai_fallback) {
                         window.showToast?.("{{ _('AI extraction failed - using basic parser') }}", 'warning');

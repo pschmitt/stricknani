@@ -418,6 +418,9 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 
 {% block page_scripts %}
 <script>
+    let initialLink = document.getElementById('link')?.value.trim() || '';
+    let isImportPrompted = false;
+
     const yarnId = parseInt("{{ yarn.id if yarn else 0 }}");
     const isEditing = "{{ 'true' if yarn else 'false' }}" === "true";
     const deleteErrorMessage = '{{ _("Failed to delete the photo. Please try again") }}';
@@ -564,9 +567,6 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         window.unsavedChanges?.setDirty(true);
     }
 
-    let initialLink = document.getElementById('link')?.value.trim() || '';
-    let isImportPrompted = false;
-
     function syncLinkInputs(el) {
         const value = el.value;
         document.querySelectorAll('input[name="link"]').forEach(input => {
@@ -574,6 +574,11 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         });
         document.getElementById('reimport-btn')?.classList.toggle('hidden', !value);
         document.getElementById('reimport-btn-mobile')?.classList.toggle('hidden', !value);
+
+        // If the user manually changes the link, we might want to prompt for import again
+        if (value !== initialLink) {
+            isImportPrompted = false;
+        }
     }
 
     async function importFromUrl(url) {
