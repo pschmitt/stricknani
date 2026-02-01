@@ -125,6 +125,7 @@
 
             const openSuggestions = () => {
                 suggestionContainer.classList.remove('hidden');
+                updateActiveItem(activeIndex >= 0 ? activeIndex : 0);
             };
 
             const updateClearButton = () => {
