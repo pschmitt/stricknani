@@ -172,15 +172,15 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                                 <input type="url" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
                                     class="input  input-sm w-full" placeholder="https://..."
                                     oninput="syncLinkInputs(this)">
-                                <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2">
-                                    <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
+                                <label id="wayback_mobile_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2 {% if not feature_wayback_enabled %}hidden{% endif %}">
+                                    <input type="checkbox" id="archive_on_save_mobile" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
                                         checked>
                                     <span class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Archive on Wayback Machine') }}</span>
                                 </label>
                             </div>
 
                             <div class="col-span-2 pt-2 border-t border-base-200">
-                                <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
+                                <label id="ai_enhanced_mobile_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
                                     <input type="checkbox" id="is_ai_enhanced_mobile_checkbox"
                                         class="checkbox checkbox-primary checkbox-sm"
                                         {% if yarn and yarn.is_ai_enhanced %}checked{% endif %}
@@ -398,15 +398,15 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                         <input type="url" id="link" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
                             class="input  input-sm w-full" placeholder="https://..."
                             oninput="syncLinkInputs(this)">
-                        <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2">
-                            <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
+                        <label id="wayback_sidebar_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2 {% if not feature_wayback_enabled %}hidden{% endif %}">
+                            <input type="checkbox" id="archive_on_save_sidebar" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
                                 checked>
                             <span class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Archive on Wayback Machine') }}</span>
                         </label>
                     </div>
 
                     <div class="pt-2 border-t border-base-200">
-                        <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
+                        <label id="ai_enhanced_sidebar_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
                             <input type="checkbox" id="is_ai_enhanced_checkbox"
                                 class="checkbox checkbox-primary checkbox-sm"
                                 {% if yarn and yarn.is_ai_enhanced %}checked{% endif %}
@@ -634,12 +634,58 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
     }
 
     function syncLinkInputs(el) {
-        const value = el.value;
+        const value = el.value.trim();
         document.querySelectorAll('input[name="link"]').forEach(input => {
             if (input !== el) input.value = value;
         });
         document.getElementById('reimport-btn')?.classList.toggle('hidden', !value);
         document.getElementById('reimport-btn-mobile')?.classList.toggle('hidden', !value);
+
+        // Enable/disable AI and Wayback checkboxes
+        const waybackCheckboxes = [
+            document.getElementById('archive_on_save_mobile'),
+            document.getElementById('archive_on_save_sidebar')
+        ];
+        const aiCheckboxes = [
+            document.getElementById('is_ai_enhanced_checkbox'),
+            document.getElementById('is_ai_enhanced_mobile_checkbox')
+        ];
+        const containers = [
+            document.getElementById('wayback_mobile_container'),
+            document.getElementById('wayback_sidebar_container'),
+            document.getElementById('ai_enhanced_mobile_container'),
+            document.getElementById('ai_enhanced_sidebar_container')
+        ];
+
+        const isEnabled = value.length > 0;
+        
+        [...waybackCheckboxes, ...aiCheckboxes].forEach(cb => {
+            if (cb) {
+                const wasDisabled = cb.disabled;
+                cb.disabled = !isEnabled;
+                if (!isEnabled) {
+                    cb.checked = false;
+                    // Trigger sync for AI hidden field if it's an AI checkbox
+                    if (aiCheckboxes.includes(cb)) {
+                        const hiddenInput = document.getElementById('is_ai_enhanced');
+                        if (hiddenInput) hiddenInput.value = '';
+                    }
+                } else if (wasDisabled && waybackCheckboxes.includes(cb)) {
+                    // Auto-set wayback to true when it becomes enabled
+                    cb.checked = true;
+                }
+            }
+        });
+
+        containers.forEach(container => {
+            if (container) {
+                if (isEnabled) {
+                    container.classList.remove('opacity-50', 'grayscale', 'pointer-events-none');
+                } else {
+                    container.classList.add('opacity-50', 'grayscale', 'pointer-events-none');
+                }
+            }
+        });
 
         // If the user manually changes the link, we might want to prompt for import again
         if (value !== initialLink) {
@@ -701,6 +747,10 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         }
 
         const urlParams = new URLSearchParams(window.location.search);
+        // Initialize checkbox states based on link presence
+        const linkEl = document.getElementById('link');
+        if (linkEl) syncLinkInputs(linkEl);
+
         if (urlParams.get('import') === '1') {
             const currentUrl = document.getElementById('link')?.value;
             if (currentUrl) {

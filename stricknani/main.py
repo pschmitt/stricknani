@@ -195,6 +195,7 @@ def render_template(
         "is_dev_instance",
         request.url.hostname in {"localhost", "127.0.0.1"} or config.DEBUG,
     )
+    context.setdefault("feature_wayback_enabled", config.FEATURE_WAYBACK_ENABLED)
 
     current_user = context.get("current_user")
     avatar_url = None
