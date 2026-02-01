@@ -426,6 +426,9 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
     window.populateYarnForm = function (data) {
         if (!data) return;
 
+        // Prevent re-prompting on save since we just imported
+        isImportPrompted = true;
+
         const fields = {
             'name': data.name,
             'brand': data.brand,

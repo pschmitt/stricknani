@@ -2230,6 +2230,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     }
 
     function populateProjectForm(data) {
+        // Prevent re-prompting on save since we just imported
+        isImportPrompted = true;
+
         // Map fields helper
         const setFieldValue = (id, value) => {
             const el = document.getElementById(id);
