@@ -8,9 +8,9 @@ setup:
   uv venv
   uv pip install -e ".[dev]"
 
-# Run dev server with reload
-run:
-  (sleep 2 && $BROWSER http://localhost:{{dev_port}} &)
+# Run dev server with reload. Use -b to skip opening the browser.
+run args='':
+  {{ if args == "-b" { "" } else { "(sleep 2 && ${BROWSER:-xdg-open} http://localhost:" + dev_port + " &)" } }}
   IMPORT_TRACE_ENABLED=1 uv run uvicorn stricknani.main:app --reload --host 0.0.0.0 --port {{dev_port}} --log-level debug --access-log
 
 # Run linters
