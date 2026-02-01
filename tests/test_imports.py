@@ -270,7 +270,7 @@ async def test_import_ai_fallback(test_client: "TestClientFixture") -> None:
     # Check that basic parser was used
     assert data["title"] == "Simple Beanie"
     assert data["ai_fallback"] is True
-    assert "AI extraction failed" in data["comment"]
+    assert "AI extraction failed" in data["description"]
 
 
 @pytest.mark.asyncio
@@ -305,9 +305,9 @@ async def test_import_text(test_client: "TestClientFixture") -> None:
     assert response.status_code == 200
     data = response.json()
 
-    # Without AI, text should just be in comment
-    assert data["comment"] is not None
-    assert len(data["comment"]) > 0
+    # Without AI, text should just be in description
+    assert data["description"] is not None
+    assert "Baby Blanket Pattern" in data["description"]
 
 
 @pytest.mark.skipif(not OPENAI_AVAILABLE, reason="OpenAI not installed")
@@ -401,9 +401,9 @@ async def test_import_text_file(test_client: "TestClientFixture") -> None:
     assert response.status_code == 200
     data = response.json()
 
-    # Without AI, content goes to comment
-    assert data["comment"] is not None
-    assert "Simple Pattern" in data["comment"]
+    # Without AI, content goes to description
+    assert data["description"] is not None
+    assert "Simple Pattern" in data["description"]
 
 
 @pytest.mark.asyncio

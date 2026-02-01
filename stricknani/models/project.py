@@ -131,7 +131,9 @@ class Image(Base):
     image_type: Mapped[str] = mapped_column(String(20))
     alt_text: Mapped[str] = mapped_column(String(255))
     is_title_image: Mapped[bool] = mapped_column(Boolean, default=False)
-    is_stitch_sample: Mapped[bool | None] = mapped_column(Boolean, default=False, nullable=True)
+    is_stitch_sample: Mapped[bool | None] = mapped_column(
+        Boolean, default=False, nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC)
     )

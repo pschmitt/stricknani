@@ -1,18 +1,16 @@
 """Yarn stash routes."""
 
+import asyncio
 import json
 import logging
 import re
 from collections.abc import Iterable, Sequence
+from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Annotated, Any
-from datetime import UTC, datetime
-from urllib.parse import urlparse
+from typing import Annotated
 
 import httpx
-
-
 from fastapi import (
     APIRouter,
     Depends,
@@ -58,8 +56,6 @@ from stricknani.utils.wayback import (
     _should_request_archive,
     store_wayback_snapshot,
 )
-import asyncio
-
 
 router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
 
@@ -145,8 +141,8 @@ async def _import_yarn_images_from_urls(
             if primary_url:
                 is_primary = image_url == primary_url
             else:
-                # If no primary_url is provided, the first imported photo becomes primary
-                # if there are no existing photos.
+                # If no primary_url is provided, the first imported photo becomes
+                # primary if there are no existing photos.
                 is_primary = imported == 0 and not yarn.photos
 
             photo = YarnImage(
@@ -375,6 +371,7 @@ async def import_yarn(
 ) -> JSONResponse:
     """Import yarn data from URL."""
     import logging
+
     from stricknani.utils.importer import (
         GarnstudioPatternImporter,
         PatternImporter,

@@ -9,7 +9,6 @@ from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Annotated, Any
-from urllib.parse import quote, urlparse
 
 import httpx
 from fastapi import (
@@ -30,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from stricknani.config import config
-from stricknani.database import AsyncSessionLocal, get_db
+from stricknani.database import get_db
 from stricknani.main import get_language, render_template, templates
 from stricknani.models import (
     Category,
@@ -54,13 +53,7 @@ from stricknani.utils.files import (
 )
 from stricknani.utils.i18n import install_i18n
 from stricknani.utils.import_trace import ImportTrace
-from stricknani.utils.markdown import render_markdown
-
-router: APIRouter = APIRouter(prefix="/projects", tags=["projects"])
-
 from stricknani.utils.importer import (
-    IMPORT_ALLOWED_IMAGE_EXTENSIONS,
-    IMPORT_ALLOWED_IMAGE_TYPES,
     IMPORT_IMAGE_HEADERS,
     IMPORT_IMAGE_MAX_BYTES,
     IMPORT_IMAGE_MAX_COUNT,
@@ -70,11 +63,13 @@ from stricknani.utils.importer import (
     _is_garnstudio_url,
     _is_valid_import_url,
 )
-
+from stricknani.utils.markdown import render_markdown
 from stricknani.utils.wayback import (
     _should_request_archive,
     store_wayback_snapshot,
 )
+
+router: APIRouter = APIRouter(prefix="/projects", tags=["projects"])
 
 
 def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
@@ -1013,7 +1008,14 @@ async def import_pattern(
                     if all(
                         v is None or v == [] or v == ""
                         for k, v in data.items()
-                        if k not in {"link", "image_urls", "description", "comment", "steps"}
+                        if k
+                        not in {
+                            "link",
+                            "image_urls",
+                            "description",
+                            "comment",
+                            "steps",
+                        }
                     ):
                         ai_failed = True
                         data = basic_data
@@ -1037,7 +1039,9 @@ async def import_pattern(
                         + "\n\n(Note: AI extraction failed, used basic parser)"
                     )
                 else:
-                    data["description"] = "(Note: AI extraction failed, used basic parser)"
+                    data["description"] = (
+                        "(Note: AI extraction failed, used basic parser)"
+                    )
             else:
                 # Even if not fully failed, if we used basic steps, tag the comment
                 if (
@@ -1497,13 +1501,17 @@ async def get_project(
         "gauge_stitches": project.gauge_stitches,
         "gauge_rows": project.gauge_rows,
         "description": project.description or "",
-        "description_html": render_markdown(project.description, f"project-{project.id}")
-        if project.description
-        else None,
+        "description_html": (
+            render_markdown(project.description, f"project-{project.id}")
+            if project.description
+            else None
+        ),
         "stitch_sample": project.stitch_sample or "",
-        "stitch_sample_html": render_markdown(project.stitch_sample, f"project-{project.id}")
-        if project.stitch_sample
-        else None,
+        "stitch_sample_html": (
+            render_markdown(project.stitch_sample, f"project-{project.id}")
+            if project.stitch_sample
+            else None
+        ),
         "comment": project.comment or "",
         "comment_html": render_markdown(project.comment, f"project-{project.id}")
         if project.comment
@@ -2274,7 +2282,10 @@ async def promote_project_image(
     """Promote an image to be the title image for a project."""
     # Ensure project exists and belongs to user
     result = await db.execute(
-        select(Project).where(Project.id == project_id, Project.owner_id == current_user.id)
+        select(Project).where(
+            Project.id == project_id,
+            Project.owner_id == current_user.id,
+        )
     )
     project = result.scalar_one_or_none()
     if not project:

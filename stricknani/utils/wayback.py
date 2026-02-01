@@ -1,12 +1,10 @@
 """Wayback Machine utilities."""
 
 import logging
-import asyncio
 from datetime import UTC, datetime
 from urllib.parse import quote
 
 import httpx
-from sqlalchemy import update
 
 from stricknani.database import AsyncSessionLocal
 from stricknani.utils.importer import _is_valid_import_url

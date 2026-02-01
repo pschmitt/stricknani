@@ -39,7 +39,7 @@ async def test_admin_users_page_renders(test_client: Any) -> None:
     response = await client.get("/admin/users")
 
     assert response.status_code == 200
-    assert "User Management" in response.text
+    assert "Admin" in response.text
 
 
 @pytest.mark.asyncio

@@ -137,7 +137,8 @@ class PatternImporter:
         }
 
         logger.info(
-            "Import extracted title=%s needles=%s yarn=%s category=%s steps=%s images=%s",
+            "Import extracted title=%s needles=%s yarn=%s category=%s "
+            "steps=%s images=%s",
             data.get("title"),
             data.get("needles"),
             data.get("yarn"),
@@ -182,14 +183,18 @@ class PatternImporter:
                     title = text
                     break
 
-        if title and any(x in title.lower() for x in ["yarn", "garn", "wolle", "ball"]):
+        if title and any(
+            x in title.lower() for x in ["yarn", "garn", "wolle", "ball"]
+        ):
             return self._clean_yarn_name(title)
         return title
 
     def _extract_needles(self, soup: BeautifulSoup) -> str | None:
         """Extract needle information."""
         # Try finding by label first
-        val = self._find_info_by_label(soup, ["nadelstärke", "needles", "needle size", "nadeln"])
+        val = self._find_info_by_label(
+            soup, ["nadelstärke", "needles", "needle size", "nadeln"]
+        )
         if val:
             return val
 
@@ -229,7 +234,9 @@ class PatternImporter:
         if not yarn_text:
             # Try to use product name if we are on a yarn product page
             title = self._extract_title(soup)
-            if title and any(x in title.lower() for x in ["yarn", "garn", "wolle", "ball"]):
+            if title and any(
+                x in title.lower() for x in ["yarn", "garn", "wolle", "ball"]
+            ):
                 yarn_text = title
 
         return self._clean_yarn_name(yarn_text)
@@ -284,7 +291,9 @@ class PatternImporter:
                     return brand
 
         # 2. Try technical info labels
-        val = self._find_info_by_label(soup, ["brand", "manufacturer", "hersteller", "marke"])
+        val = self._find_info_by_label(
+            soup, ["brand", "manufacturer", "hersteller", "marke"]
+        )
         if val:
             return val
 
@@ -310,12 +319,15 @@ class PatternImporter:
 
     def _extract_fiber_content(self, soup: BeautifulSoup) -> str | None:
         """Extract fiber content / composition."""
-        val = self._find_info_by_label(soup, ["zusammensetzung", "fiber content", "composition", "material"])
+        val = self._find_info_by_label(
+            soup, ["zusammensetzung", "fiber content", "composition", "material"]
+        )
         if val:
             return val
 
         patterns = [
-            r"(?:fiber content|composition|zusammensetzung|material)\s*[:：]\s*([^\n<]+)",
+            r"(?:fiber content|composition|zusammensetzung|material)"
+            r"\s*[:：]\s*([^\n<]+)",
         ]
         text = soup.get_text()
         for pattern in patterns:
@@ -326,7 +338,9 @@ class PatternImporter:
 
     def _extract_colorway(self, soup: BeautifulSoup) -> str | None:
         """Extract colorway/color information."""
-        val = self._find_info_by_label(soup, ["colorway", "color", "farbe", "farbbezeichnung"])
+        val = self._find_info_by_label(
+            soup, ["colorway", "color", "farbe", "farbbezeichnung"]
+        )
         if val:
             return val
 
@@ -352,7 +366,9 @@ class PatternImporter:
     def _extract_weight_grams(self, soup: BeautifulSoup) -> int | None:
         """Extract weight in grams."""
         # Try labeled search first
-        val = self._find_info_by_label(soup, ["gewicht", "ball weight", "weight"])
+        val = self._find_info_by_label(
+            soup, ["gewicht", "ball weight", "weight"]
+        )
         if val:
             match = re.search(r"(\d+)", val)
             if match:
@@ -361,7 +377,10 @@ class PatternImporter:
         text = soup.get_text()
 
         # Look for patterns like "300m / 100g" or "300m pro 100g"
-        complex_patterns = [r"(\d+)\s*m\s*/\s*(\d+)\s*g", r"(\d+)\s*m\s*pro\s*(\d+)\s*g"]
+        complex_patterns = [
+            r"(\d+)\s*m\s*/\s*(\d+)\s*g",
+            r"(\d+)\s*m\s*pro\s*(\d+)\s*g",
+        ]
         for p in complex_patterns:
             match = re.search(p, text, re.I)
             if match:
@@ -383,7 +402,9 @@ class PatternImporter:
     def _extract_length_meters(self, soup: BeautifulSoup) -> int | None:
         """Extract length in meters."""
         # Try labeled search first
-        val = self._find_info_by_label(soup, ["lauflänge", "yardage", "length", "laufweite"])
+        val = self._find_info_by_label(
+            soup, ["lauflänge", "yardage", "length", "laufweite"]
+        )
         if val:
             match = re.search(r"(\d+)", val)
             if match:
@@ -392,7 +413,10 @@ class PatternImporter:
         text = soup.get_text()
 
         # Look for patterns like "300m / 100g"
-        complex_patterns = [r"(\d+)\s*m\s*/\s*(\d+)\s*g", r"(\d+)\s*m\s*pro\s*(\d+)\s*g"]
+        complex_patterns = [
+            r"(\d+)\s*m\s*/\s*(\d+)\s*g",
+            r"(\d+)\s*m\s*pro\s*(\d+)\s*g",
+        ]
         for p in complex_patterns:
             match = re.search(p, text, re.I)
             if match:
@@ -510,7 +534,8 @@ class PatternImporter:
         # 1. Search for Label: Value in flat text
         text = soup.get_text(separator="\n", strip=True)
         for label in labels:
-            # Match label optionally followed by colon and then capture until end of line
+            # Match label optionally followed by colon and then
+            # capture until end of line
             pattern = rf"(?:{label})\s*[:：]?\s*([^\n]+)"
             match = re.search(pattern, text, re.I)
             if match:
@@ -521,10 +546,15 @@ class PatternImporter:
         # 2. Search for Label followed by Value in DT/DD or Tables or next siblings
         for label in labels:
             # Find element containing label precisely
-            target = soup.find(
-                lambda t: t.name in ["th", "td", "dt", "span", "div", "b", "strong", "label"]
-                and label.lower() == t.get_text().strip().rstrip(":").lower()
-            )
+            # Use a closure to capture the current label for the lambda
+            def _match_tag(t: Any, lbl: str = label) -> bool:
+                return (
+                    t.name
+                    in ["th", "td", "dt", "span", "div", "b", "strong", "label"]
+                    and lbl.lower() == t.get_text().strip().rstrip(":").lower()
+                )
+
+            target = soup.find(_match_tag)
             if not target:
                 continue
 
@@ -545,7 +575,8 @@ class PatternImporter:
                         return val_text
 
             # If it's a generic tag, check next meaningful sibling or child of parent
-            # Some shops like Wolle Roedel put labels in a header/button and value in a following div
+            # Some shops like Wolle Roedel put labels in a header/button
+            # and value in a following div
             nxt = target.find_next()
             if nxt and nxt != target:
                 val_text = nxt.get_text().strip()
@@ -596,7 +627,9 @@ class PatternImporter:
             "product description",
             "über das produkt",
         ]
-        for heading_tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "strong", "span"]):
+        for heading_tag in soup.find_all(
+            ["h1", "h2", "h3", "h4", "h5", "h6", "strong", "span"]
+        ):
             h_text = heading_tag.get_text().strip().lower()
             if any(h_text == h for h in description_headings):
                 # Try to find the next meaningful sibling
@@ -628,7 +661,9 @@ class PatternImporter:
 
         # Try first long paragraph in article or main content
         for tag in ["article", "main", "div"]:
-            container = soup.find(tag, class_=re.compile(r"description|content|product-info", re.I))
+            container = soup.find(
+                tag, class_=re.compile(r"description|content|product-info", re.I)
+            )
             if container:
                 p_tags = container.find_all("p")
                 for p in p_tags:
@@ -678,7 +713,16 @@ class PatternImporter:
             if match:
                 val = match.group(1).strip().upper()
                 # Validate it's likely a weight term
-                if val in ["DK", "ARAN", "LACE", "SPORT", "WORSTED", "BULKY", "JUMBO", "FINGERING"]:
+                if val in [
+                    "DK",
+                    "ARAN",
+                    "LACE",
+                    "SPORT",
+                    "WORSTED",
+                    "BULKY",
+                    "JUMBO",
+                    "FINGERING",
+                ]:
                     return val
 
         return None
