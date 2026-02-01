@@ -1,4 +1,13 @@
 {% set current_path = request.url.path %}
+{% set current_icon = page_icon if page_icon is defined else 
+    'mdi-folder-outline' if current_path.startswith('/projects') else
+    'mdi-sheep' if current_path.startswith('/yarn') else
+    'mdi-ruler' if current_path.startswith('/gauge') else
+    'mdi-shield-account' if current_path.startswith('/admin') else
+    'mdi-account-circle' if current_path.startswith('/user') else
+    'mdi-login' if current_path.startswith('/login') else
+    'mdi-yarn'
+%}
 {# Check if page_actions contains a back button (looking for mdi-arrow-left) or if back_url is provided #}
 {% set has_back_button = back_url or (page_actions and 'mdi-arrow-left' in page_actions) %}
 {% set hide_page_title_on_mobile = page_title_mobile_hidden if page_title_mobile_hidden is defined else false %}
@@ -8,7 +17,7 @@
     <div class="max-w-none mx-auto px-4 md:px-8 lg:px-10 w-full">
         <div class="flex items-center justify-between h-12 w-full gap-4">
             {# Left side: Back button OR Favicon + Title with dropdown #}
-            <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="flex items-center gap-3 md:gap-8 min-w-0 flex-1">
                 {% if has_back_button %}
                 {% if back_url %}
                 <div class="w-8 h-8 flex items-center justify-center shrink-0">
@@ -31,6 +40,11 @@
                 <div class="dropdown dropdown-start md:dropdown-start navbar-nav-dropdown">
                     <button tabindex="0" role="button"
                         class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
+                        {% if '<' in current_icon %}
+                            <div class="flex items-center {% if hide_page_title_on_mobile %}hidden md:flex{% endif %}">{{ current_icon|safe }}</div>
+                        {% else %}
+                            <span class="mdi {{ current_icon }} text-primary {% if hide_page_title_on_mobile %}hidden md:inline-block{% endif %}"></span>
+                        {% endif %}
                         <span class="truncate {% if hide_page_title_on_mobile %}hidden md:inline{% endif %}">
                             {{ display_title|truncate(40, True, '...') }}
                         </span>
@@ -86,6 +100,11 @@
                 <div class="dropdown dropdown-start md:dropdown-start navbar-nav-dropdown">
                     <button tabindex="0" role="button"
                         class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
+                        {% if '<' in current_icon %}
+                            <div class="flex items-center {% if hide_page_title_on_mobile %}hidden md:flex{% endif %}">{{ current_icon|safe }}</div>
+                        {% else %}
+                            <span class="mdi {{ current_icon }} text-primary {% if hide_page_title_on_mobile %}hidden md:inline-block{% endif %}"></span>
+                        {% endif %}
                         <span class="truncate {% if hide_page_title_on_mobile %}hidden md:inline{% endif %}">
                             {{ display_title|truncate(40, True, '...') }}
                         </span>
