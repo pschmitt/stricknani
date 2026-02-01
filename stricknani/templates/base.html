@@ -228,6 +228,34 @@
             overscroll-behavior: contain;
         }
 
+        .navbar-dropdown-nav {
+            margin-top: 0.25rem;
+        }
+
+        .navbar-dropdown-nav::before {
+            height: 0.75rem;
+            top: -0.75rem;
+        }
+
+        .ellipsis-dropdown-content {
+            width: 20rem;
+            min-width: 20rem;
+        }
+
+        .ellipsis-dropdown-content :is(a, button) {
+            padding: 0.7rem 1rem;
+        }
+
+        .navbar-dropdown-content::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: -0.5rem;
+            height: 0.5rem;
+            background: transparent;
+        }
+
         .pswp__thumb {
             width: 3.25rem;
             height: 3.25rem;
@@ -1140,6 +1168,44 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initAll();
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navDropdowns = document.querySelectorAll('.navbar-nav-dropdown');
+            if (!navDropdowns.length) {
+                return;
+            }
+
+            navDropdowns.forEach((dropdown) => {
+                let closeTimer;
+                const openDropdown = () => {
+                    if (closeTimer) {
+                        clearTimeout(closeTimer);
+                        closeTimer = null;
+                    }
+                    dropdown.classList.add('dropdown-open');
+                };
+                const scheduleClose = () => {
+                    if (closeTimer) {
+                        clearTimeout(closeTimer);
+                    }
+                    closeTimer = setTimeout(() => {
+                        if (dropdown.matches(':hover')) {
+                            return;
+                        }
+                        if (dropdown.contains(document.activeElement)) {
+                            return;
+                        }
+                        dropdown.classList.remove('dropdown-open');
+                    }, 250);
+                };
+
+                dropdown.addEventListener('mouseenter', openDropdown);
+                dropdown.addEventListener('mouseleave', scheduleClose);
+                dropdown.addEventListener('focusin', openDropdown);
+                dropdown.addEventListener('focusout', scheduleClose);
+            });
         });
     </script>
 </body>
