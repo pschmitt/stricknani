@@ -754,6 +754,7 @@ async def list_projects(
             "yarn_count": len(project.yarns),
             "yarn_names": yarn_names,
             "is_favorite": project.id in favorite_ids,
+            "is_ai_enhanced": project.is_ai_enhanced,
             "thumbnail_url": thumbnail_url,
             "image_alt": image_alt,
             "preview_images": preview_images,
@@ -1128,7 +1129,7 @@ async def import_pattern(
             )
 
         # For text and file imports, use AI to extract pattern data
-        if content_text and use_ai_enabled:
+        if content_text and use_ai and use_ai_enabled:
             try:
                 from openai import AsyncOpenAI
             except ImportError:
@@ -1536,6 +1537,7 @@ async def get_project(
         ),
         "created_at": project.created_at.isoformat(),
         "updated_at": project.updated_at.isoformat(),
+        "is_ai_enhanced": project.is_ai_enhanced,
         "title_images": title_images,
         "stitch_sample_images": stitch_sample_images,
         "steps": [
@@ -1568,7 +1570,11 @@ async def get_project(
     return render_template(
         "projects/detail.html",
         request,
-        {"current_user": current_user, "project": project_data},
+        {
+            "current_user": current_user,
+            "project": project_data,
+            "is_ai_enhanced": project.is_ai_enhanced,
+        },
     )
 
 
@@ -1689,6 +1695,7 @@ async def edit_project_form(
             and not project.link_archive
             and project.link_archive_requested_at
         ),
+        "is_ai_enhanced": project.is_ai_enhanced,
         "title_images": title_images,
         "stitch_sample_images": stitch_sample_images,
         "steps": steps_data,
@@ -1709,6 +1716,7 @@ async def edit_project_form(
             "categories": categories,
             "yarns": yarn_options,
             "tag_suggestions": tag_suggestions,
+            "is_ai_enhanced": project.is_ai_enhanced,
         },
     )
 
@@ -1732,6 +1740,7 @@ async def create_project(
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     import_title_image_url: Annotated[str | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
+    is_ai_enhanced: Annotated[bool | None, Form()] = False,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -1765,6 +1774,7 @@ async def create_project(
         link=link.strip() if link else None,
         owner_id=current_user.id,
         tags=_serialize_tags(normalized_tags),
+        is_ai_enhanced=bool(is_ai_enhanced),
     )
     if project.link and _should_request_archive(archive_on_save):
         project.link_archive_requested_at = datetime.now(UTC)
@@ -1839,6 +1849,7 @@ async def update_project(
     yarn_ids: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
+    is_ai_enhanced: Annotated[bool | None, Form()] = False,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
@@ -1885,6 +1896,7 @@ async def update_project(
     project.comment = comment.strip() if comment else None
     project.link = link.strip() if link else None
     project.tags = _serialize_tags(_normalize_tags(tags))
+    project.is_ai_enhanced = bool(is_ai_enhanced)
     if project.link and _should_request_archive(archive_on_save):
         project.link_archive_requested_at = datetime.now(UTC)
 

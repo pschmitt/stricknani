@@ -78,6 +78,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 <form id="yarnForm" action="{{ '/yarn/' ~ yarn.id ~ '/edit' if yarn else '/yarn/' }}" method="post"
     enctype="multipart/form-data" data-primary-form="true" class="space-y-6">
     <input type="hidden" id="archive_on_save" name="archive_on_save" value="">
+    <input type="hidden" id="is_ai_enhanced" name="is_ai_enhanced" value="{{ '1' if yarn and yarn.is_ai_enhanced else '' }}">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <!-- Main Content Column -->
         <div class="lg:col-span-2 space-y-6">
@@ -171,10 +172,23 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                                 <input type="url" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
                                     class="input  input-sm w-full" placeholder="https://..."
                                     oninput="syncLinkInputs(this)">
-                                <label class="label cursor-pointer justify-start gap-2 mt-2">
-                                    <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
+                                <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2">
+                                    <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
                                         checked>
-                                    <span class=" text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                                    <span class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Archive on Wayback Machine') }}</span>
+                                </label>
+                            </div>
+
+                            <div class="col-span-2 pt-2 border-t border-base-200">
+                                <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
+                                    <input type="checkbox" id="is_ai_enhanced_mobile_checkbox"
+                                        class="checkbox checkbox-primary checkbox-sm"
+                                        {% if yarn and yarn.is_ai_enhanced %}checked{% endif %}
+                                        onchange="syncAiEnhanced(this)">
+                                    <span class="label-text text-xs font-bold uppercase text-base-content/50 flex items-center gap-2">
+                                        <span class="badge badge-primary font-black text-[10px] h-4 min-h-0">AI</span>
+                                        {{ _('AI Enhanced') }}
+                                    </span>
                                 </label>
                             </div>
                         </div>
@@ -193,15 +207,28 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                             class="textarea  w-full">{{ yarn.description if yarn and yarn.description else '' }}</textarea>
                     </div>
 
+                    <div class="divider my-2"></div>
+
                     <div>
                         <div class="flex items-center justify-between mb-1">
-                            <label for="notes" class=" text-sm font-medium inline-flex items-center gap-2">
-                                <span class="mdi mdi-note-text-outline text-base-content/70"></span>
-                                {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional') }}</span>
+                            <label for="link" class=" text-xs font-bold uppercase text-base-content/50">
+                                {{ _('Source Link') }}
                             </label>
+                            <button type="button" id="reimport-btn-mobile"
+                                class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not yarn.link else '' }}"
+                                onclick="importFromUrl(document.getElementById('link').value)">
+                                <span class="mdi mdi-download"></span>
+                                {{ _('Re-import') }}
+                            </button>
                         </div>
-                        <textarea id="notes" name="notes" rows="4"
-                            class="textarea  w-full">{{ yarn.notes if yarn and yarn.notes else '' }}</textarea>
+                        <input type="url" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
+                            class="input  input-sm w-full" placeholder="https://..."
+                            oninput="syncLinkInputs(this)">
+                        <label class="label cursor-pointer justify-start gap-2 mt-2">
+                            <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
+                                checked>
+                            <span class=" text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -371,10 +398,23 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                         <input type="url" id="link" name="link" value="{{ yarn.link if yarn and yarn.link else '' }}"
                             class="input  input-sm w-full" placeholder="https://..."
                             oninput="syncLinkInputs(this)">
-                        <label class="label cursor-pointer justify-start gap-2 mt-2">
-                            <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
+                        <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2">
+                            <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
                                 checked>
-                            <span class=" text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                            <span class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Archive on Wayback Machine') }}</span>
+                        </label>
+                    </div>
+
+                    <div class="pt-2 border-t border-base-200">
+                        <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
+                            <input type="checkbox" id="is_ai_enhanced_checkbox"
+                                class="checkbox checkbox-primary checkbox-sm"
+                                {% if yarn and yarn.is_ai_enhanced %}checked{% endif %}
+                                onchange="syncAiEnhanced(this)">
+                            <span class="label-text text-xs font-bold uppercase text-base-content/50 flex items-center gap-2">
+                                <span class="badge badge-primary font-black text-[10px] h-4 min-h-0">AI</span>
+                                {{ _('AI Enhanced') }}
+                            </span>
                         </label>
                     </div>
                 </div>
@@ -432,6 +472,19 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
     const deleteErrorMessage = '{{ _("Failed to delete the photo. Please try again") }}';
     const deleteNetworkErrorMessage = '{{ _("Network error while deleting photo") }}';
 
+    function syncAiEnhanced(el) {
+        const isChecked = el.checked;
+        const hiddenInput = document.getElementById('is_ai_enhanced');
+        const desktopCheckbox = document.getElementById('is_ai_enhanced_checkbox');
+        const mobileCheckbox = document.getElementById('is_ai_enhanced_mobile_checkbox');
+        
+        if (hiddenInput) hiddenInput.value = isChecked ? '1' : '';
+        if (desktopCheckbox && desktopCheckbox !== el) desktopCheckbox.checked = isChecked;
+        if (mobileCheckbox && mobileCheckbox !== el) mobileCheckbox.checked = isChecked;
+        
+        window.unsavedChanges?.setDirty(true);
+    }
+
     window.populateYarnForm = function (data) {
         if (!data) return;
 
@@ -473,6 +526,13 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         if (archiveField) {
             archiveField.value = '1';
         }
+
+        const hiddenAiInput = document.getElementById('is_ai_enhanced');
+        if (hiddenAiInput) hiddenAiInput.value = '1';
+        const aiCheckbox = document.getElementById('is_ai_enhanced_checkbox');
+        const aiCheckboxMobile = document.getElementById('is_ai_enhanced_mobile_checkbox');
+        if (aiCheckbox) aiCheckbox.checked = true;
+        if (aiCheckboxMobile) aiCheckboxMobile.checked = true;
 
         window.unsavedChanges?.setDirty(true);
         window.showToast?.('{{ _("Data imported successfully!") }}', 'success');

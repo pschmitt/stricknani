@@ -1042,11 +1042,15 @@ class PatternImporter:
             index += 1
 
         steps: list[dict[str, Any]] = []
-        for i, paragraph in enumerate(merged, 1):
+        for paragraph in merged:
+            # Filter out paragraphs that are just separators (e.g. "-----")
+            if not paragraph or set(paragraph.strip()) <= {"-", "_", "*", " "}:
+                continue
+
             steps.append(
                 {
-                    "step_number": i,
-                    "title": f"Step {i}",
+                    "step_number": len(steps) + 1,
+                    "title": f"Step {len(steps) + 1}",
                     "description": paragraph,
                     "images": [],
                 }
@@ -1054,36 +1058,100 @@ class PatternImporter:
         return steps
 
     def _normalize_garnstudio_text(self, text: str) -> str:
+        """Improve Garnstudio text structure by converting headers to Markdown."""
         normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+
+        # Comprehensive list of Garnstudio section markers (German and English)
         headings = [
+            # Main sections
             "HINWEISE ZUR ANLEITUNG",
             "HINWEISE ZU ANLEITUNG",
             "HINWEIS ZUR ANLEITUNG",
+            "PATTERN NOTES",
+            "NOTES FOR THE PATTERN",
+            "NOTES FOR INSTRUCTIONS",
             "MUSTER",
+            "PATTERN",
+            "STRIKKEMØNSTER",
             "ZUNAHMETIPP",
+            "INCREASING TIP",
+            "ØKETIPS",
             "ABNAHMETIPP",
+            "DECREASING TIP",
+            "FELLINGSTIPS",
             "MASCHENPROBE",
+            "GAUGE",
+            "STRIKKEFASTHET",
             "GROESSEN",
             "GRÖSSEN",
+            "SIZE",
+            "SIZES",
+            "STØRRELSER",
             "GARN",
+            "YARN",
             "MATERIAL",
+            "MATERIALS",
             "NADELN",
+            "NEEDLES",
+            "PINNER",
             "RIPPEN",
+            "RIB",
+            "VRANGBORD",
             "ABNAHMEN",
+            "DECREASES",
             "ZUNAHMEN",
+            "INCREASES",
             "ARM",
+            "SLEEVE",
+            "ERME",
             "RAGLAN",
+            "YOKE",
+            "BÆRESTYKKE",
+            "VORDER- UND RÜCKENTEIL",
+            "BODY",
+            "BOLEN",
+            "HALS",
+            "NECK",
+            "AUSARBEITUNG",
+            "FINISHING",
+            "MONTERING",
         ]
 
+        # 1. First, find all-caps lines that are known headings and make them h3
+        lines = normalized.splitlines()
+        structured_lines = []
+        for line in lines:
+            stripped = line.strip()
+            upper_stripped = stripped.rstrip(":").upper()
+
+            is_heading = False
+            if upper_stripped in headings:
+                is_heading = True
+            elif stripped.isupper() and 3 < len(stripped) < 50:
+                # Heuristic for other all-caps lines that might be headings
+                is_heading = True
+
+            if is_heading:
+                structured_lines.append(f"\n\n### {stripped.rstrip(':')}\n")
+            else:
+                structured_lines.append(line)
+
+        normalized = "\n".join(structured_lines)
+
+        # 2. Fix inline colon-style headings that weren't on their own line
         for heading in headings:
+            # Avoid re-matching already processed ### headings using lookbehind
             normalized = re.sub(
-                rf"\\s*({re.escape(heading)}\\s*:)",
-                r"\n\n\\1",
+                rf"(?<!### )\b({re.escape(heading)})\s*:",
+                r"\n\n### \1\n",
                 normalized,
                 flags=re.I,
             )
 
-        return normalized
+        # 3. Clean up excessive newlines
+        normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+
+        return normalized.strip()
 
     def _resolve_image_url(self, src: str | AttributeValueList) -> str | None:
         if isinstance(src, list):

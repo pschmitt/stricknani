@@ -187,9 +187,9 @@ def _build_example_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
         elif field == "yarn":
             example[field] = "Worsted weight wool"
         elif field == "gauge_stitches":
-            example[field] = 20
+            example[field] = 21
         elif field == "gauge_rows":
-            example[field] = 28
+            example[field] = 30
         elif field == "description":
             example[field] = "A simple beginner-friendly scarf pattern"
         elif field == "comment":
@@ -230,6 +230,9 @@ def _build_ai_prompts(
         "Use the exact field names from the schema. Use null for missing values.\n"
         "Prefer structured steps: split instructions into ordered "
         "steps when possible.\n"
+        "IMPORTANT: For long text fields like 'description' and 'description' in "
+        "steps, always use Markdown formatting (headings, bullet points, bold "
+        "text) to ensure the content is readable and not just a wall of text.\n"
         "Do not invent data that is not present in the source.\n\n"
         f"{json_module.dumps(schema, indent=2)}\n\n"
         "Return valid JSON only.\n"

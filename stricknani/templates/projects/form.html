@@ -95,6 +95,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
     <input type="hidden" id="import_title_image_url" name="import_title_image_url" value="">
     <input type="hidden" id="archive_on_save" name="archive_on_save" value="">
+    <input type="hidden" id="is_ai_enhanced" name="is_ai_enhanced" value="{{ '1' if project and project.is_ai_enhanced else '' }}">
     <input type="hidden" id="stepsData" name="steps_data">
 
     <div id="importWarning"
@@ -125,6 +126,29 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         <input type="text" id="name" name="name" required
                             value="{{ project.name if project and project.name else '' }}"
                             class="input  w-full" placeholder="{{ _('e.g. My Amazing Project') }}">
+                    </div>
+
+                    <!-- Gallery Section (moved inside card) -->
+                    <div class="pt-2 border-t border-base-200">
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-base-content/40 mb-4 flex items-center gap-2">
+                            <span class="mdi mdi-image-multiple"></span>
+                            {{ _('Gallery') }}
+                        </h3>
+                        <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery"
+                            data-pswp-gallery>
+                            {% if project %}
+                            {% for image in project.title_images %}
+                            {{ image_upload.image_preview(image, project_id=project.id, show_promote=true) }}
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div id="titleImageUploadContainer">
+                            {{ image_upload.upload_dropzone(
+                            input_id='titleImageInput',
+                            container_id='titleImageDropZone'
+                            ) }}
+                        </div>
                     </div>
 
                     <!-- Mobile Details Card -->
@@ -230,10 +254,23 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                 <input type="url" name="link" value="{{ project.link or '' }}"
                                     class="input  input-sm w-full" placeholder="https://..."
                                     oninput="syncLinkInputs(this)">
-                                <label class="label cursor-pointer justify-start gap-2 mt-2">
-                                    <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
+                                <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2">
+                                    <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
                                         checked>
-                                    <span class=" text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                                    <span class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Archive on Wayback Machine') }}</span>
+                                </label>
+                            </div>
+
+                            <div class="sm:col-span-2 pt-2 border-t border-base-200">
+                                <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
+                                    <input type="checkbox" id="is_ai_enhanced_mobile_checkbox"
+                                        class="checkbox checkbox-primary checkbox-sm"
+                                        {% if project and project.is_ai_enhanced %}checked{% endif %}
+                                        onchange="syncAiEnhanced(this)">
+                                    <span class="label-text text-xs font-bold uppercase text-base-content/50 flex items-center gap-2">
+                                        <span class="badge badge-primary font-black text-[10px] h-4 min-h-0">AI</span>
+                                        {{ _('AI Enhanced') }}
+                                    </span>
                                 </label>
                             </div>
                         </div>
@@ -254,42 +291,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             placeholder="{{ _('Brief description of this project...') }}">{{ project.description if project and project.description else '' }}</textarea>
                         <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
                     </div>
-
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label for="comment" class=" text-sm font-medium inline-flex items-center gap-2">
-                                <span class="mdi mdi-note-text-outline text-base-content/70"></span>
-                                {{ _('Notes') }}
-                            </label>
-                        </div>
-                        <textarea id="comment" name="comment" rows="6" class="textarea  w-full"
-                            placeholder="{{ _('Personal notes about this project...') }}">{{ project.comment if project and project.comment else '' }}</textarea>
-                        <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gallery Card -->
-            <div
-                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
-                <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-                    <span class="mdi mdi-image-multiple text-primary"></span>
-                    {{ _('Gallery') }}
-                </h3>
-                <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery"
-                    data-pswp-gallery>
-                    {% if project %}
-                    {% for image in project.title_images %}
-                    {{ image_upload.image_preview(image, project_id=project.id, show_promote=true) }}
-                    {% endfor %}
-                    {% endif %}
-                </div>
-
-                <div id="titleImageUploadContainer">
-                    {{ image_upload.upload_dropzone(
-                    input_id='titleImageInput',
-                    container_id='titleImageDropZone'
-                    ) }}
                 </div>
             </div>
 
@@ -511,10 +512,23 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         <input type="url" id="link" name="link" value="{{ project.link or '' }}"
                             class="input  input-sm w-full" placeholder="https://..."
                             oninput="syncLinkInputs(this)">
-                        <label class="label cursor-pointer justify-start gap-2 mt-2">
-                            <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-xs"
+                        <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2">
+                            <input type="checkbox" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
                                 checked>
-                            <span class=" text-xs">{{ _('Archive on Wayback Machine') }}</span>
+                            <span class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Archive on Wayback Machine') }}</span>
+                        </label>
+                    </div>
+
+                    <div class="pt-2 border-t border-base-200">
+                        <label class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
+                            <input type="checkbox" id="is_ai_enhanced_checkbox"
+                                class="checkbox checkbox-primary checkbox-sm"
+                                {% if project and project.is_ai_enhanced %}checked{% endif %}
+                                onchange="syncAiEnhanced(this)">
+                            <span class="label-text text-xs font-bold uppercase text-base-content/50 flex items-center gap-2">
+                                <span class="badge badge-primary font-black text-[10px] h-4 min-h-0">AI</span>
+                                {{ _('AI Enhanced') }}
+                            </span>
                         </label>
                     </div>
                 </div>
@@ -603,6 +617,19 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     function autoResize(el) {
         el.style.height = 'auto';
         el.style.height = el.scrollHeight + 'px';
+    }
+
+    function syncAiEnhanced(el) {
+        const isChecked = el.checked;
+        const hiddenInput = document.getElementById('is_ai_enhanced');
+        const desktopCheckbox = document.getElementById('is_ai_enhanced_checkbox');
+        const mobileCheckbox = document.getElementById('is_ai_enhanced_mobile_checkbox');
+        
+        if (hiddenInput) hiddenInput.value = isChecked ? '1' : '';
+        if (desktopCheckbox && desktopCheckbox !== el) desktopCheckbox.checked = isChecked;
+        if (mobileCheckbox && mobileCheckbox !== el) mobileCheckbox.checked = isChecked;
+        
+        window.unsavedChanges?.setDirty(true);
     }
 
     async function previewMarkdown(source) {
@@ -751,6 +778,14 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 setFieldValue('tags', data.tags);
                 setFieldValue('comment', data.comment);
                 setFieldValue('link', data.link);
+
+                // Set AI enhanced flag
+                const hiddenAiInput = document.getElementById('is_ai_enhanced');
+                if (hiddenAiInput) hiddenAiInput.value = '1';
+                const aiCheckbox = document.getElementById('is_ai_enhanced_checkbox');
+                const aiCheckboxMobile = document.getElementById('is_ai_enhanced_mobile_checkbox');
+                if (aiCheckbox) aiCheckbox.checked = true;
+                if (aiCheckboxMobile) aiCheckboxMobile.checked = true;
 
                 // Image URLs (Project level)
                 const importImagesField = document.getElementById('import_image_urls');

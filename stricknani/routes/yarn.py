@@ -374,6 +374,7 @@ def _serialize_yarn_cards(
                 "updated_at": yarn.updated_at.isoformat() if yarn.updated_at else None,
                 "project_count": len(yarn.projects),
                 "is_favorite": yarn.id in favorites,
+                "is_ai_enhanced": yarn.is_ai_enhanced,
             },
             "preview_url": _resolve_preview(yarn),
         }
@@ -615,6 +616,7 @@ async def create_yarn(
     import_primary_image_url: Annotated[str | None, Form()] = None,
     photos: Annotated[list[UploadFile | str] | None, File()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
+    is_ai_enhanced: Annotated[bool | None, Form()] = False,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -638,6 +640,7 @@ async def create_yarn(
         notes=notes.strip() if notes else None,
         link=link.strip() if link else None,
         owner_id=current_user.id,
+        is_ai_enhanced=bool(is_ai_enhanced),
     )
     yarn.photos = []
     db.add(yarn)
@@ -694,6 +697,7 @@ async def yarn_detail(
             "current_user": current_user,
             "yarn": yarn,
             "is_favorite": is_favorite,
+            "is_ai_enhanced": yarn.is_ai_enhanced,
             "description_html": render_markdown(yarn.description)
             if yarn.description
             else None,
@@ -739,6 +743,7 @@ async def edit_yarn(
             "current_user": current_user,
             "yarn": yarn,
             "photos": _serialize_photos(yarn),
+            "is_ai_enhanced": yarn.is_ai_enhanced,
         },
     )
 
@@ -763,6 +768,7 @@ async def update_yarn(
     import_primary_image_url: Annotated[str | None, Form()] = None,
     new_photos: Annotated[list[UploadFile | str] | None, File()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
+    is_ai_enhanced: Annotated[bool | None, Form()] = False,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -788,6 +794,7 @@ async def update_yarn(
     yarn.length_meters = _parse_optional_int("length_meters", length_meters)
     yarn.notes = notes.strip() if notes else None
     yarn.link = link.strip() if link else None
+    yarn.is_ai_enhanced = bool(is_ai_enhanced)
 
     await _handle_photo_uploads(new_photos, yarn, db)
 

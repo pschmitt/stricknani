@@ -256,6 +256,13 @@
                             </span>
                         </div>
 
+                        {% if project.is_ai_enhanced %}
+                        <div class="py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Data Source') }}</span>
+                            <span class="badge badge-primary font-black text-[10px] tracking-tighter uppercase h-5 min-h-0" title="{{ _('AI Enhanced') }}">AI</span>
+                        </div>
+                        {% endif %}
+
                         <div class="divider my-2"></div>
 
                         <!-- Gauge -->
@@ -348,15 +355,22 @@
                         <div class="divider my-2"></div>
 
                         <!-- Source Link -->
-                        <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
-                            {% if project.link %}
-                            <a href="{{ project.link }}" target="_blank" rel="noreferrer"
-                                class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
-                                <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
-                                {{ project.link }}
-                            </a>
-                            {% if project.link_archive %}
+                                                <div>
+                                                    <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
+                                                    {% if project.link %}
+                                                    <div class="flex items-center gap-2 group/link">
+                                                        <a href="{{ project.link }}" target="_blank" rel="noreferrer"
+                                                            class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
+                                                            <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
+                                                            {{ project.link }}
+                                                        </a>
+                                                        <button type="button" 
+                                                            onclick="copyToClipboard('{{ project.link }}', this)"
+                                                            class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
+                                                            title="{{ _('Copy URL') }}">
+                                                            <span class="mdi mdi-content-copy text-xs"></span>
+                                                        </button>
+                                                    </div>                            {% if project.link_archive %}
                             <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
                                 class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
                                 <span class="mdi mdi-archive-outline"></span>
@@ -557,6 +571,13 @@
                         </span>
                     </div>
 
+                    {% if project.is_ai_enhanced %}
+                    <div class="py-1">
+                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Data Source') }}</span>
+                        <span class="badge badge-primary font-black text-[10px] tracking-tighter uppercase h-5 min-h-0" title="{{ _('AI Enhanced') }}">AI</span>
+                    </div>
+                    {% endif %}
+
                     <div class="divider my-2"></div>
 
                     <!-- Gauge -->
@@ -648,15 +669,22 @@
                     <div class="divider my-2"></div>
 
                     <!-- Source Link -->
-                    <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
-                        {% if project.link %}
-                        <a href="{{ project.link }}" target="_blank" rel="noreferrer"
-                            class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
-                            <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
-                            {{ project.link }}
-                        </a>
-                        {% if project.link_archive %}
+                                            <div>
+                                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
+                                                {% if project.link %}
+                                                <div class="flex items-center gap-2 group/link">
+                                                    <a href="{{ project.link }}" target="_blank" rel="noreferrer"
+                                                        class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
+                                                        <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
+                                                        {{ project.link }}
+                                                    </a>
+                                                    <button type="button" 
+                                                        onclick="copyToClipboard('{{ project.link }}', this)"
+                                                        class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
+                                                        title="{{ _('Copy URL') }}">
+                                                        <span class="mdi mdi-content-copy text-xs"></span>
+                                                    </button>
+                                                </div>                        {% if project.link_archive %}
                         <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
                             class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
                             <span class="mdi mdi-archive-outline"></span>

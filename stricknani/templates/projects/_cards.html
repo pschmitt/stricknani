@@ -81,6 +81,9 @@
                 {% if project.is_favorite %}
                 <span class="mdi mdi-heart text-pink-500 text-sm shrink-0" title="{{ _('In favorites') }}"></span>
                 {% endif %}
+                {% if project.is_ai_enhanced %}
+                <span class="badge badge-ghost border-primary/20 text-primary/70 font-black text-[8px] tracking-tighter uppercase px-1.5 h-4 min-h-0 shrink-0" title="{{ _('AI Enhanced') }}">AI</span>
+                {% endif %}
             </h3>
             {% if project.category and project.category != 'None' %}
             <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}" 

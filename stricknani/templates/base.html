@@ -1098,6 +1098,26 @@
 
         window.openDialog = openDialog;
         window.closeDialog = closeDialog;
+
+        async function copyToClipboard(text, btn) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const originalContent = btn.innerHTML;
+                btn.innerHTML = '<span class="mdi mdi-check text-success"></span>';
+                btn.classList.add('btn-success', 'bg-success/10');
+                
+                window.showToast?.('{{ _("Copied to clipboard") }}', 'success');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.remove('btn-success', 'bg-success/10');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                window.showToast?.('{{ _("Failed to copy") }}', 'error');
+            }
+        }
+        window.copyToClipboard = copyToClipboard;
     </script>
     <script type="module">
         import PhotoSwipeLightbox from 'https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.min.js';

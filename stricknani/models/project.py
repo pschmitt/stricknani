@@ -40,6 +40,7 @@ class Project(Base):
         DateTime, nullable=True
     )
     link_archive_failed: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_ai_enhanced: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), index=True
     )
