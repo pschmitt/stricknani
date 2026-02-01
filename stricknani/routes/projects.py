@@ -1867,8 +1867,16 @@ async def update_project(
     if steps_data:
         steps_list = json.loads(steps_data)
         existing_step_ids = {step.id for step in project.steps}
+        def _coerce_step_id(raw: object) -> int | None:
+            try:
+                return int(raw)
+            except (TypeError, ValueError):
+                return None
+
         new_step_ids = {
-            step_data.get("id") for step_data in steps_list if step_data.get("id")
+            step_id
+            for step_data in steps_list
+            if (step_id := _coerce_step_id(step_data.get("id"))) is not None
         }
 
         # Delete removed steps
@@ -1888,7 +1896,7 @@ async def update_project(
 
         # Update or create steps
         for step_data in steps_list:
-            step_id = step_data.get("id")
+            step_id = _coerce_step_id(step_data.get("id"))
             if step_id and step_id in existing_step_ids:
                 # Update existing step
                 step_result = await db.execute(select(Step).where(Step.id == step_id))
