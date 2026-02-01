@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --extra dev --extra ai
+          uv sync --extra dev
 
       - name: Run ruff
         run: uv run ruff check .

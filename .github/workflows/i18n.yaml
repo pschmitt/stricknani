@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --extra dev --extra ai
+          uv sync --extra dev
 
       - name: Check translations
         run: uv run python -m stricknani.scripts.check_translations
