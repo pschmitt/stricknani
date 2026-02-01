@@ -591,8 +591,8 @@
     {% endif %}
 
     {% if current_user %}
-    <dialog id="globalSearchModal" class="modal sm:modal-middle backdrop:bg-base-300/80 backdrop:backdrop-blur-sm">
-        <div class="modal-box max-w-2xl p-0 overflow-hidden shadow-2xl border border-base-300 bg-base-100 rounded-2xl">
+    <dialog id="globalSearchModal" class="modal modal-top sm:modal-middle backdrop:bg-base-300/80 backdrop:backdrop-blur-sm">
+        <div class="modal-box max-w-2xl p-0 overflow-hidden shadow-2xl border border-base-300 bg-base-100 rounded-2xl sm:mt-0 mt-4 mx-2 sm:mx-auto">
             <div class="relative flex items-center border-b border-base-300 px-4 py-2 bg-base-200/50">
                 <span class="mdi mdi-magnify text-2xl opacity-40 mr-3"></span>
                 <input type="text" id="globalSearchInput" 
