@@ -64,6 +64,37 @@ templates_path = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(templates_path))
 
 
+def category_color_filter(category_name: str | None) -> str:
+    """Map category names to colorful Tailwind classes using deterministic hashing."""
+    if not category_name or category_name == "None":
+        return "badge-ghost"
+
+    # Use a deterministic hash of the category name to pick a color
+    hash_val = sum(ord(c) for c in category_name)
+    palette = [
+        ("blue", "blue"),
+        ("indigo", "indigo"),
+        ("teal", "teal"),
+        ("rose", "rose"),
+        ("amber", "amber"),
+        ("emerald", "emerald"),
+        ("orange", "orange"),
+        ("purple", "purple"),
+        ("pink", "pink"),
+        ("cyan", "cyan"),
+        ("violet", "violet"),
+    ]
+
+    base, dark = palette[hash_val % len(palette)]
+    return (
+        f"bg-{base}-100 text-{base}-700 dark:bg-{dark}-900/30 "
+        f"dark:text-{dark}-300 border-{base}-200 dark:border-{dark}-800"
+    )
+
+
+templates.env.filters["category_color"] = category_color_filter
+
+
 access_logger = logging.getLogger("stricknani.access")
 
 

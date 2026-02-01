@@ -1421,7 +1421,12 @@ async def get_project(
     # Prepare project-level images (exclude step images)
     title_images = []
     stitch_sample_images = []
-    for img in project.images:
+    has_seen_title = False
+
+    # Sort images to ensure consistent title selection (primary first, then by ID)
+    sorted_images = sorted(project.images, key=lambda i: (not i.is_title_image, i.id))
+
+    for img in sorted_images:
         if img.step_id is not None:
             continue
 
@@ -1438,17 +1443,29 @@ async def get_project(
                 }
             )
         else:
+            is_title = img.is_title_image
+            if is_title:
+                if has_seen_title:
+                    is_title = False
+                else:
+                    has_seen_title = True
+
             title_images.append(
                 {
                     "id": img.id,
                     "url": get_file_url(img.filename, project.id),
                     "thumbnail_url": get_thumbnail_url(img.filename, project.id),
                     "alt_text": img.alt_text,
-                    "is_title_image": img.is_title_image,
+                    "is_title_image": is_title,
                     "width": width,
                     "height": height,
                 }
             )
+
+    # If no image was marked as title but we have gallery images, mark the first one
+    if not has_seen_title and title_images:
+        title_images[0]["is_title_image"] = True
+
     title_images.sort(key=lambda item: (not item["is_title_image"], item["id"]))
 
     # Prepare steps with images
@@ -1589,16 +1606,30 @@ async def edit_project_form(
 
     title_images = []
     stitch_sample_images = []
-    for img in project.images:
+    has_seen_title = False
+
+    # Sort images to ensure consistent title selection (primary first, then by ID)
+    sorted_images = sorted(project.images, key=lambda i: (not i.is_title_image, i.id))
+
+    for img in sorted_images:
         if img.step_id is not None:
             continue
         width, height = _get_image_dimensions(img.filename, project.id)
+
+        is_title = img.is_title_image
+        if not img.is_stitch_sample:
+            if is_title:
+                if has_seen_title:
+                    is_title = False
+                else:
+                    has_seen_title = True
+
         img_data = {
             "id": img.id,
             "url": get_file_url(img.filename, project.id),
             "thumbnail_url": get_thumbnail_url(img.filename, project.id),
             "alt_text": img.alt_text,
-            "is_title_image": img.is_title_image,
+            "is_title_image": is_title,
             "width": width,
             "height": height,
         }
@@ -1606,6 +1637,10 @@ async def edit_project_form(
             stitch_sample_images.append(img_data)
         else:
             title_images.append(img_data)
+
+    # If no image was marked as title but we have gallery images, mark the first one
+    if not has_seen_title and title_images:
+        title_images[0]["is_title_image"] = True
 
     title_images.sort(key=lambda item: (not item["is_title_image"], item["id"]))
 
@@ -2132,13 +2167,24 @@ async def upload_title_image(
     file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
     await create_thumbnail(file_path, project_id)
 
+    # Check if a title image already exists
+    count_result = await db.execute(
+        select(func.count(Image.id)).where(
+            Image.project_id == project_id,
+            Image.is_title_image.is_(True),
+            Image.is_stitch_sample.is_(False),
+            Image.step_id.is_(None),
+        )
+    )
+    has_title_image = (count_result.scalar() or 0) > 0
+
     # Create database record
     image = Image(
         filename=filename,
         original_filename=original_filename,
         image_type=ImageType.PHOTO.value,
         alt_text=alt_text or original_filename,
-        is_title_image=True,
+        is_title_image=not has_title_image,
         project_id=project_id,
     )
     db.add(image)

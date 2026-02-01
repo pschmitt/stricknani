@@ -247,7 +247,7 @@ async def seed_demo_data(reset: bool = False) -> None:
                 await db.flush()  # Get yarn ID
 
                 # Copy and add photos
-                for img_filename in photos:
+                for i, img_filename in enumerate(photos):
                     src_path = demo_assets_dir / img_filename
                     if src_path.exists():
                         # Create yarn media directory
@@ -264,6 +264,7 @@ async def seed_demo_data(reset: bool = False) -> None:
                             original_filename=img_filename,
                             alt_text=f"{yarn.name} photo",
                             yarn_id=yarn.id,
+                            is_primary=(i == 0),
                         )
                         db.add(yarn_image)
                         await _maybe_create_thumbnail(
@@ -509,7 +510,7 @@ async def seed_demo_data(reset: bool = False) -> None:
                 await db.flush()  # Get project ID
 
                 # Copy and add title images
-                for img_filename in title_images:
+                for i, img_filename in enumerate(title_images):
                     src_path = demo_assets_dir / img_filename
                     if src_path.exists():
                         # Create project media directory
@@ -528,7 +529,7 @@ async def seed_demo_data(reset: bool = False) -> None:
                             original_filename=img_filename,
                             image_type=ImageType.PHOTO.value,
                             alt_text=f"{project.name} title image",
-                            is_title_image=True,
+                            is_title_image=(i == 0),
                             project_id=project.id,
                         )
                         db.add(project_image)

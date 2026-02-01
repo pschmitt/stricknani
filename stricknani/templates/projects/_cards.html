@@ -81,7 +81,8 @@
                 </a>
             </h3>
             {% if project.category and project.category != 'None' %}
-            <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}" class="badge badge-primary shrink-0 ml-2">
+            <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}" 
+               class="badge border {{ project.category|category_color }} shrink-0 ml-2 font-medium py-2.5">
                 {{ _(project.category) }}
             </a>
             {% endif %}
@@ -89,7 +90,8 @@
         {% if project.tags %}
         <div class="mb-4 flex flex-wrap gap-2 -ml-2">
             {% for tag in project.tags %}
-            <a href="/projects?search={{ ('#' ~ tag)|urlencode }}" class="badge badge-outline">#{{ tag }}</a>
+            <a href="/projects?search={{ ('#' ~ tag)|urlencode }}" 
+               class="badge badge-sm border-base-300 bg-base-200/50 text-base-content/70 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all duration-200">#{{ tag }}</a>
             {% endfor %}
         </div>
         {% endif %}

@@ -69,7 +69,7 @@ disabled_text=None
     </a>
     {% if show_promote %}
     <button type="button" onclick="promoteImage({{ project_id }}, {{ image.id }})"
-        class="title-promote-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all {{ 'bg-amber-400 text-white' if image.is_title_image else 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500' }} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+        class="title-promote-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all {{ 'bg-amber-400 text-white opacity-100' if image.is_title_image else 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500' }} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
         title="{{ _('Make title image') }}">
         <span class="mdi {{ 'mdi-star' if image.is_title_image else 'mdi-star-outline' }}"></span>
     </button>

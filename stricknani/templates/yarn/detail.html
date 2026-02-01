@@ -339,8 +339,10 @@
                             <div class="font-semibold text-sm truncate group-hover:text-primary transition-colors">{{
                                 project.name }}</div>
                             {% if project.category %}
-                            <div class="text-xs text-base-content/60 truncate">
-                                {{ _(project.category) }}
+                            <div class="mt-0.5">
+                                <span class="badge badge-xs border {{ project.category|category_color }} font-medium">
+                                    {{ _(project.category) }}
+                                </span>
                             </div>
                             {% endif %}
                         </div>

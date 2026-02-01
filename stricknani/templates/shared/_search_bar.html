@@ -39,13 +39,13 @@
         {% if inline_filters %}
         {% set filter = filters[0] %}
         <div class="absolute inset-y-0 right-0 hidden sm:flex items-center pr-2">
-            <div class="badge badge-outline gap-1">
-                <span class="mdi {{ filter.icon }}" aria-hidden="true"></span>
-                <span class="truncate max-w-[6rem] sm:max-w-[10rem]">
-                    {{ filter.label }}: {{ filter.label_value }}
+            <div class="badge {% if filter.name == 'category' %}border {{ filter.value|category_color }}{% else %}border-primary/20 bg-primary/5 text-primary{% endif %} gap-1 font-bold shadow-sm">
+                <span class="mdi {{ filter.icon }} text-xs" aria-hidden="true"></span>
+                <span class="truncate max-w-[6rem] sm:max-w-[10rem] text-xs">
+                    {{ filter.label_value }}
                 </span>
-                <a href="{{ filter.clear_url }}" class="ml-1 inline-flex items-center" title="{{ filter.clear_label }}">
-                    <span class="mdi mdi-close" aria-hidden="true"></span>
+                <a href="{{ filter.clear_url }}" class="ml-1 inline-flex items-center hover:text-error transition-colors" title="{{ filter.clear_label }}">
+                    <span class="mdi mdi-close text-xs" aria-hidden="true"></span>
                     <span class="sr-only">{{ filter.clear_label }}</span>
                 </a>
             </div>
@@ -60,16 +60,16 @@
     {% if filters %}
     <div class="mt-2 flex flex-wrap items-center gap-2 text-xs {% if inline_filters %}sm:hidden{% endif %}">
         {% for filter in filters %}
-        <span class="badge badge-outline gap-1 min-w-0">
-            <span class="mdi {{ filter.icon }}" aria-hidden="true"></span>
+        <div class="badge {% if filter.name == 'category' %}border {{ filter.value|category_color }}{% else %}border-primary/20 bg-primary/5 text-primary{% endif %} gap-1 font-bold shadow-sm py-3 px-3">
+            <span class="mdi {{ filter.icon }} text-xs" aria-hidden="true"></span>
             <span class="truncate">
-                {{ filter.label }}: {{ filter.label_value }}
+                {{ filter.label_value }}
             </span>
-        </span>
-        <a href="{{ filter.clear_url }}" class="btn btn-ghost btn-xs ml-auto" title="{{ filter.clear_label }}">
-            <span class="mdi mdi-close" aria-hidden="true"></span>
-            <span class="sr-only">{{ filter.clear_label }}</span>
-        </a>
+            <a href="{{ filter.clear_url }}" class="ml-1 inline-flex items-center hover:text-error transition-colors" title="{{ filter.clear_label }}">
+                <span class="mdi mdi-close text-xs" aria-hidden="true"></span>
+                <span class="sr-only">{{ filter.clear_label }}</span>
+            </a>
+        </div>
         {% endfor %}
     </div>
     {% endif %}

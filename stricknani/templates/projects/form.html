@@ -1235,7 +1235,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             </a>
             ${showPromote ? `
             <button type="button" onclick="promoteImage(${projectId}, ${imageData.id})"
-                class="title-promote-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all ${isPrimary ? 'bg-amber-400 text-white' : 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500'} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+                class="title-promote-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all ${isPrimary ? 'bg-amber-400 text-white opacity-100' : 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500'} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
                 title="{{ _('Make title image') }}">
                 <span class="mdi ${isPrimary ? 'mdi-star' : 'mdi-star-outline'}"></span>
             </button>

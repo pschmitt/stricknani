@@ -304,8 +304,21 @@ def _serialize_photos(yarn: Yarn) -> list[dict[str, object]]:
     """Prepare photo metadata for templates."""
 
     payload: list[dict[str, object]] = []
-    for photo in yarn.photos:
+    has_seen_primary = False
+
+    # Sort photos: primary first, then by ID
+    sorted_photos = sorted(yarn.photos, key=lambda p: (not p.is_primary, p.id))
+
+    for photo in sorted_photos:
         width, height = _get_photo_dimensions(yarn.id, photo.filename)
+
+        is_primary = photo.is_primary
+        if is_primary:
+            if has_seen_primary:
+                is_primary = False
+            else:
+                has_seen_primary = True
+
         payload.append(
             {
                 "id": photo.id,
@@ -320,11 +333,16 @@ def _serialize_photos(yarn: Yarn) -> list[dict[str, object]]:
                     subdir="yarns",
                 ),
                 "alt_text": photo.alt_text,
-                "is_primary": photo.is_primary,
+                "is_primary": is_primary,
                 "width": width,
                 "height": height,
             }
         )
+
+    # If no primary photo seen but we have photos, mark the first as primary
+    if not has_seen_primary and payload:
+        payload[0]["is_primary"] = True
+
     return payload
 
 

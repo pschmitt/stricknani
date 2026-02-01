@@ -227,7 +227,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                                 class="h-full w-full object-cover cursor-zoom-in">
                         </a>
                         <button type="button" onclick="promoteYarnPhoto({{ photo.id }})"
-                            class="yarn-promote-btn absolute top-2 left-2 z-10 rounded-full p-1.5 shadow-sm transition-all {{ 'bg-amber-400 text-white' if photo.is_primary else 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500' }} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+                            class="yarn-promote-btn absolute top-2 left-2 z-10 rounded-full p-1.5 shadow-sm transition-all {{ 'bg-amber-400 text-white opacity-100' if photo.is_primary else 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500' }} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
                             title="{{ _('Make primary photo') }}">
                             <span class="mdi {{ 'mdi-star' if photo.is_primary else 'mdi-star-outline' }}"></span>
                         </button>
