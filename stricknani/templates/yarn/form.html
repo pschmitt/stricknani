@@ -9,6 +9,7 @@
 
 {# Set variables for the unified navbar #}
 {% set page_title %}{{ yarn.name if yarn else _('New Yarn') }}{% endset %}
+{% set page_title_mobile_hidden = yarn %}
 {% set back_url = '/yarn/' + yarn.id|string if yarn else '/yarn' %}
 {% set back_label = _('Back to yarns') %}
 {% set page_actions %}

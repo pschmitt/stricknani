@@ -1,6 +1,8 @@
 {% set current_path = request.url.path %}
 {# Check if page_actions contains a back button (looking for mdi-arrow-left) or if back_url is provided #}
 {% set has_back_button = back_url or (page_actions and 'mdi-arrow-left' in page_actions) %}
+{% set hide_page_title_on_mobile = page_title_mobile_hidden if page_title_mobile_hidden is defined else false %}
+{% set display_title = page_title if page_title else _('Stricknani') %}
 
 <nav class="navbar bg-base-200 shadow-sm border-b border-base-300 sticky top-0 z-[80] min-h-12">
     <div class="max-w-none mx-auto px-4 md:px-8 lg:px-10 w-full">
@@ -26,16 +28,17 @@
                 {% endif %}
 
                 {# Page Title - hidden on mobile when back button exists #}
-                <div class="dropdown dropdown-end md:dropdown-start">
+                <div class="dropdown dropdown-start md:dropdown-start">
                     <button tabindex="0" role="button"
                         class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
-                        <span class="truncate">{% if page_title %}{{ page_title }}{% else %}{{ _('Stricknani') }}{%
-                            endif %}</span>
+                        <span class="truncate {% if hide_page_title_on_mobile %}hidden md:inline{% endif %}">
+                            {{ display_title|truncate(40, True, '...') }}
+                        </span>
                         <span
-                            class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity"></span>
+                            class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity {% if hide_page_title_on_mobile %}hidden md:inline{% endif %}"></span>
                     </button>
                     <ul tabindex="0"
-                        class="dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
+                        class="dropdown-content navbar-dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
                         {% if current_user %}
                         <li>
                             <a href="/projects"
@@ -80,16 +83,17 @@
                 </div>
 
                 {# Page Title with Navigation Dropdown #}
-                <div class="dropdown dropdown-end md:dropdown-start">
+                <div class="dropdown dropdown-start md:dropdown-start">
                     <button tabindex="0" role="button"
                         class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
-                        <span class="truncate">{% if page_title %}{{ page_title }}{% else %}{{ _('Stricknani') }}{%
-                            endif %}</span>
+                        <span class="truncate {% if hide_page_title_on_mobile %}hidden md:inline{% endif %}">
+                            {{ display_title|truncate(40, True, '...') }}
+                        </span>
                         <span
-                            class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity"></span>
+                            class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity {% if hide_page_title_on_mobile %}hidden md:inline{% endif %}"></span>
                     </button>
                     <ul tabindex="0"
-                        class="dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
+                        class="dropdown-content navbar-dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
                         {% if current_user %}
                         <li>
                             <a href="/projects"
@@ -160,7 +164,7 @@
                         <span class="mdi mdi-account-circle text-3xl"></span>
                         {% endif %}
                     </button>
-                    <div tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[90] w-72 p-0 shadow-xl border border-base-300 mt-2">
+                    <div tabindex="0" class="dropdown-content navbar-dropdown-content menu bg-base-100 rounded-box z-[90] w-72 p-0 shadow-xl border border-base-300 mt-2">
                         <div class="flex items-center gap-3 border-b border-base-300 px-4 py-3">
                             <div class="avatar">
                                 <button type="button"
@@ -254,7 +258,7 @@
                             <span class="mdi mdi-chevron-down text-xs opacity-50"></span>
                         </button>
                         <ul tabindex="0"
-                            class="dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
+                            class="dropdown-content navbar-dropdown-content z-[90] menu p-2 shadow-lg bg-base-100 rounded-lg w-48 border border-base-200 gap-1 mt-2">
                             <li>
                                 <form action="/auth/set-language" method="post" class="block p-0">
                                     <input type="hidden" name="next"

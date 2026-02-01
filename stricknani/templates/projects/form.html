@@ -7,6 +7,7 @@
 
 {# Set variables for the unified navbar #}
 {% set page_title %}{{ project.name if project else _('New Project') }}{% endset %}
+{% set page_title_mobile_hidden = project %}
 {% set back_url = '/projects/' + project.id|string if project else '/projects' %}
 {% set back_label = _('Back to projects') %}
 {% set page_actions %}

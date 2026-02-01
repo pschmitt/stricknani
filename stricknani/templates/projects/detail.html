@@ -7,6 +7,7 @@
 
 {# Set variables for the unified navbar #}
 {% set page_title %}{{ project.name }}{% endset %}
+{% set page_title_mobile_hidden = true %}
 {% set page_actions %}
 <a href="/projects" class="btn btn-ghost btn-circle" aria-label="{{ _('Back to projects') }}">
     <span class="mdi mdi-arrow-left text-xl"></span>
@@ -143,7 +144,10 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
-    <h1 class="text-2xl font-bold mb-4 md:hidden">{{ project.name }}</h1>
+    <h1 class="text-2xl font-bold mb-4 md:hidden flex items-center gap-2">
+        <span class="mdi mdi-folder-outline text-primary text-2xl"></span>
+        {{ project.name }}
+    </h1>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <!-- Main Content Column -->
