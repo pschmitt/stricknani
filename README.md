@@ -55,7 +55,9 @@ All config is via environment variables or `.env` (see `.env.example`).
 | `SESSION_COOKIE_SECURE` | Secure session cookies | `false` |
 | `LANGUAGE_COOKIE_SECURE` | Secure language cookie | `false` |
 | `COOKIE_SAMESITE` | SameSite policy | `strict` |
-| `FEATURE_SIGNUP_ENABLED` | Enable user signup | `true` |
+| `FEATURE_SIGNUP_ENABLED` | Enable user signup | `false` |
+| `FEATURE_WAYBACK_ENABLED` | Enable Wayback Machine snapshots | `false` |
+| `FEATURE_AI_IMPORT_ENABLED` | Enable AI-powered pattern import | `true` |
 | `DEFAULT_LANGUAGE` | Default language | `de` |
 | `OPENAI_API_KEY` | OpenAI API key for AI import | (optional) |
 | `SENTRY_DSN` | Sentry DSN | (optional) |

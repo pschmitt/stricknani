@@ -53,6 +53,9 @@ class Config:
     FEATURE_WAYBACK_ENABLED: bool = (
         os.getenv("FEATURE_WAYBACK_ENABLED", "false").lower() == "true"
     )
+    FEATURE_AI_IMPORT_ENABLED: bool = (
+        os.getenv("FEATURE_AI_IMPORT_ENABLED", "true").lower() == "true"
+    )
 
     # AI/OpenAI
     OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")

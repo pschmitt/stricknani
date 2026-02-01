@@ -795,7 +795,8 @@ async def list_projects(
             "selected_category": category,
             "selected_tag": tag,
             "search": search,
-            "has_openai_key": bool(config.OPENAI_API_KEY),
+            "has_openai_key": config.FEATURE_AI_IMPORT_ENABLED
+            and bool(config.OPENAI_API_KEY),
         },
     )
 
@@ -817,7 +818,9 @@ async def new_project_form(
     tag_suggestions = await _get_user_tags(db, current_user.id)
 
     # Check if OpenAI API key is available for AI import
-    has_openai_key = bool(os.getenv("OPENAI_API_KEY"))
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
+        os.getenv("OPENAI_API_KEY")
+    )
 
     return render_template(
         "projects/form.html",
@@ -875,7 +878,9 @@ async def import_pattern(
         content_text = ""
         source_url = None
 
-        use_ai_enabled = bool(os.getenv("OPENAI_API_KEY"))
+        use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
+            os.getenv("OPENAI_API_KEY")
+        )
 
         # Extract content based on import type
         if import_type == "url":
