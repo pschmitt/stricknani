@@ -87,7 +87,7 @@
             {% endif %}
         </div>
         {% if project.tags %}
-        <div class="mb-4 flex flex-wrap gap-2">
+        <div class="mb-4 flex flex-wrap gap-2 -ml-2">
             {% for tag in project.tags %}
             <a href="/projects?search={{ ('#' ~ tag)|urlencode }}" class="badge badge-outline">#{{ tag }}</a>
             {% endfor %}

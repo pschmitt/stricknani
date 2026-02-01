@@ -147,14 +147,12 @@ msgid "Set as primary"
 msgstr "Als Titelbild festlegen"
 
 #: stricknani/templates/base.html:964
-#, fuzzy
 msgid "Delete image"
 msgstr "Bild löschen"
 
 #: stricknani/templates/base.html:995
-#, fuzzy
 msgid "Download image"
-msgstr "Bild öffnen"
+msgstr "Bild herunterladen"
 
 #: stricknani/templates/admin/_user_card.html:9
 #: stricknani/templates/shared/unified_navbar.html:157
@@ -247,14 +245,12 @@ msgstr "Benutzer löschen"
 
 #: stricknani/templates/admin/users.html:9
 #: stricknani/templates/admin/users.html:12
-#, fuzzy
 msgid "New User"
-msgstr "Benutzer löschen"
+msgstr "Neuer Benutzer"
 
 #: stricknani/templates/admin/users.html:25
-#, fuzzy
 msgid "Users"
-msgstr "Benutzer insgesamt"
+msgstr "Benutzer"
 
 #: stricknani/templates/admin/users.html:41
 msgid "Update profile details for"
@@ -406,13 +402,12 @@ msgid "Login failed"
 msgstr "Anmeldung fehlgeschlagen"
 
 #: stricknani/templates/auth/login.html:24
-#, fuzzy
 msgid ""
 "We could not sign you in with those details. Please review them and try\n"
 "                        again."
 msgstr ""
-"Wir konnten Sie mit diesen Daten nicht anmelden. Bitte überprüfen Sie "
-"diese und versuchen Sie es erneut."
+"Wir konnten dich mit diesen Daten nicht anmelden. Bitte überprüfe sie "
+"und versuche es erneut."
 
 #: stricknani/templates/auth/login.html:27
 msgid "Check for typos or extra spaces in your email and password."
@@ -429,8 +424,8 @@ msgid ""
 "If you lost access, reach out to your instance admin to reset your "
 "password."
 msgstr ""
-"Wenn Sie den Zugriff verloren haben, wenden Sie sich an Ihren "
-"Administrator, um Ihr Passwort zurückzusetzen."
+"Wenn du den Zugriff verloren hast, wende dich an deinen "
+"Administrator, um dein Passwort zurückzusetzen."
 
 #: stricknani/templates/auth/login.html:62
 msgid "Don't have an account? Sign up"
@@ -456,13 +451,12 @@ msgid "Gauge Calculator"
 msgstr "Maschenrechner"
 
 #: stricknani/templates/gauge/calculator.html:19
-#, fuzzy
 msgid ""
 "Calculate how many stitches to cast on and rows to knit based on your "
 "gauge and the pattern's\n"
 "                gauge."
 msgstr ""
-"Berechnen Sie basierend auf Ihrer Maschenprobe und der Maschenprobe der "
+"Berechne basierend auf deiner Maschenprobe und der Maschenprobe der "
 "Anleitung, wie viele Maschen angeschlagen und wie viele Reihen gestrickt "
 "werden müssen."
 
@@ -588,9 +582,8 @@ msgstr "Speichere das Projekt, bevor du diesem Schritt Bilder hinzufügst"
 #: stricknani/templates/macros/image_upload.html:73
 #: stricknani/templates/projects/form.html:1245
 #: stricknani/templates/projects/form.html:1621
-#, fuzzy
 msgid "Make title image"
-msgstr "Bild löschen"
+msgstr "Als Titelbild festlegen"
 
 #: stricknani/templates/projects/_cards.html:8
 #, python-format
@@ -963,15 +956,13 @@ msgstr "Notizen"
 #: stricknani/templates/projects/detail.html:413
 #: stricknani/templates/projects/detail.html:432
 #: stricknani/templates/projects/form.html:306
-#, fuzzy
 msgid "Stitch Sample"
-msgstr "Maschen"
+msgstr "Maschenprobe"
 
 #: stricknani/templates/projects/detail.html:425
 #: stricknani/templates/projects/form.html:318
-#, fuzzy
 msgid "Stitch Sample Photos"
-msgstr "Schritt-Fotos"
+msgstr "Fotos der Maschenprobe"
 
 #: stricknani/templates/projects/detail.html:449
 msgid "Instructions"
@@ -1048,9 +1039,8 @@ msgstr "Neues Projekt"
 #: stricknani/templates/projects/list.html:27
 #: stricknani/templates/yarn/form.html:18
 #: stricknani/templates/yarn/list.html:14
-#, fuzzy
 msgid "More options"
-msgstr "Weitere Aktionen"
+msgstr "Weitere Optionen"
 
 #: stricknani/templates/projects/form.html:24
 #: stricknani/templates/projects/form.html:72
@@ -1066,21 +1056,19 @@ msgid "Preview"
 msgstr "Vorschau"
 
 #: stricknani/templates/projects/form.html:104
-#, fuzzy
 msgid ""
 "Imported Data - Not Saved\n"
 "                    Yet"
-msgstr "Importierte Daten - Noch nicht gespeichert"
+msgstr "Importierte Daten – noch nicht gespeichert"
 
 #: stricknani/templates/projects/form.html:107
-#, fuzzy
 msgid ""
 "This project was imported from an external source. Please review all "
 "fields carefully and\n"
 "                    click \"Save\" to keep it."
 msgstr ""
 "Dieses Projekt wurde aus einer externen Quelle importiert. Bitte "
-"überprüfe alle Felder sorgfältig und klicke auf \"Speichern\", um es zu "
+"überprüfe alle Felder sorgfältig und klicke auf „Speichern“, um es zu "
 "behalten."
 
 #: stricknani/templates/projects/form.html:124
@@ -1107,11 +1095,10 @@ msgid "Add a tag..."
 msgstr "Tag hinzufügen..."
 
 #: stricknani/templates/projects/form.html:184
-#, fuzzy
 msgid ""
 "Press Enter or choose a\n"
 "                                    suggestion."
-msgstr "Enter drücken oder Vorschlag wählen."
+msgstr "Drücke Enter oder wähle einen Vorschlag aus."
 
 #: stricknani/templates/projects/form.html:195
 #: stricknani/templates/projects/form.html:467
@@ -1395,9 +1382,8 @@ msgstr "Projekt importieren"
 
 #: stricknani/templates/projects/list.html:65
 #: stricknani/templates/yarn/list.html:52
-#, fuzzy
 msgid "Search"
-msgstr "Suche löschen"
+msgstr "Suchen"
 
 #: stricknani/templates/shared/_empty_search_state.html:2
 msgid "No matching results"
@@ -1420,9 +1406,8 @@ msgid "You have unsaved changes. Save before leaving?"
 msgstr "Sie haben ungespeicherte Änderungen. Vor dem Verlassen speichern?"
 
 #: stricknani/templates/shared/form_base.html:20
-#, fuzzy
 msgid "Discard"
-msgstr "Deaktiviert"
+msgstr "Verwerfen"
 
 #: stricknani/templates/shared/unified_navbar.html:51
 #: stricknani/templates/shared/unified_navbar.html:105
@@ -1431,9 +1416,8 @@ msgid "Yarns"
 msgstr "Garne"
 
 #: stricknani/templates/shared/unified_navbar.html:76
-#, fuzzy
 msgid "Home"
-msgstr "Design"
+msgstr "Start"
 
 #: stricknani/templates/shared/unified_navbar.html:185
 msgid "Signed in"
@@ -1741,7 +1725,6 @@ msgid "Delete photo"
 msgstr "Foto löschen"
 
 #: stricknani/templates/yarn/form.html:260
-#, fuzzy
 msgid ""
 "Supported: JPG, PNG, GIF. Thumbnails are generated\n"
 "                    automatically."
@@ -1772,7 +1755,6 @@ msgid "Are you sure you want to delete this yarn?"
 msgstr "Möchtest du dieses Garn wirklich löschen?"
 
 #: stricknani/templates/yarn/form.html:415
-#, fuzzy
 msgid ""
 "This will also delete all photos associated with this yarn. This\n"
 "            action cannot be undone."
@@ -1789,14 +1771,12 @@ msgid "Network error while deleting photo"
 msgstr "Netzwerkfehler beim Löschen des Fotos"
 
 #: stricknani/templates/yarn/form.html:486
-#, fuzzy
 msgid "Data imported successfully!"
-msgstr "Anleitung erfolgreich importiert"
+msgstr "Daten erfolgreich importiert!"
 
 #: stricknani/templates/yarn/form.html:631
-#, fuzzy
 msgid "Failed to import yarn data"
-msgstr "Import der Anleitung fehlgeschlagen"
+msgstr "Garn-Daten konnten nicht importiert werden"
 
 #: stricknani/templates/yarn/form.html:670
 msgid ""

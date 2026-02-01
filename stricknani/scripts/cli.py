@@ -813,9 +813,7 @@ def main() -> None:
     project_export_parser.add_argument(
         "--url", default="http://localhost:7674", help="API URL"
     )
-    project_export_parser.add_argument(
-        "--email", required=True, help="User email"
-    )
+    project_export_parser.add_argument("--email", required=True, help="User email")
     project_export_parser.add_argument(
         "--password", help="User password (omit to prompt)"
     )

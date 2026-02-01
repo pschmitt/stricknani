@@ -64,7 +64,6 @@ def _is_allowed_import_image(content_type: str | None, url: str) -> bool:
     return extension in IMPORT_ALLOWED_IMAGE_EXTENSIONS
 
 
-
 class PatternImporter:
     """Extract knitting pattern data from URLs."""
 
@@ -149,6 +148,7 @@ class PatternImporter:
 
         # Decode HTML entities in all string fields
         from typing import cast
+
         return cast(dict[str, Any], self._unescape_data(data))
 
     def _unescape_data(self, data: Any) -> Any:
@@ -184,9 +184,7 @@ class PatternImporter:
                     title = text
                     break
 
-        if title and any(
-            x in title.lower() for x in ["yarn", "garn", "wolle", "ball"]
-        ):
+        if title and any(x in title.lower() for x in ["yarn", "garn", "wolle", "ball"]):
             return self._clean_yarn_name(title)
         return title
 
@@ -367,9 +365,7 @@ class PatternImporter:
     def _extract_weight_grams(self, soup: BeautifulSoup) -> int | None:
         """Extract weight in grams."""
         # Try labeled search first
-        val = self._find_info_by_label(
-            soup, ["gewicht", "ball weight", "weight"]
-        )
+        val = self._find_info_by_label(soup, ["gewicht", "ball weight", "weight"])
         if val:
             match = re.search(r"(\d+)", val)
             if match:
@@ -550,8 +546,7 @@ class PatternImporter:
             # Use a closure to capture the current label for the lambda
             def _match_tag(t: Any, lbl: str = label) -> bool:
                 return (
-                    t.name
-                    in ["th", "td", "dt", "span", "div", "b", "strong", "label"]
+                    t.name in ["th", "td", "dt", "span", "div", "b", "strong", "label"]
                     and lbl.lower() == t.get_text().strip().rstrip(":").lower()
                 )
 
@@ -701,7 +696,7 @@ class PatternImporter:
             ]
             for weight in weights:
                 # Search with word boundaries for short terms like DK
-                if re.search(fr"\b{weight}\b", title, re.I):
+                if re.search(rf"\b{weight}\b", title, re.I):
                     return weight.upper()
 
         # Look for explicit labels

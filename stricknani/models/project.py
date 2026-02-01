@@ -53,6 +53,7 @@ class Project(Base):
             and not self.link_archive
             and not self.link_archive_failed
         )
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.now(UTC),

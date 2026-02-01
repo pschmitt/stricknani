@@ -38,11 +38,11 @@
             </div>
 
             <div class="dropdown dropdown-end md:hidden ml-auto">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square" popovertarget="user-card-mobile-popover-{{ user.id }}" style="anchor-name: --user-card-mobile-{{ user.id }}">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
                     <span class="mdi mdi-dots-vertical text-lg"></span>
                 </div>
-                <ul tabindex="0" popover id="user-card-mobile-popover-{{ user.id }}" style="position-anchor: --user-card-mobile-{{ user.id }}"
-                    class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
+                <ul tabindex="0"
+                    class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200 mt-2">
                     <li class="{% if user.id == current_user.id %}menu-disabled opacity-50{% endif %}">
                         <form method="post" action="/admin/users/{{ user.id }}/toggle-active"
                             hx-post="/admin/users/{{ user.id }}/toggle-active" hx-target="#user-card-{{ user.id }}"
@@ -117,11 +117,11 @@
             </form>
 
             <div class="dropdown dropdown-end hidden md:block">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square" popovertarget="user-card-popover-{{ user.id }}" style="anchor-name: --user-card-{{ user.id }}">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
                     <span class="mdi mdi-dots-vertical text-lg"></span>
                 </div>
-                <ul tabindex="0" popover id="user-card-popover-{{ user.id }}" style="position-anchor: --user-card-{{ user.id }}"
-                    class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
+                <ul tabindex="0"
+                    class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200 mt-2">
                     <li>
                         <button type="button" onclick="openEditUserDialog(this)" data-user-id="{{ user.id }}"
                             data-user-email="{{ user.email }}">

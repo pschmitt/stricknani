@@ -181,9 +181,6 @@ def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
     return hints
 
 
-
-
-
 def _extract_garnstudio_notes_block(comment: str) -> str | None:
     if not comment:
         return None
@@ -205,9 +202,6 @@ def _extract_garnstudio_notes_block(comment: str) -> str | None:
         return heading_match.group(1).strip()
 
     return None
-
-
-
 
 
 async def _import_images_from_urls(
@@ -1867,10 +1861,13 @@ async def update_project(
     if steps_data:
         steps_list = json.loads(steps_data)
         existing_step_ids = {step.id for step in project.steps}
+
         def _coerce_step_id(raw: object) -> int | None:
             try:
-                return int(raw)
-            except (TypeError, ValueError):
+                if isinstance(raw, (str, int, float)):
+                    return int(raw)
+                return None
+            except (TypeError, ValueError, AttributeError):
                 return None
 
         new_step_ids = {
@@ -1931,6 +1928,7 @@ async def update_project(
         url=f"/projects/{project.id}?toast=project_updated",
         status_code=status.HTTP_303_SEE_OTHER,
     )
+
 
 @router.post("/{project_id}/retry-archive", response_class=Response)
 async def retry_project_archive(
@@ -2309,9 +2307,7 @@ async def promote_project_image(
 
     # Set all images for this project to non-title
     await db.execute(
-        update(Image)
-        .where(Image.project_id == project_id)
-        .values(is_title_image=False)
+        update(Image).where(Image.project_id == project_id).values(is_title_image=False)
     )
 
     # Set selected image to title

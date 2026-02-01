@@ -190,7 +190,6 @@ def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
     return []
 
 
-
 def _strip_wrapping_quotes(value: str) -> str:
     """Strip wrapping single or double quotes from a search token."""
 
@@ -646,8 +645,6 @@ async def create_yarn(
     ):
         asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
 
-
-
     return RedirectResponse(
         url=f"/yarn/{yarn.id}?toast=yarn_created",
         status_code=status.HTTP_303_SEE_OTHER,
@@ -794,8 +791,6 @@ async def update_yarn(
     ):
         asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
 
-
-
     return RedirectResponse(
         url=f"/yarn/{yarn.id}?toast=yarn_updated",
         status_code=status.HTTP_303_SEE_OTHER,
@@ -901,9 +896,7 @@ async def promote_yarn_photo(
 
     # Set all photos for this yarn to non-primary
     await db.execute(
-        update(YarnImage)
-        .where(YarnImage.yarn_id == yarn_id)
-        .values(is_primary=False)
+        update(YarnImage).where(YarnImage.yarn_id == yarn_id).values(is_primary=False)
     )
 
     # Set selected photo to primary
