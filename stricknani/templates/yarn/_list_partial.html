@@ -47,24 +47,25 @@
         </div>
         <span class="sr-only">{{ _('Open yarn details for %(name)s') % {'name': yarn.name} }}</span>
     </a>
-    <div class="absolute top-2 left-2 z-10">
-        {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='card' %}
-        {% include "yarn/_favorite_toggle.html" %}
-        {% endwith %}
-    </div>
-    <div class="absolute bottom-2 right-2 z-10">
-        <a href="/yarn/{{ yarn.id }}/edit" class="btn btn-circle btn-primary shadow-sm h-10 w-10 min-h-0 text-xl"
-            title="{{ _('Edit %(name)s') % {'name': yarn.name} }}">
-            <span class="mdi mdi-pencil" aria-hidden="true"></span>
-            <span class="sr-only">{{ _('Edit') }}</span>
-        </a>
+    <div class="absolute top-3 right-3 z-10">
+        <div class="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+            <a href="/yarn/{{ yarn.id }}/edit" 
+               class="btn btn-circle bg-black/20 backdrop-blur-md border-white/20 text-white hover:bg-white hover:text-primary transition-all h-9 w-9 min-h-0 text-lg shadow-sm" 
+               title="{{ _('Edit %(name)s') % {'name': yarn.name} }}">
+                <span class="mdi mdi-pencil" aria-hidden="true"></span>
+                <span class="sr-only">{{ _('Edit') }}</span>
+            </a>
+        </div>
     </div>
     {% elif section == 'body' %}
     <div class="flex justify-between items-start mb-3">
-        <h3 class="card-title">
-            <a href="/yarn/{{ yarn.id }}" class="hover:text-primary">
+        <h3 class="card-title flex items-center gap-2 min-w-0">
+            <a href="/yarn/{{ yarn.id }}" class="hover:text-primary truncate">
                 {{ yarn.name }}
             </a>
+            {% if yarn.is_favorite %}
+            <span class="mdi mdi-heart text-pink-500 text-sm shrink-0" title="{{ _('In favorites') }}"></span>
+            {% endif %}
         </h3>
     </div>
     {% if yarn.brand %}

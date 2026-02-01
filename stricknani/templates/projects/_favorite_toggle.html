@@ -10,11 +10,11 @@
         attrs='hx-' ~ action ~ '="/projects/' ~ project_id ~ '/favorite?variant=' ~ variant ~ '" hx-target="closest [data-favorite-toggle]" hx-swap="innerHTML" data-toast-message="' ~ message ~ '" data-toast-variant="' ~ ('info' if is_favorite else 'success') ~ '" aria-pressed="' ~ ('true' if is_favorite else 'false') ~ '" title="' ~ label ~ '"'
     ) }}
 {% else %}
-    {% set button_classes = 'inline-flex h-10 w-10 items-center justify-center rounded-full border text-xl transition focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900' %}
+    {% set button_classes = 'inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 backdrop-blur-md shadow-sm' %}
     {% if is_favorite %}
-        {% set button_classes = button_classes ~ ' border-pink-600 bg-pink-600 text-white hover:bg-pink-700 dark:border-pink-500 dark:bg-pink-500 dark:text-white dark:hover:bg-pink-400' %}
+        {% set button_classes = button_classes ~ ' border-pink-500/30 bg-pink-500/20 text-pink-500 hover:bg-pink-500 hover:text-white dark:border-pink-400/30 dark:bg-pink-400/10 dark:text-pink-400 dark:hover:bg-pink-400 dark:hover:text-white' %}
     {% else %}
-        {% set button_classes = button_classes ~ ' border-base-300 bg-base-100 text-base-content/70 hover:border-pink-400 hover:text-pink-600 dark:border-base-300 dark:bg-base-100 dark:text-base-content/70 dark:hover:border-pink-400 dark:hover:text-pink-300' %}
+        {% set button_classes = button_classes ~ ' border-white/20 bg-black/10 text-white/70 hover:bg-white hover:text-pink-500 hover:border-pink-200 dark:bg-white/5 dark:text-white/50 dark:hover:bg-white dark:hover:text-pink-500' %}
     {% endif %}
     <button
         type="button"

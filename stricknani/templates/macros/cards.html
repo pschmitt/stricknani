@@ -1,9 +1,9 @@
 {% macro list_card(data_attrs='') %}
-<div class="card bg-base-200 shadow-xl" {{ data_attrs | safe }}>
-    <div class="relative rounded-t-lg overflow-hidden">
+<div class="card bg-base-100 shadow-sm border border-base-200 hover:shadow-xl hover:border-primary/20 transition-all duration-300 group overflow-hidden rounded-2xl" {{ data_attrs | safe }}>
+    <div class="relative overflow-hidden">
         {{ caller('media') }}
     </div>
-    <div class="card-body">
+    <div class="card-body p-4 sm:p-5">
         {{ caller('body') }}
     </div>
 </div>
