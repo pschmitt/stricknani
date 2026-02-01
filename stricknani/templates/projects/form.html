@@ -102,11 +102,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         <div class="flex items-start gap-3">
             <span class="mdi mdi-alert text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></span>
             <div class="flex-1">
-                <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved
-                    Yet') }}</h3>
+                <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved Yet') }}</h3>
                 <p class="text-sm text-yellow-700 dark:text-yellow-300">
-                    {{ _('This project was imported from an external source. Please review all fields carefully and
-                    click "Save" to keep it.') }}
+                    {{ _('This project was imported from an external source. Please review all fields carefully and click "Save" to keep it.') }}
                 </p>
             </div>
         </div>
@@ -182,14 +180,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                         {% endfor %}
                                     </div>
                                 </div>
-                                <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a
-                                    suggestion.') }}
-                                </p>
+                                <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a suggestion.') }}</p>
                             </div>
 
                             <div>
-                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Used
-                                    Needles') }}</label>
+                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Used Needles') }}</label>
                                 <input type="text" name="needles"
                                     value="{{ project.needles if project and project.needles else '' }}"
                                     class="input  input-sm w-full mt-1"
@@ -197,8 +192,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             </div>
 
                             <div>
-                                <label class=" text-xs font-bold uppercase text-base-content/50">{{
-                                    _('Recommended Size') }}</label>
+                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Recommended Size') }}</label>
                                 <input type="text" name="recommended_needles"
                                     value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
                                     class="input  input-sm w-full mt-1"
@@ -311,8 +305,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         <textarea id="stitch_sample" name="stitch_sample" rows="4"
                             class="textarea  w-full"
                             placeholder="{{ _('Describe your stitch sample / gauge swatch...') }}">{{ project.stitch_sample if project and project.stitch_sample else '' }}</textarea>
-                        <p class="text-xs text-base-content/70 mt-1 mb-2">{{ _('Supports Markdown formatting and image
-                            drops') }}</p>
+                        <p class="text-xs text-base-content/70 mt-1 mb-2">{{ _('Supports Markdown formatting and image drops') }}</p>
 
                         <h4 id="stitchSamplePhotosLabel"
                             class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not project or not project.stitch_sample_images %} hidden{% endif %}">

@@ -59,8 +59,12 @@ def main() -> int:
         ),
         key=str,
     )
+    multiline_ids = sorted(
+        (msgid for msgid in template_ids if isinstance(msgid, str) and "\n" in msgid),
+        key=str,
+    )
 
-    if not (missing_ids or missing_strings or fuzzy_strings):
+    if not (missing_ids or missing_strings or fuzzy_strings or multiline_ids):
         print("Translations look complete.")
         return 0
 
@@ -78,6 +82,13 @@ def main() -> int:
         print("Fuzzy msgstr entries in de catalog:")
         for msgid in fuzzy_strings:
             print(f"  - {msgid}")
+
+    if multiline_ids:
+        print("Multiline msgids found (use a single line in templates):")
+        for msgid in multiline_ids:
+            # Show a snippet of the multiline msgid
+            snippet = msgid.replace("\n", "\\n")[:60]
+            print(f"  - {snippet}...")
 
     return 1
 

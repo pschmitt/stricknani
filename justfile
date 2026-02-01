@@ -22,6 +22,18 @@ lint:
 i18n-check:
   uv run python -m stricknani.scripts.check_translations
 
+# Extract translation strings from source files
+i18n-extract:
+  uv run python -m babel.messages.frontend extract -F babel.cfg -o stricknani/locales/messages.pot stricknani
+
+# Update translation catalogs from the template
+i18n-update: i18n-extract
+  uv run python -m babel.messages.frontend update -i stricknani/locales/messages.pot -d stricknani/locales
+
+# Compile catalogs after edits
+i18n-compile:
+  uv run python -m babel.messages.frontend compile -d stricknani/locales
+
 # Format code
 fmt:
   uv run ruff format .

@@ -6,8 +6,11 @@ Use this file as the single source of truth for how to work in the Stricknani re
 
 ### Translations (UI text)
 - Always add new strings to `stricknani/locales/en/LC_MESSAGES/messages.po` and `stricknani/locales/de/LC_MESSAGES/messages.po`.
+- **Avoid multiline strings** in HTML templates (e.g., between `{% trans %}` or in `{{ _(...) }}`). Keep them on a single line to prevent brittle multiline `msgid`s in the catalogs.
+- Update catalogs after template changes:
+  `just i18n-update`
 - Compile catalogs after edits:
-  `uv run python -m babel.messages.frontend compile -d stricknani/locales`
+  `just i18n-compile`
 - Verify translations:
   `just i18n-check`
 
@@ -34,6 +37,8 @@ Use this file as the single source of truth for how to work in the Stricknani re
 - Lint: `just lint`
 - Format: `just fmt`
 - Tests: `just test`
+- i18n Update: `just i18n-update`
+- i18n Compile: `just i18n-compile`
 - Full checks: `just check`
 
 ---
