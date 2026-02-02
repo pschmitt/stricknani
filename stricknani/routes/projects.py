@@ -1401,8 +1401,8 @@ async def _ensure_yarns_by_text(
                 raw_names.append(line)
         yarn_names = raw_names
     else:
-        # Fallback to comma splitting if it's a single line
-        # but avoid splitting on commas that are likely part of a color spec (Garnstudio style)
+        # Fallback to comma splitting if it's a single line but avoid splitting
+        # on commas that are likely part of a color spec (Garnstudio style)
         if re.search(r"(?:farbe|color|colour)\s*\d+\s*,\s*", yarn_text, re.I):
             yarn_names = [yarn_text.strip()]
         else:

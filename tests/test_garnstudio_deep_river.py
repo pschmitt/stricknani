@@ -71,7 +71,8 @@ async def test_garnstudio_deep_river_cardigan() -> None:
     assert len(diagram_step["images"]) > 0
 
     # Ensure no images from "related patterns" (drops/mag/...) leaked through
-    # Pattern ID is 11991, drops mag images usually have the pattern ID in them or mag number.
+    # Pattern ID is 11991, drops mag images usually have the pattern ID in them
+    # or mag number.
     # Related patterns mentioned earlier: mag 254/12, 252/10, 252/9
     for url in data["image_urls"]:
         assert "254/12/" not in url
@@ -84,11 +85,11 @@ async def test_garnstudio_yarn_split_regression_11899() -> None:
     url = "https://www.garnstudio.com/pattern.php?id=11899&cid=9"
     importer = GarnstudioPatternImporter(url)
     data = await importer.fetch_and_parse()
-    
+
     yarn_text = data["yarn"]
     assert "DROPS ALPACA" in yarn_text
     assert "Farbe 9020, hell perlgrau" in yarn_text
-    
+
     # Simulate create_project's splitting logic (and frontend selectByName)
     import re
     if "\n" in yarn_text.strip():
@@ -98,7 +99,13 @@ async def test_garnstudio_yarn_split_regression_11899() -> None:
             raw_names = [yarn_text.strip()]
         else:
             raw_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
-            
+
     assert len(raw_names) == 1
     assert "DROPS ALPACA" in raw_names[0]
     assert "hell perlgrau" in raw_names[0]
+
+    # Verify images
+    assert len(data["image_urls"]) >= 5
+    # Ensure they are the correct pattern images (252/9/)
+    for url in data["image_urls"]:
+        assert "/252/9/" in url or "og:image" in url or "og-image" in url

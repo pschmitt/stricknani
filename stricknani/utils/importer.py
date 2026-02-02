@@ -110,25 +110,35 @@ class PatternImporter:
                 ".pcalc", ".pcalc-wrapper", ".btn", ".pattern-print", ".dropdown",
                 ".lessons-wrapper", ".mobile-only", ".re-material", ".updates",
                 ".pattern_copyright", ".pattern-share-new", ".pattern-ad",
-                ".pattern-prices", ".img-rel", ".selected-filters", ".ratio-1-1"
+                ".pattern-prices", ".selected-filters", ".ratio-1-1",
+                ".lesson-list-pattern", ".video-list-pattern", ".nav-pattern"
             ]
             for selector in noise_selectors:
                 for noise in soup.select(selector):
                     noise.decompose()
 
-            # Remove the "You might also like" section entirely
-            for h2 in soup.find_all("h2"):
-                if "Vielleicht gefällt" in h2.get_text() or "You might also like" in h2.get_text():
+            # Remove sections by heading
+            for heading in soup.find_all(["h2", "h3"]):
+                text = heading.get_text().lower()
+                noise_keywords = [
+                    "vielleicht gefällt", "you might also like",
+                    "brauchen sie hilfe", "need some help",
+                    "schritt-für-schritt", "step-by-step"
+                ]
+                if any(x in text for x in noise_keywords):
                     # Find parent row or container and decompose
-                    parent = h2.find_parent("div", class_="row")
+                    parent = heading.find_parent("div", class_="row")
                     if parent:
-                        # Decompose this row and the following one (which contains the images)
+                        # Decompose this row and potentially the next one
+                        # if it's a related content block
                         nxt = parent.find_next_sibling("div", class_="row")
-                        if nxt:
+                        if nxt and (
+                            nxt.select(".img-rel") or nxt.select(".ratio-16-9")
+                        ):
                             nxt.decompose()
                         parent.decompose()
                     else:
-                        h2.decompose()
+                        heading.decompose()
 
         steps = self._extract_steps(soup)
         images = self._extract_images(soup)
@@ -1510,6 +1520,9 @@ class PatternImporter:
                         "twitter",
                         "instagram",
                         "pinterest",
+                        "/img/school/lessons/",
+                        "/img/activity/",
+                        "/img/shademap/",
                     ]
                 ):
                     continue
