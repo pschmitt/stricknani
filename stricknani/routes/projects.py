@@ -1402,7 +1402,11 @@ async def _ensure_yarns_by_text(
         yarn_names = raw_names
     else:
         # Fallback to comma splitting if it's a single line
-        yarn_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
+        # but avoid splitting on commas that are likely part of a color spec (Garnstudio style)
+        if re.search(r"(?:farbe|color|colour)\s*\d+\s*,\s*", yarn_text, re.I):
+            yarn_names = [yarn_text.strip()]
+        else:
+            yarn_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
 
     if not yarn_names:
         return current_yarn_ids

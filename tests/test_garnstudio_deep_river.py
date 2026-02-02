@@ -77,3 +77,28 @@ async def test_garnstudio_deep_river_cardigan() -> None:
         assert "254/12/" not in url
         assert "252/10/" not in url
         assert "252/9/" not in url
+
+@pytest.mark.asyncio
+async def test_garnstudio_yarn_split_regression_11899() -> None:
+    """Test regression for pattern 11899 where yarns were split incorrectly by comma."""
+    url = "https://www.garnstudio.com/pattern.php?id=11899&cid=9"
+    importer = GarnstudioPatternImporter(url)
+    data = await importer.fetch_and_parse()
+    
+    yarn_text = data["yarn"]
+    assert "DROPS ALPACA" in yarn_text
+    assert "Farbe 9020, hell perlgrau" in yarn_text
+    
+    # Simulate create_project's splitting logic (and frontend selectByName)
+    import re
+    if "\n" in yarn_text.strip():
+        raw_names = [n.strip() for n in yarn_text.splitlines() if n.strip()]
+    else:
+        if re.search(r"(?:farbe|color|colour)\s*\d+\s*,\s*", yarn_text, re.I):
+            raw_names = [yarn_text.strip()]
+        else:
+            raw_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
+            
+    assert len(raw_names) == 1
+    assert "DROPS ALPACA" in raw_names[0]
+    assert "hell perlgrau" in raw_names[0]

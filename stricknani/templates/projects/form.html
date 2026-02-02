@@ -1083,8 +1083,20 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             remove: removeYarn,
             selectByName: function (name) {
                 if (!name) return { anySelected: false, remaining: '' };
-                const names = name.split('\n').flatMap(n => n.split(',')).map(n => n.trim()).filter(Boolean);
-                const remaining = [];
+                
+                let rawNames = [];
+                if (name.includes('\n')) {
+                    rawNames = name.split('\n').map(n => n.trim()).filter(Boolean);
+                } else {
+                    // Smart comma splitting: avoid splitting on commas followed by color names
+                    // or preceded by "Farbe/color" specs (Garnstudio style).
+                    if (/(?:farbe|color|colour)\s*\d+\s*,\s*/i.test(name)) {
+                        rawNames = [name.trim()];
+                    } else {
+                        rawNames = name.split(',').map(n => n.trim()).filter(Boolean);
+                    }
+                }
+                const names = rawNames;
                 let anySelected = false;
 
                 names.forEach(n => {
