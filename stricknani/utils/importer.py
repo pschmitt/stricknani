@@ -254,6 +254,8 @@ class PatternImporter:
             r"\d+\s*oz\b",
             r"\d+\s*yds?\b",
             r"\d+\s*yards\b",
+            r"\bvon\s+Garnstudio\b",
+            r"\bby\s+Garnstudio\b",
         ]
 
         cleaned = name
@@ -313,6 +315,12 @@ class PatternImporter:
             content = meta_brand.get("content")
             if isinstance(content, str) and not self._is_ui_text(content):
                 return content.strip()
+
+        # 4. Fallback for Garnstudio
+        if self.is_garnstudio:
+            if title and "drops" in title.lower():
+                return "Drops"
+            return "Garnstudio"
 
         return None
 
@@ -1200,7 +1208,8 @@ class PatternImporter:
 
     def _extract_images(self, soup: BeautifulSoup) -> list[str]:
         """Extract image URLs from the page."""
-        images: list[str] = []
+        # Use a list of tuples (url, tag) to allow scoring based on tag attributes
+        extracted: list[tuple[str, Tag | None]] = []
         seen: set[str] = set()
 
         meta_image = soup.find("meta", property="og:image")
@@ -1209,7 +1218,7 @@ class PatternImporter:
             if isinstance(content, str):
                 resolved = self._resolve_image_url(content)
                 if resolved:
-                    images.append(resolved)
+                    extracted.append((resolved, meta_image))
                     seen.add(resolved)
 
         for source in soup.find_all("source"):
@@ -1223,7 +1232,7 @@ class PatternImporter:
                 resolved = self._resolve_image_url(srcset_url)
                 if not resolved or resolved in seen:
                     continue
-                images.append(resolved)
+                extracted.append((resolved, source))
                 seen.add(resolved)
 
         # Look for images in common pattern containers
@@ -1284,7 +1293,7 @@ class PatternImporter:
                 ):
                     continue
 
-                images.append(resolved)
+                extracted.append((resolved, img))
                 seen.add(resolved)
 
         if self.is_garnstudio:
@@ -1294,7 +1303,7 @@ class PatternImporter:
                 if href and isinstance(href, str):
                     resolved = self._resolve_image_url(href)
                     if resolved and resolved not in seen:
-                        images.append(resolved)
+                        extracted.append((resolved, anchor))
                         seen.add(resolved)
 
             for anchor in soup.find_all("a"):
@@ -1306,23 +1315,52 @@ class PatternImporter:
                 resolved = self._resolve_image_url(href)
                 if not resolved or resolved in seen:
                     continue
-                images.append(resolved)
+                extracted.append((resolved, anchor))
                 seen.add(resolved)
 
         # Prioritize diagrams, charts, and sketches
-        def _score_image(url: str) -> int:
+        def _score_image(item: tuple[str, Tag | None]) -> int:
+            url, tag = item
             score = 0
             lower_url = url.lower()
-            if any(
-                x in lower_url
-                for x in ["diagram", "chart", "skizze", "measure", "schema"]
-            ):
-                score += 10
+            
+            # Keywords in URL
+            diagram_keywords = ["diagram", "chart", "skizze", "measure", "schema", "proportions"]
+            if any(x in lower_url for x in diagram_keywords):
+                score += 15
+            
+            # Garnstudio specific diagram pattern (e.g. 140-d.jpg or 3-chart.jpg)
+            if self.is_garnstudio and re.search(r"-\d*[dc]\.(?:jpe?g|png)$", lower_url):
+                score += 20
+
+            # Check tag attributes if available
+            if tag:
+                # Check alt, title, and class of the tag
+                tag_text = " ".join([
+                    str(tag.get("alt") or ""),
+                    str(tag.get("title") or ""),
+                    " ".join(tag.get("class", [])) if isinstance(tag.get("class"), list) else str(tag.get("class") or "")
+                ]).lower()
+                
+                if any(x in tag_text for x in diagram_keywords):
+                    score += 25
+                
+                # Check parent class (Garnstudio uses print-diagrams)
+                parent = tag.parent
+                if parent:
+                    parent_class = " ".join(parent.get("class", [])) if isinstance(parent.get("class"), list) else str(parent.get("class", ""))
+                    if "diagram" in parent_class.lower() or "skizze" in parent_class.lower():
+                        score += 30
+
+            # Prefer larger images if URL suggests it (heuristic)
+            if any(x in lower_url for x in ["large", "high", "orig"]):
+                score += 5
+                
             return score
 
-        images.sort(key=_score_image, reverse=True)
+        extracted.sort(key=_score_image, reverse=True)
 
-        return images[:10]  # Limit to 10 images
+        return [url for url, _tag in extracted[:10]]
 
     def _allow_small_image(self, img: Tag, candidates: list[str]) -> bool:
         if not self.is_garnstudio:

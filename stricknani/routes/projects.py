@@ -160,6 +160,7 @@ def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
         "name",
         "needles",
         "yarn",
+        "brand",
         "gauge_stitches",
         "gauge_rows",
         "category",
@@ -1195,6 +1196,7 @@ async def import_pattern(
             "needles": None,
             "recommended_needles": None,
             "yarn": None,
+            "brand": None,
             "gauge_stitches": None,
             "gauge_rows": None,
             "description": content_text[:2000] if content_text else None,
@@ -1393,7 +1395,11 @@ async def delete_category(
 
 
 async def _ensure_yarns_by_text(
-    db: AsyncSession, user_id: int, yarn_text: str | None, current_yarn_ids: list[int]
+    db: AsyncSession,
+    user_id: int,
+    yarn_text: str | None,
+    current_yarn_ids: list[int],
+    yarn_brand: str | None = None,
 ) -> list[int]:
     """Link against a real yarn from our db, or create a new yarn when there is no match."""
     if not yarn_text:
@@ -1426,7 +1432,7 @@ async def _ensure_yarns_by_text(
 
         if not yarn:
             # Create new yarn
-            yarn = Yarn(name=name, owner_id=user_id)
+            yarn = Yarn(name=name, owner_id=user_id, brand=yarn_brand)
             db.add(yarn)
             await db.flush()
 
@@ -1811,6 +1817,7 @@ async def create_project(
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
     yarn_text: Annotated[str | None, Form()] = None,
+    yarn_brand: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     import_title_image_url: Annotated[str | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
@@ -1818,20 +1825,9 @@ async def create_project(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
-    """Create a new project."""
-    # Parse comma-separated yarn IDs
-    parsed_yarn_ids = []
-    if yarn_ids:
-        try:
-            parsed_yarn_ids = [
-                int(id.strip()) for id in yarn_ids.split(",") if id.strip()
-            ]
-        except ValueError:
-            pass
-
     # Ensure yarn matches or creates
     parsed_yarn_ids = await _ensure_yarns_by_text(
-        db, current_user.id, yarn_text, parsed_yarn_ids
+        db, current_user.id, yarn_text, parsed_yarn_ids, yarn_brand=yarn_brand
     )
 
     gauge_stitches_value = _parse_optional_int("gauge_stitches", gauge_stitches)
@@ -1928,6 +1924,7 @@ async def update_project(
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
     yarn_text: Annotated[str | None, Form()] = None,
+    yarn_brand: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
     is_ai_enhanced: Annotated[bool | None, Form()] = False,
@@ -1947,7 +1944,7 @@ async def update_project(
 
     # Ensure yarn matches or creates
     parsed_yarn_ids = await _ensure_yarns_by_text(
-        db, current_user.id, yarn_text, parsed_yarn_ids
+        db, current_user.id, yarn_text, parsed_yarn_ids, yarn_brand=yarn_brand
     )
 
     result = await db.execute(
