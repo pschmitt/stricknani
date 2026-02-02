@@ -208,6 +208,11 @@ def _extract_garnstudio_notes_block(comment: str) -> str | None:
     return None
 
 
+def _normalize_for_comparison(text: str) -> str:
+    """Normalize text for fuzzy comparison by removing non-alphanumeric chars."""
+    return re.sub(r"\W+", "", text).lower()
+
+
 async def _import_images_from_urls(
     db: AsyncSession,
     project: Project,
@@ -994,9 +999,22 @@ async def import_pattern(
                                     for s in ai_data.get("steps", [])
                                 ]
                             )
-                            # Only append if not already in description or steps
-                            is_in_desc = notes_block in ai_desc
-                            is_in_steps = notes_block in ai_steps_text
+                            # Only append if not already in description or steps (fuzzy)
+                            norm_notes = _normalize_for_comparison(notes_block)
+                            is_in_desc = norm_notes in _normalize_for_comparison(
+                                ai_desc
+                            )
+
+                            ai_steps_text = " ".join(
+                                [
+                                    s.get("description", "")
+                                    for s in ai_data.get("steps", [])
+                                ]
+                            )
+                            is_in_steps = norm_notes in _normalize_for_comparison(
+                                ai_steps_text
+                            )
+
                             if not is_in_desc and not is_in_steps:
                                 if ai_desc:
                                     ai_data["description"] = (

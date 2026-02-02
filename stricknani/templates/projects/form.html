@@ -616,8 +616,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     let isImportPrompted = false;
 
     function autoResize(el) {
-        el.style.height = 'auto';
-        el.style.height = el.scrollHeight + 'px';
+        if (!el) return;
+        // Use setTimeout to ensure the element is visible and has dimensions
+        setTimeout(() => {
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight + 2) + 'px';
+        }, 0);
     }
 
     function syncAiEnhanced(el) {
