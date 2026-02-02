@@ -62,6 +62,7 @@ def _extract_garnstudio_text(soup: BeautifulSoup) -> str:
         "#pattern-info",
         ".pattern-instructions",
         "#pattern-instructions",
+        ".print-diagrams",
     ]
     for selector in selectors:
         container = soup.select_one(selector)
@@ -82,13 +83,11 @@ def _extract_garnstudio_text(soup: BeautifulSoup) -> str:
     ]
 
     for container in [c for c in candidates if c]:
-        text = container.get_text(separator=" ", strip=True)
+        text = container.get_text(separator="\n", strip=True)
         if text:
             return text
 
-    return soup.get_text(separator=" ", strip=True)
-
-    return soup.get_text(separator=" ", strip=True)
+    return soup.get_text(separator="\n", strip=True)
 
 
 if TYPE_CHECKING:

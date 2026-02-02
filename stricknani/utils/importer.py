@@ -610,26 +610,51 @@ class PatternImporter:
             "stitch sample",
             "tension",
         ]
+
+        # 1. Look for precise matches where the content looks like a gauge
         for heading_tag in soup.find_all(
             ["h1", "h2", "h3", "h4", "h5", "h6", "strong", "span", "b", "div"]
         ):
-            h_text = heading_tag.get_text().strip().lower()
+            h_text = heading_tag.get_text().strip().lower().rstrip(":")
             if any(h_text == h for h in headings):
                 # Try to find the next meaningful sibling
                 curr = heading_tag
                 # Go up a few levels if needed to find siblings
                 for _ in range(3):
-                    next_node = curr.find_next_sibling(["div", "p", "section"])
-                    if next_node:
+                    # Look for following nodes
+                    next_nodes = curr.find_all_next(
+                        ["div", "p", "section", "span"], limit=5
+                    )
+                    for next_node in next_nodes:
                         text = next_node.get_text(" ", strip=True)
-                        if len(text) > 20:
+                        # A valid stitch sample usually contains numbers
+                        # and keywords like 'maschen', 'reihen', 'sts'
+                        lower_text = text.lower()
+                        has_metrics = any(
+                            kw in lower_text
+                            for kw in ["masche", "reihe", "sts", "row", "stitches"]
+                        )
+                        has_10cm = "10" in lower_text or "cm" in lower_text
+
+                        if has_metrics and has_10cm and len(text) > 10:
+                            # Avoid UI noise
+                            is_noise = (
+                                "aktualisiert" in lower_text
+                                or "korrigiert" in lower_text
+                            )
+                            if is_noise:
+                                continue
                             return text
                     # If no direct sibling, look at children of parent
                     if curr.parent:
                         curr = curr.parent
 
-        # Fallback to label search
-        return self._find_info_by_label(soup, headings)
+        # 2. Fallback to label search
+        val = self._find_info_by_label(soup, headings)
+        if val and ("maschen" in val.lower() or "sts" in val.lower()):
+            return val
+
+        return None
 
     def _extract_description(self, soup: BeautifulSoup) -> str | None:
         """Extract pattern description."""
