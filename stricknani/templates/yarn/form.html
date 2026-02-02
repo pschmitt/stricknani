@@ -13,23 +13,28 @@
 {% set back_url = '/yarn/' + yarn.id|string if yarn else '/yarn' %}
 {% set back_label = _('Back to yarns') %}
 {% set page_actions %}
-{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="yarnForm"') }}
-{% if not yarn %}
-<div class="dropdown dropdown-end dropdown-bottom hidden md:inline-flex">
-    <button type="button" class="btn btn-square btn-ghost" aria-label="{{ _('More options') }}">
-        <span class="mdi mdi-dots-vertical text-xl"></span>
+<div class="flex items-center gap-1">
+    <button type="submit" form="yarnForm" class="btn btn-primary gap-2 h-10 min-h-0 px-3 md:px-4">
+        <span class="mdi mdi-content-save text-xl"></span>
+        <span class="hidden md:inline">{{ _('Save') }}</span>
     </button>
-    <ul tabindex="0"
-        class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
-        <li>
-            <button type="button" onclick="document.getElementById('importDialog').showModal()">
-                <span class="mdi mdi-download"></span>
-                {{ _('Import') }}
-            </button>
-        </li>
-    </ul>
+    {% if not yarn %}
+    <div class="dropdown dropdown-end dropdown-bottom">
+        <button type="button" class="btn btn-square btn-ghost btn-sm md:btn-md" aria-label="{{ _('More options') }}">
+            <span class="mdi mdi-dots-vertical text-xl"></span>
+        </button>
+        <ul tabindex="0"
+            class="dropdown-content ellipsis-dropdown-content z-[100] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
+            <li>
+                <button type="button" onclick="document.getElementById('importDialog').showModal()">
+                    <span class="mdi mdi-download"></span>
+                    {{ _('Import') }}
+                </button>
+            </li>
+        </ul>
+    </div>
+    {% endif %}
 </div>
-{% endif %}
 {% endset %}
 
 {% block form_before %}
