@@ -590,9 +590,9 @@ class PatternImporter:
         # 1. Search for Label: Value in flat text
         text = soup.get_text(separator="\n", strip=True)
         for label in labels:
-            # Match label optionally followed by colon and then
-            # capture until end of line
-            pattern = rf"(?:{label})\s*[:：]?\s*([^\n]+)"
+            # Match label at start of line optionally followed by colon
+            # and then capture until end of line
+            pattern = rf"(?m)^(?:{label})\s*[:：]?\s*([^\n]+)"
             match = re.search(pattern, text, re.I)
             if match:
                 val = match.group(1).strip()
@@ -1767,11 +1767,16 @@ class PatternImporter:
 
     def _extract_garnstudio_yarn(self, soup: BeautifulSoup) -> str | None:
         """Extract yarn list from Garnstudio pattern."""
-        text = self._extract_garnstudio_text(soup)
-        if not text:
+        material = soup.find(id=re.compile(r"material_text(_print)?"))
+        if not material:
+            material = soup.select_one(".pattern-material")
+
+        if not material:
             return None
 
-        lines = [line.rstrip() for line in text.splitlines()]
+        # Use BeautifulSoup directly to preserve structure
+        text = material.get_text(separator="\n", strip=True)
+        lines = [line.strip() for line in text.splitlines()]
         yarn_headings = {"GARN", "YARN", "MATERIAL", "MATERIALS"}
 
         start_index = -1
@@ -1804,11 +1809,21 @@ class PatternImporter:
         collected: list[str] = []
         for line in lines[start_index + 1 :]:
             stripped = line.strip()
-            if stripped:
-                label = stripped[:-1] if stripped.endswith(":") else stripped
-                if label.isupper() and label in stop_headings:
-                    break
-            collected.append(line)
+            if not stripped:
+                continue
+
+            label = stripped[:-1] if stripped.endswith(":") else stripped
+            if label.isupper() and label in stop_headings:
+                break
+
+            # Garnstudio yarns are often split into name and weight/color
+            # Merge if the current line doesn't look like a new yarn
+            if collected and not any(
+                kw in stripped.upper() for kw in ["DROPS", "GARNGRUPPE", "ODER:"]
+            ):
+                collected[-1] = f"{collected[-1]} {stripped}"
+            else:
+                collected.append(stripped)
 
         return "\n".join(collected).strip() or None
 

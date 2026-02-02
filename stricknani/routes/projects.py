@@ -1383,8 +1383,25 @@ async def _ensure_yarns_by_text(
     if not yarn_text:
         return current_yarn_ids
 
-    # Normalize yarn names from text (could be comma separated or just one)
-    yarn_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
+    # Normalize yarn names from text.
+    # Garnstudio uses newlines for multiple yarns, and commas for color info.
+    # We should prefer newline splitting if multiple lines exist.
+    if "\n" in yarn_text.strip():
+        # Split by newlines and handle "Oder:" (alternative yarn)
+        raw_names = []
+        for line in yarn_text.splitlines():
+            line = line.strip()
+            if not line or line.lower() == "oder:":
+                continue
+            if line.lower().startswith("oder:"):
+                line = line[5:].strip()
+            if line:
+                raw_names.append(line)
+        yarn_names = raw_names
+    else:
+        # Fallback to comma splitting if it's a single line
+        yarn_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
+
     if not yarn_names:
         return current_yarn_ids
 

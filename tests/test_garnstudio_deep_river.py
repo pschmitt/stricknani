@@ -14,8 +14,28 @@ async def test_garnstudio_deep_river_cardigan() -> None:
     assert data["title"] == "Deep River Cardigan"
 
     # Check yarns
-    assert "DROPS DAISY" in data["yarn"]
-    assert "DROPS KARISMA" in data["yarn"]
+    yarn_text = data["yarn"]
+    assert "DROPS DAISY" in yarn_text
+    assert "DROPS KARISMA" in yarn_text
+
+    # Simulate create_project's splitting logic
+    if "\n" in yarn_text.strip():
+        raw_names = []
+        for line in yarn_text.splitlines():
+            line = line.strip()
+            if not line or line.lower() == "oder:":
+                continue
+            if line.lower().startswith("oder:"):
+                line = line[5:].strip()
+            if line:
+                raw_names.append(line)
+        yarn_names = raw_names
+    else:
+        yarn_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
+
+    assert len(yarn_names) == 2
+    assert any("DROPS DAISY" in name for name in yarn_names)
+    assert any("DROPS KARISMA" in name for name in yarn_names)
 
     # Check needles
     assert "RUNDNADELN Nr. 4" in data["needles"]
