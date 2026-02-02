@@ -65,11 +65,13 @@ def _extract_garnstudio_text(soup: BeautifulSoup) -> str:
     ]
 
     for container in [c for c in candidates if c]:
-        text = container.get_text(separator="\n", strip=True)
+        # Use a space separator instead of newline to avoid fragmenting sentences
+        # that are split across multiple inline tags (like <b> or <span>).
+        text = container.get_text(separator=" ", strip=True)
         if text:
             return text
 
-    return soup.get_text(separator="\n", strip=True)
+    return soup.get_text(separator=" ", strip=True)
 
 
 if TYPE_CHECKING:
@@ -256,6 +258,8 @@ def _build_ai_prompts(
         "IMPORTANT: For long text fields like 'description' and 'description' in "
         "steps, always use Markdown formatting (headings, bullet points, bold "
         "text) to ensure the content is readable and not just a wall of text. "
+        "Normalize the text flow: fix broken line breaks and sentences that are "
+        "split across multiple lines incorrectly. "
         "You should change the contents to apply this markup for increased readability, "
         "but do not change the underlying meaning or information.\n"
         "Do not invent data that is not present in the source.\n\n"

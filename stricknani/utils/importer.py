@@ -1342,11 +1342,13 @@ class PatternImporter:
         ]
 
         for container in [c for c in candidates if c]:
-            text = container.get_text(separator="\n", strip=True)
+            # Use a space separator instead of newline to avoid fragmenting sentences
+            # that are split across multiple inline tags (like <b> or <span>).
+            text = container.get_text(separator=" ", strip=True)
             if text:
                 return text
 
-        return soup.get_text(separator="\n", strip=True)
+        return soup.get_text(separator=" ", strip=True)
 
 
 class GarnstudioPatternImporter(PatternImporter):
