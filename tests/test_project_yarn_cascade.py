@@ -1,9 +1,9 @@
 """Tests for project-yarn cascading deletion and auto-linking."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from stricknani.models import Project, Yarn
@@ -151,8 +151,5 @@ async def test_delete_project_htmx_status(test_client: "TestClientFixture") -> N
         await db.commit()
         p_id = project.id
 
-    response = await client.delete(
-        f"/projects/{p_id}", headers={"HX-Request": "true"}
-    )
+    response = await client.delete(f"/projects/{p_id}", headers={"HX-Request": "true"})
     assert response.status_code == 200
-
