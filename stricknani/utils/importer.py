@@ -1288,6 +1288,15 @@ class PatternImporter:
                 seen.add(resolved)
 
         if self.is_garnstudio:
+            # Check for fancybox/lightbox links which often hold diagrams
+            for anchor in soup.find_all("a", class_=lambda x: x and "fancybox" in str(x)):
+                href = anchor.get("href")
+                if href and isinstance(href, str):
+                    resolved = self._resolve_image_url(href)
+                    if resolved and resolved not in seen:
+                        images.append(resolved)
+                        seen.add(resolved)
+
             for anchor in soup.find_all("a"):
                 href = anchor.get("href")
                 if not href or not isinstance(href, str):
@@ -1299,6 +1308,19 @@ class PatternImporter:
                     continue
                 images.append(resolved)
                 seen.add(resolved)
+
+        # Prioritize diagrams, charts, and sketches
+        def _score_image(url: str) -> int:
+            score = 0
+            lower_url = url.lower()
+            if any(
+                x in lower_url
+                for x in ["diagram", "chart", "skizze", "measure", "schema"]
+            ):
+                score += 10
+            return score
+
+        images.sort(key=_score_image, reverse=True)
 
         return images[:10]  # Limit to 10 images
 
@@ -1319,12 +1341,24 @@ class PatternImporter:
         combined = " ".join(attr_bits + candidates).lower()
         return any(
             token in combined
-            for token in ["diagram", "chart", "schema", "schem", "muster", "pattern"]
+            for token in [
+                "diagram",
+                "chart",
+                "schema",
+                "schem",
+                "muster",
+                "pattern",
+                "skizze",
+                "measure",
+            ]
         )
 
     def _looks_like_image_url(self, url: str) -> bool:
         lower = url.lower()
-        if any(token in lower for token in ["diagram", "chart", "schema", "schem"]):
+        if any(
+            token in lower
+            for token in ["diagram", "chart", "schema", "schem", "skizze", "measure"]
+        ):
             return True
         path = urlparse(lower).path
         return path.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp"))

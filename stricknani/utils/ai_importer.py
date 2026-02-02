@@ -372,6 +372,7 @@ class AIPatternImporter:
         # Extract images
         images = await self._extract_images(soup)
         images = self._deduplicate_image_urls(images)
+
         logger.debug("AI import image URLs: %s", images[:5])
 
         if self.trace:
@@ -568,6 +569,22 @@ class AIPatternImporter:
                     continue
                 images.append(resolved)
                 seen.add(resolved)
+
+        # Prioritize diagrams, charts, and sketches
+        def _score_image(url: str) -> int:
+            score = 0
+            lower_url = url.lower()
+            if any(
+                x in lower_url
+                for x in ["diagram", "chart", "skizze", "measure", "schema"]
+            ):
+                score += 10
+            # Prefer larger images if URL suggests it (heuristic)
+            if any(x in lower_url for x in ["large", "high", "orig"]):
+                score += 5
+            return score
+
+        images.sort(key=_score_image, reverse=True)
 
         return images
 
