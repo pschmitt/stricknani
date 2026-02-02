@@ -44,7 +44,10 @@ def _is_garnstudio_url(url: str) -> bool:
 
 def _looks_like_image_url(url: str) -> bool:
     lower = url.lower()
-    if any(token in lower for token in ["diagram", "chart", "schema", "schem"]):
+    if any(
+        token in lower
+        for token in ["diagram", "chart", "schema", "schem", "skizze", "measure"]
+    ):
         return True
     path = urlparse(lower).path
     return path.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp"))
@@ -230,6 +233,9 @@ def _build_ai_prompts(
         "Use the exact field names from the schema. Use null for missing values.\n"
         "Prefer structured steps: split instructions into ordered "
         "steps when possible.\n"
+        "IMPORTANT: Generate meaningful titles for each step (e.g., 'Cast On', "
+        "'Back Piece', 'Assembly') based on the content, instead of using generic "
+        "titles like 'Step 1' or 'Step 2'.\n"
         "IMPORTANT: For long text fields like 'description' and 'description' in "
         "steps, always use Markdown formatting (headings, bullet points, bold "
         "text) to ensure the content is readable and not just a wall of text. "
@@ -475,6 +481,15 @@ class AIPatternImporter:
                 seen.add(resolved)
 
         if _is_garnstudio_url(self.url):
+            # Check for fancybox/lightbox links which often hold diagrams
+            for anchor in soup.find_all("a", class_=lambda x: x and "fancybox" in str(x)):
+                href = anchor.get("href")
+                if href and isinstance(href, str):
+                    resolved = self._resolve_image_url(href)
+                    if resolved and resolved not in seen:
+                        images.append(resolved)
+                        seen.add(resolved)
+
             for anchor in soup.find_all("a"):
                 href = anchor.get("href")
                 if not href or not isinstance(href, str):
@@ -545,7 +560,16 @@ class AIPatternImporter:
         combined = " ".join(attr_bits + candidates).lower()
         return any(
             token in combined
-            for token in ["diagram", "chart", "schema", "schem", "muster", "pattern"]
+            for token in [
+                "diagram",
+                "chart",
+                "schema",
+                "schem",
+                "muster",
+                "pattern",
+                "skizze",
+                "measure",
+            ]
         )
 
     async def _ai_extract(
