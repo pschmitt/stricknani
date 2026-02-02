@@ -1298,7 +1298,9 @@ class PatternImporter:
 
         if self.is_garnstudio:
             # Check for fancybox/lightbox links which often hold diagrams
-            for anchor in soup.find_all("a", class_=lambda x: x and "fancybox" in str(x)):
+            for anchor in soup.find_all(
+                "a", class_=lambda x: x and "fancybox" in str(x)
+            ):
                 href = anchor.get("href")
                 if href and isinstance(href, str):
                     resolved = self._resolve_image_url(href)
@@ -1323,12 +1325,19 @@ class PatternImporter:
             url, tag = item
             score = 0
             lower_url = url.lower()
-            
+
             # Keywords in URL
-            diagram_keywords = ["diagram", "chart", "skizze", "measure", "schema", "proportions"]
+            diagram_keywords = [
+                "diagram",
+                "chart",
+                "skizze",
+                "measure",
+                "schema",
+                "proportions",
+            ]
             if any(x in lower_url for x in diagram_keywords):
                 score += 15
-            
+
             # Garnstudio specific diagram pattern (e.g. 140-d.jpg or 3-chart.jpg)
             if self.is_garnstudio and re.search(r"-\d*[dc]\.(?:jpe?g|png)$", lower_url):
                 score += 20
@@ -1336,26 +1345,42 @@ class PatternImporter:
             # Check tag attributes if available
             if tag:
                 # Check alt, title, and class of the tag
-                tag_text = " ".join([
-                    str(tag.get("alt") or ""),
-                    str(tag.get("title") or ""),
-                    " ".join(tag.get("class", [])) if isinstance(tag.get("class"), list) else str(tag.get("class") or "")
-                ]).lower()
-                
+                tag_alt = tag.get("alt")
+                tag_title = tag.get("title")
+                tag_class = tag.get("class")
+
+                alt_str = str(tag_alt) if tag_alt else ""
+                title_str = str(tag_title) if tag_title else ""
+                class_str = (
+                    " ".join(tag_class)
+                    if isinstance(tag_class, list)
+                    else str(tag_class or "")
+                )
+
+                tag_text = f"{alt_str} {title_str} {class_str}".lower()
+
                 if any(x in tag_text for x in diagram_keywords):
                     score += 25
-                
+
                 # Check parent class (Garnstudio uses print-diagrams)
                 parent = tag.parent
-                if parent:
-                    parent_class = " ".join(parent.get("class", [])) if isinstance(parent.get("class"), list) else str(parent.get("class", ""))
-                    if "diagram" in parent_class.lower() or "skizze" in parent_class.lower():
+                if isinstance(parent, Tag):
+                    p_class = parent.get("class")
+                    parent_class = (
+                        " ".join(p_class)
+                        if isinstance(p_class, list)
+                        else str(p_class or "")
+                    )
+                    if (
+                        "diagram" in parent_class.lower()
+                        or "skizze" in parent_class.lower()
+                    ):
                         score += 30
 
             # Prefer larger images if URL suggests it (heuristic)
             if any(x in lower_url for x in ["large", "high", "orig"]):
                 score += 5
-                
+
             return score
 
         extracted.sort(key=_score_image, reverse=True)

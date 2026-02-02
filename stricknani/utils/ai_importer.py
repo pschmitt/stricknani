@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 import httpx
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from sqlalchemy import Integer, String, Text
 
 # Check if OpenAI is available
@@ -143,7 +143,9 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
         elif name == "yarn":
             description = "Yarn name and weight"
         elif name == "brand":
-            description = "The brand or manufacturer of the yarn (e.g. 'Drops', 'Garnstudio')"
+            description = (
+                "The brand or manufacturer of the yarn (e.g. 'Drops', 'Garnstudio')"
+            )
         elif name == "description":
             description = "A brief summary or description of the pattern"
         elif name == "comment":
@@ -172,7 +174,8 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
         "description": (
             "A list of the most relevant high-quality image URLs for this pattern. "
             "Exclude duplicates (e.g. different resolutions of the same image), "
-            "icons, and irrelevant assets. Prefer the highest resolution version available."
+            "icons, and irrelevant assets. Prefer the highest resolution version "
+            "available."
         ),
         "items": {"type": "string"},
     }
@@ -249,7 +252,8 @@ def _build_ai_prompts(
         "Use the exact field names from the schema. Use null for missing values.\n"
         "IMPORTANT: Preserve the original language of the source text for all "
         "descriptive fields (name, description, step titles, step descriptions). "
-        "DO NOT translate the content to English if the source is in another language.\n"
+        "DO NOT translate the content to English if the source is in another "
+        "language.\n"
         "Prefer structured steps: split instructions into ordered "
         "steps when possible.\n"
         "IMPORTANT: Generate meaningful titles for each step (e.g., 'Cast On', "
@@ -263,10 +267,13 @@ def _build_ai_prompts(
         "IMPORTANT: For long text fields like 'description' and 'description' in "
         "steps, always use Markdown formatting (headings, bullet points, bold "
         "text) to ensure the content is readable and not just a wall of text. "
+        "Minimize redundancy: the 'description' field should be a high-level "
+        "summary of the pattern, while the 'steps' should contain the detailed "
+        "instructions. DO NOT repeat large blocks of text in both fields.\n"
         "Normalize the text flow: fix broken line breaks and sentences that are "
         "split across multiple lines incorrectly. "
-        "You should change the contents to apply this markup for increased readability, "
-        "but do not change the underlying meaning or information.\n"
+        "You should change the contents to apply this markup for increased "
+        "readability, but do not change the underlying meaning or information.\n"
         "Do not invent data that is not present in the source.\n\n"
         f"{json_module.dumps(schema, indent=2)}\n\n"
         "Return valid JSON only.\n"
@@ -403,9 +410,10 @@ class AIPatternImporter:
         # Move extracted comment to description if applicable
         ai_comment = extracted_data.get("comment")
         ai_description = extracted_data.get("description")
-        if ai_comment:
+        if ai_comment and ai_comment.strip():
             if ai_description:
-                extracted_data["description"] = f"{ai_description}\n\n{ai_comment}"
+                if ai_comment.strip() not in ai_description:
+                    extracted_data["description"] = f"{ai_description}\n\n{ai_comment}"
             else:
                 extracted_data["description"] = ai_comment
         extracted_data["comment"] = None
@@ -561,7 +569,9 @@ class AIPatternImporter:
 
         if _is_garnstudio_url(self.url):
             # Check for fancybox/lightbox links which often hold diagrams
-            for anchor in soup.find_all("a", class_=lambda x: x and "fancybox" in str(x)):
+            for anchor in soup.find_all(
+                "a", class_=lambda x: x and "fancybox" in str(x)
+            ):
                 href = anchor.get("href")
                 if href and isinstance(href, str):
                     resolved = self._resolve_image_url(href)
@@ -588,31 +598,57 @@ class AIPatternImporter:
             lower_url = url.lower()
 
             # Keywords in URL
-            diagram_keywords = ["diagram", "chart", "skizze", "measure", "schema", "proportions"]
+            diagram_keywords = [
+                "diagram",
+                "chart",
+                "skizze",
+                "measure",
+                "schema",
+                "proportions",
+            ]
             if any(x in lower_url for x in diagram_keywords):
                 score += 15
 
             # Garnstudio specific diagram pattern (e.g. 140-d.jpg or 3-chart.jpg)
-            if _is_garnstudio_url(self.url) and re.search(r"-\d*[dc]\.(?:jpe?g|png)$", lower_url):
+            if _is_garnstudio_url(self.url) and re.search(
+                r"-\d*[dc]\.(?:jpe?g|png)$", lower_url
+            ):
                 score += 20
 
             # Check tag attributes if available
             if tag:
                 # Check alt, title, and class of the tag
-                tag_text = " ".join([
-                    str(tag.get("alt") or ""),
-                    str(tag.get("title") or ""),
-                    " ".join(tag.get("class", [])) if isinstance(tag.get("class"), list) else str(tag.get("class") or "")
-                ]).lower()
+                tag_alt = tag.get("alt")
+                tag_title = tag.get("title")
+                tag_class = tag.get("class")
+
+                alt_str = str(tag_alt) if tag_alt else ""
+                title_str = str(tag_title) if tag_title else ""
+                class_str = (
+                    " ".join(tag_class)
+                    if isinstance(tag_class, list)
+                    else str(tag_class or "")
+                )
+
+                tag_text = f"{alt_str} {title_str} {class_str}".lower()
 
                 if any(x in tag_text for x in diagram_keywords):
                     score += 25
 
                 # Check parent class (Garnstudio uses print-diagrams)
                 parent = tag.parent
-                if parent:
-                    parent_class = " ".join(parent.get("class", [])) if isinstance(parent.get("class"), list) else str(parent.get("class") or "")
-                    if "diagram" in parent_class.lower() or "skizze" in parent_class.lower() or "print-diagrams" in parent_class.lower():
+                if isinstance(parent, Tag):
+                    p_class = parent.get("class")
+                    parent_class = (
+                        " ".join(p_class)
+                        if isinstance(p_class, list)
+                        else str(p_class or "")
+                    )
+                    if (
+                        "diagram" in parent_class.lower()
+                        or "skizze" in parent_class.lower()
+                        or "print-diagrams" in parent_class.lower()
+                    ):
                         score += 30
 
             # Prefer larger images if URL suggests it (heuristic)

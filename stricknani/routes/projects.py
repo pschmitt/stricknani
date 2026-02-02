@@ -38,8 +38,11 @@ from stricknani.models import (
     Project,
     Step,
     User,
-    Yarn,
+    project_yarns,
     user_favorites,
+)
+from stricknani.models import (
+    Yarn as YarnModel,
 )
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
@@ -119,7 +122,7 @@ def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
     return token.strip(), remaining
 
 
-def _resolve_yarn_preview(yarn: Yarn) -> dict[str, str | None]:
+def _resolve_yarn_preview(yarn: YarnModel) -> dict[str, str | None]:
     """Return preview image data for a yarn if a photo exists."""
 
     if not yarn.photos:
@@ -524,14 +527,14 @@ async def _get_user_categories(db: AsyncSession, user_id: int) -> list[str]:
     return [category.name for category in result.scalars()]
 
 
-async def _get_user_yarns(db: AsyncSession, user_id: int) -> Sequence[Yarn]:
+async def _get_user_yarns(db: AsyncSession, user_id: int) -> Sequence[YarnModel]:
     """Return all yarns for a user ordered by name."""
 
     result = await db.execute(
-        select(Yarn)
-        .where(Yarn.owner_id == user_id)
-        .order_by(Yarn.name)
-        .options(selectinload(Yarn.photos))
+        select(YarnModel)
+        .where(YarnModel.owner_id == user_id)
+        .order_by(YarnModel.name)
+        .options(selectinload(YarnModel.photos))
     )
     yarns = result.scalars().all()
     for yarn in yarns:
@@ -555,16 +558,16 @@ async def _get_user_tags(db: AsyncSession, user_id: int) -> list[str]:
 
 async def _load_owned_yarns(
     db: AsyncSession, user_id: int, yarn_ids: list[int]
-) -> Sequence[Yarn]:
+) -> Sequence[YarnModel]:
     """Load yarns that belong to the user from provided IDs."""
 
     if not yarn_ids:
         return []
 
     result = await db.execute(
-        select(Yarn).where(
-            Yarn.owner_id == user_id,
-            Yarn.id.in_(yarn_ids),
+        select(YarnModel).where(
+            YarnModel.owner_id == user_id,
+            YarnModel.id.in_(yarn_ids),
         )
     )
     return result.scalars().all()
@@ -984,14 +987,23 @@ async def import_pattern(
                         basic_desc = basic_data.get("description") or ""
                         notes_block = _extract_garnstudio_notes_block(basic_desc)
                         if notes_block:
-                            ai_desc = ai_data.get("description")
-                            if ai_desc:
-                                if notes_block not in ai_desc:
+                            ai_desc = ai_data.get("description") or ""
+                            ai_steps_text = " ".join(
+                                [
+                                    s.get("description", "")
+                                    for s in ai_data.get("steps", [])
+                                ]
+                            )
+                            # Only append if not already in description or steps
+                            is_in_desc = notes_block in ai_desc
+                            is_in_steps = notes_block in ai_steps_text
+                            if not is_in_desc and not is_in_steps:
+                                if ai_desc:
                                     ai_data["description"] = (
                                         f"{ai_desc}\n\n{notes_block}"
                                     )
-                            else:
-                                ai_data["description"] = notes_block
+                                else:
+                                    ai_data["description"] = notes_block
 
                     # 4. Check if name/title is actually set
                     if (
@@ -1401,7 +1413,7 @@ async def _ensure_yarns_by_text(
     current_yarn_ids: list[int],
     yarn_brand: str | None = None,
 ) -> list[int]:
-    """Link against a real yarn from our db, or create a new yarn when there is no match."""
+    """Link against a real yarn, or create a new one when there is no match."""
     if not yarn_text:
         return current_yarn_ids
 
@@ -1415,7 +1427,9 @@ async def _ensure_yarns_by_text(
     # Pre-load already linked yarns names to avoid double linking
     existing_linked_yarns = []
     if updated_ids:
-        res = await db.execute(select(Yarn.name).where(Yarn.id.in_(updated_ids)))
+        res = await db.execute(
+            select(YarnModel.name).where(YarnModel.id.in_(updated_ids))
+        )
         existing_linked_yarns = [row[0].lower() for row in res]
 
     for name in yarn_names:
@@ -1423,40 +1437,39 @@ async def _ensure_yarns_by_text(
             continue
 
         # Try to find match in DB
-        res = await db.execute(
-            select(Yarn).where(
-                Yarn.owner_id == user_id, func.lower(Yarn.name) == name.lower()
+        res_match = await db.execute(
+            select(YarnModel).where(
+                YarnModel.owner_id == user_id,
+                func.lower(YarnModel.name) == name.lower(),
             )
         )
-        yarn = res.scalar_one_or_none()
+        db_yarn_obj = res_match.scalar_one_or_none()
 
-        if not yarn:
+        if not db_yarn_obj:
             # Create new yarn
-            yarn = Yarn(name=name, owner_id=user_id, brand=yarn_brand)
-            db.add(yarn)
+            db_yarn_obj = YarnModel(name=name, owner_id=user_id, brand=yarn_brand)
+            db.add(db_yarn_obj)
             await db.flush()
 
-        if yarn.id not in updated_ids:
-            updated_ids.append(yarn.id)
+        if db_yarn_obj.id not in updated_ids:
+            updated_ids.append(db_yarn_obj.id)
 
     return updated_ids
 
 
-async def _get_exclusive_yarns(db: AsyncSession, project: Project) -> list[Yarn]:
+async def _get_exclusive_yarns(db: AsyncSession, project: Project) -> list[YarnModel]:
     """Return yarns linked ONLY to this project."""
     exclusive = []
-    # Project needs to have yarns and projects loaded
-    for yarn in project.yarns:
+    # Project needs to have yarns loaded
+    for y in project.yarns:
         # We need to count how many projects this yarn belongs to
-        # Since project_yarns is a secondary table
+        # Since project_yarns is a secondary table, we check it directly
         res = await db.execute(
-            select(func.count(Project.id))
-            .join(Yarn.projects)
-            .where(Yarn.id == yarn.id)
+            select(func.count()).where(project_yarns.c.yarn_id == y.id)
         )
         count = res.scalar() or 0
         if count == 1:
-            exclusive.append(yarn)
+            exclusive.append(y)
     return exclusive
 
 
@@ -1477,8 +1490,8 @@ async def get_project(
         .options(
             selectinload(Project.images),
             selectinload(Project.steps).selectinload(Step.images),
-            selectinload(Project.yarns).selectinload(Yarn.photos),
-            selectinload(Project.yarns).selectinload(Yarn.projects),
+            selectinload(Project.yarns).selectinload(YarnModel.photos),
+            selectinload(Project.yarns).selectinload(YarnModel.projects),
         )
     )
     project = result.scalar_one_or_none()
@@ -1671,7 +1684,7 @@ async def edit_project_form(
         .options(
             selectinload(Project.images),
             selectinload(Project.steps).selectinload(Step.images),
-            selectinload(Project.yarns).selectinload(Yarn.projects),
+            selectinload(Project.yarns).selectinload(YarnModel.projects),
         )
     )
     project = result.scalar_one_or_none()
@@ -1825,6 +1838,17 @@ async def create_project(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
+    """Create a new project."""
+    # Parse comma-separated yarn IDs
+    parsed_yarn_ids = []
+    if yarn_ids:
+        try:
+            parsed_yarn_ids = [
+                int(id.strip()) for id in yarn_ids.split(",") if id.strip()
+            ]
+        except ValueError:
+            pass
+
     # Ensure yarn matches or creates
     parsed_yarn_ids = await _ensure_yarns_by_text(
         db, current_user.id, yarn_text, parsed_yarn_ids, yarn_brand=yarn_brand
@@ -2105,7 +2129,7 @@ async def delete_project(
         .options(
             selectinload(Project.images),
             selectinload(Project.steps),
-            selectinload(Project.yarns).selectinload(Yarn.projects),
+            selectinload(Project.yarns).selectinload(YarnModel.projects),
         )
     )
     project = result.scalar_one_or_none()
