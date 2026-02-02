@@ -785,12 +785,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 setFieldValue('yarn_brand', data.brand);
                 
                 if (data.yarn) {
-                    const res = window.yarnSelector?.selectByName(data.yarn);
-                    if (res && res.remaining) {
-                        setFieldValue('yarn_search', res.remaining);
-                    } else if (!res || !res.anySelected) {
-                        setFieldValue('yarn_search', data.yarn);
-                    }
+                    window.yarnSelector?.selectByName(data.yarn);
                 }
 
                 setFieldValue('gauge_stitches', data.gauge_stitches);
@@ -1042,6 +1037,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         const yarnOptions = document.querySelectorAll('.yarn-option');
 
         const selectedYarns = new Map();
+        const pendingYarns = new Set(); // Yarns that don't exist in DB yet
 
         function selectYarn(id, name, brand, colorway, dyeLot, imageUrl) {
             if (selectedYarns.has(id)) return;
@@ -1052,11 +1048,31 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             filterOptions();
         }
 
+        function selectPendingYarn(name) {
+            const normalized = name.trim();
+            if (!normalized || pendingYarns.has(normalized)) return;
+            
+            // Check if it already exists in selectedYarns by name
+            for (let y of selectedYarns.values()) {
+                if (y.name.toLowerCase() === normalized.toLowerCase()) return;
+            }
+
+            pendingYarns.add(normalized);
+            updateSelectedDisplay();
+            updateHiddenInput();
+        }
+
         function removeYarn(id) {
             selectedYarns.delete(id);
             updateSelectedDisplay();
             updateHiddenInput();
             filterOptions();
+        }
+
+        function removePendingYarn(name) {
+            pendingYarns.delete(name);
+            updateSelectedDisplay();
+            updateHiddenInput();
         }
 
         // Expose API
@@ -1065,7 +1081,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             remove: removeYarn,
             selectByName: function (name) {
                 if (!name) return { anySelected: false, remaining: '' };
-                const names = name.split(',').map(n => n.trim()).filter(Boolean);
+                const names = name.split('\n').flatMap(n => n.split(',')).map(n => n.trim()).filter(Boolean);
                 const remaining = [];
                 let anySelected = false;
 
@@ -1090,11 +1106,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         );
                         anySelected = true;
                     } else {
-                        remaining.push(n);
+                        selectPendingYarn(n);
+                        anySelected = true;
                     }
                 });
 
-                return { anySelected, remaining: remaining.join(', ') };
+                return { anySelected, remaining: '' };
             }
         };
 
@@ -1116,43 +1133,75 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         {% endif %}
 
         function updateSelectedDisplay() {
-        if (selectedYarns.size === 0) {
-            selectedContainer.innerHTML = '<span class="text-base-content/40 text-sm">{{ _("No yarns selected") }}</span>';
-            return;
+            if (selectedYarns.size === 0 && pendingYarns.size === 0) {
+                selectedContainer.innerHTML = '<span class="text-base-content/40 text-sm">{{ _("No yarns selected") }}</span>';
+                return;
+            }
+
+            selectedContainer.innerHTML = '';
+            
+            // Render existing yarns
+            selectedYarns.forEach((yarn, id) => {
+                const chip = document.createElement('div');
+                chip.className = 'flex items-center gap-2 py-2 px-3 bg-primary/10 text-primary border border-primary/20 rounded-lg';
+
+                const imageHtml = yarn.imageUrl
+                    ? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-8 h-8 rounded object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
+                    : '';
+
+                chip.innerHTML = `
+                    ${imageHtml}
+                    <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? ' hidden' : ''}" data-fallback-icon>
+                        <span class="mdi mdi-image-off text-sm" aria-hidden="true"></span>
+                    </div>
+                    <span class="text-sm flex-1">
+                        ${yarn.name}${yarn.brand ? ` • ${yarn.brand}` : ''}
+                    </span>
+                    <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-yarn="${id}">
+                        <span class="mdi mdi-close"></span>
+                    </button>
+                `;
+                selectedContainer.appendChild(chip);
+
+                chip.querySelector('[data-remove-yarn]').addEventListener('click', () => {
+                    removeYarn(id);
+                });
+            });
+
+            // Render pending yarns
+            pendingYarns.forEach(name => {
+                const chip = document.createElement('div');
+                chip.className = 'flex items-center gap-2 py-2 px-3 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg';
+
+                chip.innerHTML = `
+                    <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60">
+                        <span class="mdi mdi-sheep text-sm" aria-hidden="true"></span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <span class="text-sm block truncate">${name}</span>
+                        <span class="text-[10px] opacity-70 block">{{ _('New Yarn') }}</span>
+                    </div>
+                    <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-pending="${name}">
+                        <span class="mdi mdi-close"></span>
+                    </button>
+                `;
+                selectedContainer.appendChild(chip);
+
+                chip.querySelector('[data-remove-pending]').addEventListener('click', () => {
+                    removePendingYarn(name);
+                });
+            });
         }
 
-        selectedContainer.innerHTML = '';
-        selectedYarns.forEach((yarn, id) => {
-            const chip = document.createElement('div');
-            chip.className = 'flex items-center gap-2 py-2 px-3 bg-primary/10 text-primary border border-primary/20 rounded-lg';
-
-            const imageHtml = yarn.imageUrl
-                ? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-8 h-8 rounded object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
-                : '';
-
-            chip.innerHTML = `
-                ${imageHtml}
-                <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? ' hidden' : ''}" data-fallback-icon>
-                    <span class="mdi mdi-image-off text-sm" aria-hidden="true"></span>
-                </div>
-                <span class="text-sm flex-1">
-                    ${yarn.name}${yarn.brand ? ` • ${yarn.brand}` : ''}
-                </span>
-                <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-yarn="${id}">
-                    <span class="mdi mdi-close"></span>
-                </button>
-            `;
-            selectedContainer.appendChild(chip);
-
-            chip.querySelector('[data-remove-yarn]').addEventListener('click', () => {
-                removeYarn(id);
-            });
-        });
-    }
-
-    function updateHiddenInput() {
-        hiddenInput.value = Array.from(selectedYarns.keys()).join(',');
-    }
+        function updateHiddenInput() {
+            hiddenInput.value = Array.from(selectedYarns.keys()).join(',');
+            // Also update the yarn_search input which is used for new yarns
+            // BUT only if it's not currently being edited by the user
+            const searchInput = document.getElementById('yarn_search');
+            if (searchInput && document.activeElement !== searchInput) {
+                searchInput.value = Array.from(pendingYarns).join('\n');
+            }
+        }
 
     function filterOptions() {
         const searchTerm = searchInput.value.toLowerCase();
