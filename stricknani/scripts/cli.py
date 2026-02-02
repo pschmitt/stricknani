@@ -450,9 +450,33 @@ async def add_yarn(
 
 
 async def import_project_url(
-    owner_email: str, url: str, use_ai: bool, import_images: bool
+    url: str, use_ai: bool, import_images: bool, owner_email: str | None = None
 ) -> None:
     """Import a project from a URL."""
+    basic_importer = PatternImporter(url)
+    data = await basic_importer.fetch_and_parse()
+
+    if use_ai and config.OPENAI_API_KEY:
+        try:
+            ai_importer: ModuleType | None
+            import stricknani.utils.ai_importer as ai_importer
+        except ImportError:
+            ai_importer = None
+
+        if ai_importer and ai_importer.OPENAI_AVAILABLE:
+            try:
+                ai_importer_instance = ai_importer.AIPatternImporter(
+                    url, hints=build_ai_hints(data)
+                )
+                data = await ai_importer_instance.fetch_and_parse()
+            except Exception as exc:
+                logger.warning("AI import failed, using basic parser: %s", exc)
+
+    if not owner_email:
+        # Debug mode: just print the data
+        output_json(data)
+        return
+
     await init_db()
     async with AsyncSessionLocal() as session:
         owner = await get_user_by_email(session, owner_email)
@@ -461,25 +485,6 @@ async def import_project_url(
                 f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
             )
             return
-
-        basic_importer = PatternImporter(url)
-        data = await basic_importer.fetch_and_parse()
-
-        if use_ai and config.OPENAI_API_KEY:
-            try:
-                ai_importer: ModuleType | None
-                import stricknani.utils.ai_importer as ai_importer
-            except ImportError:
-                ai_importer = None
-
-            if ai_importer and ai_importer.OPENAI_AVAILABLE:
-                try:
-                    ai_importer_instance = ai_importer.AIPatternImporter(
-                        url, hints=build_ai_hints(data)
-                    )
-                    data = await ai_importer_instance.fetch_and_parse()
-                except Exception as exc:
-                    logger.warning("AI import failed, using basic parser: %s", exc)
 
         name = data.get("name") or data.get("title") or "Imported Project"
         project = Project(
@@ -491,6 +496,7 @@ async def import_project_url(
             gauge_stitches=data.get("gauge_stitches"),
             gauge_rows=data.get("gauge_rows"),
             comment=data.get("comment"),
+            description=data.get("description"),
             link=data.get("link") or url,
             owner_id=owner.id,
         )
@@ -529,6 +535,68 @@ async def import_project_url(
         output_ok(
             f"[green]Imported project[/green] [cyan]{project.id}[/cyan]",
             {"project_id": project.id},
+        )
+
+
+async def import_yarn_url(
+    url: str, use_ai: bool, owner_email: str | None = None
+) -> None:
+    """Import a yarn from a URL."""
+    basic_importer = PatternImporter(url)
+    data = await basic_importer.fetch_and_parse()
+
+    if use_ai and config.OPENAI_API_KEY:
+        try:
+            ai_importer: ModuleType | None
+            import stricknani.utils.ai_importer as ai_importer
+        except ImportError:
+            ai_importer = None
+
+        if ai_importer and ai_importer.OPENAI_AVAILABLE:
+            try:
+                # We reuse the same AI logic for yarns for now
+                ai_importer_instance = ai_importer.AIPatternImporter(
+                    url, hints=build_ai_hints(data)
+                )
+                data = await ai_importer_instance.fetch_and_parse()
+            except Exception as exc:
+                logger.warning("AI import failed, using basic parser: %s", exc)
+
+    if not owner_email:
+        # Debug mode: just print the data
+        output_json(data)
+        return
+
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        owner = await get_user_by_email(session, owner_email)
+        if not owner:
+            error_console.print(
+                f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+            )
+            return
+
+        name = data.get("name") or data.get("title") or "Imported Yarn"
+        yarn_entry = Yarn(
+            name=name,
+            brand=data.get("brand"),
+            colorway=data.get("colorway"),
+            fiber_content=data.get("fiber_content"),
+            weight_grams=data.get("weight_grams"),
+            length_meters=data.get("length_meters"),
+            weight_category=data.get("weight_category"),
+            recommended_needles=data.get("recommended_needles"),
+            notes=data.get("description") or data.get("comment"),
+            link=data.get("link") or url,
+            owner_id=owner.id,
+        )
+        session.add(yarn_entry)
+        await session.commit()
+        await session.refresh(yarn_entry)
+
+        output_ok(
+            f"[green]Imported yarn[/green] [cyan]{yarn_entry.id}[/cyan]",
+            {"yarn_id": yarn_entry.id},
         )
 
 
@@ -776,11 +844,9 @@ def main() -> None:
     project_add_parser.add_argument("--tags", help="Comma-separated tags")
     project_add_parser.add_argument("--link", help="Project link")
     project_import_parser = project_subparsers.add_parser(
-        "import-url", help="Import a project from a URL"
+        "import", help="Import a project from a URL"
     )
-    project_import_parser.add_argument(
-        "--owner-email", required=True, help="Owner email"
-    )
+    project_import_parser.add_argument("--owner-email", help="Owner email")
     project_import_parser.add_argument("--url", required=True, help="URL to import")
     project_import_parser.add_argument(
         "--no-ai",
@@ -836,6 +902,16 @@ def main() -> None:
     yarn_add_parser.add_argument("--length-meters", type=int, help="Length in meters")
     yarn_add_parser.add_argument("--notes", help="Notes")
     yarn_add_parser.add_argument("--link", help="Link")
+    yarn_import_parser = yarn_subparsers.add_parser(
+        "import", help="Import a yarn from a URL"
+    )
+    yarn_import_parser.add_argument("--owner-email", help="Owner email")
+    yarn_import_parser.add_argument("--url", required=True, help="URL to import")
+    yarn_import_parser.add_argument(
+        "--no-ai",
+        action="store_true",
+        help="Disable AI import even if configured",
+    )
     yarn_delete_parser = yarn_subparsers.add_parser("delete", help="Delete a yarn")
     yarn_delete_parser.add_argument("--id", type=int, required=True, help="Yarn ID")
     yarn_delete_parser.add_argument(
@@ -904,13 +980,13 @@ def main() -> None:
                     args.link,
                 )
             )
-        elif args.project_command == "import-url":
+        elif args.project_command == "import":
             asyncio.run(
                 import_project_url(
-                    args.owner_email,
                     args.url,
                     not args.no_ai,
                     args.import_images,
+                    args.owner_email,
                 )
             )
         elif args.project_command == "delete":
@@ -945,6 +1021,14 @@ def main() -> None:
                     args.length_meters,
                     args.notes,
                     args.link,
+                )
+            )
+        elif args.yarn_command == "import":
+            asyncio.run(
+                import_yarn_url(
+                    args.url,
+                    not args.no_ai,
+                    args.owner_email,
                 )
             )
         elif args.yarn_command == "delete":

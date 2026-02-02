@@ -177,10 +177,10 @@ async def test_cli_imports_project_url(
     )
 
     await cli.import_project_url(
-        "tester@example.com",
         "https://example.com/pattern",
         use_ai=False,
         import_images=False,
+        owner_email="tester@example.com",
     )
 
     async with session_factory() as session:
