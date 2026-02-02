@@ -1380,10 +1380,47 @@ async def _ensure_yarns_by_text(
     yarn_text: str | None,
     current_yarn_ids: list[int],
     yarn_brand: str | None = None,
+    yarn_details: list[dict[str, Any]] | None = None,
 ) -> list[int]:
     """Link against a real yarn, or create a new one when there is no match."""
+    updated_ids = list(current_yarn_ids)
+
+    # 1. Handle structured yarn details first (highest quality)
+    if yarn_details:
+        for detail in yarn_details:
+            name = detail.get("name")
+            if not name:
+                continue
+
+            # Try to find match in DB
+            res_match = await db.execute(
+                select(YarnModel).where(
+                    YarnModel.owner_id == user_id,
+                    func.lower(YarnModel.name) == name.lower(),
+                )
+            )
+            db_yarn_obj = res_match.scalar_one_or_none()
+
+            if not db_yarn_obj:
+                # Create new yarn with all available details
+                db_yarn_obj = YarnModel(
+                    name=name,
+                    owner_id=user_id,
+                    brand=detail.get("brand") or yarn_brand,
+                    colorway=detail.get("colorway"),
+                )
+                db.add(db_yarn_obj)
+                await db.flush()
+
+            if db_yarn_obj.id not in updated_ids:
+                updated_ids.append(db_yarn_obj.id)
+
+        # If we had structured details, we consider them exhaustive for the text
+        return updated_ids
+
+    # 2. Fallback to raw text parsing
     if not yarn_text:
-        return current_yarn_ids
+        return updated_ids
 
     # Normalize yarn names from text.
     # Garnstudio uses newlines for multiple yarns, and commas for color info.
@@ -1409,9 +1446,7 @@ async def _ensure_yarns_by_text(
             yarn_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
 
     if not yarn_names:
-        return current_yarn_ids
-
-    updated_ids = list(current_yarn_ids)
+        return updated_ids
 
     # Pre-load already linked yarns names to avoid double linking
     existing_linked_yarns = []
@@ -1819,6 +1854,7 @@ async def create_project(
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
     yarn_text: Annotated[str | None, Form()] = None,
+    yarn_details: Annotated[str | None, Form()] = None,
     yarn_brand: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     import_title_image_url: Annotated[str | None, Form()] = None,
@@ -1838,9 +1874,22 @@ async def create_project(
         except ValueError:
             pass
 
+    # Parse structured yarn details if available
+    parsed_yarn_details = None
+    if yarn_details:
+        try:
+            parsed_yarn_details = json.loads(yarn_details)
+        except json.JSONDecodeError:
+            pass
+
     # Ensure yarn matches or creates
     parsed_yarn_ids = await _ensure_yarns_by_text(
-        db, current_user.id, yarn_text, parsed_yarn_ids, yarn_brand=yarn_brand
+        db,
+        current_user.id,
+        yarn_text,
+        parsed_yarn_ids,
+        yarn_brand=yarn_brand,
+        yarn_details=parsed_yarn_details,
     )
 
     gauge_stitches_value = _parse_optional_int("gauge_stitches", gauge_stitches)
@@ -1937,6 +1986,7 @@ async def update_project(
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
     yarn_text: Annotated[str | None, Form()] = None,
+    yarn_details: Annotated[str | None, Form()] = None,
     yarn_brand: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
@@ -1955,9 +2005,22 @@ async def update_project(
         except ValueError:
             pass
 
+    # Parse structured yarn details if available
+    parsed_yarn_details = None
+    if yarn_details:
+        try:
+            parsed_yarn_details = json.loads(yarn_details)
+        except json.JSONDecodeError:
+            pass
+
     # Ensure yarn matches or creates
     parsed_yarn_ids = await _ensure_yarns_by_text(
-        db, current_user.id, yarn_text, parsed_yarn_ids, yarn_brand=yarn_brand
+        db,
+        current_user.id,
+        yarn_text,
+        parsed_yarn_ids,
+        yarn_brand=yarn_brand,
+        yarn_details=parsed_yarn_details,
     )
 
     result = await db.execute(

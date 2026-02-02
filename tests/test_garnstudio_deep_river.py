@@ -79,6 +79,7 @@ async def test_garnstudio_deep_river_cardigan() -> None:
         assert "252/10/" not in url
         assert "252/9/" not in url
 
+
 @pytest.mark.asyncio
 async def test_garnstudio_yarn_split_regression_11899() -> None:
     """Test regression for pattern 11899 where yarns were split incorrectly by comma."""
@@ -92,6 +93,7 @@ async def test_garnstudio_yarn_split_regression_11899() -> None:
 
     # Simulate create_project's splitting logic (and frontend selectByName)
     import re
+
     if "\n" in yarn_text.strip():
         raw_names = [n.strip() for n in yarn_text.splitlines() if n.strip()]
     else:

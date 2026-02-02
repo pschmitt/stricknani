@@ -102,6 +102,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     <input type="hidden" id="archive_on_save" name="archive_on_save" value="">
     <input type="hidden" id="is_ai_enhanced" name="is_ai_enhanced" value="{{ '1' if project and project.is_ai_enhanced else '' }}">
     <input type="hidden" id="yarn_brand" name="yarn_brand" value="">
+    <input type="hidden" id="yarn_details" name="yarn_details" value="">
     <input type="hidden" id="stepsData" name="steps_data">
 
     <div id="importWarning"
@@ -785,6 +786,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 setFieldValue('recommended_needles', data.recommended_needles);
                 setFieldValue('yarn_brand', data.brand);
                 
+                const yarnDetailsField = document.getElementById('yarn_details');
+                if (yarnDetailsField && data.yarn_details) {
+                    yarnDetailsField.value = JSON.stringify(data.yarn_details);
+                }
+
                 if (data.yarn) {
                     window.yarnSelector?.selectByName(data.yarn);
                 }
@@ -2486,7 +2492,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         setFieldValue('recommended_needles', data.recommended_needles);
         setFieldValue('yarn_brand', data.brand);
         
-                        if (data.yarn) {
+        const yarnDetailsField = document.getElementById('yarn_details');
+        if (yarnDetailsField && data.yarn_details) {
+            yarnDetailsField.value = JSON.stringify(data.yarn_details);
+        }
+
+        if (data.yarn) {
                             window.yarnSelector?.selectByName(data.yarn);
                         }
                 setFieldValue('gauge_stitches', data.gauge_stitches);

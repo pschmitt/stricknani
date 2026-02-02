@@ -107,11 +107,24 @@ class PatternImporter:
         if self.is_garnstudio:
             # Targeted noise removal
             noise_selectors = [
-                ".pcalc", ".pcalc-wrapper", ".btn", ".pattern-print", ".dropdown",
-                ".lessons-wrapper", ".mobile-only", ".re-material", ".updates",
-                ".pattern_copyright", ".pattern-share-new", ".pattern-ad",
-                ".pattern-prices", ".selected-filters", ".ratio-1-1",
-                ".lesson-list-pattern", ".video-list-pattern", ".nav-pattern"
+                ".pcalc",
+                ".pcalc-wrapper",
+                ".btn",
+                ".pattern-print",
+                ".dropdown",
+                ".lessons-wrapper",
+                ".mobile-only",
+                ".re-material",
+                ".updates",
+                ".pattern_copyright",
+                ".pattern-share-new",
+                ".pattern-ad",
+                ".pattern-prices",
+                ".selected-filters",
+                ".ratio-1-1",
+                ".lesson-list-pattern",
+                ".video-list-pattern",
+                ".nav-pattern",
             ]
             for selector in noise_selectors:
                 for noise in soup.select(selector):
@@ -121,9 +134,12 @@ class PatternImporter:
             for heading in soup.find_all(["h2", "h3"]):
                 text = heading.get_text().lower()
                 noise_keywords = [
-                    "vielleicht gefällt", "you might also like",
-                    "brauchen sie hilfe", "need some help",
-                    "schritt-für-schritt", "step-by-step"
+                    "vielleicht gefällt",
+                    "you might also like",
+                    "brauchen sie hilfe",
+                    "need some help",
+                    "schritt-für-schritt",
+                    "step-by-step",
                 ]
                 if any(x in text for x in noise_keywords):
                     # Find parent row or container and decompose
@@ -155,10 +171,22 @@ class PatternImporter:
         if image_limit > 0:
             image_urls = images[:image_limit]
 
+        yarn_text = self._extract_yarn(soup)
+        yarn_details = None
+        if self.is_garnstudio and yarn_text:
+            # If multiple yarns, split and parse each
+            yarn_lines = yarn_text.split("\n")
+            yarn_details = [
+                self._parse_garnstudio_yarn_string(line)
+                for line in yarn_lines
+                if line.strip()
+            ]
+
         data: dict[str, Any] = {
             "title": self._extract_title(soup),
             "needles": self._extract_needles(soup),
-            "yarn": self._extract_yarn(soup),
+            "yarn": yarn_text,
+            "yarn_details": yarn_details,
             "brand": self._extract_brand(soup),
             "fiber_content": self._extract_fiber_content(soup),
             "colorway": self._extract_colorway(soup),
@@ -297,6 +325,11 @@ class PatternImporter:
         if not name:
             return name
 
+        # If it's a Garnstudio pattern, use the more sophisticated parser
+        if self.is_garnstudio:
+            details = self._parse_garnstudio_yarn_string(name)
+            return details["name"]
+
         # Remove patterns like "100g", "300m", "50 g", "100 g", "300 m"
         # Also handles "100g/300m" or similar
         # \b doesn't always work with / so we use a more inclusive pattern
@@ -321,6 +354,57 @@ class PatternImporter:
 
         # Clean up whitespace
         return " ".join(cleaned.split()).strip()
+
+    def _parse_garnstudio_yarn_string(self, yarn_str: str) -> dict[str, str | None]:
+        """Parse a complex Garnstudio yarn string into its components.
+
+        Example: DROPS BRUSHED ALPACA SILK von Garnstudio (gehört zur Garngruppe C)
+        100-125-125-150-150-175 g Farbe 22, hellrostrot
+        """
+        data: dict[str, str | None] = {
+            "name": yarn_str,
+            "brand": "Garnstudio",
+            "colorway": None,
+            "weight": None,
+        }
+
+        cleaned = yarn_str.replace("\n", " ").strip()
+
+        # 1. Extract Colorway (Farbe ...)
+        color_pat = r"(?:Farbe|Color|Farge)\s+([^,]+(?:,\s*[^,]+)?)"
+        color_match = re.search(color_pat, cleaned, re.I)
+        if color_match:
+            data["colorway"] = color_match.group(1).strip()
+            cleaned = cleaned[: color_match.start()] + cleaned[color_match.end() :]
+
+        # 2. Extract Brand info (von Garnstudio / by Garnstudio)
+        brand_match = re.search(r"\b(?:von|by|av)\s+Garnstudio\b", cleaned, re.I)
+        if brand_match:
+            data["brand"] = "Garnstudio"
+            cleaned = cleaned[: brand_match.start()] + cleaned[brand_match.end() :]
+
+        # 3. Extract Yarn Group (gehört zur Garngruppe ...)
+        group_pat = r"\(?(?:gehört zur |belongs to )?Garngruppe\s+[A-F]\)?"
+        group_match = re.search(group_pat, cleaned, re.I)
+        if group_match:
+            cleaned = cleaned[: group_match.start()] + cleaned[group_match.end() :]
+
+        # 4. Extract weight/amount (100-125 g)
+        weight_match = re.search(r"[\d-]+\s*g\b", cleaned, re.I)
+        if weight_match:
+            data["weight"] = weight_match.group(0).strip()
+            cleaned = cleaned[: weight_match.start()] + cleaned[weight_match.end() :]
+
+        # 5. Clean up the remaining name
+        # Handle "Oder:" (alternative yarn)
+        cleaned = re.sub(r"\bOder:\s*", "", cleaned, flags=re.I)
+        # Remove trailing/leading punctuation and extra whitespace
+        cleaned = re.sub(r"^\s*[:,-]+", "", cleaned)
+        cleaned = re.sub(r"[:,-]+\s*$", "", cleaned)
+
+        data["name"] = " ".join(cleaned.split()).strip()
+
+        return data
 
     def _extract_brand(self, soup: BeautifulSoup) -> str | None:
         """Extract brand/manufacturer information."""
