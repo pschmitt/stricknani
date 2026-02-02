@@ -55,9 +55,26 @@ def _looks_like_image_url(url: str) -> bool:
 
 
 def _extract_garnstudio_text(soup: BeautifulSoup) -> str:
+    # Try to find both info and instructions
+    parts = []
+    selectors = [
+        ".pattern-info",
+        "#pattern-info",
+        ".pattern-instructions",
+        "#pattern-instructions",
+    ]
+    for selector in selectors:
+        container = soup.select_one(selector)
+        if container:
+            text = container.get_text(separator=" ", strip=True)
+            if text:
+                parts.append(text)
+
+    if parts:
+        return "\n\n".join(parts)
+
+    # Fallback to older logic if specific containers not found
     candidates = [
-        soup.find(["div", "section"], class_=re.compile(r"pattern-instructions", re.I)),
-        soup.find(["div", "section"], id=re.compile(r"pattern-instructions", re.I)),
         soup.find(["div", "section"], id=re.compile(r"pattern[_-]?text", re.I)),
         soup.find(["div", "section"], class_=re.compile(r"pattern[_-]?text", re.I)),
         soup.find("article"),
@@ -65,11 +82,11 @@ def _extract_garnstudio_text(soup: BeautifulSoup) -> str:
     ]
 
     for container in [c for c in candidates if c]:
-        # Use a space separator instead of newline to avoid fragmenting sentences
-        # that are split across multiple inline tags (like <b> or <span>).
         text = container.get_text(separator=" ", strip=True)
         if text:
             return text
+
+    return soup.get_text(separator=" ", strip=True)
 
     return soup.get_text(separator=" ", strip=True)
 

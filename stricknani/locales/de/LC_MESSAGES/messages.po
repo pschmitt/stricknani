@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-02 13:24+0100\n"
+"POT-Creation-Date: 2026-02-02 13:53+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -729,7 +729,7 @@ msgstr "z.B. https://www.ravelry.com/patterns/library/..."
 
 #: stricknani/templates/projects/_import_dialog.html:40
 msgid "AI-powered extraction enabled"
-msgstr ""
+msgstr "KI-gestützte Extraktion aktiviert"
 
 #: stricknani/templates/projects/_import_dialog.html:63
 #: stricknani/templates/yarn/_import_dialog.html:53
@@ -1045,13 +1045,12 @@ msgstr "Diese Aktion kann nicht rückgängig gemacht werden."
 #: stricknani/templates/projects/detail.html:757
 #: stricknani/templates/projects/form.html:2793
 msgid "Some yarns are only used in this project:"
-msgstr ""
+msgstr "Einige Garne werden nur in diesem Projekt verwendet:"
 
 #: stricknani/templates/projects/detail.html:765
 #: stricknani/templates/projects/form.html:2801
-#, fuzzy
 msgid "Also delete these yarns"
-msgstr "Garn löschen"
+msgstr "Diese Garne ebenfalls löschen"
 
 #: stricknani/templates/projects/detail.html:861
 msgid "Failed to delete project"

@@ -580,7 +580,17 @@ class PatternImporter:
 
             # If it's a generic tag, check next meaningful sibling or child of parent
             # Some shops like Wolle Roedel put labels in a header/button
-            # and value in a following div
+            # and value in a following div.
+            # Garnstudio often has <b>Label:</b> Value<br>
+
+            # 1. Check direct next sibling (often a string)
+            sib = target.next_sibling
+            if sib and isinstance(sib, NavigableString):
+                val_text = str(sib).strip()
+                if val_text and not self._is_ui_text(val_text):
+                    return val_text
+
+            # 2. Check next tag
             nxt = target.find_next()
             if nxt and nxt != target:
                 val_text = nxt.get_text().strip()
@@ -601,7 +611,7 @@ class PatternImporter:
             "tension",
         ]
         for heading_tag in soup.find_all(
-            ["h1", "h2", "h3", "h4", "h5", "h6", "strong", "span"]
+            ["h1", "h2", "h3", "h4", "h5", "h6", "strong", "span", "b", "div"]
         ):
             h_text = heading_tag.get_text().strip().lower()
             if any(h_text == h for h in headings):
