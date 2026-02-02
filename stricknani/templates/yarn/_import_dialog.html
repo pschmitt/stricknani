@@ -1,5 +1,5 @@
 {% import "macros/dialogs.html" as dialogs %}
-{% call dialogs.modal('importDialog', title=_('Import Yarn'), box_class='max-w-xl') %}
+{% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl') %}
 <form id="importYarnForm" action="/yarn/import" method="POST">
     <div class="space-y-6 py-2">
         <!-- Magic Header -->
@@ -37,7 +37,7 @@
     <div class="modal-action mt-8">
         {{ dialogs.dialog_cancel(_('Cancel'),
         attrs='onclick="document.getElementById(\'importDialog\').close()"') }}
-        {{ dialogs.dialog_primary(_('Import Yarn'), icon='mdi-auto-fix', type='submit', class='btn-wide') }}
+        {{ dialogs.dialog_primary(_('Import'), icon='mdi-auto-fix', type='submit', class='btn-wide') }}
     </div>
 </form>
 
