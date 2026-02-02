@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
-from bs4.element import AttributeValueList, NavigableString, Tag
+from bs4.element import AttributeValueList, NavigableString, PageElement, Tag
 
 logger = logging.getLogger("stricknani.imports")
 
@@ -603,58 +603,104 @@ class PatternImporter:
 
     def _extract_stitch_sample(self, soup: BeautifulSoup) -> str | None:
         """Extract stitch sample / gauge info."""
-        # Try finding a stitch sample heading
-        headings = [
-            "maschenprobe",
-            "gauge",
-            "stitch sample",
-            "tension",
-        ]
+        headings = ["maschenprobe", "gauge", "stitch sample", "tension"]
 
-        # 1. Look for precise matches where the content looks like a gauge
         for heading_tag in soup.find_all(
             ["h1", "h2", "h3", "h4", "h5", "h6", "strong", "span", "b", "div"]
         ):
             h_text = heading_tag.get_text().strip().lower().rstrip(":")
             if any(h_text == h for h in headings):
-                # Try to find the next meaningful sibling
-                curr = heading_tag
-                # Go up a few levels if needed to find siblings
-                for _ in range(3):
-                    # Look for following nodes
-                    next_nodes = curr.find_all_next(
-                        ["div", "p", "section", "span"], limit=5
-                    )
-                    for next_node in next_nodes:
-                        text = next_node.get_text(" ", strip=True)
-                        # A valid stitch sample usually contains numbers
-                        # and keywords like 'maschen', 'reihen', 'sts'
-                        lower_text = text.lower()
-                        has_metrics = any(
-                            kw in lower_text
-                            for kw in ["masche", "reihe", "sts", "row", "stitches"]
-                        )
-                        has_10cm = "10" in lower_text or "cm" in lower_text
+                # 1. Start collecting from siblings
+                collected: list[str] = []
+                curr: PageElement = heading_tag
+                for _ in range(25):
+                    nxt = curr.next_sibling
+                    if not nxt:
+                        # Move up to parent's sibling if it's an inline container
+                        if (
+                            curr.parent
+                            and isinstance(curr.parent, Tag)
+                            and curr.parent.name in ["span", "b", "strong", "i", "a"]
+                            and curr.parent != soup
+                        ):
+                            curr = curr.parent
+                            continue
+                        break
 
-                        if has_metrics and has_10cm and len(text) > 10:
-                            # Avoid UI noise
-                            is_noise = (
-                                "aktualisiert" in lower_text
-                                or "korrigiert" in lower_text
-                            )
-                            if is_noise:
-                                continue
-                            return text
-                    # If no direct sibling, look at children of parent
-                    if curr.parent:
-                        curr = curr.parent
+                    curr = nxt
+                    text = ""
+                    is_hard_block = False
+                    if isinstance(nxt, NavigableString):
+                        text = str(nxt).strip()
+                    elif isinstance(nxt, Tag):
+                        # Stop if we hit another real heading
+                        if nxt.name in ["h1", "h2", "h3", "h4", "h5", "h6", "h7"]:
+                            break
 
-        # 2. Fallback to label search
-        val = self._find_info_by_label(soup, headings)
-        if val and ("maschen" in val.lower() or "sts" in val.lower()):
-            return val
+                        text = nxt.get_text(" ", strip=True)
+                        is_hard_block = nxt.name in [
+                            "p",
+                            "div",
+                            "section",
+                            "article",
+                            "hr",
+                        ]
 
-        return None
+                    if not text:
+                        if isinstance(nxt, Tag) and nxt.name == "br":
+                            # We allow crossing one or two BRs
+                            continue
+                        continue
+
+                    # If it's a known other heading, stop
+                    lower_text = text.lower()
+                    if any(
+                        h in lower_text
+                        for h in ["anleitung", "material", "nadeln", "size"]
+                    ):
+                        break
+
+                    # If we encounter a hard block and we already have gauge info, stop.
+                    if is_hard_block:
+                        current_combined = " ".join(collected)
+                        if self._looks_like_stitch_sample(current_combined):
+                            break
+
+                    collected.append(text)
+
+                if collected:
+                    combined = " ".join(collected).strip()
+                    # Clean up multiple spaces
+                    combined = " ".join(combined.split())
+                    if self._looks_like_stitch_sample(combined):
+                        return combined
+
+        # 3. Fallback to label search
+        return self._find_info_by_label(soup, headings)
+
+    def _looks_like_stitch_sample(self, text: str) -> bool:
+        """Check if text contains typical gauge information."""
+        if not text or len(text) < 5:
+            return False
+
+        # Noise check
+        lower = text.lower()
+        if "aktualisiert" in lower or "korrigiert" in lower:
+            return False
+
+        # Metrics check (maschen, reihen, sts, rows, 10 cm)
+        metrics = ["masche", "reihe", "sts", "row", "stitches"]
+        has_metrics = any(kw in lower for kw in metrics)
+        has_10cm = "10" in lower or "cm" in lower
+
+        # Numbers check
+        has_numbers = any(char.isdigit() for char in text)
+
+        return (
+            (has_metrics and has_numbers)
+            or (has_metrics and has_10cm)
+            or (has_10cm and has_numbers)
+        )
 
     def _extract_description(self, soup: BeautifulSoup) -> str | None:
         """Extract pattern description."""
@@ -1192,10 +1238,10 @@ class PatternImporter:
         normalized = "\n".join(structured_lines)
 
         # 2. Fix inline colon-style headings
-        # Match "WORD IN CAPS:" at the start of a line or after newline
-        # We avoid ### markers
+        # Match "WORD IN CAPS:" at the start of a line or after double newline
+        # Also handles known headings. We allow a newline before the colon.
         normalized = re.sub(
-            r"^([A-Z0-9\s-]{3,50}):",
+            r"^([A-Z0-9\s-]{3,50})\s*\n?:",
             r"### \1\n",
             normalized,
             flags=re.MULTILINE,

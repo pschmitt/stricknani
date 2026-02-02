@@ -1033,10 +1033,10 @@ async def import_pattern(
                     if ai_data.get("title") and not ai_data.get("name"):
                         ai_data["name"] = ai_data.get("title")
 
-                    # 5. Merge stitch sample if AI missed it
-                    ai_sample = ai_data.get("stitch_sample")
+                    # 5. Merge stitch sample: Favor heuristic over AI as it's more
+                    # precise and less likely to include unrelated paragraphs.
                     basic_sample = basic_data.get("stitch_sample")
-                    if not ai_sample and basic_sample:
+                    if basic_sample:
                         ai_data["stitch_sample"] = basic_sample
 
                     data = ai_data
