@@ -578,6 +578,12 @@ class AIPatternImporter:
                         "badge",
                         "banner",
                         "ad",
+                        "design",
+                        "social",
+                        "facebook",
+                        "twitter",
+                        "instagram",
+                        "pinterest",
                     ]
                 ):
                     continue
@@ -624,14 +630,29 @@ class AIPatternImporter:
                 "schema",
                 "proportions",
             ]
-            if any(x in lower_url for x in diagram_keywords):
-                score += 15
+            is_diagram = any(x in lower_url for x in diagram_keywords)
 
             # Garnstudio specific diagram pattern (e.g. 140-d.jpg or 3-chart.jpg)
             if _is_garnstudio_url(self.url) and re.search(
-                r"-\d*[dc]\.(?:jpe?g|png)$", lower_url
+                r"[-/]\d*[dc]\.(?:jpe?g|png)$", lower_url
             ):
-                score += 20
+                is_diagram = True
+
+            # Keywords in URL indicating photos
+            photo_keywords = ["large", "high", "orig", "photo", "image", "pic"]
+            is_photo = any(x in lower_url for x in photo_keywords)
+
+            if is_diagram:
+                # Diagrams are important but shouldn't be primary
+                score += 8
+            elif is_photo:
+                score += 15
+            else:
+                score += 10
+
+            # Boost OG Image significantly to make it primary
+            if tag and tag.name == "meta" and tag.get("property") == "og:image":
+                score += 50
 
             # Check tag attributes if available
             if tag:
@@ -651,7 +672,9 @@ class AIPatternImporter:
                 tag_text = f"{alt_str} {title_str} {class_str}".lower()
 
                 if any(x in tag_text for x in diagram_keywords):
-                    score += 25
+                    score += 5  # Add a bit more if it's explicitly a diagram
+                elif any(x in tag_text for x in ["pattern", "product", "main"]):
+                    score += 20
 
                 # Check parent class (Garnstudio uses print-diagrams)
                 parent = tag.parent
@@ -667,11 +690,7 @@ class AIPatternImporter:
                         or "skizze" in parent_class.lower()
                         or "print-diagrams" in parent_class.lower()
                     ):
-                        score += 30
-
-            # Prefer larger images if URL suggests it (heuristic)
-            if any(x in lower_url for x in ["large", "high", "orig"]):
-                score += 5
+                        score += 5
 
             return score
 

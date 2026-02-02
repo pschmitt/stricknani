@@ -1,10 +1,11 @@
-"""URL import utilities for extracting knitting pattern data."""
+"URL import utilities for extracting knitting pattern data."
 
 import html
 import logging
 import re
+from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -54,8 +55,6 @@ IMPORT_ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
 def _is_allowed_import_image(content_type: str | None, url: str) -> bool:
     """Validate content type or file extension for image imports."""
-    from pathlib import Path
-
     if content_type:
         normalized = content_type.split(";", 1)[0].strip().lower()
         if normalized in IMPORT_ALLOWED_IMAGE_TYPES:
@@ -74,7 +73,7 @@ class PatternImporter:
         self.is_garnstudio = _is_garnstudio_url(url)
         self._garnstudio_gauge_cache: tuple[int | None, int | None] | None = None
 
-    async def fetch_and_parse(self) -> dict[str, Any]:
+    async def fetch_and_parse(self, image_limit: int = 10) -> dict[str, Any]:
         """Fetch URL and extract pattern data."""
         logger.info("Importing pattern from %s", self.url)
         async with httpx.AsyncClient(
@@ -115,7 +114,11 @@ class PatternImporter:
                 else:
                     description = garn_notes
         comment = None
-        data = {
+        image_urls = images
+        if image_limit > 0:
+            image_urls = images[:image_limit]
+
+        data: dict[str, Any] = {
             "title": self._extract_title(soup),
             "needles": self._extract_needles(soup),
             "yarn": self._extract_yarn(soup),
@@ -132,7 +135,7 @@ class PatternImporter:
             "comment": comment,
             "steps": steps,
             "link": self.url,
-            "image_urls": images,
+            "image_urls": image_urls,
         }
 
         logger.info(
@@ -143,7 +146,7 @@ class PatternImporter:
             data.get("yarn"),
             data.get("weight_category"),
             len(steps),
-            len(images),
+            len(image_urls),
         )
 
         # Decode HTML entities in all string fields
@@ -813,7 +816,8 @@ class PatternImporter:
         return None
 
     def _get_garnstudio_gauge(
-        self, soup: BeautifulSoup
+        self,
+        soup: BeautifulSoup,
     ) -> tuple[int | None, int | None]:
         if self._garnstudio_gauge_cache is not None:
             return self._garnstudio_gauge_cache
@@ -1267,8 +1271,6 @@ class PatternImporter:
         if cleaned.startswith(("http://", "https://")):
             return cleaned
 
-        from urllib.parse import urljoin
-
         return urljoin(self.url, cleaned)
 
     def _pick_srcset_url(self, srcset: str) -> str | None:
@@ -1326,7 +1328,7 @@ class PatternImporter:
                 extracted.append((resolved, source))
                 seen.add(resolved)
 
-        # Look for images in common pattern containers
+        # Skip common non-pattern images
         for img in soup.find_all("img"):
             candidates: list[str] = []
             for attr in [
@@ -1364,10 +1366,16 @@ class PatternImporter:
                 except (ValueError, TypeError):
                     pass
 
-            # Skip common non-pattern images
             for candidate in candidates:
                 resolved = self._resolve_image_url(candidate)
                 if not resolved or resolved in seen:
+                    continue
+
+                # Extension check
+                if (
+                    Path(urlparse(resolved).path).suffix.lower()
+                    not in IMPORT_ALLOWED_IMAGE_EXTENSIONS
+                ):
                     continue
 
                 if any(
@@ -1380,6 +1388,12 @@ class PatternImporter:
                         "badge",
                         "banner",
                         "ad",
+                        "design",
+                        "social",
+                        "facebook",
+                        "twitter",
+                        "instagram",
+                        "pinterest",
                     ]
                 ):
                     continue
@@ -1395,7 +1409,12 @@ class PatternImporter:
                 href = anchor.get("href")
                 if href and isinstance(href, str):
                     resolved = self._resolve_image_url(href)
-                    if resolved and resolved not in seen:
+                    if (
+                        resolved
+                        and resolved not in seen
+                        and Path(urlparse(resolved).path).suffix.lower()
+                        in IMPORT_ALLOWED_IMAGE_EXTENSIONS
+                    ):
                         extracted.append((resolved, anchor))
                         seen.add(resolved)
 
@@ -1406,7 +1425,12 @@ class PatternImporter:
                 if not self._looks_like_image_url(href):
                     continue
                 resolved = self._resolve_image_url(href)
-                if not resolved or resolved in seen:
+                if (
+                    not resolved
+                    or resolved in seen
+                    or Path(urlparse(resolved).path).suffix.lower()
+                    not in IMPORT_ALLOWED_IMAGE_EXTENSIONS
+                ):
                     continue
                 extracted.append((resolved, anchor))
                 seen.add(resolved)
@@ -1417,21 +1441,23 @@ class PatternImporter:
             score = 0
             lower_url = url.lower()
 
-            # Keywords in URL
-            diagram_keywords = [
-                "diagram",
-                "chart",
-                "skizze",
-                "measure",
-                "schema",
-                "proportions",
-            ]
-            if any(x in lower_url for x in diagram_keywords):
-                score += 15
+            is_diagram = self._is_diagram_url(url)
 
-            # Garnstudio specific diagram pattern (e.g. 140-d.jpg or 3-chart.jpg)
-            if self.is_garnstudio and re.search(r"-\d*[dc]\.(?:jpe?g|png)$", lower_url):
-                score += 20
+            # Keywords in URL indicating photos
+            photo_keywords = ["large", "high", "orig", "photo", "image", "pic"]
+            is_photo = any(x in lower_url for x in photo_keywords)
+
+            if is_diagram:
+                # Diagrams are important but shouldn't be primary
+                score += 8
+            elif is_photo:
+                score += 15
+            else:
+                score += 10
+
+            # Boost OG Image significantly to make it primary
+            if tag and tag.name == "meta" and tag.get("property") == "og:image":
+                score += 50
 
             # Check tag attributes if available
             if tag:
@@ -1450,8 +1476,20 @@ class PatternImporter:
 
                 tag_text = f"{alt_str} {title_str} {class_str}".lower()
 
-                if any(x in tag_text for x in diagram_keywords):
-                    score += 25
+                if any(
+                    x in tag_text
+                    for x in [
+                        "diagram",
+                        "chart",
+                        "skizze",
+                        "measure",
+                        "schema",
+                        "proportions",
+                    ]
+                ):
+                    score += 5  # Add a bit more if it's explicitly a diagram
+                elif any(x in tag_text for x in ["pattern", "product", "main"]):
+                    score += 20
 
                 # Check parent class (Garnstudio uses print-diagrams)
                 parent = tag.parent
@@ -1466,17 +1504,32 @@ class PatternImporter:
                         "diagram" in parent_class.lower()
                         or "skizze" in parent_class.lower()
                     ):
-                        score += 30
-
-            # Prefer larger images if URL suggests it (heuristic)
-            if any(x in lower_url for x in ["large", "high", "orig"]):
-                score += 5
+                        score += 5
 
             return score
 
         extracted.sort(key=_score_image, reverse=True)
 
-        return [url for url, _tag in extracted[:10]]
+        return [url for url, _tag in extracted]
+
+    def _is_diagram_url(self, url: str) -> bool:
+        """Check if an image URL looks like a diagram or chart."""
+        lower_url = url.lower()
+        diagram_keywords = [
+            "diagram",
+            "chart",
+            "skizze",
+            "measure",
+            "schema",
+            "proportions",
+        ]
+        if any(kw in lower_url for kw in diagram_keywords):
+            return True
+        if self.is_garnstudio and re.search(
+            r"[-/]\d*[dc]\.(?:jpe?g|png)$", lower_url
+        ):
+            return True
+        return False
 
     def _allow_small_image(self, img: Tag, candidates: list[str]) -> bool:
         if not self.is_garnstudio:
@@ -1545,3 +1598,44 @@ class GarnstudioPatternImporter(PatternImporter):
     def __init__(self, url: str, timeout: int = 10) -> None:
         super().__init__(url, timeout)
         self.is_garnstudio = True
+
+    async def fetch_and_parse(self, image_limit: int = 10) -> dict[str, Any]:
+        """Fetch URL and extract data with Garnstudio post-processing."""
+        # Use -1 to get all images for diagram extraction
+        data = await super().fetch_and_parse(image_limit=-1)
+
+        # Identify diagrams in image_urls
+        diagrams = [
+            url for url in data.get("image_urls", []) if self._is_diagram_url(url)
+        ]
+
+        if diagrams:
+            # Check if we already have a step for diagrams
+            has_diagram_step = any(
+                "diagram" in s["title"].lower() or "skizze" in s["title"].lower()
+                for s in data["steps"]
+            )
+
+            if not has_diagram_step:
+                # Basic language detection
+                is_english = "cid=1" in self.url or "dropsdesign.com" in self.url
+                title = "Diagram" if is_english else "Diagramm"
+                desc = (
+                    "Measurements and diagrams for this pattern."
+                    if is_english
+                    else "Maßskizzen und Diagramme für diese Anleitung."
+                )
+
+                # Add a "Diagramm" step at the end
+                data["steps"].append(
+                    {
+                        "step_number": len(data["steps"]) + 1,
+                        "title": title,
+                        "description": desc,
+                        "images": diagrams,
+                    }
+                )
+
+        # Slice back to the requested limit
+        data["image_urls"] = data["image_urls"][:image_limit]
+        return data
