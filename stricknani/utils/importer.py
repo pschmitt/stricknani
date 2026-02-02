@@ -107,11 +107,27 @@ class PatternImporter:
         if self.is_garnstudio:
             # Targeted noise removal
             noise_selectors = [
-                ".pcalc", ".pcalc-wrapper", ".btn", ".pattern-print", ".dropdown",
-                ".lessons-wrapper", ".mobile-only", ".re-material", ".pcalc-title",
-                ".pcalc-content", ".pcalc-form", ".pcalc-result", ".pcalc-close",
-                "#pcalc-wrapper", "#pcalc-container", ".pattern-print-link",
-                "script", "style", "nav", "footer", "header"
+                ".pcalc",
+                ".pcalc-wrapper",
+                ".btn",
+                ".pattern-print",
+                ".dropdown",
+                ".lessons-wrapper",
+                ".mobile-only",
+                ".re-material",
+                ".pcalc-title",
+                ".pcalc-content",
+                ".pcalc-form",
+                ".pcalc-result",
+                ".pcalc-close",
+                "#pcalc-wrapper",
+                "#pcalc-container",
+                ".pattern-print-link",
+                "script",
+                "style",
+                "nav",
+                "footer",
+                "header",
             ]
             for selector in noise_selectors:
                 for noise in soup.select(selector):
@@ -889,44 +905,56 @@ class PatternImporter:
         if not text:
             return None
 
-        # Look for the beginning of technical notes
-        # Often starts with HINWEISE or just specific technique names
-        lines = [line.rstrip() for line in text.splitlines()]
+        normalized = self._normalize_garnstudio_text(text)
+        lines = normalized.splitlines()
 
-        stop_headings = {
-            "GRÖSSEN",
-            "GROESSEN",
-            "SIZE",
-            "SIZES",
-            "STØRRELSER",
-            "MATERIAL",
-            "MATERIALS",
-            "GARN",
-            "YARN",
-            "NADELN",
-            "NEEDLES",
-            "PINNER",
-            "MASCHENPROBE",
-            "GAUGE",
-            "STRIKKEFASTHET",
-            "ABMESSUNGEN",
-            "MEASUREMENTS",
-            "DIE ARBEIT BEGINNT HIER",
-            "START HERE",
-            "KURZBESCHREIBUNG",
-        }
+        # We are looking for the section between "HINWEISE ZUR ANLEITUNG"
+        # and "DIE ARBEIT BEGINNT HIER"
+        start_index = -1
+        stop_index = -1
 
-        collected: list[str] = []
+        for i, line in enumerate(lines):
+            upper = line.strip().upper()
+            if "### HINWEISE ZUR ANLEITUNG" in upper:
+                start_index = i
+            if start_index != -1 and (
+                "### DIE ARBEIT BEGINNT HIER" in upper
+                or "### KURZBESCHREIBUNG" in upper
+            ):
+                stop_index = i
+                break
+
+        if start_index != -1:
+            if stop_index != -1:
+                notes = "\n".join(lines[start_index + 1 : stop_index]).strip()
+            else:
+                # If no clear stop, take a reasonable amount or until next major section
+                notes = "\n".join(lines[start_index + 1 :]).strip()
+
+            # Remove any trailing separators
+            notes = re.sub(r"-{3,}", "", notes).strip()
+            return notes or None
+
+        # Fallback: if no HINWEISE heading, try to find technical terms
+        tech_terms = {"KRAUSRIPPEN", "RAGLANZUNAHMEN", "STRICKTIPP", "ABNAHMETIPP"}
+        collected = []
+        started = False
         for line in lines:
-            stripped = line.strip()
-            if stripped:
-                label = stripped[:-1] if stripped.endswith(":") else stripped
-                if label.isupper() and label in stop_headings:
-                    break
-            collected.append(line)
+            upper = line.strip().upper()
+            if any(term in upper for term in tech_terms):
+                started = True
 
-        notes = "\n".join(collected).strip()
-        return notes or None
+            if started:
+                if (
+                    "### DIE ARBEIT BEGINNT HIER" in upper
+                    or "### KURZBESCHREIBUNG" in upper
+                ):
+                    break
+                collected.append(line)
+        if collected:
+            return "\n".join(collected).strip()
+
+        return None
 
     def _extract_steps(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract pattern instructions as steps."""
@@ -1110,17 +1138,37 @@ class PatternImporter:
             "DIE ARBEIT BEGINNT HIER",
             "START HERE",
             "KURZBESCHREIBUNG",
-            "ANLEITUNG",
-            "INSTRUCTIONS",
+            "ANLEITUNG -",  # Often "ANLEITUNG - KURZBESCHREIBUNG"
         ]
 
         lines = text.splitlines()
         start_index = 0
+        found = False
         for i, line in enumerate(lines):
             upper = line.strip().upper()
             if any(marker in upper for marker in instruction_markers):
                 start_index = i
+                found = True
                 break
+
+        # If we didn't find a clear marker, but we found "HINWEISE ZUR ANLEITUNG",
+        # the instructions likely start after the technical notes.
+        if not found:
+            for i, line in enumerate(lines):
+                if "HINWEISE ZUR ANLEITUNG" in line.upper():
+                    # Look for the next heading that is NOT a technical note
+                    for j in range(i + 1, len(lines)):
+                        l_text = lines[j].strip()
+                        is_tech = any(
+                            t in l_text.upper()
+                            for t in ["TIPP", "KNOPFLÖCHER", "KRAUSRIPPEN"]
+                        )
+                        if l_text.isupper() and len(l_text) > 3 and not is_tech:
+                            start_index = j
+                            found = True
+                            break
+                    if found:
+                        break
 
         instruction_text = "\n".join(lines[start_index:])
         normalized_text = self._normalize_garnstudio_text(instruction_text)
@@ -1128,6 +1176,28 @@ class PatternImporter:
         # 2. Iterate lines and group into steps
         steps: list[dict[str, Any]] = []
         current_step: dict[str, Any] | None = None
+
+        # Skip the marker itself if it became a heading
+        skip_headings = {
+            "DIE ARBEIT BEGINNT HIER",
+            "START HERE",
+            "ANLEITUNG",
+            "MASCHENPROBE",
+            "GAUGE",
+            "STRIKKEFASTHET",
+            "MATERIAL",
+            "MATERIALS",
+            "GARN",
+            "YARN",
+            "NADELN",
+            "NEEDLES",
+            "PINNER",
+            "GRÖSSEN",
+            "GROESSEN",
+            "SIZE",
+            "SIZES",
+            "STØRRELSER",
+        }
 
         lines = [line.rstrip() for line in normalized_text.splitlines()]
         for line in lines:
@@ -1143,6 +1213,9 @@ class PatternImporter:
 
             if stripped.startswith("### "):
                 title = stripped[4:].strip()
+                if title.upper() in skip_headings:
+                    continue
+
                 current_step = {
                     "step_number": len(steps) + 1,
                     "title": title,
@@ -1194,24 +1267,21 @@ class PatternImporter:
         """Improve Garnstudio text structure by converting headers to Markdown."""
         normalized = text.replace("\r\n", "\n").replace("\r", "\n")
 
-        # Comprehensive list of Garnstudio section markers (German and English)
-        headings = [
-            # Main sections
+        # 1. First, find all-caps lines or lines ending with colon
+        # that are likely headings
+        lines = normalized.splitlines()
+        structured_lines = []
+
+        # Heading keywords to always recognize
+        headings = {
             "HINWEISE ZUR ANLEITUNG",
-            "HINWEISE ZU ANLEITUNG",
-            "HINWEIS ZUR ANLEITUNG",
             "PATTERN NOTES",
-            "NOTES FOR THE PATTERN",
-            "NOTES FOR INSTRUCTIONS",
             "MUSTER",
             "PATTERN",
-            "STRIKKEMØNSTER",
             "ZUNAHMETIPP",
             "INCREASING TIP",
-            "ØKETIPS",
             "ABNAHMETIPP",
             "DECREASING TIP",
-            "FELLINGSTIPS",
             "MASCHENPROBE",
             "GAUGE",
             "STRIKKEFASTHET",
@@ -1219,7 +1289,6 @@ class PatternImporter:
             "GRÖSSEN",
             "SIZE",
             "SIZES",
-            "STØRRELSER",
             "GARN",
             "YARN",
             "MATERIAL",
@@ -1229,7 +1298,6 @@ class PatternImporter:
             "PINNER",
             "RIPPEN",
             "RIB",
-            "VRANGBORD",
             "ABNAHMEN",
             "DECREASES",
             "ZUNAHMEN",
@@ -1239,7 +1307,6 @@ class PatternImporter:
             "ERME",
             "RAGLAN",
             "YOKE",
-            "BÆRESTYKKE",
             "VORDER- UND RÜCKENTEIL",
             "BODY",
             "BOLEN",
@@ -1248,40 +1315,68 @@ class PatternImporter:
             "AUSARBEITUNG",
             "FINISHING",
             "MONTERING",
-        ]
+            "JACKE - KURZBESCHREIBUNG DER ARBEIT",
+            "HALSAUSSCHNITT",
+            "RAGLANZUNAHMEN",
+            "V-AUSSCHNITT",
+            "TEILUNG FÜR DAS RUMPFTEIL UND DIE ÄRMEL",
+            "RUMPFTEIL",
+            "ÄRMEL",
+            "BLENDE",
+            "KNOPFLÖCHER",
+            "STRICKTIPP",
+            "STREIFEN",
+            "KRAUSRIPPEN / KRAUS RECHTS (in Hin- und Rück-Reihen)",
+            "KRAUSRIPPEN / KRAUS RECHTS",
+        }
 
-        # 1. First, find all-caps lines that are known headings and make them h3
-        lines = normalized.splitlines()
-        structured_lines = []
         for line in lines:
             stripped = line.strip()
-            upper_stripped = stripped.rstrip(":").upper()
+            if not stripped:
+                structured_lines.append("")
+                continue
+
+            match_line = stripped.rstrip(":").strip()
+            upper_line = match_line.upper()
 
             is_heading = False
-            if upper_stripped in headings:
+            if upper_line in headings:
                 is_heading = True
-            elif stripped.isupper() and 3 < len(stripped) < 50:
-                # Heuristic for other all-caps lines that might be headings
+            elif (
+                match_line.isupper()
+                and 3 < len(match_line) < 70
+                and any(c.isalpha() for c in match_line)
+            ):
+                # Heuristic for other all-caps lines that contain at least one letter
+                is_heading = True
+            elif (
+                stripped.endswith(":")
+                and match_line.isupper()
+                and len(match_line) < 70
+                and any(c.isalpha() for c in match_line)
+            ):
                 is_heading = True
 
             if is_heading:
-                structured_lines.append(f"\n\n### {stripped.rstrip(':')}\n")
+                # Use the original capitalization if it's not all-caps,
+                # but for Garnstudio most are all-caps anyway.
+                structured_lines.append(f"### {match_line}")
             else:
                 structured_lines.append(line)
 
         normalized = "\n".join(structured_lines)
 
-        # 2. Fix inline colon-style headings
-        # Match "WORD IN CAPS:" at the start of a line or after double newline
-        # Also handles known headings. We allow a newline before the colon.
+        # 2. Fix inline colon-style headings that weren't captured
+        # Match "WORD IN CAPS:" at the start of a line
         normalized = re.sub(
-            r"^([A-Z0-9\s-]{3,50})\s*\n?:",
-            r"### \1\n",
+            r"^([A-Z0-9\s\-/()]{3,70}):\s*$",
+            r"### \1",
             normalized,
             flags=re.MULTILINE,
         )
 
-        # 3. Clean up excessive newlines
+        # 3. Clean up excessive newlines and separators
+        normalized = re.sub(r"-{3,}", "", normalized)
         normalized = re.sub(r"\n{3,}", "\n\n", normalized)
 
         return normalized.strip()
@@ -1555,9 +1650,7 @@ class PatternImporter:
         ]
         if any(kw in lower_url for kw in diagram_keywords):
             return True
-        if self.is_garnstudio and re.search(
-            r"[-/]\d*[dc]\.(?:jpe?g|png)$", lower_url
-        ):
+        if self.is_garnstudio and re.search(r"[-/]\d*[dc]\.(?:jpe?g|png)$", lower_url):
             return True
         return False
 
@@ -1604,43 +1697,20 @@ class PatternImporter:
         self, soup: BeautifulSoup, target_headings: list[str]
     ) -> str | None:
         """Extract a block of text following one of the target headings."""
-        # 1. Try finding bold/strong labels anywhere
-        for tag in soup.find_all(["b", "strong"]):
-            text = tag.get_text().strip().rstrip(":").upper()
-            if any(h == text for h in target_headings):
-                # Found the heading
-                collected = []
-                curr = tag.next_sibling
-                while curr:
-                    if isinstance(curr, Tag):
-                        # Stop if we hit another bold tag (likely another heading)
-                        # But ignore tiny tags like <a> inside the text
-                        tag_text = curr.get_text().strip()
-                        if curr.name in ["b", "strong"] and len(tag_text) > 2:
-                            break
-                        if curr.name == "br":
-                            collected.append("\n")
-                        else:
-                            collected.append(curr.get_text())
-                    elif isinstance(curr, NavigableString):
-                        collected.append(str(curr))
-                    curr = curr.next_sibling
-
-                val = "".join(collected).strip()
-                if val:
-                    # Normalize whitespace
-                    return " ".join(val.split())
-
-        # 2. Try regex search in the whole text if direct tag match fails
         text = self._extract_garnstudio_text(soup)
         if not text:
             return None
 
-        lines = [line.rstrip() for line in text.splitlines()]
+        lines = [line.strip() for line in text.splitlines()]
         start_index = -1
+
+        # Normalize target headings to upper case for comparison
+        targets = [h.upper() for h in target_headings]
+
         for i, line in enumerate(lines):
-            upper = line.strip().rstrip(":").upper()
-            if any(h == upper for h in target_headings):
+            # Check for "HEADING:" or "HEADING"
+            match_line = line.rstrip(":").strip().upper()
+            if match_line in targets:
                 start_index = i
                 break
 
@@ -1649,10 +1719,15 @@ class PatternImporter:
 
         # Headers that indicate the end of this section
         stop_headings = {
-            "GARN",
-            "YARN",
+            "GRÖSSEN",
+            "GROESSEN",
+            "SIZE",
+            "SIZES",
+            "STØRRELSER",
             "MATERIAL",
             "MATERIALS",
+            "GARN",
+            "YARN",
             "NADELN",
             "NEEDLES",
             "PINNER",
@@ -1664,21 +1739,31 @@ class PatternImporter:
             "DIE ARBEIT BEGINNT HIER",
             "START HERE",
             "KURZBESCHREIBUNG",
+            "HINWEISE ZUR ANLEITUNG",
+            "PATTERN NOTES",
+            "MUSTER",
+            "PATTERN",
         }
 
         collected_lines: list[str] = []
         for line in lines[start_index + 1 :]:
-            stripped = line.strip()
-            if stripped:
-                label = stripped[:-1] if stripped.endswith(":") else stripped
-                if label.isupper() and label in stop_headings:
+            if not line:
+                if collected_lines:  # Stop at empty line if we already have content
                     break
+                continue
+
+            match_line = line.rstrip(":").strip().upper()
+            if match_line in stop_headings:
+                break
+
+            # If it's another all-caps line (likely a heading), stop
+            if line.isupper() and len(line) > 3 and not any(c.isdigit() for c in line):
+                break
+
             collected_lines.append(line)
 
-        val = "\n".join(collected_lines).strip()
-        if val:
-            return " ".join(val.split())
-        return None
+        val = " ".join(collected_lines).strip()
+        return val or None
 
     def _extract_garnstudio_yarn(self, soup: BeautifulSoup) -> str | None:
         """Extract yarn list from Garnstudio pattern."""
@@ -1711,10 +1796,13 @@ class PatternImporter:
             "DIE ARBEIT BEGINNT HIER",
             "START HERE",
             "KURZBESCHREIBUNG",
+            "KNÖPFE",
+            "BUTTONS",
+            "KNAPPER",
         }
 
         collected: list[str] = []
-        for line in lines[start_index + 1:]:
+        for line in lines[start_index + 1 :]:
             stripped = line.strip()
             if stripped:
                 label = stripped[:-1] if stripped.endswith(":") else stripped
@@ -1725,45 +1813,69 @@ class PatternImporter:
         return "\n".join(collected).strip() or None
 
     def _extract_garnstudio_text(self, soup: BeautifulSoup) -> str:
-        """Extract clean text from Garnstudio pattern page."""
-        # Target specific content areas
-        parts = []
-        # Garnstudio uses these classes for the actual pattern data
-        selectors = [
-            ".pattern-info",
-            ".pattern-instructions",
-            ".print-diagrams",
-        ]
+        """Extract clean text from Garnstudio pattern page using trafilatura."""
+        import trafilatura
 
-        for selector in selectors:
-            container = soup.select_one(selector)
-            if container:
-                # Get text with newlines to preserve structure
-                text = container.get_text(separator="\n", strip=True)
-                if text:
-                    parts.append(text)
+        # Targeted noise removal before trafilatura
+        noise_selectors = [
+            ".pcalc",
+            ".pcalc-wrapper",
+            ".btn",
+            ".pattern-print",
+            ".dropdown",
+            ".lessons-wrapper",
+            ".mobile-only",
+            ".re-material",
+            ".updates",
+            ".pattern_copyright",
+            ".pattern-share-new",
+            ".pattern-ad",
+            ".pattern-prices",
+        ]
+        for noise in soup.select(", ".join(noise_selectors)):
+            noise.decompose()
+
+        # Garnstudio has content in these IDs/classes
+        # #material_text contains GRÖSSE, GARN, NADELN, MASCHENPROBE
+        # #instruction_text contains technical notes and the actual pattern
+        material = soup.find(id=re.compile(r"material_text(_print)?"))
+        instruction = soup.find(id=re.compile(r"instruction_text(_print)?"))
+
+        # Fallbacks for older pages or different layouts
+        if not material:
+            material = soup.select_one(".pattern-material")
+        if not instruction:
+            instruction = soup.select_one(".pattern-instructions")
+
+        parts = []
+        if material:
+            # Trafilatura might be too aggressive for the short material block
+            # try with specific settings or fallback to BeautifulSoup
+            info_text = trafilatura.extract(
+                material.decode(),
+                include_comments=False,
+                include_tables=True,
+                no_fallback=False,
+            )
+            if not info_text or len(info_text) < 50:
+                info_text = material.get_text(separator="\n", strip=True)
+            if info_text:
+                parts.append(info_text)
+
+        if instruction:
+            instr_text = trafilatura.extract(
+                instruction.decode(), include_comments=False, include_tables=True
+            )
+            if not instr_text or len(instr_text) < 20:
+                instr_text = instruction.get_text(separator="\n", strip=True)
+            if instr_text:
+                parts.append(instr_text)
 
         if parts:
             return "\n\n".join(parts)
 
-        # Fallback to older logic if specific containers not found
-        candidates = [
-            soup.find(
-                ["div", "section"], class_=re.compile(r"pattern-instructions", re.I)
-            ),
-            soup.find(["div", "section"], id=re.compile(r"pattern-instructions", re.I)),
-            soup.find(["div", "section"], id=re.compile(r"pattern[_-]?text", re.I)),
-            soup.find(["div", "section"], class_=re.compile(r"pattern[_-]?text", re.I)),
-            soup.find("article"),
-            soup.find("main"),
-        ]
-
-        for container in [c for c in candidates if c]:
-            text = container.get_text(separator="\n", strip=True)
-            if text:
-                return text
-
-        return soup.get_text(separator="\n", strip=True)
+        # Ultimate fallback
+        return trafilatura.extract(soup.decode(), include_comments=False) or ""
 
 
 class GarnstudioPatternImporter(PatternImporter):

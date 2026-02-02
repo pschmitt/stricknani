@@ -61,13 +61,13 @@ async def test_ai_import_minimizes_redundancy(test_client: "TestClientFixture") 
             "/projects/import",
             data={
                 "type": "url",
-                "url": "https://www.garnstudio.com/pattern.php?id=123",
+                "url": "https://www.example.com/pattern/123",
                 "use_ai": True,
             },
         )
 
-    assert response.status_code == 200
-    data = response.json()
+        assert response.status_code == 200
+        data = response.json()
 
     # Even if AI returns it in both, our merging logic should ideally NOT
     # duplicate it further.

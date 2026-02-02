@@ -185,29 +185,6 @@ def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
     return hints
 
 
-def _extract_garnstudio_notes_block(comment: str) -> str | None:
-    if not comment:
-        return None
-
-    dashed_block = re.search(
-        r"(-{5,}\s*\n\s*HINWEISE\s+ZUR\s+ANLEITUNG:?\s*\n-{5,}.*?)(?=\n-{5,}|\Z)",
-        comment,
-        re.I | re.S,
-    )
-    if dashed_block:
-        return dashed_block.group(1).strip()
-
-    heading_match = re.search(
-        r"(HINWEISE\s+ZUR\s+ANLEITUNG:?.*)",
-        comment,
-        re.I | re.S,
-    )
-    if heading_match:
-        return heading_match.group(1).strip()
-
-    return None
-
-
 def _normalize_for_comparison(text: str) -> str:
     """Normalize text for fuzzy comparison by removing non-alphanumeric chars."""
     return re.sub(r"\W+", "", text).lower()
@@ -946,7 +923,8 @@ async def import_pattern(
                 len(basic_data.get("image_urls", [])),
             )
 
-            if use_ai_enabled:
+            # Skip AI for Garnstudio URLs as the basic parser is now high quality
+            if use_ai_enabled and not _is_garnstudio_url(url):
                 try:
                     from stricknani.utils.ai_importer import AIPatternImporter
 
@@ -986,42 +964,6 @@ async def import_pattern(
                     ):
                         ai_data["image_urls"] = basic_data["image_urls"]
                         logger.info("AI found fewer images, using basic parser images")
-
-                    # 3. Garnstudio notes: keep the detailed notes block if missing
-                    if _is_garnstudio_url(url):
-                        basic_desc = basic_data.get("description") or ""
-                        notes_block = _extract_garnstudio_notes_block(basic_desc)
-                        if notes_block:
-                            ai_desc = ai_data.get("description") or ""
-                            # Only append if not already in description or steps (fuzzy)
-                            norm_notes = _normalize_for_comparison(notes_block)
-                            is_in_desc = norm_notes in _normalize_for_comparison(
-                                ai_desc
-                            )
-
-                            ai_steps_text = " ".join(
-                                [
-                                    s.get("description", "")
-                                    for s in ai_data.get("steps", [])
-                                ]
-                            )
-                            is_in_steps = norm_notes in _normalize_for_comparison(
-                                ai_steps_text
-                            )
-
-                            # If AI description is very short, it might have missed
-                            # details. Otherwise, trust the AI's summary/steps.
-                            if (
-                                not is_in_desc
-                                and not is_in_steps
-                                and len(ai_desc) < 250
-                            ):
-                                if ai_desc:
-                                    ai_data["description"] = (
-                                        f"{ai_desc}\n\n{notes_block}"
-                                    )
-                                else:
-                                    ai_data["description"] = notes_block
 
                     # 4. Check if name/title is actually set
                     if (

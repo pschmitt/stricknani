@@ -8,7 +8,7 @@ from stricknani.utils.importer import GarnstudioPatternImporter
 async def test_garnstudio_stitch_sample_greedy_noise() -> None:
     """Reproduce the issue where update notices are captured as stitch sample."""
     html = """
-    <div class="pattern-info">
+    <div id="material_text">
         <div class="maschenprobe">
             <b>MASCHENPROBE:</b><br>
             21 Maschen in der Breite und 28 Reihen in der Höhe glatt rechts
@@ -50,14 +50,14 @@ async def test_garnstudio_stitch_sample_greedy_noise() -> None:
 async def test_garnstudio_12105_reproduction() -> None:
     """Test reproduction for pattern 12105."""
     html = """
-    <div class="pattern-info">
+    <div id="material_text">
         <span class="quickexplanation">MASCHENPROBE</span>:<br />
         21 Maschen in der Breite und 28 <span class="quickexplanation">Reihen</span>
         in der Höhe <span class="quickexplanation">glatt rechts</span>
         auf Stricknadel Nr. 4 = 10 x 10 cm. <br />
         BITTE BEACHTEN: Die Angabe der Nadelstärke ist nur eine Orientierungshilfe.
     </div>
-    <div class="pattern-instructions">
+    <div id="instruction_text">
         STREIFEN: <br />
         Streifen wie folgt stricken:<br />
         6 Runden mit der Farbe hellbeige / marzipan,
