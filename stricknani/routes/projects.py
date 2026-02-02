@@ -993,12 +993,6 @@ async def import_pattern(
                         notes_block = _extract_garnstudio_notes_block(basic_desc)
                         if notes_block:
                             ai_desc = ai_data.get("description") or ""
-                            ai_steps_text = " ".join(
-                                [
-                                    s.get("description", "")
-                                    for s in ai_data.get("steps", [])
-                                ]
-                            )
                             # Only append if not already in description or steps (fuzzy)
                             norm_notes = _normalize_for_comparison(notes_block)
                             is_in_desc = norm_notes in _normalize_for_comparison(
@@ -1015,7 +1009,13 @@ async def import_pattern(
                                 ai_steps_text
                             )
 
-                            if not is_in_desc and not is_in_steps:
+                            # If AI description is very short, it might have missed
+                            # details. Otherwise, trust the AI's summary/steps.
+                            if (
+                                not is_in_desc
+                                and not is_in_steps
+                                and len(ai_desc) < 250
+                            ):
                                 if ai_desc:
                                     ai_data["description"] = (
                                         f"{ai_desc}\n\n{notes_block}"
