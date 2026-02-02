@@ -25,6 +25,7 @@ IMPORT_HEADERS = {
     "User-Agent": "Stricknani Importer/0.1",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
+RE_IMAGE_SIZE = re.compile(r"[-_]\d+x\d+(?=\.[a-z]{3,4}$)", re.I)
 
 
 def _is_garnstudio_url(url: str) -> bool:
@@ -161,6 +162,17 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
 
         schema["properties"][name] = prop
 
+    # Add image_urls field
+    schema["properties"]["image_urls"] = {
+        "type": "array",
+        "description": (
+            "A list of the most relevant high-quality image URLs for this pattern. "
+            "Exclude duplicates (e.g. different resolutions of the same image), "
+            "icons, and irrelevant assets. Prefer the highest resolution version available."
+        ),
+        "items": {"type": "string"},
+    }
+
     # Add steps field (not a direct column but important for patterns)
     schema["properties"]["steps"] = {
         "type": "array",
@@ -235,7 +247,12 @@ def _build_ai_prompts(
         "steps when possible.\n"
         "IMPORTANT: Generate meaningful titles for each step (e.g., 'Cast On', "
         "'Back Piece', 'Assembly') based on the content, instead of using generic "
-        "titles like 'Step 1' or 'Step 2'.\n"
+        "titles like 'Step 1' or 'Step 2'. If you extract a title from a header "
+        "in the text, DO NOT repeat that header in the step description.\n"
+        "IMPORTANT: Select only the most relevant, high-quality image URLs from the "
+        "provided list for 'image_urls'. Avoid duplicate images (multiple "
+        "resolutions of the same photo). Choose the highest resolution version "
+        "available. Exclude icons, avatars, and unrelated site assets.\n"
         "IMPORTANT: For long text fields like 'description' and 'description' in "
         "steps, always use Markdown formatting (headings, bullet points, bold "
         "text) to ensure the content is readable and not just a wall of text. "
@@ -350,6 +367,7 @@ class AIPatternImporter:
 
         # Extract images
         images = await self._extract_images(soup)
+        images = self._deduplicate_image_urls(images)
         logger.debug("AI import image URLs: %s", images[:5])
 
         if self.trace:
@@ -364,7 +382,8 @@ class AIPatternImporter:
             self.trace.record_text_blob("source_text", text_content)
 
         # Use AI to parse the content
-        extracted_data = await self._ai_extract(text_content, images[:5], self.hints)
+        # Send more images to the AI now so it can choose the best ones
+        extracted_data = await self._ai_extract(text_content, images[:20], self.hints)
 
         # Move extracted comment to description if applicable
         ai_comment = extracted_data.get("comment")
@@ -379,8 +398,17 @@ class AIPatternImporter:
         # Add the source URL
         extracted_data["link"] = self.url
 
-        # Add image URLs
-        extracted_data["image_urls"] = images[:10]  # Limit to 10 images
+        # Add image URLs (prefer AI selected ones if they are valid URLs from our list)
+        ai_image_urls = extracted_data.get("image_urls")
+        if ai_image_urls and isinstance(ai_image_urls, list):
+            # Verify AI didn't hallucinate new URLs
+            valid_ai_images = [u for u in ai_image_urls if u in images]
+            if valid_ai_images:
+                extracted_data["image_urls"] = valid_ai_images[:10]
+            else:
+                extracted_data["image_urls"] = images[:10]
+        else:
+            extracted_data["image_urls"] = images[:10]
 
         logger.info(
             "AI import extracted name=%s needles=%s yarn=%s steps=%s images=%s",
@@ -391,6 +419,41 @@ class AIPatternImporter:
             len(extracted_data.get("image_urls") or []),
         )
         return extracted_data
+
+    def _deduplicate_image_urls(self, urls: list[str]) -> list[str]:
+        """Group similar URLs and pick the best one (usually the highest res)."""
+        if not urls:
+            return []
+
+        groups: dict[str, list[str]] = {}
+        for url in urls:
+            # Strip size suffixes like -300x300 or _1024x1024
+            base = RE_IMAGE_SIZE.sub("", url)
+            # Strip common query params that might affect size
+            base = re.sub(r"[?&](w|h|width|height|size)=\d+", "", base)
+
+            if base not in groups:
+                groups[base] = []
+            groups[base].append(url)
+
+        deduplicated = []
+        for base, versions in groups.items():
+            if len(versions) == 1:
+                deduplicated.append(versions[0])
+                continue
+
+            # Heuristic: the longest URL often contains more markers
+            # but also prefer one without size markers if base is in versions
+            if base in versions:
+                deduplicated.append(base)
+            else:
+                # Pick the version that looks "best"
+                # For now, just pick the longest one as it might be 'original'
+                # or have higher res markers
+                best = max(versions, key=len)
+                deduplicated.append(best)
+
+        return deduplicated
 
     async def _extract_images(self, soup: BeautifulSoup) -> list[str]:
         """Extract image URLs from the page."""
