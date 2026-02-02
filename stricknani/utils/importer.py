@@ -1003,77 +1003,87 @@ class PatternImporter:
         if not text:
             return []
 
+        # 1. Normalize and identify headers
         normalized_text = self._normalize_garnstudio_text(text)
-        lines = [line.rstrip() for line in normalized_text.splitlines()]
-        paragraphs: list[str] = []
-        current: list[str] = []
 
-        def flush() -> None:
-            nonlocal current
-            if current:
-                paragraph = "\n".join(current).strip()
-                if paragraph:
-                    paragraphs.append(paragraph)
-            current = []
+        # 2. Iterate lines and group
+        # We'll use a state machine: either we are in a step or not.
+        steps: list[dict[str, Any]] = []
+        current_step: dict[str, Any] | None = None
+
+        lines = [line.rstrip() for line in normalized_text.splitlines()]
 
         for line in lines:
             stripped = line.strip()
             if not stripped:
-                flush()
-                continue
-
-            if current:
-                prev = current[-1]
-                if prev.endswith("-"):
-                    current[-1] = prev[:-1] + stripped
-                    continue
-                if stripped.startswith("(") or stripped[:1].islower():
-                    current[-1] = f"{current[-1]} {stripped}".strip()
-                    continue
-                if prev.endswith("("):
-                    current[-1] = f"{current[-1]} {stripped}".strip()
-                    continue
-
-            current.append(stripped)
-
-        flush()
-
-        merged: list[str] = []
-        index = 0
-        while index < len(paragraphs):
-            paragraph = paragraphs[index]
-            if index + 1 < len(paragraphs):
-                next_paragraph = paragraphs[index + 1]
+                # Add newline to current description if it doesn't already have one
                 if (
-                    paragraph.isupper()
-                    and len(paragraph) < 40
-                    and (
-                        next_paragraph.startswith("(")
-                        or next_paragraph[:1].islower()
-                        or len(next_paragraph) < 40
-                    )
+                    current_step
+                    and current_step["description"]
+                    and not current_step["description"].endswith("\n")
                 ):
-                    merged.append(f"{paragraph}\n{next_paragraph}".strip())
-                    index += 2
-                    continue
-            merged.append(paragraph)
-            index += 1
-
-        steps: list[dict[str, Any]] = []
-        for paragraph in merged:
-            # Filter out paragraphs that are just separators (e.g. "-----")
-            if not paragraph or set(paragraph.strip()) <= {"-", "_", "*", " "}:
+                    current_step["description"] += "\n"
                 continue
 
-            steps.append(
-                {
+            if stripped.startswith("### "):
+                # Start of a new step
+                title = stripped[4:].strip()
+                current_step = {
                     "step_number": len(steps) + 1,
-                    "title": f"Step {len(steps) + 1}",
-                    "description": paragraph,
+                    "title": title,
+                    "description": "",
                     "images": [],
                 }
-            )
-        return steps
+                steps.append(current_step)
+                continue
+
+            # Not a header.
+            if not current_step:
+                # Content before first header
+                current_step = {
+                    "step_number": len(steps) + 1,
+                    "title": f"Step {len(steps) + 1}",
+                    "description": "",
+                    "images": [],
+                }
+                steps.append(current_step)
+
+            # Merging logic for fragmented lines (from tags like <span>)
+            desc = current_step["description"]
+            if desc and not desc.endswith("\n"):
+                # Check if we should join or add a space
+                # If current line starts with lowercase or (, join with space
+                # Or if the previous line ended with a hyphen
+                if (
+                    stripped.startswith("(")
+                    or stripped[:1].islower()
+                    or desc.endswith("-")
+                ):
+                    if desc.endswith("-"):
+                        current_step["description"] = desc[:-1] + stripped
+                    else:
+                        current_step["description"] += " " + stripped
+                else:
+                    # Might be a new sentence or paragraph that wasn't caught
+                    current_step["description"] += "\n" + stripped
+            else:
+                # New line in description
+                current_step["description"] += stripped
+
+        # Cleanup
+        final_steps = []
+        for s in steps:
+            s["description"] = s["description"].strip()
+            if s["description"]:
+                final_steps.append(s)
+
+        # Re-index
+        for i, s in enumerate(final_steps, 1):
+            s["step_number"] = i
+            if s["title"].startswith("Step "):
+                s["title"] = f"Step {i}"
+
+        return final_steps
 
     def _normalize_garnstudio_text(self, text: str) -> str:
         """Improve Garnstudio text structure by converting headers to Markdown."""
@@ -1156,15 +1166,15 @@ class PatternImporter:
 
         normalized = "\n".join(structured_lines)
 
-        # 2. Fix inline colon-style headings that weren't on their own line
-        for heading in headings:
-            # Avoid re-matching already processed ### headings using lookbehind
-            normalized = re.sub(
-                rf"(?<!### )\b({re.escape(heading)})\s*:",
-                r"\n\n### \1\n",
-                normalized,
-                flags=re.I,
-            )
+        # 2. Fix inline colon-style headings
+        # Match "WORD IN CAPS:" at the start of a line or after newline
+        # We avoid ### markers
+        normalized = re.sub(
+            r"^([A-Z0-9\s-]{3,50}):",
+            r"### \1\n",
+            normalized,
+            flags=re.MULTILINE,
+        )
 
         # 3. Clean up excessive newlines
         normalized = re.sub(r"\n{3,}", "\n\n", normalized)
@@ -1449,13 +1459,13 @@ class PatternImporter:
         ]
 
         for container in [c for c in candidates if c]:
-            # Use a space separator instead of newline to avoid fragmenting sentences
-            # that are split across multiple inline tags (like <b> or <span>).
-            text = container.get_text(separator=" ", strip=True)
+            # Use a newline separator to preserve line structure for headers.
+            # We'll merge fragments later in the step processing logic.
+            text = container.get_text(separator="\n", strip=True)
             if text:
                 return text
 
-        return soup.get_text(separator=" ", strip=True)
+        return soup.get_text(separator="\n", strip=True)
 
 
 class GarnstudioPatternImporter(PatternImporter):

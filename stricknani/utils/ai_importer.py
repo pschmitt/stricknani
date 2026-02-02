@@ -66,7 +66,7 @@ def _extract_garnstudio_text(soup: BeautifulSoup) -> str:
     for selector in selectors:
         container = soup.select_one(selector)
         if container:
-            text = container.get_text(separator=" ", strip=True)
+            text = container.get_text(separator="\n", strip=True)
             if text:
                 parts.append(text)
 
