@@ -778,6 +778,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 setFieldValue('tags', data.tags);
                 setFieldValue('comment', data.comment);
                 setFieldValue('link', data.link);
+                if (data.link) initialLink = data.link;
 
                 // Set AI enhanced flag
                 const hiddenAiInput = document.getElementById('is_ai_enhanced');
@@ -2355,6 +2356,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         setFieldValue('description', data.description);
         setFieldValue('comment', data.comment);
         setFieldValue('link', data.link);
+                if (data.link) initialLink = data.link;
 
         // Project Image Previews
         const importImagesField = document.getElementById('import_image_urls');
@@ -2617,6 +2619,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             data.link = document.getElementById('importUrl').value.trim();
                         }
                         setFieldValue('link', data.link);
+                if (data.link) initialLink = data.link;
                     } catch (e) {
                         console.error('Error mapping metadata', e);
                     }
