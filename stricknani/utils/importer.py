@@ -107,37 +107,28 @@ class PatternImporter:
         if self.is_garnstudio:
             # Targeted noise removal
             noise_selectors = [
-                ".pcalc",
-                ".pcalc-wrapper",
-                ".btn",
-                ".pattern-print",
-                ".dropdown",
-                ".lessons-wrapper",
-                ".mobile-only",
-                ".re-material",
-                ".pcalc-title",
-                ".pcalc-content",
-                ".pcalc-form",
-                ".pcalc-result",
-                ".pcalc-close",
-                "#pcalc-wrapper",
-                "#pcalc-container",
-                ".pattern-print-link",
-                "script",
-                "style",
-                "nav",
-                "footer",
-                "header",
+                ".pcalc", ".pcalc-wrapper", ".btn", ".pattern-print", ".dropdown",
+                ".lessons-wrapper", ".mobile-only", ".re-material", ".updates",
+                ".pattern_copyright", ".pattern-share-new", ".pattern-ad",
+                ".pattern-prices", ".img-rel", ".selected-filters", ".ratio-1-1"
             ]
             for selector in noise_selectors:
                 for noise in soup.select(selector):
                     noise.decompose()
 
-            # Also look for elements by ID if they don't have classes
-            for noise_id in ["pcalc-wrapper", "pcalc-container"]:
-                element = soup.find(id=noise_id)
-                if element:
-                    element.decompose()
+            # Remove the "You might also like" section entirely
+            for h2 in soup.find_all("h2"):
+                if "Vielleicht gefällt" in h2.get_text() or "You might also like" in h2.get_text():
+                    # Find parent row or container and decompose
+                    parent = h2.find_parent("div", class_="row")
+                    if parent:
+                        # Decompose this row and the following one (which contains the images)
+                        nxt = parent.find_next_sibling("div", class_="row")
+                        if nxt:
+                            nxt.decompose()
+                        parent.decompose()
+                    else:
+                        h2.decompose()
 
         steps = self._extract_steps(soup)
         images = self._extract_images(soup)

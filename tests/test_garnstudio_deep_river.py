@@ -69,3 +69,11 @@ async def test_garnstudio_deep_river_cardigan() -> None:
     diagram_step = next((s for s in data["steps"] if "Diagram" in s["title"]), None)
     assert diagram_step is not None
     assert len(diagram_step["images"]) > 0
+
+    # Ensure no images from "related patterns" (drops/mag/...) leaked through
+    # Pattern ID is 11991, drops mag images usually have the pattern ID in them or mag number.
+    # Related patterns mentioned earlier: mag 254/12, 252/10, 252/9
+    for url in data["image_urls"]:
+        assert "254/12/" not in url
+        assert "252/10/" not in url
+        assert "252/9/" not in url

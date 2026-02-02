@@ -556,9 +556,10 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
                 <div class="space-y-4">
                     <input type="hidden" id="yarn_ids" name="yarn_ids" value="">
+                    <input type="hidden" id="yarn_text_hidden" name="yarn_text" value="">
 
                     <div class="relative">
-                        <input type="text" id="yarn_search" name="yarn_text" placeholder="{{ _('Search yarns...') }}"
+                        <input type="text" id="yarn_search" placeholder="{{ _('Search yarns...') }}"
                             class="input  input-sm w-full pl-8" autocomplete="off">
                         <span
                             class="mdi mdi-magnify absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/60"></span>
@@ -799,12 +800,13 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 if (data.link) initialLink = data.link;
 
                 // Set AI enhanced flag
+                const isAiEnhanced = data.is_ai_enhanced === true;
                 const hiddenAiInput = document.getElementById('is_ai_enhanced');
-                if (hiddenAiInput) hiddenAiInput.value = '1';
+                if (hiddenAiInput) hiddenAiInput.value = isAiEnhanced ? '1' : '';
                 const aiCheckbox = document.getElementById('is_ai_enhanced_checkbox');
                 const aiCheckboxMobile = document.getElementById('is_ai_enhanced_mobile_checkbox');
-                if (aiCheckbox) aiCheckbox.checked = true;
-                if (aiCheckboxMobile) aiCheckboxMobile.checked = true;
+                if (aiCheckbox) aiCheckbox.checked = isAiEnhanced;
+                if (aiCheckboxMobile) aiCheckboxMobile.checked = isAiEnhanced;
 
                 // Image URLs (Project level)
                 const importImagesField = document.getElementById('import_image_urls');
@@ -1111,6 +1113,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     }
                 });
 
+                // Clear the visible search input
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+
                 return { anySelected, remaining: '' };
             }
         };
@@ -1174,12 +1181,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 chip.className = 'flex items-center gap-2 py-2 px-3 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg';
 
                 chip.innerHTML = `
-                    <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60">
+                    <div class="relative w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60">
                         <span class="mdi mdi-sheep text-sm" aria-hidden="true"></span>
+                        <span class="absolute -top-1.5 -right-1.5 badge badge-secondary font-black text-[8px] h-3 min-h-0 px-1 border-none shadow-sm scale-90">NEW</span>
                     </div>
                     <div class="flex-1 min-w-0">
                         <span class="text-sm block truncate">${name}</span>
-                        <span class="text-[10px] opacity-70 block">{{ _('New Yarn') }}</span>
                     </div>
                     <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-pending="${name}">
                         <span class="mdi mdi-close"></span>
@@ -1195,11 +1202,19 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
         function updateHiddenInput() {
             hiddenInput.value = Array.from(selectedYarns.keys()).join(',');
-            // Also update the yarn_search input which is used for new yarns
-            // BUT only if it's not currently being edited by the user
+            
+            const yarnTextHidden = document.getElementById('yarn_text_hidden');
+            if (yarnTextHidden) {
+                yarnTextHidden.value = Array.from(pendingYarns).join('\n');
+            }
+            
+            // Explicitly clear yarn_search if we have pending yarns as chips
             const searchInput = document.getElementById('yarn_search');
-            if (searchInput && document.activeElement !== searchInput) {
-                searchInput.value = Array.from(pendingYarns).join('\n');
+            if (searchInput && pendingYarns.size > 0 && document.activeElement !== searchInput) {
+                // If the user isn't typing, make sure it's clean
+                if (searchInput.value.includes('\n') || Array.from(pendingYarns).some(y => searchInput.value.includes(y))) {
+                    searchInput.value = '';
+                }
             }
         }
 
@@ -2459,22 +2474,25 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         setFieldValue('recommended_needles', data.recommended_needles);
         setFieldValue('yarn_brand', data.brand);
         
-        if (data.yarn) {
-            const res = window.yarnSelector?.selectByName(data.yarn);
-            if (res && res.remaining) {
-                setFieldValue('yarn_search', res.remaining);
-            } else if (!res || !res.anySelected) {
-                setFieldValue('yarn_search', data.yarn);
-            }
-        }
-
-        setFieldValue('gauge_stitches', data.gauge_stitches);
+                        if (data.yarn) {
+                            window.yarnSelector?.selectByName(data.yarn);
+                        }
+                setFieldValue('gauge_stitches', data.gauge_stitches);
         setFieldValue('gauge_rows', data.gauge_rows);
         setFieldValue('stitch_sample', data.stitch_sample);
         setFieldValue('description', data.description);
         setFieldValue('comment', data.comment);
         setFieldValue('link', data.link);
-                if (data.link) initialLink = data.link;
+        if (data.link) initialLink = data.link;
+
+        // AI Enhanced flag
+        const isAiEnhanced = data.is_ai_enhanced === true;
+        const hiddenAiInput = document.getElementById('is_ai_enhanced');
+        if (hiddenAiInput) hiddenAiInput.value = isAiEnhanced ? '1' : '';
+        const aiCheckbox = document.getElementById('is_ai_enhanced_checkbox');
+        const aiCheckboxMobile = document.getElementById('is_ai_enhanced_mobile_checkbox');
+        if (aiCheckbox) aiCheckbox.checked = isAiEnhanced;
+        if (aiCheckboxMobile) aiCheckboxMobile.checked = isAiEnhanced;
 
         // Project Image Previews
         const importImagesField = document.getElementById('import_image_urls');
@@ -2728,16 +2746,10 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         setFieldValue('recommended_needles', data.recommended_needles);
                         setFieldValue('yarn_brand', data.brand);
                         
-                        if (data.yarn) {
-                            const res = window.yarnSelector?.selectByName(data.yarn);
-                            if (res && res.remaining) {
-                                setFieldValue('yarn_search', res.remaining);
-                            } else if (!res || !res.anySelected) {
-                                setFieldValue('yarn_search', data.yarn);
-                            }
-                        }
-
-                        setFieldValue('gauge_stitches', data.gauge_stitches);
+                                        if (data.yarn) {
+                                            window.yarnSelector?.selectByName(data.yarn);
+                                        }
+                                                setFieldValue('gauge_stitches', data.gauge_stitches);
                         setFieldValue('gauge_rows', data.gauge_rows);
                         setFieldValue('stitch_sample', data.stitch_sample);
                         setFieldValue('description', data.description);

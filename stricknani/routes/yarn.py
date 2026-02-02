@@ -436,6 +436,7 @@ async def import_yarn(
             "link": url,
             "image_urls": data.get("image_urls", [])[:5],
             "notes": None,
+            "is_ai_enhanced": False,
         }
 
         return JSONResponse(content=yarn_data)

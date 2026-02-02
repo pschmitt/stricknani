@@ -532,12 +532,13 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             archiveField.value = '1';
         }
 
+        const isAiEnhanced = data.is_ai_enhanced === true;
         const hiddenAiInput = document.getElementById('is_ai_enhanced');
-        if (hiddenAiInput) hiddenAiInput.value = '1';
+        if (hiddenAiInput) hiddenAiInput.value = isAiEnhanced ? '1' : '';
         const aiCheckbox = document.getElementById('is_ai_enhanced_checkbox');
         const aiCheckboxMobile = document.getElementById('is_ai_enhanced_mobile_checkbox');
-        if (aiCheckbox) aiCheckbox.checked = true;
-        if (aiCheckboxMobile) aiCheckboxMobile.checked = true;
+        if (aiCheckbox) aiCheckbox.checked = isAiEnhanced;
+        if (aiCheckboxMobile) aiCheckboxMobile.checked = isAiEnhanced;
 
         window.unsavedChanges?.setDirty(true);
         window.showToast?.('{{ _("Data imported successfully!") }}', 'success');

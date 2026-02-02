@@ -905,6 +905,7 @@ async def import_pattern(
             else:
                 basic_importer = PatternImporter(url)
             basic_data = await basic_importer.fetch_and_parse()
+            basic_data["is_ai_enhanced"] = False
             data = basic_data
             if trace:
                 trace.add_event(
@@ -982,6 +983,7 @@ async def import_pattern(
                         ai_data["stitch_sample"] = basic_sample
 
                     data = ai_data
+                    data["is_ai_enhanced"] = True
 
                     # Check if AI extraction actually worked (not just URL/images).
                     if all(
