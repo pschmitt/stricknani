@@ -742,6 +742,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        initYarnSelector();
+        initTagEditor();
+
         const importedData = sessionStorage.getItem('importedData');
         if (importedData) {
             try {
@@ -769,7 +772,16 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 setFieldValue('name', data.title || data.name);
                 setFieldValue('needles', data.needles);
                 setFieldValue('recommended_needles', data.recommended_needles);
-                setFieldValue('yarn_search', data.yarn);
+                
+                if (data.yarn) {
+                    const res = window.yarnSelector?.selectByName(data.yarn);
+                    if (res && res.remaining) {
+                        setFieldValue('yarn_search', res.remaining);
+                    } else if (!res || !res.anySelected) {
+                        setFieldValue('yarn_search', data.yarn);
+                    }
+                }
+
                 setFieldValue('gauge_stitches', data.gauge_stitches);
                 setFieldValue('gauge_rows', data.gauge_rows);
                 setFieldValue('stitch_sample', data.stitch_sample);
@@ -857,9 +869,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
             setupTextareaDrop(el);
         });
-
-        initYarnSelector();
-        initTagEditor();
 
         // Initialize checkbox states based on link presence
         const linkEl = document.getElementById('link');
@@ -1023,40 +1032,79 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
         const selectedYarns = new Map();
 
+        function selectYarn(id, name, brand, colorway, dyeLot, imageUrl) {
+            if (selectedYarns.has(id)) return;
+
+            selectedYarns.set(id, { name, brand, colorway, dyeLot, imageUrl });
+            updateSelectedDisplay();
+            updateHiddenInput();
+            filterOptions();
+        }
+
+        function removeYarn(id) {
+            selectedYarns.delete(id);
+            updateSelectedDisplay();
+            updateHiddenInput();
+            filterOptions();
+        }
+
+        // Expose API
+        window.yarnSelector = {
+            select: selectYarn,
+            remove: removeYarn,
+            selectByName: function (name) {
+                if (!name) return { anySelected: false, remaining: '' };
+                const names = name.split(',').map(n => n.trim()).filter(Boolean);
+                const remaining = [];
+                let anySelected = false;
+
+                names.forEach(n => {
+                    const nLower = n.toLowerCase();
+                    const option = Array.from(yarnOptions).find(opt => {
+                        const optName = opt.dataset.yarnName.toLowerCase();
+                        const optBrand = (opt.dataset.yarnBrand || '').toLowerCase();
+                        return optName === nLower ||
+                            `${optBrand} ${optName}`.toLowerCase() === nLower ||
+                            (optBrand && nLower.includes(optBrand) && nLower.includes(optName));
+                    });
+
+                    if (option) {
+                        selectYarn(
+                            parseInt(option.dataset.yarnId),
+                            option.dataset.yarnName,
+                            option.dataset.yarnBrand,
+                            option.dataset.yarnColorway,
+                            option.dataset.yarnDyeLot,
+                            option.dataset.yarnImage
+                        );
+                        anySelected = true;
+                    } else {
+                        remaining.push(n);
+                    }
+                });
+
+                return { anySelected, remaining: remaining.join(', ') };
+            }
+        };
+
         {% if project and project.yarn_ids %}
         const preSelectedIds = {{ project.yarn_ids | tojson }};
-    yarnOptions.forEach(option => {
-        const yarnId = parseInt(option.dataset.yarnId);
-        if (preSelectedIds.includes(yarnId)) {
-            selectYarn(
-                yarnId,
-                option.dataset.yarnName,
-                option.dataset.yarnBrand,
-                option.dataset.yarnColorway,
-                option.dataset.yarnDyeLot,
-                option.dataset.yarnImage,
-            );
-        }
-    });
-    {% endif %}
+        yarnOptions.forEach(option => {
+            const yarnId = parseInt(option.dataset.yarnId);
+            if (preSelectedIds.includes(yarnId)) {
+                selectYarn(
+                    yarnId,
+                    option.dataset.yarnName,
+                    option.dataset.yarnBrand,
+                    option.dataset.yarnColorway,
+                    option.dataset.yarnDyeLot,
+                    option.dataset.yarnImage,
+                );
+            }
+        });
+        {% endif %}
 
-    function selectYarn(id, name, brand, colorway, dyeLot, imageUrl) {
-        if (selectedYarns.has(id)) return;
-
-        selectedYarns.set(id, { name, brand, colorway, dyeLot, imageUrl });
-        updateSelectedDisplay();
-        updateHiddenInput();
-        filterOptions();
-    }
-
-    function removeYarn(id) {
-        selectedYarns.delete(id);
-        updateSelectedDisplay();
-        updateHiddenInput();
-        filterOptions();
-    }
-
-    function updateSelectedDisplay() {
+        function updateSelectedDisplay() {
         if (selectedYarns.size === 0) {
             selectedContainer.innerHTML = '<span class="text-base-content/40 text-sm">{{ _("No yarns selected") }}</span>';
             return;
@@ -2349,7 +2397,16 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         setFieldValue('name', data.title || data.name);
         setFieldValue('needles', data.needles);
         setFieldValue('recommended_needles', data.recommended_needles);
-        setFieldValue('yarn_search', data.yarn);
+        
+        if (data.yarn) {
+            const res = window.yarnSelector?.selectByName(data.yarn);
+            if (res && res.remaining) {
+                setFieldValue('yarn_search', res.remaining);
+            } else if (!res || !res.anySelected) {
+                setFieldValue('yarn_search', data.yarn);
+            }
+        }
+
         setFieldValue('gauge_stitches', data.gauge_stitches);
         setFieldValue('gauge_rows', data.gauge_rows);
         setFieldValue('stitch_sample', data.stitch_sample);
@@ -2608,7 +2665,16 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         setFieldValue('name', data.title || data.name);
                         setFieldValue('needles', data.needles);
                         setFieldValue('recommended_needles', data.recommended_needles);
-                        setFieldValue('yarn_search', data.yarn); // Populate autocomplete search
+                        
+                        if (data.yarn) {
+                            const res = window.yarnSelector?.selectByName(data.yarn);
+                            if (res && res.remaining) {
+                                setFieldValue('yarn_search', res.remaining);
+                            } else if (!res || !res.anySelected) {
+                                setFieldValue('yarn_search', data.yarn);
+                            }
+                        }
+
                         setFieldValue('gauge_stitches', data.gauge_stitches);
                         setFieldValue('gauge_rows', data.gauge_rows);
                         setFieldValue('stitch_sample', data.stitch_sample);
