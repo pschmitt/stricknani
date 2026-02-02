@@ -552,7 +552,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     <input type="hidden" id="yarn_ids" name="yarn_ids" value="">
 
                     <div class="relative">
-                        <input type="text" id="yarn_search" placeholder="{{ _('Search yarns...') }}"
+                        <input type="text" id="yarn_search" name="yarn_text" placeholder="{{ _('Search yarns...') }}"
                             class="input  input-sm w-full pl-8" autocomplete="off">
                         <span
                             class="mdi mdi-magnify absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/60"></span>
@@ -2699,11 +2699,33 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 <dialog id="deleteProjectDialog" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box">
         <h3 class="font-bold text-lg">{{ _('Delete Project') }}</h3>
-        <p class="py-4 text-base-content/80">
-            {{ _('Are you sure you want to delete this project?') }}
-            <br>
-            <strong class="text-base-content">{{ project.name }}</strong>
-        </p>
+        <div class="py-4 space-y-4">
+            <p class="text-base-content/80">
+                {{ _('Are you sure you want to delete this project?') }}
+                <br>
+                <strong class="text-base-content">{{ project.name }}</strong>
+            </p>
+
+            {% if project.exclusive_yarns %}
+            <div class="bg-warning/10 border-l-4 border-warning p-4 rounded-r-lg">
+                <div class="flex items-start gap-3">
+                    <span class="mdi mdi-alert text-warning text-xl"></span>
+                    <div class="space-y-2">
+                        <p class="text-sm font-medium">{{ _('Some yarns are only used in this project:') }}</p>
+                        <ul class="text-xs opacity-80 list-disc list-inside">
+                            {% for yarn in project.exclusive_yarns %}
+                            <li>{{ yarn.name }}</li>
+                            {% endfor %}
+                        </ul>
+                        <label class="label cursor-pointer justify-start gap-3 p-0 mt-2">
+                            <input type="checkbox" id="delete_exclusive_yarns" class="checkbox checkbox-warning checkbox-sm">
+                            <span class="label-text font-bold">{{ _('Also delete these yarns') }}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
         <div class="modal-action">
             {{ dialogs.dialog_cancel(_('Cancel'),
             attrs='onclick="document.getElementById(\'deleteProjectDialog\').close()"') }}
@@ -2715,7 +2737,13 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
 <script>
     function deleteProject() {
-        fetch('/projects/{{ project.id }}', {
+        const deleteYarns = document.getElementById('delete_exclusive_yarns')?.checked || false;
+        const url = new URL('/projects/{{ project.id }}', window.location.origin);
+        if (deleteYarns) {
+            url.searchParams.set('delete_yarns', 'true');
+        }
+
+        fetch(url, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'

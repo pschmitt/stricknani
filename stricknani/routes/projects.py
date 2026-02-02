@@ -1392,6 +1392,68 @@ async def delete_category(
     )
 
 
+async def _ensure_yarns_by_text(
+    db: AsyncSession, user_id: int, yarn_text: str | None, current_yarn_ids: list[int]
+) -> list[int]:
+    """Link against a real yarn from our db, or create a new yarn when there is no match."""
+    if not yarn_text:
+        return current_yarn_ids
+
+    # Normalize yarn names from text (could be comma separated or just one)
+    yarn_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
+    if not yarn_names:
+        return current_yarn_ids
+
+    updated_ids = list(current_yarn_ids)
+
+    # Pre-load already linked yarns names to avoid double linking
+    existing_linked_yarns = []
+    if updated_ids:
+        res = await db.execute(select(Yarn.name).where(Yarn.id.in_(updated_ids)))
+        existing_linked_yarns = [row[0].lower() for row in res]
+
+    for name in yarn_names:
+        if name.lower() in existing_linked_yarns:
+            continue
+
+        # Try to find match in DB
+        res = await db.execute(
+            select(Yarn).where(
+                Yarn.owner_id == user_id, func.lower(Yarn.name) == name.lower()
+            )
+        )
+        yarn = res.scalar_one_or_none()
+
+        if not yarn:
+            # Create new yarn
+            yarn = Yarn(name=name, owner_id=user_id)
+            db.add(yarn)
+            await db.flush()
+
+        if yarn.id not in updated_ids:
+            updated_ids.append(yarn.id)
+
+    return updated_ids
+
+
+async def _get_exclusive_yarns(db: AsyncSession, project: Project) -> list[Yarn]:
+    """Return yarns linked ONLY to this project."""
+    exclusive = []
+    # Project needs to have yarns and projects loaded
+    for yarn in project.yarns:
+        # We need to count how many projects this yarn belongs to
+        # Since project_yarns is a secondary table
+        res = await db.execute(
+            select(func.count(Project.id))
+            .join(Yarn.projects)
+            .where(Yarn.id == yarn.id)
+        )
+        count = res.scalar() or 0
+        if count == 1:
+            exclusive.append(yarn)
+    return exclusive
+
+
 @router.get("/{project_id}", response_class=HTMLResponse)
 async def get_project(
     request: Request,
@@ -1410,6 +1472,7 @@ async def get_project(
             selectinload(Project.images),
             selectinload(Project.steps).selectinload(Step.images),
             selectinload(Project.yarns).selectinload(Yarn.photos),
+            selectinload(Project.yarns).selectinload(Yarn.projects),
         )
     )
     project = result.scalar_one_or_none()
@@ -1508,6 +1571,7 @@ async def get_project(
         )
     )
     is_favorite = favorite_lookup.first() is not None
+    exclusive_yarns = await _get_exclusive_yarns(db, project)
     project_data = {
         "id": project.id,
         "name": project.name,
@@ -1570,6 +1634,7 @@ async def get_project(
             }
             for yarn in project.yarns
         ],
+        "exclusive_yarns": [{"id": y.id, "name": y.name} for y in exclusive_yarns],
     }
 
     return render_template(
@@ -1600,7 +1665,7 @@ async def edit_project_form(
         .options(
             selectinload(Project.images),
             selectinload(Project.steps).selectinload(Step.images),
-            selectinload(Project.yarns),
+            selectinload(Project.yarns).selectinload(Yarn.projects),
         )
     )
     project = result.scalar_one_or_none()
@@ -1681,6 +1746,7 @@ async def edit_project_form(
             }
         )
 
+    exclusive_yarns = await _get_exclusive_yarns(db, project)
     project_data = {
         "id": project.id,
         "name": project.name,
@@ -1706,6 +1772,7 @@ async def edit_project_form(
         "steps": steps_data,
         "tags": project.tag_list(),
         "yarn_ids": [y.id for y in project.yarns],
+        "exclusive_yarns": [{"id": y.id, "name": y.name} for y in exclusive_yarns],
     }
 
     categories = await _get_user_categories(db, current_user.id)
@@ -1743,6 +1810,7 @@ async def create_project(
     link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
+    yarn_text: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     import_title_image_url: Annotated[str | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
@@ -1760,6 +1828,12 @@ async def create_project(
             ]
         except ValueError:
             pass
+
+    # Ensure yarn matches or creates
+    parsed_yarn_ids = await _ensure_yarns_by_text(
+        db, current_user.id, yarn_text, parsed_yarn_ids
+    )
+
     gauge_stitches_value = _parse_optional_int("gauge_stitches", gauge_stitches)
     gauge_rows_value = _parse_optional_int("gauge_rows", gauge_rows)
     normalized_category = await _ensure_category(db, current_user.id, category)
@@ -1853,6 +1927,7 @@ async def update_project(
     link: Annotated[str | None, Form()] = None,
     steps_data: Annotated[str | None, Form()] = None,
     yarn_ids: Annotated[str | None, Form()] = None,
+    yarn_text: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
     is_ai_enhanced: Annotated[bool | None, Form()] = False,
@@ -1869,6 +1944,12 @@ async def update_project(
             ]
         except ValueError:
             pass
+
+    # Ensure yarn matches or creates
+    parsed_yarn_ids = await _ensure_yarns_by_text(
+        db, current_user.id, yarn_text, parsed_yarn_ids
+    )
+
     result = await db.execute(
         select(Project)
         .where(Project.id == project_id)
@@ -2016,6 +2097,7 @@ async def retry_project_archive(
 async def delete_project(
     project_id: int,
     request: Request,
+    delete_yarns: bool = False,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -2023,7 +2105,11 @@ async def delete_project(
     result = await db.execute(
         select(Project)
         .where(Project.id == project_id)
-        .options(selectinload(Project.images), selectinload(Project.steps))
+        .options(
+            selectinload(Project.images),
+            selectinload(Project.steps),
+            selectinload(Project.yarns).selectinload(Yarn.projects),
+        )
     )
     project = result.scalar_one_or_none()
 
@@ -2036,6 +2122,21 @@ async def delete_project(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
+
+    # Handle exclusive yarn deletion
+    if delete_yarns:
+        exclusive_yarns = await _get_exclusive_yarns(db, project)
+        for yarn in exclusive_yarns:
+            # Delete yarn media if any
+            yarn_media_dir = config.MEDIA_ROOT / "yarns" / str(yarn.id)
+            yarn_thumb_dir = config.MEDIA_ROOT / "thumbnails" / "yarns" / str(yarn.id)
+            import shutil
+
+            if yarn_media_dir.exists():
+                shutil.rmtree(yarn_media_dir)
+            if yarn_thumb_dir.exists():
+                shutil.rmtree(yarn_thumb_dir)
+            await db.delete(yarn)
 
     # Delete all project assets before deleting the database record
     import shutil

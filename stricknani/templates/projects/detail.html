@@ -744,10 +744,31 @@
         <p class="text-sm opacity-90">{{ _('This action cannot be undone.') }}</p>
     </div>
 </div>
-<div class="p-6">
-    <p class="mb-6 text-base-content/80">
+<div class="p-6 space-y-6">
+    <p class="text-base-content/80">
         {{ _('Are you sure you want to delete') }} <strong class="text-base-content">{{ project.name }}</strong>?
     </p>
+
+    {% if project.exclusive_yarns %}
+    <div class="bg-warning/10 border-l-4 border-warning p-4 rounded-r-lg">
+        <div class="flex items-start gap-3">
+            <span class="mdi mdi-alert text-warning text-xl"></span>
+            <div class="space-y-2">
+                <p class="text-sm font-medium text-warning-content">{{ _('Some yarns are only used in this project:') }}</p>
+                <ul class="text-xs opacity-80 list-disc list-inside">
+                    {% for yarn in project.exclusive_yarns %}
+                    <li>{{ yarn.name }}</li>
+                    {% endfor %}
+                </ul>
+                <label class="label cursor-pointer justify-start gap-3 p-0 mt-2">
+                    <input type="checkbox" id="delete_exclusive_yarns" class="checkbox checkbox-warning checkbox-sm">
+                    <span class="label-text font-bold">{{ _('Also delete these yarns') }}</span>
+                </label>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="flex justify-end gap-2">
         <form method="dialog">
             {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
@@ -820,7 +841,13 @@
         btn.disabled = true;
         btn.classList.add('loading');
 
-        fetch('/projects/{{ project.id }}', {
+        const deleteYarns = document.getElementById('delete_exclusive_yarns')?.checked || false;
+        const url = new URL('/projects/{{ project.id }}', window.location.origin);
+        if (deleteYarns) {
+            url.searchParams.set('delete_yarns', 'true');
+        }
+
+        fetch(url, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
