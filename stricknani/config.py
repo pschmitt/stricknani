@@ -67,9 +67,13 @@ class Config:
 
     # Sentry
     SENTRY_DSN: str | None = os.getenv("SENTRY_DSN")
+    SENTRY_FRONTEND_DSN: str | None = os.getenv("SENTRY_FRONTEND_DSN")
     SENTRY_ENVIRONMENT: str = os.getenv("SENTRY_ENVIRONMENT", "production")
     SENTRY_TRACES_SAMPLE_RATE: float = float(
         os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0")
+    )
+    SENTRY_FRONTEND_TRACES_SAMPLE_RATE: float = float(
+        os.getenv("SENTRY_FRONTEND_TRACES_SAMPLE_RATE", str(SENTRY_TRACES_SAMPLE_RATE))
     )
 
     # Internationalization

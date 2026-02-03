@@ -168,6 +168,14 @@ app.mount("/media", StaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
 # Setup templates
 templates_path = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(templates_path))
+templates.env.globals["sentry_frontend_dsn"] = config.SENTRY_FRONTEND_DSN
+templates.env.globals["sentry_frontend_env"] = config.SENTRY_ENVIRONMENT
+templates.env.globals["sentry_frontend_traces_sample_rate"] = (
+    config.SENTRY_FRONTEND_TRACES_SAMPLE_RATE
+)
+templates.env.globals["sentry_frontend_enabled"] = bool(
+    config.SENTRY_FRONTEND_DSN
+) and not (config.DEBUG or config.TESTING)
 
 
 def category_color_filter(category_name: str | None) -> str:

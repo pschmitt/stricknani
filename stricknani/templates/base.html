@@ -1624,6 +1624,18 @@
             });
         });
     </script>
+    {% if sentry_frontend_enabled %}
+    <script src="https://browser.sentry-cdn.com/10.38.0/bundle.tracing.min.js"
+        integrity="sha384-COL1vOWQO+0hwStGhZ6r5BKlWlJzd59gOqtCYmcIvfDd0ifnTHrWzzQQYmUNf/Lr"
+        crossorigin="anonymous"></script>
+    <script>
+        Sentry.init({
+            dsn: {{ sentry_frontend_dsn | tojson }},
+            environment: {{ sentry_frontend_env | tojson }},
+            tracesSampleRate: {{ sentry_frontend_traces_sample_rate }}
+        });
+    </script>
+    {% endif %}
 </body>
 
 </html>
