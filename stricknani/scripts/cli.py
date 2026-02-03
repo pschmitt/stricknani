@@ -7,7 +7,6 @@ import asyncio
 import getpass
 import json
 import logging
-import subprocess
 import sys
 from datetime import datetime
 from types import ModuleType
@@ -1027,10 +1026,11 @@ def main() -> None:
     elif args.command == "alembic":
         from pathlib import Path
 
+        from alembic.config import main as alembic_main
+
         ini_path = Path(__file__).parent.parent / "alembic.ini"
-        cmd = [sys.executable, "-m", "alembic", "-c", str(ini_path)] + args.alembic_args
-        result = subprocess.run(cmd)
-        sys.exit(result.returncode)
+        alembic_args = ["-c", str(ini_path)] + args.alembic_args
+        alembic_main(argv=alembic_args)
 
 
 if __name__ == "__main__":
