@@ -52,6 +52,31 @@
 {% include "shared/unified_navbar.html" %}
 {% endblock %}
 
+{% block head %}
+<style>
+    .collapse-right.collapse-arrow > .collapse-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        padding-right: 3rem;
+    }
+
+    .collapse-right.collapse-arrow > .collapse-title::after {
+        right: 1.25rem;
+        transform: translateY(-50%) rotate(-45deg);
+    }
+
+    .collapse-right.collapse-arrow > input:checked ~ .collapse-title::after {
+        transform: translateY(-50%) rotate(-45deg);
+    }
+
+    .collapse-right > input:not(:checked) ~ .collapse-content {
+        padding-right: 2.5rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
     <h1 class="text-2xl font-bold mb-4 md:hidden flex items-center gap-2">
@@ -59,336 +84,358 @@
         {{ yarn.name }}
     </h1>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+    <div id="yarn-grid" class="relative grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 transition-all duration-300">
         <!-- Main Content Column -->
-        <div class="lg:col-span-2 space-y-8">
+        <div id="main-column" class="lg:col-span-2 space-y-8 transition-all duration-300">
             <!-- Gallery Section -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
-                <div class="p-4 border-b border-base-100 flex items-center justify-between">
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
+                <input type="checkbox" checked />
+                <div class="collapse-title p-4 flex items-center justify-between">
                     <h2 class="font-bold text-lg flex items-center gap-2">
                         <span class="mdi mdi-image-multiple text-primary"></span>
                         {{ _('Gallery') }}
                     </h2>
-                    <span class="text-xs font-medium text-base-content/50">{{ photos|length }} {{ _('photos') }}</span>
+                    <span class="text-xs font-medium text-base-content/50 mr-8">{{ photos|length }} {{ _('photos') }}</span>
                 </div>
-                <div class="p-2 bg-base-200/50">
-                    {% if photos %}
-                    {% set photo_count = photos|length %}
-                    {% set photo_preview = photos[:3] %}
-                    <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
-                        {% for photo in photo_preview %}
-                        <div
-                            class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200">
-                            <a href="{{ photo.full_url }}"
-                                class="block h-full w-full{% if loop.last and photo_count > 3 %} pointer-events-none{% endif %}"
-                                data-pswp-width="{{ photo.width or 1200 }}"
-                                data-pswp-height="{{ photo.height or 1200 }}"
-                                data-pswp-caption="{{ photo.alt_text or yarn.name }}">
-                                <img src="{{ photo.thumbnail_url }}" alt="{{ photo.alt_text or yarn.name }}"
-                                    class="h-full w-full object-cover cursor-zoom-in transition duration-300 hover:scale-105"
-                                    loading="lazy">
-                            </a>
-                            {% if loop.last and photo_count > 3 %}
-                            <div class="absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
-                                data-pswp-open-index="2" role="button" tabindex="0" aria-label="{{ _('Open gallery') }}"
-                                onclick="window.openPhotoSwipeIndex?.(this)"
-                                onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openPhotoSwipeIndex?.(this); }">
-                                +{{ photo_count - 3 }}
+                <div class="collapse-content p-0">
+                    <div class="p-2 bg-base-200/50">
+                        {% if photos %}
+                        {% set photo_count = photos|length %}
+                        {% set photo_preview = photos[:3] %}
+                        <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
+                            {% for photo in photo_preview %}
+                            <div
+                                class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200">
+                                <a href="{{ photo.full_url }}"
+                                    class="block h-full w-full{% if loop.last and photo_count > 3 %} pointer-events-none{% endif %}"
+                                    data-pswp-width="{{ photo.width or 1200 }}"
+                                    data-pswp-height="{{ photo.height or 1200 }}"
+                                    data-pswp-caption="{{ photo.alt_text or yarn.name }}">
+                                    <img src="{{ photo.thumbnail_url }}" alt="{{ photo.alt_text or yarn.name }}"
+                                        class="h-full w-full object-cover cursor-zoom-in transition duration-300 hover:scale-105"
+                                        loading="lazy">
+                                </a>
+                                {% if loop.last and photo_count > 3 %}
+                                <div class="absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
+                                    data-pswp-open-index="2" role="button" tabindex="0" aria-label="{{ _('Open gallery') }}"
+                                    onclick="window.openPhotoSwipeIndex?.(this)"
+                                    onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openPhotoSwipeIndex?.(this); }">
+                                    +{{ photo_count - 3 }}
+                                </div>
+                                {% endif %}
                             </div>
-                            {% endif %}
+                            {% endfor %}
+                            {% for photo in photos[3:] %}
+                            <a href="{{ photo.full_url }}" class="hidden" data-pswp-width="{{ photo.width or 1200 }}"
+                                data-pswp-height="{{ photo.height or 1200 }}"
+                                data-pswp-caption="{{ photo.alt_text or yarn.name }}"></a>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
-                        {% for photo in photos[3:] %}
-                        <a href="{{ photo.full_url }}" class="hidden" data-pswp-width="{{ photo.width or 1200 }}"
-                            data-pswp-height="{{ photo.height or 1200 }}"
-                            data-pswp-caption="{{ photo.alt_text or yarn.name }}"></a>
-                        {% endfor %}
+                        {% else %}
+                        <div class="flex flex-col items-center justify-center py-12 text-base-content/40">
+                            <span class="mdi mdi-image-off-outline text-4xl mb-2"></span>
+                            <p class="text-sm">{{ _('No photos yet') }}</p>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% else %}
-                    <div class="flex flex-col items-center justify-center py-12 text-base-content/40">
-                        <span class="mdi mdi-image-off-outline text-4xl mb-2"></span>
-                        <p class="text-sm">{{ _('No photos yet') }}</p>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
 
             <!-- Description -->
             {% if yarn.description %}
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                <h3
-                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center justify-between gap-2 text-xs">
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+                <input type="checkbox" checked />
+                <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center justify-between gap-2 text-xs">
                     <div class="flex items-center gap-2">
                         <span class="mdi mdi-text-box-outline"></span>
                         {{ _('Description') }}
                     </div>
-                    <button class="btn btn-ghost btn-xs gap-1"
-                        onclick='copyToClipboard({{ (yarn.description or '')|tojson }}, this)'
-                        title="{{ _('Copy Description') }}">
-                        <span class="mdi mdi-content-copy"></span>
-                    </button>
-                </h3>
-                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
-                    {% if description_html %}
-                    {{ description_html | safe }}
-                    {% else %}
-                    {{ yarn.description }}
-                    {% endif %}
+                </div>
+                <div class="collapse-content">
+                    <div class="flex justify-end mb-2">
+                        <button class="btn btn-ghost btn-xs gap-1"
+                            onclick='copyToClipboard({{ (yarn.description or '')|tojson }}, this)'
+                            title="{{ _('Copy Description') }}">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
+                    </div>
+                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                        {% if description_html %}
+                        {{ description_html | safe }}
+                        {% else %}
+                        {{ yarn.description }}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             {% endif %}
 
             <!-- Notes -->
             {% if yarn.notes %}
-            <div
-                class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
-                <h3
-                    class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center justify-between gap-2 text-xs">
+            <div class="collapse collapse-arrow bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30">
+                <input type="checkbox" checked />
+                <div class="collapse-title font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest flex items-center justify-between gap-2 text-xs">
                     <div class="flex items-center gap-2">
                         <span class="mdi mdi-notebook-outline"></span>
                         {{ _('Notes') }}
                     </div>
-                    <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
-                        onclick='copyToClipboard({{ (yarn.notes or '')|tojson }}, this)'
-                        title="{{ _('Copy Notes') }}">
-                        <span class="mdi mdi-content-copy"></span>
-                    </button>
-                </h3>
-                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
-                    {% if notes_html %}
-                    {{ notes_html | safe }}
-                    {% else %}
-                    {{ yarn.notes }}
-                    {% endif %}
+                </div>
+                <div class="collapse-content">
+                    <div class="flex justify-end mb-2">
+                        <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
+                            onclick='copyToClipboard({{ (yarn.notes or '')|tojson }}, this)'
+                            title="{{ _('Copy Notes') }}">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
+                    </div>
+                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                        {% if notes_html %}
+                        {{ notes_html | safe }}
+                        {% else %}
+                        {{ yarn.notes }}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             {% endif %}
         </div>
 
         <!-- Sidebar Column -->
-        <div class="space-y-6">
+        <div class="hidden lg:block lg:absolute lg:right-0 lg:top-0 z-30">
+            <button type="button" id="details-restore-button"
+                class="flex h-16 w-8 -mr-4 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
+                onclick="restoreSidebarDetails()" title="{{ _('Yarn Details') }}" aria-label="{{ _('Yarn Details') }}">
+                <span class="mdi mdi-chevron-left text-lg"></span>
+                <span class="sr-only">{{ _('Yarn Details') }}</span>
+            </button>
+        </div>
+
+        <div id="sidebar-column" class="space-y-6 lg:col-start-3 lg:row-start-1 lg:sticky lg:top-20 lg:self-start transition-all duration-300">
             <!-- Details Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                <h3
-                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
-                    <span class="mdi mdi-information-outline"></span>
-                    {{ _('Yarn Details') }}
-                </h3>
-
-                <div class="space-y-4">
-                    <!-- Badge Info -->
-                    {% if yarn.brand %}
-                    <div class="py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Brand')
-                            }}</span>
-                        <a href="/yarn?brand={{ yarn.brand|urlencode }}"
-                            class="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 max-w-[12rem]">
-                            <span class="mdi mdi-factory text-sm"></span>
-                            <span class="truncate">{{ yarn.brand }}</span>
-                        </a>
-                    </div>
-                    {% endif %}
-
-                    <div class="py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Added')
-                            }}</span>
-                        <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
-                            <span class="mdi mdi-calendar-plus"></span>
-                            {{ metadata.created }}
-                        </span>
-                    </div>
-
-                    {% if yarn.is_ai_enhanced %}
-                    <div class="py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Data Source') }}</span>
-                        <span class="badge badge-primary font-black text-[10px] tracking-tighter uppercase h-5 min-h-0" title="{{ _('AI Enhanced') }}">AI</span>
-                    </div>
-                    {% endif %}
-
-                    <div class="divider my-2"></div>
-
-                    {% if yarn.colorway %}
-                    <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Colorway')
-                            }}</span>
-                        <div class="flex items-center gap-2 text-sm font-medium">
-                            <span class="mdi mdi-palette text-base-content/60"></span>
-                            {{ yarn.colorway }}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if yarn.dye_lot %}
-                    <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Dye Lot')
-                            }}</span>
-                        <div class="flex items-center gap-2 text-sm font-medium">
-                            <span class="mdi mdi-identifier text-base-content/60"></span>
-                            {{ yarn.dye_lot }}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if yarn.fiber_content %}
-                    <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Fiber Content')
-                            }}</span>
-                        <div class="flex items-center gap-2 text-sm font-medium">
-                            <span class="mdi mdi-leaf text-success"></span>
-                            {{ yarn.fiber_content }}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if yarn.weight_category %}
-                    <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Weight Category') }}</span>
-                        <div class="flex items-center gap-2 text-sm font-medium">
-                            <span class="mdi mdi-weight text-base-content/60"></span>
-                            {{ yarn.weight_category }}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if yarn.recommended_needles %}
-                    <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Recommended Needles') }}</span>
-                        <div class="flex items-start gap-2 text-sm font-medium whitespace-pre-wrap">
-                            <span class="mdi mdi-needle text-base-content/60 mt-0.5"></span>
-                            {{ yarn.recommended_needles }}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <div class="divider my-2"></div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        {% if yarn.weight_grams %}
-                        <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Weight')
-                                }}</span>
-                            <div class="flex items-center gap-2 text-sm font-medium">
-                                <span class="mdi mdi-scale text-base-content/60"></span>
-                                {{ yarn.weight_grams }}g
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% if yarn.length_meters %}
-                        <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Length')
-                                }}</span>
-                            <div class="flex items-center gap-2 text-sm font-medium">
-                                <span class="mdi mdi-ruler text-base-content/60"></span>
-                                {{ yarn.length_meters }}m
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    {% if yarn.link %}
-                    <div class="pt-2">
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Source Link')
-                            }}</span>
-                        <div class="flex items-center gap-2 group/link">
-                            <a href="{{ yarn.link }}" target="_blank" rel="noreferrer"
-                                class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
-                                <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
-                                {{ yarn.link }}
-                            </a>
-                            <button type="button" 
-                                onclick="copyToClipboard('{{ yarn.link }}', this)"
-                                class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
-                                title="{{ _('Copy URL') }}">
-                                <span class="mdi mdi-content-copy text-xs"></span>
-                            </button>
-                        </div>
-                        {% if yarn.link_archive %}
-                        <a href="{{ yarn.link_archive }}" target="_blank" rel="noreferrer"
-                            class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
-                            <span class="mdi mdi-archive-outline"></span>
-                            {{ _('Archived snapshot') }}
-                        </a>
-                        {% elif yarn.link_archive_failed %}
-                        <div class="mt-2 flex flex-wrap items-center gap-2">
-                            <div
-                                class="inline-flex items-center gap-2 rounded-full bg-error/10 px-3 py-1 text-xs font-semibold text-error">
-                                <span class="mdi mdi-alert-circle-outline"></span>
-                                {{ _('Archive request failed') }}
-                            </div>
-                            <form action="/yarn/{{ yarn.id }}/retry-archive" method="post" class="inline">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
-                                    <span class="mdi mdi-refresh"></span>
-                                    {{ _('Retry') }}
-                                </button>
-                            </form>
-                        </div>
-                        {% elif yarn.archive_pending %}
-                        <div
-                            class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-                            <span class="mdi mdi-clock-outline"></span>
-                            {{ _('Archive requested - check back soon') }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endif %}
+            <div class="collapse collapse-right collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+                <input type="checkbox" id="details-toggle-sidebar" checked onchange="toggleSidebarExpansion(this)" />
+                <div class="collapse-title w-full font-bold text-base text-base-content/40 uppercase tracking-widest text-xs">
+                    <span class="flex items-center gap-2">
+                        <span class="mdi mdi-information-outline"></span>
+                        {{ _('Yarn Details') }}
+                    </span>
                 </div>
-            </div>
+
+                <div class="collapse-content space-y-4">
+                    <div class="pt-2">
+                        <!-- Badge Info -->
+                        {% if yarn.brand %}
+                        <div class="py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Brand')
+                                }}</span>
+                            <a href="/yarn?brand={{ yarn.brand|urlencode }}"
+                                class="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 max-w-[12rem]">
+                                <span class="mdi mdi-factory text-sm"></span>
+                                <span class="truncate">{{ yarn.brand }}</span>
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        <div class="py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Added')
+                                }}</span>
+                            <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
+                                <span class="mdi mdi-calendar-plus"></span>
+                                {{ metadata.created }}
+                            </span>
+                        </div>
+
+                        {% if yarn.is_ai_enhanced %}
+                        <div class="py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Data Source') }}</span>
+                            <span class="badge badge-primary font-black text-[10px] tracking-tighter uppercase h-5 min-h-0" title="{{ _('AI Enhanced') }}">AI</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="divider my-2"></div>
+
+                        {% if yarn.colorway %}
+                        <div>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Colorway')
+                                }}</span>
+                            <div class="flex items-center gap-2 text-sm font-medium">
+                                <span class="mdi mdi-palette text-base-content/60"></span>
+                                {{ yarn.colorway }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if yarn.dye_lot %}
+                        <div>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Dye Lot')
+                                }}</span>
+                            <div class="flex items-center gap-2 text-sm font-medium">
+                                <span class="mdi mdi-identifier text-base-content/60"></span>
+                                {{ yarn.dye_lot }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if yarn.fiber_content %}
+                        <div>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Fiber Content')
+                                }}</span>
+                            <div class="flex items-center gap-2 text-sm font-medium">
+                                <span class="mdi mdi-leaf text-success"></span>
+                                {{ yarn.fiber_content }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if yarn.weight_category %}
+                        <div>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Weight Category') }}</span>
+                            <div class="flex items-center gap-2 text-sm font-medium">
+                                <span class="mdi mdi-weight text-base-content/60"></span>
+                                {{ yarn.weight_category }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if yarn.recommended_needles %}
+                        <div>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Recommended Needles') }}</span>
+                            <div class="flex items-start gap-2 text-sm font-medium whitespace-pre-wrap">
+                                <span class="mdi mdi-needle text-base-content/60 mt-0.5"></span>
+                                {{ yarn.recommended_needles }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="divider my-2"></div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            {% if yarn.weight_grams %}
+                            <div>
+                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Weight')
+                                    }}</span>
+                                <div class="flex items-center gap-2 text-sm font-medium">
+                                    <span class="mdi mdi-scale text-base-content/60"></span>
+                                    {{ yarn.weight_grams }}g
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if yarn.length_meters %}
+                            <div>
+                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Length')
+                                    }}</span>
+                                <div class="flex items-center gap-2 text-sm font-medium">
+                                    <span class="mdi mdi-ruler text-base-content/60"></span>
+                                    {{ yarn.length_meters }}m
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if yarn.link %}
+                        <div class="pt-2">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Source Link')
+                                }}</span>
+                            <div class="flex items-center gap-2 group/link">
+                                <a href="{{ yarn.link }}" target="_blank" rel="noreferrer"
+                                    class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
+                                    <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
+                                    {{ yarn.link }}
+                                </a>
+                                <button type="button" 
+                                    onclick="copyToClipboard('{{ yarn.link }}', this)"
+                                    class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
+                                    title="{{ _('Copy URL') }}">
+                                    <span class="mdi mdi-content-copy text-xs"></span>
+                                </button>
+                            </div>
+                            {% if yarn.link_archive %}
+                            <a href="{{ yarn.link_archive }}" target="_blank" rel="noreferrer"
+                                class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
+                                <span class="mdi mdi-archive-outline"></span>
+                                {{ _('Archived snapshot') }}
+                            </a>
+                            {% elif yarn.link_archive_failed %}
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <div
+                                    class="inline-flex items-center gap-2 rounded-full bg-error/10 px-3 py-1 text-xs font-semibold text-error">
+                                    <span class="mdi mdi-alert-circle-outline"></span>
+                                    {{ _('Archive request failed') }}
+                                </div>
+                                <form action="/yarn/{{ yarn.id }}/retry-archive" method="post" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                        <span class="mdi mdi-refresh"></span>
+                                        {{ _('Retry') }}
+                                    </button>
+                                </form>
+                            </div>
+                            {% elif yarn.archive_pending %}
+                            <div
+                                class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                                <span class="mdi mdi-clock-outline"></span>
+                                {{ _('Archive requested - check back soon') }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+        </div>
+
+    </div>
+</div>
 
             <!-- Linked Projects Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                <div class="flex items-center justify-between mb-4">
-                    <h3
-                        class="font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
-                        <span class="mdi mdi-folder-outline"></span>
-                        {{ _('Linked Projects') }}
-                    </h3>
-                    {% if linked_projects %}
-                    <span class="badge badge-sm badge-ghost">{{ linked_projects|length }}</span>
-                    {% endif %}
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+                <input type="checkbox" checked />
+                <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
+                    <span class="mdi mdi-folder-outline"></span>
+                    {{ _('Linked Projects') }}
                 </div>
 
-                {% if linked_projects %}
-                <div class="space-y-3">
-                    {% for project in linked_projects %}
-                    <a href="/projects/{{ project.id }}"
-                        class="flex items-center gap-3 p-2 rounded-xl hover:bg-base-200 transition group border border-transparent hover:border-base-300">
-                        <!-- Project Thumbnail -->
-                        <div class="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-base-200 border border-base-200">
-                            {% if project.preview_url %}
-                            <img src="{{ project.preview_url }}" alt="{{ project.name }}"
-                                class="h-full w-full object-cover">
-                            {% else %}
-                            <div class="flex h-full w-full items-center justify-center text-base-content/30">
-                                <span class="mdi mdi-image-off-outline text-lg"></span>
+                <div class="collapse-content">
+                    {% if linked_projects %}
+                    <div class="space-y-3">
+                        {% for project in linked_projects %}
+                        <a href="/projects/{{ project.id }}"
+                            class="flex items-center gap-3 p-2 rounded-xl hover:bg-base-200 transition group border border-transparent hover:border-base-300">
+                            <!-- Project Thumbnail -->
+                            <div class="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-base-200 border border-base-200">
+                                {% if project.preview_url %}
+                                <img src="{{ project.preview_url }}" alt="{{ project.name }}"
+                                    class="h-full w-full object-cover">
+                                {% else %}
+                                <div class="flex h-full w-full items-center justify-center text-base-content/30">
+                                    <span class="mdi mdi-image-off-outline text-lg"></span>
+                                </div>
+                                {% endif %}
                             </div>
-                            {% endif %}
-                        </div>
-                        <!-- Project Info -->
-                        <div class="min-w-0 flex-1">
-                            <div class="font-semibold text-sm truncate group-hover:text-primary transition-colors">{{
-                                project.name }}</div>
-                            {% if project.category %}
-                            <div class="mt-0.5">
-                                <span class="badge badge-xs border {{ project.category|category_color }} font-medium">
-                                    {{ _(project.category) }}
-                                </span>
+                            <!-- Project Info -->
+                            <div class="min-w-0 flex-1">
+                                <div class="font-semibold text-sm truncate group-hover:text-primary transition-colors">{{
+                                    project.name }}</div>
+                                {% if project.category %}
+                                <div class="mt-0.5">
+                                    <span class="badge badge-xs border {{ project.category|category_color }} font-medium">
+                                        {{ _(project.category) }}
+                                    </span>
+                                </div>
+                                {% endif %}
                             </div>
-                            {% endif %}
-                        </div>
-                        <span
-                            class="mdi mdi-chevron-right text-base-content/30 group-hover:text-primary transition-colors"></span>
-                    </a>
-                    {% endfor %}
+                            <span
+                                class="mdi mdi-chevron-right text-base-content/30 group-hover:text-primary transition-colors"></span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-6 bg-base-200/30 rounded-xl border border-dashed border-base-300">
+                        <span class="mdi mdi-folder-open-outline text-3xl text-base-content/20 block mb-2"></span>
+                        <p class="text-sm text-base-content/60">{{ _('No projects linked') }}</p>
+                    </div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <div class="text-center py-6 bg-base-200/30 rounded-xl border border-dashed border-base-300">
-                    <span class="mdi mdi-folder-open-outline text-3xl text-base-content/20 block mb-2"></span>
-                    <p class="text-sm text-base-content/60">{{ _('No projects linked') }}</p>
-                </div>
-                {% endif %}
             </div>
         </div>
+
     </div>
 </div>
 
@@ -418,4 +465,41 @@
     </div>
     {{ dialogs.modal_backdrop() }}
 </dialog>
+
+<script>
+    function toggleSidebarExpansion(checkbox) {
+        const main = document.getElementById('main-column');
+        const sidebar = document.getElementById('sidebar-column');
+        const restoreButton = document.getElementById('details-restore-button');
+        if (!main || !sidebar) return;
+
+        if (checkbox.checked) {
+            main.classList.replace('lg:col-span-3', 'lg:col-span-2');
+            main.classList.remove('lg:pr-12');
+            sidebar.classList.remove('lg:hidden', 'lg:pointer-events-none', 'lg:opacity-0');
+            sidebar.classList.add('lg:block');
+            restoreButton?.classList.add('opacity-0', 'pointer-events-none', 'translate-x-2', 'scale-95');
+            restoreButton?.classList.remove('opacity-100', 'translate-x-0', 'scale-100');
+        } else {
+            main.classList.replace('lg:col-span-2', 'lg:col-span-3');
+            main.classList.add('lg:pr-12');
+            sidebar.classList.add('lg:hidden', 'lg:pointer-events-none', 'lg:opacity-0');
+            sidebar.classList.remove('lg:block');
+            restoreButton?.classList.remove('opacity-0', 'pointer-events-none', 'translate-x-2', 'scale-95');
+            restoreButton?.classList.add('opacity-100', 'translate-x-0', 'scale-100');
+        }
+    }
+
+    function restoreSidebarDetails() {
+        const sidebarToggle = document.getElementById('details-toggle-sidebar');
+        if (!sidebarToggle) return;
+        sidebarToggle.checked = true;
+        toggleSidebarExpansion(sidebarToggle);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const sidebarToggle = document.getElementById('details-toggle-sidebar');
+        if (sidebarToggle) toggleSidebarExpansion(sidebarToggle);
+    });
+</script>
 {% endblock %}

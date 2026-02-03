@@ -56,6 +56,27 @@
 
 {% block head %}
 <style>
+    .collapse-right.collapse-arrow > .collapse-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        padding-right: 3rem;
+    }
+
+    .collapse-right.collapse-arrow > .collapse-title::after {
+        right: 1.25rem;
+        transform: translateY(-50%) rotate(-45deg);
+    }
+
+    .collapse-right.collapse-arrow > input:checked ~ .collapse-title::after {
+        transform: translateY(-50%) rotate(-45deg);
+    }
+
+    .collapse-right > input:not(:checked) ~ .collapse-content {
+        padding-right: 2.5rem;
+    }
+
     @media print {
 
         /* Hide UI elements */
@@ -149,44 +170,47 @@
         {{ project.name }}
     </h1>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+    <div id="project-grid" class="relative grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 transition-all duration-300">
         <!-- Main Content Column -->
-        <div class="lg:col-span-2 space-y-8">
+        <div id="main-column" class="lg:col-span-2 space-y-8 transition-all duration-300">
             <!-- Gallery Section -->
             {% if project.title_images %}
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
-                <div class="p-4 border-b border-base-100 flex items-center justify-between">
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
+                <input type="checkbox" checked /> 
+                <div class="collapse-title p-4 flex items-center justify-between">
                     <h2 class="font-bold text-lg flex items-center gap-2">
                         <span class="mdi mdi-image-multiple text-primary"></span>
                         {{ _('Gallery') }}
                     </h2>
-                    <span class="text-xs font-medium text-base-content/50">{{ project.title_images|length }} {{
+                    <span class="text-xs font-medium text-base-content/50 mr-8">{{ project.title_images|length }} {{
                         _('images') }}</span>
                 </div>
-                <div class="p-2 bg-base-200/50">
-                    {% set gallery_count = project.title_images|length %}
-                    <div class="grid grid-cols-3 gap-2 pswp-gallery" id="project-gallery-{{ project.id }}"
-                        data-pswp-gallery>
-                        {% for image in project.title_images %}
-                        <div
-                            class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200 {% if loop.index > 3 %}hidden print:block{% endif %}">
-                            <a href="{{ image.url }}" class="block h-full w-full"
-                                data-pswp-width="{{ image.width or 1200 }}"
-                                data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}">
-                                <img src="{{ image.url }}" alt="{{ image.alt_text }}"
-                                    class="h-full w-full object-cover cursor-zoom-in transition duration-300 hover:scale-105"
-                                    loading="lazy">
-                            </a>
-                            {% if loop.index == 3 and gallery_count > 3 %}
-                            <div class="print:hidden absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
-                                data-pswp-open-index="2" role="button" tabindex="0" aria-label="{{ _('Open gallery') }}"
-                                onclick="window.openPhotoSwipeIndex?.(this)"
-                                onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openPhotoSwipeIndex?.(this); }">
-                                +{{ gallery_count - 3 }}
+                <div class="collapse-content p-0">
+                    <div class="p-2 bg-base-200/50">
+                        {% set gallery_count = project.title_images|length %}
+                        <div class="grid grid-cols-3 gap-2 pswp-gallery" id="project-gallery-{{ project.id }}"
+                            data-pswp-gallery>
+                            {% for image in project.title_images %}
+                            <div
+                                class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200 {% if loop.index > 3 %}hidden print:block{% endif %}">
+                                <a href="{{ image.url }}" class="block h-full w-full"
+                                    data-pswp-width="{{ image.width or 1200 }}"
+                                    data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}">
+                                    <img src="{{ image.url }}" alt="{{ image.alt_text }}"
+                                        class="h-full w-full object-cover cursor-zoom-in transition duration-300 hover:scale-105"
+                                        loading="lazy">
+                                </a>
+                                {% if loop.index == 3 and gallery_count > 3 %}
+                                <div class="print:hidden absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
+                                    data-pswp-open-index="2" role="button" tabindex="0" aria-label="{{ _('Open gallery') }}"
+                                    onclick="window.openPhotoSwipeIndex?.(this)"
+                                    onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openPhotoSwipeIndex?.(this); }">
+                                    +{{ gallery_count - 3 }}
+                                </div>
+                                {% endif %}
                             </div>
-                            {% endif %}
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -194,42 +218,45 @@
 
             <!-- Attachments Section -->
             {% if project.attachments %}
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
-                <div class="p-4 border-b border-base-100 flex items-center justify-between">
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
+                <input type="checkbox" checked />
+                <div class="collapse-title p-4 flex items-center justify-between">
                     <h2 class="font-bold text-lg flex items-center gap-2">
                         <span class="mdi mdi-paperclip text-primary"></span>
                         {{ _('Attachments') }}
                     </h2>
-                    <span class="text-xs font-medium text-base-content/50">{{ project.attachments|length }} {{
+                    <span class="text-xs font-medium text-base-content/50 mr-8">{{ project.attachments|length }} {{
                         _('files') }}</span>
                 </div>
-                <div class="p-4 space-y-2">
-                    {% for attachment in project.attachments %}
-                    <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:bg-base-200/50 transition-colors group">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                {% if attachment.content_type == 'application/pdf' %}
-                                <span class="mdi mdi-file-pdf-outline text-2xl"></span>
-                                {% elif attachment.content_type.startswith('image/') %}
-                                <span class="mdi mdi-file-image-outline text-2xl"></span>
-                                {% else %}
-                                <span class="mdi mdi-file-outline text-2xl"></span>
-                                {% endif %}
+                <div class="collapse-content p-0">
+                    <div class="p-4 space-y-2">
+                        {% for attachment in project.attachments %}
+                        <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:bg-base-200/50 transition-colors group">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                    {% if attachment.content_type == 'application/pdf' %}
+                                    <span class="mdi mdi-file-pdf-outline text-2xl"></span>
+                                    {% elif attachment.content_type.startswith('image/') %}
+                                    <span class="mdi mdi-file-image-outline text-2xl"></span>
+                                    {% else %}
+                                    <span class="mdi mdi-file-outline text-2xl"></span>
+                                    {% endif %}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-medium text-sm truncate" title="{{ attachment.original_filename }}">
+                                        {{ attachment.original_filename }}
+                                    </p>
+                                    <p class="text-[10px] text-base-content/50 uppercase font-bold tracking-wider">
+                                        {{ (attachment.size_bytes / 1024 / 1024)|round(2) }} MB • {{ attachment.content_type.split('/')[-1]|upper }}
+                                    </p>
+                                </div>
                             </div>
-                            <div class="min-w-0">
-                                <p class="font-medium text-sm truncate" title="{{ attachment.original_filename }}">
-                                    {{ attachment.original_filename }}
-                                </p>
-                                <p class="text-[10px] text-base-content/50 uppercase font-bold tracking-wider">
-                                    {{ (attachment.size_bytes / 1024 / 1024)|round(2) }} MB • {{ attachment.content_type.split('/')[-1]|upper }}
-                                </p>
-                            </div>
+                            <a href="{{ attachment.url }}" target="_blank" class="btn btn-ghost btn-sm btn-circle text-primary opacity-0 group-hover:opacity-100 transition-opacity" title="{{ _('Download') }}">
+                                <span class="mdi mdi-download text-xl"></span>
+                            </a>
                         </div>
-                        <a href="{{ attachment.url }}" target="_blank" class="btn btn-ghost btn-sm btn-circle text-primary opacity-0 group-hover:opacity-100 transition-opacity" title="{{ _('Download') }}">
-                            <span class="mdi mdi-download text-xl"></span>
-                        </a>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
             {% endif %}
@@ -238,7 +265,7 @@
             <div class="space-y-6 lg:hidden">
                 <!-- Details Card (Collapsible) -->
                 <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
-                    <input type="checkbox" id="details-toggle-mobile" /> 
+                    <input type="checkbox" id="details-toggle-mobile" checked /> 
                     <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Project Details') }}
@@ -345,61 +372,72 @@
                 <!-- Notes Card -->
                 {% if project.notes_html %}
                 <div
-                    class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
-                    <h3
-                        class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center justify-between gap-2 text-xs">
+                    class="collapse collapse-arrow bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30">
+                    <input type="checkbox" checked />
+                    <div class="collapse-title font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest flex items-center justify-between gap-2 text-xs">
                         <div class="flex items-center gap-2">
                             <span class="mdi mdi-notebook-outline"></span>
                             {{ _('Notes') }}
                         </div>
-                        <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
-                            onclick='copyToClipboard({{ (project.notes or '')|tojson }}, this)'
-                            title="{{ _('Copy Notes') }}">
-                            <span class="mdi mdi-content-copy"></span>
-                        </button>
-                    </h3>
-                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
-                        {{ project.notes_html | safe }}
+                    </div>
+                    <div class="collapse-content">
+                        <div class="flex justify-end mb-2">
+                            <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
+                                onclick='copyToClipboard({{ (project.notes or '')|tojson }}, this)'
+                                title="{{ _('Copy Notes') }}">
+                                <span class="mdi mdi-content-copy"></span>
+                            </button>
+                        </div>
+                        <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                            {{ project.notes_html | safe }}
+                        </div>
                     </div>
                 </div>
                 {% endif %}
             </div>
 
             {% if project.description %}
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                <h3
-                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center justify-between gap-2 text-xs">
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+                <input type="checkbox" checked />
+                <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center justify-between gap-2 text-xs">
                     <div class="flex items-center gap-2">
                         <span class="mdi mdi-text-box-outline"></span>
                         {{ _('Description') }}
                     </div>
-                    <button class="btn btn-ghost btn-xs gap-1"
-                        onclick='copyToClipboard({{ (project.description or '')|tojson }}, this)'
-                        title="{{ _('Copy Description') }}">
-                        <span class="mdi mdi-content-copy"></span>
-                    </button>
-                </h3>
-                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
-                    {% if project.description_html %}
-                    {{ project.description_html | safe }}
-                    {% else %}
-                    {{ project.description }}
-                    {% endif %}
+                </div>
+                <div class="collapse-content">
+                    <div class="flex justify-end mb-2">
+                        <button class="btn btn-ghost btn-xs gap-1"
+                            onclick='copyToClipboard({{ (project.description or '')|tojson }}, this)'
+                            title="{{ _('Copy Description') }}">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
+                    </div>
+                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                        {% if project.description_html %}
+                        {{ project.description_html | safe }}
+                        {% else %}
+                        {{ project.description }}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             {% endif %}
 
 
             <!-- Technical Specifications Group -->
-            <div class="space-y-4">
-                <h2 class="font-bold text-xl flex items-center gap-2 px-2 text-base-content/50 uppercase tracking-widest text-xs">
-                    <span class="mdi mdi-cog-outline"></span>
-                    {{ _('Technical Specifications') }}
-                </h2>
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+                <input type="checkbox" checked />
+                <div class="collapse-title p-4">
+                    <h2 class="font-bold text-xl flex items-center gap-2 text-base-content/50 uppercase tracking-widest text-xs">
+                        <span class="mdi mdi-cog-outline"></span>
+                        {{ _('Technical Specifications') }}
+                    </h2>
+                </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="collapse-content space-y-6">
                     <!-- Yarns Used -->
-                    <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+                    <div class="bg-base-200/30 rounded-xl border border-base-200 p-5">
                         <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                             <span class="mdi mdi-sheep"></span>
                             {{ _('Yarns Used') }}
@@ -437,54 +475,54 @@
 
                     <!-- Recommended Needles -->
                     {% if project.needles %}
-                    <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+                    <div class="bg-base-200/30 rounded-xl border border-base-200 p-5">
                         <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                             <span class="mdi mdi-needle"></span>
                             {{ _('Recommended Needles') }}
                         </h3>
-                        <div class="text-sm font-medium text-base-content/80 bg-base-200/50 rounded-lg p-3 border border-base-200 whitespace-pre-wrap">
+                        <div class="text-sm font-medium text-base-content/80 bg-base-100 rounded-lg p-3 border border-base-200 whitespace-pre-wrap">
                             {{ project.needles }}
                         </div>
                     </div>
                     {% endif %}
-                </div>
 
-                <!-- Stitch Sample (Full width if present) -->
-                {% if project.stitch_sample_html or project.stitch_sample_images %}
-                <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5" id="stitch-sample-card">
-                    <h3
-                        class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
-                        <span class="mdi mdi-grid"></span>
-                        {{ _('Stitch Sample') }}
-                    </h3>
-                    {% if project.stitch_sample_html %}
-                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90 mb-4" id="stitch-sample-text">
-                        {{ project.stitch_sample_html | safe }}
-                    </div>
-                    {% endif %}
-
-                    {% if project.stitch_sample_images %}
-                    <div class="mt-4 pt-4 border-t border-base-100" id="stitch-sample-photos">
-                        <h4
-                            class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
-                            <span class="mdi mdi-image-outline"></span> {{ _('Stitch Sample Photos') }}
-                        </h4>
-                        <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
-                            {% for image in project.stitch_sample_images %}
-                            <a href="{{ image.url }}"
-                                class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
-                                data-pswp-width="{{ image.width or 1200 }}" data-pswp-height="{{ image.height or 1200 }}"
-                                data-pswp-caption="{{ image.alt_text }} ({{ _('Stitch Sample') }})">
-                                <img src="{{ image.url }}" alt="{{ image.alt_text }}"
-                                    class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
-                                    loading="lazy">
-                            </a>
-                            {% endfor %}
+                    <!-- Stitch Sample (Full width if present) -->
+                    {% if project.stitch_sample_html or project.stitch_sample_images %}
+                    <div class="bg-base-200/30 rounded-xl border border-base-200 p-5" id="stitch-sample-card">
+                        <h3
+                            class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                            <span class="mdi mdi-grid"></span>
+                            {{ _('Stitch Sample') }}
+                        </h3>
+                        {% if project.stitch_sample_html %}
+                        <div class="prose prose-sm prose-compact max-w-none text-base-content/90 mb-4" id="stitch-sample-text">
+                            {{ project.stitch_sample_html | safe }}
                         </div>
+                        {% endif %}
+
+                        {% if project.stitch_sample_images %}
+                        <div class="mt-4 pt-4 border-t border-base-100" id="stitch-sample-photos">
+                            <h4
+                                class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                <span class="mdi mdi-image-outline"></span> {{ _('Stitch Sample Photos') }}
+                            </h4>
+                            <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
+                                {% for image in project.stitch_sample_images %}
+                                <a href="{{ image.url }}"
+                                    class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
+                                    data-pswp-width="{{ image.width or 1200 }}" data-pswp-height="{{ image.height or 1200 }}"
+                                    data-pswp-caption="{{ image.alt_text }} ({{ _('Stitch Sample') }})">
+                                    <img src="{{ image.url }}" alt="{{ image.alt_text }}"
+                                        class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
+                                        loading="lazy">
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
-                {% endif %}
             </div>
 
             <!-- Steps Section -->
@@ -509,8 +547,9 @@
 
                         <!-- Content Card -->
                         <div
-                            class="step-card flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 transition hover:shadow-md hover:border-primary/20">
-                            <div class="flex items-center justify-between mb-2">
+                            class="collapse collapse-arrow step-card flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm transition hover:shadow-md hover:border-primary/20">
+                            <input type="checkbox" checked />
+                            <div class="collapse-title flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     <!-- Mobile Step Number -->
                                     <div
@@ -519,41 +558,45 @@
                                     </div>
                                     <h3 class="text-lg font-bold text-base-content">{{ step.title }}</h3>
                                 </div>
-                                <button class="btn btn-ghost btn-xs"
-                                    onclick='copyToClipboard({{ (step.description or '')|tojson }}, this)'
-                                    title="{{ _('Copy Instructions') }}">
-                                    <span class="mdi mdi-content-copy"></span>
-                                </button>
                             </div>
-
-                            {% if step.description_html %}
-                            <div
-                                class="step-description prose prose-sm prose-compact max-w-none text-base-content/80 mb-4">
-                                {{ step.description_html | safe }}
-                            </div>
-                            {% endif %}
-
-                            {% if step.images %}
-                            <div class="step-photos-section mt-4 pt-4 border-t border-base-100">
-                                <h4
-                                    class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
-                                    <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
-                                </h4>
-                                <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
-                                    {% for image in step.images %}
-                                    <a href="{{ image.url }}"
-                                        class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
-                                        data-pswp-width="{{ image.width or 1200 }}"
-                                        data-pswp-height="{{ image.height or 1200 }}"
-                                        data-pswp-caption="{{ image.alt_text }} ({{ step.title }})">
-                                        <img src="{{ image.url }}" alt="{{ image.alt_text }}"
-                                            class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
-                                            loading="lazy">
-                                    </a>
-                                    {% endfor %}
+                            <div class="collapse-content">
+                                <div class="flex justify-end mb-2">
+                                    <button class="btn btn-ghost btn-xs"
+                                        onclick='copyToClipboard({{ (step.description or '')|tojson }}, this)'
+                                        title="{{ _('Copy Instructions') }}">
+                                        <span class="mdi mdi-content-copy"></span>
+                                    </button>
                                 </div>
+
+                                {% if step.description_html %}
+                                <div
+                                    class="step-description prose prose-sm prose-compact max-w-none text-base-content/80 mb-4">
+                                    {{ step.description_html | safe }}
+                                </div>
+                                {% endif %}
+
+                                {% if step.images %}
+                                <div class="step-photos-section mt-4 pt-4 border-t border-base-100">
+                                    <h4
+                                        class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                        <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
+                                    </h4>
+                                    <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
+                                        {% for image in step.images %}
+                                        <a href="{{ image.url }}"
+                                            class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
+                                            data-pswp-width="{{ image.width or 1200 }}"
+                                            data-pswp-height="{{ image.height or 1200 }}"
+                                            data-pswp-caption="{{ image.alt_text }} ({{ step.title }})">
+                                            <img src="{{ image.url }}" alt="{{ image.alt_text }}"
+                                                class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
+                                                loading="lazy">
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
-                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -563,13 +606,24 @@
         </div>
 
         <!-- Sidebar Column -->
-        <div class="space-y-6 hidden lg:block">
+        <div class="hidden lg:block lg:absolute lg:right-0 lg:top-0 z-30">
+            <button type="button" id="details-restore-button"
+                class="flex h-16 w-8 -mr-4 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
+                onclick="restoreSidebarDetails()" title="{{ _('Project Details') }}" aria-label="{{ _('Project Details') }}">
+                <span class="mdi mdi-chevron-left text-lg"></span>
+                <span class="sr-only">{{ _('Project Details') }}</span>
+            </button>
+        </div>
+
+        <div id="sidebar-column" class="space-y-6 hidden lg:block lg:col-start-3 lg:row-start-1 lg:sticky lg:top-20 lg:self-start transition-all duration-300">
             <!-- Details Card (Collapsible) -->
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
-                <input type="checkbox" id="details-toggle-sidebar" checked /> 
-                <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
-                    <span class="mdi mdi-information-outline"></span>
-                    {{ _('Project Details') }}
+            <div class="collapse collapse-right collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+                <input type="checkbox" id="details-toggle-sidebar" checked onchange="toggleSidebarExpansion(this)" /> 
+                <div class="collapse-title w-full font-bold text-base text-base-content/40 uppercase tracking-widest text-xs">
+                    <span class="flex items-center gap-2">
+                        <span class="mdi mdi-information-outline"></span>
+                        {{ _('Project Details') }}
+                    </span>
                 </div>
                 
                 <div class="collapse-content space-y-4">
@@ -668,32 +722,33 @@
                             <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
                             {% endif %}
                         </div>
-                    </div>
-                </div>
+
+                        {% if project.notes_html %}
+                        <div class="divider my-3"></div>
+                        <div class="rounded-xl border border-yellow-100 dark:border-yellow-900/30 bg-yellow-50/70 dark:bg-yellow-900/10 p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2 text-yellow-800 dark:text-yellow-500 font-bold text-xs uppercase tracking-widest">
+                                    <span class="mdi mdi-notebook-outline"></span>
+                                    {{ _('Notes') }}
+                                </div>
+                                <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
+                                    onclick='copyToClipboard({{ (project.notes or '')|tojson }}, this)'
+                                    title="{{ _('Copy Notes') }}">
+                                    <span class="mdi mdi-content-copy"></span>
+                                </button>
+                            </div>
+                            <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                                {{ project.notes_html | safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+    </div>
+</div>
             </div>
 
-            <!-- Notes Card -->
-            {% if project.notes_html %}
-            <div
-                class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
-                <h3
-                    class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center justify-between gap-2 text-xs">
-                    <div class="flex items-center gap-2">
-                        <span class="mdi mdi-notebook-outline"></span>
-                        {{ _('Notes') }}
-                    </div>
-                    <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
-                        onclick='copyToClipboard({{ (project.notes or '')|tojson }}, this)'
-                        title="{{ _('Copy Notes') }}">
-                        <span class="mdi mdi-content-copy"></span>
-                    </button>
-                </h3>
-                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
-                    {{ project.notes_html | safe }}
-                </div>
-            </div>
-            {% endif %}
         </div>
+
     </div>
 </div>
 
@@ -740,7 +795,41 @@
 {% endcall %}
 
 <script>
+    function toggleSidebarExpansion(checkbox) {
+        const main = document.getElementById('main-column');
+        const sidebar = document.getElementById('sidebar-column');
+        const restoreButton = document.getElementById('details-restore-button');
+        if (!main || !sidebar) return;
+        
+        if (checkbox.checked) {
+            main.classList.replace('lg:col-span-3', 'lg:col-span-2');
+            main.classList.remove('lg:pr-12');
+            sidebar.classList.remove('lg:hidden', 'lg:pointer-events-none', 'lg:opacity-0');
+            sidebar.classList.add('lg:block');
+            restoreButton?.classList.add('opacity-0', 'pointer-events-none', 'translate-x-2', 'scale-95');
+            restoreButton?.classList.remove('opacity-100', 'translate-x-0', 'scale-100');
+        } else {
+            main.classList.replace('lg:col-span-2', 'lg:col-span-3');
+            main.classList.add('lg:pr-12');
+            sidebar.classList.add('lg:hidden', 'lg:pointer-events-none', 'lg:opacity-0');
+            sidebar.classList.remove('lg:block');
+            restoreButton?.classList.remove('opacity-0', 'pointer-events-none', 'translate-x-2', 'scale-95');
+            restoreButton?.classList.add('opacity-100', 'translate-x-0', 'scale-100');
+        }
+    }
+
+    function restoreSidebarDetails() {
+        const sidebarToggle = document.getElementById('details-toggle-sidebar');
+        if (!sidebarToggle) return;
+        sidebarToggle.checked = true;
+        toggleSidebarExpansion(sidebarToggle);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+        // Initialize sidebar state
+        const sidebarToggle = document.getElementById('details-toggle-sidebar');
+        if (sidebarToggle) toggleSidebarExpansion(sidebarToggle);
+
         function updateDetailImageVisibility() {
             // Check stitch sample
             const stitchSampleCard = document.getElementById('stitch-sample-card');

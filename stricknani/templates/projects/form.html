@@ -45,6 +45,28 @@
     .tab-content.hidden {
         display: none;
     }
+
+    .collapse-right.collapse-arrow > .collapse-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        padding-right: 3rem;
+        cursor: pointer;
+    }
+
+    .collapse-right.collapse-arrow > .collapse-title::after {
+        right: 1.25rem;
+        transform: translateY(-50%) rotate(-45deg);
+    }
+
+    .collapse-right.collapse-arrow > input:checked ~ .collapse-title::after {
+        transform: translateY(-50%) rotate(-45deg);
+    }
+
+    .collapse-right > input:not(:checked) ~ .collapse-content {
+        padding-right: 2.5rem;
+    }
 </style>
 {% endblock %}
 
@@ -120,29 +142,73 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+    <div class="relative grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <!-- Main Content Column -->
-        <div class="lg:col-span-2 space-y-6">
+        <div id="main-column" class="lg:col-span-2 space-y-6">
             <!-- Basic Info Card -->
             <div
-                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
-                <div class="space-y-4 sm:space-y-6">
-                    <div>
-                        <label for="name" class=" text-sm font-medium mb-1 inline-flex items-center gap-2">
-                            <span class="mdi mdi-notebook-outline text-base-content/70"></span>
-                            {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
-                        </label>
-                        <input type="text" id="name" name="name" required
-                            value="{{ project.name if project and project.name else '' }}"
-                            class="input  w-full" placeholder="{{ _('e.g. My Amazing Project') }}">
-                    </div>
+                class="collapse collapse-arrow bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 overflow-visible">
+                <input type="checkbox" checked />
+                <div class="collapse-title p-3 sm:p-6 pb-0">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-base-content/40 flex items-center gap-2">
+                        <span class="mdi mdi-information-outline"></span>
+                        {{ _('Basic Information') }}
+                    </h3>
+                </div>
+                <div class="collapse-content p-3 sm:p-6 pt-0">
+                    <div class="space-y-4 sm:space-y-6 pt-4">
+                        <div>
+                            <label for="name" class=" text-sm font-medium mb-1 inline-flex items-center gap-2">
+                                <span class="mdi mdi-notebook-outline text-base-content/70"></span>
+                                {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
+                            </label>
+                            <input type="text" id="name" name="name" required
+                                value="{{ project.name if project and project.name else '' }}"
+                                class="input input-bordered w-full" placeholder="{{ _('e.g. My Amazing Project') }}">
+                        </div>
 
-                    <!-- Gallery Section (moved inside card) -->
-                    <div class="pt-2 border-t border-base-200">
-                        <h3 class="text-sm font-bold uppercase tracking-widest text-base-content/40 mb-4 flex items-center gap-2">
-                            <span class="mdi mdi-image-multiple"></span>
-                            {{ _('Gallery') }}
-                        </h3>
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label for="description"
+                                    class=" text-sm font-medium inline-flex items-center gap-2">
+                                    <span class="mdi mdi-text-box-outline text-base-content/70"></span>
+                                    {{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
+                                        }}</span>
+                                </label>
+                            </div>
+                            <textarea id="description" name="description" rows="4" class="textarea textarea-bordered w-full"
+                                placeholder="{{ _('Brief description of this project...') }}">{{ project.description if project and project.description else '' }}</textarea>
+                            <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label for="notes"
+                                    class=" text-sm font-medium inline-flex items-center gap-2">
+                                    <span class="mdi mdi-notebook-outline text-base-content/70"></span>
+                                    {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
+                                        }}</span>
+                                </label>
+                            </div>
+                            <textarea id="notes" name="notes" rows="4" class="textarea textarea-bordered w-full"
+                                placeholder="{{ _('Personal notes about this project...') }}">{{ project.notes if project and project.notes else '' }}</textarea>
+                            <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gallery Card -->
+            <div class="collapse collapse-arrow bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 overflow-visible">
+                <input type="checkbox" checked />
+                <div class="collapse-title p-3 sm:p-6 pb-0">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-base-content/40 flex items-center gap-2">
+                        <span class="mdi mdi-image-multiple"></span>
+                        {{ _('Gallery') }}
+                    </h3>
+                </div>
+                <div class="collapse-content p-3 sm:p-6 pt-0">
+                    <div class="pt-4">
                         <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery"
                             data-pswp-gallery>
                             {% if project %}
@@ -159,14 +225,20 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             ) }}
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Attachments Section -->
-                    <div class="pt-2 border-t border-base-200">
-                        <h3 class="text-sm font-bold uppercase tracking-widest text-base-content/40 mb-4 flex items-center gap-2">
-                            <span class="mdi mdi-paperclip"></span>
-                            {{ _('Attachments') }}
-                        </h3>
-                        
+            <!-- Attachments Card -->
+            <div class="collapse collapse-arrow bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 overflow-visible">
+                <input type="checkbox" checked />
+                <div class="collapse-title p-3 sm:p-6 pb-0">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-base-content/40 flex items-center gap-2">
+                        <span class="mdi mdi-paperclip"></span>
+                        {{ _('Attachments') }}
+                    </h3>
+                </div>
+                <div class="collapse-content p-3 sm:p-6 pt-0">
+                    <div class="pt-4">
                         <div id="attachmentsContainer" class="space-y-2 mb-4">
                             {% if project and project.attachments %}
                             {% for attachment in project.attachments %}
@@ -201,337 +273,326 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         {{ image_upload.upload_dropzone(
                             input_id='attachmentInput',
                             container_id='attachmentDropZone',
-                            text=_('Click or drag files here to attach (PDF, etc.)'),
+                            label_text=_('Click or drag files here to attach (PDF, etc.)'),
                             icon='mdi-paperclip'
                         ) }}
                     </div>
+                </div>
+            </div>
 
-                    <!-- Mobile Details Card -->
-                    <div class="lg:hidden p-4 bg-base-200/30 rounded-xl border border-base-200 space-y-4">
-                        <h3
-                            class="font-bold text-xs uppercase tracking-widest text-base-content/40 flex items-center gap-2">
-                            <span class="mdi mdi-information-outline"></span>
-                            {{ _('Project Details') }}
-                        </h3>
+            <!-- Mobile Details Card -->
+            <div class="lg:hidden p-4 bg-base-200/30 rounded-xl border border-base-200 space-y-4">
+                <h3
+                    class="font-bold text-xs uppercase tracking-widest text-base-content/40 flex items-center gap-2">
+                    <span class="mdi mdi-information-outline"></span>
+                    {{ _('Project Details') }}
+                </h3>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <div class="flex items-center justify-between">
-                                    <label for="category-mobile"
-                                        class=" text-xs font-bold uppercase text-base-content/50">
-                                        {{ _('Category') }}
-                                    </label>
-                                    <a href="/projects/categories" class="text-[10px] text-primary hover:underline"
-                                        target="_blank" rel="noreferrer">
-                                        {{ _('Manage') }}
-                                    </a>
-                                </div>
-                                <select name="category" class="select  select-sm w-full mt-1">
-                                    <option value="">{{ _('Select a category') }}</option>
-                                    {% for category in categories %}
-                                    <option value="{{ category }}" {% if project and project.category==category
-                                        %}selected{% endif %}>
-                                        {{ category }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label for="tags_input_mobile"
-                                    class=" text-xs font-bold uppercase text-base-content/50">
-                                    {{ _('Tags') }}
-                                </label>
-                                <input type="hidden" id="tags" name="tags"
-                                    value="{{ project.tags | join(', ') if project and project.tags else '' }}">
-                                <div id="tags_chips_mobile" class="flex flex-wrap gap-2 mt-2"></div>
-                                <div class="relative mt-2">
-                                    <input type="text" id="tags_input_mobile"
-                                        class="input  input-sm w-full" autocomplete="off"
-                                        placeholder="{{ _('Add a tag...') }}">
-                                    <div id="tags_suggestions_mobile"
-                                        class="hidden absolute z-30 w-full mt-1 max-h-48 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
-                                        {% for tag in tag_suggestions %}
-                                        <button type="button"
-                                            class="tag-suggestion w-full text-left px-3 py-2 hover:bg-base-200 text-sm"
-                                            data-tag="{{ tag }}">
-                                            #{{ tag }}
-                                        </button>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a suggestion.') }}</p>
-                            </div>
-
-                            <div class="sm:col-span-2">
-                                <div class="flex items-center justify-between mb-1">
-                                    <label class=" text-xs font-bold uppercase text-base-content/50">{{
-                                        _('Pattern Source') }}</label>
-                            <div class="sm:col-span-2">
-                                <div class="flex items-center justify-between mb-1">
-                                    <label class=" text-xs font-bold uppercase text-base-content/50">{{
-                                        _('Pattern Source') }}</label>
-                                    <button type="button" id="reimport-btn-mobile"
-                                        class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
-                                        onclick="importFromUrl(document.getElementById('link').value)">
-                                        <span class="mdi mdi-download"></span>
-                                        {{ _('Re-import') }}
-                                    </button>
-                                    <a href="{{ project.link }}" target="_blank"
-                                        class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
-                                        id="visit-link-btn-mobile" title="{{ _('Visit Website') }}">
-                                        <span class="mdi mdi-open-in-new"></span>
-                                        {{ _('Visit') }}
-                                    </a>
-                                    <button type="button"
-                                        class="btn btn-ghost btn-xs gap-1 normal-case"
-                                        onclick="copyToClipboard(document.getElementById('link').value, this)" title="{{ _('Copy URL') }}">
-                                        <span class="mdi mdi-content-copy"></span>
-                                    </button>
-                                </div>
-                                <input type="url" name="link" value="{{ project.link or '' }}"
-                                    class="input  input-sm w-full" placeholder="https://..."
-                                    oninput="syncLinkInputs(this)">
-                                <label id="wayback_mobile_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2 {% if not feature_wayback_enabled %}hidden{% endif %}">
-                                    <input type="checkbox" id="archive_on_save_mobile" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
-                                        checked>
-                                    <span class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Archive on Wayback Machine') }}</span>
-                                </label>
-                            </div>
-
-                            <div class="sm:col-span-2 pt-2 border-t border-base-200">
-                                <label id="ai_enhanced_mobile_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
-                                    <input type="checkbox" id="is_ai_enhanced_mobile_checkbox"
-                                        class="checkbox checkbox-primary checkbox-sm"
-                                        {% if project and project.is_ai_enhanced %}checked{% endif %}
-                                        onchange="syncAiEnhanced(this)">
-                                    <span class="label-text text-xs font-bold uppercase text-base-content/50 flex items-center gap-2">
-                                        <span class="badge badge-primary font-black text-[10px] h-4 min-h-0">AI</span>
-                                        {{ _('AI Enhanced') }}
-                                    </span>
-                                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <label for="category-mobile"
+                                class=" text-xs font-bold uppercase text-base-content/50">
+                                {{ _('Category') }}
+                            </label>
+                            <a href="/projects/categories" class="text-[10px] text-primary hover:underline"
+                                target="_blank" rel="noreferrer">
+                                {{ _('Manage') }}
+                            </a>
+                        </div>
+                        <select name="category" class="select  select-sm w-full mt-1">
+                            <option value="">{{ _('Select a category') }}</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}" {% if project and project.category==category
+                                %}selected{% endif %}>
+                                {{ category }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="tags_input_mobile"
+                            class=" text-xs font-bold uppercase text-base-content/50">
+                            {{ _('Tags') }}
+                        </label>
+                        <input type="hidden" id="tags" name="tags"
+                            value="{{ project.tags | join(', ') if project and project.tags else '' }}">
+                        <div id="tags_chips_mobile" class="flex flex-wrap gap-2 mt-2"></div>
+                        <div class="relative mt-2">
+                            <input type="text" id="tags_input_mobile"
+                                class="input  input-sm w-full" autocomplete="off"
+                                placeholder="{{ _('Add a tag...') }}">
+                            <div id="tags_suggestions_mobile"
+                                class="hidden absolute z-30 w-full mt-1 max-h-48 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
+                                {% for tag in tag_suggestions %}
+                                <button type="button"
+                                    class="tag-suggestion w-full text-left px-3 py-2 hover:bg-base-200 text-sm"
+                                    data-tag="{{ tag }}">
+                                    #{{ tag }}
+                                </button>
+                                {% endfor %}
                             </div>
                         </div>
+                        <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a suggestion.') }}</p>
                     </div>
 
-
-
-                    <div>
+                    <div class="sm:col-span-2">
                         <div class="flex items-center justify-between mb-1">
-                            <label for="description"
-                                class=" text-sm font-medium inline-flex items-center gap-2">
-                                <span class="mdi mdi-text-box-outline text-base-content/70"></span>
-                                {{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
-                                    }}</span>
-                            </label>
+                            <label class=" text-xs font-bold uppercase text-base-content/50">{{
+                                _('Pattern Source') }}</label>
+                            <button type="button" id="reimport-btn-mobile"
+                                class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
+                                onclick="importFromUrl(document.getElementById('link').value)">
+                                <span class="mdi mdi-download"></span>
+                                {{ _('Re-import') }}
+                            </button>
+                            <a href="{{ project.link }}" target="_blank"
+                                class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
+                                id="visit-link-btn-mobile" title="{{ _('Visit Website') }}">
+                                <span class="mdi mdi-open-in-new"></span>
+                                {{ _('Visit') }}
+                            </a>
+                            <button type="button"
+                                class="btn btn-ghost btn-xs gap-1 normal-case"
+                                onclick="copyToClipboard(document.getElementById('link').value, this)" title="{{ _('Copy URL') }}">
+                                <span class="mdi mdi-content-copy"></span>
+                            </button>
                         </div>
-                        <textarea id="description" name="description" rows="4" class="textarea  w-full"
-                            placeholder="{{ _('Brief description of this project...') }}">{{ project.description if project and project.description else '' }}</textarea>
-                        <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
+                        <input type="url" name="link" value="{{ project.link or '' }}"
+                            class="input  input-sm w-full" placeholder="https://..."
+                            oninput="syncLinkInputs(this)">
+                        <label id="wayback_mobile_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2 {% if not feature_wayback_enabled %}hidden{% endif %}">
+                            <input type="checkbox" id="archive_on_save_mobile" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
+                                checked>
+                            <span class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Archive on Wayback Machine') }}</span>
+                        </label>
                     </div>
 
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label for="notes"
-                                class=" text-sm font-medium inline-flex items-center gap-2">
-                                <span class="mdi mdi-notebook-outline text-base-content/70"></span>
-                                {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
-                                    }}</span>
-                            </label>
-                        </div>
-                        <textarea id="notes" name="notes" rows="4" class="textarea  w-full"
-                            placeholder="{{ _('Personal notes about this project...') }}">{{ project.notes if project and project.notes else '' }}</textarea>
-                        <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
+                    <div class="sm:col-span-2 pt-2 border-t border-base-200">
+                        <label id="ai_enhanced_mobile_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
+                            <input type="checkbox" id="is_ai_enhanced_mobile_checkbox"
+                                class="checkbox checkbox-primary checkbox-sm"
+                                {% if project and project.is_ai_enhanced %}checked{% endif %}
+                                onchange="syncAiEnhanced(this)">
+                            <span class="label-text text-xs font-bold uppercase text-base-content/50 flex items-center gap-2">
+                                <span class="badge badge-primary font-black text-[10px] h-4 min-h-0">AI</span>
+                                {{ _('AI Enhanced') }}
+                            </span>
+                        </label>
                     </div>
                 </div>
             </div>
 
             <!-- Technical Specifications Group -->
-            <div class="space-y-4">
-                <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs px-2">
-                    <span class="mdi mdi-cog-outline"></span>
-                    {{ _('Technical Specifications') }}
-                </h3>
-
-                <!-- Yarns Card -->
-                <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-semibold text-base-content flex items-center gap-2">
-                            <span class="mdi mdi-sheep text-primary"></span>
-                            {{ _('Yarns Used') }}
-                        </h3>
-                        <a href="/yarn/new" class="btn btn-link btn-xs p-0 h-auto min-h-0" target="_blank" rel="noreferrer">
-                            {{ _('Add new') }}
-                        </a>
-                    </div>
-
-                    <div class="space-y-4">
-                        <input type="hidden" id="yarn_ids" name="yarn_ids" value="">
-                        <input type="hidden" id="yarn_text_hidden" name="yarn_text" value="">
-
-                        <div class="relative">
-                            <input type="text" id="yarn_search" placeholder="{{ _('Search yarns...') }}"
-                                class="input input-bordered w-full pl-10" autocomplete="off">
-                            <span class="mdi mdi-magnify absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60 text-xl"></span>
+            <div class="collapse collapse-arrow bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 overflow-visible">
+                <input type="checkbox" checked />
+                <div class="collapse-title p-3 sm:p-6 pb-0">
+                    <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
+                        <span class="mdi mdi-cog-outline"></span>
+                        {{ _('Technical Specifications') }}
+                    </h3>
+                </div>
+                <div class="collapse-content p-3 sm:p-6 pt-0">
+                    <div class="space-y-6 pt-4">
+                        <!-- Recommended Needles Card -->
+                        <div class="bg-base-200/30 rounded-xl border border-base-200 p-4">
+                            <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                                <span class="mdi mdi-needle text-primary"></span>
+                                {{ _('Recommended Needles') }}
+                            </h3>
+                            <div>
+                                <textarea id="needles" name="needles" rows="2"
+                                    class="textarea textarea-bordered w-full"
+                                    placeholder="{{ _('e.g. 4.0mm circular') }}">{{ project.needles if project and project.needles else '' }}</textarea>
+                            </div>
                         </div>
 
-                        <div id="yarn_dropdown"
-                            class="hidden absolute z-50 w-full max-w-md max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
-                            {% for yarn in yarns %}
-                            <button type="button"
-                                class="yarn-option w-full text-left px-3 py-2 hover:bg-base-200 border-b border-base-200 last:border-b-0 text-sm"
-                                data-yarn-id="{{ yarn.id }}" data-yarn-name="{{ yarn.name }}"
-                                data-yarn-brand="{{ yarn.brand or '' }}" data-yarn-colorway="{{ yarn.colorway or '' }}"
-                                data-yarn-dye-lot="{{ yarn.dye_lot or '' }}"
-                                data-yarn-image="{{ yarn.photos[0].filename if yarn.photos and yarn.photos[0] else '' }}">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center shrink-0">
-                                        {% if yarn.photos and yarn.photos[0] %}
-                                        <img src="{{ yarn.photos[0].filename }}" alt=""
-                                            class="w-full h-full rounded object-cover">
-                                        {% else %}
-                                        <span class="mdi mdi-sheep text-sm opacity-50"></span>
+                        <!-- Yarns Card -->
+                        <div class="bg-base-200/30 rounded-xl border border-base-200 p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-base-content flex items-center gap-2">
+                                    <span class="mdi mdi-sheep text-primary"></span>
+                                    {{ _('Yarns Used') }}
+                                </h3>
+                                <a href="/yarn/new" class="btn btn-link btn-xs p-0 h-auto min-h-0" target="_blank" rel="noreferrer">
+                                    {{ _('Add new') }}
+                                </a>
+                            </div>
+
+                            <div class="space-y-4">
+                                <input type="hidden" id="yarn_ids" name="yarn_ids" value="">
+                                <input type="hidden" id="yarn_text_hidden" name="yarn_text" value="">
+
+                                <div class="relative">
+                                    <input type="text" id="yarn_search" placeholder="{{ _('Search yarns...') }}"
+                                        class="input input-bordered w-full pl-10" autocomplete="off">
+                                    <span class="mdi mdi-magnify absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60 text-xl"></span>
+                                </div>
+
+                                <div id="yarn_dropdown"
+                                    class="hidden absolute z-50 w-full max-w-md max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
+                                    {% for yarn in yarns %}
+                                    <button type="button"
+                                        class="yarn-option w-full text-left px-3 py-2 hover:bg-base-200 border-b border-base-200 last:border-b-0 text-sm"
+                                        data-yarn-id="{{ yarn.id }}" data-yarn-name="{{ yarn.name }}"
+                                        data-yarn-brand="{{ yarn.brand or '' }}" data-yarn-colorway="{{ yarn.colorway or '' }}"
+                                        data-yarn-dye-lot="{{ yarn.dye_lot or '' }}"
+                                        data-yarn-image="{{ yarn.photos[0].filename if yarn.photos and yarn.photos[0] else '' }}">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center shrink-0">
+                                                {% if yarn.photos and yarn.photos[0] %}
+                                                <img src="{{ yarn.photos[0].filename }}" alt=""
+                                                    class="w-full h-full rounded object-cover">
+                                                {% else %}
+                                                <span class="mdi mdi-sheep text-sm opacity-50"></span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="font-medium truncate">{{ yarn.name }}</div>
+                                                <div class="text-[10px] opacity-60 truncate">{{ yarn.brand or '' }}</div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+
+                                <div id="selected_yarns" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <!-- Chips populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stitch Sample Card -->
+                        <div class="bg-base-200/30 rounded-xl border border-base-200 p-4">
+                            <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                                <span class="mdi mdi-grid text-primary"></span>
+                                {{ _('Stitch Sample') }}
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <textarea id="stitch_sample" name="stitch_sample" rows="4"
+                                        class="textarea textarea-bordered w-full"
+                                        placeholder="{{ _('Describe your stitch sample / gauge swatch...') }}">{{ project.stitch_sample if project and project.stitch_sample else '' }}</textarea>
+                                    <p class="text-xs text-base-content/70 mt-1 mb-2">{{ _('Supports Markdown formatting and image drops') }}</p>
+
+                                    <h4 id="stitchSamplePhotosLabel"
+                                        class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not project or not project.stitch_sample_images %} hidden{% endif %}">
+                                        <span class="mdi mdi-image-outline"></span> {{ _('Stitch Sample Photos') }}
+                                    </h4>
+                                    <div id="stitchSampleImagesContainer"
+                                        class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery" data-pswp-gallery>
+                                        {% if project and project.stitch_sample_images %}
+                                        {% for image in project.stitch_sample_images %}
+                                        {{ image_upload.image_preview(image) }}
+                                        {% endfor %}
                                         {% endif %}
                                     </div>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="font-medium truncate">{{ yarn.name }}</div>
-                                        <div class="text-[10px] opacity-60 truncate">{{ yarn.brand or '' }}</div>
-                                    </div>
+                                    {{ image_upload.upload_dropzone('stitchSampleImageInput', container_id='stitchSampleDropzone')
+                                    }}
                                 </div>
-                            </button>
-                            {% endfor %}
-                        </div>
-
-                        <div id="selected_yarns" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <!-- Chips populated by JS -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Stitch Sample Card -->
-                <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
-                    <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-                        <span class="mdi mdi-grid text-primary"></span>
-                        {{ _('Stitch Sample') }}
-                    </h3>
-                    <div class="space-y-4">
-                        <div>
-                            <textarea id="stitch_sample" name="stitch_sample" rows="4"
-                                class="textarea textarea-bordered w-full"
-                                placeholder="{{ _('Describe your stitch sample / gauge swatch...') }}">{{ project.stitch_sample if project and project.stitch_sample else '' }}</textarea>
-                            <p class="text-xs text-base-content/70 mt-1 mb-2">{{ _('Supports Markdown formatting and image drops') }}</p>
-
-                            <h4 id="stitchSamplePhotosLabel"
-                                class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not project or not project.stitch_sample_images %} hidden{% endif %}">
-                                <span class="mdi mdi-image-outline"></span> {{ _('Stitch Sample Photos') }}
-                            </h4>
-                            <div id="stitchSampleImagesContainer"
-                                class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery" data-pswp-gallery>
-                                {% if project and project.stitch_sample_images %}
-                                {% for image in project.stitch_sample_images %}
-                                {{ image_upload.image_preview(image) }}
-                                {% endfor %}
-                                {% endif %}
                             </div>
-                            {{ image_upload.upload_dropzone('stitchSampleImageInput', container_id='stitchSampleDropzone')
-                            }}
                         </div>
-                    </div>
-                </div>
-
-                <!-- Recommended Needles Card -->
-                <div class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
-                    <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-                        <span class="mdi mdi-needle text-primary"></span>
-                        {{ _('Recommended Needles') }}
-                    </h3>
-                    <div>
-                        <textarea id="needles" name="needles" rows="2"
-                            class="textarea textarea-bordered w-full"
-                            placeholder="{{ _('e.g. 4.0mm circular') }}">{{ project.needles if project and project.needles else '' }}</textarea>
                     </div>
                 </div>
             </div>
 
             <!-- Steps Card -->
             <div
-                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
-                <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-                    <span class="mdi mdi-format-list-text text-primary"></span>
-                    {{ _('Steps') }}
-                </h3>
-                <div id="stepsContainer" class="space-y-4">
-                    {% for step in (project.steps if project else []) %}
-                    <div class="step-item border rounded-lg p-2 md:p-4 bg-base-200/50 border-base-300"
-                        data-step-id="{{ step.id }}" data-step-number="{{ step.step_number }}">
-                        <!-- Step Item Content (Keep as is but adjust colors if needed) -->
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span
-                                    class="step-number">{{
-                                    step.step_number }}</span></h4>
-                            <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="moveStepUp(this)" class="btn btn-xs btn-ghost gap-1"
-                                    title="{{ _('Move Up') }}">
-                                    <span class="mdi mdi-arrow-up"></span>
-                                    <span class="hidden sm:inline">{{ _('Move Up') }}</span>
-                                </button>
-                                <button type="button" onclick="moveStepDown(this)" class="btn btn-xs btn-ghost gap-1"
-                                    title="{{ _('Move Down') }}">
-                                    <span class="mdi mdi-arrow-down"></span>
-                                    <span class="hidden sm:inline">{{ _('Move Down') }}</span>
-                                </button>
-                                <button type="button" onclick="saveStep(this)" class="btn btn-xs btn-primary gap-1"
-                                    title="{{ _('Save') }}">
-                                    <span class="mdi mdi-content-save"></span>
-                                    <span class="hidden sm:inline">{{ _('Save') }}</span>
-                                </button>
-                                <button type="button" onclick="removeStep(this)"
-                                    class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
-                                    <span class="mdi mdi-delete"></span>
-                                    <span class="hidden sm:inline">{{ _('Remove') }}</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <input type="text" class="step-title input  w-full"
-                                placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
-                        </div>
-                        <textarea class="step-description textarea  w-full mb-2" rows="3"
-                            placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
-                        <p class="text-xs text-base-content/70 mb-2">{{ _('Supports Markdown formatting') }}</p>
-                        <h4
-                            class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not step.images %} hidden{% endif %}">
-                            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
-                        </h4>
-                        <div class="step-images grid grid-cols-3 gap-2 mb-2 pswp-gallery" data-pswp-gallery>
-                            {% for image in step.images %}
-                            {{ image_upload.image_preview(image, class='aspect-video overflow-hidden') }}
-                            {% endfor %}
-                        </div>
-                        {{ image_upload.step_upload_dropzone(
-                        input_id='stepImageInput' + step.id|string,
-                        step_id=step.id
-                        ) }}
-                    </div>
-                    {% endfor %}
+                class="collapse collapse-arrow bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 overflow-visible">
+                <input type="checkbox" checked />
+                <div class="collapse-title p-3 sm:p-6 pb-0">
+                    <h3 class="text-xl font-semibold text-base-content flex items-center gap-2">
+                        <span class="mdi mdi-format-list-text text-primary"></span>
+                        {{ _('Steps') }}
+                    </h3>
                 </div>
-                <button type="button" onclick="addStep()" class="btn btn-success text-white mt-4 gap-2">
-                    <span class="mdi mdi-playlist-plus text-xl"></span>
-                    {{ _('Add Step') }}
-                </button>
+                <div class="collapse-content p-3 sm:p-6 pt-0">
+                    <div id="stepsContainer" class="space-y-4 pt-4">
+                        {% for step in (project.steps if project else []) %}
+                        <div class="step-item border rounded-lg p-2 md:p-4 bg-base-200/50 border-base-300"
+                            data-step-id="{{ step.id }}" data-step-number="{{ step.step_number }}">
+                            <!-- Step Item Content -->
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span
+                                        class="step-number">{{
+                                        step.step_number }}</span></h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" onclick="moveStepUp(this)" class="btn btn-xs btn-ghost gap-1"
+                                        title="{{ _('Move Up') }}">
+                                        <span class="mdi mdi-arrow-up"></span>
+                                        <span class="hidden sm:inline">{{ _('Move Up') }}</span>
+                                    </button>
+                                    <button type="button" onclick="moveStepDown(this)" class="btn btn-xs btn-ghost gap-1"
+                                        title="{{ _('Move Down') }}">
+                                        <span class="mdi mdi-arrow-down"></span>
+                                        <span class="hidden sm:inline">{{ _('Move Down') }}</span>
+                                    </button>
+                                    <button type="button" onclick="saveStep(this)" class="btn btn-xs btn-primary gap-1"
+                                        title="{{ _('Save') }}">
+                                        <span class="mdi mdi-content-save"></span>
+                                        <span class="hidden sm:inline">{{ _('Save') }}</span>
+                                    </button>
+                                    <button type="button" onclick="removeStep(this)"
+                                        class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
+                                        <span class="mdi mdi-delete"></span>
+                                        <span class="hidden sm:inline">{{ _('Remove') }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <input type="text" class="step-title input input-bordered w-full"
+                                    placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
+                            </div>
+                            <textarea class="step-description textarea textarea-bordered w-full mb-2" rows="3"
+                                placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
+                            <p class="text-xs text-base-content/70 mb-2">{{ _('Supports Markdown formatting') }}</p>
+                            <h4
+                                class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not step.images %} hidden{% endif %}">
+                                <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
+                            </h4>
+                            <div class="step-images grid grid-cols-3 gap-2 mb-2 pswp-gallery" data-pswp-gallery>
+                                {% for image in step.images %}
+                                {{ image_upload.image_preview(image, class='aspect-video overflow-hidden') }}
+                                {% endfor %}
+                            </div>
+                            {{ image_upload.step_upload_dropzone(
+                            input_id='stepImageInput' + step.id|string,
+                            step_id=step.id
+                            ) }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" onclick="addStep()" class="btn btn-success text-white mt-4 gap-2">
+                        <span class="mdi mdi-playlist-plus text-xl"></span>
+                        {{ _('Add Step') }}
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Sidebar Column -->
-        <div class="space-y-6">
-            <!-- Project Details Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 hidden lg:block">
-                <h3
-                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
-                    <span class="mdi mdi-information-outline"></span>
-                    {{ _('Project Details') }}
-                </h3>
+        <div class="hidden lg:block lg:absolute lg:right-0 lg:top-0 z-30">
+            <button type="button" id="project-details-restore-button"
+                class="flex h-16 w-8 -mr-4 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
+                onclick="restoreEditSidebarDetails()" title="{{ _('Project Details') }}" aria-label="{{ _('Project Details') }}">
+                <span class="mdi mdi-chevron-left text-lg"></span>
+                <span class="sr-only">{{ _('Project Details') }}</span>
+            </button>
+        </div>
 
-                <div class="space-y-4">
+        <!-- Sidebar Column -->
+        <div id="sidebar-column" class="space-y-6 lg:col-start-3 lg:row-start-1 lg:sticky lg:top-24 lg:self-start">
+            <!-- Project Details Card -->
+            <div class="collapse collapse-right collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 hidden lg:block">
+                <input type="checkbox" id="project-details-toggle-sidebar" checked onchange="toggleEditSidebarExpansion(this)" />
+                <label for="project-details-toggle-sidebar" class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest text-xs">
+                    <span class="flex items-center gap-2">
+                        <span class="mdi mdi-information-outline"></span>
+                        {{ _('Project Details') }}
+                    </span>
+                </label>
+
+                <div class="collapse-content space-y-4">
+                    <div class="pt-2">
                     <div>
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
                             <label for="category" class=" text-xs font-bold uppercase text-base-content/50">
@@ -623,6 +684,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                             </span>
                         </label>
                     </div>
+                    </div>
                 </div>
             </div>
 
@@ -648,6 +710,36 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 <script>
     let initialLink = document.getElementById('link')?.value.trim() || '';
     let isImportPrompted = false;
+
+    function toggleEditSidebarExpansion(checkbox) {
+        const main = document.getElementById('main-column');
+        const sidebar = document.getElementById('sidebar-column');
+        const restoreButton = document.getElementById('project-details-restore-button');
+        if (!main || !sidebar) return;
+
+        if (checkbox.checked) {
+            main.classList.replace('lg:col-span-3', 'lg:col-span-2');
+            main.classList.remove('lg:pr-12');
+            sidebar.classList.remove('lg:hidden', 'lg:pointer-events-none', 'lg:opacity-0');
+            sidebar.classList.add('lg:block');
+            restoreButton?.classList.add('opacity-0', 'pointer-events-none', 'translate-x-2', 'scale-95');
+            restoreButton?.classList.remove('opacity-100', 'translate-x-0', 'scale-100');
+        } else {
+            main.classList.replace('lg:col-span-2', 'lg:col-span-3');
+            main.classList.add('lg:pr-12');
+            sidebar.classList.add('lg:hidden', 'lg:pointer-events-none', 'lg:opacity-0');
+            sidebar.classList.remove('lg:block');
+            restoreButton?.classList.remove('opacity-0', 'pointer-events-none', 'translate-x-2', 'scale-95');
+            restoreButton?.classList.add('opacity-100', 'translate-x-0', 'scale-100');
+        }
+    }
+
+    function restoreEditSidebarDetails() {
+        const sidebarToggle = document.getElementById('project-details-toggle-sidebar');
+        if (!sidebarToggle) return;
+        sidebarToggle.checked = true;
+        toggleEditSidebarExpansion(sidebarToggle);
+    }
 
     function autoResize(el) {
         if (!el) return;
@@ -761,6 +853,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         initAttachmentUploader();
         initYarnSelector();
         initTagEditor();
+        const sidebarToggle = document.getElementById('project-details-toggle-sidebar');
+        if (sidebarToggle) toggleEditSidebarExpansion(sidebarToggle);
 
         const importedData = sessionStorage.getItem('importedData');
         if (importedData) {
@@ -832,7 +926,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         if (typeof addPendingTitleImageToGallery === 'function') {
                             try { addPendingTitleImageToGallery(url); } catch (e) { console.error(e); }
                         }
-                    });
+    });
                 }
 
                 // Steps

@@ -1030,6 +1030,10 @@ def main() -> None:
 
         ini_path = Path(__file__).parent.parent / "alembic.ini"
         alembic_args = ["-c", str(ini_path)] + args.alembic_args
+        if args.alembic_args == ["downgrade"]:
+            alembic_args.append("-1")
+        elif args.alembic_args == ["upgrade"]:
+            alembic_args.append("head")
         alembic_main(argv=alembic_args)
 
 
