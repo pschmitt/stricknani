@@ -12,9 +12,9 @@ let
   stricknaniCliWrapper = pkgs.writeShellScriptBin "stricknani-cli" ''
     exec sudo -u "${user}" -- env \
       DATABASE_URL="${cfg.databaseUrl}" \
-      ${pkgs.runtimeShell} -c ' \
-        cd "${cfg.dataDir}" \
-        exec ${cfg.package}/bin/stricknani-cli "$@" \
+      ${pkgs.runtimeShell} -c '
+        cd "${cfg.dataDir}";
+        exec "${cfg.package}/bin/stricknani-cli" "$@" \
       ' -- "$@"
   '';
 in
