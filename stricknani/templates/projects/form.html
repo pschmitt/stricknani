@@ -645,37 +645,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         window.unsavedChanges?.setDirty(true);
     }
 
-    async function previewMarkdown(source) {
-        const textarea = typeof source === 'string' ? document.getElementById(source) : source;
-        if (!textarea) return;
-
-        const content = textarea.value;
-        if (!content.trim()) {
-            window.showToast?.('{{ _("Nothing to preview") }}', 'info');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('content', content);
-
-        try {
-            const response = await fetch('/utils/preview/markdown', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                const html = await response.text();
-                const dialog = document.getElementById('previewDialog');
-                const contentDiv = document.getElementById('previewContent');
-                contentDiv.innerHTML = html;
-                dialog.showModal();
-            }
-        } catch (error) {
-            console.error('Preview failed', error);
-        }
-    }
-
     /**
      * Update image visibility in galleries based on their presence in the Markdown text.
      */
@@ -755,6 +724,14 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        const titleImageInput = document.getElementById('titleImageInput');
+        const titleImageDropZone = document.getElementById('titleImageDropZone');
+        if (titleImageInput && titleImageDropZone) {
+            window.setupImageUploadWidget(titleImageInput, titleImageDropZone, uploadTitleImage);
+        }
+
+        initStepImageUploaders();
+        initStitchSampleImageUploader();
         initYarnSelector();
         initTagEditor();
 
@@ -1651,88 +1628,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         });
     }
 
-    function setupImageUploadWidget(input, dropzone, onUpload) {
-        if (!input || !dropzone || dropzone.dataset.initialized === 'true') {
-            return;
-        }
-
-        dropzone.dataset.initialized = 'true';
-        const instructions = dropzone.querySelector('.upload-instructions');
-        const getEnabledText = () => instructions?.dataset.enabledText || instructions?.textContent || '';
-
-        const setUploadingState = (isUploading) => {
-            dropzone.classList.toggle('opacity-70', isUploading);
-            dropzone.classList.toggle('pointer-events-none', isUploading);
-            dropzone.classList.toggle('cursor-wait', isUploading);
-            dropzone.setAttribute('aria-busy', String(Boolean(isUploading)));
-            if (instructions) {
-                instructions.textContent = isUploading ? uploadingMessage : getEnabledText();
-            }
-        };
-
-        const handleFiles = async (files) => {
-            const fileList = Array.from(files || []);
-            if (!fileList.length) {
-                return;
-            }
-
-            const imageFiles = fileList.filter((file) => file.type.startsWith('image/'));
-            if (!imageFiles.length) {
-                window.showToast?.(unsupportedFileMessage, 'error');
-                return;
-            }
-
-            setUploadingState(true);
-            try {
-                for (const file of imageFiles) {
-                    try {
-                        await onUpload(file);
-                    } catch (error) {
-                        console.error('Image upload failed', error);
-                        window.showToast?.(uploadNetworkErrorMessage, 'error');
-                    }
-                }
-            } finally {
-                setUploadingState(false);
-            }
-        };
-
-        input.addEventListener('change', async (event) => {
-            await handleFiles(event.target.files);
-            input.value = '';
-        });
-
-        const dragTargets = [dropzone];
-        const label = dropzone.querySelector('label');
-        if (label) {
-            dragTargets.push(label);
-        }
-
-        dragTargets.forEach((target) => {
-            target.addEventListener('dragover', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                dropzone.classList.add('border-blue-500');
-            });
-
-            target.addEventListener('dragleave', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                dropzone.classList.remove('border-blue-500');
-            });
-
-            target.addEventListener('drop', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                dropzone.classList.remove('border-blue-500');
-                const files = event.dataTransfer ? event.dataTransfer.files : null;
-                if (files && files.length > 0) {
-                    await handleFiles(files);
-                }
-            });
-        });
-    }
-
     const titleImageInput = document.getElementById('titleImageInput');
     const titleImageDropZone = document.getElementById('titleImageDropZone');
 
@@ -2070,7 +1965,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 instructions.textContent = instructions.dataset.enabledText || uploadInstructionsText;
             }
 
-            setupImageUploadWidget(input, dropzone, async (file) => {
+            window.setupImageUploadWidget(input, dropzone, async (file) => {
                 const sid = await ensureStepId(stepItem);
                 if (sid) {
                     const data = await uploadStepImage(sid, file);
@@ -2141,7 +2036,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             return;
         }
 
-        setupImageUploadWidget(input, dropzone, async (file) => {
+        window.setupImageUploadWidget(input, dropzone, async (file) => {
             if (!(await ensureProjectId())) return;
 
             const formData = new FormData();
