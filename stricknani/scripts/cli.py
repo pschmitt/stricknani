@@ -7,6 +7,7 @@ import asyncio
 import getpass
 import json
 import logging
+import subprocess
 import sys
 from datetime import datetime
 from types import ModuleType
@@ -913,6 +914,14 @@ def main() -> None:
     api_subparsers.add_parser("projects", help="List projects")
     api_subparsers.add_parser("yarns", help="List yarns")
 
+    # Alembic
+    alembic_parser = subparsers.add_parser("alembic", help="Run alembic migrations")
+    alembic_parser.add_argument(
+        "alembic_args",
+        nargs=argparse.REMAINDER,
+        help="Arguments passed to alembic",
+    )
+
     args = parser.parse_args(raw_args)
 
     if args.command == "user":
@@ -1014,6 +1023,14 @@ def main() -> None:
             )
         elif args.yarn_command == "delete":
             asyncio.run(delete_yarn(args.id, args.owner_email))
+
+    elif args.command == "alembic":
+        from pathlib import Path
+
+        ini_path = Path(__file__).parent.parent / "alembic.ini"
+        cmd = [sys.executable, "-m", "alembic", "-c", str(ini_path)] + args.alembic_args
+        result = subprocess.run(cmd)
+        sys.exit(result.returncode)
 
 
 if __name__ == "__main__":
