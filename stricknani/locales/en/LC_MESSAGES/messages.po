@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-03 13:25+0100\n"
+"POT-Creation-Date: 2026-02-03 13:29+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -19,6 +19,7 @@ msgstr ""
 
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
 #: stricknani/templates/base.html:415 stricknani/templates/errors/401.html:3
+#: stricknani/templates/errors/403.html:3
 #: stricknani/templates/errors/404.html:3
 #: stricknani/templates/errors/500.html:3
 #: stricknani/templates/shared/unified_navbar.html:14
@@ -494,6 +495,22 @@ msgid ""
 msgstr ""
 "You need to be signed in to access this area of Stricknani. Please log in"
 " to continue your knitting journey."
+
+#: stricknani/templates/errors/403.html:3
+msgid "Forbidden"
+msgstr "Forbidden"
+
+#: stricknani/templates/errors/403.html:8
+msgid "No entry"
+msgstr "No entry"
+
+#: stricknani/templates/errors/403.html:10
+msgid ""
+"You don't have permission to view this project or area. If you believe "
+"this is a mistake, please check with the owner."
+msgstr ""
+"You don't have permission to view this project or area. If you believe "
+"this is a mistake, please check with the owner."
 
 #: stricknani/templates/errors/404.html:3
 msgid "Page Not Found"

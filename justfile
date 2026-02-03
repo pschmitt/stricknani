@@ -109,3 +109,14 @@ migrate-up:
 
 migrate-down:
   uv run alembic --config stricknani/alembic.ini downgrade -1
+
+# Run alembic with arguments
+alembic *ARGS:
+  uv run alembic --config stricknani/alembic.ini {{ARGS}}
+
+# Deploy to production
+deploy:
+  #!/usr/bin/env zhj
+  cd /etc/nixos
+  nix flake update stricknani
+  nrb --target rofl-10

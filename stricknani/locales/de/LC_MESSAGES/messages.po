@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-03 13:25+0100\n"
+"POT-Creation-Date: 2026-02-03 13:29+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -19,6 +19,7 @@ msgstr ""
 
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
 #: stricknani/templates/base.html:415 stricknani/templates/errors/401.html:3
+#: stricknani/templates/errors/403.html:3
 #: stricknani/templates/errors/404.html:3
 #: stricknani/templates/errors/500.html:3
 #: stricknani/templates/shared/unified_navbar.html:14
@@ -483,6 +484,22 @@ msgstr ""
 "Du musst angemeldet sein, um auf diesen Bereich von Stricknani "
 "zuzugreifen. Bitte melde dich an, um deine Strickreise fortzusetzen."
 
+#: stricknani/templates/errors/403.html:3
+msgid "Forbidden"
+msgstr "Verboten"
+
+#: stricknani/templates/errors/403.html:8
+msgid "No entry"
+msgstr "Kein Zutritt"
+
+#: stricknani/templates/errors/403.html:10
+msgid ""
+"You don't have permission to view this project or area. If you believe "
+"this is a mistake, please check with the owner."
+msgstr ""
+"Du hast keine Berechtigung, dieses Projekt oder diesen Bereich anzuzeigen. "
+"Wenn du glaubst, dass dies ein Fehler ist, wende dich bitte an den Besitzer."
+
 #: stricknani/templates/errors/404.html:3
 msgid "Page Not Found"
 msgstr "Seite nicht gefunden"
@@ -513,8 +530,9 @@ msgid ""
 "Something went wrong on our end. We've encountered an unexpected error "
 "and are looking into it. Please try again later."
 msgstr ""
-"Auf unserer Seite ist etwas schiefgegangen. Wir haben einen unerwarteten Fehler "
-"festgestellt und untersuchen diesen. Bitte versuche es später erneut."
+"Auf unserer Seite ist etwas schiefgegangen. Wir haben einen unerwarteten "
+"Fehler festgestellt und untersuchen diesen. Bitte versuche es später "
+"erneut."
 
 #: stricknani/templates/errors/base.html:23
 msgid "Go Home"

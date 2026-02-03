@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-03 13:25+0100\n"
+"POT-Creation-Date: 2026-02-03 13:29+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,6 +19,7 @@ msgstr ""
 
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
 #: stricknani/templates/base.html:415 stricknani/templates/errors/401.html:3
+#: stricknani/templates/errors/403.html:3
 #: stricknani/templates/errors/404.html:3
 #: stricknani/templates/errors/500.html:3
 #: stricknani/templates/shared/unified_navbar.html:14
@@ -479,6 +480,20 @@ msgstr ""
 msgid ""
 "You need to be signed in to access this area of Stricknani. Please log in"
 " to continue your knitting journey."
+msgstr ""
+
+#: stricknani/templates/errors/403.html:3
+msgid "Forbidden"
+msgstr ""
+
+#: stricknani/templates/errors/403.html:8
+msgid "No entry"
+msgstr ""
+
+#: stricknani/templates/errors/403.html:10
+msgid ""
+"You don't have permission to view this project or area. If you believe "
+"this is a mistake, please check with the owner."
 msgstr ""
 
 #: stricknani/templates/errors/404.html:3

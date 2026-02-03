@@ -68,9 +68,25 @@ async def unauthorized_exception_handler(
     return render_template("errors/401.html", request, status_code=401)
 
 
+@app.exception_handler(403)
+async def forbidden_exception_handler(
+    request: Request, exc: HTTPException
+) -> HTMLResponse:
+    """Handle 403 errors by rendering a custom template."""
+    return render_template("errors/403.html", request, status_code=403)
+
+
 @app.exception_handler(Exception)
 async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
     """Handle all other unhandled exceptions by rendering a 500 template."""
+    if isinstance(exc, HTTPException):
+        if exc.status_code == 404:
+            return await not_found_exception_handler(request, exc)
+        if exc.status_code == 401:
+            return await unauthorized_exception_handler(request, exc)
+        if exc.status_code == 403:
+            return await forbidden_exception_handler(request, exc)
+
     # Log the exception for debugging
     access_logger.exception("Unhandled exception: %s", str(exc))
     return render_template("errors/500.html", request, status_code=500)
