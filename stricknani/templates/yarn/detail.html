@@ -302,6 +302,7 @@
                                 {{ _('Archive request failed') }}
                             </div>
                             <form action="/yarn/{{ yarn.id }}/retry-archive" method="post" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
                                     <span class="mdi mdi-refresh"></span>
                                     {{ _('Retry') }}
@@ -395,6 +396,7 @@
                     {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
                 </form>
                 <form action="/yarn/{{ yarn.id }}/delete" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     {{ dialogs.dialog_danger(_('Delete Forever'), type='submit') }}
                 </form>
             </div>

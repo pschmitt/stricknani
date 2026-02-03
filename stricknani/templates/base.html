@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ _('Stricknani') }}{% endblock %}</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
     {% block head %}{% endblock %}
     <link rel="icon" type="image/svg+xml"
         href="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}">
@@ -43,6 +44,14 @@
     <script src="https://unpkg.com/@tailwindcss/browser@4.1.18"></script>
     <!-- renovate: datasource=npm depName=htmx.org -->
     <script src="https://unpkg.com/htmx.org@2.0.7"></script>
+    <script>
+        document.addEventListener('htmx:configRequest', (event) => {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (csrfToken) {
+                event.detail.headers['X-CSRF-Token'] = csrfToken;
+            }
+        });
+    </script>
     <style>
         .cropper-view-box,
         .cropper-face {

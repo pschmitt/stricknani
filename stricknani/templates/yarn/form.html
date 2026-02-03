@@ -82,6 +82,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 {% block form_body %}
 <form id="yarnForm" action="{{ '/yarn/' ~ yarn.id ~ '/edit' if yarn else '/yarn/' }}" method="post"
     enctype="multipart/form-data" data-primary-form="true" class="space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" id="archive_on_save" name="archive_on_save" value="">
     <input type="hidden" id="is_ai_enhanced" name="is_ai_enhanced" value="{{ '1' if yarn and yarn.is_ai_enhanced else '' }}">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
@@ -456,6 +457,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
             </form>
             <form action="/yarn/{{ yarn.id }}/delete" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 {{ dialogs.dialog_danger(_('Delete Forever'), type='submit') }}
             </form>
         </div>

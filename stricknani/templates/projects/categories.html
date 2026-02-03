@@ -35,6 +35,7 @@
     <div class="card-body p-4 sm:p-6">
         <h2 class="card-title text-base mb-4">{{ _('Add New Category') }}</h2>
         <form action="/projects/categories" method="post" class="flex flex-col sm:flex-row gap-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="flex-grow">
                 <label for="new-category-name" class="sr-only">{{ _('Category Name') }}</label>
                 <input type="text" id="new-category-name" name="name" required
@@ -51,6 +52,7 @@
     <div class="card bg-base-100 shadow-sm border border-base-200 group hover:border-base-300 transition-colors">
         <div class="card-body p-4">
             <form action="/projects/categories/{{ category.id }}" method="post" class="flex items-center gap-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="flex-grow">
                     <label for="category-{{ category.id }}" class="sr-only">{{ _('Category Name') }}</label>
                     <input type="text" id="category-{{ category.id }}" name="name" value="{{ category.name }}" required
@@ -74,7 +76,9 @@
                 </div>
             </form>
             <form id="delete-category-{{ category.id }}" action="/projects/categories/{{ category.id }}/delete"
-                method="post" class="hidden" aria-hidden="true"></form>
+                method="post" class="hidden" aria-hidden="true">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            </form>
         </div>
     </div>
     {% else %}

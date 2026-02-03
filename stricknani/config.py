@@ -18,8 +18,13 @@ class Config:
 
     # Application
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+    CSRF_SECRET_KEY: str = os.getenv("CSRF_SECRET_KEY", SECRET_KEY)
     PORT: int = int(os.getenv("PORT", "7674"))
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    TESTING: bool = (
+        os.getenv("TESTING", "false").lower() == "true"
+        or "PYTEST_CURRENT_TEST" in os.environ
+    )
 
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./stricknani.db")

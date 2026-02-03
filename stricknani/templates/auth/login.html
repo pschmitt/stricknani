@@ -34,6 +34,7 @@
                 <!-- Login Form -->
                 <div id="login-form" class="space-y-6">
                     <form action="/auth/login" method="post" class="space-y-5">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <div class="form-control">
                             <label for="login-email" class="label py-1">
                                 <span class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60">{{ _('Email Address') }}</span>
@@ -98,6 +99,7 @@
                     </div>
 
                     <form action="/auth/signup" method="post" class="space-y-5">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <div class="form-control">
                             <label for="signup-email" class="label py-1">
                                 <span class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60">{{ _('Email Address') }}</span>

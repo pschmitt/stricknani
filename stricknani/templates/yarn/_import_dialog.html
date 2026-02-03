@@ -1,6 +1,7 @@
 {% import "macros/dialogs.html" as dialogs %}
 {% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl') %}
 <form id="importYarnForm" action="/yarn/import" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div class="space-y-6 py-2">
         <!-- Magic Header -->
         <div class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">

@@ -6,10 +6,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import FastAPI, Form, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi_csrf_protect import CsrfProtect
+from fastapi_csrf_protect.exceptions import CsrfProtectError
 
 from stricknani.config import config
 from stricknani.database import init_db
@@ -44,12 +46,48 @@ if config.SENTRY_DSN:
 config.ensure_media_dirs()
 
 
+async def csrf_validation_dependency(
+    request: Request, csrf_protect: CsrfProtect = Depends()
+) -> None:
+    """Global CSRF validation dependency."""
+    if config.TESTING:
+        return
+    if request.method in {"POST", "PUT", "DELETE", "PATCH"}:
+        await csrf_protect.validate_csrf(request)
+
+
 app = FastAPI(
     title="Stricknani",
     description="A self-hosted web app for managing knitting projects",
     version="0.1.0",
     lifespan=lifespan,
+    dependencies=[Depends(csrf_validation_dependency)],
 )
+
+
+@CsrfProtect.load_config
+def get_csrf_config() -> list[tuple[str, Any]]:
+    """Load CSRF configuration."""
+    return [
+        ("secret_key", config.CSRF_SECRET_KEY),
+        ("cookie_samesite", config.COOKIE_SAMESITE),
+    ]
+
+
+@app.exception_handler(CsrfProtectError)
+async def csrf_protect_exception_handler(
+    request: Request, exc: CsrfProtectError
+) -> HTMLResponse:
+    """Handle CSRF errors."""
+    return await render_template(
+        "errors/403.html",
+        request,
+        context={
+            "error_title": "CSRF Error",
+            "error_message": exc.message,
+        },
+        status_code=403,
+    )
 
 
 @app.exception_handler(404)
@@ -92,7 +130,6 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
     return await render_template("errors/500.html", request, status_code=500)
 
 
-# Mount static files
 static_path = Path(__file__).parent / "static"
 static_path.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
@@ -238,6 +275,11 @@ async def render_template(
     )
     context.setdefault("feature_wayback_enabled", config.FEATURE_WAYBACK_ENABLED)
 
+    # CSRF protection
+    csrf = CsrfProtect()
+    csrf_token, signed_token = csrf.generate_csrf_tokens()
+    context["csrf_token"] = csrf_token
+
     # Automatically fetch current user if not provided
     if "current_user" not in context:
         from stricknani.database import get_db
@@ -258,12 +300,17 @@ async def render_template(
     context.setdefault("current_user_avatar_url", avatar_url)
     context.setdefault("current_user_avatar_thumbnail", avatar_thumb)
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name=template_name,
         context=context,
         status_code=status_code,
     )
+
+    # Set CSRF cookie
+    csrf.set_csrf_cookie(signed_token, response)
+
+    return response
 
 
 # Health check endpoint

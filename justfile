@@ -119,4 +119,4 @@ deploy:
   #!/usr/bin/env zhj
   cd /etc/nixos
   nix flake update stricknani
-  nrb --target rofl-10
+  nrb --target rofl-10.brkn.lol

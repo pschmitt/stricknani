@@ -1,5 +1,6 @@
 <div class="join w-full bg-base-200 p-1 rounded-xl {{ container_class|default('') }}">
     <form action="/auth/set-language" method="post" class="flex-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="next"
             value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
         <input type="hidden" name="language" value="en">
@@ -9,6 +10,7 @@
         </button>
     </form>
     <form action="/auth/set-language" method="post" class="flex-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="next"
             value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
         <input type="hidden" name="language" value="de">

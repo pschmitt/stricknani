@@ -49,6 +49,7 @@
                             hx-swap="outerHTML" class="w-full p-0"
                             data-toast-message="{{ _('User disabled') if user.is_active else _('User activated') }}"
                             data-toast-variant="success">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             {% if user.is_active %}
                             <button type="submit" class="w-full text-left flex items-center gap-2 py-2 px-4" {% if
                                 user.id==current_user.id %}disabled style="cursor: not-allowed" {% endif %}>
@@ -82,6 +83,7 @@
                             hx-swap="outerHTML" class="w-full p-0"
                             data-toast-message="{{ _('Admin access revoked') if user.is_admin else _('Admin access granted') }}"
                             data-toast-variant="success">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <button type="submit" class="w-full text-left flex items-center gap-2 py-2 px-4" {% if
                                 user.id==current_user.id %}disabled style="cursor: not-allowed" text-base-content/50{%
                                 endif %}>
@@ -107,6 +109,7 @@
                 hx-swap="outerHTML"
                 data-toast-message="{{ _('User disabled') if user.is_active else _('User activated') }}"
                 data-toast-variant="success" class="hidden md:block">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 {% if user.is_active %}
                 {{ buttons.secondary(_('Disable'), type='submit', icon='mdi-account-off', class='btn-xs sm:btn-sm',
                 attrs='disabled' if user.id == current_user.id else '') }}
@@ -140,6 +143,7 @@
                             hx-swap="outerHTML" class="w-full p-0"
                             data-toast-message="{{ _('Admin access revoked') if user.is_admin else _('Admin access granted') }}"
                             data-toast-variant="success">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <button type="submit" class="w-full text-left flex items-center gap-2 py-2 px-4" {% if
                                 user.id==current_user.id %}disabled style="cursor: not-allowed" text-base-content/50{%
                                 endif %}>

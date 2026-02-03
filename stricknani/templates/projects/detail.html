@@ -698,6 +698,7 @@
                                 {{ _('Archive request failed') }}
                             </div>
                             <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
                                     <span class="mdi mdi-refresh"></span>
                                     {{ _('Retry') }}
@@ -850,7 +851,8 @@
         fetch(url, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '{{ csrf_token }}'
             }
         }).then(response => {
             if (response.ok) {

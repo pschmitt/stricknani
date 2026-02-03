@@ -58,6 +58,7 @@ async def test_client(
         user_id = user.id
         step_id = step.id
 
+    config.TESTING = True
     original_media_root = config.MEDIA_ROOT
     config.MEDIA_ROOT = tmp_path / "media"
     config.ensure_media_dirs()
