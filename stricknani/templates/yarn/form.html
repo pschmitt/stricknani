@@ -745,7 +745,52 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         }
     }
 
+    async function uploadYarnImage(file) {
+        const formData = new FormData();
+        formData.append('new_photos', file);
+
+        try {
+            window.showToast?.('{{ _("Uploading image...") }}', 'info');
+            const response = await fetch(`/yarn/${yarnId}/edit`, {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': '{{ csrf_token }}' },
+                body: formData
+            });
+
+            if (response.ok) {
+                window.showToast?.('{{ _("Image uploaded!") }}', 'success');
+                window.location.reload();
+            } else {
+                const message = await parseErrorMessage(response, '{{ _("Upload failed") }}');
+                window.showToast?.(message, 'error');
+            }
+        } catch (error) {
+            console.error('Upload failed', error);
+            window.showToast?.('{{ _("Network error while uploading image") }}', 'error');
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+        const photosInput = document.getElementById('photos');
+        const dropzone = photosInput?.closest('.border-2');
+        if (photosInput && dropzone) {
+            window.setupImageUploadWidget(photosInput, dropzone, async (file) => {
+                if (isEditing && yarnId) {
+                    await uploadYarnImage(file);
+                } else {
+                    // For new yarns, add to preview list
+                    const exists = Array.from(yarnFiles.files).some(f =>
+                        f.name === file.name && f.size === file.size && f.lastModified === file.lastModified
+                    );
+                    if (!exists) {
+                        yarnFiles.items.add(file);
+                        photosInput.files = yarnFiles.files;
+                        previewImages(photosInput);
+                    }
+                }
+            });
+        }
+
         const importedData = sessionStorage.getItem('importedYarnData');
         if (importedData) {
             try {
@@ -966,40 +1011,6 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         typeof extractErrorMessage === 'function'
             ? extractErrorMessage
             : async (_response, fallback) => fallback;
-
-    async function previewMarkdown(source) {
-        const textarea = typeof source === 'string' ? document.getElementById(source) : source;
-        if (!textarea) return;
-
-        const content = textarea.value;
-        if (!content.trim()) {
-            window.showToast?.('{{ _("Nothing to preview") }}', 'info');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('content', content);
-
-        try {
-            const response = await fetch('/utils/preview/markdown', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-Token': '{{ csrf_token }}'
-                },
-                body: formData
-            });
-
-            if (response.ok) {
-                const html = await response.text();
-                const dialog = document.getElementById('previewDialog');
-                const contentDiv = document.getElementById('previewContent');
-                contentDiv.innerHTML = html;
-                dialog.showModal();
-            }
-        } catch (error) {
-            console.error('Preview failed', error);
-        }
-    }
 
     const yarnFiles = new DataTransfer();
 

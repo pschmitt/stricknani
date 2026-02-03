@@ -1125,6 +1125,104 @@
             }
         }
         window.copyToClipboard = copyToClipboard;
+
+        // Shared Image Upload Widget Logic
+        window.setupImageUploadWidget = function(input, dropzone, onUpload) {
+            if (!input || !dropzone || dropzone.dataset.initialized === 'true') {
+                return;
+            }
+
+            dropzone.dataset.initialized = 'true';
+            const instructions = dropzone.querySelector('.upload-instructions');
+            const getEnabledText = () => instructions?.dataset.enabledText || instructions?.textContent || '';
+            const uploadingMessage = '{{ _("Uploading...") }}';
+
+            const setUploadingState = (isUploading) => {
+                dropzone.classList.toggle('opacity-70', isUploading);
+                dropzone.classList.toggle('pointer-events-none', isUploading);
+                dropzone.classList.toggle('cursor-wait', isUploading);
+                dropzone.setAttribute('aria-busy', String(Boolean(isUploading)));
+                if (instructions) {
+                    instructions.textContent = isUploading ? uploadingMessage : getEnabledText();
+                }
+            };
+
+            const handleFiles = async (files) => {
+                const fileList = Array.from(files || []);
+                if (!fileList.length) return;
+
+                const imageFiles = fileList.filter(file => file.type.startsWith('image/'));
+                if (!imageFiles.length) {
+                    window.showToast?.('{{ _("Only image files are supported") }}', 'error');
+                    return;
+                }
+
+                setUploadingState(true);
+                try {
+                    for (const file of imageFiles) {
+                        await onUpload(file);
+                    }
+                } finally {
+                    setUploadingState(false);
+                }
+            };
+
+            input.addEventListener('change', async (e) => {
+                await handleFiles(e.target.files);
+                input.value = '';
+            });
+
+            ['dragover', 'dragleave', 'drop'].forEach(name => {
+                dropzone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (name === 'dragover') dropzone.classList.add('border-primary');
+                    else dropzone.classList.remove('border-primary');
+                });
+            });
+
+            dropzone.addEventListener('drop', async (e) => {
+                const files = e.dataTransfer?.files;
+                if (files && files.length > 0) {
+                    await handleFiles(files);
+                }
+            });
+        };
+
+        // Shared Markdown Preview Logic
+        window.previewMarkdown = async function(source) {
+            const textarea = typeof source === 'string' ? document.getElementById(source) : source;
+            if (!textarea) return;
+
+            const content = textarea.value;
+            if (!content.trim()) {
+                window.showToast?.('{{ _("Nothing to preview") }}', 'info');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('content', content);
+
+            try {
+                const response = await fetch('/utils/preview/markdown', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': '{{ csrf_token }}' },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const html = await response.text();
+                    const dialog = document.getElementById('previewDialog');
+                    const contentDiv = document.getElementById('previewContent');
+                    if (dialog && contentDiv) {
+                        contentDiv.innerHTML = html;
+                        dialog.showModal();
+                    }
+                }
+            } catch (error) {
+                console.error('Preview failed', error);
+            }
+        };
     </script>
     <script type="module">
         import PhotoSwipeLightbox from 'https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.min.js';

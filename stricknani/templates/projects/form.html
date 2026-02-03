@@ -1,760 +1,462 @@
-{% extends "shared/form_base.html" %}
-{% import "macros/buttons.html" as buttons %}
-{% import "macros/dialogs.html" as dialogs %}
-{% import "macros/image_upload.html" as image_upload %}
-
-{% block title %}{{ _('Edit') if project else _('New') }} {{ _('Project') }} - Stricknani{% endblock %}
-
-{# Set variables for the unified navbar #}
-{% set page_title %}{{ project.name if project else _('New Project') }}{% endset %}
-{% set page_title_mobile_hidden = true %}
-{% set back_url = '/projects/' + project.id|string if project else '/projects' %}
-{% set back_label = _('Back to projects') %}
-{% set page_actions %}
-<div class="flex items-center gap-1">
-    <button type="submit" form="projectForm" class="btn btn-primary gap-2 h-10 min-h-0 px-3 md:px-4">
-        <span class="mdi mdi-content-save text-xl"></span>
-        <span>{{ _('Save') }}</span>
-    </button>
-    {% if not project %}
-    <div class="dropdown dropdown-end dropdown-bottom">
-        <button type="button" class="btn btn-square btn-ghost btn-sm md:btn-md" aria-label="{{ _('More options') }}">
-            <span class="mdi mdi-dots-vertical text-xl"></span>
-        </button>
-        <ul tabindex="0"
-            class="dropdown-content ellipsis-dropdown-content z-[100] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
-            <li>
-                <button type="button" onclick="document.getElementById('importDialog').showModal()">
-                    <span class="mdi mdi-download"></span>
-                    {{ _('Import') }}
-                </button>
-            </li>
-        </ul>
-    </div>
-    {% endif %}
-</div>
-{% endset %}
-
-{% block form_styles %}
-<style>
-    .tab-content {
-        display: block;
-        min-height: 200px;
-    }
-
-    .tab-content.hidden {
-        display: none;
-    }
-</style>
-{% endblock %}
-
-{% block form_before %}
-<dialog id="previewDialog"
-    class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-2xl">
-    <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-        <h3 class="text-lg font-semibold">{{ _('Preview') }}</h3>
-        <button onclick="document.getElementById('previewDialog').close()"
-            class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-            <span class="mdi mdi-close text-xl"></span>
-        </button>
-    </div>
-    <div id="previewContent" class="p-6 prose max-w-none dark:prose-invert overflow-y-auto max-h-[70vh]"></div>
-</dialog>
-
-{% include "projects/_import_dialog.html" %}
-{% endblock %}
-
-{% block form_nav %}
-{{ buttons.back_circle('/projects/' + project.id|string if project else '/projects', label=_('Back to projects'),
-attrs='data-unsaved-confirm="true"') }}
-{% endblock %}
-
-{% block form_header_class %}
-md:sticky md:top-0 md:z-50 bg-base-100 py-4 px-4 -mx-4 shadow-none
-{% endblock %}
-
-{% block form_actions %}
-{% if not project %}
-{{ buttons.secondary(_('Import'), icon='mdi-download',
-attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='flex-1 sm:flex-none') }}
-{% endif %}
-
-{# Save button logic:
-- Always hidden on mobile (moved to FAB)
-- Visible on desktop #}
-{% set save_classes = 'hidden md:inline-flex flex-1 sm:flex-none md:btn-wide' %}
-
-{{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class=save_classes) }}
-
-<!-- Mobile FAB for Project Save -->
-{{ buttons.fab('mdi-content-save', type='submit', attrs='form="projectForm"', class='md:hidden', label=_('Save')) }}
-{% endblock %}
-
-{% block form_title %}
-{{ project.name if project else _('New Project') }}
-{% endblock %}
-
-{% block form_body %}
-<form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post"
-    data-primary-form="true" class="space-y-6">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
-    <input type="hidden" id="import_title_image_url" name="import_title_image_url" value="">
-    <input type="hidden" id="archive_on_save" name="archive_on_save" value="">
-    <input type="hidden" id="is_ai_enhanced" name="is_ai_enhanced" value="{{ '1' if project and project.is_ai_enhanced else '' }}">
-    <input type="hidden" id="yarn_brand" name="yarn_brand" value="">
-    <input type="hidden" id="yarn_details" name="yarn_details" value="">
-    <input type="hidden" id="stepsData" name="steps_data">
-
-    <div id="importWarning"
-        class="hidden mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded">
-        <div class="flex items-start gap-3">
-            <span class="mdi mdi-alert text-yellow-600 dark:text-yellow-500 text-xl mt-0.5"></span>
-            <div class="flex-1">
-                <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">{{ _('Imported Data - Not Saved Yet') }}</h3>
-                <p class="text-sm text-yellow-700 dark:text-yellow-300">
-                    {{ _('This project was imported from an external source. Please review all fields carefully and click "Save" to keep it.') }}
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        <!-- Main Content Column -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Basic Info Card -->
-            <div
-                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
-                <div class="space-y-4 sm:space-y-6">
-                    <div>
-                        <label for="name" class=" text-sm font-medium mb-1 inline-flex items-center gap-2">
-                            <span class="mdi mdi-notebook-outline text-base-content/70"></span>
-                            {{ _('Project Name') }} <span class="text-red-500 dark:text-red-400">*</span>
-                        </label>
-                        <input type="text" id="name" name="name" required
-                            value="{{ project.name if project and project.name else '' }}"
-                            class="input  w-full" placeholder="{{ _('e.g. My Amazing Project') }}">
-                    </div>
-
-                    <!-- Gallery Section (moved inside card) -->
-                    <div class="pt-2 border-t border-base-200">
-                        <h3 class="text-sm font-bold uppercase tracking-widest text-base-content/40 mb-4 flex items-center gap-2">
-                            <span class="mdi mdi-image-multiple"></span>
-                            {{ _('Gallery') }}
-                        </h3>
-                        <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery"
-                            data-pswp-gallery>
-                            {% if project %}
-                            {% for image in project.title_images %}
-                            {{ image_upload.image_preview(image, project_id=project.id, show_promote=true) }}
-                            {% endfor %}
-                            {% endif %}
-                        </div>
-
-                        <div id="titleImageUploadContainer">
-                            {{ image_upload.upload_dropzone(
-                            input_id='titleImageInput',
-                            container_id='titleImageDropZone'
-                            ) }}
-                        </div>
-                    </div>
-
-                    <!-- Mobile Details Card -->
-                    <div class="lg:hidden p-4 bg-base-200/30 rounded-xl border border-base-200 space-y-4">
-                        <h3
-                            class="font-bold text-xs uppercase tracking-widest text-base-content/40 flex items-center gap-2">
-                            <span class="mdi mdi-information-outline"></span>
-                            {{ _('Project Details') }}
-                        </h3>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <div class="flex items-center justify-between">
-                                    <label for="category-mobile"
-                                        class=" text-xs font-bold uppercase text-base-content/50">
-                                        {{ _('Category') }}
-                                    </label>
-                                    <a href="/projects/categories" class="text-[10px] text-primary hover:underline"
-                                        target="_blank" rel="noreferrer">
-                                        {{ _('Manage') }}
-                                    </a>
-                                </div>
-                                <select name="category" class="select  select-sm w-full mt-1">
-                                    <option value="">{{ _('Select a category') }}</option>
-                                    {% for category in categories %}
-                                    <option value="{{ category }}" {% if project and project.category==category
-                                        %}selected{% endif %}>
-                                        {{ category }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label for="tags_input_mobile"
-                                    class=" text-xs font-bold uppercase text-base-content/50">
-                                    {{ _('Tags') }}
-                                </label>
-                                <input type="hidden" id="tags" name="tags"
-                                    value="{{ project.tags | join(', ') if project and project.tags else '' }}">
-                                <div id="tags_chips_mobile" class="flex flex-wrap gap-2 mt-2"></div>
-                                <div class="relative mt-2">
-                                    <input type="text" id="tags_input_mobile"
-                                        class="input  input-sm w-full" autocomplete="off"
-                                        placeholder="{{ _('Add a tag...') }}">
-                                    <div id="tags_suggestions_mobile"
-                                        class="hidden absolute z-30 w-full mt-1 max-h-48 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
-                                        {% for tag in tag_suggestions %}
-                                        <button type="button"
-                                            class="tag-suggestion w-full text-left px-3 py-2 hover:bg-base-200 text-sm"
-                                            data-tag="{{ tag }}">
-                                            #{{ tag }}
-                                        </button>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a suggestion.') }}</p>
-                            </div>
-
-                            <div>
-                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Used Needles') }}</label>
-                                <input type="text" name="needles"
-                                    value="{{ project.needles if project and project.needles else '' }}"
-                                    class="input  input-sm w-full mt-1"
-                                    placeholder="{{ _('e.g. 4.0mm circular') }}">
-                            </div>
-
-                            <div>
-                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Recommended Size') }}</label>
-                                <input type="text" name="recommended_needles"
-                                    value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
-                                    class="input  input-sm w-full mt-1"
-                                    placeholder="{{ _('e.g. 3.5mm') }}">
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-2 sm:col-span-2">
-                                <div>
-                                    <label class=" text-xs font-bold uppercase text-base-content/50">{{
-                                        _('Gauge St.') }}</label>
-                                    <input type="number" name="gauge_stitches"
-                                        value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
-                                        class="input  input-sm w-full mt-1" placeholder="20">
-                                </div>
-                                <div>
-                                    <label class=" text-xs font-bold uppercase text-base-content/50">{{
-                                        _('Gauge Rows') }}</label>
-                                    <input type="number" name="gauge_rows"
-                                        value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
-                                        class="input  input-sm w-full mt-1" placeholder="28">
-                                </div>
-                            </div>
-
-                            <div class="sm:col-span-2">
-                                <div class="flex items-center justify-between mb-1">
-                                    <label class=" text-xs font-bold uppercase text-base-content/50">{{
-                                        _('Pattern Source') }}</label>
-                                    <button type="button" id="reimport-btn-mobile"
-                                        class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
-                                        onclick="importFromUrl(document.getElementById('link').value)">
-                                        <span class="mdi mdi-download"></span>
-                                        {{ _('Re-import') }}
-                                    </button>
-                                </div>
-                                <input type="url" name="link" value="{{ project.link or '' }}"
-                                    class="input  input-sm w-full" placeholder="https://..."
-                                    oninput="syncLinkInputs(this)">
-                                <label id="wayback_mobile_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2 {% if not feature_wayback_enabled %}hidden{% endif %}">
-                                    <input type="checkbox" id="archive_on_save_mobile" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
-                                        checked>
-                                    <span class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Archive on Wayback Machine') }}</span>
-                                </label>
-                            </div>
-
-                            <div class="sm:col-span-2 pt-2 border-t border-base-200">
-                                <label id="ai_enhanced_mobile_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
-                                    <input type="checkbox" id="is_ai_enhanced_mobile_checkbox"
-                                        class="checkbox checkbox-primary checkbox-sm"
-                                        {% if project and project.is_ai_enhanced %}checked{% endif %}
-                                        onchange="syncAiEnhanced(this)">
-                                    <span class="label-text text-xs font-bold uppercase text-base-content/50 flex items-center gap-2">
-                                        <span class="badge badge-primary font-black text-[10px] h-4 min-h-0">AI</span>
-                                        {{ _('AI Enhanced') }}
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-
-
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label for="description"
-                                class=" text-sm font-medium inline-flex items-center gap-2">
-                                <span class="mdi mdi-text-box-outline text-base-content/70"></span>
-                                {{ _('Description') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
-                                    }}</span>
-                            </label>
-                        </div>
-                        <textarea id="description" name="description" rows="4" class="textarea  w-full"
-                            placeholder="{{ _('Brief description of this project...') }}">{{ project.description if project and project.description else '' }}</textarea>
-                        <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stitch Sample Card -->
-            <div
-                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
-                <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-                    <span class="mdi mdi-grid text-primary"></span>
-                    {{ _('Stitch Sample') }}
-                </h3>
-                <div class="space-y-4">
-                    <div>
-                        <textarea id="stitch_sample" name="stitch_sample" rows="4"
-                            class="textarea  w-full"
-                            placeholder="{{ _('Describe your stitch sample / gauge swatch...') }}">{{ project.stitch_sample if project and project.stitch_sample else '' }}</textarea>
-                        <p class="text-xs text-base-content/70 mt-1 mb-2">{{ _('Supports Markdown formatting and image drops') }}</p>
-
-                        <h4 id="stitchSamplePhotosLabel"
-                            class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not project or not project.stitch_sample_images %} hidden{% endif %}">
-                            <span class="mdi mdi-image-outline"></span> {{ _('Stitch Sample Photos') }}
-                        </h4>
-                        <div id="stitchSampleImagesContainer"
-                            class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery" data-pswp-gallery>
-                            {% if project and project.stitch_sample_images %}
-                            {% for image in project.stitch_sample_images %}
-                            {{ image_upload.image_preview(image) }}
-                            {% endfor %}
-                            {% endif %}
-                        </div>
-                        {{ image_upload.upload_dropzone('stitchSampleImageInput', container_id='stitchSampleDropzone')
-                        }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Steps Card -->
-            <div
-                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
-                <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
-                    <span class="mdi mdi-format-list-text text-primary"></span>
-                    {{ _('Steps') }}
-                </h3>
-                <div id="stepsContainer" class="space-y-4">
-                    {% for step in (project.steps if project else []) %}
-                    <div class="step-item border rounded-lg p-2 md:p-4 bg-base-200/50 border-base-300"
-                        data-step-id="{{ step.id }}" data-step-number="{{ step.step_number }}">
-                        <!-- Step Item Content (Keep as is but adjust colors if needed) -->
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span
-                                    class="step-number">{{
-                                    step.step_number }}</span></h4>
-                            <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="moveStepUp(this)" class="btn btn-xs btn-ghost gap-1"
-                                    title="{{ _('Move Up') }}">
-                                    <span class="mdi mdi-arrow-up"></span>
-                                    <span class="hidden sm:inline">{{ _('Move Up') }}</span>
-                                </button>
-                                <button type="button" onclick="moveStepDown(this)" class="btn btn-xs btn-ghost gap-1"
-                                    title="{{ _('Move Down') }}">
-                                    <span class="mdi mdi-arrow-down"></span>
-                                    <span class="hidden sm:inline">{{ _('Move Down') }}</span>
-                                </button>
-                                <button type="button" onclick="saveStep(this)" class="btn btn-xs btn-primary gap-1"
-                                    title="{{ _('Save') }}">
-                                    <span class="mdi mdi-content-save"></span>
-                                    <span class="hidden sm:inline">{{ _('Save') }}</span>
-                                </button>
-                                <button type="button" onclick="removeStep(this)"
-                                    class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
-                                    <span class="mdi mdi-delete"></span>
-                                    <span class="hidden sm:inline">{{ _('Remove') }}</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <input type="text" class="step-title input  w-full"
-                                placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
-                        </div>
-                        <textarea class="step-description textarea  w-full mb-2" rows="3"
-                            placeholder="{{ _('Step Description') }}">{{ step.description or '' }}</textarea>
-                        <p class="text-xs text-base-content/70 mb-2">{{ _('Supports Markdown formatting') }}</p>
-                        <h4
-                            class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not step.images %} hidden{% endif %}">
-                            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
-                        </h4>
-                        <div class="step-images grid grid-cols-3 gap-2 mb-2 pswp-gallery" data-pswp-gallery>
-                            {% for image in step.images %}
-                            {{ image_upload.image_preview(image, class='aspect-video overflow-hidden') }}
-                            {% endfor %}
-                        </div>
-                        {{ image_upload.step_upload_dropzone(
-                        input_id='stepImageInput' + step.id|string,
-                        step_id=step.id
-                        ) }}
-                    </div>
-                    {% endfor %}
-                </div>
-                <button type="button" onclick="addStep()" class="btn btn-success text-white mt-4 gap-2">
-                    <span class="mdi mdi-playlist-plus text-xl"></span>
-                    {{ _('Add Step') }}
-                </button>
-            </div>
-        </div>
-
-        <!-- Sidebar Column -->
-        <div class="space-y-6">
-            <!-- Project Details Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5 hidden lg:block">
-                <h3
-                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
-                    <span class="mdi mdi-information-outline"></span>
-                    {{ _('Project Details') }}
-                </h3>
-
-                <div class="space-y-4">
-                    <div>
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                            <label for="category" class=" text-xs font-bold uppercase text-base-content/50">
-                                {{ _('Category') }}
-                            </label>
-                            <a href="/projects/categories" class="btn btn-link btn-xs p-0 h-auto min-h-0"
-                                target="_blank" rel="noreferrer">
-                                {{ _('Manage') }}
-                            </a>
-                        </div>
-                        <select id="category" name="category" class="select  select-sm w-full">
-                            <option value="">{{ _('Select a category') }}</option>
-                            {% for category in categories %}
-                            <option value="{{ category }}" {% if project and project.category==category %}selected{%
-                                endif %}>
-                                {{ category }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="tags_input" class=" text-xs font-bold uppercase text-base-content/50">
-                            {{ _('Tags') }}
-                        </label>
-                        <div id="tags_chips" class="flex flex-wrap gap-2 mt-2"></div>
-                        <div class="relative mt-2">
-                            <input type="text" id="tags_input" class="input  input-sm w-full"
-                                autocomplete="off" placeholder="{{ _('Add a tag...') }}">
-                            <div id="tags_suggestions"
-                                class="hidden absolute z-30 w-full mt-1 max-h-48 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
-                                {% for tag in tag_suggestions %}
-                                <button type="button"
-                                    class="tag-suggestion w-full text-left px-3 py-2 hover:bg-base-200 text-sm"
-                                    data-tag="{{ tag }}">
-                                    #{{ tag }}
-                                </button>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a suggestion.') }}
-                        </p>
-                    </div>
-
-                    <div class="divider my-2"></div>
-
-                    <div>
-                        <label for="needles"
-                            class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
-                            {{ _('Used Needles') }}
-                        </label>
-                        <input type="text" id="needles" name="needles"
-                            value="{{ project.needles if project and project.needles else '' }}"
-                            class="input  input-sm w-full" placeholder="{{ _('e.g. 4.0mm circular') }}">
-                    </div>
-
-                    <div>
-                        <label for="recommended_needles"
-                            class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
-                            {{ _('Recommended Size') }}
-                        </label>
-                        <input type="text" id="recommended_needles" name="recommended_needles"
-                            value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
-                            class="input  input-sm w-full" placeholder="{{ _('e.g. 3.5mm') }}">
-                    </div>
-
-                    <div class="divider my-2"></div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="gauge_stitches"
-                                class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
-                                {{ _('Gauge St.') }}
-                            </label>
-                            <input type="number" id="gauge_stitches" name="gauge_stitches"
-                                value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
-                                class="input  input-sm w-full" placeholder="20" min="1">
-                        </div>
-                        <div>
-                            <label for="gauge_rows"
-                                class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
-                                {{ _('Gauge Rows') }}
-                            </label>
-                            <input type="number" id="gauge_rows" name="gauge_rows"
-                                value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
-                                class="input  input-sm w-full" placeholder="28" min="1">
-                        </div>
-                    </div>
-
-                    <div class="divider my-2"></div>
-
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label for="link" class=" text-xs font-bold uppercase text-base-content/50">
-                                {{ _('Pattern Source') }}
-                            </label>
-                            <button type="button" id="reimport-btn"
-                                class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
-                                onclick="importFromUrl(document.getElementById('link').value)">
-                                <span class="mdi mdi-download"></span>
-                                {{ _('Re-import') }}
-                            </button>
-                        </div>
-                        <input type="url" id="link" name="link" value="{{ project.link or '' }}"
-                            class="input  input-sm w-full" placeholder="https://..."
-                            oninput="syncLinkInputs(this)">
-                        <label id="wayback_sidebar_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2 {% if not feature_wayback_enabled %}hidden{% endif %}">
-                            <input type="checkbox" id="archive_on_save_sidebar" name="archive_on_save" value="1" class="checkbox checkbox-primary checkbox-sm"
-                                checked>
-                            <span class="label-text text-xs font-bold uppercase text-base-content/50">{{ _('Archive on Wayback Machine') }}</span>
-                        </label>
-                    </div>
-
-                    <div class="pt-2 border-t border-base-200">
-                        <label id="ai_enhanced_sidebar_container" class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300">
-                            <input type="checkbox" id="is_ai_enhanced_checkbox"
-                                class="checkbox checkbox-primary checkbox-sm"
-                                {% if project and project.is_ai_enhanced %}checked{% endif %}
-                                onchange="syncAiEnhanced(this)">
-                            <span class="label-text text-xs font-bold uppercase text-base-content/50 flex items-center gap-2">
-                                <span class="badge badge-primary font-black text-[10px] h-4 min-h-0">AI</span>
-                                {{ _('AI Enhanced') }}
-                            </span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Yarns Card -->
-            <div
-                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-5">
-                <div class="flex items-center justify-between mb-4">
-                    <h3
-                        class="font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
-                        <span class="mdi mdi-sheep"></span>
-                        {{ _('Yarns Used') }}
-                    </h3>
-                    <a href="/yarn/new" class="btn btn-link btn-xs p-0 h-auto min-h-0" target="_blank" rel="noreferrer">
-                        {{ _('Add new') }}
-                    </a>
-                </div>
-
-                <div class="space-y-4">
-                    <input type="hidden" id="yarn_ids" name="yarn_ids" value="">
-                    <input type="hidden" id="yarn_text_hidden" name="yarn_text" value="">
-
-                    <div class="relative">
-                        <input type="text" id="yarn_search" placeholder="{{ _('Search yarns...') }}"
-                            class="input  input-sm w-full pl-8" autocomplete="off">
-                        <span
-                            class="mdi mdi-magnify absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/60"></span>
-                    </div>
-
-                    <div id="yarn_dropdown"
-                        class="hidden absolute z-20 w-64 max-h-60 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
-                        {% for yarn in yarns %}
-                        <button type="button"
-                            class="yarn-option w-full text-left px-3 py-2 hover:bg-base-200 border-b border-base-200 last:border-b-0 text-sm"
-                            data-yarn-id="{{ yarn.id }}" data-yarn-name="{{ yarn.name }}"
-                            data-yarn-brand="{{ yarn.brand or '' }}" data-yarn-colorway="{{ yarn.colorway or '' }}"
-                            data-yarn-dye-lot="{{ yarn.dye_lot or '' }}"
-                            data-yarn-image="{{ yarn.photos[0].filename if yarn.photos and yarn.photos[0] else '' }}">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center shrink-0">
-                                    {% if yarn.photos and yarn.photos[0] %}
-                                    <img src="{{ yarn.photos[0].filename }}" alt=""
-                                        class="w-full h-full rounded object-cover">
-                                    {% else %}
-                                    <span class="mdi mdi-sheep text-sm opacity-50"></span>
-                                    {% endif %}
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="font-medium truncate">{{ yarn.name }}</div>
-                                    <div class="text-[10px] opacity-60 truncate">{{ yarn.brand or '' }}</div>
-                                </div>
-                            </div>
-                        </button>
-                        {% endfor %}
-                    </div>
-
-                    <div id="selected_yarns" class="space-y-2">
-                        <!-- Chips populated by JS -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Danger Zone -->
-            {% if project %}
-            <div
-                class="bg-red-50 dark:bg-red-900/10 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-red-100 dark:border-red-900/30 p-3 sm:p-5">
-                <h3
-                    class="font-bold text-base text-red-800 dark:text-red-400 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
-                    <span class="mdi mdi-alert-outline"></span>
-                    {{ _('Danger Zone') }}
-                </h3>
-                {{ buttons.danger(_('Delete Project'), icon='mdi-delete-outline',
-                attrs='onclick="document.getElementById(\'deleteProjectDialog\').showModal()"', class="w-full") }}
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</form>
-{% endblock %}
-
-{% block page_scripts %}
-<script>
-    let initialLink = document.getElementById('link')?.value.trim() || '';
-    let isImportPrompted = false;
-
-    function autoResize(el) {
-        if (!el) return;
-        // Use setTimeout to ensure the element is visible and has dimensions
-        setTimeout(() => {
-            el.style.height = 'auto';
-            el.style.height = (el.scrollHeight + 2) + 'px';
-        }, 0);
-    }
-
-    function syncAiEnhanced(el) {
-        const isChecked = el.checked;
-        const hiddenInput = document.getElementById('is_ai_enhanced');
-        const desktopCheckbox = document.getElementById('is_ai_enhanced_checkbox');
-        const mobileCheckbox = document.getElementById('is_ai_enhanced_mobile_checkbox');
-        
-        if (hiddenInput) hiddenInput.value = isChecked ? '1' : '';
-        if (desktopCheckbox && desktopCheckbox !== el) desktopCheckbox.checked = isChecked;
-        if (mobileCheckbox && mobileCheckbox !== el) mobileCheckbox.checked = isChecked;
-        
-        window.unsavedChanges?.setDirty(true);
-    }
-
-    async function previewMarkdown(source) {
-        const textarea = typeof source === 'string' ? document.getElementById(source) : source;
-        if (!textarea) return;
-
-        const content = textarea.value;
-        if (!content.trim()) {
-            window.showToast?.('{{ _("Nothing to preview") }}', 'info');
-            return;
-        }
+async function uploadTitleImage(file) {
+        if (!(await ensureProjectId())) return false;
 
         const formData = new FormData();
-        formData.append('content', content);
+        formData.append('file', file);
+        formData.append('alt_text', file.name);
 
+        let response;
         try {
-            const response = await fetch('/utils/preview/markdown', {
+            response = await fetch(`/projects/${projectId}/images/title`, {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                },
+                body: formData,
             });
-
-            if (response.ok) {
-                const html = await response.text();
-                const dialog = document.getElementById('previewDialog');
-                const contentDiv = document.getElementById('previewContent');
-                contentDiv.innerHTML = html;
-                dialog.showModal();
-            }
         } catch (error) {
-            console.error('Preview failed', error);
+            console.error('Title image upload failed', error);
+            window.showToast?.(uploadNetworkErrorMessage, 'error');
+            return false;
         }
+
+        if (!response.ok) {
+            const message = await parseErrorMessage(response, uploadErrorMessage);
+            window.showToast?.(message, 'error');
+            return false;
+        }
+
+        const data = await response.json();
+        addTitleImageToGallery(data);
+        window.unsavedChanges?.setDirty(true);
+        return true;
     }
 
-    /**
-     * Update image visibility in galleries based on their presence in the Markdown text.
-     */
-    function updateImageVisibility(textarea) {
-        if (!textarea) return;
-        let container;
-        let label;
-        const stepItem = textarea.closest('.step-item');
-        const isStepDescription = Boolean(stepItem);
-        if (textarea.id === 'stitch_sample') {
-            container = document.getElementById('stitchSampleImagesContainer');
-            label = document.getElementById('stitchSamplePhotosLabel');
-        } else if (isStepDescription) {
-            container = stepItem.querySelector('.step-images');
-            label = stepItem.querySelector('.step-photos-label');
-        }
-
+    function addTitleImageToGallery(imageData) {
+        const container = document.getElementById('titleImagesContainer');
         if (!container) return;
 
-        const images = container.querySelectorAll('[data-image-id], [data-pending-url]');
-        if (textarea.id === 'stitch_sample' || isStepDescription) {
-            images.forEach(imgWrapper => {
-                imgWrapper.classList.remove('hidden');
-                imgWrapper.querySelectorAll('.hidden').forEach(child => {
-                    child.classList.remove('hidden');
-                });
-            });
-            if (images.length === 0) {
-                container.classList.add('hidden');
-                if (label) label.classList.add('hidden');
-            } else {
-                container.classList.remove('hidden');
-                if (label) label.classList.remove('hidden');
+        container.insertAdjacentHTML('beforeend', createImagePreviewHTML(imageData, {
+            showPromote: true,
+            isPrimary: false
+        }));
+        window.refreshPhotoSwipeGallery?.(container);
+    }
+
+    function addPendingTitleImageToGallery(url) {
+        const container = document.getElementById('titleImagesContainer');
+        const div = document.createElement('div');
+        div.className = 'relative group';
+        div.setAttribute('data-pending-url', url);
+        div.innerHTML = `
+        <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" 
+            data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false" 
+            draggable="true" ondragstart="handleImageDragStart(event)"
+            class="block">
+            <img src="${url}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
+        </a>
+        <button type="button" onclick="promotePendingImage(this, '${url}')"
+            class="promote-pending-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+            title="{{ _('Make title image') }}">
+            <span class="mdi mdi-star-outline"></span>
+        </button>
+        <button type="button" onclick="deletePendingImage(this, '${url}')" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+            <span class="mdi mdi-delete"></span>
+        </button>
+    `;
+        container.appendChild(div);
+
+        // If this is the first image, automatically promote it
+        const currentTitleUrl = document.getElementById('import_title_image_url').value;
+        if (!currentTitleUrl) {
+            promotePendingImage(div.querySelector('.promote-pending-btn'), url);
+        }
+
+        window.refreshPhotoSwipeGallery?.(container);
+    }
+
+    function promotePendingImage(btn, url) {
+        // Update hidden field
+        const input = document.getElementById('import_title_image_url');
+        if (input) input.value = url;
+
+        // Visual update
+        document.querySelectorAll('.promote-pending-btn').forEach(b => {
+            b.classList.remove('bg-amber-400', 'text-white', 'opacity-100');
+            b.classList.add('bg-white/90', 'text-slate-400', 'opacity-0');
+            const star = b.querySelector('span');
+            if (star) {
+                star.classList.remove('mdi-star');
+                star.classList.add('mdi-star-outline');
             }
-            return;
-        }
-
-        const text = textarea.value;
-        const urlsInText = [];
-        const regex = /!\[.*?\]\((.*?)\)/g;
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            urlsInText.push(match[1]);
-        }
-
-        let visibleCount = 0;
-        images.forEach(imgWrapper => {
-            const anchor = imgWrapper.querySelector('a');
-            if (!anchor) return;
-            const url = anchor.getAttribute('href');
-
-            // Check if URL (decoded or literal) is in the text
-            const isUsed = urlsInText.some(u => {
-                try {
-                    return u === url || decodeURI(u) === url || u.endsWith(url);
-                } catch (e) {
-                    return u === url || u.endsWith(url);
-                }
-            });
-
-            if (isUsed) {
-                imgWrapper.classList.add('hidden');
-            } else {
-                imgWrapper.classList.remove('hidden');
-                visibleCount++;
+            const anchor = b.closest('[data-pending-url]')?.querySelector('a[data-pswp-promote]');
+            if (anchor) {
+                anchor.setAttribute('data-pswp-is-primary', 'false');
             }
         });
 
-        // Hide section if no images or all are used in text
-        if (images.length === 0 || visibleCount === 0) {
-            container.classList.add('hidden');
-            if (label) label.classList.add('hidden');
-        } else {
-            container.classList.remove('hidden');
-            if (label) label.classList.remove('hidden');
+        if (btn) {
+            btn.classList.add('bg-amber-400', 'text-white', 'opacity-100');
+            btn.classList.remove('bg-white/90', 'text-slate-400', 'opacity-0');
+            const star = btn.querySelector('span');
+            if (star) {
+                star.classList.remove('mdi-star-outline');
+                star.classList.add('mdi-star');
+            }
+            const anchor = btn.closest('[data-pending-url]')?.querySelector('a[data-pswp-promote]');
+            if (anchor) {
+                anchor.setAttribute('data-pswp-is-primary', 'true');
+            }
+        }
+        window.unsavedChanges?.setDirty(true);
+    }
+
+    function deletePendingImage(button, url) {
+        window.confirmAction(
+            '{{ _("Remove Image") }}',
+            '{{ _("Remove this image from the import list?") }}',
+            () => {
+                // Remove visual element
+                const container = button.closest('.relative');
+                const wasPrimary = document.getElementById('import_title_image_url')?.value === url;
+                container?.remove();
+
+                // Update hidden input
+                const importInput = document.getElementById('import_image_urls');
+                if (importInput && importInput.value) {
+                    try {
+                        let urls = JSON.parse(importInput.value);
+                        urls = urls.filter(u => u !== url);
+                        importInput.value = JSON.stringify(urls);
+                        if (wasPrimary) {
+                            if (urls.length > 0) {
+                                const nextUrl = urls[0];
+                                const nextBtn = document.querySelector(`[data-pending-url="${CSS.escape(nextUrl)}"] .promote-pending-btn`);
+                                promotePendingImage(nextBtn, nextUrl);
+                            } else {
+                                const titleInput = document.getElementById('import_title_image_url');
+                                if (titleInput) {
+                                    titleInput.value = '';
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error updating import_image_urls:', e);
+                    }
+                } else if (wasPrimary) {
+                    const titleInput = document.getElementById('import_title_image_url');
+                    if (titleInput) {
+                        titleInput.value = '';
+                    }
+                }
+                window.unsavedChanges?.setDirty(true);
+            }
+        );
+    }
+
+    async function deleteImage(imageId) {
+        window.confirmAction(
+            '{{ _("Delete Image") }}',
+            '{{ _("Are you sure you want to delete this image? This action cannot be undone.") }}',
+            async () => {
+                let response;
+                try {
+                    response = await fetch(`/projects/${projectId}/images/${imageId}`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-Token': '{{ csrf_token }}' }
+                    });
+                } catch (error) {
+                    console.error('Image deletion failed', error);
+                    window.showToast?.(deleteNetworkErrorMessage, 'error');
+                    return;
+                }
+
+                if (!response.ok) {
+                    const message = await parseErrorMessage(response, deleteErrorMessage);
+                    window.showToast?.(message, 'error');
+                    return;
+                }
+
+                const element = document.querySelector(`[data-image-id="${imageId}"]`);
+                if (element) {
+                    element.remove();
+                }
+                window.unsavedChanges?.setDirty(true);
+            }
+        );
+    }
+
+    async function promoteImage(pId, imageId) {
+        try {
+            const response = await fetch(`/projects/${pId}/images/${imageId}/promote`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                }
+            });
+
+            if (response.ok) {
+                // If PhotoSwipe is open, close it before reloading
+                if (window.pswpLightboxes) {
+                    for (const lb of window.pswpLightboxes.values()) {
+                        if (lb.pswp) lb.pswp.close();
+                    }
+                }
+                setPrimaryTitleImage(imageId);
+            } else {
+                console.error('Failed to promote image');
+            }
+        } catch (error) {
+            console.error('Error promoting image:', error);
         }
     }
 
+    function setPrimaryTitleImage(imageId) {
+        const container = document.getElementById('titleImagesContainer');
+        if (!container) {
+            return;
+        }
+        container.querySelectorAll('[data-image-id]').forEach((item) => {
+            const anchor = item.querySelector('a[data-pswp-promote]');
+            if (anchor) {
+                anchor.setAttribute('data-pswp-is-primary', 'false');
+            }
+            const button = item.querySelector('.title-promote-btn');
+            if (button) {
+                button.classList.remove('bg-amber-400', 'text-white', 'opacity-100');
+                button.classList.add('bg-white/90', 'text-slate-400', 'opacity-0');
+                const icon = button.querySelector('span');
+                if (icon) {
+                    icon.classList.remove('mdi-star');
+                    icon.classList.add('mdi-star-outline');
+                }
+            }
+        });
+
+        const target = container.querySelector(`[data-image-id="${imageId}"]`);
+        if (!target) {
+            return;
+        }
+        const targetAnchor = target.querySelector('a[data-pswp-promote]');
+        if (targetAnchor) {
+            targetAnchor.setAttribute('data-pswp-is-primary', 'true');
+        }
+        const targetButton = target.querySelector('.title-promote-btn');
+        if (targetButton) {
+            targetButton.classList.add('bg-amber-400', 'text-white', 'opacity-100');
+            targetButton.classList.remove('bg-white/90', 'text-slate-400', 'opacity-0');
+            const icon = targetButton.querySelector('span');
+            if (icon) {
+                icon.classList.add('mdi-star');
+                icon.classList.remove('mdi-star-outline');
+            }
+        }
+        window.unsavedChanges?.setDirty(true);
+    }
+
+    // Add event listeners for PhotoSwipe managed actions
+    document.addEventListener('pswp:promote', (e) => {
+        const anchor = e.detail.element;
+        const container = anchor.closest('[data-image-id]');
+        if (container) {
+            const imageId = container.dataset.imageId;
+            if (imageId && projectId) {
+                promoteImage(projectId, imageId);
+            }
+        } else {
+            // Handle pending images
+            const pendingContainer = anchor.closest('[data-pending-url]');
+            if (pendingContainer) {
+                const btn = pendingContainer.querySelector('.promote-pending-btn');
+                const url = pendingContainer.dataset.pendingUrl;
+                if (btn && url) promotePendingImage(btn, url);
+            }
+        }
+    });
+
+    document.addEventListener('pswp:delete', (e) => {
+        const anchor = e.detail.element;
+        const container = anchor.closest('[data-image-id]');
+        if (container) {
+            const imageId = container.dataset.imageId;
+            if (imageId) {
+                // Close PhotoSwipe before showing confirmation
+                if (window.pswpLightboxes) {
+                    for (const lb of window.pswpLightboxes.values()) {
+                        if (lb.pswp) lb.pswp.close();
+                    }
+                }
+                deleteImage(imageId);
+            }
+        } else {
+            // Handle pending images
+            const pendingContainer = anchor.closest('[data-pending-url]');
+            if (pendingContainer) {
+                const url = pendingContainer.dataset.pendingUrl;
+                const deleteBtn = pendingContainer.querySelector('button[onclick*="deletePendingImage"]');
+                const removeBtn = pendingContainer.querySelector('button[onclick*="removePendingStepImage"]');
+                if (window.pswpLightboxes) {
+                    for (const lb of window.pswpLightboxes.values()) {
+                        if (lb.pswp) lb.pswp.close();
+                    }
+                }
+                if (deleteBtn && url) {
+                    deletePendingImage(deleteBtn, url);
+                } else if (removeBtn) {
+                    removePendingStepImage(removeBtn);
+                }
+            }
+        }
+    });
+
+    function initStepImageUploaders() {
+        document.querySelectorAll('.step-item').forEach((stepItem) => {
+            const dropzone = stepItem.querySelector('.step-image-dropzone');
+            const input = stepItem.querySelector('.step-image-input');
+            const instructions = dropzone?.querySelector('.upload-instructions');
+            const stepId = stepItem.getAttribute('data-step-id');
+
+            if (!dropzone || !input || dropzone.dataset.initialized === 'true') {
+                return;
+            }
+
+            dropzone.classList.remove(
+                'opacity-60',
+                'opacity-50',
+                'cursor-not-allowed',
+                'pointer-events-none',
+            );
+            dropzone.removeAttribute('aria-disabled');
+            if (instructions) {
+                instructions.textContent = instructions.dataset.enabledText || uploadInstructionsText;
+            }
+
+            window.setupImageUploadWidget(input, dropzone, async (file) => {
+                const sid = await ensureStepId(stepItem);
+                if (sid) {
+                    const data = await uploadStepImage(sid, file);
+                    if (data) {
+                        addStepImagePreview(stepItem, data);
+                    }
+                }
+            });
+        });
+    }
+
+    async function ensureStepId(stepItem) {
+        if (!(await ensureProjectId())) return null;
+        let stepId = stepItem.getAttribute('data-step-id');
+        if (stepId) return stepId;
+
+        return await saveStepInternal(stepItem);
+    }
+
+    async function uploadStepImage(stepId, file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('alt_text', file.name);
+
+        let response;
+        try {
+            response = await fetch(`/projects/${projectId}/steps/${stepId}/images`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                },
+                body: formData,
+            });
+        } catch (error) {
+            console.error('Step image upload failed', error);
+            window.showToast?.(uploadNetworkErrorMessage, 'error');
+            return null;
+        }
+
+        if (!response.ok) {
+            const message = await parseErrorMessage(response, uploadErrorMessage);
+            window.showToast?.(message, 'error');
+            return null;
+        }
+
+        const data = await response.json();
+        window.unsavedChanges?.setDirty(true);
+        return data;
+    }
+
+    function addStepImagePreview(stepItem, imageData) {
+        const imagesContainer = stepItem.querySelector('.step-images');
+        if (!imagesContainer) return;
+
+        imagesContainer.insertAdjacentHTML('beforeend', createImagePreviewHTML(imageData, {
+            imageClass: 'h-20'
+        }));
+        window.refreshPhotoSwipeGallery?.(imagesContainer);
+        const textarea = stepItem.querySelector('.step-description');
+        if (textarea) updateImageVisibility(textarea);
+    }
+
+    function initStitchSampleImageUploader() {
+        const dropzone = document.getElementById('stitchSampleDropzone');
+        const input = document.getElementById('stitchSampleImageInput');
+
+        if (!dropzone || !input || dropzone.dataset.initialized === 'true') {
+            return;
+        }
+
+        window.setupImageUploadWidget(input, dropzone, async (file) => {
+            if (!(await ensureProjectId())) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('alt_text', file.name);
+
+            try {
+                const response = await fetch(`/projects/${projectId}/images/stitch-sample`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': '{{ csrf_token }}'
+                    },
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const message = await parseErrorMessage(response, uploadErrorMessage);
+                    window.showToast?.(message, 'error');
+                    return;
+                }
+
+                const data = await response.json();
+                addStitchSampleImagePreview(data);
+                window.unsavedChanges?.setDirty(true);
+            } catch (error) {
+                console.error('Stitch sample image upload failed', error);
+                window.showToast?.(uploadNetworkErrorMessage, 'error');
+            }
+        });
+    }
+
+    function addStitchSampleImagePreview(imageData) {
+        const container = document.getElementById('stitchSampleImagesContainer');
+        if (!container) return;
+
+        container.insertAdjacentHTML('beforeend', createImagePreviewHTML(imageData));
+        if (window.refreshPhotoSwipeGallery) {
+            window.refreshPhotoSwipeGallery(container);
+        }
+        const textarea = document.getElementById('stitch_sample');
+        if (textarea) updateImageVisibility(textarea);
+    }
+
+    initStepImageUploaders();
+    initStitchSampleImageUploader();
+
     document.addEventListener('DOMContentLoaded', () => {
+        const titleImageInput = document.getElementById('titleImageInput');
+        const titleImageDropZone = document.getElementById('titleImageDropZone');
+        if (titleImageInput && titleImageDropZone) {
+            window.setupImageUploadWidget(titleImageInput, titleImageDropZone, uploadTitleImage);
+        }
+
         initYarnSelector();
         initTagEditor();
 
@@ -1440,13 +1142,16 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         formData.append('alt_text', file.name);
 
         const url = stepId
-            ? `/projects/${projectId}/steps/${stepId}/images`
+            ? `/projects/${projectId}/steps/${stepId}/images` 
             : `/projects/${projectId}/images/title`;
 
         try {
             window.showToast?.('{{ _("Uploading image...") }}', 'info');
             const response = await fetch(url, {
                 method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                },
                 body: formData
             });
 
@@ -1489,7 +1194,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         const response = await fetch(`/projects/${projectId}`, {
                             method: 'DELETE',
                             headers: {
-                                'HX-Request': 'true' // Trigger HTMX-like response if needed, although we are navigating away
+                                'HX-Request': 'true', // Trigger HTMX-like response if needed, although we are navigating away
+                                'X-CSRF-Token': '{{ csrf_token }}'
                             }
                         });
                         if (!response.ok) {
@@ -1526,6 +1232,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token }}'
                 },
                 body: formData
             });
@@ -1651,445 +1358,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         });
     }
 
-    function setupImageUploadWidget(input, dropzone, onUpload) {
-        if (!input || !dropzone || dropzone.dataset.initialized === 'true') {
-            return;
-        }
-
-        dropzone.dataset.initialized = 'true';
-        const instructions = dropzone.querySelector('.upload-instructions');
-        const getEnabledText = () => instructions?.dataset.enabledText || instructions?.textContent || '';
-
-        const setUploadingState = (isUploading) => {
-            dropzone.classList.toggle('opacity-70', isUploading);
-            dropzone.classList.toggle('pointer-events-none', isUploading);
-            dropzone.classList.toggle('cursor-wait', isUploading);
-            dropzone.setAttribute('aria-busy', String(Boolean(isUploading)));
-            if (instructions) {
-                instructions.textContent = isUploading ? uploadingMessage : getEnabledText();
-            }
-        };
-
-        const handleFiles = async (files) => {
-            const fileList = Array.from(files || []);
-            if (!fileList.length) {
-                return;
-            }
-
-            const imageFiles = fileList.filter((file) => file.type.startsWith('image/'));
-            if (!imageFiles.length) {
-                window.showToast?.(unsupportedFileMessage, 'error');
-                return;
-            }
-
-            setUploadingState(true);
-            try {
-                for (const file of imageFiles) {
-                    try {
-                        await onUpload(file);
-                    } catch (error) {
-                        console.error('Image upload failed', error);
-                        window.showToast?.(uploadNetworkErrorMessage, 'error');
-                    }
-                }
-            } finally {
-                setUploadingState(false);
-            }
-        };
-
-        input.addEventListener('change', async (event) => {
-            await handleFiles(event.target.files);
-            input.value = '';
-        });
-
-        const dragTargets = [dropzone];
-        const label = dropzone.querySelector('label');
-        if (label) {
-            dragTargets.push(label);
-        }
-
-        dragTargets.forEach((target) => {
-            target.addEventListener('dragover', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                dropzone.classList.add('border-blue-500');
-            });
-
-            target.addEventListener('dragleave', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                dropzone.classList.remove('border-blue-500');
-            });
-
-            target.addEventListener('drop', async (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                dropzone.classList.remove('border-blue-500');
-                const files = event.dataTransfer ? event.dataTransfer.files : null;
-                if (files && files.length > 0) {
-                    await handleFiles(files);
-                }
-            });
-        });
-    }
-
-    const titleImageInput = document.getElementById('titleImageInput');
-    const titleImageDropZone = document.getElementById('titleImageDropZone');
-
-    setupImageUploadWidget(titleImageInput, titleImageDropZone, uploadTitleImage);
-
-    async function uploadTitleImage(file) {
-        if (!(await ensureProjectId())) return false;
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('alt_text', file.name);
-
-        let response;
-        try {
-            response = await fetch(`/projects/${projectId}/images/title`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-Token': '{{ csrf_token }}'
-                },
-                body: formData,
-            });
-        } catch (error) {
-            console.error('Title image upload failed', error);
-            window.showToast?.(uploadNetworkErrorMessage, 'error');
-            return false;
-        }
-
-        if (!response.ok) {
-            const message = await parseErrorMessage(response, uploadErrorMessage);
-            window.showToast?.(message, 'error');
-            return false;
-        }
-
-        const data = await response.json();
-        addTitleImageToGallery(data);
-        window.unsavedChanges?.setDirty(true);
-        return true;
-    }
-
-    function addTitleImageToGallery(imageData) {
-        const container = document.getElementById('titleImagesContainer');
-        if (!container) return;
-
-        container.insertAdjacentHTML('beforeend', createImagePreviewHTML(imageData, {
-            showPromote: true,
-            isPrimary: false
-        }));
-        window.refreshPhotoSwipeGallery?.(container);
-    }
-
-    function addPendingTitleImageToGallery(url) {
-        const container = document.getElementById('titleImagesContainer');
-        const div = document.createElement('div');
-        div.className = 'relative group';
-        div.setAttribute('data-pending-url', url);
-        div.innerHTML = `
-        <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" 
-            data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false" 
-            draggable="true" ondragstart="handleImageDragStart(event)"
-            class="block">
-            <img src="${url}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
-        </a>
-        <button type="button" onclick="promotePendingImage(this, '${url}')"
-            class="promote-pending-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
-            title="{{ _('Make title image') }}">
-            <span class="mdi mdi-star-outline"></span>
-        </button>
-        <button type="button" onclick="deletePendingImage(this, '${url}')" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-            <span class="mdi mdi-delete"></span>
-        </button>
-    `;
-        container.appendChild(div);
-
-        // If this is the first image, automatically promote it
-        const currentTitleUrl = document.getElementById('import_title_image_url').value;
-        if (!currentTitleUrl) {
-            promotePendingImage(div.querySelector('.promote-pending-btn'), url);
-        }
-
-        window.refreshPhotoSwipeGallery?.(container);
-    }
-
-    function promotePendingImage(btn, url) {
-        // Update hidden field
-        const input = document.getElementById('import_title_image_url');
-        if (input) input.value = url;
-
-        // Visual update
-        document.querySelectorAll('.promote-pending-btn').forEach(b => {
-            b.classList.remove('bg-amber-400', 'text-white', 'opacity-100');
-            b.classList.add('bg-white/90', 'text-slate-400', 'opacity-0');
-            const star = b.querySelector('span');
-            if (star) {
-                star.classList.remove('mdi-star');
-                star.classList.add('mdi-star-outline');
-            }
-            const anchor = b.closest('[data-pending-url]')?.querySelector('a[data-pswp-promote]');
-            if (anchor) {
-                anchor.setAttribute('data-pswp-is-primary', 'false');
-            }
-        });
-
-        if (btn) {
-            btn.classList.add('bg-amber-400', 'text-white', 'opacity-100');
-            btn.classList.remove('bg-white/90', 'text-slate-400', 'opacity-0');
-            const star = btn.querySelector('span');
-            if (star) {
-                star.classList.remove('mdi-star-outline');
-                star.classList.add('mdi-star');
-            }
-            const anchor = btn.closest('[data-pending-url]')?.querySelector('a[data-pswp-promote]');
-            if (anchor) {
-                anchor.setAttribute('data-pswp-is-primary', 'true');
-            }
-        }
-        window.unsavedChanges?.setDirty(true);
-    }
-
-    function deletePendingImage(button, url) {
-        window.confirmAction(
-            '{{ _("Remove Image") }}',
-            '{{ _("Remove this image from the import list?") }}',
-            () => {
-                // Remove visual element
-                const container = button.closest('.relative');
-                const wasPrimary = document.getElementById('import_title_image_url')?.value === url;
-                container?.remove();
-
-                // Update hidden input
-                const importInput = document.getElementById('import_image_urls');
-                if (importInput && importInput.value) {
-                    try {
-                        let urls = JSON.parse(importInput.value);
-                        urls = urls.filter(u => u !== url);
-                        importInput.value = JSON.stringify(urls);
-                        if (wasPrimary) {
-                            if (urls.length > 0) {
-                                const nextUrl = urls[0];
-                                const nextBtn = document.querySelector(`[data-pending-url="${CSS.escape(nextUrl)}"] .promote-pending-btn`);
-                                promotePendingImage(nextBtn, nextUrl);
-                            } else {
-                                const titleInput = document.getElementById('import_title_image_url');
-                                if (titleInput) {
-                                    titleInput.value = '';
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Error updating import_image_urls:', e);
-                    }
-                } else if (wasPrimary) {
-                    const titleInput = document.getElementById('import_title_image_url');
-                    if (titleInput) {
-                        titleInput.value = '';
-                    }
-                }
-                window.unsavedChanges?.setDirty(true);
-            }
-        );
-    }
-
-    async function deleteImage(imageId) {
-        window.confirmAction(
-            '{{ _("Delete Image") }}',
-            '{{ _("Are you sure you want to delete this image? This action cannot be undone.") }}',
-            async () => {
-                let response;
-                try {
-                    response = await fetch(`/projects/${projectId}/images/${imageId}`, {
-                        method: 'DELETE',
-                    });
-                } catch (error) {
-                    console.error('Image deletion failed', error);
-                    window.showToast?.(deleteNetworkErrorMessage, 'error');
-                    return;
-                }
-
-                if (!response.ok) {
-                    const message = await parseErrorMessage(response, deleteErrorMessage);
-                    window.showToast?.(message, 'error');
-                    return;
-                }
-
-                const element = document.querySelector(`[data-image-id="${imageId}"]`);
-                if (element) {
-                    element.remove();
-                }
-                window.unsavedChanges?.setDirty(true);
-            }
-        );
-    }
-
-    async function promoteImage(pId, imageId) {
-        try {
-            const response = await fetch(`/projects/${pId}/images/${imageId}/promote`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            if (response.ok) {
-                // If PhotoSwipe is open, close it before reloading
-                if (window.pswpLightboxes) {
-                    for (const lb of window.pswpLightboxes.values()) {
-                        if (lb.pswp) lb.pswp.close();
-                    }
-                }
-                setPrimaryTitleImage(imageId);
-            } else {
-                console.error('Failed to promote image');
-            }
-        } catch (error) {
-            console.error('Error promoting image:', error);
-        }
-    }
-
-    function setPrimaryTitleImage(imageId) {
-        const container = document.getElementById('titleImagesContainer');
-        if (!container) {
-            return;
-        }
-        container.querySelectorAll('[data-image-id]').forEach((item) => {
-            const anchor = item.querySelector('a[data-pswp-promote]');
-            if (anchor) {
-                anchor.setAttribute('data-pswp-is-primary', 'false');
-            }
-            const button = item.querySelector('.title-promote-btn');
-            if (button) {
-                button.classList.remove('bg-amber-400', 'text-white', 'opacity-100');
-                button.classList.add('bg-white/90', 'text-slate-400', 'opacity-0');
-                const icon = button.querySelector('span');
-                if (icon) {
-                    icon.classList.remove('mdi-star');
-                    icon.classList.add('mdi-star-outline');
-                }
-            }
-        });
-
-        const target = container.querySelector(`[data-image-id="${imageId}"]`);
-        if (!target) {
-            return;
-        }
-        const targetAnchor = target.querySelector('a[data-pswp-promote]');
-        if (targetAnchor) {
-            targetAnchor.setAttribute('data-pswp-is-primary', 'true');
-        }
-        const targetButton = target.querySelector('.title-promote-btn');
-        if (targetButton) {
-            targetButton.classList.add('bg-amber-400', 'text-white', 'opacity-100');
-            targetButton.classList.remove('bg-white/90', 'text-slate-400', 'opacity-0');
-            const icon = targetButton.querySelector('span');
-            if (icon) {
-                icon.classList.add('mdi-star');
-                icon.classList.remove('mdi-star-outline');
-            }
-        }
-        window.unsavedChanges?.setDirty(true);
-    }
-
-    // Add event listeners for PhotoSwipe managed actions
-    document.addEventListener('pswp:promote', (e) => {
-        const anchor = e.detail.element;
-        const container = anchor.closest('[data-image-id]');
-        if (container) {
-            const imageId = container.dataset.imageId;
-            if (imageId && projectId) {
-                promoteImage(projectId, imageId);
-            }
-        } else {
-            // Handle pending images
-            const pendingContainer = anchor.closest('[data-pending-url]');
-            if (pendingContainer) {
-                const btn = pendingContainer.querySelector('.promote-pending-btn');
-                const url = pendingContainer.dataset.pendingUrl;
-                if (btn && url) promotePendingImage(btn, url);
-            }
-        }
-    });
-
-    document.addEventListener('pswp:delete', (e) => {
-        const anchor = e.detail.element;
-        const container = anchor.closest('[data-image-id]');
-        if (container) {
-            const imageId = container.dataset.imageId;
-            if (imageId) {
-                // Close PhotoSwipe before showing confirmation
-                if (window.pswpLightboxes) {
-                    for (const lb of window.pswpLightboxes.values()) {
-                        if (lb.pswp) lb.pswp.close();
-                    }
-                }
-                deleteImage(imageId);
-            }
-        } else {
-            // Handle pending images
-            const pendingContainer = anchor.closest('[data-pending-url]');
-            if (pendingContainer) {
-                const url = pendingContainer.dataset.pendingUrl;
-                const deleteBtn = pendingContainer.querySelector('button[onclick*="deletePendingImage"]');
-                const removeBtn = pendingContainer.querySelector('button[onclick*="removePendingStepImage"]');
-                if (window.pswpLightboxes) {
-                    for (const lb of window.pswpLightboxes.values()) {
-                        if (lb.pswp) lb.pswp.close();
-                    }
-                }
-                if (deleteBtn && url) {
-                    deletePendingImage(deleteBtn, url);
-                } else if (removeBtn) {
-                    removePendingStepImage(removeBtn);
-                }
-            }
-        }
-    });
-
-    function initStepImageUploaders() {
-        document.querySelectorAll('.step-item').forEach((stepItem) => {
-            const dropzone = stepItem.querySelector('.step-image-dropzone');
-            const input = stepItem.querySelector('.step-image-input');
-            const instructions = dropzone?.querySelector('.upload-instructions');
-            const stepId = stepItem.getAttribute('data-step-id');
-
-            if (!dropzone || !input || dropzone.dataset.initialized === 'true') {
-                return;
-            }
-
-            dropzone.classList.remove(
-                'opacity-60',
-                'opacity-50',
-                'cursor-not-allowed',
-                'pointer-events-none',
-            );
-            dropzone.removeAttribute('aria-disabled');
-            if (instructions) {
-                instructions.textContent = instructions.dataset.enabledText || uploadInstructionsText;
-            }
-
-            setupImageUploadWidget(input, dropzone, async (file) => {
-                const sid = await ensureStepId(stepItem);
-                if (sid) {
-                    const data = await uploadStepImage(sid, file);
-                    if (data) {
-                        addStepImagePreview(stepItem, data);
-                    }
-                }
-            });
-        });
-    }
-
-    async function ensureStepId(stepItem) {
-        if (!(await ensureProjectId())) return null;
-        let stepId = stepItem.getAttribute('data-step-id');
-        if (stepId) return stepId;
-
-        return await saveStepInternal(stepItem);
-    }
-
     async function uploadStepImage(stepId, file) {
         const formData = new FormData();
         formData.append('file', file);
@@ -2133,6 +1401,102 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         if (textarea) updateImageVisibility(textarea);
     }
 
+    function initStepImageUploaders() {
+        document.querySelectorAll('.step-item').forEach((stepItem) => {
+            const dropzone = stepItem.querySelector('.step-image-dropzone');
+            const input = stepItem.querySelector('.step-image-input');
+            const instructions = dropzone?.querySelector('.upload-instructions');
+            const stepId = stepItem.getAttribute('data-step-id');
+
+            if (!dropzone || !input || dropzone.dataset.initialized === 'true') {
+                return;
+            }
+
+            dropzone.classList.remove(
+                'opacity-60',
+                'opacity-50',
+                'cursor-not-allowed',
+                'pointer-events-none',
+            );
+            dropzone.removeAttribute('aria-disabled');
+            if (instructions) {
+                instructions.textContent = instructions.dataset.enabledText || uploadInstructionsText;
+            }
+
+            window.setupImageUploadWidget(input, dropzone, async (file) => {
+                const sid = await ensureStepId(stepItem);
+                if (sid) {
+                    const data = await uploadStepImage(sid, file);
+                    if (data) {
+                        addStepImagePreview(stepItem, data);
+                    }
+                }
+            });
+        });
+    }
+
+    async function ensureStepId(stepItem) {
+        if (!(await ensureProjectId())) return null;
+        let stepId = stepItem.getAttribute('data-step-id');
+        if (stepId) return stepId;
+
+        return await saveStepInternal(stepItem);
+    }
+
+    async function saveStepInternal(stepItem) {
+        const stepId = stepItem.getAttribute('data-step-id');
+        const title = stepItem.querySelector('.step-title').value;
+        const description = stepItem.querySelector('.step-description').value;
+        const stepNumber = parseInt(stepItem.getAttribute('data-step-number')) || 1;
+
+        if (!(await ensureProjectId())) return null;
+
+        try {
+            const url = stepId
+                ? `/projects/${projectId}/steps/${stepId}`
+                : `/projects/${projectId}/steps`;
+            const method = stepId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    title: title,
+                    description: description,
+                    step_number: stepNumber
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save step');
+            }
+
+            const data = await response.json();
+
+            if (!stepId && data.id) {
+                stepItem.setAttribute('data-step-id', data.id);
+                const dropzone = stepItem.querySelector('.step-image-dropzone');
+                const fileInput = stepItem.querySelector('.step-image-input');
+                if (dropzone) dropzone.setAttribute('data-step-id', data.id);
+                if (fileInput) fileInput.setAttribute('data-step-id', data.id);
+
+                // Re-initialize the newly saved step's uploader
+                initStepImageUploaders();
+            }
+
+            window.showToast?.('{{ _("Step saved successfully") }}', 'success');
+            window.unsavedChanges?.setDirty(true);
+            return data.id;
+        } catch (error) {
+            console.error('Save step failed', error);
+            window.showToast?.('{{ _("Failed to save step") }}', 'error');
+            return null;
+        }
+    }
+
     function initStitchSampleImageUploader() {
         const dropzone = document.getElementById('stitchSampleDropzone');
         const input = document.getElementById('stitchSampleImageInput');
@@ -2141,7 +1505,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             return;
         }
 
-        setupImageUploadWidget(input, dropzone, async (file) => {
+        window.setupImageUploadWidget(input, dropzone, async (file) => {
             if (!(await ensureProjectId())) return;
 
             const formData = new FormData();
@@ -2188,276 +1552,704 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     initStepImageUploaders();
     initStitchSampleImageUploader();
 
-    function addStep(title = '', description = '', stepImages = []) {
-        const container = document.getElementById('stepsContainer');
-        const stepNumber = container.children.length + 1;
-        const div = document.createElement('div');
-        div.className = 'step-item border rounded-lg p-2 md:p-4 bg-base-200 border-base-300 dark:bg-base-300/50 dark:border-base-700';
-        div.setAttribute('data-step-number', stepNumber);
-        const inputId = `newStepImageInput${Date.now()}`;
-        div.innerHTML = `
-        <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span class="step-number">${stepNumber}</span></h4>
-            <div class="flex flex-wrap gap-2">
-                <button type="button" onclick="moveStepUp(this)" class="btn btn-xs btn-ghost gap-1" title="{{ _('Move Up') }}">
-                    <span class="mdi mdi-arrow-up"></span><span class="hidden sm:inline">{{ _('Move Up') }}</span>
-                </button>
-                <button type="button" onclick="moveStepDown(this)" class="btn btn-xs btn-ghost gap-1" title="{{ _('Move Down') }}">
-                    <span class="mdi mdi-arrow-down"></span><span class="hidden sm:inline">{{ _('Move Down') }}</span>
-                </button>
-                <button type="button" onclick="saveStep(this)" class="btn btn-xs btn-primary gap-1" title="{{ _('Save') }}">
-                    <span class="mdi mdi-content-save"></span><span class="hidden sm:inline">{{ _('Save') }}</span>
-                </button>
-                <button type="button" onclick="removeStep(this)" class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
-                    <span class="mdi mdi-delete"></span><span class="hidden sm:inline">{{ _('Remove') }}</span>
-                </button>
-            </div>
-        </div>
-        <div class="mb-2">
-            <input type="text" class="step-title input  w-full" placeholder="{{ _('Step Title') }}" value="${title.replace(/"/g, '&quot;')}">
-        </div>
-        <textarea class="textarea  w-full mb-2 step-description" rows="3" placeholder="{{ _('Step Description') }}">${description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
-        <p class="mb-2 text-xs text-slate-500 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>
-        <h4 class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100 hidden">
-            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
-        </h4>
-        <div class="step-images mb-2 grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
-            ${stepImages.map(url => `
-            <div class="relative" data-pending-url="${url}">
-                <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" data-pswp-delete="true" class="block">
-                    <img src="${url}" class="h-20 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" draggable="true" ondragstart="handleImageDragStart(event)">
-                </a>
-                <button type="button" onclick="removePendingStepImage(this)" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            `).join('')}
-        </div>
-        <div class="step-image-dropzone border-2 border-dashed border-slate-300 dark:border-slate-600 p-4 sm:p-8 text-center transition-colors dark:border-slate-600 dark:hover:border-blue-400" data-step-id="">
-            <input type="file" class="step-image-input hidden" accept="image/*" multiple data-step-id="" id="${inputId}">
-            <label for="${inputId}" class="block cursor-pointer">
-                <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                <p class="upload-instructions mt-2 text-sm text-gray-600 dark:text-slate-300" data-enabled-text="${uploadInstructionsText}" data-disabled-text="${stepUploadDisabledMessage}">${stepUploadDisabledMessage}</p>
-            </label>
-        </div>
-    `;
-        container.appendChild(div);
-        initStepImageUploaders();
-        const newStepGallery = div.querySelector('.step-images');
-        if (newStepGallery) {
-            window.refreshPhotoSwipeGallery?.(newStepGallery);
+    document.addEventListener('DOMContentLoaded', () => {
+        const titleImageInput = document.getElementById('titleImageInput');
+        const titleImageDropZone = document.getElementById('titleImageDropZone');
+        if (titleImageInput && titleImageDropZone) {
+            window.setupImageUploadWidget(titleImageInput, titleImageDropZone, uploadTitleImage);
         }
 
-        const newTextarea = div.querySelector('textarea');
-        if (newTextarea) {
-            newTextarea.style.overflowY = 'hidden';
-            autoResize(newTextarea);
-            updateImageVisibility(newTextarea);
-            newTextarea.addEventListener('input', () => {
-                autoResize(newTextarea);
-                updateImageVisibility(newTextarea);
-            });
-            setupTextareaDrop(newTextarea);
-        }
-        window.unsavedChanges?.setDirty(true);
-    }
+        initYarnSelector();
+        initTagEditor();
 
-    function removeStep(button) {
-        button.closest('.step-item').remove();
-        updateStepNumbers();
-        window.unsavedChanges?.setDirty(true);
-    }
+        const importedData = sessionStorage.getItem('importedData');
+        if (importedData) {
+            try {
+                const data = JSON.parse(importedData);
+                console.log('[DEBUG] Loading imported data from storage:', data);
 
-    function removePendingStepImage(button) {
-        const container = button?.closest('[data-pending-url]');
-        if (!container) {
-            return;
-        }
-        container.remove();
-        window.unsavedChanges?.setDirty(true);
-    }
+                // Prevent re-prompting on save
+                isImportPrompted = true;
 
-    function moveStepUp(button) {
-        const item = button.closest('.step-item');
-        const prev = item.previousElementSibling;
-        if (prev) {
-            item.parentNode.insertBefore(item, prev);
-            updateStepNumbers();
-            window.unsavedChanges?.setDirty(true);
-        }
-    }
-
-    function moveStepDown(button) {
-        const item = button.closest('.step-item');
-        const next = item.nextElementSibling;
-        if (next) {
-            item.parentNode.insertBefore(next, item);
-            updateStepNumbers();
-            window.unsavedChanges?.setDirty(true);
-        }
-    }
-
-    function updateStepNumbers() {
-        document.querySelectorAll('.step-item').forEach((item, index) => {
-            const number = index + 1;
-            item.setAttribute('data-step-number', number);
-            item.querySelector('.step-number').textContent = number;
-        });
-    }
-
-    async function saveStep(button) {
-        const stepItem = button.closest('.step-item');
-        button.disabled = true;
-        const originalText = button.innerHTML;
-        button.innerHTML = '<span class="mdi mdi-loading mdi-spin"></span> {{ _("Saving...") }}';
-
-        try {
-            await saveStepInternal(stepItem);
-        } finally {
-            button.disabled = false;
-            button.innerHTML = originalText;
-        }
-    }
-
-    async function saveStepInternal(stepItem) {
-        const stepId = stepItem.getAttribute('data-step-id');
-        const title = stepItem.querySelector('.step-title').value;
-        const description = stepItem.querySelector('.step-description').value;
-        const stepNumber = parseInt(stepItem.getAttribute('data-step-number')) || 1;
-
-        if (!(await ensureProjectId())) return null;
-
-        try {
-            const url = stepId
-                ? `/projects/${projectId}/steps/${stepId}`
-                : `/projects/${projectId}/steps`;
-            const method = stepId ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    title: title,
-                    description: description,
-                    step_number: stepNumber
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save step');
-            }
-
-            const data = await response.json();
-
-            if (!stepId && data.id) {
-                stepItem.setAttribute('data-step-id', data.id);
-                const dropzone = stepItem.querySelector('.step-image-dropzone');
-                const fileInput = stepItem.querySelector('.step-image-input');
-                if (dropzone) dropzone.setAttribute('data-step-id', data.id);
-                if (fileInput) fileInput.setAttribute('data-step-id', data.id);
-
-                // Also add visual confirmation of "Save" button if it exists
-                const saveBtn = stepItem.querySelector('button[onclick="saveStep(this)"]');
-                if (!saveBtn && !projectId) {
-                    // Logic to add save button if it was hidden?
-                }
-            }
-
-            window.showToast?.('{{ _("Step saved successfully") }}', 'success');
-            window.unsavedChanges?.setDirty(true);
-            return data.id;
-        } catch (error) {
-            console.error('Save step failed', error);
-            window.showToast?.('{{ _("Failed to save step") }}', 'error');
-            return null;
-        }
-    }
-
-    function syncLinkInputs(el) {
-        const value = el.value.trim();
-        document.querySelectorAll('input[name="link"]').forEach(input => {
-            if (input !== el) input.value = value;
-        });
-        document.getElementById('reimport-btn')?.classList.toggle('hidden', !value);
-        document.getElementById('reimport-btn-mobile')?.classList.toggle('hidden', !value);
-
-        // Enable/disable AI and Wayback checkboxes
-        const waybackCheckboxes = [
-            document.getElementById('archive_on_save_mobile'),
-            document.getElementById('archive_on_save_sidebar')
-        ];
-        const aiCheckboxes = [
-            document.getElementById('is_ai_enhanced_checkbox'),
-            document.getElementById('is_ai_enhanced_mobile_checkbox')
-        ];
-        const containers = [
-            document.getElementById('wayback_mobile_container'),
-            document.getElementById('wayback_sidebar_container'),
-            document.getElementById('ai_enhanced_mobile_container'),
-            document.getElementById('ai_enhanced_sidebar_container')
-        ];
-
-        const isEnabled = value.length > 0;
-        
-        [...waybackCheckboxes, ...aiCheckboxes].forEach(cb => {
-            if (cb) {
-                const wasDisabled = cb.disabled;
-                cb.disabled = !isEnabled;
-                if (!isEnabled) {
-                    cb.checked = false;
-                    // Trigger sync for AI hidden field if it's an AI checkbox
-                    if (aiCheckboxes.includes(cb)) {
-                        const hiddenInput = document.getElementById('is_ai_enhanced');
-                        if (hiddenInput) hiddenInput.value = '';
+                const setFieldValue = (id, value) => {
+                    const el = document.getElementById(id);
+                    if (el && value !== undefined && value !== null) {
+                        if (id === 'comment' && el.value.trim().length > 0) return false;
+                        el.value = value;
+                        if (typeof autoResize === 'function') autoResize(el);
+                        return true;
                     }
-                } else if (wasDisabled && waybackCheckboxes.includes(cb)) {
-                    // Auto-set wayback to true when it becomes enabled
-                    cb.checked = true;
+                    return false;
+                };
+
+                const warningBanner = document.getElementById('importWarning');
+                if (warningBanner) warningBanner.classList.remove('hidden');
+
+                // Metadata
+                setFieldValue('name', data.title || data.name);
+                setFieldValue('needles', data.needles);
+                setFieldValue('recommended_needles', data.recommended_needles);
+                setFieldValue('yarn_brand', data.brand);
+                
+                const yarnDetailsField = document.getElementById('yarn_details');
+                if (yarnDetailsField && data.yarn_details) {
+                    yarnDetailsField.value = JSON.stringify(data.yarn_details);
                 }
+
+                if (data.yarn) {
+                    window.yarnSelector?.selectByName(data.yarn);
+                }
+
+                setFieldValue('gauge_stitches', data.gauge_stitches);
+                setFieldValue('gauge_rows', data.gauge_rows);
+                setFieldValue('stitch_sample', data.stitch_sample);
+                setFieldValue('description', data.description);
+                setFieldValue('category', data.category);
+                setFieldValue('tags', data.tags);
+                setFieldValue('comment', data.comment);
+                setFieldValue('link', data.link);
+                if (data.link) initialLink = data.link;
+
+                // Set AI enhanced flag
+                const isAiEnhanced = data.is_ai_enhanced === true;
+                const hiddenAiInput = document.getElementById('is_ai_enhanced');
+                if (hiddenAiInput) hiddenAiInput.value = isAiEnhanced ? '1' : '';
+                const aiCheckbox = document.getElementById('is_ai_enhanced_checkbox');
+                const aiCheckboxMobile = document.getElementById('is_ai_enhanced_mobile_checkbox');
+                if (aiCheckbox) aiCheckbox.checked = isAiEnhanced;
+                if (aiCheckboxMobile) aiCheckboxMobile.checked = isAiEnhanced;
+
+                // Image URLs (Project level)
+                const importImagesField = document.getElementById('import_image_urls');
+                const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
+                if (importImagesField) {
+                    importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
+                }
+                const archiveField = document.getElementById('archive_on_save');
+                if (archiveField) {
+                    archiveField.value = '1';
+                }
+
+                // Render pending images for preview
+                if (imageUrls.length > 0) {
+                    imageUrls.forEach(url => {
+                        if (typeof addPendingTitleImageToGallery === 'function') {
+                            try { addPendingTitleImageToGallery(url); } catch (e) { console.error(e); }
+                        }
+                    });
+                }
+
+                // Steps
+                if (data.steps && data.steps.length > 0) {
+                    const stepsContainer = document.getElementById('stepsContainer');
+                    if (stepsContainer) {
+                        stepsContainer.innerHTML = '';
+                        data.steps.forEach((step, index) => {
+                            if (typeof addStep === 'function') {
+                                try {
+                                    addStep(step.title || `Step ${index + 1}`, step.description || '', step.images || []);
+                                } catch (e) {
+                                    console.error('Failed to add step from storage', e, step);
+                                }
+                            }
+                        });
+                    }
+                }
+
+                sessionStorage.removeItem('importedData');
+                window.unsavedChanges?.setDirty(true);
+                window.showToast?.('{{ _("Pattern data loaded - please review and save") }}', 'success');
+
+                setTimeout(() => {
+                    const saveButton = document.querySelector('button[type="submit"]');
+                    if (saveButton) {
+                        saveButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        saveButton.classList.add('ring-4', 'ring-primary', 'ring-opacity-50');
+                        setTimeout(() => {
+                            saveButton.classList.remove('ring-4', 'ring-primary', 'ring-opacity-50');
+                        }, 3000);
+                    }
+                }, 500);
+
+            } catch (error) {
+                console.error('Error loading imported data:', error);
+                sessionStorage.removeItem('importedData');
             }
+        }
+
+        document.querySelectorAll('textarea').forEach(el => {
+            el.style.overflowY = 'hidden';
+            autoResize(el);
+            updateImageVisibility(el);
+            el.addEventListener('input', () => {
+                autoResize(el);
+                updateImageVisibility(el);
+            });
+
+            setupTextareaDrop(el);
         });
 
-        containers.forEach(container => {
-            if (container) {
-                if (isEnabled) {
-                    container.classList.remove('opacity-50', 'grayscale', 'pointer-events-none');
+        // Initialize checkbox states based on link presence
+        const linkEl = document.getElementById('link');
+        if (linkEl) syncLinkInputs(linkEl);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('import') === '1') {
+            const currentUrl = document.getElementById('link')?.value;
+            if (currentUrl) {
+                importFromUrl(currentUrl);
+            } else {
+                document.getElementById('importDialog')?.showModal();
+            }
+        }
+    });
+
+    function initTagEditor() {
+        const hiddenInput = document.getElementById('tags');
+        if (!hiddenInput) return;
+
+        const desktop = {
+            input: document.getElementById('tags_input'),
+            chips: document.getElementById('tags_chips'),
+            suggestions: document.getElementById('tags_suggestions'),
+        };
+        const mobile = {
+            input: document.getElementById('tags_input_mobile'),
+            chips: document.getElementById('tags_chips_mobile'),
+            suggestions: document.getElementById('tags_suggestions_mobile'),
+        };
+        const views = [desktop, mobile].filter(view => view.input && view.chips);
+
+        const normalizeTag = (raw) => raw.replace(/^#/, '').trim();
+        const splitTags = (raw) => raw.split(/[,#\\s]+/).map(normalizeTag).filter(Boolean);
+
+        const tags = [];
+        const tagIndex = new Set();
+
+        const addTag = (tag) => {
+            const normalized = normalizeTag(tag);
+            if (!normalized) return;
+            const key = normalized.toLowerCase();
+            if (tagIndex.has(key)) return;
+            tagIndex.add(key);
+            tags.push(normalized);
+            renderChips();
+            syncHidden();
+        };
+
+        const removeTag = (tag) => {
+            const key = tag.toLowerCase();
+            if (!tagIndex.has(key)) return;
+            tagIndex.delete(key);
+            const index = tags.findIndex(item => item.toLowerCase() === key);
+            if (index >= 0) tags.splice(index, 1);
+            renderChips();
+            syncHidden();
+        };
+
+        const syncHidden = () => {
+            hiddenInput.value = tags.join(', ');
+        };
+
+        const renderChips = () => {
+            views.forEach(view => {
+                view.chips.innerHTML = '';
+                tags.forEach(tag => {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'badge badge-outline gap-1';
+                    chip.setAttribute('data-tag', tag);
+                    chip.innerHTML = `#${tag}<span class="mdi mdi-close text-[10px]"></span>`;
+                    chip.addEventListener('click', () => removeTag(tag));
+                    view.chips.appendChild(chip);
+                });
+            });
+            refreshSuggestions();
+        };
+
+        const refreshSuggestions = () => {
+            const selected = new Set(tags.map(tag => tag.toLowerCase()));
+            views.forEach(view => {
+                if (!view.suggestions) return;
+                view.suggestions.querySelectorAll('.tag-suggestion').forEach(button => {
+                    const tag = button.dataset.tag || '';
+                    const isHidden = selected.has(tag.toLowerCase());
+                    button.classList.toggle('hidden', isHidden);
+                });
+            });
+        };
+
+        const addFromInput = (input) => {
+            const raw = input.value;
+            splitTags(raw).forEach(addTag);
+            input.value = '';
+            refreshSuggestions();
+        };
+
+        const handleInput = (event, view) => {
+            if (!view.suggestions) return;
+            const query = event.target.value.trim().toLowerCase();
+            const hasQuery = query.length > 0;
+            let anyVisible = false;
+            view.suggestions.querySelectorAll('.tag-suggestion').forEach(button => {
+                const tag = (button.dataset.tag || '').toLowerCase();
+                const matches = !query || tag.includes(query);
+                const isSelected = tagIndex.has(tag);
+                const shouldShow = matches && !isSelected;
+                button.classList.toggle('hidden', !shouldShow);
+                if (shouldShow) anyVisible = true;
+            });
+            view.suggestions.classList.toggle('hidden', !hasQuery || !anyVisible);
+        };
+
+        const handleKeydown = (event, view) => {
+            if (event.key === 'Enter' || event.key === 'Tab') {
+                if (event.target.value.trim()) {
+                    event.preventDefault();
+                    addFromInput(event.target);
+                    view.suggestions?.classList.add('hidden');
+                }
+            }
+            if (event.key === 'Escape') {
+                view.suggestions?.classList.add('hidden');
+            }
+        };
+
+        const handleBlur = (view) => {
+            setTimeout(() => {
+                view.suggestions?.classList.add('hidden');
+                if (view.input && view.input.value.trim()) {
+                    addFromInput(view.input);
+                }
+            }, 100);
+        };
+
+        const bindView = (view) => {
+            if (!view.input) return;
+            view.input.addEventListener('input', (event) => handleInput(event, view));
+            view.input.addEventListener('keydown', (event) => handleKeydown(event, view));
+            view.input.addEventListener('blur', () => handleBlur(view));
+            view.suggestions?.querySelectorAll('.tag-suggestion').forEach(button => {
+                button.addEventListener('click', () => {
+                    addTag(button.dataset.tag || '');
+                    view.suggestions?.classList.add('hidden');
+                });
+            });
+        };
+
+        splitTags(hiddenInput.value).forEach(addTag);
+        views.forEach(bindView);
+        refreshSuggestions();
+    }
+
+    function initYarnSelector() {
+        const searchInput = document.getElementById('yarn_search');
+        const dropdown = document.getElementById('yarn_dropdown');
+        const selectedContainer = document.getElementById('selected_yarns');
+        const hiddenInput = document.getElementById('yarn_ids');
+        const yarnOptions = document.querySelectorAll('.yarn-option');
+
+        const selectedYarns = new Map();
+        const pendingYarns = new Set(); // Yarns that don't exist in DB yet
+
+        function selectYarn(id, name, brand, colorway, dyeLot, imageUrl) {
+            if (selectedYarns.has(id)) return;
+
+            selectedYarns.set(id, { name, brand, colorway, dyeLot, imageUrl });
+            updateSelectedDisplay();
+            updateHiddenInput();
+            filterOptions();
+        }
+
+        function selectPendingYarn(name) {
+            const normalized = name.trim();
+            if (!normalized || pendingYarns.has(normalized)) return;
+            
+            // Check if it already exists in selectedYarns by name
+            for (let y of selectedYarns.values()) {
+                if (y.name.toLowerCase() === normalized.toLowerCase()) return;
+            }
+
+            pendingYarns.add(normalized);
+            updateSelectedDisplay();
+            updateHiddenInput();
+        }
+
+        function removeYarn(id) {
+            selectedYarns.delete(id);
+            updateSelectedDisplay();
+            updateHiddenInput();
+            filterOptions();
+        }
+
+        function removePendingYarn(name) {
+            pendingYarns.delete(name);
+            updateSelectedDisplay();
+            updateHiddenInput();
+        }
+
+        // Expose API
+        window.yarnSelector = {
+            select: selectYarn,
+            remove: removeYarn,
+            selectByName: function (name) {
+                if (!name) return { anySelected: false, remaining: '' };
+                
+                let rawNames = [];
+                if (name.includes('\n')) {
+                    rawNames = name.split('\n').map(n => n.trim()).filter(Boolean);
                 } else {
-                    container.classList.add('opacity-50', 'grayscale', 'pointer-events-none');
+                    // Smart comma splitting: avoid splitting on commas followed by color names
+                    // or preceded by "Farbe/color" specs (Garnstudio style).
+                    if (/(?:farbe|color|colour)\s*\d+\s*,\s*/i.test(name)) {
+                        rawNames = [name.trim()];
+                    } else {
+                        rawNames = name.split(',').map(n => n.trim()).filter(Boolean);
+                    }
                 }
+                const names = rawNames;
+                let anySelected = false;
+
+                names.forEach(n => {
+                    const nLower = n.toLowerCase();
+                    const option = Array.from(yarnOptions).find(opt => {
+                        const optName = opt.dataset.yarnName.toLowerCase();
+                        const optBrand = (opt.dataset.yarnBrand || '').toLowerCase();
+                        return optName === nLower ||
+                            `${optBrand} ${optName}`.toLowerCase() === nLower ||
+                            (optBrand && nLower.includes(optBrand) && nLower.includes(optName));
+                    });
+
+                    if (option) {
+                        selectYarn(
+                            parseInt(option.dataset.yarnId),
+                            option.dataset.yarnName,
+                            option.dataset.yarnBrand,
+                            option.dataset.yarnColorway,
+                            option.dataset.yarnDyeLot,
+                            option.dataset.yarnImage
+                        );
+                        anySelected = true;
+                    } else {
+                        selectPendingYarn(n);
+                        anySelected = true;
+                    }
+                });
+
+                // Clear the visible search input
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+
+                return { anySelected, remaining: '' };
+            }
+        };
+
+        {% if project and project.yarn_ids %}
+        const preSelectedIds = {{ project.yarn_ids | tojson }};
+        yarnOptions.forEach(option => {
+            const yarnId = parseInt(option.dataset.yarnId);
+            if (preSelectedIds.includes(yarnId)) {
+                selectYarn(
+                    yarnId,
+                    option.dataset.yarnName,
+                    option.dataset.yarnBrand,
+                    option.dataset.yarnColorway,
+                    option.dataset.yarnDyeLot,
+                    option.dataset.yarnImage,
+                );
+            }
+        });
+        {% endif %}
+
+        function updateSelectedDisplay() {
+            if (selectedYarns.size === 0 && pendingYarns.size === 0) {
+                selectedContainer.innerHTML = '<span class="text-base-content/40 text-sm">{{ _("No yarns selected") }}</span>';
+                return;
+            }
+
+            selectedContainer.innerHTML = '';
+            
+            // Render existing yarns
+            selectedYarns.forEach((yarn, id) => {
+                const chip = document.createElement('div');
+                chip.className = 'flex items-center gap-2 py-2 px-3 bg-primary/10 text-primary border border-primary/20 rounded-lg';
+
+                const imageHtml = yarn.imageUrl
+                    ? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-8 h-8 rounded object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
+                    : '';
+
+                chip.innerHTML = `
+                    ${imageHtml}
+                    <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? ' hidden' : ''}" data-fallback-icon>
+                        <span class="mdi mdi-image-off text-sm" aria-hidden="true"></span>
+                    </div>
+                    <span class="text-sm flex-1">
+                        ${yarn.name}${yarn.brand ? ` • ${yarn.brand}` : ''}
+                    </span>
+                    <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-yarn="${id}">
+                        <span class="mdi mdi-close"></span>
+                    </button>
+                `;
+                selectedContainer.appendChild(chip);
+
+                chip.querySelector('[data-remove-yarn]').addEventListener('click', () => {
+                    removeYarn(id);
+                });
+            });
+
+            // Render pending yarns
+            pendingYarns.forEach(name => {
+                const chip = document.createElement('div');
+                chip.className = 'flex items-center gap-2 py-2 px-3 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg';
+
+                chip.innerHTML = `
+                    <div class="relative w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60">
+                        <span class="mdi mdi-sheep text-sm" aria-hidden="true"></span>
+                        <span class="absolute -top-1.5 -right-1.5 badge badge-secondary font-black text-[8px] h-3 min-h-0 px-1 border-none shadow-sm scale-90">NEW</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <span class="text-sm block truncate">${name}</span>
+                    </div>
+                    <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-pending="${name}">
+                        <span class="mdi mdi-close"></span>
+                    </button>
+                `;
+                selectedContainer.appendChild(chip);
+
+                chip.querySelector('[data-remove-pending]').addEventListener('click', () => {
+                    removePendingYarn(name);
+                });
+            });
+        }
+
+        function updateHiddenInput() {
+            hiddenInput.value = Array.from(selectedYarns.keys()).join(',');
+            
+            const yarnTextHidden = document.getElementById('yarn_text_hidden');
+            if (yarnTextHidden) {
+                yarnTextHidden.value = Array.from(pendingYarns).join('\n');
+            }
+            
+            // Explicitly clear yarn_search if we have pending yarns as chips
+            const searchInput = document.getElementById('yarn_search');
+            if (searchInput && pendingYarns.size > 0 && document.activeElement !== searchInput) {
+                // If the user isn't typing, make sure it's clean
+                if (searchInput.value.includes('\n') || Array.from(pendingYarns).some(y => searchInput.value.includes(y))) {
+                    searchInput.value = '';
+                }
+            }
+        }
+
+    function filterOptions() {
+        const searchTerm = searchInput.value.toLowerCase();
+        let visibleCount = 0;
+
+        yarnOptions.forEach(option => {
+            const yarnId = parseInt(option.dataset.yarnId);
+            const isSelected = selectedYarns.has(yarnId);
+            const name = option.dataset.yarnName.toLowerCase();
+            const brand = (option.dataset.yarnBrand || '').toLowerCase();
+            const colorway = (option.dataset.yarnColorway || '').toLowerCase();
+            const dyeLot = (option.dataset.yarnDyeLot || '').toLowerCase();
+            const matchesSearch =
+                !searchTerm
+                || name.includes(searchTerm)
+                || brand.includes(searchTerm)
+                || colorway.includes(searchTerm)
+                || dyeLot.includes(searchTerm);
+
+            if (!isSelected && matchesSearch) {
+                option.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                option.classList.add('hidden');
             }
         });
 
-        // If the user manually changes the link, we might want to prompt for import again
-        if (value !== initialLink) {
-            isImportPrompted = false;
+        if (visibleCount > 0 && (searchInput === document.activeElement || searchTerm)) {
+            dropdown.classList.remove('hidden');
+        } else {
+            dropdown.classList.add('hidden');
         }
     }
 
-    async function importFromUrl(url) {
-        if (!url) return;
+    searchInput.addEventListener('focus', () => {
+        filterOptions();
+    });
 
-        const importDialog = document.getElementById('importDialog');
-        const importForm = document.getElementById('importForm');
-        const importLoading = document.getElementById('importLoading');
+    searchInput.addEventListener('input', () => {
+        filterOptions();
+    });
 
-        if (!importDialog || !importForm || !importLoading) return;
+    searchInput.addEventListener('blur', (e) => {
+        setTimeout(() => {
+            if (!dropdown.contains(document.activeElement)) {
+                dropdown.classList.add('hidden');
+            }
+        }, 200);
+    });
 
-        // Reset and show loading state
-        importDialog.showModal();
-        importForm.classList.add('hidden');
-        importLoading.classList.remove('hidden');
+    yarnOptions.forEach(option => {
+        option.addEventListener('click', (e) => {
+            e.preventDefault();
+            const yarnId = parseInt(option.dataset.yarnId);
+            const yarnName = option.dataset.yarnName;
+            const yarnBrand = option.dataset.yarnBrand;
+            const yarnColorway = option.dataset.yarnColorway;
+            const yarnDyeLot = option.dataset.yarnDyeLot;
+            const yarnImage = option.dataset.yarnImage;
+
+            selectYarn(yarnId, yarnName, yarnBrand, yarnColorway, yarnDyeLot, yarnImage);
+            searchInput.value = '';
+            searchInput.focus();
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+}
+
+    function setupTextareaDrop(textarea) {
+        textarea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            textarea.classList.add('border-blue-500', 'ring-2', 'ring-blue-500');
+        });
+
+        textarea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            textarea.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500');
+        });
+
+        textarea.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            textarea.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500');
+
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+                if (imageFiles.length === 0) return;
+
+                const stepItem = textarea.closest('.step-item');
+                let sid = stepItem ? stepItem.getAttribute('data-step-id') : null;
+
+                if (stepItem && !sid) {
+                    sid = await ensureStepId(stepItem);
+                    if (!sid) return;
+                }
+
+                if (!sid && !projectId) {
+                    if (!(await ensureProjectId())) return;
+                }
+
+                for (const file of imageFiles) {
+                    await uploadAndInsertImage(file, textarea, sid);
+                }
+                return;
+            }
+
+            const text = e.dataTransfer.getData('text/plain');
+            if (text) {
+                insertAtCursor(textarea, text);
+            }
+        });
+    }
+
+    function handleImageDragStart(event) {
+        // Find the anchor element (either target itself or parent)
+        const anchor = event.target.tagName === 'A' ? event.target : event.target.closest('a');
+        if (!anchor) return;
+
+        const src = anchor.getAttribute('href');
+        const alt = anchor.getAttribute('data-pswp-caption') || (anchor.querySelector('img')?.alt) || "";
+        const markdown = `![${alt}](${src})`;
+
+        // Debug
+        console.log('Dragging image as markdown:', markdown);
+
+        // Set data
+        event.dataTransfer.setData('text/plain', markdown);
+        event.dataTransfer.effectAllowed = 'copy';
+
+        // Important: set dropEffect in dragover/drop handlers, here we just set effectAllowed
+    }
+    function insertAtCursor(textarea, text) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const val = textarea.value;
+        textarea.value = val.substring(0, start) + text + val.substring(end);
+        textarea.selectionStart = textarea.selectionEnd = start + text.length;
+        textarea.focus();
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        autoResize(textarea);
+    }
+    /**
+     * Helper to create a unified image preview card in JavaScript.
+     * Matches the image_preview Jinja macro.
+     */
+    function createImagePreviewHTML(imageData, options = {}) {
+        const {
+            showPromote = false,
+            showDelete = true,
+            isPrimary = false,
+            projectId = window.projectId,
+            imageClass = 'h-32'
+        } = options;
+
+        const pswpWidth = imageData.width || 1200;
+        const pswpHeight = imageData.height || 1200;
+        const altText = imageData.alt_text || "";
+        const thumbUrl = imageData.thumbnail_url || imageData.url;
+
+        return `
+        <div class="relative group" data-image-id="${imageData.id}">
+            <a href="${imageData.url}" 
+               data-pswp-width="${pswpWidth}"
+               data-pswp-height="${pswpHeight}" 
+               data-pswp-caption="${altText}" 
+               ${showPromote ? 'data-pswp-promote="true"' : ''}
+               ${showDelete ? 'data-pswp-delete="true"' : ''}
+               data-pswp-is-primary="${isPrimary ? 'true' : 'false'}"
+               draggable="true" ondragstart="handleImageDragStart(event)"
+               class="block">
+                <img src="${thumbUrl}" 
+                     alt="${altText}" 
+                     class="${imageClass} w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
+            </a>
+            ${showPromote ? `
+            <button type="button" onclick="promoteImage(${projectId}, ${imageData.id})"
+                class="title-promote-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all ${isPrimary ? 'bg-amber-400 text-white opacity-100' : 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500'} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+                title="{{ _('Make title image') }}">
+                <span class="mdi ${isPrimary ? 'mdi-star' : 'mdi-star-outline'}"></span>
+            </button>
+            ` : ''}
+            ${showDelete ? `
+            <button type="button" onclick="deleteImage(${imageData.id})"
+                class="absolute top-1 right-1 z-10 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                <span class="mdi mdi-delete"></span>
+            </button>
+            ` : ''}
+        </div>
+        `;
+    }
+
+    async function uploadAndInsertImage(file, textarea, stepId) {
+        if (!stepId && !(await ensureProjectId())) return;
 
         const formData = new FormData();
-        formData.append('url', url);
-        formData.append('type', 'url');
+        formData.append('file', file);
+        formData.append('alt_text', file.name);
+
+        const url = stepId
+            ? `/projects/${projectId}/steps/${stepId}/images` 
+            : `/projects/${projectId}/images/title`;
 
         try {
-            const response = await fetch('/projects/import', {
+            window.showToast?.('{{ _("Uploading image...") }}', 'info');
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-Token': '{{ csrf_token }}'
@@ -2465,457 +2257,209 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 body: formData
             });
 
-            if (!response.ok) {
-                throw new Error('Import failed');
-            }
+            if (response.ok) {
+                const data = await response.json();
+                const markdown = `![${data.alt_text}](${data.url})`;
+                insertAtCursor(textarea, markdown);
+                window.showToast?.('{{ _("Image uploaded!") }}', 'success');
+                window.unsavedChanges?.setDirty(true);
 
-            const data = await response.json();
-            populateProjectForm(data);
-
-            importDialog.close();
-        } catch (error) {
-            console.error('Import failed:', error);
-            window.showToast?.('{{ _("Failed to import pattern") }}', 'error');
-            importDialog.close();
-        } finally {
-            importForm.classList.remove('hidden');
-            importLoading.classList.add('hidden');
-        }
-    }
-
-    function populateProjectForm(data) {
-        // Prevent re-prompting on save since we just imported
-        isImportPrompted = true;
-
-        // Map fields helper
-        const setFieldValue = (id, value) => {
-            const el = document.getElementById(id);
-            if (el && value) {
-                if (id === 'comment' && el.value.trim().length > 0) return false;
-                el.value = value;
-                if (typeof autoResize === 'function') autoResize(el);
-                if (typeof updateImageVisibility === 'function') updateImageVisibility(el);
-                return true;
-            }
-            return false;
-        };
-
-        // Metadata
-        setFieldValue('name', data.title || data.name);
-        setFieldValue('needles', data.needles);
-        setFieldValue('recommended_needles', data.recommended_needles);
-        setFieldValue('yarn_brand', data.brand);
-        
-        const yarnDetailsField = document.getElementById('yarn_details');
-        if (yarnDetailsField && data.yarn_details) {
-            yarnDetailsField.value = JSON.stringify(data.yarn_details);
-        }
-
-        if (data.yarn) {
-                            window.yarnSelector?.selectByName(data.yarn);
-                        }
-                setFieldValue('gauge_stitches', data.gauge_stitches);
-        setFieldValue('gauge_rows', data.gauge_rows);
-        setFieldValue('stitch_sample', data.stitch_sample);
-        setFieldValue('description', data.description);
-        setFieldValue('comment', data.comment);
-        setFieldValue('link', data.link);
-        if (data.link) initialLink = data.link;
-
-        // AI Enhanced flag
-        const isAiEnhanced = data.is_ai_enhanced === true;
-        const hiddenAiInput = document.getElementById('is_ai_enhanced');
-        if (hiddenAiInput) hiddenAiInput.value = isAiEnhanced ? '1' : '';
-        const aiCheckbox = document.getElementById('is_ai_enhanced_checkbox');
-        const aiCheckboxMobile = document.getElementById('is_ai_enhanced_mobile_checkbox');
-        if (aiCheckbox) aiCheckbox.checked = isAiEnhanced;
-        if (aiCheckboxMobile) aiCheckboxMobile.checked = isAiEnhanced;
-
-        // Project Image Previews
-        const importImagesField = document.getElementById('import_image_urls');
-        const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
-        if (importImagesField) {
-            importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
-        }
-
-        if (imageUrls.length > 0) {
-            imageUrls.forEach(url => {
-                if (typeof addPendingTitleImageToGallery === 'function') {
-                    addPendingTitleImageToGallery(url);
-                }
-            });
-        }
-
-        // Steps
-        if (data.steps && data.steps.length > 0) {
-            const stepsContainer = document.getElementById('stepsContainer');
-            if (stepsContainer) {
-                stepsContainer.innerHTML = '';
-                data.steps.forEach((step, index) => {
-                    if (typeof addStep === 'function') {
-                        addStep(step.title || `Step ${index + 1}`, step.description || '', step.images || []);
+                if (stepId) {
+                    const stepItem = document.querySelector(`.step-item[data-step-id="${stepId}"]`);
+                    if (stepItem) {
+                        addStepImagePreview(stepItem, data);
                     }
-                });
+                } else {
+                    addTitleImageToGallery(data);
+                }
+            } else {
+                window.showToast?.('{{ _("Upload failed") }}', 'error');
             }
+        } catch (error) {
+            console.error('Upload failed', error);
+            window.showToast?.('{{ _("Upload failed") }}', 'error');
+        }
+    }
+</script>
+
+<script>
+    let projectId = {{ (project.id if project else none) | tojson }};
+    let wasSilentlyCreated = false;
+
+    // Initialize discard hook
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.unsavedChanges) {
+            window.unsavedChanges.onBeforeDiscard = async () => {
+                if (wasSilentlyCreated && projectId) {
+                    console.log('Discarding silent project:', projectId);
+                    try {
+                        const response = await fetch(`/projects/${projectId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'HX-Request': 'true', // Trigger HTMX-like response if needed, although we are navigating away
+                                'X-CSRF-Token': '{{ csrf_token }}'
+                            }
+                        });
+                        if (!response.ok) {
+                            console.error('Failed to delete silent project');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting silent project:', error);
+                    }
+                }
+            };
+        }
+    });
+
+    /**
+     * Ensures the project exists before performing actions that require a projectId.
+     * If project doesn't exist, it performs a minimal save to get an ID.
+     */
+    async function ensureProjectId() {
+        if (projectId) return true;
+
+        const nameInput = document.getElementById('name');
+        if (nameInput && !nameInput.value.trim()) {
+            const now = new Date();
+            const dateStr = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0');
+            nameInput.value = `{{ _("New Project") }} ${dateStr}`;
         }
 
-        window.showToast?.('{{ _("Pattern imported successfully") }}', 'success');
-        window.unsavedChanges?.setDirty(true);
-        document.getElementById('name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const formData = new FormData(document.getElementById('projectForm'));
+
+        try {
+            const response = await fetch('/projects', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                projectId = data.id;
+                wasSilentlyCreated = true;
+                window.unsavedChanges?.setDirty(true);
+
+                // Update form action and other links
+                const form = document.getElementById('projectForm');
+                if (form) {
+                    form.action = `/projects/${projectId}`;
+                }
+
+                // Update back button link
+                const backBtn = document.querySelector('[data-unsaved-confirm]');
+                if (backBtn && backBtn.tagName.toLowerCase() === 'a') {
+                    backBtn.href = '/projects';
+                }
+
+                // Update browser URL without reloading
+                window.history.replaceState({}, '', `/projects/${projectId}/edit`);
+                return true;
+            } else {
+                window.showToast?.('{{ _("Failed to initialize project") }}', 'error');
+                return false;
+            }
+        } catch (error) {
+            console.error('Project initialization failed', error);
+            window.showToast?.('{{ _("Network error") }}', 'error');
+            return false;
+        }
     }
 
-    document.getElementById('projectForm').addEventListener('submit', function (e) {
-        const currentLink = document.getElementById('link')?.value.trim() || '';
+    const uploadInstructionsText = '{{ _("Drag and drop images here or click to upload") }}';
+    const stepUploadDisabledMessage = '{{ _("Save the project before adding images to this step") }}';
+    const uploadErrorMessage = '{{ _("Image upload failed. Please try again") }}';
+    const uploadNetworkErrorMessage = '{{ _("Network error while uploading image") }}';
+    const unsupportedFileMessage = '{{ _("Only image files are supported") }}';
+    const deleteErrorMessage = '{{ _("Failed to delete the image. Please try again") }}';
+    const deleteNetworkErrorMessage = '{{ _("Network error while deleting image") }}';
+    const uploadingMessage = '{{ _("Uploading…") }}';
 
-        // If a link was added to a project that didn't have one, prompt for import
-        if (!initialLink && currentLink && !isImportPrompted) {
-            e.preventDefault();
-            window.confirmAction(
-                '{{ _("Import Data?") }}',
-                '{{ _("You added a pattern source. Would you like to import details (notes, steps, etc.) from this URL before saving?") }}',
-                () => {
-                    isImportPrompted = true;
-                    importFromUrl(currentLink);
-                },
-                () => {
-                    isImportPrompted = true;
-                    this.submit();
-                },
-                {
-                    confirmText: '{{ _("Import") }}',
-                    cancelText: '{{ _("Just Save") }}'
-                }
-            );
+    const parseErrorMessage =
+        typeof extractErrorMessage === 'function'
+            ? extractErrorMessage
+            : async (_response, fallback) => fallback;
+
+    function bindPendingStepDropzone(dropzone, input, instructions) {
+        if (!dropzone || dropzone.dataset.pendingBound === 'true') {
             return;
         }
 
-        const steps = [];
-        document.querySelectorAll('.step-item').forEach((item, index) => {
-            const pendingImages = Array.from(item.querySelectorAll('[data-pending-url]')).map(img => img.dataset.pendingUrl);
-            steps.push({
-                id: item.getAttribute('data-step-id') || null,
-                title: item.querySelector('.step-title').value,
-                description: item.querySelector('.step-description').value,
-                step_number: index + 1,
-                image_urls: pendingImages
-            });
+        dropzone.dataset.pendingBound = 'true';
+        dropzone.classList.add('opacity-60', 'cursor-not-allowed');
+        dropzone.classList.remove('pointer-events-none');
+        dropzone.setAttribute('aria-disabled', 'true');
+
+        if (instructions) {
+            instructions.textContent =
+                instructions.dataset.disabledText || stepUploadDisabledMessage;
+        }
+
+        const showDisabledToast = () => {
+            window.showToast?.(stepUploadDisabledMessage, 'info');
+        };
+
+        dropzone.addEventListener('click', (event) => {
+            event.preventDefault();
+            showDisabledToast();
         });
-        document.getElementById('stepsData').value = JSON.stringify(steps);
-    });
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const importDialog = document.getElementById('importDialog');
-        const importForm = document.getElementById('importForm');
-        const importLoading = document.getElementById('importLoading');
-
-        let currentTab = 'url';
-        const tabs = document.querySelectorAll('.tabs .tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-
-        tabs.forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                e.preventDefault();
-                const tabName = tab.dataset.tab;
-
-                tabs.forEach(t => t.classList.remove('tab-active'));
-                tab.classList.add('tab-active');
-
-                tabContents.forEach(content => {
-                    if (content.id === `tab-${tabName}`) {
-                        content.classList.remove('hidden');
-                    } else {
-                        content.classList.add('hidden');
-                    }
-                });
-
-                currentTab = tabName;
+        ['dragover', 'drop'].forEach((eventName) => {
+            dropzone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (eventName === 'dragover') {
+                    dropzone.classList.add('border-blue-500');
+                } else {
+                    dropzone.classList.remove('border-blue-500');
+                    showDisabledToast();
+                }
             });
         });
 
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('importFile');
-        const dropZoneContent = document.getElementById('dropZoneContent');
-        const filePreview = document.getElementById('filePreview');
-        const fileName = document.getElementById('fileName');
-        const removeFileBtn = document.getElementById('removeFile');
+        dropzone.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dropzone.classList.remove('border-blue-500');
+        });
 
-        if (dropZone && fileInput) {
-            dropZone.addEventListener('click', (e) => {
-                if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
-                    fileInput.click();
-                }
-            });
+        const label = dropzone.querySelector('label');
+        if (label) {
+            ['click', 'dragover', 'drop', 'dragleave'].forEach((eventName) => {
+                label.addEventListener(eventName, (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (eventName === 'dragover') {
+                        dropzone.classList.add('border-blue-500');
+                        return;
+                    }
 
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    showFilePreview(file);
-                }
-            });
+                    if (eventName === 'dragleave') {
+                        dropzone.classList.remove('border-blue-500');
+                        return;
+                    }
 
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropZone.classList.add('border-primary', 'bg-base-200');
-            });
+                    if (eventName === 'drop') {
+                        dropzone.classList.remove('border-blue-500');
+                    }
 
-            dropZone.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('border-primary', 'bg-base-200');
-            });
-
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('border-primary', 'bg-base-200');
-
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(files[0]);
-                    fileInput.files = dataTransfer.files;
-                    showFilePreview(files[0]);
-                }
-            });
-
-            if (removeFileBtn) {
-                removeFileBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    fileInput.value = '';
-                    hideFilePreview();
+                    showDisabledToast();
                 });
-            }
-
-            function showFilePreview(file) {
-                fileName.textContent = file.name;
-                dropZoneContent.classList.add('hidden');
-                filePreview.classList.remove('hidden');
-            }
-
-            function hideFilePreview() {
-                dropZoneContent.classList.remove('hidden');
-                filePreview.classList.add('hidden');
-                fileName.textContent = '';
-            }
-        }
-
-        if (importForm) {
-            importForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const formData = new FormData();
-
-                if (currentTab === 'url') {
-                    const url = document.getElementById('importUrl').value.trim();
-                    if (!url) {
-                        window.showToast?.("{{ _('Please enter a URL') }}", 'error');
-                        return;
-                    }
-                    formData.append('url', url);
-                    formData.append('type', 'url');
-
-                } else if (currentTab === 'file') {
-                    const fileInput = document.getElementById('importFile');
-                    const file = fileInput.files[0];
-                    if (!file) {
-                        window.showToast?.("{{ _('Please select a file') }}", 'error');
-                        return;
-                    }
-                    formData.append('file', file);
-                    formData.append('type', 'file');
-
-                } else if (currentTab === 'text') {
-                    const text = document.getElementById('importText').value.trim();
-                    if (!text) {
-                        window.showToast?.("{{ _('Please enter some text') }}", 'error');
-                        return;
-                    }
-                    formData.append('text', text);
-                    formData.append('type', 'text');
-                }
-
-                importForm.classList.add('hidden');
-                importLoading.classList.remove('hidden');
-
-                try {
-                    console.log('Importing with type:', currentTab);
-
-                    const response = await fetch('/projects/import', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-Token': '{{ csrf_token }}'
-                        },
-                        body: formData
-                    });
-
-                    if (!response.ok) {
-                        let errorMsg = 'Failed to import';
-                        try {
-                            const error = await response.json();
-                            errorMsg = error.detail || errorMsg;
-                        } catch (e) {
-                            errorMsg = `HTTP ${response.status}: ${response.statusText}`;
-                        }
-                        throw new Error(errorMsg);
-                    }
-
-                    const data = await response.json();
-                    console.log('Import successful, data:', data);
-
-                    // Prevent re-prompting on save
-                    isImportPrompted = true;
-
-                    if (data.ai_fallback) {
-                        window.showToast?.("{{ _('AI extraction failed - using basic parser') }}", 'warning');
-                    }
-
-                    // Map fields helper
-                    const setFieldValue = (id, value) => {
-                        const el = document.getElementById(id);
-                        if (el && value) {
-                            if (id === 'comment' && el.value.trim().length > 0) return false;
-                            el.value = value;
-                            if (typeof autoResize === 'function') autoResize(el);
-                            return true;
-                        }
-                        return false;
-                    };
-
-                    // Metadata
-                    try {
-                        setFieldValue('name', data.title || data.name);
-                        setFieldValue('needles', data.needles);
-                        setFieldValue('recommended_needles', data.recommended_needles);
-                        setFieldValue('yarn_brand', data.brand);
-                        
-                                        if (data.yarn) {
-                                            window.yarnSelector?.selectByName(data.yarn);
-                                        }
-                                                setFieldValue('gauge_stitches', data.gauge_stitches);
-                        setFieldValue('gauge_rows', data.gauge_rows);
-                        setFieldValue('stitch_sample', data.stitch_sample);
-                        setFieldValue('description', data.description);
-                        setFieldValue('comment', data.comment);
-
-                        if (currentTab === 'url' && !data.link) {
-                            data.link = document.getElementById('importUrl').value.trim();
-                        }
-                        setFieldValue('link', data.link);
-                if (data.link) initialLink = data.link;
-                    } catch (e) {
-                        console.error('Error mapping metadata', e);
-                    }
-
-                    // Project Image Previews
-                    try {
-                        const importImagesField = document.getElementById('import_image_urls');
-                        const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
-                        if (importImagesField) {
-                            importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
-                        }
-                        const archiveField = document.getElementById('archive_on_save');
-                        if (archiveField) {
-                            archiveField.value = '1';
-                        }
-
-                        if (imageUrls.length > 0) {
-                            window.showToast?.('{{ _("Imported images will be previewed in the gallery") }}', 'info');
-                            imageUrls.forEach(url => {
-                                if (typeof addPendingTitleImageToGallery === 'function') {
-                                    try { addPendingTitleImageToGallery(url); } catch (e) { console.error(e); }
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.error('Error mapping images', e);
-                    }
-
-                    // Steps
-                    try {
-                        if (data.steps && data.steps.length > 0) {
-                            const stepsContainer = document.getElementById('stepsContainer');
-                            if (stepsContainer) {
-                                stepsContainer.innerHTML = '';
-                                data.steps.forEach((step, index) => {
-                                    if (typeof addStep === 'function') {
-                                        try {
-                                            addStep(step.title || `Step ${index + 1}`, step.description || '', step.images || []);
-                                        } catch (e) {
-                                            console.error('Failed to add step:', e, step);
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Error processing steps', e);
-                    }
-
-                    importDialog.close();
-
-                    importForm.reset();
-                    importForm.classList.remove('hidden');
-                    importLoading.classList.add('hidden');
-
-                    if (fileInput) fileInput.value = '';
-                    if (typeof hideFilePreview === 'function') hideFilePreview();
-
-                    window.showToast?.('{{ _("Pattern imported successfully") }}', 'success');
-                    window.unsavedChanges?.setDirty(true);
-
-                    document.getElementById('name').scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                } catch (error) {
-                    console.error('Import failed:', error);
-                    window.showToast?.(error.message || '{{ _("Failed to import pattern") }}', 'error');
-
-                    importForm.classList.remove('hidden');
-                    importLoading.classList.add('hidden');
-                }
             });
         }
-    });
-</script>
 
+        input.addEventListener('change', (event) => {
+            event.preventDefault();
+            input.value = '';
+            showDisabledToast();
+        });
+    }
 
-<dialog id="deleteProjectDialog" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg">{{ _('Delete Project') }}</h3>
-        <div class="py-4 space-y-4">
-            <p class="text-base-content/80">
-                {{ _('Are you sure you want to delete this project?') }}
-                <br>
-                <strong class="text-base-content">{{ project.name }}</strong>
-            </p>
-
-            {% if project.exclusive_yarns %}
-            <div class="bg-warning/10 border-l-4 border-warning p-4 rounded-r-lg">
-                <div class="flex items-start gap-3">
-                    <span class="mdi mdi-alert text-warning text-xl"></span>
-                    <div class="space-y-2">
-                        <p class="text-sm font-medium">{{ _('Some yarns are only used in this project:') }}</p>
-                        <ul class="text-xs opacity-80 list-disc list-inside">
-                            {% for yarn in project.exclusive_yarns %}
-                            <li>{{ yarn.name }}</li>
-                            {% endfor %}
-                        </ul>
-                        <label class="label cursor-pointer justify-start gap-3 p-0 mt-2">
-                            <input type="checkbox" id="delete_exclusive_yarns" class="checkbox checkbox-warning checkbox-sm">
-                            <span class="label-text font-bold">{{ _('Also delete these yarns') }}</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        <div class="modal-action">
-            {{ dialogs.dialog_cancel(_('Cancel'),
-            attrs='onclick="document.getElementById(\'deleteProjectDialog\').close()"') }}
-            {{ dialogs.dialog_danger(_('Delete'), attrs='onclick="deleteProject()"') }}
-        </div>
-    </div>
-    {{ dialogs.modal_backdrop() }}
-</dialog>
-
-<script>
     function deleteProject() {
         const deleteYarns = document.getElementById('delete_exclusive_yarns')?.checked || false;
         const url = new URL('/projects/{{ project.id }}', window.location.origin);
@@ -2936,5 +2480,4 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         });
     }
 </script>
-
 {% endblock %}
