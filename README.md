@@ -42,7 +42,7 @@ App runs at http://localhost:7674
 
 ## Configuration
 
-All config is via environment variables or `.env` (see `.env.example`).
+All config is via environment variables or `.envrc` (see `.envrc.example`).
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -74,7 +74,7 @@ Install AI extras:
 uv pip install -e ".[ai]"
 ```
 
-Then set `OPENAI_API_KEY` in `.env`.
+Then set `OPENAI_API_KEY` in `.envrc`.
 
 ## Developer Workflow
 

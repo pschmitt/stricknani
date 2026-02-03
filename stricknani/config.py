@@ -6,10 +6,10 @@ from typing import Literal, cast
 
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-# Look for .env in the repository root (parent of stricknani package)
+# Load environment variables from .envrc file
+# Look for .envrc in the repository root (parent of stricknani package)
 _config_dir = Path(__file__).parent.parent
-_env_file = _config_dir / ".env"
+_env_file = _config_dir / ".envrc"
 load_dotenv(_env_file, override=True)
 
 
