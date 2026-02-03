@@ -216,14 +216,10 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                 <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a suggestion.') }}</p>
                             </div>
 
-                            <div>
-                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Used Needles') }}</label>
-                                <input type="text" name="needles"
-                                    value="{{ project.needles if project and project.needles else '' }}"
-                                    class="input  input-sm w-full mt-1"
-                                    placeholder="{{ _('e.g. 4.0mm circular') }}">
-                            </div>
-
+                            <div class="sm:col-span-2">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class=" text-xs font-bold uppercase text-base-content/50">{{
+                                        _('Pattern Source') }}</label>
                             <div class="sm:col-span-2">
                                 <div class="flex items-center justify-between mb-1">
                                     <label class=" text-xs font-bold uppercase text-base-content/50">{{
@@ -332,6 +328,20 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         {{ image_upload.upload_dropzone('stitchSampleImageInput', container_id='stitchSampleDropzone')
                         }}
                     </div>
+                </div>
+            </div>
+
+            <!-- Recommended Needles Card -->
+            <div
+                class="bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 p-3 sm:p-6">
+                <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
+                    <span class="mdi mdi-needle text-primary"></span>
+                    {{ _('Recommended Needles') }}
+                </h3>
+                <div>
+                    <input type="text" id="needles" name="needles"
+                        value="{{ project.needles if project and project.needles else '' }}"
+                        class="input w-full" placeholder="{{ _('e.g. 4.0mm circular') }}">
                 </div>
             </div>
 
@@ -457,18 +467,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         </div>
                         <p class="text-[10px] text-base-content/60 mt-1">{{ _('Press Enter or choose a suggestion.') }}
                         </p>
-                    </div>
-
-                    <div class="divider my-2"></div>
-
-                    <div>
-                        <label for="needles"
-                            class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
-                            {{ _('Used Needles') }}
-                        </label>
-                        <input type="text" id="needles" name="needles"
-                            value="{{ project.needles if project and project.needles else '' }}"
-                            class="input  input-sm w-full" placeholder="{{ _('e.g. 4.0mm circular') }}">
                     </div>
 
                     <div class="divider my-2"></div>

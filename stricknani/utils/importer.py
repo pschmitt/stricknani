@@ -71,6 +71,7 @@ class PatternImporter:
         self.url = url
         self.timeout = timeout
         self.is_garnstudio = _is_garnstudio_url(url)
+        self._garnstudio_gauge_cache: tuple[int | None, int | None] | None = None
 
     async def fetch_and_parse(self, image_limit: int = 10) -> dict[str, Any]:
         """Fetch URL and extract pattern data."""
@@ -257,7 +258,18 @@ class PatternImporter:
         """Extract needle information."""
         if self.is_garnstudio:
             val = self._extract_garnstudio_info_by_heading(
-                soup, ["NADELN", "NEEDLES", "PINNER"]
+                soup,
+                [
+                    "NADELN",
+                    "NEEDLES",
+                    "PINNER",
+                    "HÄKELNADEL",
+                    "HÄKELNADELN",
+                    "CROCHET HOOK",
+                    "CROCHET HOOKS",
+                    "HEKLENÅL",
+                    "HEKLENÅLER",
+                ],
             )
             if val:
                 return val
@@ -1202,6 +1214,12 @@ class PatternImporter:
             "NADELN",
             "NEEDLES",
             "PINNER",
+            "HÄKELNADEL",
+            "HÄKELNADELN",
+            "CROCHET HOOK",
+            "CROCHET HOOKS",
+            "HEKLENÅL",
+            "HEKLENÅLER",
             "GRÖSSEN",
             "GROESSEN",
             "SIZE",
@@ -1301,11 +1319,15 @@ class PatternImporter:
             "SIZES",
             "GARN",
             "YARN",
-            "MATERIAL",
-            "MATERIALS",
             "NADELN",
             "NEEDLES",
             "PINNER",
+            "HÄKELNADEL",
+            "HÄKELNADELN",
+            "CROCHET HOOK",
+            "CROCHET HOOKS",
+            "HEKLENÅL",
+            "HEKLENÅLER",
             "RIPPEN",
             "RIB",
             "ABNAHMEN",
@@ -1746,6 +1768,12 @@ class PatternImporter:
             "NADELN",
             "NEEDLES",
             "PINNER",
+            "HÄKELNADEL",
+            "HÄKELNADELN",
+            "CROCHET HOOK",
+            "CROCHET HOOKS",
+            "HEKLENÅL",
+            "HEKLENÅLER",
             "MASCHENPROBE",
             "GAUGE",
             "STRIKKEFASTHET",
@@ -1808,6 +1836,12 @@ class PatternImporter:
             "NADELN",
             "NEEDLES",
             "PINNER",
+            "HÄKELNADEL",
+            "HÄKELNADELN",
+            "CROCHET HOOK",
+            "CROCHET HOOKS",
+            "HEKLENÅL",
+            "HEKLENÅLER",
             "MASCHENPROBE",
             "GAUGE",
             "STRIKKEFASTHET",

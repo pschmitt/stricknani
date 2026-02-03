@@ -63,4 +63,3 @@ async def test_import_yarn_wolle_roedel(test_client: Any) -> None:
     assert data["length_meters"] == 300
     assert data["fiber_content"] == "42% Alpaka, 40% Polyacryl, 18% Wolle"
     assert data["recommended_needles"] == "4-4,5mm"
-    
