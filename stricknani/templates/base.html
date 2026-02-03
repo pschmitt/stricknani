@@ -738,24 +738,64 @@
     </dialog>
 
     <script>
-        window.confirmAction = (title, message, onConfirm) => {
+        window.confirmAction = (title, message, onConfirm, onCancel = null, options = {}) => {
             const dialog = document.getElementById('confirmationDialog');
             const titleEl = document.getElementById('confirmationTitle');
             const messageEl = document.getElementById('confirmationMessage');
             const confirmBtn = document.getElementById('confirmationConfirm');
+            const cancelBtn = document.getElementById('confirmationCancel');
 
-            if (!dialog || !titleEl || !messageEl || !confirmBtn) return;
+            if (!dialog || !titleEl || !messageEl || !confirmBtn || !cancelBtn) return;
 
             titleEl.textContent = title;
             messageEl.textContent = message;
 
+            // Handle options
+            const confirmText = options.confirmText || '{{ _("Confirm") }}';
+            const cancelText = options.cancelText || '{{ _("Cancel") }}';
+            
+            // Update button text (looking for the span or text node)
+            // Assuming buttons might have icons, so we set text content carefully or just innerHTML if we want to be lazy
+            // But the macros use specific structure. Let's look at the button structure in the dialog.
+            // They are using dialogs.dialog_cancel and dialogs.dialog_danger.
+            // Usually valid to just set innerText if we accept losing the icon, OR we can try to find the text span.
+            // For now, let's just update the last child text node or span.
+            
+            // Simple approach: Replace the button content if text provided, or just text
+            if (options.confirmText) {
+                // Try to preserve icon if possible
+                const icon = confirmBtn.querySelector('.mdi');
+                confirmBtn.innerHTML = '';
+                if (icon) confirmBtn.appendChild(icon);
+                confirmBtn.appendChild(document.createTextNode(' ' + confirmText));
+            }
+            
+            if (options.cancelText) {
+                 // Try to preserve icon if possible
+                const icon = cancelBtn.querySelector('.mdi');
+                cancelBtn.innerHTML = '';
+                if (icon) cancelBtn.appendChild(icon);
+                cancelBtn.appendChild(document.createTextNode(' ' + cancelText));
+            }
+
             // Remove old listeners to avoid stacking
             const newConfirmBtn = confirmBtn.cloneNode(true);
             confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
             newConfirmBtn.addEventListener('click', () => {
-                onConfirm();
+                if (onConfirm) onConfirm();
                 dialog.close();
+            });
+            
+            newCancelBtn.addEventListener('click', () => {
+                if (onCancel) onCancel();
+                // Dialog closes automatically due to form method="dialog", but we can be explicit if needed.
+                // Since we cloned the button, we might have lost the type="submit" behavior if not careful? 
+                // cloneNode copies attributes, so type="submit" remains.
+                // form method="dialog" handles the close.
             });
 
             dialog.showModal();

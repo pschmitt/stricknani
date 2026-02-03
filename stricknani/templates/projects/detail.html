@@ -191,31 +191,6 @@
                 </div>
             </div>
             {% endif %}
-
-            {% if project.description %}
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                <h3
-                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center justify-between gap-2 text-xs">
-                    <div class="flex items-center gap-2">
-                        <span class="mdi mdi-text-box-outline"></span>
-                        {{ _('Description') }}
-                    </div>
-                    <button class="btn btn-ghost btn-xs gap-1"
-                        onclick='copyToClipboard({{ (project.description or '')|tojson }}, this)'
-                        title="{{ _('Copy Description') }}">
-                        <span class="mdi mdi-content-copy"></span>
-                    </button>
-                </h3>
-                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
-                    {% if project.description_html %}
-                    {{ project.description_html | safe }}
-                    {% else %}
-                    {{ project.description }}
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
             <!-- Mobile: Details + Notes before steps -->
             <div class="space-y-6 lg:hidden">
                 <!-- Details Card -->
@@ -433,6 +408,31 @@
                 </div>
                 {% endif %}
             </div>
+
+            {% if project.description %}
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+                <h3
+                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="mdi mdi-text-box-outline"></span>
+                        {{ _('Description') }}
+                    </div>
+                    <button class="btn btn-ghost btn-xs gap-1"
+                        onclick='copyToClipboard({{ (project.description or '')|tojson }}, this)'
+                        title="{{ _('Copy Description') }}">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                </h3>
+                <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                    {% if project.description_html %}
+                    {{ project.description_html | safe }}
+                    {% else %}
+                    {{ project.description }}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
 
             {% if project.stitch_sample_html or project.stitch_sample_images %}
             <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5" id="stitch-sample-card">

@@ -1738,7 +1738,9 @@ class PatternImporter:
         ]
         if any(kw in lower_url for kw in diagram_keywords):
             return True
-        if self.is_garnstudio and re.search(r"[-/]\d*[dc]\.(?:jpe?g|png)$", lower_url):
+        if self.is_garnstudio and re.search(
+            r"[-/](?:diag\d*|\d*[dc])\.(?:jpe?g|png)$", lower_url
+        ):
             return True
         return False
 
@@ -2024,6 +2026,11 @@ class GarnstudioPatternImporter(PatternImporter):
                         "images": diagrams,
                     }
                 )
+
+                # Remove diagrams from main gallery to avoid clutter
+                data["image_urls"] = [
+                    url for url in data["image_urls"] if url not in diagrams
+                ]
 
         # Slice back to the requested limit
         data["image_urls"] = data["image_urls"][:image_limit]

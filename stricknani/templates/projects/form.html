@@ -95,7 +95,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 {% endblock %}
 
 {% block form_body %}
-<form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects' }}" method="post"
+<form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects/' }}" method="post"
     data-primary-form="true" class="space-y-6">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
@@ -105,6 +105,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
     <input type="hidden" id="yarn_brand" name="yarn_brand" value="">
     <input type="hidden" id="yarn_details" name="yarn_details" value="">
     <input type="hidden" id="stepsData" name="steps_data">
+
 
     <div id="importWarning"
         class="hidden mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded">
@@ -761,7 +762,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         if (importedData) {
             try {
                 const data = JSON.parse(importedData);
-                console.log('[DEBUG] Loading imported data from storage:', data);
 
                 // Prevent re-prompting on save
                 isImportPrompted = true;
@@ -1650,10 +1650,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         });
     }
 
-    const titleImageInput = document.getElementById('titleImageInput');
-    const titleImageDropZone = document.getElementById('titleImageDropZone');
 
-    setupImageUploadWidget(titleImageInput, titleImageDropZone, uploadTitleImage);
 
     async function uploadTitleImage(file) {
         if (!(await ensureProjectId())) return false;
@@ -2102,9 +2099,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         if (textarea) updateImageVisibility(textarea);
     }
 
-    initStepImageUploaders();
-    initStitchSampleImageUploader();
-
     function addStep(title = '', description = '', stepImages = []) {
         const container = document.getElementById('stepsContainer');
         const stepNumber = container.children.length + 1;
@@ -2499,6 +2493,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         // If a link was added to a project that didn't have one, prompt for import
         if (!initialLink && currentLink && !isImportPrompted) {
             e.preventDefault();
+
             window.confirmAction(
                 '{{ _("Import Data?") }}',
                 '{{ _("You added a pattern source. Would you like to import details (notes, steps, etc.) from this URL before saving?") }}',
@@ -2508,6 +2503,22 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 },
                 () => {
                     isImportPrompted = true;
+                    // Gather steps data manually since we are bypassing the submit event
+                    const steps = [];
+                    const container = document.getElementById('stepsContainer');
+                    const items = container ? container.querySelectorAll('.step-item') : [];
+
+                    items.forEach((item, index) => {
+                        const pendingImages = Array.from(item.querySelectorAll('[data-pending-url]')).map(img => img.dataset.pendingUrl);
+                        steps.push({
+                            id: item.getAttribute('data-step-id') || null,
+                            title: item.querySelector('.step-title').value,
+                            description: item.querySelector('.step-description').value,
+                            step_number: index + 1,
+                            image_urls: pendingImages
+                        });
+                    });
+                    document.getElementById('stepsData').value = JSON.stringify(steps);
                     this.submit();
                 },
                 {
@@ -2519,16 +2530,21 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         }
 
         const steps = [];
-        document.querySelectorAll('.step-item').forEach((item, index) => {
-            const pendingImages = Array.from(item.querySelectorAll('[data-pending-url]')).map(img => img.dataset.pendingUrl);
-            steps.push({
-                id: item.getAttribute('data-step-id') || null,
-                title: item.querySelector('.step-title').value,
-                description: item.querySelector('.step-description').value,
-                step_number: index + 1,
-                image_urls: pendingImages
+        const container = document.getElementById('stepsContainer');
+        const items = container ? container.querySelectorAll('.step-item') : [];
+
+        if (items.length > 0) {
+            items.forEach((item, index) => {
+                const pendingImages = Array.from(item.querySelectorAll('[data-pending-url]')).map(img => img.dataset.pendingUrl);
+                steps.push({
+                    id: item.getAttribute('data-step-id') || null,
+                    title: item.querySelector('.step-title').value,
+                    description: item.querySelector('.step-description').value,
+                    step_number: index + 1,
+                    image_urls: pendingImages
+                });
             });
-        });
+        }
         document.getElementById('stepsData').value = JSON.stringify(steps);
     });
 
