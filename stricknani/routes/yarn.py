@@ -852,6 +852,68 @@ async def update_yarn(
     )
 
 
+@router.post("/{yarn_id}/photos")
+async def upload_yarn_photo(
+    yarn_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> JSONResponse:
+    """Upload a photo for a yarn entry."""
+    result = await db.execute(select(Yarn).where(Yarn.id == yarn_id))
+    yarn = result.scalar_one_or_none()
+
+    if yarn is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    # Save file
+    saved_name, original = await save_uploaded_file(file, yarn_id, subdir="yarns")
+
+    # Create thumbnail
+    source_path = config.MEDIA_ROOT / "yarns" / str(yarn_id) / saved_name
+    await create_thumbnail(source_path, yarn_id, subdir="yarns")
+
+    # Check if a primary image already exists
+    count_result = await db.execute(
+        select(func.count(YarnImage.id)).where(
+            YarnImage.yarn_id == yarn_id,
+            YarnImage.is_primary.is_(True),
+        )
+    )
+    has_primary = (count_result.scalar() or 0) > 0
+
+    # Create database record
+    photo = YarnImage(
+        filename=saved_name,
+        original_filename=original,
+        alt_text=yarn.name or original,
+        yarn_id=yarn_id,
+        is_primary=not has_primary,
+    )
+    db.add(photo)
+    await db.commit()
+    await db.refresh(photo)
+
+    width, height = _get_photo_dimensions(yarn_id, saved_name)
+
+    return JSONResponse(
+        {
+            "id": photo.id,
+            "thumbnail_url": get_thumbnail_url(saved_name, yarn_id, subdir="yarns"),
+            "full_url": get_file_url(saved_name, yarn_id, subdir="yarns"),
+            "alt_text": photo.alt_text,
+            "is_primary": photo.is_primary,
+            "width": width,
+            "height": height,
+        }
+    )
+
+
 @router.post("/{yarn_id}/retry-archive", response_class=Response)
 async def retry_yarn_archive(
     yarn_id: int,

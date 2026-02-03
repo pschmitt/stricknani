@@ -246,8 +246,8 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                     {{ _('Photos') }}
                 </h3>
 
-                {% if photos %}
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 pswp-gallery" data-pswp-gallery>
+                <div id="existing-photos-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 pswp-gallery" data-pswp-gallery>
+                    {% if photos %}
                     {% for photo in photos %}
                     <div id="photo-card-{{ photo.id }}"
                         class="relative group aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
@@ -271,8 +271,8 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                         </button>
                     </div>
                     {% endfor %}
+                    {% endif %}
                 </div>
-                {% endif %}
 
 
                 {{ image_upload.upload_dropzone(
@@ -747,19 +747,21 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 
     async function uploadYarnImage(file) {
         const formData = new FormData();
-        formData.append('new_photos', file);
+        formData.append('file', file);
 
         try {
             window.showToast?.('{{ _("Uploading image...") }}', 'info');
-            const response = await fetch(`/yarn/${yarnId}/edit`, {
+            const response = await fetch(`/yarn/${yarnId}/photos`, {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': '{{ csrf_token }}' },
                 body: formData
             });
 
             if (response.ok) {
+                const data = await response.json();
+                addYarnPhotoToGallery(data);
                 window.showToast?.('{{ _("Image uploaded!") }}', 'success');
-                window.location.reload();
+                window.unsavedChanges?.setDirty(true);
             } else {
                 const message = await parseErrorMessage(response, '{{ _("Upload failed") }}');
                 window.showToast?.(message, 'error');
@@ -768,6 +770,42 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             console.error('Upload failed', error);
             window.showToast?.('{{ _("Network error while uploading image") }}', 'error');
         }
+    }
+
+    function addYarnPhotoToGallery(photoData) {
+        const grid = document.getElementById('existing-photos-grid');
+        if (grid) {
+            grid.insertAdjacentHTML('beforeend', createYarnPhotoPreviewHTML(photoData));
+            window.refreshPhotoSwipeGallery?.(grid);
+        } else {
+            window.location.reload();
+        }
+    }
+
+    function createYarnPhotoPreviewHTML(photo) {
+        return `
+        <div id="photo-card-${photo.id}"
+            class="relative group aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
+            <a href="${photo.full_url}" data-pswp-width="${photo.width || 1200}"
+                data-pswp-height="${photo.height || 1200}" data-pswp-caption="${photo.alt_text}"
+                data-pswp-promote="true" data-pswp-delete="true"
+                data-pswp-is-primary="${photo.is_primary ? 'true' : 'false'}"
+                class="block h-full w-full">
+                <img src="${photo.thumbnail_url}" alt="${photo.alt_text}"
+                    class="h-full w-full object-cover cursor-zoom-in">
+            </a>
+            <button type="button" onclick="promoteYarnPhoto(${photo.id})"
+                class="yarn-promote-btn absolute top-2 left-2 z-10 rounded-full p-1.5 shadow-sm transition-all ${photo.is_primary ? 'bg-amber-400 text-white opacity-100' : 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500'} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+                title="{{ _('Make primary photo') }}">
+                <span class="mdi ${photo.is_primary ? 'mdi-star' : 'mdi-star-outline'}"></span>
+            </button>
+            <button type="button" onclick="deleteYarnPhoto(${photo.id})"
+                class="absolute top-2 right-2 z-10 bg-white/90 text-red-600 rounded-full p-1.5 hover:bg-red-50 shadow-sm transition-colors dark:bg-slate-900/90 dark:text-red-400 dark:hover:bg-red-900/50"
+                title="{{ _('Delete photo') }}">
+                <span class="mdi mdi-trash-can-outline"></span>
+            </button>
+        </div>
+        `;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
