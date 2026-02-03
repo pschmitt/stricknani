@@ -165,7 +165,7 @@ class PatternImporter:
                 # of the description.
                 description = garn_notes
 
-        comment = None
+        notes = None
         image_urls = images
         if image_limit > 0:
             image_urls = images[:image_limit]
@@ -194,7 +194,7 @@ class PatternImporter:
             "weight_category": self._extract_weight_category(soup),
             "stitch_sample": self._extract_stitch_sample(soup),
             "description": description,
-            "notes": None,
+            "notes": notes,
             "steps": steps,
             "link": self.url,
             "image_urls": image_urls,

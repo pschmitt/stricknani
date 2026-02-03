@@ -2367,7 +2367,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         const setFieldValue = (id, value) => {
             const el = document.getElementById(id);
             if (el && value) {
-                if (id === 'comment' && el.value.trim().length > 0) return false;
+                if (id === 'notes' && el.value.trim().length > 0) return false;
                 el.value = value;
                 if (typeof autoResize === 'function') autoResize(el);
                 if (typeof updateImageVisibility === 'function') updateImageVisibility(el);
@@ -2669,7 +2669,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     const setFieldValue = (id, value) => {
                         const el = document.getElementById(id);
                         if (el && value) {
-                            if (id === 'comment' && el.value.trim().length > 0) return false;
+                            if (id === 'notes' && el.value.trim().length > 0) return false;
                             el.value = value;
                             if (typeof autoResize === 'function') autoResize(el);
                             return true;

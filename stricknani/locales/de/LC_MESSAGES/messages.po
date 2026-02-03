@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-03 21:06+0100\n"
+"POT-Creation-Date: 2026-02-03 21:14+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -805,7 +805,8 @@ msgid "Pattern URL"
 msgstr "Anleitungs-URL"
 
 #: stricknani/templates/projects/_import_dialog.html:29
-msgid "e.g. https://www.ravelry.com/patterns/library/..."
+#, fuzzy
+msgid "e.g. https://www.garnstudio.com/pattern.php?id=..."
 msgstr "z.B. https://www.ravelry.com/patterns/library/..."
 
 #: stricknani/templates/projects/_import_dialog.html:41
@@ -1567,7 +1568,8 @@ msgid "Yarn URL"
 msgstr "Garn-URL"
 
 #: stricknani/templates/yarn/_import_dialog.html:29
-msgid "e.g. https://www.ravelry.com/yarns/library/..."
+#, fuzzy
+msgid "e.g. https://www.garnstudio.com/yarn.php?id=..."
 msgstr "z.B. https://www.ravelry.com/yarns/library/..."
 
 #: stricknani/templates/yarn/_import_dialog.html:56

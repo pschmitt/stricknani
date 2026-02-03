@@ -1,4 +1,4 @@
-"""rename project comment to notes
+"""Rename project comment to notes.
 
 Revision ID: f672f9194075
 Revises: accb7972e17f
