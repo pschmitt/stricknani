@@ -122,14 +122,20 @@ alembic *ARGS:
 # Deploy to production
 deploy commit='':
   #!/usr/bin/env zhj
-  set -euo pipefail
 
-  cd /etc/nixos
+  cd /etc/nixos || exit 9
 
-  nix flake update stricknani
-  nrb --target rofl-10.brkn.lol
+  if ! nix flake update stricknani
+  then
+    echo_error "Failed to update stricknani dependency"
+    exit 1
+  fi
 
-  if [[ "{{commit}}" == "--commit" ]]; then
+  nixos::rebuild --target rofl-10.brkn.lol || exit 3
+
+  if [[ "{{commit}}" == "--commit" ]]
+  then
     git add flake.lock
     git commit -m "chore: update stricknani"
+    git push
   fi

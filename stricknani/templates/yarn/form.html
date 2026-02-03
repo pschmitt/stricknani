@@ -721,6 +721,9 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         try {
             const response = await fetch('/yarn/import', {
                 method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                },
                 body: formData
             });
 
@@ -805,7 +808,8 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                     response = await fetch(`/yarn/${yarnId}/photos/${photoId}/delete`, {
                         method: 'POST',
                         headers: {
-                            'Accept': 'application/json'
+                            'Accept': 'application/json',
+                            'X-CSRF-Token': '{{ csrf_token }}'
                         }
                     });
                 } catch (error) {
@@ -837,7 +841,8 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             const response = await fetch(`/yarn/${yarnId}/photos/${photoId}/promote`, {
                 method: 'POST',
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': '{{ csrf_token }}'
                 }
             });
 
@@ -978,6 +983,9 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         try {
             const response = await fetch('/utils/preview/markdown', {
                 method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                },
                 body: formData
             });
 

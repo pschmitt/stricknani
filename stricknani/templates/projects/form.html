@@ -1749,6 +1749,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         try {
             response = await fetch(`/projects/${projectId}/images/title`, {
                 method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                },
                 body: formData,
             });
         } catch (error) {
@@ -2096,6 +2099,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         try {
             response = await fetch(`/projects/${projectId}/steps/${stepId}/images`, {
                 method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                },
                 body: formData,
             });
         } catch (error) {
@@ -2145,6 +2151,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             try {
                 const response = await fetch(`/projects/${projectId}/images/stitch-sample`, {
                     method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': '{{ csrf_token }}'
+                    },
                     body: formData,
                 });
 
@@ -2330,6 +2339,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token }}'
                 },
                 body: JSON.stringify({
                     title: title,
@@ -2449,6 +2459,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         try {
             const response = await fetch('/projects/import', {
                 method: 'POST',
+                headers: {
+                    'X-CSRF-Token': '{{ csrf_token }}'
+                },
                 body: formData
             });
 
@@ -2727,6 +2740,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
                     const response = await fetch('/projects/import', {
                         method: 'POST',
+                        headers: {
+                            'X-CSRF-Token': '{{ csrf_token }}'
+                        },
                         body: formData
                     });
 
@@ -2910,7 +2926,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         fetch(url, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '{{ csrf_token }}'
             }
         }).then(response => {
             if (response.ok) {
