@@ -247,24 +247,6 @@
 
                         <div class="divider my-2"></div>
 
-                        <!-- Gauge -->
-                        {% if project.gauge_stitches is not none or project.gauge_rows is not none %}
-                        <div class="bg-base-200/50 rounded-xl p-3">
-                            <div class="flex items-center gap-2 mb-1.5">
-                                <span class="mdi mdi-ruler-square text-primary"></span>
-                                <span class="text-xs font-bold uppercase text-base-content/70">{{ _('Gauge (10cm)')
-                                    }}</span>
-                            </div>
-                            <div class="flex items-baseline gap-1 text-sm">
-                                <strong class="text-base-content text-lg">{{ project.gauge_stitches or '-' }}</strong>
-                                <span class="text-base-content/60 text-xs">{{ _('sts') }}</span>
-                                <span class="text-base-content/40 mx-1">×</span>
-                                <strong class="text-base-content text-lg">{{ project.gauge_rows or '-' }}</strong>
-                                <span class="text-base-content/60 text-xs">{{ _('rows') }}</span>
-                            </div>
-                        </div>
-                        {% endif %}
-
                         <!-- Linked Yarns (compact) -->
                         {% if project.linked_yarns %}
                         <div>
@@ -316,17 +298,6 @@
                                 <div class="flex items-center gap-2 text-sm font-medium">
                                     <span class="mdi mdi-needle text-primary/70"></span>
                                     {{ project.needles }}
-                                </div>
-                                {% else %}
-                                <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
-                                {% endif %}
-                            </div>
-                            <div>
-                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Recommended needle size') }}</span>
-                                {% if project.recommended_needles %}
-                                <div class="flex items-center gap-2 text-sm font-medium">
-                                    <span class="mdi mdi-needle text-base-content/40"></span>
-                                    {{ project.recommended_needles }}
                                 </div>
                                 {% else %}
                                 <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
@@ -601,24 +572,6 @@
 
                     <div class="divider my-2"></div>
 
-                    <!-- Gauge -->
-                    {% if project.gauge_stitches is not none or project.gauge_rows is not none %}
-                    <div class="bg-base-200/50 rounded-xl p-3">
-                        <div class="flex items-center gap-2 mb-1.5">
-                            <span class="mdi mdi-ruler-square text-primary"></span>
-                            <span class="text-xs font-bold uppercase text-base-content/70">{{ _('Gauge (10cm)')
-                                }}</span>
-                        </div>
-                        <div class="flex items-baseline gap-1 text-sm">
-                            <strong class="text-base-content text-lg">{{ project.gauge_stitches or '-' }}</strong>
-                            <span class="text-base-content/60 text-xs">{{ _('sts') }}</span>
-                            <span class="text-base-content/40 mx-1">×</span>
-                            <strong class="text-base-content text-lg">{{ project.gauge_rows or '-' }}</strong>
-                            <span class="text-base-content/60 text-xs">{{ _('rows') }}</span>
-                        </div>
-                    </div>
-                    {% endif %}
-
                     <!-- Linked Yarns (compact) -->
                     {% if project.linked_yarns %}
                     <div>
@@ -669,17 +622,6 @@
                             <div class="flex items-center gap-2 text-sm font-medium">
                                 <span class="mdi mdi-needle text-primary/70"></span>
                                 {{ project.needles }}
-                            </div>
-                            {% else %}
-                            <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Recommended needle size') }}</span>
-                            {% if project.recommended_needles %}
-                            <div class="flex items-center gap-2 text-sm font-medium">
-                                <span class="mdi mdi-needle text-base-content/40"></span>
-                                {{ project.recommended_needles }}
                             </div>
                             {% else %}
                             <span class="text-sm text-base-content/40 italic">{{ _('Not specified') }}</span>

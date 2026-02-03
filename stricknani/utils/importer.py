@@ -71,7 +71,6 @@ class PatternImporter:
         self.url = url
         self.timeout = timeout
         self.is_garnstudio = _is_garnstudio_url(url)
-        self._garnstudio_gauge_cache: tuple[int | None, int | None] | None = None
 
     async def fetch_and_parse(self, image_limit: int = 10) -> dict[str, Any]:
         """Fetch URL and extract pattern data."""
@@ -193,8 +192,6 @@ class PatternImporter:
             "weight_grams": self._extract_weight_grams(soup),
             "length_meters": self._extract_length_meters(soup),
             "weight_category": self._extract_weight_category(soup),
-            "gauge_stitches": self._extract_gauge_stitches(soup),
-            "gauge_rows": self._extract_gauge_rows(soup),
             "stitch_sample": self._extract_stitch_sample(soup),
             "description": description,
             "comment": comment,
@@ -576,78 +573,6 @@ class PatternImporter:
                     return int(match.group(1))
                 except ValueError:
                     pass
-        return None
-
-    def _extract_gauge_stitches(self, soup: BeautifulSoup) -> int | None:
-        """Extract gauge stitches per 10cm."""
-        if self.is_garnstudio:
-            stitches, _rows = self._get_garnstudio_gauge(soup)
-            if stitches:
-                return stitches
-
-        # Try finding by label first
-        val = self._find_info_by_label(soup, ["maschenprobe", "gauge", "tension"])
-        if val:
-            # 22 M und 28 R = 10 x 10 cm
-            match = re.search(r"(\d+)\s*(?:m|maschen|sts|stitches)", val, re.I)
-            if match:
-                return int(match.group(1))
-
-        patterns = [
-            r"(\d+)\s*st(?:itches?)?\s*(?:per|in|over|=)\s*10\s*cm",
-            r"(\d+)\s*st(?:itches?)?\s+in\s+width",
-            r"gauge[:\s]+(\d+)\s*st",
-            r"(\d+)\s*(?:m|maschen)\s*(?:pro|per|in|auf|über)?\s*10\s*cm",
-            r"maschenprobe[^\d]*(\d+)\s*m",
-        ]
-
-        text = soup.get_text()
-        for pattern in patterns:
-            match = re.search(pattern, text, re.I)
-            if match:
-                try:
-                    return int(match.group(1))
-                except ValueError:
-                    pass
-
-        return None
-
-    def _extract_gauge_rows(self, soup: BeautifulSoup) -> int | None:
-        """Extract gauge rows per 10cm."""
-        if self.is_garnstudio:
-            _stitches, rows = self._get_garnstudio_gauge(soup)
-            if rows:
-                return rows
-
-        # Try finding by label first
-        val = self._find_info_by_label(soup, ["maschenprobe", "gauge", "tension"])
-        if val:
-            # 22 M und 28 R = 10 x 10 cm
-            match = re.search(r"und\s*(\d+)\s*(?:r|reihen|rows)", val, re.I)
-            if match:
-                return int(match.group(1))
-            # Fallback if it's just '28 R' or similar
-            match = re.search(r"(\d+)\s*(?:r|reihen|rows)", val, re.I)
-            if match:
-                return int(match.group(1))
-
-        patterns = [
-            r"(\d+)\s*row[s]?\s*(?:per|in|over|=)\s*10\s*cm",
-            r"(\d+)\s*row[s]?\s+in\s+height",
-            r"gauge[:\s]+\d+\s*st[^,]+,\s*(\d+)\s*row",
-            r"(\d+)\s*(?:r|reihen)\s*(?:pro|per|in|auf|über)?\s*10\s*cm",
-            r"maschenprobe[^\d]*(?:\d+\s*m[^\d]+)?(\d+)\s*r",
-        ]
-
-        text = soup.get_text()
-        for pattern in patterns:
-            match = re.search(pattern, text, re.I)
-            if match:
-                try:
-                    return int(match.group(1))
-                except ValueError:
-                    pass
-
         return None
 
     def _is_ui_text(self, text: str | None) -> bool:

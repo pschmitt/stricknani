@@ -224,31 +224,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                     placeholder="{{ _('e.g. 4.0mm circular') }}">
                             </div>
 
-                            <div>
-                                <label class=" text-xs font-bold uppercase text-base-content/50">{{ _('Recommended Size') }}</label>
-                                <input type="text" name="recommended_needles"
-                                    value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
-                                    class="input  input-sm w-full mt-1"
-                                    placeholder="{{ _('e.g. 3.5mm') }}">
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-2 sm:col-span-2">
-                                <div>
-                                    <label class=" text-xs font-bold uppercase text-base-content/50">{{
-                                        _('Gauge St.') }}</label>
-                                    <input type="number" name="gauge_stitches"
-                                        value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
-                                        class="input  input-sm w-full mt-1" placeholder="20">
-                                </div>
-                                <div>
-                                    <label class=" text-xs font-bold uppercase text-base-content/50">{{
-                                        _('Gauge Rows') }}</label>
-                                    <input type="number" name="gauge_rows"
-                                        value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
-                                        class="input  input-sm w-full mt-1" placeholder="28">
-                                </div>
-                            </div>
-
                             <div class="sm:col-span-2">
                                 <div class="flex items-center justify-between mb-1">
                                     <label class=" text-xs font-bold uppercase text-base-content/50">{{
@@ -480,39 +455,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         <input type="text" id="needles" name="needles"
                             value="{{ project.needles if project and project.needles else '' }}"
                             class="input  input-sm w-full" placeholder="{{ _('e.g. 4.0mm circular') }}">
-                    </div>
-
-                    <div>
-                        <label for="recommended_needles"
-                            class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
-                            {{ _('Recommended Size') }}
-                        </label>
-                        <input type="text" id="recommended_needles" name="recommended_needles"
-                            value="{{ project.recommended_needles if project and project.recommended_needles else '' }}"
-                            class="input  input-sm w-full" placeholder="{{ _('e.g. 3.5mm') }}">
-                    </div>
-
-                    <div class="divider my-2"></div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="gauge_stitches"
-                                class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
-                                {{ _('Gauge St.') }}
-                            </label>
-                            <input type="number" id="gauge_stitches" name="gauge_stitches"
-                                value="{{ project.gauge_stitches if project and project.gauge_stitches is not none else '' }}"
-                                class="input  input-sm w-full" placeholder="20" min="1">
-                        </div>
-                        <div>
-                            <label for="gauge_rows"
-                                class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
-                                {{ _('Gauge Rows') }}
-                            </label>
-                            <input type="number" id="gauge_rows" name="gauge_rows"
-                                value="{{ project.gauge_rows if project and project.gauge_rows is not none else '' }}"
-                                class="input  input-sm w-full" placeholder="28" min="1">
-                        </div>
                     </div>
 
                     <div class="divider my-2"></div>
@@ -783,7 +725,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 // Metadata
                 setFieldValue('name', data.title || data.name);
                 setFieldValue('needles', data.needles);
-                setFieldValue('recommended_needles', data.recommended_needles);
                 setFieldValue('yarn_brand', data.brand);
                 
                 const yarnDetailsField = document.getElementById('yarn_details');
@@ -795,8 +736,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     window.yarnSelector?.selectByName(data.yarn);
                 }
 
-                setFieldValue('gauge_stitches', data.gauge_stitches);
-                setFieldValue('gauge_rows', data.gauge_rows);
                 setFieldValue('stitch_sample', data.stitch_sample);
                 setFieldValue('description', data.description);
                 setFieldValue('category', data.category);

@@ -164,8 +164,6 @@ def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
         "needles",
         "yarn",
         "brand",
-        "gauge_stitches",
-        "gauge_rows",
         "category",
         "comment",
         "link",
@@ -411,25 +409,6 @@ async def _import_step_images(
             imported += 1
 
     return imported
-
-
-def _parse_optional_int(field_name: str, value: str | None) -> int | None:
-    """Parse optional integer fields coming from forms."""
-
-    if value is None:
-        return None
-
-    cleaned = str(value).strip()
-    if not cleaned:
-        return None
-
-    try:
-        return int(cleaned)
-    except ValueError as exc:  # pragma: no cover - guarded validation
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid value for {field_name}",
-        ) from exc
 
 
 def _normalize_tags(raw_tags: str | None) -> list[str]:
@@ -1621,9 +1600,6 @@ async def get_project(
         "category": project.category,
         "yarn": project.yarn,
         "needles": project.needles,
-        "recommended_needles": project.recommended_needles,
-        "gauge_stitches": project.gauge_stitches,
-        "gauge_rows": project.gauge_rows,
         "description": project.description or "",
         "description_html": (
             render_markdown(project.description, f"project-{project.id}")
@@ -1796,9 +1772,6 @@ async def edit_project_form(
         "category": project.category,
         "yarn": project.yarn,
         "needles": project.needles,
-        "recommended_needles": project.recommended_needles,
-        "gauge_stitches": project.gauge_stitches,
-        "gauge_rows": project.gauge_rows,
         "stitch_sample": project.stitch_sample or "",
         "description": project.description or "",
         "comment": project.comment or "",
@@ -1843,9 +1816,6 @@ async def create_project(
     name: Annotated[str, Form()],
     category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
-    recommended_needles: Annotated[str | None, Form()] = None,
-    gauge_stitches: Annotated[str | None, Form()] = None,
-    gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
     stitch_sample: Annotated[str | None, Form()] = None,
     description: Annotated[str | None, Form()] = None,
@@ -1892,8 +1862,6 @@ async def create_project(
         yarn_details=parsed_yarn_details,
     )
 
-    gauge_stitches_value = _parse_optional_int("gauge_stitches", gauge_stitches)
-    gauge_rows_value = _parse_optional_int("gauge_rows", gauge_rows)
     normalized_category = await _ensure_category(db, current_user.id, category)
     normalized_tags = _normalize_tags(tags)
 
@@ -1901,11 +1869,6 @@ async def create_project(
         name=name.strip(),
         category=normalized_category,
         needles=needles.strip() if needles else None,
-        recommended_needles=(
-            recommended_needles.strip() if recommended_needles else None
-        ),
-        gauge_stitches=gauge_stitches_value,
-        gauge_rows=gauge_rows_value,
         stitch_sample=stitch_sample.strip() if stitch_sample else None,
         description=description.strip() if description else None,
         comment=comment.strip() if comment else None,
@@ -1975,9 +1938,6 @@ async def update_project(
     name: Annotated[str, Form()],
     category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
-    recommended_needles: Annotated[str | None, Form()] = None,
-    gauge_stitches: Annotated[str | None, Form()] = None,
-    gauge_rows: Annotated[str | None, Form()] = None,
     comment: Annotated[str | None, Form()] = None,
     stitch_sample: Annotated[str | None, Form()] = None,
     description: Annotated[str | None, Form()] = None,
@@ -2046,11 +2006,6 @@ async def update_project(
     project.yarns = selected_yarns
     project.yarn = selected_yarns[0].name if selected_yarns else None
     project.needles = needles.strip() if needles else None
-    project.recommended_needles = (
-        recommended_needles.strip() if recommended_needles else None
-    )
-    project.gauge_stitches = _parse_optional_int("gauge_stitches", gauge_stitches)
-    project.gauge_rows = _parse_optional_int("gauge_rows", gauge_rows)
     project.stitch_sample = stitch_sample.strip() if stitch_sample else None
     project.description = description.strip() if description else None
     project.comment = comment.strip() if comment else None

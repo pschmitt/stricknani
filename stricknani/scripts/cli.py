@@ -358,9 +358,6 @@ async def add_project(
     category: str | None,
     yarn: str | None,
     needles: str | None,
-    recommended_needles: str | None,
-    gauge_stitches: int | None,
-    gauge_rows: int | None,
     comment: str | None,
     tags: str | None,
     link: str | None,
@@ -381,9 +378,6 @@ async def add_project(
             category=category,
             yarn=yarn,
             needles=needles,
-            recommended_needles=recommended_needles,
-            gauge_stitches=gauge_stitches,
-            gauge_rows=gauge_rows,
             comment=comment,
             tags=serialized_tags,
             link=link,
@@ -492,9 +486,6 @@ async def import_project_url(
             category=data.get("category"),
             yarn=data.get("yarn"),
             needles=data.get("needles"),
-            recommended_needles=data.get("recommended_needles"),
-            gauge_stitches=data.get("gauge_stitches"),
-            gauge_rows=data.get("gauge_rows"),
             comment=data.get("comment"),
             description=data.get("description"),
             link=data.get("link") or url,
@@ -833,13 +824,6 @@ def main() -> None:
     project_add_parser.add_argument("--category", help="Project category")
     project_add_parser.add_argument("--yarn", help="Yarn description")
     project_add_parser.add_argument("--needles", help="Needle size")
-    project_add_parser.add_argument("--recommended-needles", help="Recommended needles")
-    project_add_parser.add_argument(
-        "--gauge-stitches", type=int, help="Gauge stitches per 10cm"
-    )
-    project_add_parser.add_argument(
-        "--gauge-rows", type=int, help="Gauge rows per 10cm"
-    )
     project_add_parser.add_argument("--comment", help="Project comment")
     project_add_parser.add_argument("--tags", help="Comma-separated tags")
     project_add_parser.add_argument("--link", help="Project link")
@@ -972,9 +956,6 @@ def main() -> None:
                     args.category,
                     args.yarn,
                     args.needles,
-                    args.recommended_needles,
-                    args.gauge_stitches,
-                    args.gauge_rows,
                     args.comment,
                     args.tags,
                     args.link,
