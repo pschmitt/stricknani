@@ -2,10 +2,10 @@
   lib,
   buildPythonPackage,
   fetchurl,
-  setuptools,
-  poetry-core,
+  hatchling,
   fastapi,
   pydantic,
+  pydantic-settings,
   itsdangerous,
 }:
 
@@ -20,13 +20,13 @@ buildPythonPackage rec {
   };
 
   nativeBuildInputs = [
-    setuptools
-    poetry-core
+    hatchling
   ];
 
   propagatedBuildInputs = [
     fastapi
     pydantic
+    pydantic-settings
     itsdangerous
   ];
 
