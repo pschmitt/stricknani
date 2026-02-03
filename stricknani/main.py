@@ -91,6 +91,7 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
     access_logger.exception("Unhandled exception: %s", str(exc))
     return await render_template("errors/500.html", request, status_code=500)
 
+
 # Mount static files
 static_path = Path(__file__).parent / "static"
 static_path.mkdir(exist_ok=True)
