@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi_csrf_protect import CsrfProtect
 from fastapi_csrf_protect.exceptions import CsrfProtectError
+from fastapi_csrf_protect.flexible import CsrfProtect as FlexibleCsrfProtect
 
 from stricknani.config import config
 from stricknani.database import init_db
@@ -46,13 +47,26 @@ if config.SENTRY_DSN:
 config.ensure_media_dirs()
 
 
+@CsrfProtect.load_config
+def get_csrf_config() -> list[tuple[str, Any]]:
+    """Load CSRF configuration."""
+    return [
+        ("secret_key", config.CSRF_SECRET_KEY),
+        ("cookie_samesite", config.COOKIE_SAMESITE),
+        ("token_location", "header"),
+        ("token_key", "csrf_token"),
+    ]
+
+
 async def csrf_validation_dependency(
-    request: Request, csrf_protect: CsrfProtect = Depends()
+    request: Request, csrf_protect: FlexibleCsrfProtect = Depends()
 ) -> None:
     """Global CSRF validation dependency."""
     if config.TESTING:
         return
     if request.method in {"POST", "PUT", "DELETE", "PATCH"}:
+        if request.headers.get("content-type") == "application/x-www-form-urlencoded":
+            await request.form()
         await csrf_protect.validate_csrf(request)
 
 
@@ -63,15 +77,6 @@ app = FastAPI(
     lifespan=lifespan,
     dependencies=[Depends(csrf_validation_dependency)],
 )
-
-
-@CsrfProtect.load_config
-def get_csrf_config() -> list[tuple[str, Any]]:
-    """Load CSRF configuration."""
-    return [
-        ("secret_key", config.CSRF_SECRET_KEY),
-        ("cookie_samesite", config.COOKIE_SAMESITE),
-    ]
 
 
 @app.exception_handler(CsrfProtectError)
