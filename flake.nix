@@ -53,6 +53,7 @@
               just
               ruff
               mypy
+              statix
             ];
 
             shellHook = ''

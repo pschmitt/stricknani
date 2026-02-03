@@ -38,6 +38,7 @@ i18n-compile:
 fmt:
   uv run ruff format .
   uv run ruff check --fix .
+  statix fix .
 
 # Trim trailing whitespace
 trim:
@@ -50,7 +51,11 @@ test:
   uv run pytest -v
 
 # Run all checks (lint + test)
-check: lint test i18n-check
+check: lint lint-nix test i18n-check
+
+# Lint Nix files
+lint-nix:
+  statix check
 
 # Build with Nix
 build-nix:

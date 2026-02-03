@@ -140,7 +140,7 @@ in
     services.nginx.virtualHosts = lib.mkIf (cfg.nginx.enable && cfg.hostName != null) {
       "${cfg.hostName}" = {
         inherit (cfg.nginx) forceSSL enableACME;
-        serverAliases = cfg.serverAliases;
+        inherit (cfg) serverAliases;
         locations."/" = {
           proxyPass = "http://${cfg.bindHost}:${toString cfg.port}";
           recommendedProxySettings = true;
