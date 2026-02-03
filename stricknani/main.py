@@ -10,7 +10,6 @@ from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi_csrf_protect import CsrfProtect
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 from fastapi_csrf_protect.flexible import CsrfProtect as FlexibleCsrfProtect
 
@@ -47,7 +46,7 @@ if config.SENTRY_DSN:
 config.ensure_media_dirs()
 
 
-@CsrfProtect.load_config
+@FlexibleCsrfProtect.load_config
 def get_csrf_config() -> list[tuple[str, Any]]:
     """Load CSRF configuration."""
     return [
@@ -305,7 +304,7 @@ async def render_template(
     context.setdefault("feature_wayback_enabled", config.FEATURE_WAYBACK_ENABLED)
 
     # CSRF protection
-    csrf = CsrfProtect()
+    csrf = FlexibleCsrfProtect()
     csrf_token, signed_token = csrf.generate_csrf_tokens()
     context["csrf_token"] = csrf_token
 
