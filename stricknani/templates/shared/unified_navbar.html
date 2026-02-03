@@ -68,6 +68,14 @@
                                 {{ _('Yarns') }}
                             </a>
                         </li>
+                        {% else %}
+                        <li>
+                            <a href="/login"
+                                class="{% if current_path.startswith('/login') %}bg-primary/10 text-primary font-medium{% endif %}">
+                                <span class="mdi mdi-login text-lg"></span>
+                                {{ _('Login') }}
+                            </a>
+                        </li>
                         {% endif %}
                         <li>
                             <a href="/gauge"
@@ -126,6 +134,14 @@
                                 class="{% if current_path.startswith('/yarn') %}bg-primary/10 text-primary font-medium{% endif %}">
                                 <span class="mdi mdi-sheep text-lg"></span>
                                 {{ _('Yarns') }}
+                            </a>
+                        </li>
+                        {% else %}
+                        <li>
+                            <a href="/login"
+                                class="{% if current_path.startswith('/login') %}bg-primary/10 text-primary font-medium{% endif %}">
+                                <span class="mdi mdi-login text-lg"></span>
+                                {{ _('Login') }}
                             </a>
                         </li>
                         {% endif %}
@@ -337,11 +353,6 @@
                             </li>
                         </ul>
                     </div>
-                    
-                    <a href="/login" class="btn btn-ghost btn-sm sm:btn-md gap-2">
-                        <span class="mdi mdi-login text-lg"></span>
-                        <span class="hidden sm:inline">{{ _('Login') }}</span>
-                    </a>
                 </div>
                 {% endif %}
             </div>
