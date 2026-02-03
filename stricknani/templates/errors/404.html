@@ -1,0 +1,10 @@
+{% extends "errors/base.html" %}
+
+{% block title %}404 - {{ _('Page Not Found') }} - {{ _('Stricknani') }}{% endblock %}
+
+{% block error_icon %}mdi-map-marker-question-outline{% endblock %}
+{% block error_code %}404{% endblock %}
+{% block error_title %}{{ _('Lost in the stitches?') }}{% endblock %}
+{% block error_message %}
+    {{ _("We couldn't find the page you're looking for. It might have been moved, deleted, or perhaps it never existed in our pattern.") }}
+{% endblock %}

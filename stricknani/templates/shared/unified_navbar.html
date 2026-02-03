@@ -234,26 +234,7 @@
                                         {{ _('Language') }}
                                     </span>
                                 </label>
-                                <div class="join w-full bg-base-200 p-1 rounded-xl">
-                                    <form action="/auth/set-language" method="post" class="flex-1">
-                                        <input type="hidden" name="next"
-                                            value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                        <input type="hidden" name="language" value="en">
-                                        <button type="submit"
-                                            class="btn btn-sm w-full border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold {% if current_language == 'en' %}bg-base-100 shadow-sm text-primary{% else %}btn-ghost opacity-60 hover:opacity-100{% endif %}">
-                                            🇬🇧 EN
-                                        </button>
-                                    </form>
-                                    <form action="/auth/set-language" method="post" class="flex-1">
-                                        <input type="hidden" name="next"
-                                            value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                        <input type="hidden" name="language" value="de">
-                                        <button type="submit"
-                                            class="btn btn-sm w-full border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold {% if current_language == 'de' %}bg-base-100 shadow-sm text-primary{% else %}btn-ghost opacity-60 hover:opacity-100{% endif %}">
-                                            🇩🇪 DE
-                                        </button>
-                                    </form>
-                                </div>
+                                {% include "shared/_language_selector.html" %}
                             </div>
                             <div class="space-y-2">
                                 <label class="block mb-1 px-1">
@@ -294,64 +275,19 @@
                         <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
                     </button>
                     
-                    <div class="join bg-base-300/50 p-0.5 rounded-full hidden sm:flex border border-base-300">
-                        <form action="/auth/set-language" method="post" class="join-item">
-                            <input type="hidden" name="next"
-                                value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                            <input type="hidden" name="language" value="en">
-                            <button type="submit"
-                                class="btn btn-xs rounded-full border-none h-7 min-h-7 px-3 text-[10px] font-black transition-all {% if current_language == 'en' %}bg-base-100 shadow-sm text-primary{% else %}btn-ghost text-base-content/40 hover:text-base-content{% endif %}">
-                                EN
-                            </button>
-                        </form>
-                        <form action="/auth/set-language" method="post" class="join-item">
-                            <input type="hidden" name="next"
-                                value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                            <input type="hidden" name="language" value="de">
-                            <button type="submit"
-                                class="btn btn-xs rounded-full border-none h-7 min-h-7 px-3 text-[10px] font-black transition-all {% if current_language == 'de' %}bg-base-100 shadow-sm text-primary{% else %}btn-ghost text-base-content/40 hover:text-base-content{% endif %}">
-                                DE
-                            </button>
-                        </form>
+                    <div class="hidden sm:block min-w-32">
+                        {% set container_class = "bg-base-300/50 border border-base-300 rounded-full" %}
+                        {% include "shared/_language_selector.html" %}
                     </div>
 
                     <div class="dropdown dropdown-end sm:hidden">
                         <button tabindex="0" role="button" class="btn btn-ghost btn-circle btn-sm">
                             <span class="mdi mdi-translate text-lg"></span>
                         </button>
-                        <ul tabindex="0"
-                            class="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-48 border border-base-300 gap-1 mt-2 z-[90]">
-                            <li>
-                                <form action="/auth/set-language" method="post" class="block p-0">
-                                    <input type="hidden" name="next"
-                                        value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                    <input type="hidden" name="language" value="en">
-                                    <button type="submit"
-                                        class="flex w-full items-center gap-3 py-3 px-4 rounded-lg {% if current_language == 'en' %}bg-primary/10 text-primary font-bold{% endif %} hover:bg-base-200">
-                                        <span class="text-xl leading-none">🇬🇧</span>
-                                        <span class="text-sm">{{ _('English') }}</span>
-                                        {% if current_language == 'en' %}
-                                        <span class="mdi mdi-check ml-auto text-primary"></span>
-                                        {% endif %}
-                                    </button>
-                                </form>
-                            </li>
-                            <li>
-                                <form action="/auth/set-language" method="post" class="block p-0">
-                                    <input type="hidden" name="next"
-                                        value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-                                    <input type="hidden" name="language" value="de">
-                                    <button type="submit"
-                                        class="flex w-full items-center gap-3 py-3 px-4 rounded-lg {% if current_language == 'de' %}bg-primary/10 text-primary font-bold{% endif %} hover:bg-base-200">
-                                        <span class="text-xl leading-none">🇩🇪</span>
-                                        <span class="text-sm">{{ _('German') }}</span>
-                                        {% if current_language == 'de' %}
-                                        <span class="mdi mdi-check ml-auto text-primary"></span>
-                                        {% endif %}
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
+                        <div tabindex="0"
+                            class="dropdown-content p-2 shadow-xl bg-base-100 rounded-box w-48 border border-base-300 mt-2 z-[90]">
+                            {% include "shared/_language_selector.html" %}
+                        </div>
                     </div>
                 </div>
                 {% endif %}

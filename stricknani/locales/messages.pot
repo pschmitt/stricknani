@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-03 12:02+0100\n"
+"POT-Creation-Date: 2026-02-03 13:25+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,9 @@ msgstr ""
 "Generated-By: Babel 2.17.0\n"
 
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
-#: stricknani/templates/base.html:415
+#: stricknani/templates/base.html:415 stricknani/templates/errors/401.html:3
+#: stricknani/templates/errors/404.html:3
+#: stricknani/templates/errors/500.html:3
 #: stricknani/templates/shared/unified_navbar.html:14
 #: stricknani/templates/yarn/list.html:5
 msgid "Stricknani"
@@ -177,16 +179,16 @@ msgid "Download image"
 msgstr ""
 
 #: stricknani/templates/admin/_user_card.html:9
-#: stricknani/templates/shared/unified_navbar.html:166
-#: stricknani/templates/shared/unified_navbar.html:181
+#: stricknani/templates/shared/unified_navbar.html:196
+#: stricknani/templates/shared/unified_navbar.html:211
 #, python-format
 msgid "Profile picture for %(email)s"
 msgstr ""
 
 #: stricknani/templates/admin/_user_card.html:13
 #: stricknani/templates/admin/users.html:7
-#: stricknani/templates/shared/unified_navbar.html:77
-#: stricknani/templates/shared/unified_navbar.html:130
+#: stricknani/templates/shared/unified_navbar.html:92
+#: stricknani/templates/shared/unified_navbar.html:160
 msgid "Admin"
 msgstr ""
 
@@ -408,8 +410,9 @@ msgid "Email already registered"
 msgstr ""
 
 #: stricknani/templates/auth/login.html:4
-#: stricknani/templates/shared/unified_navbar.html:61
-#: stricknani/templates/shared/unified_navbar.html:114
+#: stricknani/templates/errors/401.html:16
+#: stricknani/templates/shared/unified_navbar.html:76
+#: stricknani/templates/shared/unified_navbar.html:144
 msgid "Login"
 msgstr ""
 
@@ -418,7 +421,7 @@ msgid "Welcome to Stricknani"
 msgstr ""
 
 #: stricknani/templates/auth/login.html:19
-msgid "Sign in to your Stricknani instance"
+msgid "Please sign in below"
 msgstr ""
 
 #: stricknani/templates/auth/login.html:28
@@ -464,9 +467,55 @@ msgstr ""
 msgid "Already have an account? Sign in"
 msgstr ""
 
+#: stricknani/templates/errors/401.html:3
+msgid "Unauthorized"
+msgstr ""
+
+#: stricknani/templates/errors/401.html:8
+msgid "Members only"
+msgstr ""
+
+#: stricknani/templates/errors/401.html:10
+msgid ""
+"You need to be signed in to access this area of Stricknani. Please log in"
+" to continue your knitting journey."
+msgstr ""
+
+#: stricknani/templates/errors/404.html:3
+msgid "Page Not Found"
+msgstr ""
+
+#: stricknani/templates/errors/404.html:7
+msgid "Lost in the stitches?"
+msgstr ""
+
+#: stricknani/templates/errors/404.html:9
+msgid ""
+"We couldn't find the page you're looking for. It might have been moved, "
+"deleted, or perhaps it never existed in our pattern."
+msgstr ""
+
+#: stricknani/templates/errors/500.html:3
+msgid "Internal Server Error"
+msgstr ""
+
+#: stricknani/templates/errors/500.html:8
+msgid "Dropped a stitch"
+msgstr ""
+
+#: stricknani/templates/errors/500.html:10
+msgid ""
+"Something went wrong on our end. We've encountered an unexpected error "
+"and are looking into it. Please try again later."
+msgstr ""
+
+#: stricknani/templates/errors/base.html:23
+msgid "Go Home"
+msgstr ""
+
 #: stricknani/templates/gauge/calculator.html:7
-#: stricknani/templates/shared/unified_navbar.html:69
-#: stricknani/templates/shared/unified_navbar.html:122
+#: stricknani/templates/shared/unified_navbar.html:84
+#: stricknani/templates/shared/unified_navbar.html:152
 msgid "Gauge Calculator"
 msgstr ""
 
@@ -1355,6 +1404,8 @@ msgstr ""
 #: stricknani/templates/projects/list.html:4
 #: stricknani/templates/projects/list.html:21
 #: stricknani/templates/projects/list.html:56
+#: stricknani/templates/shared/unified_navbar.html:61
+#: stricknani/templates/shared/unified_navbar.html:129
 msgid "Projects"
 msgstr ""
 
@@ -1392,48 +1443,46 @@ msgstr ""
 msgid "Discard"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:86
+#: stricknani/templates/shared/unified_navbar.html:68
+#: stricknani/templates/shared/unified_navbar.html:136
+#: stricknani/templates/yarn/list.html:9 stricknani/templates/yarn/list.html:36
+msgid "Yarns"
+msgstr ""
+
+#: stricknani/templates/shared/unified_navbar.html:101
 msgid "Home"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:178
+#: stricknani/templates/shared/unified_navbar.html:208
 msgid "Change profile picture"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:195
+#: stricknani/templates/shared/unified_navbar.html:225
 msgid "Signed in"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:204
+#: stricknani/templates/shared/unified_navbar.html:234
 msgid "Language"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:233
+#: stricknani/templates/shared/unified_navbar.html:244
 msgid "Appearance"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:240
+#: stricknani/templates/shared/unified_navbar.html:251
 msgid "Light"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:245
+#: stricknani/templates/shared/unified_navbar.html:256
 msgid "Dark"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:254
+#: stricknani/templates/shared/unified_navbar.html:265
 msgid "Logout"
 msgstr ""
 
-#: stricknani/templates/shared/unified_navbar.html:263
+#: stricknani/templates/shared/unified_navbar.html:274
 msgid "Toggle theme"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:302
-msgid "English"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:317
-msgid "German"
 msgstr ""
 
 #: stricknani/templates/yarn/_empty_state.html:6
@@ -1719,9 +1768,5 @@ msgstr ""
 
 #: stricknani/templates/yarn/form.html:1025
 msgid "Remove image"
-msgstr ""
-
-#: stricknani/templates/yarn/list.html:9 stricknani/templates/yarn/list.html:36
-msgid "Yarns"
 msgstr ""
 

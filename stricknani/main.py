@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import FastAPI, Form, Request, Response
+from fastapi import FastAPI, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -50,6 +50,30 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+
+@app.exception_handler(404)
+async def not_found_exception_handler(
+    request: Request, exc: HTTPException
+) -> HTMLResponse:
+    """Handle 404 errors by rendering a custom template."""
+    return render_template("errors/404.html", request, status_code=404)
+
+
+@app.exception_handler(401)
+async def unauthorized_exception_handler(
+    request: Request, exc: HTTPException
+) -> HTMLResponse:
+    """Handle 401 errors by rendering a custom template."""
+    return render_template("errors/401.html", request, status_code=401)
+
+
+@app.exception_handler(Exception)
+async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
+    """Handle all other unhandled exceptions by rendering a 500 template."""
+    # Log the exception for debugging
+    access_logger.exception("Unhandled exception: %s", str(exc))
+    return render_template("errors/500.html", request, status_code=500)
 
 # Mount static files
 static_path = Path(__file__).parent / "static"
