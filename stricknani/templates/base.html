@@ -1209,15 +1209,21 @@
                 const fileList = Array.from(files || []);
                 if (!fileList.length) return;
 
-                const imageFiles = fileList.filter(file => file.type.startsWith('image/'));
-                if (!imageFiles.length) {
+                const accept = (input.getAttribute('accept') || '').trim();
+                const requiresImages = accept.includes('image/')
+                    && !accept.includes('*/*')
+                    && !accept.split(',').some(item => item.trim() === '*/*');
+                const acceptedFiles = requiresImages
+                    ? fileList.filter(file => file.type.startsWith('image/'))
+                    : fileList;
+                if (!acceptedFiles.length) {
                     window.showToast?.('{{ _("Only image files are supported") }}', 'error');
                     return;
                 }
 
                 setUploadingState(true);
                 try {
-                    for (const file of imageFiles) {
+                    for (const file of acceptedFiles) {
                         await onUpload(file);
                     }
                 } finally {

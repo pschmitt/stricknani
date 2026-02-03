@@ -9,12 +9,14 @@ container_id=None,
 container_class=None,
 input_name=None,
 onchange=None,
-icon=None
+icon=None,
+accept=None
 ) -%}
 <div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors dark:border-slate-600 dark:hover:border-blue-400 {{ container_class or '' }}"
     {% if container_id %} id="{{ container_id }}" {% endif %}>
-    <input type="file" id="{{ input_id }}" {% if input_name %} name="{{ input_name }}" {% endif %} accept="image/*" {%
-        if multiple %} multiple{% endif %} class="hidden" {% if onchange %} onchange="{{ onchange }}" {% endif %}>
+    <input type="file" id="{{ input_id }}" {% if input_name %} name="{{ input_name }}" {% endif %}
+        accept="{{ accept or 'image/*' }}" {% if multiple %} multiple{% endif %} class="hidden" {% if onchange %}
+        onchange="{{ onchange }}" {% endif %}>
     <label for="{{ input_id }}" class="cursor-pointer block">
         <span class="mdi {{ icon or 'mdi-image-plus' }} mx-auto text-4xl text-slate-400 dark:text-slate-500"></span>
         <p class="upload-instructions mt-2 text-sm text-base-content/70" {% if label_text %}
