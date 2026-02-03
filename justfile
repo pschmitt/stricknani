@@ -115,8 +115,16 @@ alembic *ARGS:
   uv run alembic --config stricknani/alembic.ini {{ARGS}}
 
 # Deploy to production
-deploy:
+deploy commit='':
   #!/usr/bin/env zhj
+  set -euo pipefail
+
   cd /etc/nixos
+
   nix flake update stricknani
   nrb --target rofl-10.brkn.lol
+
+  if [[ "{{commit}}" == "--commit" ]]; then
+    git add flake.lock
+    git commit -m "chore: update stricknani"
+  fi
