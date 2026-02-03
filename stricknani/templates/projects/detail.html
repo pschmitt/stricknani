@@ -195,9 +195,16 @@
             {% if project.description %}
             <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
                 <h3
-                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
-                    <span class="mdi mdi-text-box-outline"></span>
-                    {{ _('Description') }}
+                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="mdi mdi-text-box-outline"></span>
+                        {{ _('Description') }}
+                    </div>
+                    <button class="btn btn-ghost btn-xs gap-1"
+                        onclick='copyToClipboard({{ (project.description or '')|tojson }}, this)'
+                        title="{{ _('Copy Description') }}">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
                 </h3>
                 <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
                     {% if project.description_html %}
@@ -409,9 +416,16 @@
                 <div
                     class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
                     <h3
-                        class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
-                        <span class="mdi mdi-notebook-outline"></span>
-                        {{ _('Notes') }}
+                        class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="mdi mdi-notebook-outline"></span>
+                            {{ _('Notes') }}
+                        </div>
+                        <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
+                            onclick='copyToClipboard({{ (project.comment or '')|tojson }}, this)'
+                            title="{{ _('Copy Notes') }}">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
                     </h3>
                     <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
                         {{ project.comment_html | safe }}
@@ -479,13 +493,20 @@
                         <!-- Content Card -->
                         <div
                             class="step-card flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm p-5 transition hover:shadow-md hover:border-primary/20">
-                            <div class="flex items-center gap-3 mb-2">
-                                <!-- Mobile Step Number -->
-                                <div
-                                    class="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20">
-                                    <span class="font-bold text-sm">{{ step.step_number }}</span>
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-3">
+                                    <!-- Mobile Step Number -->
+                                    <div
+                                        class="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20">
+                                        <span class="font-bold text-sm">{{ step.step_number }}</span>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-base-content">{{ step.title }}</h3>
                                 </div>
-                                <h3 class="text-lg font-bold text-base-content">{{ step.title }}</h3>
+                                <button class="btn btn-ghost btn-xs"
+                                    onclick='copyToClipboard({{ (step.description or '')|tojson }}, this)'
+                                    title="{{ _('Copy Instructions') }}">
+                                    <span class="mdi mdi-content-copy"></span>
+                                </button>
                             </div>
 
                             {% if step.description_html %}
@@ -724,9 +745,16 @@
             <div
                 class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
                 <h3
-                    class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
-                    <span class="mdi mdi-notebook-outline"></span>
-                    {{ _('Notes') }}
+                    class="font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest mb-4 flex items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="mdi mdi-notebook-outline"></span>
+                        {{ _('Notes') }}
+                    </div>
+                    <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
+                        onclick='copyToClipboard({{ (project.comment or '')|tojson }}, this)'
+                        title="{{ _('Copy Notes') }}">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
                 </h3>
                 <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
                     {{ project.comment_html | safe }}

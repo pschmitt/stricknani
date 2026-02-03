@@ -258,6 +258,17 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                         <span class="mdi mdi-download"></span>
                                         {{ _('Re-import') }}
                                     </button>
+                                    <a href="{{ project.link }}" target="_blank"
+                                        class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
+                                        id="visit-link-btn-mobile" title="{{ _('Visit Website') }}">
+                                        <span class="mdi mdi-open-in-new"></span>
+                                        {{ _('Visit') }}
+                                    </a>
+                                    <button type="button"
+                                        class="btn btn-ghost btn-xs gap-1 normal-case"
+                                        onclick="copyToClipboard(document.getElementById('link').value, this)" title="{{ _('Copy URL') }}">
+                                        <span class="mdi mdi-content-copy"></span>
+                                    </button>
                                 </div>
                                 <input type="url" name="link" value="{{ project.link or '' }}"
                                     class="input  input-sm w-full" placeholder="https://..."
@@ -515,6 +526,17 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                 onclick="importFromUrl(document.getElementById('link').value)">
                                 <span class="mdi mdi-download"></span>
                                 {{ _('Re-import') }}
+                            </button>
+                            <a href="{{ project.link }}" target="_blank"
+                                class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
+                                id="visit-link-btn" title="{{ _('Visit Website') }}">
+                                <span class="mdi mdi-open-in-new"></span>
+                                {{ _('Visit') }}
+                            </a>
+                            <button type="button"
+                                class="btn btn-ghost btn-xs gap-1 normal-case"
+                                onclick="copyToClipboard(document.getElementById('link').value, this)" title="{{ _('Copy URL') }}">
+                                <span class="mdi mdi-content-copy"></span>
                             </button>
                         </div>
                         <input type="url" id="link" name="link" value="{{ project.link or '' }}"
@@ -2280,6 +2302,18 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         });
         document.getElementById('reimport-btn')?.classList.toggle('hidden', !value);
         document.getElementById('reimport-btn-mobile')?.classList.toggle('hidden', !value);
+
+        const visitBtnMobile = document.getElementById('visit-link-btn-mobile');
+        if (visitBtnMobile) {
+            visitBtnMobile.classList.toggle('hidden', !value);
+            visitBtnMobile.href = value;
+        }
+
+        const visitBtn = document.getElementById('visit-link-btn');
+        if (visitBtn) {
+            visitBtn.classList.toggle('hidden', !value);
+            visitBtn.href = value;
+        }
 
         // Enable/disable AI and Wayback checkboxes
         const waybackCheckboxes = [
