@@ -160,9 +160,9 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                             <div class="col-span-2">
                                 <label class=" text-xs font-bold uppercase text-base-content/50">{{
                                     _('Recommended Needles') }}</label>
-                                <input type="text" name="recommended_needles"
-                                    value="{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}"
-                                    class="input  input-sm w-full mt-1" placeholder="4.0mm">
+                                <textarea name="recommended_needles"
+                                    class="textarea textarea-bordered textarea-sm w-full mt-1"
+                                    placeholder="4.0mm">{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}</textarea>
                             </div>
 
                             <div class="col-span-2">
@@ -383,9 +383,9 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                             class=" text-xs font-bold uppercase text-base-content/50 block mb-1">
                             {{ _('Recommended Needles') }}
                         </label>
-                        <input type="text" id="recommended_needles" name="recommended_needles"
-                            value="{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}"
-                            class="input  input-sm w-full" placeholder="4.0mm">
+                        <textarea id="recommended_needles" name="recommended_needles"
+                            class="textarea textarea-bordered textarea-sm w-full"
+                            placeholder="4.0mm">{{ yarn.recommended_needles if yarn and yarn.recommended_needles else '' }}</textarea>
                     </div>
 
                     <div class="divider my-2"></div>
@@ -513,6 +513,15 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
     const isEditing = "{{ 'true' if yarn else 'false' }}" === "true";
     const deleteErrorMessage = '{{ _("Failed to delete the photo. Please try again") }}';
     const deleteNetworkErrorMessage = '{{ _("Network error while deleting photo") }}';
+
+    function autoResize(el) {
+        if (!el) return;
+        // Use setTimeout to ensure the element is visible and has dimensions
+        setTimeout(() => {
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight + 2) + 'px';
+        }, 0);
+    }
 
     function syncAiEnhanced(el) {
         const isChecked = el.checked;
@@ -875,6 +884,14 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 }
             });
         }
+
+        document.querySelectorAll('textarea').forEach(el => {
+            el.style.overflowY = 'hidden';
+            autoResize(el);
+            el.addEventListener('input', () => {
+                autoResize(el);
+            });
+        });
 
         const importedData = sessionStorage.getItem('importedYarnData');
         if (importedData) {

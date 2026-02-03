@@ -472,7 +472,9 @@ async def seed_demo_data(reset: bool = False) -> None:
             steps_data = project_data.pop("steps", [])
             if not isinstance(steps_data, list):
                 steps_data = []
-            linked_yarns = project_data.pop("linked_yarns", [])
+            from typing import cast
+
+            linked_yarns = cast(list[str], project_data.pop("linked_yarns", []))
             if not isinstance(linked_yarns, list):
                 linked_yarns = []
 

@@ -15,8 +15,11 @@ Use this file as the single source of truth for how to work in the Stricknani re
   `just i18n-check`
 
 ### Code Quality
+- **Zero Tolerance Policy:** If you notice a formatting or linting error, you MUST fix it immediately.
 - Linting: `uv run ruff check .`
 - Type checking: `uv run mypy .` (strict)
+- Nix linting: `statix check`
+- Formatting: `just fmt`
 - Tests: `uv run pytest -v`
 - **Server Health Check (Mandatory):** After any code change, you MUST verify the application starts correctly by running the integration tests: `uv run pytest tests/test_health.py`. This catches runtime syntax errors in templates or application logic that static analysis might miss.
 - Trim trailing whitespace in all edited files.

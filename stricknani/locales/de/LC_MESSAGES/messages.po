@@ -805,7 +805,6 @@ msgid "Pattern URL"
 msgstr "Anleitungs-URL"
 
 #: stricknani/templates/projects/_import_dialog.html:29
-#, fuzzy
 msgid "e.g. https://www.garnstudio.com/pattern.php?id=..."
 msgstr "z.B. https://www.ravelry.com/patterns/library/..."
 
@@ -1568,7 +1567,6 @@ msgid "Yarn URL"
 msgstr "Garn-URL"
 
 #: stricknani/templates/yarn/_import_dialog.html:29
-#, fuzzy
 msgid "e.g. https://www.garnstudio.com/yarn.php?id=..."
 msgstr "z.B. https://www.ravelry.com/yarns/library/..."
 

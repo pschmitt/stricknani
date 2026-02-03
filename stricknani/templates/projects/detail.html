@@ -191,153 +191,153 @@
                 </div>
             </div>
             {% endif %}
+
+            <!-- Attachments Section -->
+            {% if project.attachments %}
+            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
+                <div class="p-4 border-b border-base-100 flex items-center justify-between">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <span class="mdi mdi-paperclip text-primary"></span>
+                        {{ _('Attachments') }}
+                    </h2>
+                    <span class="text-xs font-medium text-base-content/50">{{ project.attachments|length }} {{
+                        _('files') }}</span>
+                </div>
+                <div class="p-4 space-y-2">
+                    {% for attachment in project.attachments %}
+                    <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:bg-base-200/50 transition-colors group">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                {% if attachment.content_type == 'application/pdf' %}
+                                <span class="mdi mdi-file-pdf-outline text-2xl"></span>
+                                {% elif attachment.content_type.startswith('image/') %}
+                                <span class="mdi mdi-file-image-outline text-2xl"></span>
+                                {% else %}
+                                <span class="mdi mdi-file-outline text-2xl"></span>
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-medium text-sm truncate" title="{{ attachment.original_filename }}">
+                                    {{ attachment.original_filename }}
+                                </p>
+                                <p class="text-[10px] text-base-content/50 uppercase font-bold tracking-wider">
+                                    {{ (attachment.size_bytes / 1024 / 1024)|round(2) }} MB • {{ attachment.content_type.split('/')[-1]|upper }}
+                                </p>
+                            </div>
+                        </div>
+                        <a href="{{ attachment.url }}" target="_blank" class="btn btn-ghost btn-sm btn-circle text-primary opacity-0 group-hover:opacity-100 transition-opacity" title="{{ _('Download') }}">
+                            <span class="mdi mdi-download text-xl"></span>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Mobile: Details + Notes before steps -->
             <div class="space-y-6 lg:hidden">
-                <!-- Details Card -->
-                <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                    <h3
-                        class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                <!-- Details Card (Collapsible) -->
+                <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+                    <input type="checkbox" id="details-toggle-mobile" /> 
+                    <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Project Details') }}
-                    </h3>
-
-                    <div class="space-y-4">
-                        <!-- Badges Info -->
-                        {% if project.category and project.category != 'None' %}
-                        <div class="mb-4">
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
-                                }}</span>
-                            <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
-                                class="badge badge-md border {{ project.category|category_color }} font-bold py-3.5 px-4 shadow-sm hover:brightness-95 transition-all">
-                                <span class="mdi mdi-tag-outline mr-1.5 text-sm"></span>
-                                <span class="truncate">{{ _(project.category) }}</span>
-                            </a>
-                        </div>
-                        {% endif %}
-
-                        {% if project.tags %}
-                        <div class="mb-4">
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Tags')
-                                }}</span>
-                            <div class="flex flex-wrap gap-2">
-                                {% for tag in project.tags %}
-                                <a href="/projects?search={{ ('#' ~ tag)|urlencode }}"
-                                    class="badge border-base-300 bg-base-200/50 text-base-content/70 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all duration-200 py-3 px-3">#{{ tag
-                                    }}</a>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        <div class="py-1">
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created')
-                                }}</span>
-                            <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
-                                <span class="mdi mdi-calendar-plus"></span>
-                                {{ project.created_at[:10] }}
-                            </span>
-                        </div>
-
-                        {% if project.is_ai_enhanced %}
-                        <div class="py-1">
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Data Source') }}</span>
-                            <span class="badge badge-primary font-black text-[10px] tracking-tighter uppercase h-5 min-h-0" title="{{ _('AI Enhanced') }}">AI</span>
-                        </div>
-                        {% endif %}
-
-                        <div class="divider my-2"></div>
-
-                        <!-- Linked Yarns (compact) -->
-                        {% if project.linked_yarns %}
-                        <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used')
-                                }}</span>
-                            <div class="space-y-2">
-                                {% for yarn in project.linked_yarns %}
-                                <a href="/yarn/{{ yarn.id }}"
-                                    class="flex items-center gap-2 rounded-lg border border-base-200 bg-base-100 px-2.5 py-2 text-sm transition hover:border-base-300 hover:bg-base-200/40">
-                                    <div
-                                        class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
-                                        {% if yarn.preview_url %}
-                                        <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}"
-                                            class="h-full w-full object-cover">
-                                        {% else %}
-                                        <span class="mdi mdi-sheep text-base-content/40"></span>
-                                        {% endif %}
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="truncate font-medium">{{ yarn.name }}</div>
-                                        <div class="text-xs text-base-content/60 truncate">
-                                            {{ yarn.brand or _('Unknown Brand') }}
-                                            {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
-                                        </div>
-                                    </div>
-                                    <span class="mdi mdi-chevron-right text-base-content/30"></span>
+                    </div>
+                    <div class="collapse-content space-y-4">
+                        <div class="pt-2">
+                            <!-- Badges Info -->
+                            {% if project.category and project.category != 'None' %}
+                            <div class="mb-4">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
+                                    }}</span>
+                                <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
+                                    class="badge badge-md border {{ project.category|category_color }} font-bold py-3.5 px-4 shadow-sm hover:brightness-95 transition-all">
+                                    <span class="mdi mdi-tag-outline mr-1.5 text-sm"></span>
+                                    <span class="truncate">{{ _(project.category) }}</span>
                                 </a>
-                                {% endfor %}
                             </div>
-                        </div>
-                        {% else %}
-                        <div>
-                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used')
-                                }}</span>
-                            <div
-                                class="flex items-center justify-between rounded-lg border border-dashed border-base-300 bg-base-200/30 px-3 py-2 text-sm text-base-content/60">
-                                <span>{{ _('No yarns linked') }}</span>
-                                <a href="/projects/{{ project.id }}/edit" class="text-primary hover:underline">{{
-                                    _('Link yarn') }}</a>
-                            </div>
-                        </div>
-                        {% endif %}
+                            {% endif %}
 
-                        <div class="divider my-2"></div>
-
-                        <!-- Source Link -->
-                                                <div>
-                                                    <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
-                                                    {% if project.link %}
-                                                    <div class="flex items-center gap-2 group/link">
-                                                        <a href="{{ project.link }}" target="_blank" rel="noreferrer"
-                                                            class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
-                                                            <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
-                                                            {{ project.link }}
-                                                        </a>
-                                                        <button type="button" 
-                                                            onclick="copyToClipboard('{{ project.link }}', this)"
-                                                            class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
-                                                            title="{{ _('Copy URL') }}">
-                                                            <span class="mdi mdi-content-copy text-xs"></span>
-                                                        </button>
-                                                    </div>                            {% if project.link_archive %}
-                            <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
-                                class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
-                                <span class="mdi mdi-archive-outline"></span>
-                                {{ _('Archived snapshot') }}
-                            </a>
-                            {% elif project.link_archive_failed %}
-                            <div class="mt-2 flex flex-wrap items-center gap-2">
-                                <div
-                                    class="inline-flex items-center gap-2 rounded-full bg-error/10 px-3 py-1 text-xs font-semibold text-error">
-                                    <span class="mdi mdi-alert-circle-outline"></span>
-                                    {{ _('Archive request failed') }}
+                            {% if project.tags %}
+                            <div class="mb-4">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Tags')
+                                    }}</span>
+                                <div class="flex flex-wrap gap-2">
+                                    {% for tag in project.tags %}
+                                    <a href="/projects?search={{ ('#' ~ tag)|urlencode }}"
+                                        class="badge border-base-300 bg-base-200/50 text-base-content/70 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all duration-200 py-3 px-3">#{{ tag
+                                        }}</a>
+                                    {% endfor %}
                                 </div>
-                                <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
-                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
-                                        <span class="mdi mdi-refresh"></span>
-                                        {{ _('Retry') }}
+                            </div>
+                            {% endif %}
+
+                            <div class="py-1">
+                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created')
+                                    }}</span>
+                                <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
+                                    <span class="mdi mdi-calendar-plus"></span>
+                                    {{ project.created_at[:10] }}
+                                </span>
+                            </div>
+
+                            {% if project.is_ai_enhanced %}
+                            <div class="py-1">
+                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Data Source') }}</span>
+                                <span class="badge badge-primary font-black text-[10px] tracking-tighter uppercase h-5 min-h-0" title="{{ _('AI Enhanced') }}">AI</span>
+                            </div>
+                            {% endif %}
+
+                            <div class="divider my-2"></div>
+
+                            <!-- Source Link -->
+                            <div>
+                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
+                                {% if project.link %}
+                                <div class="flex items-center gap-2 group/link">
+                                    <a href="{{ project.link }}" target="_blank" rel="noreferrer"
+                                        class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
+                                        <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
+                                        {{ project.link }}
+                                    </a>
+                                    <button type="button" 
+                                        onclick="copyToClipboard('{{ project.link }}', this)"
+                                        class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
+                                        title="{{ _('Copy URL') }}">
+                                        <span class="mdi mdi-content-copy text-xs"></span>
                                     </button>
-                                </form>
+                                </div>
+                                {% if project.link_archive %}
+                                <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
+                                    class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
+                                    <span class="mdi mdi-archive-outline"></span>
+                                    {{ _('Archived snapshot') }}
+                                </a>
+                                {% elif project.link_archive_failed %}
+                                <div class="mt-2 flex flex-wrap items-center gap-2">
+                                    <div
+                                        class="inline-flex items-center gap-2 rounded-full bg-error/10 px-3 py-1 text-xs font-semibold text-error">
+                                        <span class="mdi mdi-alert-circle-outline"></span>
+                                        {{ _('Archive request failed') }}
+                                    </div>
+                                    <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
+                                        <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                            <span class="mdi mdi-refresh"></span>
+                                            {{ _('Retry') }}
+                                        </button>
+                                    </form>
+                                </div>
+                                {% elif project.archive_pending %}
+                                <div
+                                    class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                                    <span class="mdi mdi-clock-outline"></span>
+                                    {{ _('Archive requested - check back soon') }}
+                                </div>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
+                                {% endif %}
                             </div>
-                            {% elif project.archive_pending %}
-                            <div
-                                class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-                                <span class="mdi mdi-clock-outline"></span>
-                                {{ _('Archive requested - check back soon') }}
-                            </div>
-                            {% endif %}
-                            {% else %}
-                            <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -390,54 +390,102 @@
             {% endif %}
 
 
-            {% if project.stitch_sample_html or project.stitch_sample_images %}
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5" id="stitch-sample-card">
-                <h3
-                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
-                    <span class="mdi mdi-grid"></span>
-                    {{ _('Stitch Sample') }}
-                </h3>
-                {% if project.stitch_sample_html %}
-                <div class="prose prose-sm prose-compact max-w-none text-base-content/90 mb-4" id="stitch-sample-text">
-                    {{ project.stitch_sample_html | safe }}
-                </div>
-                {% endif %}
-
-                {% if project.stitch_sample_images %}
-                <div class="mt-4 pt-4 border-t border-base-100" id="stitch-sample-photos">
-                    <h4
-                        class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <span class="mdi mdi-image-outline"></span> {{ _('Stitch Sample Photos') }}
-                    </h4>
-                    <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
-                        {% for image in project.stitch_sample_images %}
-                        <a href="{{ image.url }}"
-                            class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
-                            data-pswp-width="{{ image.width or 1200 }}" data-pswp-height="{{ image.height or 1200 }}"
-                            data-pswp-caption="{{ image.alt_text }} ({{ _('Stitch Sample') }})">
-                            <img src="{{ image.url }}" alt="{{ image.alt_text }}"
-                                class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
-                                loading="lazy">
-                        </a>
-                        {% endfor %}
+            <!-- Technical Specifications Group -->
+            <div class="space-y-4">
+                <h2 class="font-bold text-xl flex items-center gap-2 px-2 text-base-content/50 uppercase tracking-widest text-xs">
+                    <span class="mdi mdi-cog-outline"></span>
+                    {{ _('Technical Specifications') }}
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Yarns Used -->
+                    <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+                        <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                            <span class="mdi mdi-sheep"></span>
+                            {{ _('Yarns Used') }}
+                        </h3>
+                        {% if project.linked_yarns %}
+                        <div class="space-y-2">
+                            {% for yarn in project.linked_yarns %}
+                            <a href="/yarn/{{ yarn.id }}"
+                                class="flex items-center gap-2 rounded-lg border border-base-200 bg-base-100 px-2.5 py-2 text-sm transition hover:border-base-300 hover:bg-base-200/40">
+                                <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
+                                    {% if yarn.preview_url %}
+                                    <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}" class="h-full w-full object-cover">
+                                    {% else %}
+                                    <span class="mdi mdi-sheep text-base-content/40"></span>
+                                    {% endif %}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate font-medium">{{ yarn.name }}</div>
+                                    <div class="text-xs text-base-content/60 truncate">
+                                        {{ yarn.brand or _('Unknown Brand') }}
+                                        {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
+                                    </div>
+                                </div>
+                                <span class="mdi mdi-chevron-right text-base-content/30"></span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="flex items-center justify-between rounded-lg border border-dashed border-base-300 bg-base-200/30 px-3 py-2 text-sm text-base-content/60">
+                            <span>{{ _('No yarns linked') }}</span>
+                            <a href="/projects/{{ project.id }}/edit" class="text-primary hover:underline">{{ _('Link yarn') }}</a>
+                        </div>
+                        {% endif %}
                     </div>
+
+                    <!-- Recommended Needles -->
+                    {% if project.needles %}
+                    <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
+                        <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                            <span class="mdi mdi-needle"></span>
+                            {{ _('Recommended Needles') }}
+                        </h3>
+                        <div class="text-sm font-medium text-base-content/80 bg-base-200/50 rounded-lg p-3 border border-base-200 whitespace-pre-wrap">
+                            {{ project.needles }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Stitch Sample (Full width if present) -->
+                {% if project.stitch_sample_html or project.stitch_sample_images %}
+                <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5" id="stitch-sample-card">
+                    <h3
+                        class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                        <span class="mdi mdi-grid"></span>
+                        {{ _('Stitch Sample') }}
+                    </h3>
+                    {% if project.stitch_sample_html %}
+                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90 mb-4" id="stitch-sample-text">
+                        {{ project.stitch_sample_html | safe }}
+                    </div>
+                    {% endif %}
+
+                    {% if project.stitch_sample_images %}
+                    <div class="mt-4 pt-4 border-t border-base-100" id="stitch-sample-photos">
+                        <h4
+                            class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            <span class="mdi mdi-image-outline"></span> {{ _('Stitch Sample Photos') }}
+                        </h4>
+                        <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
+                            {% for image in project.stitch_sample_images %}
+                            <a href="{{ image.url }}"
+                                class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
+                                data-pswp-width="{{ image.width or 1200 }}" data-pswp-height="{{ image.height or 1200 }}"
+                                data-pswp-caption="{{ image.alt_text }} ({{ _('Stitch Sample') }})">
+                                <img src="{{ image.url }}" alt="{{ image.alt_text }}"
+                                    class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
+                                    loading="lazy">
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
-            {% endif %}
-
-            {% if project.needles %}
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                <h3
-                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
-                    <span class="mdi mdi-needle"></span>
-                    {{ _('Recommended Needles') }}
-                </h3>
-                <div class="text-base-content/90">
-                    {{ project.needles }}
-                </div>
-            </div>
-            {% endif %}
 
             <!-- Steps Section -->
             {% if project.steps %}
@@ -516,16 +564,17 @@
 
         <!-- Sidebar Column -->
         <div class="space-y-6 hidden lg:block">
-            <!-- Details Card -->
-            <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-5">
-                <h3
-                    class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+            <!-- Details Card (Collapsible) -->
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+                <input type="checkbox" id="details-toggle-sidebar" checked /> 
+                <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
                     <span class="mdi mdi-information-outline"></span>
                     {{ _('Project Details') }}
-                </h3>
-
-                <div class="space-y-4">
-                    <!-- Badges Info -->
+                </div>
+                
+                <div class="collapse-content space-y-4">
+                    <div class="pt-2">
+                        <!-- Badges Info -->
                         {% if project.category and project.category != 'None' %}
                         <div class="mb-4 sm:mb-6">
                             <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
@@ -552,115 +601,73 @@
                         </div>
                         {% endif %}
 
-                    <div class="py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created')
-                            }}</span>
-                        <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
-                            <span class="mdi mdi-calendar-plus"></span>
-                            {{ project.created_at[:10] }}
-                        </span>
-                    </div>
-
-                    {% if project.is_ai_enhanced %}
-                    <div class="py-1">
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Data Source') }}</span>
-                        <span class="badge badge-primary font-black text-[10px] tracking-tighter uppercase h-5 min-h-0" title="{{ _('AI Enhanced') }}">AI</span>
-                    </div>
-                    {% endif %}
-
-                    <div class="divider my-2"></div>
-
-                    <!-- Linked Yarns (compact) -->
-                    {% if project.linked_yarns %}
-                    <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used')
-                            }}</span>
-                        <div class="space-y-2">
-                            {% for yarn in project.linked_yarns %}
-                            <a href="/yarn/{{ yarn.id }}"
-                                class="flex items-center gap-2 rounded-lg border border-base-200 bg-base-100 px-2.5 py-2 text-sm transition hover:border-base-300 hover:bg-base-200/40">
-                                <div
-                                    class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
-                                    {% if yarn.preview_url %}
-                                    <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}"
-                                        class="h-full w-full object-cover">
-                                    {% else %}
-                                    <span class="mdi mdi-sheep text-base-content/40"></span>
-                                    {% endif %}
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="truncate font-medium">{{ yarn.name }}</div>
-                                    <div class="text-xs text-base-content/60 truncate">
-                                        {{ yarn.brand or _('Unknown Brand') }}
-                                        {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
-                                    </div>
-                                </div>
-                                <span class="mdi mdi-chevron-right text-base-content/30"></span>
-                            </a>
-                            {% endfor %}
+                        <div class="py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created')
+                                }}</span>
+                            <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
+                                <span class="mdi mdi-calendar-plus"></span>
+                                {{ project.created_at[:10] }}
+                            </span>
                         </div>
-                    </div>
-                    {% else %}
-                    <div>
-                        <span class="text-xs font-bold uppercase text-base-content/50 block mb-2">{{ _('Yarns Used')
-                            }}</span>
-                        <div
-                            class="flex items-center justify-between rounded-lg border border-dashed border-base-300 bg-base-200/30 px-3 py-2 text-sm text-base-content/60">
-                            <span>{{ _('No yarns linked') }}</span>
-                            <a href="/projects/{{ project.id }}/edit" class="text-primary hover:underline">{{ _('Link yarn') }}</a>
+
+                        {% if project.is_ai_enhanced %}
+                        <div class="py-1">
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Data Source') }}</span>
+                            <span class="badge badge-primary font-black text-[10px] tracking-tighter uppercase h-5 min-h-0" title="{{ _('AI Enhanced') }}">AI</span>
                         </div>
-                    </div>
-                    {% endif %}
+                        {% endif %}
 
-                    <div class="divider my-2"></div>
+                        <div class="divider my-2"></div>
 
-                    <!-- Source Link -->
-                                            <div>
-                                                <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
-                                                {% if project.link %}
-                                                <div class="flex items-center gap-2 group/link">
-                                                    <a href="{{ project.link }}" target="_blank" rel="noreferrer"
-                                                        class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
-                                                        <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
-                                                        {{ project.link }}
-                                                    </a>
-                                                    <button type="button" 
-                                                        onclick="copyToClipboard('{{ project.link }}', this)"
-                                                        class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
-                                                        title="{{ _('Copy URL') }}">
-                                                        <span class="mdi mdi-content-copy text-xs"></span>
-                                                    </button>
-                                                </div>                        {% if project.link_archive %}
-                        <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
-                            class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
-                            <span class="mdi mdi-archive-outline"></span>
-                            {{ _('Archived snapshot') }}
-                        </a>
-                        {% elif project.link_archive_failed %}
-                        <div class="mt-2 flex flex-wrap items-center gap-2">
-                            <div
-                                class="inline-flex items-center gap-2 rounded-full bg-error/10 px-3 py-1 text-xs font-semibold text-error">
-                                <span class="mdi mdi-alert-circle-outline"></span>
-                                {{ _('Archive request failed') }}
-                            </div>
-                            <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
-                                    <span class="mdi mdi-refresh"></span>
-                                    {{ _('Retry') }}
+                        <!-- Source Link -->
+                        <div>
+                            <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Pattern Source') }}</span>
+                            {% if project.link %}
+                            <div class="flex items-center gap-2 group/link">
+                                <a href="{{ project.link }}" target="_blank" rel="noreferrer"
+                                    class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
+                                    <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
+                                    {{ project.link }}
+                                </a>
+                                <button type="button" 
+                                    onclick="copyToClipboard('{{ project.link }}', this)"
+                                    class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
+                                    title="{{ _('Copy URL') }}">
+                                    <span class="mdi mdi-content-copy text-xs"></span>
                                 </button>
-                            </form>
+                            </div>
+                            {% if project.link_archive %}
+                            <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
+                                class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
+                                <span class="mdi mdi-archive-outline"></span>
+                                {{ _('Archived snapshot') }}
+                            </a>
+                            {% elif project.link_archive_failed %}
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <div
+                                    class="inline-flex items-center gap-2 rounded-full bg-error/10 px-3 py-1 text-xs font-semibold text-error">
+                                    <span class="mdi mdi-alert-circle-outline"></span>
+                                    {{ _('Archive request failed') }}
+                                </div>
+                                <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                        <span class="mdi mdi-refresh"></span>
+                                        {{ _('Retry') }}
+                                    </button>
+                                </form>
+                            </div>
+                            {% elif project.archive_pending %}
+                            <div
+                                class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                                <span class="mdi mdi-clock-outline"></span>
+                                {{ _('Archive requested - check back soon') }}
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
+                            {% endif %}
                         </div>
-                        {% elif project.archive_pending %}
-                        <div
-                            class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-                            <span class="mdi mdi-clock-outline"></span>
-                            {{ _('Archive requested - check back soon') }}
-                        </div>
-                        {% endif %}
-                        {% else %}
-                        <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
-                        {% endif %}
                     </div>
                 </div>
             </div>

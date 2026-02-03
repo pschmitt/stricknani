@@ -64,6 +64,9 @@ class Project(Base):
     images: Mapped[list[Image]] = relationship(
         "Image", back_populates="project", cascade="all, delete-orphan"
     )
+    attachments: Mapped[list[Attachment]] = relationship(
+        "Attachment", back_populates="project", cascade="all, delete-orphan"
+    )
     steps: Mapped[list[Step]] = relationship(
         "Step",
         back_populates="project",
@@ -144,3 +147,22 @@ class Image(Base):
 
     project: Mapped[Project] = relationship("Project", back_populates="images")
     step: Mapped[Step | None] = relationship("Step", back_populates="images")
+
+
+class Attachment(Base):
+    """Attachment model for random project files."""
+
+    __tablename__ = "attachments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    filename: Mapped[str] = mapped_column(String(255))
+    original_filename: Mapped[str] = mapped_column(String(255))
+    content_type: Mapped[str] = mapped_column(String(100))
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
+
+    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id"))
+
+    project: Mapped[Project] = relationship("Project", back_populates="attachments")

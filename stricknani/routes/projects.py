@@ -32,6 +32,7 @@ from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.main import get_language, render_template, templates
 from stricknani.models import (
+    Attachment,
     Category,
     Image,
     ImageType,
@@ -1489,6 +1490,7 @@ async def get_project(
         .where(Project.id == project_id)
         .options(
             selectinload(Project.images),
+            selectinload(Project.attachments),
             selectinload(Project.steps).selectinload(Step.images),
             selectinload(Project.yarns).selectinload(YarnModel.photos),
             selectinload(Project.yarns).selectinload(YarnModel.projects),
@@ -1504,6 +1506,21 @@ async def get_project(
     if project.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    # Prepare attachments
+    project_attachments = []
+    for att in project.attachments:
+        project_attachments.append(
+            {
+                "id": att.id,
+                "filename": att.filename,
+                "original_filename": att.original_filename,
+                "content_type": att.content_type,
+                "size_bytes": att.size_bytes,
+                "url": get_file_url(att.filename, project.id, subdir="projects"),
+                "created_at": att.created_at.isoformat(),
+            }
         )
 
     # Prepare project-level images (exclude step images)
@@ -1625,6 +1642,7 @@ async def get_project(
         "is_ai_enhanced": project.is_ai_enhanced,
         "title_images": title_images,
         "stitch_sample_images": stitch_sample_images,
+        "attachments": project_attachments,
         "steps": [
             {
                 **step,
@@ -1680,6 +1698,7 @@ async def edit_project_form(
         .where(Project.id == project_id)
         .options(
             selectinload(Project.images),
+            selectinload(Project.attachments),
             selectinload(Project.steps).selectinload(Step.images),
             selectinload(Project.yarns).selectinload(YarnModel.projects),
         )
@@ -1694,6 +1713,21 @@ async def edit_project_form(
     if project.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    # Prepare attachments
+    project_attachments = []
+    for att in project.attachments:
+        project_attachments.append(
+            {
+                "id": att.id,
+                "filename": att.filename,
+                "original_filename": att.original_filename,
+                "content_type": att.content_type,
+                "size_bytes": att.size_bytes,
+                "url": get_file_url(att.filename, project.id, subdir="projects"),
+                "created_at": att.created_at.isoformat(),
+            }
         )
 
     title_images = []
@@ -1782,6 +1816,7 @@ async def edit_project_form(
         "is_ai_enhanced": project.is_ai_enhanced,
         "title_images": title_images,
         "stitch_sample_images": stitch_sample_images,
+        "attachments": project_attachments,
         "steps": steps_data,
         "tags": project.tag_list(),
         "yarn_ids": [y.id for y in project.yarns],
@@ -2508,6 +2543,84 @@ async def promote_project_image(
     )
 
     await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{project_id}/attachments")
+async def upload_attachment(
+    project_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> JSONResponse:
+    """Upload an attachment to a project."""
+    project = await db.get(Project, project_id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+        )
+    if project.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    content = await file.read()
+    size_bytes = len(content)
+
+    # Save file
+    filename, original_filename = save_bytes(
+        content, file.filename or "file", project_id
+    )
+
+    attachment = Attachment(
+        filename=filename,
+        original_filename=original_filename,
+        content_type=file.content_type or "application/octet-stream",
+        size_bytes=size_bytes,
+        project_id=project_id,
+    )
+    db.add(attachment)
+    await db.commit()
+    await db.refresh(attachment)
+
+    return JSONResponse(
+        {
+            "id": attachment.id,
+            "filename": attachment.filename,
+            "original_filename": attachment.original_filename,
+            "content_type": attachment.content_type,
+            "size_bytes": attachment.size_bytes,
+            "url": get_file_url(attachment.filename, project_id),
+        }
+    )
+
+
+@router.delete("/{project_id}/attachments/{attachment_id}")
+async def delete_attachment(
+    project_id: int,
+    attachment_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> Response:
+    """Delete an attachment from a project."""
+    attachment = await db.get(Attachment, attachment_id)
+    if not attachment or attachment.project_id != project_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found"
+        )
+
+    project = await db.get(Project, project_id)
+    if not project or project.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    # Delete file from storage
+    delete_file(attachment.filename, project_id)
+
+    await db.delete(attachment)
+    await db.commit()
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

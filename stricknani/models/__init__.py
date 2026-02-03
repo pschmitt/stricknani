@@ -8,11 +8,12 @@ from stricknani.models.associations import (
 from stricknani.models.base import Base
 from stricknani.models.category import Category
 from stricknani.models.enums import ImageType, ProjectCategory
-from stricknani.models.project import Image, Project, Step
+from stricknani.models.project import Attachment, Image, Project, Step
 from stricknani.models.user import User
 from stricknani.models.yarn import Yarn, YarnImage
 
 __all__ = [
+    "Attachment",
     "Base",
     "Category",
     "Image",
