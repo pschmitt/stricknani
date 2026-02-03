@@ -233,20 +233,6 @@ def _parse_optional_int(field_name: str, value: str | None) -> int | None:
         ) from exc
 
 
-async def _fetch_yarn(db: AsyncSession, yarn_id: int, owner_id: int) -> Yarn | None:
-    """Fetch a yarn entry for the owner with photos eagerly loaded."""
-
-    result = await db.execute(
-        select(Yarn)
-        .where(Yarn.id == yarn_id, Yarn.owner_id == owner_id)
-        .options(
-            selectinload(Yarn.photos),
-            selectinload(Yarn.projects).selectinload(Project.images),
-        )
-    )
-    return result.scalar_one_or_none()
-
-
 def _resolve_preview(yarn: Yarn) -> str | None:
     """Return the thumbnail URL for the first photo, if any."""
 
@@ -527,7 +513,7 @@ async def list_yarns(
     )
 
     if request.headers.get("HX-Request"):
-        return render_template(
+        return await render_template(
             "yarn/_list_partial.html",
             request,
             {
@@ -541,7 +527,7 @@ async def list_yarns(
     if request.headers.get("accept") == "application/json":
         return JSONResponse(_serialize_yarn_cards(yarns, current_user))
 
-    return render_template(
+    return await render_template(
         "yarn/list.html",
         request,
         {
@@ -560,7 +546,7 @@ async def new_yarn(
 ) -> HTMLResponse:
     """Show creation form."""
 
-    return render_template(
+    return await render_template(
         "yarn/form.html",
         request,
         {
@@ -686,12 +672,27 @@ async def yarn_detail(
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     await db.refresh(current_user, ["favorite_yarns"])
-    yarn = await _fetch_yarn(db, yarn_id, current_user.id)
+    result = await db.execute(
+        select(Yarn)
+        .where(Yarn.id == yarn_id)
+        .options(
+            selectinload(Yarn.photos),
+            selectinload(Yarn.projects).selectinload(Project.images),
+        )
+    )
+    yarn = result.scalar_one_or_none()
+
     if yarn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
     is_favorite = any(entry.id == yarn.id for entry in current_user.favorite_yarns)
 
-    return render_template(
+    return await render_template(
         "yarn/detail.html",
         request,
         {
@@ -733,11 +734,25 @@ async def edit_yarn(
 ) -> HTMLResponse:
     """Show edit form for a yarn."""
 
-    yarn = await _fetch_yarn(db, yarn_id, current_user.id)
+    result = await db.execute(
+        select(Yarn)
+        .where(Yarn.id == yarn_id)
+        .options(
+            selectinload(Yarn.photos),
+            selectinload(Yarn.projects).selectinload(Project.images),
+        )
+    )
+    yarn = result.scalar_one_or_none()
+
     if yarn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    return render_template(
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
+
+    return await render_template(
         "yarn/form.html",
         request,
         {
@@ -777,9 +792,23 @@ async def update_yarn(
     if new_photos is None:
         new_photos = []
 
-    yarn = await _fetch_yarn(db, yarn_id, current_user.id)
+    result = await db.execute(
+        select(Yarn)
+        .where(Yarn.id == yarn_id)
+        .options(
+            selectinload(Yarn.photos),
+            selectinload(Yarn.projects).selectinload(Project.images),
+        )
+    )
+    yarn = result.scalar_one_or_none()
+
     if yarn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
 
     yarn.name = name.strip()
     yarn.description = description.strip() if description else None
@@ -830,9 +859,16 @@ async def retry_yarn_archive(
     current_user: User = Depends(require_auth),
 ) -> Response:
     """Retry requesting a wayback snapshot for a yarn."""
-    yarn = await _fetch_yarn(db, yarn_id, current_user.id)
+    result = await db.execute(select(Yarn).where(Yarn.id == yarn_id))
+    yarn = result.scalar_one_or_none()
+
     if yarn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
 
     if config.FEATURE_WAYBACK_ENABLED and yarn.link:
         yarn.link_archive_failed = False
@@ -896,7 +932,7 @@ async def toggle_favorite(
         if variant == "profile" and not is_favorite:
             return HTMLResponse(content="")
 
-        return render_template(
+        return await render_template(
             "yarn/_favorite_toggle.html",
             request,
             {"yarn_id": yarn_id, "is_favorite": is_favorite, "variant": variant},
@@ -916,9 +952,16 @@ async def promote_yarn_photo(
     current_user: User = Depends(require_auth),
 ) -> Response:
     """Promote a photo to be the primary image for a yarn."""
-    yarn = await _fetch_yarn(db, yarn_id, current_user.id)
+    result = await db.execute(select(Yarn).where(Yarn.id == yarn_id))
+    yarn = result.scalar_one_or_none()
+
     if yarn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
 
     # Set all photos for this yarn to non-primary
     await db.execute(
@@ -945,9 +988,18 @@ async def delete_yarn(
 ) -> Response:
     """Delete a yarn and its photos."""
 
-    yarn = await _fetch_yarn(db, yarn_id, current_user.id)
+    result = await db.execute(
+        select(Yarn).where(Yarn.id == yarn_id).options(selectinload(Yarn.photos))
+    )
+    yarn = result.scalar_one_or_none()
+
     if yarn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
 
     for photo in list(yarn.photos):
         delete_file(photo.filename, yarn.id, subdir="yarns")
@@ -962,7 +1014,7 @@ async def delete_yarn(
         count = result.scalar() or 0
 
         if count == 0:
-            response = render_template(
+            response = await render_template(
                 "yarn/_empty_state.html",
                 request,
                 {"current_user": current_user},
@@ -989,9 +1041,18 @@ async def delete_yarn_photo(
 ) -> Response:
     """Remove a specific yarn photo."""
 
-    yarn = await _fetch_yarn(db, yarn_id, current_user.id)
+    result = await db.execute(
+        select(Yarn).where(Yarn.id == yarn_id).options(selectinload(Yarn.photos))
+    )
+    yarn = result.scalar_one_or_none()
+
     if yarn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
+        )
 
     target = next((p for p in yarn.photos if p.id == photo_id), None)
     if target is None:

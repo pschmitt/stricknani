@@ -97,7 +97,7 @@ async def admin_users_view(
     """Render the admin user management view."""
     result = await db.execute(select(User).order_by(User.email))
     users = result.scalars().all()
-    return render_template(
+    return await render_template(
         "admin/users.html",
         request,
         {

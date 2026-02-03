@@ -57,7 +57,7 @@ async def not_found_exception_handler(
     request: Request, exc: HTTPException
 ) -> HTMLResponse:
     """Handle 404 errors by rendering a custom template."""
-    return render_template("errors/404.html", request, status_code=404)
+    return await render_template("errors/404.html", request, status_code=404)
 
 
 @app.exception_handler(401)
@@ -65,7 +65,7 @@ async def unauthorized_exception_handler(
     request: Request, exc: HTTPException
 ) -> HTMLResponse:
     """Handle 401 errors by rendering a custom template."""
-    return render_template("errors/401.html", request, status_code=401)
+    return await render_template("errors/401.html", request, status_code=401)
 
 
 @app.exception_handler(403)
@@ -73,7 +73,7 @@ async def forbidden_exception_handler(
     request: Request, exc: HTTPException
 ) -> HTMLResponse:
     """Handle 403 errors by rendering a custom template."""
-    return render_template("errors/403.html", request, status_code=403)
+    return await render_template("errors/403.html", request, status_code=403)
 
 
 @app.exception_handler(Exception)
@@ -89,7 +89,7 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
 
     # Log the exception for debugging
     access_logger.exception("Unhandled exception: %s", str(exc))
-    return render_template("errors/500.html", request, status_code=500)
+    return await render_template("errors/500.html", request, status_code=500)
 
 # Mount static files
 static_path = Path(__file__).parent / "static"
@@ -204,7 +204,7 @@ def get_language(request: Request) -> str:
     return config.DEFAULT_LANGUAGE
 
 
-def render_template(
+async def render_template(
     template_name: str,
     request: Request,
     context: dict[str, Any] | None = None,
@@ -236,6 +236,16 @@ def render_template(
         request.url.hostname in {"localhost", "127.0.0.1"} or config.DEBUG,
     )
     context.setdefault("feature_wayback_enabled", config.FEATURE_WAYBACK_ENABLED)
+
+    # Automatically fetch current user if not provided
+    if "current_user" not in context:
+        from stricknani.database import get_db
+        from stricknani.routes.auth import get_current_user
+
+        session_token = request.cookies.get("session_token")
+        async for db in get_db():
+            context["current_user"] = await get_current_user(session_token, db)
+            break
 
     current_user = context.get("current_user")
     avatar_url = None
@@ -297,7 +307,7 @@ app.include_router(admin.router)
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request) -> HTMLResponse:
     """Show login page."""
-    return render_template(
+    return await render_template(
         "auth/login.html",
         request,
         {

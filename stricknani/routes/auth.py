@@ -120,7 +120,7 @@ async def login(
     """User login."""
     user = await authenticate_user(db, email, password)
     if not user:
-        return render_template(
+        return await render_template(
             "auth/login.html",
             request,
             {

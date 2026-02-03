@@ -14,15 +14,17 @@ router: APIRouter = APIRouter(prefix="/gauge", tags=["gauge"])
 
 
 @router.get("/", response_class=HTMLResponse)
-async def gauge_calculator_page(
+async def gauge_calculator(
     request: Request,
     current_user: User | None = Depends(get_current_user),
 ) -> HTMLResponse:
     """Show gauge calculator page."""
-    return render_template(
+    return await render_template(
         "gauge/calculator.html",
         request,
-        {"current_user": current_user},
+        {
+            "current_user": current_user,
+        },
     )
 
 

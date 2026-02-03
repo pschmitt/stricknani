@@ -9,11 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from stricknani.database import get_db
-from stricknani.main import get_language, templates
+from stricknani.main import render_template
 from stricknani.models import Project, User, Yarn
 from stricknani.routes.auth import require_auth
 from stricknani.utils.files import get_thumbnail_url
-from stricknani.utils.i18n import install_i18n
 
 router: APIRouter = APIRouter(prefix="/search", tags=["search"])
 
@@ -107,15 +106,11 @@ async def global_search(
     # Sort results by title
     results.sort(key=lambda x: x["title"].lower())
 
-    language = get_language(request)
-    install_i18n(templates.env, language)
-
-    return templates.TemplateResponse(
+    return await render_template(
         "shared/_global_search_results.html",
+        request,
         {
-            "request": request,
             "results": results,
             "query": q,
-            "current_language": language,
         },
     )

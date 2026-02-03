@@ -771,7 +771,7 @@ async def list_projects(
 
     categories = await _get_user_categories(db, current_user.id)
 
-    return render_template(
+    return await render_template(
         "projects/list.html",
         request,
         {
@@ -808,7 +808,7 @@ async def new_project_form(
         os.getenv("OPENAI_API_KEY")
     )
 
-    return render_template(
+    return await render_template(
         "projects/form.html",
         request,
         {
@@ -1242,7 +1242,7 @@ async def _render_categories_page(
         for category in categories
     ]
 
-    return render_template(
+    return await render_template(
         "projects/categories.html",
         request,
         {
@@ -1680,7 +1680,7 @@ async def get_project(
         "exclusive_yarns": [{"id": y.id, "name": y.name} for y in exclusive_yarns],
     }
 
-    return render_template(
+    return await render_template(
         "projects/detail.html",
         request,
         {
@@ -1822,7 +1822,7 @@ async def edit_project_form(
     yarn_options = await _get_user_yarns(db, current_user.id)
     tag_suggestions = await _get_user_tags(db, current_user.id)
 
-    return render_template(
+    return await render_template(
         "projects/form.html",
         request,
         {
@@ -2233,7 +2233,7 @@ async def delete_project(
         count = result.scalar() or 0
 
         if count == 0:
-            response = render_template(
+            response = await render_template(
                 "projects/_empty_state.html",
                 request,
                 {"current_user": current_user},
