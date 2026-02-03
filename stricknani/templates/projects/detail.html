@@ -358,7 +358,7 @@
                 </div>
 
                 <!-- Notes Card -->
-                {% if project.comment_html %}
+                {% if project.notes_html %}
                 <div
                     class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
                     <h3
@@ -368,13 +368,13 @@
                             {{ _('Notes') }}
                         </div>
                         <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
-                            onclick='copyToClipboard({{ (project.comment or '')|tojson }}, this)'
+                            onclick='copyToClipboard({{ (project.notes or '')|tojson }}, this)'
                             title="{{ _('Copy Notes') }}">
                             <span class="mdi mdi-content-copy"></span>
                         </button>
                     </h3>
                     <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
-                        {{ project.comment_html | safe }}
+                        {{ project.notes_html | safe }}
                     </div>
                 </div>
                 {% endif %}
@@ -683,7 +683,7 @@
             </div>
 
             <!-- Notes Card -->
-            {% if project.comment_html %}
+            {% if project.notes_html %}
             <div
                 class="bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30 p-5">
                 <h3
@@ -693,13 +693,13 @@
                         {{ _('Notes') }}
                     </div>
                     <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
-                        onclick='copyToClipboard({{ (project.comment or '')|tojson }}, this)'
+                        onclick='copyToClipboard({{ (project.notes or '')|tojson }}, this)'
                         title="{{ _('Copy Notes') }}">
                         <span class="mdi mdi-content-copy"></span>
                     </button>
                 </h3>
                 <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
-                    {{ project.comment_html | safe }}
+                    {{ project.notes_html | safe }}
                 </div>
             </div>
             {% endif %}

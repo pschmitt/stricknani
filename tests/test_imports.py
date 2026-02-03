@@ -69,7 +69,7 @@ async def test_import_url_basic(test_client: "TestClientFixture") -> None:
     # Check that basic fields were extracted
     assert data.get("title") is not None or data.get("name") is not None
     # Basic parser should extract some content
-    assert "comment" in data or "instructions" in data
+    assert "notes" in data or "instructions" in data
 
 
 @pytest.mark.asyncio
@@ -151,7 +151,7 @@ async def test_import_url_with_ai(test_client: "TestClientFixture") -> None:
         "gauge_stitches": 22,
         "gauge_rows": 30,
         "category": "Pullover",
-        "comment": "A cozy beginner-friendly sweater pattern",
+        "notes": "A cozy beginner-friendly sweater pattern",
         "steps": [
             {
                 "step_number": 1,
@@ -248,7 +248,7 @@ async def test_import_ai_fallback(test_client: "TestClientFixture") -> None:
             "title": "Simple Beanie",
             "needles": "5mm",
             "yarn": "chunky yarn",
-            "comment": "Pattern instructions",
+            "notes": "Pattern instructions",
             "image_urls": [],
         }
 

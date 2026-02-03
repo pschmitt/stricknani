@@ -99,9 +99,6 @@ async def test_cli_adds_project_and_yarn(
         "Schal",
         "Merino",
         "4.0mm",
-        None,
-        20,
-        28,
         "Notes",
         "one, two",
         "https://example.com",
@@ -152,9 +149,7 @@ async def test_cli_imports_project_url(
             "title": "Imported CLI Project",
             "needles": "3.5mm",
             "yarn": "Imported Yarn",
-            "gauge_stitches": 22,
-            "gauge_rows": 30,
-            "comment": "Imported notes",
+            "notes": "Imported notes",
             "link": "https://example.com/pattern",
             "steps": [
                 {

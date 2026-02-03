@@ -165,7 +165,7 @@ def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
         "yarn",
         "brand",
         "category",
-        "comment",
+        "notes",
         "link",
     ]:
         value = data.get(key)
@@ -973,7 +973,7 @@ async def import_pattern(
                             "link",
                             "image_urls",
                             "description",
-                            "comment",
+                            "notes",
                             "steps",
                         }
                     ):
@@ -1003,7 +1003,7 @@ async def import_pattern(
                         "(Note: AI extraction failed, used basic parser)"
                     )
             else:
-                # Even if not fully failed, if we used basic steps, tag the comment
+                # Even if not fully failed, if we used basic steps, tag the notes
                 if (
                     data.get("steps") == basic_data.get("steps")
                     and use_ai_enabled
@@ -1153,13 +1153,10 @@ async def import_pattern(
         data = {
             "title": None,
             "needles": None,
-            "recommended_needles": None,
             "yarn": None,
             "brand": None,
-            "gauge_stitches": None,
-            "gauge_rows": None,
             "description": content_text[:2000] if content_text else None,
-            "comment": None,
+            "notes": None,
             "steps": [],
             "link": source_url,
         }
@@ -1612,9 +1609,9 @@ async def get_project(
             if project.stitch_sample
             else None
         ),
-        "comment": project.comment or "",
-        "comment_html": render_markdown(project.comment, f"project-{project.id}")
-        if project.comment
+        "notes": project.notes or "",
+        "notes_html": render_markdown(project.notes, f"project-{project.id}")
+        if project.notes
         else None,
         "link": project.link,
         "link_archive": project.link_archive,
@@ -1774,7 +1771,7 @@ async def edit_project_form(
         "needles": project.needles,
         "stitch_sample": project.stitch_sample or "",
         "description": project.description or "",
-        "comment": project.comment or "",
+        "notes": project.notes or "",
         "link": project.link,
         "link_archive": project.link_archive,
         "archive_pending": bool(
@@ -1816,7 +1813,7 @@ async def create_project(
     name: Annotated[str, Form()],
     category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
-    comment: Annotated[str | None, Form()] = None,
+    notes: Annotated[str | None, Form()] = None,
     stitch_sample: Annotated[str | None, Form()] = None,
     description: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
@@ -1871,7 +1868,7 @@ async def create_project(
         needles=needles.strip() if needles else None,
         stitch_sample=stitch_sample.strip() if stitch_sample else None,
         description=description.strip() if description else None,
-        comment=comment.strip() if comment else None,
+        notes=notes.strip() if notes else None,
         link=link.strip() if link else None,
         owner_id=current_user.id,
         tags=_serialize_tags(normalized_tags),
@@ -1938,7 +1935,7 @@ async def update_project(
     name: Annotated[str, Form()],
     category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
-    comment: Annotated[str | None, Form()] = None,
+    notes: Annotated[str | None, Form()] = None,
     stitch_sample: Annotated[str | None, Form()] = None,
     description: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
@@ -2008,7 +2005,7 @@ async def update_project(
     project.needles = needles.strip() if needles else None
     project.stitch_sample = stitch_sample.strip() if stitch_sample else None
     project.description = description.strip() if description else None
-    project.comment = comment.strip() if comment else None
+    project.notes = notes.strip() if notes else None
     project.link = link.strip() if link else None
     project.tags = _serialize_tags(_normalize_tags(tags))
     project.is_ai_enhanced = bool(is_ai_enhanced)

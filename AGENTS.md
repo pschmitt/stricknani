@@ -95,11 +95,10 @@ It lets users organize projects with photos, gauge calculations, and notes in a 
 | Category | enum | ✓ | Pullover, Jacke, Schal, Mütze, Stirnband (extensible) |
 | Yarn | string |  | Yarn type/brand |
 | Needles | string |  | Needle size/type |
-| Gauge | int,int |  | Stitches + rows per 10 cm |
 | Instructions | markdown |  | Rendered safely |
 | Diagrams | images |  | Optional |
 | Photos | images |  | Multiple uploads |
-| Comment | text |  | Free-form note |
+| Notes | text |  | Free-form note |
 | Owner | user ref | ✓ | Creator |
 | Created/Updated | timestamp | ✓ | Auto-set |
 
@@ -129,10 +128,10 @@ Operations:
 
 ---
 
-### 4.4 Comments & Content
+### 4.4 Notes & Content
 
 - Markdown rendering (sanitized HTML).
-- Optional comment field per project.
+- Optional notes field per project.
 - Photos and diagrams displayed in a unified gallery.
 
 ---
@@ -254,7 +253,7 @@ Linting is mandatory in CI.
 ### 10.2 Screens
 
 - Projects List: cards with preview image, name, category, date.
-- Project Detail: title, metadata, rendered instructions, photos gallery, comments.
+- Project Detail: title, metadata, rendered instructions, photos gallery, notes.
 - New/Edit Project: form with drag-drop uploads and inline calculator.
 - Auth: login/signup/logout pages.
 
@@ -291,7 +290,7 @@ Linting is mandatory in CI.
 
 - `User` 1–N `Project`
 - `Project` 1–N `Image` (type: photo | diagram)
-- `Project` 1–N `Comment`
+- `Project` 1–N `Notes`
 - Indices: `(owner_id, created_at)`, `(name)`
 
 ---

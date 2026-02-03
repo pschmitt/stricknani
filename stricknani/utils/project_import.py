@@ -76,7 +76,7 @@ def build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
         "category": data.get("category"),
         "yarn": data.get("yarn"),
         "needles": data.get("needles"),
-        "notes": data.get("comment"),
+        "notes": data.get("notes"),
         "tags": data.get("tags"),
     }
 

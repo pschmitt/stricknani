@@ -358,7 +358,7 @@ async def add_project(
     category: str | None,
     yarn: str | None,
     needles: str | None,
-    comment: str | None,
+    notes: str | None,
     tags: str | None,
     link: str | None,
 ) -> None:
@@ -378,7 +378,7 @@ async def add_project(
             category=category,
             yarn=yarn,
             needles=needles,
-            comment=comment,
+            notes=notes,
             tags=serialized_tags,
             link=link,
             owner_id=owner.id,
@@ -486,7 +486,7 @@ async def import_project_url(
             category=data.get("category"),
             yarn=data.get("yarn"),
             needles=data.get("needles"),
-            comment=data.get("comment"),
+            notes=data.get("notes") or data.get("comment"),
             description=data.get("description"),
             link=data.get("link") or url,
             owner_id=owner.id,
@@ -824,7 +824,7 @@ def main() -> None:
     project_add_parser.add_argument("--category", help="Project category")
     project_add_parser.add_argument("--yarn", help="Yarn description")
     project_add_parser.add_argument("--needles", help="Needle size")
-    project_add_parser.add_argument("--comment", help="Project comment")
+    project_add_parser.add_argument("--notes", help="Project notes")
     project_add_parser.add_argument("--tags", help="Comma-separated tags")
     project_add_parser.add_argument("--link", help="Project link")
     project_import_parser = project_subparsers.add_parser(
@@ -956,7 +956,7 @@ def main() -> None:
                     args.category,
                     args.yarn,
                     args.needles,
-                    args.comment,
+                    args.notes,
                     args.tags,
                     args.link,
                 )

@@ -416,7 +416,7 @@ async def import_yarn(
             "weight_category": data.get("weight_category"),
             "fiber_content": data.get("fiber_content"),
             "recommended_needles": data.get("needles"),
-            "description": data.get("comment"),
+            "description": data.get("notes") or data.get("comment"),
             "link": url,
             "image_urls": data.get("image_urls", [])[:5],
             "notes": None,

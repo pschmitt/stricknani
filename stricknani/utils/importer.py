@@ -194,7 +194,7 @@ class PatternImporter:
             "weight_category": self._extract_weight_category(soup),
             "stitch_sample": self._extract_stitch_sample(soup),
             "description": description,
-            "comment": comment,
+            "notes": None,
             "steps": steps,
             "link": self.url,
             "image_urls": image_urls,

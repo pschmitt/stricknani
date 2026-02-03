@@ -29,7 +29,7 @@ class Project(Base):
     needles: Mapped[str | None] = mapped_column(String(255), nullable=True)
     stitch_sample: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)
     link: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     link_archive: Mapped[str | None] = mapped_column(String(2048), nullable=True)

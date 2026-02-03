@@ -40,7 +40,7 @@ async def test_ai_import_minimizes_redundancy(test_client: "TestClientFixture") 
             }
         ],
         "image_urls": [],
-        "comment": "Instruction Notes: Knit 10 rows.",
+        "notes": "Instruction Notes: Knit 10 rows.",
     }
 
     with (
@@ -75,7 +75,7 @@ async def test_ai_import_minimizes_redundancy(test_client: "TestClientFixture") 
     # But if it's already in description, it shouldn't append.
 
     # Check that description doesn't have it THREE times
-    # (1 from AI description, 1 from AI comment merge, 1 from manual notes block)
+    # (1 from AI description, 1 from AI notes merge, 1 from manual notes block)
     # The fix I implemented ensures it's only added if NOT in description
     # AND NOT in steps.
 

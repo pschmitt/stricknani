@@ -148,14 +148,8 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
             json_type = "string"
 
         # Special handling for specific fields
-        if name == "gauge_stitches":
-            description = "Number of stitches per 10cm (integer)"
-        elif name == "gauge_rows":
-            description = "Number of rows per 10cm (integer)"
-        elif name == "needles":
+        if name == "needles":
             description = "Needle size (e.g. '3.5mm', 'US 6')"
-        elif name == "recommended_needles":
-            description = "Recommended needle size from the pattern"
         elif name == "yarn":
             description = "Yarn name and weight"
         elif name == "brand":
@@ -164,7 +158,7 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
             )
         elif name == "description":
             description = "A brief summary or description of the pattern"
-        elif name == "comment":
+        elif name == "notes":
             description = "Additional notes or details about the pattern"
         elif name == "stitch_sample":
             description = (
@@ -220,17 +214,11 @@ def _build_example_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
             example[field] = "Cozy Scarf"
         elif field == "needles":
             example[field] = "4mm"
-        elif field == "recommended_needles":
-            example[field] = "3.5mm"
         elif field == "yarn":
             example[field] = "Worsted weight wool"
-        elif field == "gauge_stitches":
-            example[field] = 21
-        elif field == "gauge_rows":
-            example[field] = 30
         elif field == "description":
             example[field] = "A simple beginner-friendly scarf pattern"
-        elif field == "comment":
+        elif field == "notes":
             example[field] = "Remember to use a softer yarn for the edges"
         elif field == "category":
             example[field] = "Schal"
@@ -428,16 +416,16 @@ class AIPatternImporter:
             if not extracted_data.get("brand") and self.hints.get("brand"):
                 extracted_data["brand"] = self.hints["brand"]
 
-        # Move extracted comment to description if applicable
-        ai_comment = extracted_data.get("comment")
+        # Move extracted notes to description if applicable
+        ai_notes = extracted_data.get("notes")
         ai_description = extracted_data.get("description")
-        if ai_comment and ai_comment.strip():
+        if ai_notes and ai_notes.strip():
             if ai_description:
-                if ai_comment.strip() not in ai_description:
-                    extracted_data["description"] = f"{ai_description}\n\n{ai_comment}"
+                if ai_notes.strip() not in ai_description:
+                    extracted_data["description"] = f"{ai_description}\n\n{ai_notes}"
             else:
-                extracted_data["description"] = ai_comment
-        extracted_data["comment"] = None
+                extracted_data["description"] = ai_notes
+        extracted_data["notes"] = None
 
         # Add the source URL
         extracted_data["link"] = self.url
@@ -824,13 +812,11 @@ class AIPatternImporter:
                 "title": None,
                 "needles": None,
                 "yarn": None,
-                "gauge_stitches": None,
-                "gauge_rows": None,
                 "description": (
                     f"Imported from {self.url}\n\n"
                     "(AI extraction failed - please fill in manually)"
                 ),
-                "comment": None,
+                "notes": None,
                 "steps": [],
             }
 
