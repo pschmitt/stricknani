@@ -493,6 +493,10 @@ async def import_yarn(
         data = trim_import_strings(data)
 
         # Map pattern data to yarn fields
+        recommended_needles = data.get("needles")
+        if isinstance(recommended_needles, str):
+            recommended_needles = recommended_needles.strip() or None
+
         yarn_data = {
             "name": data.get("yarn") or data.get("title"),
             "brand": data.get("brand"),
@@ -501,7 +505,7 @@ async def import_yarn(
             "length_meters": data.get("length_meters"),
             "weight_category": data.get("weight_category"),
             "fiber_content": data.get("fiber_content"),
-            "recommended_needles": data.get("needles"),
+            "recommended_needles": recommended_needles,
             "description": data.get("notes") or data.get("comment"),
             "link": url,
             "image_urls": data.get("image_urls", [])[:5],

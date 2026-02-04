@@ -128,21 +128,30 @@ sql *ARGS:
   sqlite3 ./stricknani.db "{{ARGS}}"
 
 # Deploy to production
-deploy commit='':
+[positional-arguments]
+deploy *args='':
   #!/usr/bin/env zhj
 
   cd /etc/nixos || exit 9
 
+  zparseopts -D -E -K {c,-commit}=commit
+
   if ! nix flake update stricknani
   then
-    echo_error "Failed to update stricknani dependency"
+    echo_error "Failed to update stricknani flake input"
     exit 1
   fi
 
-  nixos::rebuild --target {{ prod_host }} || exit 3
+  nixos::rebuild --target "{{ prod_host }}" || exit 3
 
-  if [[ "{{commit}}" == "--commit" ]]
+  if [[ -n "$commit" ]]
   then
+    if ! git diff --cached --quiet
+    then
+      echo "Won't commit, there are staged changes!"
+      exit 1
+    fi
+
     git add flake.lock
     git commit -m "chore: update stricknani"
     git push

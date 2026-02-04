@@ -145,20 +145,18 @@
             {% if yarn.description %}
             <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
                 <input type="checkbox" checked />
-                <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center justify-between gap-2 text-xs">
-                    <div class="flex items-center gap-2">
-                        <span class="mdi mdi-text-box-outline"></span>
+                <div class="collapse-title p-4 flex items-center justify-between">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <span class="mdi mdi-text-box-outline text-primary"></span>
                         {{ _('Description') }}
-                    </div>
+                    </h2>
                 </div>
-                <div class="collapse-content">
-                    <div class="flex justify-end mb-2">
-                        <button class="btn btn-ghost btn-xs gap-1"
-                            onclick='copyToClipboard({{ (yarn.description or '')|tojson }}, this)'
-                            title="{{ _('Copy Description') }}">
-                            <span class="mdi mdi-content-copy"></span>
-                        </button>
-                    </div>
+                <div class="collapse-content relative">
+                    <button class="btn btn-ghost btn-xs gap-1 absolute top-2 right-2"
+                        onclick='copyToClipboard({{ (yarn.description or '')|tojson }}, this)'
+                        title="{{ _('Copy Description') }}">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
                     <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
                         {% if description_html %}
                         {{ description_html | safe }}
@@ -180,14 +178,12 @@
                         {{ _('Notes') }}
                     </div>
                 </div>
-                <div class="collapse-content">
-                    <div class="flex justify-end mb-2">
-                        <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
-                            onclick='copyToClipboard({{ (yarn.notes or '')|tojson }}, this)'
-                            title="{{ _('Copy Notes') }}">
-                            <span class="mdi mdi-content-copy"></span>
-                        </button>
-                    </div>
+                <div class="collapse-content relative">
+                    <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20 absolute top-2 right-2"
+                        onclick='copyToClipboard({{ (yarn.notes or '')|tojson }}, this)'
+                        title="{{ _('Copy Notes') }}">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
                     <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
                         {% if notes_html %}
                         {{ notes_html | safe }}

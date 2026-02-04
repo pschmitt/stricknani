@@ -2714,6 +2714,10 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
     document.getElementById('projectForm').addEventListener('submit', function (e) {
         const currentLink = document.getElementById('link')?.value.trim() || '';
+        const needlesInput = document.getElementById('recommended_needles');
+        if (needlesInput && typeof needlesInput.value === 'string') {
+            needlesInput.value = needlesInput.value.trim();
+        }
 
         // If a link was added to a project that didn't have one, prompt for import
         if (!initialLink && currentLink && !isImportPrompted) {

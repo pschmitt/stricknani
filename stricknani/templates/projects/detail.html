@@ -397,11 +397,11 @@
             {% if project.description %}
             <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
                 <input type="checkbox" checked />
-                <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center justify-between gap-2 text-xs">
-                    <div class="flex items-center gap-2">
-                        <span class="mdi mdi-text-box-outline"></span>
+                <div class="collapse-title p-4 flex items-center justify-between">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <span class="mdi mdi-text-box-outline text-primary"></span>
                         {{ _('Description') }}
-                    </div>
+                    </h2>
                 </div>
                 <div class="collapse-content relative pt-2">
                     <button class="btn btn-ghost btn-xs gap-1 absolute top-2 right-2"
@@ -424,9 +424,9 @@
             <!-- Technical Specifications Group -->
             <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
                 <input type="checkbox" checked />
-                <div class="collapse-title p-4">
-                    <h2 class="font-bold text-xl flex items-center gap-2 text-base-content/50 uppercase tracking-widest text-xs">
-                        <span class="mdi mdi-cog-outline"></span>
+                <div class="collapse-title p-4 flex items-center justify-between">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <span class="mdi mdi-cog-outline text-primary"></span>
                         {{ _('Technical Specifications') }}
                     </h2>
                 </div>

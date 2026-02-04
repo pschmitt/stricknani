@@ -568,6 +568,10 @@ async def import_yarn_url(
             return
 
         name = data.get("name") or data.get("title") or "Imported Yarn"
+        recommended_needles = data.get("recommended_needles")
+        if isinstance(recommended_needles, str):
+            recommended_needles = recommended_needles.strip() or None
+
         yarn_entry = Yarn(
             name=name,
             brand=data.get("brand"),
@@ -576,7 +580,7 @@ async def import_yarn_url(
             weight_grams=data.get("weight_grams"),
             length_meters=data.get("length_meters"),
             weight_category=data.get("weight_category"),
-            recommended_needles=data.get("recommended_needles"),
+            recommended_needles=recommended_needles,
             notes=data.get("description") or data.get("comment"),
             link=data.get("link") or url,
             owner_id=owner.id,

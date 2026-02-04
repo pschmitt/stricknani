@@ -618,7 +618,9 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
             'dye_lot': data.dye_lot,
             'fiber_content': data.fiber_content,
             'weight_category': data.weight_category,
-            'recommended_needles': data.recommended_needles,
+            'recommended_needles': (typeof data.recommended_needles === 'string'
+                ? data.recommended_needles.trim()
+                : data.recommended_needles),
             'weight_grams': data.weight_grams,
             'length_meters': data.length_meters,
             'link': data.link,
@@ -993,6 +995,10 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 
     document.getElementById('yarnForm').addEventListener('submit', function (e) {
         const currentLink = document.getElementById('link')?.value.trim() || '';
+        const needlesInput = document.getElementById('recommended_needles');
+        if (needlesInput && typeof needlesInput.value === 'string') {
+            needlesInput.value = needlesInput.value.trim();
+        }
 
         // If a link was added to a yarn that didn't have one, prompt for import
         if (!initialLink && currentLink && !isImportPrompted) {
