@@ -1629,26 +1629,38 @@ async def _ensure_yarns_by_text(
     if yarn_details:
         for detail in yarn_details:
             name = detail.get("name")
-            if not name:
+            link = detail.get("link")
+            if not name and not link:
                 continue
 
             # Try to find match in DB
-            res_match = await db.execute(
-                select(YarnModel).where(
-                    YarnModel.owner_id == user_id,
-                    func.lower(YarnModel.name) == name.lower(),
+            db_yarn_obj = None
+            if link:
+                res_match = await db.execute(
+                    select(YarnModel).where(
+                        YarnModel.owner_id == user_id,
+                        YarnModel.link == link,
+                    )
                 )
-            )
-            db_yarn_obj = res_match.scalar_one_or_none()
+                db_yarn_obj = res_match.scalar_one_or_none()
+
+            if not db_yarn_obj and name:
+                res_match = await db.execute(
+                    select(YarnModel).where(
+                        YarnModel.owner_id == user_id,
+                        func.lower(YarnModel.name) == name.lower(),
+                    )
+                )
+                db_yarn_obj = res_match.scalar_one_or_none()
 
             if not db_yarn_obj:
                 # Create new yarn with all available details
                 db_yarn_obj = YarnModel(
-                    name=name,
+                    name=name or "Unknown Yarn",
                     owner_id=user_id,
                     brand=detail.get("brand") or yarn_brand,
                     colorway=detail.get("colorway"),
-                    link=detail.get("link"),
+                    link=link,
                 )
                 db.add(db_yarn_obj)
                 await db.flush()
