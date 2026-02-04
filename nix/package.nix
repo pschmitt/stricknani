@@ -31,6 +31,7 @@ let
     sqlalchemy
     trafilatura
     uvicorn
+    waybackpy
     weasyprint
     uvloop
     watchfiles

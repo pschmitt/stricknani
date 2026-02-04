@@ -1,11 +1,11 @@
 """Wayback Machine utilities."""
 
+import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import quote
 
-import httpx
+import waybackpy
 
 from stricknani.database import AsyncSessionLocal
 from stricknani.utils.importer import _is_valid_import_url
@@ -24,47 +24,29 @@ def _should_request_archive(raw: str | None) -> bool:
 async def _request_wayback_snapshot(url: str) -> str | None:
     if not _is_valid_import_url(url):
         return None
-    save_url = f"https://web.archive.org/save/{quote(url, safe='')}"
-    async with httpx.AsyncClient(timeout=WAYBACK_SAVE_TIMEOUT) as client:
+
+    loop = asyncio.get_running_loop()
+
+    def _save() -> str | None:
+        wayback = waybackpy.Url(url, user_agent="Stricknani/0.1.0")
         try:
-            response = await client.get(save_url)
-            archive_url: str | None = None
-            content_location = response.headers.get("content-location")
-            location = response.headers.get("location")
-            for candidate in [content_location, location]:
-                if not candidate:
-                    continue
-                if candidate.startswith("/"):
-                    archive_url = f"https://web.archive.org{candidate}"
-                    break
-                if candidate.startswith("http"):
-                    archive_url = candidate
-                    break
-            logger.info(
-                "Wayback snapshot request %s -> %s",
-                url,
-                response.status_code,
-            )
-            if not archive_url:
-                try:
-                    availability = await client.get(
-                        "https://archive.org/wayback/available",
-                        params={"url": url},
-                    )
-                    if availability.status_code == 200:
-                        payload = availability.json()
-                        closest = payload.get("archived_snapshots", {}).get(
-                            "closest", {}
-                        )
-                        if isinstance(closest, dict):
-                            archive_url = closest.get("url")
-                except (httpx.HTTPError, ValueError, TypeError) as exc:
-                    logger.info(
-                        "Wayback availability check failed for %s: %s", url, exc
-                    )
-            return archive_url
-        except httpx.HTTPError as exc:
-            logger.info("Wayback snapshot request failed for %s: %s", url, exc)
+            archive = wayback.save()
+            return str(archive.archive_url)
+        except Exception as exc:
+            logger.info("Wayback save failed for %s: %s", url, exc)
+            # If save fails, try to get newest
+            try:
+                archive = wayback.newest()
+                if archive:
+                    return str(archive.archive_url)
+            except Exception as inner_exc:
+                logger.info("Wayback newest lookup failed for %s: %s", url, inner_exc)
+        return None
+
+    try:
+        return await loop.run_in_executor(None, _save)
+    except Exception as exc:
+        logger.info("Wayback snapshot request failed for %s: %s", url, exc)
     return None
 
 
