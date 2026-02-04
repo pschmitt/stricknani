@@ -365,8 +365,18 @@ class PatternImporter:
 
         notes = None
         image_urls = images
+
+        # Deduplicate images: remove images that are already in steps
+        step_images = set()
+        for step in steps:
+            for img in step.get("images", []):
+                step_images.add(img)
+
+        if step_images:
+            image_urls = [img for img in images if img not in step_images]
+
         if image_limit > 0:
-            image_urls = images[:image_limit]
+            image_urls = image_urls[:image_limit]
 
         data: dict[str, Any] = {
             "title": self._extract_title(soup),
@@ -841,6 +851,16 @@ class PatternImporter:
             "warenkorb",
             "login",
             "anmelden",
+            "nadeln & häkelnadeln",
+            "nadeln & h\u00e4kelnadeln",
+            "garne & nadeln",
+            "alle garne",
+            "alle anschauen",
+            "bestellen",
+            "andere sprache",
+            "drucken",
+            "weitere infos",
+            "pflegehinweise",
         ]
         lower_text = text.lower()
         return any(hint in lower_text for hint in ui_hints) or len(text) < 1
@@ -2143,8 +2163,20 @@ class PatternImporter:
             # Check for "HEADING:" or "HEADING"
             match_line = line.rstrip(":").strip().upper()
             if match_line in targets:
-                start_index = i
-                break
+                # Ensure it's not just a part of a larger sentence
+                if len(match_line) == len(line.strip().rstrip(":")):
+                    # Check if the next line(s) look like actual data or UI noise
+                    # If it's UI noise (like 'Bestellen'), keep looking for
+                    # another heading
+                    is_noise = False
+                    for j in range(i + 1, min(i + 3, len(lines))):
+                        if self._is_ui_text(lines[j]):
+                            is_noise = True
+                            break
+
+                    if not is_noise:
+                        start_index = i
+                        break
 
         if start_index == -1:
             return None
@@ -2357,8 +2389,7 @@ class PatternImporter:
                 # Check if it's "DROPS NADELN" or similar
                 remainder = upper[5:].strip()
                 is_heading = remainder in stop_headings or (
-                    remainder.endswith(":")
-                    and remainder[:-1].strip() in stop_headings
+                    remainder.endswith(":") and remainder[:-1].strip() in stop_headings
                 )
                 if is_heading:
                     is_stop = True
@@ -2412,6 +2443,7 @@ class PatternImporter:
             ".modal",
             ".table-products",
             ".sn",
+            "script",
         ]
         for noise in soup.select(", ".join(noise_selectors)):
             noise.decompose()
