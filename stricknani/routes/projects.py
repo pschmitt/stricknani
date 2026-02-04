@@ -2557,12 +2557,16 @@ async def upload_title_image(
     await db.commit()
     await db.refresh(image)
 
+    width, height = _get_image_dimensions(filename, project_id)
+
     return JSONResponse(
         {
             "id": image.id,
             "url": get_file_url(filename, project_id),
             "thumbnail_url": get_thumbnail_url(filename, project_id),
             "alt_text": image.alt_text,
+            "width": width,
+            "height": height,
         }
     )
 
@@ -2604,12 +2608,16 @@ async def upload_stitch_sample_image(
     await db.commit()
     await db.refresh(image)
 
+    width, height = _get_image_dimensions(filename, project_id)
+
     return JSONResponse(
         {
             "id": image.id,
             "url": get_file_url(filename, project_id),
             "thumbnail_url": get_thumbnail_url(filename, project_id),
             "alt_text": image.alt_text,
+            "width": width,
+            "height": height,
         }
     )
 
@@ -2659,12 +2667,16 @@ async def upload_step_image(
     await db.commit()
     await db.refresh(image)
 
+    width, height = _get_image_dimensions(filename, project_id)
+
     return JSONResponse(
         {
             "id": image.id,
             "url": get_file_url(filename, project_id),
             "thumbnail_url": get_thumbnail_url(filename, project_id),
             "alt_text": image.alt_text,
+            "width": width,
+            "height": height,
         }
     )
 

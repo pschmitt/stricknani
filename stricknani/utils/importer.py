@@ -1603,6 +1603,30 @@ class PatternImporter:
         extracted: list[tuple[str, Tag | None]] = []
         seen: set[str] = set()
 
+        def _is_related_pattern(tag: Tag | None) -> bool:
+            if not self.is_garnstudio or tag is None:
+                return False
+            if isinstance(tag, Tag):
+                alt_text = str(tag.get("alt") or "").lower()
+                title_text = str(tag.get("title") or "").lower()
+                if "related pattern" in alt_text or "related pattern" in title_text:
+                    return True
+            for parent in [tag, *list(tag.parents)]:
+                if not isinstance(parent, Tag):
+                    continue
+                parent_id = parent.get("id")
+                if isinstance(parent_id, str) and "related-patterns" in parent_id:
+                    return True
+                parent_class = parent.get("class")
+                class_str = (
+                    " ".join(parent_class)
+                    if isinstance(parent_class, list)
+                    else str(parent_class or "")
+                )
+                if "related-pattern" in class_str:
+                    return True
+            return False
+
         meta_image = soup.find("meta", property="og:image")
         if meta_image:
             content = meta_image.get("content")
@@ -1613,6 +1637,8 @@ class PatternImporter:
                     seen.add(resolved)
 
         for source in soup.find_all("source"):
+            if _is_related_pattern(source):
+                continue
             for attr in ["srcset", "data-srcset"]:
                 value = source.get(attr)
                 if not value or not isinstance(value, str):
@@ -1628,6 +1654,8 @@ class PatternImporter:
 
         # Skip common non-pattern images
         for img in soup.find_all("img"):
+            if _is_related_pattern(img):
+                continue
             candidates: list[str] = []
             for attr in [
                 "src",
@@ -1707,6 +1735,8 @@ class PatternImporter:
             for anchor in soup.find_all(
                 "a", class_=lambda x: x and "fancybox" in str(x)
             ):
+                if _is_related_pattern(anchor):
+                    continue
                 href = anchor.get("href")
                 if href and isinstance(href, str):
                     resolved = self._resolve_image_url(href)
@@ -1720,6 +1750,8 @@ class PatternImporter:
                         seen.add(resolved)
 
             for anchor in soup.find_all("a"):
+                if _is_related_pattern(anchor):
+                    continue
                 href = anchor.get("href")
                 if not href or not isinstance(href, str):
                     continue
