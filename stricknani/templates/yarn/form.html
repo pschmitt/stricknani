@@ -610,6 +610,9 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
 
         // Prevent re-prompting on save since we just imported
         isImportPrompted = true;
+        if (typeof data.link === 'string') {
+            initialLink = data.link.trim();
+        }
 
         const fields = {
             'name': data.name,

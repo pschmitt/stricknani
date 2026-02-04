@@ -45,6 +45,7 @@ from stricknani.models import (
 )
 from stricknani.models import (
     Yarn as YarnModel,
+    YarnImage,
 )
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
@@ -1515,6 +1516,104 @@ async def delete_category(
     )
 
 
+async def _import_yarn_images_from_urls(
+    db: AsyncSession,
+    yarn: YarnModel,
+    image_urls: Sequence[str],
+) -> int:
+    """Download and attach imported images to a yarn."""
+    if not image_urls:
+        return 0
+
+    logger = logging.getLogger("stricknani.imports")
+    imported = 0
+    seen_checksums: set[str] = set()
+    imported_similarities: list[Any] = []
+
+    headers = dict(IMPORT_IMAGE_HEADERS)
+    if yarn.link:
+        headers["Referer"] = yarn.link
+
+    async with httpx.AsyncClient(
+        timeout=IMPORT_IMAGE_TIMEOUT,
+        follow_redirects=True,
+        headers=headers,
+    ) as client:
+        for image_url in image_urls:
+            if imported >= 5:
+                break
+            if not _is_valid_import_url(image_url):
+                continue
+
+            try:
+                response = await client.get(image_url)
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                logger.warning("Failed to download yarn image %s: %s", image_url, exc)
+                continue
+
+            content_type = response.headers.get("content-type")
+            if not _is_allowed_import_image(content_type, image_url):
+                continue
+
+            if not response.content or len(response.content) > IMPORT_IMAGE_MAX_BYTES:
+                continue
+
+            checksum = compute_checksum(response.content)
+            if checksum in seen_checksums:
+                continue
+
+            try:
+                with PilImage.open(BytesIO(response.content)) as img:
+                    width, height = img.size
+                    if (
+                        width < IMPORT_IMAGE_MIN_DIMENSION
+                        or height < IMPORT_IMAGE_MIN_DIMENSION
+                    ):
+                        continue
+                    similarity = build_similarity_image(img)
+            except Exception:
+                continue
+
+            skip_thumbnail = False
+            for candidate_sim in imported_similarities:
+                score = compute_similarity_score(candidate_sim, similarity)
+                if score is not None and score >= IMPORT_IMAGE_SSIM_THRESHOLD:
+                    skip_thumbnail = True
+                    break
+
+            if skip_thumbnail:
+                continue
+
+            original_filename = build_import_filename(image_url, content_type)
+            filename = ""
+            try:
+                filename, original_filename = save_bytes(
+                    response.content, original_filename, yarn.id, subdir="yarns"
+                )
+                file_path = config.MEDIA_ROOT / "yarns" / str(yarn.id) / filename
+                await create_thumbnail(file_path, yarn.id, subdir="yarns")
+            except Exception as exc:
+                if filename:
+                    delete_file(filename, yarn.id, subdir="yarns")
+                logger.warning("Failed to store yarn image %s: %s", image_url, exc)
+                continue
+
+            photo = YarnImage(
+                filename=filename,
+                original_filename=original_filename,
+                alt_text=yarn.name or original_filename,
+                yarn_id=yarn.id,
+                is_primary=(imported == 0),
+            )
+            db.add(photo)
+            imported += 1
+            seen_checksums.add(checksum)
+            imported_similarities.append(similarity)
+
+    return imported
+
+
 async def _ensure_yarns_by_text(
     db: AsyncSession,
     user_id: int,
@@ -1549,9 +1648,73 @@ async def _ensure_yarns_by_text(
                     owner_id=user_id,
                     brand=detail.get("brand") or yarn_brand,
                     colorway=detail.get("colorway"),
+                    link=detail.get("link"),
                 )
                 db.add(db_yarn_obj)
                 await db.flush()
+
+                # If we have a link, follow it to get more data
+                if db_yarn_obj.link:
+                    try:
+                        from stricknani.utils.importer import (
+                            GarnstudioPatternImporter,
+                            PatternImporter,
+                            _is_garnstudio_url,
+                        )
+
+                        im_ptr: PatternImporter
+                        if _is_garnstudio_url(db_yarn_obj.link):
+                            im_ptr = GarnstudioPatternImporter(db_yarn_obj.link)
+                        else:
+                            im_ptr = PatternImporter(db_yarn_obj.link)
+
+                        yarn_data = await im_ptr.fetch_and_parse()
+
+                        # Update name if importer found a better one
+                        imported_name = yarn_data.get("yarn") or yarn_data.get("title")
+                        if imported_name and len(imported_name) > len(db_yarn_obj.name):
+                            db_yarn_obj.name = imported_name
+
+                        # Populate more fields if they are missing
+                        if yarn_data.get("brand") and not db_yarn_obj.brand:
+                            db_yarn_obj.brand = yarn_data.get("brand")
+                        if yarn_data.get("colorway") and not db_yarn_obj.colorway:
+                            db_yarn_obj.colorway = yarn_data.get("colorway")
+                        if yarn_data.get("fiber_content"):
+                            db_yarn_obj.fiber_content = yarn_data.get("fiber_content")
+                        if yarn_data.get("weight_grams"):
+                            db_yarn_obj.weight_grams = yarn_data.get("weight_grams")
+                        if yarn_data.get("length_meters"):
+                            db_yarn_obj.length_meters = yarn_data.get("length_meters")
+                        if yarn_data.get("weight_category"):
+                            db_yarn_obj.weight_category = yarn_data.get("weight_category")
+                        if yarn_data.get("needles"):
+                            db_yarn_obj.recommended_needles = yarn_data.get("needles")
+                        if not db_yarn_obj.description:
+                            db_yarn_obj.description = (
+                                yarn_data.get("notes") or yarn_data.get("comment")
+                            )
+
+                        # Import images
+                        img_urls = yarn_data.get("image_urls")
+                        if img_urls:
+                            await _import_yarn_images_from_urls(db, db_yarn_obj, img_urls)
+
+                        # Handle Wayback archival for the yarn link
+                        if config.FEATURE_WAYBACK_ENABLED and db_yarn_obj.link:
+                            db_yarn_obj.link_archive_requested_at = datetime.now(UTC)
+                            await db.flush()
+                            asyncio.create_task(
+                                store_wayback_snapshot(
+                                    YarnModel, db_yarn_obj.id, db_yarn_obj.link
+                                )
+                            )
+
+                    except Exception as e:
+                        logger = logging.getLogger("stricknani.imports")
+                        logger.warning(
+                            f"Failed to auto-import yarn from {db_yarn_obj.link}: {e}"
+                        )
 
             if db_yarn_obj.id not in updated_ids:
                 updated_ids.append(db_yarn_obj.id)

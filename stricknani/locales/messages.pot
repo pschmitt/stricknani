@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-04 16:29+0100\n"
+"POT-Creation-Date: 2026-02-04 21:11+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -386,7 +386,7 @@ msgstr ""
 #: stricknani/templates/projects/form.html:1593
 #: stricknani/templates/projects/form.html:1852
 #: stricknani/templates/projects/form.html:1857
-#: stricknani/templates/yarn/form.html:893
+#: stricknani/templates/yarn/form.html:896
 msgid "Upload failed"
 msgstr ""
 
@@ -764,7 +764,7 @@ msgstr ""
 #: stricknani/templates/yarn/_import_dialog.html:2
 #: stricknani/templates/yarn/_import_dialog.html:41
 #: stricknani/templates/yarn/form.html:57
-#: stricknani/templates/yarn/form.html:1018
+#: stricknani/templates/yarn/form.html:1021
 #: stricknani/templates/yarn/list.html:22
 msgid "Import"
 msgstr ""
@@ -1328,12 +1328,12 @@ msgid "No yarns selected"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:1567
-#: stricknani/templates/yarn/form.html:880
+#: stricknani/templates/yarn/form.html:883
 msgid "Uploading image..."
 msgstr ""
 
 #: stricknani/templates/projects/form.html:1577
-#: stricknani/templates/yarn/form.html:890
+#: stricknani/templates/yarn/form.html:893
 msgid "Image uploaded!"
 msgstr ""
 
@@ -1350,7 +1350,7 @@ msgid "Image upload failed. Please try again"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:1688
-#: stricknani/templates/yarn/form.html:898
+#: stricknani/templates/yarn/form.html:901
 msgid "Network error while uploading image"
 msgstr ""
 
@@ -1430,7 +1430,7 @@ msgid "Pattern imported successfully"
 msgstr ""
 
 #: stricknani/templates/projects/form.html:2727
-#: stricknani/templates/yarn/form.html:1007
+#: stricknani/templates/yarn/form.html:1010
 msgid "Import Data?"
 msgstr ""
 
@@ -1441,7 +1441,7 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/projects/form.html:2755
-#: stricknani/templates/yarn/form.html:1019
+#: stricknani/templates/yarn/form.html:1022
 msgid "Just Save"
 msgstr ""
 
@@ -1772,13 +1772,13 @@ msgid "Photos"
 msgstr ""
 
 #: stricknani/templates/yarn/form.html:314
-#: stricknani/templates/yarn/form.html:679
-#: stricknani/templates/yarn/form.html:926
+#: stricknani/templates/yarn/form.html:682
+#: stricknani/templates/yarn/form.html:929
 msgid "Make primary photo"
 msgstr ""
 
 #: stricknani/templates/yarn/form.html:319
-#: stricknani/templates/yarn/form.html:931
+#: stricknani/templates/yarn/form.html:934
 msgid "Delete photo"
 msgstr ""
 
@@ -1808,33 +1808,33 @@ msgstr ""
 msgid "Network error while deleting photo"
 msgstr ""
 
-#: stricknani/templates/yarn/form.html:661
+#: stricknani/templates/yarn/form.html:664
 msgid "Data imported successfully!"
 msgstr ""
 
-#: stricknani/templates/yarn/form.html:867
+#: stricknani/templates/yarn/form.html:870
 msgid "Failed to import yarn data"
 msgstr ""
 
-#: stricknani/templates/yarn/form.html:1008
+#: stricknani/templates/yarn/form.html:1011
 msgid ""
 "You added a source link. Would you like to import details from this URL "
 "before saving?"
 msgstr ""
 
-#: stricknani/templates/yarn/form.html:1028
+#: stricknani/templates/yarn/form.html:1031
 msgid "Delete Photo"
 msgstr ""
 
-#: stricknani/templates/yarn/form.html:1029
+#: stricknani/templates/yarn/form.html:1032
 msgid "Are you sure you want to delete this photo? This action cannot be undone."
 msgstr ""
 
-#: stricknani/templates/yarn/form.html:1057
+#: stricknani/templates/yarn/form.html:1060
 msgid "Photo deleted"
 msgstr ""
 
-#: stricknani/templates/yarn/form.html:1226
+#: stricknani/templates/yarn/form.html:1229
 msgid "Remove image"
 msgstr ""
 

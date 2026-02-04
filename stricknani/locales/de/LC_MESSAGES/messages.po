@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-04 16:29+0100\n"
+"POT-Creation-Date: 2026-02-04 21:11+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -386,7 +386,7 @@ msgstr "Benutzer nicht gefunden"
 #: stricknani/templates/projects/form.html:1593
 #: stricknani/templates/projects/form.html:1852
 #: stricknani/templates/projects/form.html:1857
-#: stricknani/templates/yarn/form.html:893
+#: stricknani/templates/yarn/form.html:896
 msgid "Upload failed"
 msgstr "Hochladen fehlgeschlagen"
 
@@ -784,7 +784,7 @@ msgstr "Zu Favoriten hinzugefügt"
 #: stricknani/templates/yarn/_import_dialog.html:2
 #: stricknani/templates/yarn/_import_dialog.html:41
 #: stricknani/templates/yarn/form.html:57
-#: stricknani/templates/yarn/form.html:1018
+#: stricknani/templates/yarn/form.html:1021
 #: stricknani/templates/yarn/list.html:22
 msgid "Import"
 msgstr "Importieren"
@@ -1357,12 +1357,12 @@ msgid "No yarns selected"
 msgstr "Keine Garne ausgewählt"
 
 #: stricknani/templates/projects/form.html:1567
-#: stricknani/templates/yarn/form.html:880
+#: stricknani/templates/yarn/form.html:883
 msgid "Uploading image..."
 msgstr "Bild wird hochgeladen..."
 
 #: stricknani/templates/projects/form.html:1577
-#: stricknani/templates/yarn/form.html:890
+#: stricknani/templates/yarn/form.html:893
 msgid "Image uploaded!"
 msgstr "Bild hochgeladen!"
 
@@ -1379,7 +1379,7 @@ msgid "Image upload failed. Please try again"
 msgstr "Bild-Upload fehlgeschlagen. Bitte versuche es erneut"
 
 #: stricknani/templates/projects/form.html:1688
-#: stricknani/templates/yarn/form.html:898
+#: stricknani/templates/yarn/form.html:901
 msgid "Network error while uploading image"
 msgstr "Netzwerkfehler beim Hochladen des Bildes"
 
@@ -1461,7 +1461,7 @@ msgid "Pattern imported successfully"
 msgstr "Anleitung erfolgreich importiert"
 
 #: stricknani/templates/projects/form.html:2727
-#: stricknani/templates/yarn/form.html:1007
+#: stricknani/templates/yarn/form.html:1010
 msgid "Import Data?"
 msgstr "Daten importieren?"
 
@@ -1474,7 +1474,7 @@ msgstr ""
 "Schritte, etc.) von dieser URL importieren, bevor du speicherst?"
 
 #: stricknani/templates/projects/form.html:2755
-#: stricknani/templates/yarn/form.html:1019
+#: stricknani/templates/yarn/form.html:1022
 msgid "Just Save"
 msgstr "Nur Speichern"
 
@@ -1811,13 +1811,13 @@ msgid "Photos"
 msgstr "Fotos"
 
 #: stricknani/templates/yarn/form.html:314
-#: stricknani/templates/yarn/form.html:679
-#: stricknani/templates/yarn/form.html:926
+#: stricknani/templates/yarn/form.html:682
+#: stricknani/templates/yarn/form.html:929
 msgid "Make primary photo"
 msgstr "Als Hauptfoto festlegen"
 
 #: stricknani/templates/yarn/form.html:319
-#: stricknani/templates/yarn/form.html:931
+#: stricknani/templates/yarn/form.html:934
 msgid "Delete photo"
 msgstr "Foto löschen"
 
@@ -1849,15 +1849,15 @@ msgstr "Foto konnte nicht gelöscht werden. Bitte erneut versuchen"
 msgid "Network error while deleting photo"
 msgstr "Netzwerkfehler beim Löschen des Fotos"
 
-#: stricknani/templates/yarn/form.html:661
+#: stricknani/templates/yarn/form.html:664
 msgid "Data imported successfully!"
 msgstr "Daten erfolgreich importiert!"
 
-#: stricknani/templates/yarn/form.html:867
+#: stricknani/templates/yarn/form.html:870
 msgid "Failed to import yarn data"
 msgstr "Garn-Daten konnten nicht importiert werden"
 
-#: stricknani/templates/yarn/form.html:1008
+#: stricknani/templates/yarn/form.html:1011
 msgid ""
 "You added a source link. Would you like to import details from this URL "
 "before saving?"
@@ -1865,21 +1865,21 @@ msgstr ""
 "Du hast einen Quelllink hinzugefügt. Möchtest du Details von dieser URL "
 "importieren, bevor du speicherst?"
 
-#: stricknani/templates/yarn/form.html:1028
+#: stricknani/templates/yarn/form.html:1031
 msgid "Delete Photo"
 msgstr "Foto löschen"
 
-#: stricknani/templates/yarn/form.html:1029
+#: stricknani/templates/yarn/form.html:1032
 msgid "Are you sure you want to delete this photo? This action cannot be undone."
 msgstr ""
 "Bist du sicher, dass du dieses Foto löschen möchtest? Diese Aktion kann "
 "nicht rückgängig gemacht werden."
 
-#: stricknani/templates/yarn/form.html:1057
+#: stricknani/templates/yarn/form.html:1060
 msgid "Photo deleted"
 msgstr "Foto gelöscht"
 
-#: stricknani/templates/yarn/form.html:1226
+#: stricknani/templates/yarn/form.html:1229
 msgid "Remove image"
 msgstr "Bild entfernen"
 

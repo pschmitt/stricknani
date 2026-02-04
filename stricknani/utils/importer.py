@@ -255,17 +255,22 @@ class PatternImporter:
                 ".dropdown",
                 ".lessons-wrapper",
                 ".mobile-only",
-                ".re-material",
                 ".updates",
                 ".pattern_copyright",
                 ".pattern-share-new",
                 ".pattern-ad",
                 ".pattern-prices",
                 ".selected-filters",
-                ".ratio-1-1",
                 ".lesson-list-pattern",
                 ".video-list-pattern",
                 ".nav-pattern",
+                ".m-menu",
+                ".dropdown-menu",
+                "#menu",
+                "nav",
+                ".modal",
+                ".table-products",
+                ".sn",
             ]
             for selector in noise_selectors:
                 for noise in soup.select(selector):
@@ -297,6 +302,23 @@ class PatternImporter:
                     else:
                         heading.decompose()
 
+        yarn_text = self._extract_yarn(soup)
+        yarn_details = None
+        if self.is_garnstudio and yarn_text:
+            # Collect yarn links for Garnstudio
+            yarn_links = self._extract_garnstudio_yarn_links(soup)
+            # If multiple yarns, split and parse each
+            yarn_lines = yarn_text.split("\n")
+            yarn_details = []
+            for line in yarn_lines:
+                if not line.strip():
+                    continue
+                detail = self._parse_garnstudio_yarn_string(line)
+                name = detail.get("name")
+                if name and name.lower() in yarn_links:
+                    detail["link"] = yarn_links[name.lower()]
+                yarn_details.append(detail)
+
         steps = self._extract_steps(soup)
         images = self._extract_images(soup)
         description = self._extract_description(soup)
@@ -311,17 +333,6 @@ class PatternImporter:
         image_urls = images
         if image_limit > 0:
             image_urls = images[:image_limit]
-
-        yarn_text = self._extract_yarn(soup)
-        yarn_details = None
-        if self.is_garnstudio and yarn_text:
-            # If multiple yarns, split and parse each
-            yarn_lines = yarn_text.split("\n")
-            yarn_details = [
-                self._parse_garnstudio_yarn_string(line)
-                for line in yarn_lines
-                if line.strip()
-            ]
 
         data: dict[str, Any] = {
             "title": self._extract_title(soup),
@@ -417,7 +428,16 @@ class PatternImporter:
 
         # Try finding by label first
         val = self._find_info_by_label(
-            soup, ["nadelstärke", "needles", "needle size", "nadeln"]
+            soup,
+            [
+                "nadelstärke",
+                "needles",
+                "needle size",
+                "nadeln",
+                "empfohlene nadelstärke",
+                "recommended needle size",
+                "anbefalt pinnestørrelse",
+            ],
         )
         if val:
             return val
@@ -659,9 +679,21 @@ class PatternImporter:
     def _extract_weight_grams(self, soup: BeautifulSoup) -> int | None:
         """Extract weight in grams."""
         # Try labeled search first
-        val = self._find_info_by_label(soup, ["gewicht", "ball weight", "weight"])
+        val = self._find_info_by_label(
+            soup,
+            [
+                "gewicht",
+                "ball weight",
+                "weight",
+                "gewicht / lauflänge",
+                "weight / yardage",
+                "vekt / løpelengde",
+            ],
+        )
         if val:
-            match = re.search(r"(\d+)", val)
+            match = re.search(r"(\d+)\s*g", val, re.I)
+            if not match:
+                match = re.search(r"(\d+)", val)
             if match:
                 return int(match.group(1))
 
@@ -694,10 +726,22 @@ class PatternImporter:
         """Extract length in meters."""
         # Try labeled search first
         val = self._find_info_by_label(
-            soup, ["lauflänge", "yardage", "length", "laufweite"]
+            soup,
+            [
+                "lauflänge",
+                "yardage",
+                "length",
+                "laufweite",
+                "gewicht / lauflänge",
+                "weight / yardage",
+                "vekt / løpelengde",
+            ],
         )
         if val:
-            match = re.search(r"(\d+)", val)
+            # Look for patterns like "210 m" or "210 Meter"
+            match = re.search(r"(\d+)\s*(?:m|meter|yards?|yds?)\b", val, re.I)
+            if not match:
+                match = re.search(r"(\d+)", val)
             if match:
                 return int(match.group(1))
 
@@ -1623,7 +1667,7 @@ class PatternImporter:
                     if isinstance(parent_class, list)
                     else str(parent_class or "")
                 )
-                if "related-pattern" in class_str:
+                if "related-pattern" in class_str or "re-material" in class_str:
                     return True
             return False
 
@@ -1981,6 +2025,47 @@ class PatternImporter:
         val = " ".join(collected_lines).strip()
         return val or None
 
+    def _extract_garnstudio_yarn_links(self, soup: BeautifulSoup) -> dict[str, str]:
+        """Extract links to yarns from Garnstudio pattern page."""
+        links: dict[str, str] = {}
+        
+        # Look for all yarn links
+        for a in soup.find_all("a", href=re.compile(r"yarn\.php")):
+            href = a.get("href")
+            if not href:
+                continue
+            
+            # Skip menu links - they usually have 'MenuYarn' in onclick
+            onclick = a.get("onclick", "")
+            if "MenuYarn" in onclick:
+                continue
+                
+            full_url = urljoin(self.url, href)
+            
+            # Try to get the yarn name
+            # 1. Direct text
+            name = a.get_text(strip=True)
+            # 2. Strong tag inside
+            if not name:
+                strong = a.find("strong")
+                if strong:
+                    name = strong.get_text(strip=True)
+            # 3. Image alt in the same container
+            if not name:
+                # Look in parent or siblings for an image with alt text
+                parent = a.find_parent(["div", "li"])
+                if parent:
+                    img = parent.find("img")
+                    if img:
+                        name = img.get("alt") or img.get("title")
+            
+            if name:
+                cleaned_name = self._clean_yarn_name(name)
+                if cleaned_name:
+                    links[cleaned_name.lower()] = full_url
+
+        return links
+
     def _extract_garnstudio_yarn(self, soup: BeautifulSoup) -> str | None:
         """Extract yarn list from Garnstudio pattern."""
         material = soup.find(id=re.compile(r"material_text(_print)?"))
@@ -2068,6 +2153,13 @@ class PatternImporter:
             ".pattern-share-new",
             ".pattern-ad",
             ".pattern-prices",
+            ".m-menu",
+            ".dropdown-menu",
+            "#menu",
+            "nav",
+            ".modal",
+            ".table-products",
+            ".sn",
         ]
         for noise in soup.select(", ".join(noise_selectors)):
             noise.decompose()
@@ -2081,6 +2173,8 @@ class PatternImporter:
         # Fallbacks for older pages or different layouts
         if not material:
             material = soup.select_one(".pattern-material")
+        if not material:
+            material = soup.select_one(".yarn-description")
         if not instruction:
             instruction = soup.select_one(".pattern-instructions")
 
