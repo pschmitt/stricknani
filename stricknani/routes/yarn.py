@@ -788,6 +788,28 @@ async def yarn_detail(
 
     is_favorite = any(entry.id == yarn.id for entry in current_user.favorite_yarns)
 
+    # Check for stale archive request (self-healing)
+    if (
+        config.FEATURE_WAYBACK_ENABLED
+        and yarn.archive_pending
+        and yarn.link_archive_requested_at
+        and yarn.link
+    ):
+        # Handle naive datetime from SQLite
+        requested_at = yarn.link_archive_requested_at
+        if requested_at.tzinfo is None:
+            requested_at = requested_at.replace(tzinfo=UTC)
+
+        elapsed = datetime.now(UTC) - requested_at
+        if elapsed.total_seconds() > 900:  # 15 minutes
+            # Reset timestamp to now so we don't spam checks immediately
+            yarn.link_archive_requested_at = datetime.now(UTC)
+            await db.commit()
+            # Retry the snapshot request
+            asyncio.create_task(
+                store_wayback_snapshot(Yarn, yarn.id, yarn.link)
+            )
+
     return await render_template(
         "yarn/detail.html",
         request,

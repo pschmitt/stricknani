@@ -70,24 +70,38 @@ async def _request_wayback_snapshot(url: str) -> str | None:
 
 async def store_wayback_snapshot(model_class: Any, entity_id: int, url: str) -> None:
     """Request and store a wayback snapshot for a given entity."""
-    async with AsyncSessionLocal() as session:
-        entity = await session.get(model_class, entity_id)
-        if not entity or entity.link_archive:
-            return
+    try:
+        async with AsyncSessionLocal() as session:
+            entity = await session.get(model_class, entity_id)
+            if not entity or entity.link_archive:
+                return
 
-        # Update requested_at first to avoid multiple requests
-        if hasattr(entity, "link_archive_requested_at"):
-            entity.link_archive_requested_at = datetime.now(UTC)
-            await session.commit()
-
-        archive_url = await _request_wayback_snapshot(url)
-        if archive_url:
-            entity.link_archive = archive_url
-            if hasattr(entity, "link_archive_failed"):
-                entity.link_archive_failed = False
-            await session.commit()
-        else:
-            logger.info("Wayback snapshot not available for %s", url)
-            if hasattr(entity, "link_archive_failed"):
-                entity.link_archive_failed = True
+            # Update requested_at first to avoid multiple requests
+            if hasattr(entity, "link_archive_requested_at"):
+                entity.link_archive_requested_at = datetime.now(UTC)
                 await session.commit()
+
+            try:
+                archive_url = await _request_wayback_snapshot(url)
+            except Exception as exc:
+                logger.error(
+                    "Unexpected error in _request_wayback_snapshot for %s: %s",
+                    url,
+                    exc,
+                )
+                archive_url = None
+
+            if archive_url:
+                entity.link_archive = archive_url
+                if hasattr(entity, "link_archive_failed"):
+                    entity.link_archive_failed = False
+                await session.commit()
+            else:
+                logger.info("Wayback snapshot not available for %s", url)
+                if hasattr(entity, "link_archive_failed"):
+                    entity.link_archive_failed = True
+                    await session.commit()
+
+    except Exception as exc:
+        logger.exception("Failed to store wayback snapshot for %s: %s", url, exc)
+

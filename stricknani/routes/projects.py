@@ -1772,6 +1772,29 @@ async def get_project(
     )
     is_favorite = favorite_lookup.first() is not None
     exclusive_yarns = await _get_exclusive_yarns(db, project)
+
+    # Check for stale archive request (self-healing)
+    if (
+        config.FEATURE_WAYBACK_ENABLED
+        and project.archive_pending
+        and project.link_archive_requested_at
+        and project.link
+    ):
+        # Handle naive datetime from SQLite
+        requested_at = project.link_archive_requested_at
+        if requested_at.tzinfo is None:
+            requested_at = requested_at.replace(tzinfo=UTC)
+
+        elapsed = datetime.now(UTC) - requested_at
+        if elapsed.total_seconds() > 900:  # 15 minutes
+            # Reset timestamp to now so we don't spam checks immediately
+            project.link_archive_requested_at = datetime.now(UTC)
+            await db.commit()
+            # Retry the snapshot request
+            asyncio.create_task(
+                store_wayback_snapshot(Project, project.id, project.link)
+            )
+
     project_data = {
         "id": project.id,
         "name": project.name,
