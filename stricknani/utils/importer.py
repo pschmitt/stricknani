@@ -2263,20 +2263,45 @@ class PatternImporter:
             if not stripped:
                 continue
 
+            upper = stripped.upper()
             label = stripped[:-1] if stripped.endswith(":") else stripped
+
+            # Check if this line is a stop heading, possibly prefixed with DROPS
+            is_stop = False
             if label.isupper() and label in stop_headings:
+                is_stop = True
+            elif upper.startswith("DROPS"):
+                # Check if it's "DROPS NADELN" or similar
+                remainder = upper[5:].strip()
+                is_heading = remainder in stop_headings or (
+                    remainder.endswith(":")
+                    and remainder[:-1].strip() in stop_headings
+                )
+                if is_heading:
+                    is_stop = True
+
+            if is_stop:
                 break
 
             # Garnstudio yarns are often split into name and weight/color
             # Merge if the current line doesn't look like a new yarn
             if collected and not any(
-                kw in stripped.upper() for kw in ["DROPS", "GARNGRUPPE", "ODER:"]
+                kw in upper for kw in ["DROPS", "GARNGRUPPE", "ODER:"]
             ):
                 collected[-1] = f"{collected[-1]} {stripped}"
             else:
                 collected.append(stripped)
 
-        return "\n".join(collected).strip() or None
+        # Post-filter: remove entries that aren't actually yarns
+        final_yarns = []
+        for y in collected:
+            # Skip if it's just "DROPS" or similar noise
+            details = self._parse_garnstudio_yarn_string(y)
+            name_upper = (details.get("name") or "").upper()
+            if name_upper and name_upper not in ["DROPS", "GARNSTUDIO"]:
+                final_yarns.append(y)
+
+        return "\n".join(final_yarns).strip() or None
 
     def _extract_garnstudio_text(self, soup: BeautifulSoup) -> str:
         """Extract clean text from Garnstudio pattern page using trafilatura."""
