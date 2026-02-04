@@ -296,9 +296,9 @@
                         {% if yarn.recommended_needles %}
                         <div>
                             <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Recommended Needles') }}</span>
-                            <div class="flex items-start gap-2 text-sm font-medium whitespace-pre-wrap">
+                            <div class="flex items-start gap-2 text-sm font-medium whitespace-normal">
                                 <span class="mdi mdi-needle text-base-content/60 mt-0.5"></span>
-                                {{ yarn.recommended_needles }}
+                                <span>{{- yarn.recommended_needles | trim -}}</span>
                             </div>
                         </div>
                         {% endif %}
