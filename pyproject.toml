@@ -26,6 +26,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "python-multipart>=0.0.9",
     "rich>=13.9.4",
+    "scikit-image>=0.24.0",
     "sentry-sdk[fastapi]>=2.20.0",
     "sqlalchemy>=2.0.35",
     "trafilatura>=1.12.0",
@@ -108,6 +109,7 @@ strict_equality = true
 module = [
     "jose.*",
     "openai",
+    "skimage.*",
     "weasyprint",
 ]
 ignore_missing_imports = true

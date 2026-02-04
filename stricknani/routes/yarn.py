@@ -5,6 +5,7 @@ import json
 import logging
 import re
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
@@ -44,14 +45,21 @@ from stricknani.utils.files import (
     save_bytes,
     save_uploaded_file,
 )
+from stricknani.utils.image_similarity import (
+    SimilarityImage,
+    build_similarity_image,
+    compute_similarity_score,
+)
 from stricknani.utils.importer import (
     IMPORT_IMAGE_HEADERS,
     IMPORT_IMAGE_MAX_BYTES,
     IMPORT_IMAGE_MAX_COUNT,
     IMPORT_IMAGE_MIN_DIMENSION,
+    IMPORT_IMAGE_SSIM_THRESHOLD,
     IMPORT_IMAGE_TIMEOUT,
     _is_allowed_import_image,
     _is_valid_import_url,
+    filter_import_image_urls,
     trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
@@ -61,6 +69,14 @@ from stricknani.utils.wayback import (
 )
 
 router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
+
+
+@dataclass
+class _ImportedSimilarity:
+    similarity: SimilarityImage
+    image: YarnImage
+    filename: str
+    is_primary: bool
 
 
 async def _load_existing_yarn_checksums(
@@ -93,6 +109,7 @@ async def _import_yarn_images_from_urls(
     imported = 0
     existing_checksums = await _load_existing_yarn_checksums(db, yarn.id)
     seen_checksums: set[str] = set()
+    imported_similarities: list[_ImportedSimilarity] = []
 
     headers = dict(IMPORT_IMAGE_HEADERS)
     if yarn.link:
@@ -149,9 +166,36 @@ async def _import_yarn_images_from_urls(
                             height,
                         )
                         continue
+                    similarity = build_similarity_image(img)
             except Exception as exc:
                 logger.info("Skipping unreadable image %s: %s", image_url, exc)
                 continue
+
+            skip_thumbnail = False
+            to_remove: list[_ImportedSimilarity] = []
+            for candidate in imported_similarities:
+                score = compute_similarity_score(candidate.similarity, similarity)
+                if score is None or score < IMPORT_IMAGE_SSIM_THRESHOLD:
+                    continue
+                if similarity.pixels <= candidate.similarity.pixels:
+                    logger.info(
+                        "Skipping thumbnail image %s (ssim %.3f)",
+                        image_url,
+                        score,
+                    )
+                    skip_thumbnail = True
+                    break
+                to_remove.append(candidate)
+
+            if skip_thumbnail:
+                continue
+
+            removed_primary = any(entry.is_primary for entry in to_remove)
+            for entry in to_remove:
+                await db.delete(entry.image)
+                delete_file(entry.filename, yarn.id, subdir="yarns")
+                imported_similarities.remove(entry)
+                imported = max(0, imported - 1)
 
             original_filename = build_import_filename(image_url, content_type)
             filename = ""
@@ -174,6 +218,9 @@ async def _import_yarn_images_from_urls(
                 # primary if there are no existing photos.
                 is_primary = imported == 0 and not yarn.photos
 
+            if removed_primary:
+                is_primary = True
+
             photo = YarnImage(
                 filename=filename,
                 original_filename=original_filename,
@@ -184,6 +231,14 @@ async def _import_yarn_images_from_urls(
             db.add(photo)
             imported += 1
             seen_checksums.add(checksum)
+            imported_similarities.append(
+                _ImportedSimilarity(
+                    similarity=similarity,
+                    image=photo,
+                    filename=filename,
+                    is_primary=is_primary,
+                )
+            )
 
     return imported
 
@@ -453,6 +508,14 @@ async def import_yarn(
             "notes": None,
             "is_ai_enhanced": False,
         }
+
+        image_urls = yarn_data.get("image_urls")
+        if isinstance(image_urls, list) and image_urls:
+            yarn_data["image_urls"] = await filter_import_image_urls(
+                image_urls,
+                referer=url,
+                limit=5,
+            )
 
         return JSONResponse(content=yarn_data)
 

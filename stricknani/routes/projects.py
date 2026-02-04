@@ -5,6 +5,7 @@ import json
 import logging
 import re
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
@@ -58,16 +59,23 @@ from stricknani.utils.files import (
     save_uploaded_file,
 )
 from stricknani.utils.i18n import install_i18n
+from stricknani.utils.image_similarity import (
+    SimilarityImage,
+    build_similarity_image,
+    compute_similarity_score,
+)
 from stricknani.utils.import_trace import ImportTrace
 from stricknani.utils.importer import (
     IMPORT_IMAGE_HEADERS,
     IMPORT_IMAGE_MAX_BYTES,
     IMPORT_IMAGE_MAX_COUNT,
     IMPORT_IMAGE_MIN_DIMENSION,
+    IMPORT_IMAGE_SSIM_THRESHOLD,
     IMPORT_IMAGE_TIMEOUT,
     _is_allowed_import_image,
     _is_garnstudio_url,
     _is_valid_import_url,
+    filter_import_image_urls,
     trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
@@ -77,6 +85,14 @@ from stricknani.utils.wayback import (
 )
 
 router: APIRouter = APIRouter(prefix="/projects", tags=["projects"])
+
+
+@dataclass
+class _ImportedSimilarity:
+    similarity: SimilarityImage
+    image: Image
+    filename: str
+    is_title_image: bool
 
 
 def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
@@ -231,6 +247,7 @@ async def _import_images_from_urls(
     imported = 0
     existing_checksums = await _load_existing_image_checksums(db, project.id)
     seen_checksums: set[str] = set()
+    imported_similarities: list[_ImportedSimilarity] = []
 
     existing_title_images = await db.execute(
         select(func.count())
@@ -311,9 +328,36 @@ async def _import_images_from_urls(
                             height,
                         )
                         continue
+                    similarity = build_similarity_image(img)
             except Exception as exc:
                 logger.info("Skipping unreadable image %s: %s", image_url, exc)
                 continue
+
+            skip_thumbnail = False
+            to_remove: list[_ImportedSimilarity] = []
+            for candidate in imported_similarities:
+                score = compute_similarity_score(candidate.similarity, similarity)
+                if score is None or score < IMPORT_IMAGE_SSIM_THRESHOLD:
+                    continue
+                if similarity.pixels <= candidate.similarity.pixels:
+                    logger.info(
+                        "Skipping thumbnail image %s (ssim %.3f)",
+                        image_url,
+                        score,
+                    )
+                    skip_thumbnail = True
+                    break
+                to_remove.append(candidate)
+
+            if skip_thumbnail:
+                continue
+
+            removed_title = any(entry.is_title_image for entry in to_remove)
+            for entry in to_remove:
+                await db.delete(entry.image)
+                delete_file(entry.filename, project.id)
+                imported_similarities.remove(entry)
+                imported = max(0, imported - 1)
 
             original_filename = build_import_filename(image_url, content_type)
             filename = ""
@@ -339,6 +383,9 @@ async def _import_images_from_urls(
             else:
                 is_title = title_available
 
+            if removed_title:
+                is_title = True
+
             image = Image(
                 filename=filename,
                 original_filename=original_filename,
@@ -350,6 +397,14 @@ async def _import_images_from_urls(
             db.add(image)
             imported += 1
             seen_checksums.add(checksum)
+            imported_similarities.append(
+                _ImportedSimilarity(
+                    similarity=similarity,
+                    image=image,
+                    filename=filename,
+                    is_title_image=is_title,
+                )
+            )
             if is_title:
                 title_available = False
 
@@ -369,6 +424,7 @@ async def _import_step_images(
         db, step.project_id, step_id=step.id
     )
     seen_checksums: set[str] = set()
+    imported_similarities: list[_ImportedSimilarity] = []
 
     headers = dict(IMPORT_IMAGE_HEADERS)
     # Use project link as referer if available (fetch project associated with step).
@@ -428,9 +484,35 @@ async def _import_step_images(
                             height,
                         )
                         continue
+                    similarity = build_similarity_image(img)
             except Exception as exc:
                 logger.info("Skipping unreadable step image %s: %s", image_url, exc)
                 continue
+
+            skip_thumbnail = False
+            to_remove: list[_ImportedSimilarity] = []
+            for candidate in imported_similarities:
+                score = compute_similarity_score(candidate.similarity, similarity)
+                if score is None or score < IMPORT_IMAGE_SSIM_THRESHOLD:
+                    continue
+                if similarity.pixels <= candidate.similarity.pixels:
+                    logger.info(
+                        "Skipping thumbnail step image %s (ssim %.3f)",
+                        image_url,
+                        score,
+                    )
+                    skip_thumbnail = True
+                    break
+                to_remove.append(candidate)
+
+            if skip_thumbnail:
+                continue
+
+            for entry in to_remove:
+                await db.delete(entry.image)
+                delete_file(entry.filename, step.project_id)
+                imported_similarities.remove(entry)
+                imported = max(0, imported - 1)
 
             original_filename = build_import_filename(image_url, content_type)
             filename = ""
@@ -461,6 +543,14 @@ async def _import_step_images(
             db.add(image)
             imported += 1
             seen_checksums.add(checksum)
+            imported_similarities.append(
+                _ImportedSimilarity(
+                    similarity=similarity,
+                    image=image,
+                    filename=filename,
+                    is_title_image=False,
+                )
+            )
 
     return imported
 
@@ -1086,6 +1176,24 @@ async def import_pattern(
                 )
                 data["import_trace_id"] = trace.trace_id
             data = trim_import_strings(data)
+
+            image_urls = data.get("image_urls")
+            if isinstance(image_urls, list) and image_urls:
+                data["image_urls"] = await filter_import_image_urls(
+                    image_urls,
+                    referer=source_url,
+                )
+
+            steps = data.get("steps")
+            if isinstance(steps, list):
+                for step in steps:
+                    step_images = step.get("images")
+                    if isinstance(step_images, list) and step_images:
+                        step["images"] = await filter_import_image_urls(
+                            step_images,
+                            referer=source_url,
+                        )
+
             return JSONResponse(content=data)
 
         elif import_type == "text":

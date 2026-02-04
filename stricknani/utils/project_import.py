@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
 import httpx
+from PIL import Image as PilImage
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -16,6 +19,22 @@ from sqlalchemy.orm import selectinload
 from stricknani.config import config
 from stricknani.models import Category, Image, ImageType, Project, Yarn
 from stricknani.utils.files import create_thumbnail, delete_file, save_bytes
+from stricknani.utils.image_similarity import (
+    SimilarityImage,
+    build_similarity_image,
+    compute_similarity_score,
+)
+from stricknani.utils.importer import (
+    IMPORT_IMAGE_MIN_DIMENSION,
+    IMPORT_IMAGE_SSIM_THRESHOLD,
+)
+
+
+@dataclass
+class _ImportedSimilarity:
+    similarity: SimilarityImage
+    image: Image
+    filename: str
 
 
 def normalize_tags(raw_tags: str | None) -> list[str]:
@@ -100,6 +119,8 @@ async def import_images_from_urls(
         )
     }
 
+    imported_similarities: list[_ImportedSimilarity] = []
+
     async with httpx.AsyncClient(
         timeout=20,
         follow_redirects=True,
@@ -117,6 +138,49 @@ async def import_images_from_urls(
             if not content:
                 logger.warning("Downloaded image %s was empty", image_url)
                 continue
+
+            try:
+                with PilImage.open(BytesIO(content)) as img:
+                    width, height = img.size
+                    if (
+                        width < IMPORT_IMAGE_MIN_DIMENSION
+                        or height < IMPORT_IMAGE_MIN_DIMENSION
+                    ):
+                        logger.warning(
+                            "Skipping small image %s (%sx%s)",
+                            image_url,
+                            width,
+                            height,
+                        )
+                        continue
+                    similarity = build_similarity_image(img)
+            except Exception as exc:
+                logger.warning("Skipping unreadable image %s: %s", image_url, exc)
+                continue
+
+            skip_thumbnail = False
+            to_remove: list[_ImportedSimilarity] = []
+            for candidate in imported_similarities:
+                score = compute_similarity_score(candidate.similarity, similarity)
+                if score is None or score < IMPORT_IMAGE_SSIM_THRESHOLD:
+                    continue
+                if similarity.pixels <= candidate.similarity.pixels:
+                    logger.info(
+                        "Skipping thumbnail image %s (ssim %.3f)",
+                        image_url,
+                        score,
+                    )
+                    skip_thumbnail = True
+                    break
+                to_remove.append(candidate)
+
+            if skip_thumbnail:
+                continue
+
+            for entry in to_remove:
+                await db.delete(entry.image)
+                delete_file(entry.filename, project.id)
+                imported_similarities.remove(entry)
 
             parsed = urlparse(image_url)
             original_name = Path(parsed.path).name or f"imported-image-{index}.jpg"
@@ -138,14 +202,20 @@ async def import_images_from_urls(
                     exc,
                 )
                 continue
-            db.add(
-                Image(
+            image = Image(
+                filename=filename,
+                original_filename=original_filename,
+                image_type=ImageType.PHOTO.value,
+                alt_text=project.name,
+                is_title_image=False,
+                project_id=project.id,
+            )
+            db.add(image)
+            imported_similarities.append(
+                _ImportedSimilarity(
+                    similarity=similarity,
+                    image=image,
                     filename=filename,
-                    original_filename=original_filename,
-                    image_type=ImageType.PHOTO.value,
-                    alt_text=project.name,
-                    is_title_image=False,
-                    project_id=project.id,
                 )
             )
 

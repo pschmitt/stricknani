@@ -1,15 +1,24 @@
 "URL import utilities for extracting knitting pattern data."
 
+from __future__ import annotations
+
 import html
 import logging
 import re
+from collections.abc import Sequence
+from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
 from bs4.element import AttributeValueList, NavigableString, PageElement, Tag
+from PIL import Image as PilImage
+
+if TYPE_CHECKING:
+    from stricknani.utils.image_similarity import SimilarityImage
 
 logger = logging.getLogger("stricknani.imports")
 
@@ -51,6 +60,7 @@ IMPORT_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 IMPORT_IMAGE_MAX_COUNT = 10
 IMPORT_IMAGE_TIMEOUT = 10
 IMPORT_IMAGE_MIN_DIMENSION = 64
+IMPORT_IMAGE_SSIM_THRESHOLD = 0.95
 IMPORT_IMAGE_HEADERS = {
     "User-Agent": "Stricknani Importer/0.1",
     "Accept": "image/*",
@@ -62,6 +72,126 @@ IMPORT_ALLOWED_IMAGE_TYPES = {
     "image/gif",
 }
 IMPORT_ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
+@dataclass
+class _FilteredImageCandidate:
+    url: str
+    similarity: SimilarityImage
+
+
+async def filter_import_image_urls(
+    image_urls: Sequence[str],
+    *,
+    referer: str | None = None,
+    limit: int = IMPORT_IMAGE_MAX_COUNT,
+) -> list[str]:
+    """Filter import image URLs by validity, size, and similarity."""
+    if not image_urls:
+        return []
+
+    from stricknani.utils.image_similarity import (
+        build_similarity_image,
+        compute_similarity_score,
+    )
+
+    logger = logging.getLogger("stricknani.imports")
+    headers = dict(IMPORT_IMAGE_HEADERS)
+    if referer:
+        headers["Referer"] = referer
+
+    accepted: list[_FilteredImageCandidate] = []
+
+    async with httpx.AsyncClient(
+        timeout=IMPORT_IMAGE_TIMEOUT,
+        follow_redirects=True,
+        headers=headers,
+    ) as client:
+        for image_url in image_urls:
+            if len(accepted) >= limit:
+                break
+            if not _is_valid_import_url(image_url):
+                logger.info("Skipping invalid image URL: %s", image_url)
+                continue
+
+            try:
+                response = await client.get(image_url)
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                logger.info("Skipping unreachable image %s: %s", image_url, exc)
+                continue
+
+            content_type = response.headers.get("content-type")
+            if not _is_allowed_import_image(content_type, image_url):
+                logger.info("Skipping non-image URL: %s", image_url)
+                continue
+
+            content_length = response.headers.get("content-length")
+            if content_length:
+                try:
+                    if int(content_length) > IMPORT_IMAGE_MAX_BYTES:
+                        logger.info("Skipping large image %s", image_url)
+                        continue
+                except ValueError:
+                    pass
+
+            if not response.content:
+                logger.info("Skipping empty image response: %s", image_url)
+                continue
+
+            if len(response.content) > IMPORT_IMAGE_MAX_BYTES:
+                logger.info("Skipping large image %s", image_url)
+                continue
+
+            try:
+                with PilImage.open(BytesIO(response.content)) as img:
+                    width, height = img.size
+                    if (
+                        width < IMPORT_IMAGE_MIN_DIMENSION
+                        or height < IMPORT_IMAGE_MIN_DIMENSION
+                    ):
+                        logger.info(
+                            "Skipping small image %s (%sx%s)",
+                            image_url,
+                            width,
+                            height,
+                        )
+                        continue
+                    similarity = build_similarity_image(img)
+            except Exception as exc:
+                logger.info("Skipping unreadable image %s: %s", image_url, exc)
+                continue
+
+            skip_thumbnail = False
+            to_remove: list[_FilteredImageCandidate] = []
+            for candidate in accepted:
+                score = compute_similarity_score(candidate.similarity, similarity)
+                if score is None or score < IMPORT_IMAGE_SSIM_THRESHOLD:
+                    continue
+                if similarity.pixels <= candidate.similarity.pixels:
+                    logger.info(
+                        "Skipping thumbnail image %s (ssim %.3f)",
+                        image_url,
+                        score,
+                    )
+                    skip_thumbnail = True
+                    break
+                to_remove.append(candidate)
+
+            if skip_thumbnail:
+                continue
+
+            for entry in to_remove:
+                accepted.remove(entry)
+
+            accepted.append(
+                _FilteredImageCandidate(
+                    url=image_url,
+                    similarity=similarity,
+                )
+            )
+
+    return [candidate.url for candidate in accepted]
 
 
 def _is_allowed_import_image(content_type: str | None, url: str) -> bool:

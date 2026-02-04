@@ -26,6 +26,7 @@ let
     python-jose
     python-multipart
     rich
+    scikit-image
     sentry-sdk
     sqlalchemy
     trafilatura
