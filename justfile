@@ -1,5 +1,7 @@
 # Stricknani justfile
 
+prod_host := "rofl-10.brkn.lol"
+
 # Default port for dev server
 dev_port := env_var_or_default("PORT", "7674")
 
@@ -137,7 +139,7 @@ deploy commit='':
     exit 1
   fi
 
-  nixos::rebuild --target rofl-10.brkn.lol || exit 3
+  nixos::rebuild --target {{ prod_host }} || exit 3
 
   if [[ "{{commit}}" == "--commit" ]]
   then
