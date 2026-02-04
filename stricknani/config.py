@@ -66,12 +66,8 @@ class Config:
     OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
 
     # Sentry
-    SENTRY_DSN_BACKEND: str | None = os.getenv(
-        "SENTRY_DSN_BACKEND", os.getenv("SENTRY_DSN")
-    )
-    SENTRY_DSN_FRONTEND: str | None = os.getenv(
-        "SENTRY_DSN_FRONTEND", os.getenv("SENTRY_FRONTEND_DSN")
-    )
+    SENTRY_DSN_BACKEND: str | None = os.getenv("SENTRY_DSN_BACKEND")
+    SENTRY_DSN_FRONTEND: str | None = os.getenv("SENTRY_DSN_FRONTEND")
     SENTRY_ENVIRONMENT: str = os.getenv("SENTRY_ENVIRONMENT", "production")
     SENTRY_TRACES_SAMPLE_RATE: float = float(
         os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0")
