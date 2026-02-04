@@ -1,5 +1,5 @@
 {% set current_path = request.url.path %}
-{% set current_icon = page_icon if page_icon is defined else 
+{% set current_icon = page_icon if page_icon is defined else
     'mdi-folder-outline' if current_path.startswith('/projects') else
     'mdi-sheep' if current_path.startswith('/yarn') else
     'mdi-ruler' if current_path.startswith('/gauge') else
@@ -275,7 +275,7 @@
                         title="{{ _('Toggle theme') }}">
                         <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
                     </button>
-                    
+
                     <div class="hidden sm:block min-w-32">
                         {% set container_class = "bg-base-300/50 border border-base-300 rounded-full" %}
                         {% include "shared/_language_selector.html" %}

@@ -63,8 +63,8 @@
     </a>
     <div class="absolute top-3 right-3 z-10">
         <div class="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-            <a href="/projects/{{ project.id }}/edit" 
-               class="btn btn-circle bg-black/20 backdrop-blur-md border-white/20 text-white hover:bg-white hover:text-primary transition-all h-9 w-9 min-h-0 text-lg shadow-sm" 
+            <a href="/projects/{{ project.id }}/edit"
+               class="btn btn-circle bg-black/20 backdrop-blur-md border-white/20 text-white hover:bg-white hover:text-primary transition-all h-9 w-9 min-h-0 text-lg shadow-sm"
                title="{{ _('Edit %(name)s') % {'name': project.name} }}">
                 <span class="mdi mdi-pencil" aria-hidden="true"></span>
                 <span class="sr-only">{{ _('Edit') }}</span>
@@ -86,7 +86,7 @@
                 {% endif %}
             </h3>
             {% if project.category and project.category != 'None' %}
-            <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}" 
+            <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
                class="badge border {{ project.category|category_color }} shrink-0 ml-2 font-medium py-2.5">
                 {{ _(project.category) }}
             </a>
@@ -95,7 +95,7 @@
         {% if project.tags %}
         <div class="mb-4 flex flex-wrap gap-2 -ml-2">
             {% for tag in project.tags %}
-            <a href="/projects?search={{ ('#' ~ tag)|urlencode }}" 
+            <a href="/projects?search={{ ('#' ~ tag)|urlencode }}"
                class="badge badge-sm border-base-300 bg-base-200/50 text-base-content/70 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all duration-200">#{{ tag }}</a>
             {% endfor %}
         </div>

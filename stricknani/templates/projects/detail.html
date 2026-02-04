@@ -176,7 +176,7 @@
             <!-- Gallery Section -->
             {% if project.title_images %}
             <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
-                <input type="checkbox" checked /> 
+                <input type="checkbox" checked />
                 <div class="collapse-title p-4 flex items-center justify-between">
                     <h2 class="font-bold text-lg flex items-center gap-2">
                         <span class="mdi mdi-image-multiple text-primary"></span>
@@ -265,7 +265,7 @@
             <div class="space-y-6 lg:hidden">
                 <!-- Details Card (Collapsible) -->
                 <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
-                    <input type="checkbox" id="details-toggle-mobile" checked /> 
+                    <input type="checkbox" id="details-toggle-mobile" checked />
                     <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Project Details') }}
@@ -327,7 +327,7 @@
                                         <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                                         {{ project.link }}
                                     </a>
-                                    <button type="button" 
+                                    <button type="button"
                                         onclick="copyToClipboard('{{ project.link }}', this)"
                                         class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
                                         title="{{ _('Copy URL') }}">
@@ -430,7 +430,7 @@
                         {{ _('Technical Specifications') }}
                     </h2>
                 </div>
-                
+
                 <div class="collapse-content space-y-6">
                     <!-- Yarns Used -->
                     <div class="bg-base-200/30 rounded-xl border border-base-200 p-5">
@@ -610,14 +610,14 @@
         <div id="sidebar-column" class="space-y-6 hidden lg:block lg:col-start-3 lg:row-start-1 lg:sticky lg:top-20 lg:self-start transition-all duration-300">
             <!-- Details Card (Collapsible) -->
             <div class="collapse collapse-right collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
-                <input type="checkbox" id="details-toggle-sidebar" checked onchange="toggleSidebarExpansion(this)" /> 
+                <input type="checkbox" id="details-toggle-sidebar" checked onchange="toggleSidebarExpansion(this)" />
                 <div class="collapse-title w-full font-bold text-base text-base-content/40 uppercase tracking-widest text-xs">
                     <span class="flex items-center gap-2">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Project Details') }}
                     </span>
                 </div>
-                
+
                 <div class="collapse-content space-y-4">
                     <div class="pt-2">
                         <!-- Badges Info -->
@@ -675,7 +675,7 @@
                                     <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                                     {{ project.link }}
                                 </a>
-                                <button type="button" 
+                                <button type="button"
                                     onclick="copyToClipboard('{{ project.link }}', this)"
                                     class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
                                     title="{{ _('Copy URL') }}">
@@ -792,7 +792,7 @@
         const sidebar = document.getElementById('sidebar-column');
         const restoreButton = document.getElementById('details-restore-button');
         if (!main || !sidebar) return;
-        
+
         if (checkbox.checked) {
             main.classList.replace('lg:col-span-3', 'lg:col-span-2');
             main.classList.remove('lg:pr-12');

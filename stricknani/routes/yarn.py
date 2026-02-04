@@ -806,9 +806,7 @@ async def yarn_detail(
             yarn.link_archive_requested_at = datetime.now(UTC)
             await db.commit()
             # Retry the snapshot request
-            asyncio.create_task(
-                store_wayback_snapshot(Yarn, yarn.id, yarn.link)
-            )
+            asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
 
     return await render_template(
         "yarn/detail.html",

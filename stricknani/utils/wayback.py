@@ -86,4 +86,3 @@ async def store_wayback_snapshot(model_class: Any, entity_id: int, url: str) -> 
 
     except Exception as exc:
         logger.exception("Failed to store wayback snapshot for %s: %s", url, exc)
-

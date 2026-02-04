@@ -1,11 +1,13 @@
 """Tests for pattern import functionality."""
 
+import io
 import json
 from io import BytesIO
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from PIL import Image
 
 if TYPE_CHECKING:
     from httpx import AsyncClient
@@ -100,12 +102,27 @@ async def test_import_url_extracts_steps_and_images(
     </html>
     """
 
-    with patch("httpx.AsyncClient.get") as mock_get:
-        mock_response = MagicMock()
-        mock_response.text = mock_html
-        mock_response.status_code = 200
-        mock_get.return_value = mock_response
+    async def _mock_get(url: str, **kwargs: Any) -> MagicMock:
+        # Create a unique valid JPEG for each URL based on its hash
+        import hashlib
 
+        h = int(hashlib.md5(str(url).encode()).hexdigest(), 16) % 255
+        img = Image.new("RGB", (100, 100), color=(h, h, h))
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format="JPEG")
+        img_content = img_bytes.getvalue()
+
+        mock_resp = MagicMock()
+        mock_resp.text = mock_html
+        mock_resp.content = img_content
+        mock_resp.status_code = 200
+        mock_resp.headers = {
+            "content-type": "image/jpeg",
+            "content-length": str(len(img_content)),
+        }
+        return mock_resp
+
+    with patch("httpx.AsyncClient.get", side_effect=_mock_get):
         response = await client.post(
             "/projects/import",
             data={

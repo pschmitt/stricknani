@@ -40,12 +40,12 @@ from stricknani.models import (
     Project,
     Step,
     User,
+    YarnImage,
     project_yarns,
     user_favorites,
 )
 from stricknani.models import (
     Yarn as YarnModel,
-    YarnImage,
 )
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
@@ -1687,18 +1687,22 @@ async def _ensure_yarns_by_text(
                         if yarn_data.get("length_meters"):
                             db_yarn_obj.length_meters = yarn_data.get("length_meters")
                         if yarn_data.get("weight_category"):
-                            db_yarn_obj.weight_category = yarn_data.get("weight_category")
+                            db_yarn_obj.weight_category = yarn_data.get(
+                                "weight_category"
+                            )
                         if yarn_data.get("needles"):
                             db_yarn_obj.recommended_needles = yarn_data.get("needles")
                         if not db_yarn_obj.description:
-                            db_yarn_obj.description = (
-                                yarn_data.get("notes") or yarn_data.get("comment")
-                            )
+                            db_yarn_obj.description = yarn_data.get(
+                                "notes"
+                            ) or yarn_data.get("comment")
 
                         # Import images
                         img_urls = yarn_data.get("image_urls")
                         if img_urls:
-                            await _import_yarn_images_from_urls(db, db_yarn_obj, img_urls)
+                            await _import_yarn_images_from_urls(
+                                db, db_yarn_obj, img_urls
+                            )
 
                         # Handle Wayback archival for the yarn link
                         if config.FEATURE_WAYBACK_ENABLED and db_yarn_obj.link:

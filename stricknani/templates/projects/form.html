@@ -756,11 +756,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         const hiddenInput = document.getElementById('is_ai_enhanced');
         const desktopCheckbox = document.getElementById('is_ai_enhanced_checkbox');
         const mobileCheckbox = document.getElementById('is_ai_enhanced_mobile_checkbox');
-        
+
         if (hiddenInput) hiddenInput.value = isChecked ? '1' : '';
         if (desktopCheckbox && desktopCheckbox !== el) desktopCheckbox.checked = isChecked;
         if (mobileCheckbox && mobileCheckbox !== el) mobileCheckbox.checked = isChecked;
-        
+
         window.unsavedChanges?.setDirty(true);
     }
 
@@ -905,7 +905,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 setFieldValue('name', data.title || data.name);
                 setFieldValue('needles', data.needles);
                 setFieldValue('yarn_brand', data.brand);
-                
+
                 const yarnDetailsField = document.getElementById('yarn_details');
                 if (yarnDetailsField && data.yarn_details) {
                     yarnDetailsField.value = JSON.stringify(data.yarn_details);
@@ -1180,7 +1180,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         function selectPendingYarn(name) {
             const normalized = name.trim();
             if (!normalized || pendingYarns.has(normalized)) return;
-            
+
             // Check if it already exists in selectedYarns by name
             for (let y of selectedYarns.values()) {
                 if (y.name.toLowerCase() === normalized.toLowerCase()) return;
@@ -1210,7 +1210,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             remove: removeYarn,
             selectByName: function (name) {
                 if (!name) return { anySelected: false, remaining: '' };
-                
+
                 let rawNames = [];
                 if (name.includes('\n')) {
                     rawNames = name.split('\n').map(n => n.trim()).filter(Boolean);
@@ -1285,7 +1285,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             }
 
             selectedContainer.innerHTML = '';
-            
+
             // Render existing yarns
             selectedYarns.forEach((yarn, id) => {
                 const chip = document.createElement('div');
@@ -1341,12 +1341,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
         function updateHiddenInput() {
             hiddenInput.value = Array.from(selectedYarns.keys()).join(',');
-            
+
             const yarnTextHidden = document.getElementById('yarn_text_hidden');
             if (yarnTextHidden) {
                 yarnTextHidden.value = Array.from(pendingYarns).join('\n');
             }
-            
+
             // Explicitly clear yarn_search if we have pending yarns as chips
             const searchInput = document.getElementById('yarn_search');
             if (searchInput && pendingYarns.size > 0 && document.activeElement !== searchInput) {
@@ -1522,17 +1522,17 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
         return `
         <div class="relative group" data-image-id="${imageData.id}">
-            <a href="${imageData.url}" 
+            <a href="${imageData.url}"
                data-pswp-width="${pswpWidth}"
-               data-pswp-height="${pswpHeight}" 
-               data-pswp-caption="${altText}" 
+               data-pswp-height="${pswpHeight}"
+               data-pswp-caption="${altText}"
                ${showPromote ? 'data-pswp-promote="true"' : ''}
                ${showDelete ? 'data-pswp-delete="true"' : ''}
                data-pswp-is-primary="${isPrimary ? 'true' : 'false'}"
                draggable="true" ondragstart="handleImageDragStart(event)"
                class="block">
-                <img src="${thumbUrl}" 
-                     alt="${altText}" 
+                <img src="${thumbUrl}"
+                     alt="${altText}"
                      class="${imageClass} w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
             </a>
             ${showPromote ? `
@@ -1925,8 +1925,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         div.className = 'relative group';
         div.setAttribute('data-pending-url', url);
         div.innerHTML = `
-        <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" 
-            data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false" 
+        <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption=""
+            data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false"
             draggable="true" ondragstart="handleImageDragStart(event)"
             class="block">
             <img src="${url}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
@@ -2548,7 +2548,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         ];
 
         const isEnabled = value.length > 0;
-        
+
         [...waybackCheckboxes, ...aiCheckboxes].forEach(cb => {
             if (cb) {
                 const wasDisabled = cb.disabled;
@@ -2650,7 +2650,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         setFieldValue('needles', data.needles);
         setFieldValue('recommended_needles', data.recommended_needles);
         setFieldValue('yarn_brand', data.brand);
-        
+
         const yarnDetailsField = document.getElementById('yarn_details');
         if (yarnDetailsField && data.yarn_details) {
             yarnDetailsField.value = JSON.stringify(data.yarn_details);
@@ -2959,7 +2959,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         setFieldValue('needles', data.needles);
                         setFieldValue('recommended_needles', data.recommended_needles);
                         setFieldValue('yarn_brand', data.brand);
-                        
+
                                         if (data.yarn) {
                                             window.yarnSelector?.selectByName(data.yarn);
                                         }

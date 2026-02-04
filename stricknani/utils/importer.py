@@ -244,6 +244,23 @@ class PatternImporter:
 
         soup = BeautifulSoup(response.text, "html.parser")
 
+        yarn_text = self._extract_yarn(soup)
+        yarn_details = None
+        if self.is_garnstudio and yarn_text:
+            # Collect yarn links for Garnstudio
+            yarn_links = self._extract_garnstudio_yarn_links(soup)
+            # If multiple yarns, split and parse each
+            yarn_lines = yarn_text.split("\n")
+            yarn_details = []
+            for line in yarn_lines:
+                if not line.strip():
+                    continue
+                detail = self._parse_garnstudio_yarn_string(line)
+                name = detail.get("name")
+                if name and name.lower() in yarn_links:
+                    detail["link"] = yarn_links[name.lower()]
+                yarn_details.append(detail)
+
         # Pre-clean Garnstudio soup to remove UI noise globally
         if self.is_garnstudio:
             # Targeted noise removal
@@ -271,22 +288,36 @@ class PatternImporter:
                 ".modal",
                 ".table-products",
                 ".sn",
+                "#related-patterns",
+                "#yarn-patterns",
+                ".feature-cats",
             ]
             for selector in noise_selectors:
                 for noise in soup.select(selector):
                     noise.decompose()
 
             # Remove sections by heading
-            for heading in soup.find_all(["h2", "h3"]):
+            noise_keywords = [
+                "vielleicht gefällt",
+                "you might also like",
+                "brauchen sie hilfe",
+                "need some help",
+                "schritt-für-schritt",
+                "step-by-step",
+                "anleitungen für",
+                "patterns for",
+                "anleitungen mit",
+                "patterns with",
+                "andere garne",
+                "other yarns",
+                "andere qualitäten",
+                "other qualities",
+            ]
+            for heading in soup.find_all(["h2", "h3", "h4", "h5", "p"]):
+                if heading.name == "p" and not heading.find("strong"):
+                    continue
+
                 text = heading.get_text().lower()
-                noise_keywords = [
-                    "vielleicht gefällt",
-                    "you might also like",
-                    "brauchen sie hilfe",
-                    "need some help",
-                    "schritt-für-schritt",
-                    "step-by-step",
-                ]
                 if any(x in text for x in noise_keywords):
                     # Find parent row or container and decompose
                     parent = heading.find_parent("div", class_="row")
@@ -301,23 +332,6 @@ class PatternImporter:
                         parent.decompose()
                     else:
                         heading.decompose()
-
-        yarn_text = self._extract_yarn(soup)
-        yarn_details = None
-        if self.is_garnstudio and yarn_text:
-            # Collect yarn links for Garnstudio
-            yarn_links = self._extract_garnstudio_yarn_links(soup)
-            # If multiple yarns, split and parse each
-            yarn_lines = yarn_text.split("\n")
-            yarn_details = []
-            for line in yarn_lines:
-                if not line.strip():
-                    continue
-                detail = self._parse_garnstudio_yarn_string(line)
-                name = detail.get("name")
-                if name and name.lower() in yarn_links:
-                    detail["link"] = yarn_links[name.lower()]
-                yarn_details.append(detail)
 
         steps = self._extract_steps(soup)
         images = self._extract_images(soup)
@@ -1013,10 +1027,28 @@ class PatternImporter:
                 return content.strip()
 
         # Try first long paragraph in article or main content
-        for tag in ["article", "main", "div"]:
+        # Prioritize specific IDs and classes first
+        for tag in ["div", "section", "article", "main"]:
             container = soup.find(
-                tag, class_=re.compile(r"description|content|product-info", re.I)
+                tag, id=re.compile(r"about|description", re.I)
+            ) or soup.find(
+                tag, class_=re.compile(r"yarn-description|product-info", re.I)
             )
+
+            if container:
+                p_tags = container.find_all("p")
+                for p in p_tags:
+                    text = p.get_text(strip=True)
+                    if len(text) > 100:
+                        return text
+
+        # Fallback to more generic containers
+        for tag in ["article", "main", "div", "section"]:
+            container = soup.find(
+                tag,
+                class_=re.compile(r"description|content", re.I),
+            )
+
             if container:
                 p_tags = container.find_all("p")
                 for p in p_tags:
@@ -1653,13 +1685,22 @@ class PatternImporter:
             if isinstance(tag, Tag):
                 alt_text = str(tag.get("alt") or "").lower()
                 title_text = str(tag.get("title") or "").lower()
-                if "related pattern" in alt_text or "related pattern" in title_text:
+                related_keywords = [
+                    "related pattern",
+                    "patterns with",
+                    "anleitungen für",
+                    "anleitungen mit",
+                    "free patterns",
+                ]
+                if any(x in alt_text for x in related_keywords) or any(
+                    x in title_text for x in related_keywords
+                ):
                     return True
             for parent in [tag, *list(tag.parents)]:
                 if not isinstance(parent, Tag):
                     continue
-                parent_id = parent.get("id")
-                if isinstance(parent_id, str) and "related-patterns" in parent_id:
+                parent_id = str(parent.get("id") or "").lower()
+                if "related-patterns" in parent_id or "patterns" in parent_id:
                     return True
                 parent_class = parent.get("class")
                 class_str = (
@@ -1669,6 +1710,22 @@ class PatternImporter:
                 )
                 if "related-pattern" in class_str or "re-material" in class_str:
                     return True
+
+                # If on a pattern page, exclude images linked to yarn pages
+                # or images that are explicitly marked as product images (yarns)
+                if "pattern.php" in self.url:
+                    if isinstance(parent, Tag) and parent.name == "a":
+                        href = str(parent.get("href") or "")
+                        onclick = str(parent.get("onclick") or "")
+                        if "yarn.php" in href:
+                            return True
+                        if "Location': 'Pattern'" in onclick:
+                            return True
+
+                    if isinstance(tag, Tag):
+                        alt = str(tag.get("alt") or "").lower()
+                        if "product image" in alt:
+                            return True
             return False
 
         meta_image = soup.find("meta", property="og:image")
@@ -1751,14 +1808,14 @@ class PatternImporter:
                 if any(
                     x in resolved.lower()
                     for x in [
-                        "logo",
-                        "icon",
+                        "/logo",
+                        "/icon",
                         "avatar",
                         "button",
                         "badge",
                         "banner",
-                        "ad",
-                        "design",
+                        "/ad/",
+                        "-ad-",
                         "social",
                         "facebook",
                         "twitter",
@@ -1766,7 +1823,6 @@ class PatternImporter:
                         "pinterest",
                         "/img/school/lessons/",
                         "/img/activity/",
-                        "/img/shademap/",
                     ]
                 ):
                     continue
@@ -2003,6 +2059,10 @@ class PatternImporter:
             "PATTERN NOTES",
             "MUSTER",
             "PATTERN",
+            "ANLEITUNGEN FÜR",
+            "PATTERNS FOR",
+            "ANLEITUNGEN MIT",
+            "PATTERNS WITH",
         }
 
         collected_lines: list[str] = []
@@ -2028,37 +2088,58 @@ class PatternImporter:
     def _extract_garnstudio_yarn_links(self, soup: BeautifulSoup) -> dict[str, str]:
         """Extract links to yarns from Garnstudio pattern page."""
         links: dict[str, str] = {}
-        
+
         # Look for all yarn links
         for a in soup.find_all("a", href=re.compile(r"yarn\.php")):
-            href = a.get("href")
-            if not href:
+            href_raw = a.get("href")
+            if not href_raw:
                 continue
-            
+
+            href = (
+                " ".join(href_raw) if isinstance(href_raw, list) else str(href_raw)
+            ).strip()
+
             # Skip menu links - they usually have 'MenuYarn' in onclick
-            onclick = a.get("onclick", "")
+            onclick_raw = a.get("onclick", "")
+            onclick = (
+                " ".join(onclick_raw)
+                if isinstance(onclick_raw, list)
+                else str(onclick_raw or "")
+            )
             if "MenuYarn" in onclick:
                 continue
-                
+
             full_url = urljoin(self.url, href)
-            
+
             # Try to get the yarn name
             # 1. Direct text
             name = a.get_text(strip=True)
             # 2. Strong tag inside
             if not name:
                 strong = a.find("strong")
-                if strong:
+                if isinstance(strong, Tag):
                     name = strong.get_text(strip=True)
             # 3. Image alt in the same container
             if not name:
                 # Look in parent or siblings for an image with alt text
                 parent = a.find_parent(["div", "li"])
-                if parent:
+                if isinstance(parent, Tag):
                     img = parent.find("img")
-                    if img:
-                        name = img.get("alt") or img.get("title")
-            
+                    if isinstance(img, Tag):
+                        alt_raw = img.get("alt")
+                        title_raw = img.get("title")
+                        alt = (
+                            " ".join(alt_raw)
+                            if isinstance(alt_raw, list)
+                            else str(alt_raw or "")
+                        )
+                        title = (
+                            " ".join(title_raw)
+                            if isinstance(title_raw, list)
+                            else str(title_raw or "")
+                        )
+                        name = alt or title
+
             if name:
                 cleaned_name = self._clean_yarn_name(name)
                 if cleaned_name:
@@ -2167,16 +2248,11 @@ class PatternImporter:
         # Garnstudio has content in these IDs/classes
         # #material_text contains GRÖSSE, GARN, NADELN, MASCHENPROBE
         # #instruction_text contains technical notes and the actual pattern
+        # #about contains yarn description on yarn pages
         material = soup.find(id=re.compile(r"material_text(_print)?"))
         instruction = soup.find(id=re.compile(r"instruction_text(_print)?"))
-
-        # Fallbacks for older pages or different layouts
-        if not material:
-            material = soup.select_one(".pattern-material")
-        if not material:
-            material = soup.select_one(".yarn-description")
-        if not instruction:
-            instruction = soup.select_one(".pattern-instructions")
+        about = soup.select_one("#about")
+        yarn_desc = soup.select_one(".yarn-description")
 
         parts = []
         if material:
@@ -2201,6 +2277,24 @@ class PatternImporter:
                 instr_text = instruction.get_text(separator="\n", strip=True)
             if instr_text:
                 parts.append(instr_text)
+
+        if about:
+            about_text = trafilatura.extract(
+                about.decode(), include_comments=False, include_tables=True
+            )
+            if not about_text or len(about_text) < 20:
+                about_text = about.get_text(separator="\n", strip=True)
+            if about_text:
+                parts.append(about_text)
+
+        if yarn_desc:
+            desc_text = trafilatura.extract(
+                yarn_desc.decode(), include_comments=False, include_tables=True
+            )
+            if not desc_text or len(desc_text) < 20:
+                desc_text = yarn_desc.get_text(separator="\n", strip=True)
+            if desc_text:
+                parts.append(desc_text)
 
         if parts:
             return "\n\n".join(parts)

@@ -601,9 +601,9 @@
         <div class="modal-box max-w-2xl p-0 overflow-hidden shadow-2xl border border-base-300 bg-base-100 rounded-2xl sm:mt-0 mt-4 mx-2 sm:mx-auto">
             <div class="relative flex items-center border-b border-base-300 px-4 py-2 bg-base-200/50">
                 <span class="mdi mdi-magnify text-2xl opacity-40 mr-3"></span>
-                <input type="text" id="globalSearchInput" 
+                <input type="text" id="globalSearchInput"
                     name="q"
-                    placeholder="{{ _('Search projects, yarns...') }}" 
+                    placeholder="{{ _('Search projects, yarns...') }}"
                     class="input border-none bg-transparent w-full focus:outline-none focus:ring-0 px-0 h-12 text-lg font-medium"
                     hx-get="/search/global"
                     hx-trigger="keyup changed delay:300ms"
@@ -667,7 +667,7 @@
                 if (isTwoFinger) {
                     const touchEndY = (e.changedTouches[0].pageY + (e.changedTouches[1] ? e.changedTouches[1].pageY : e.changedTouches[0].pageY)) / 2;
                     const swipeDistance = touchEndY - touchStartY;
-                    
+
                     // If swiped down more than 100px
                     if (swipeDistance > 100) {
                         const modal = document.getElementById('globalSearchModal');
@@ -753,14 +753,14 @@
             // Handle options
             const confirmText = options.confirmText || '{{ _("Confirm") }}';
             const cancelText = options.cancelText || '{{ _("Cancel") }}';
-            
+
             // Update button text (looking for the span or text node)
             // Assuming buttons might have icons, so we set text content carefully or just innerHTML if we want to be lazy
             // But the macros use specific structure. Let's look at the button structure in the dialog.
             // They are using dialogs.dialog_cancel and dialogs.dialog_danger.
             // Usually valid to just set innerText if we accept losing the icon, OR we can try to find the text span.
             // For now, let's just update the last child text node or span.
-            
+
             // Simple approach: Replace the button content if text provided, or just text
             if (options.confirmText) {
                 // Try to preserve icon if possible
@@ -769,7 +769,7 @@
                 if (icon) confirmBtn.appendChild(icon);
                 confirmBtn.appendChild(document.createTextNode(' ' + confirmText));
             }
-            
+
             if (options.cancelText) {
                  // Try to preserve icon if possible
                 const icon = cancelBtn.querySelector('.mdi');
@@ -781,7 +781,7 @@
             // Remove old listeners to avoid stacking
             const newConfirmBtn = confirmBtn.cloneNode(true);
             confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-            
+
             const newCancelBtn = cancelBtn.cloneNode(true);
             cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
@@ -789,11 +789,11 @@
                 if (onConfirm) onConfirm();
                 dialog.close();
             });
-            
+
             newCancelBtn.addEventListener('click', () => {
                 if (onCancel) onCancel();
                 // Dialog closes automatically due to form method="dialog", but we can be explicit if needed.
-                // Since we cloned the button, we might have lost the type="submit" behavior if not careful? 
+                // Since we cloned the button, we might have lost the type="submit" behavior if not careful?
                 // cloneNode copies attributes, so type="submit" remains.
                 // form method="dialog" handles the close.
             });
@@ -973,7 +973,7 @@
 
                             }
 
-                
+
 
                             const closeDropdowns = () => {
                                 document.querySelectorAll('.dropdown').forEach(d => {
@@ -1002,11 +1002,11 @@
                                 }
                             });
 
-                
+
 
                             // Mobile menu logic handled by DaisyUI drawer (CSS only)
 
-                
+
         });
 
         // Theme management functionality
@@ -1035,7 +1035,7 @@
             const label = document.getElementById('theme-label');
             const icon = document.getElementById('theme-icon');
             const iconPublic = document.getElementById('theme-icon-public');
-            
+
             // Update segmented control buttons if they exist
             const lightBtn = document.getElementById('theme-btn-light');
             const darkBtn = document.getElementById('theme-btn-dark');
@@ -1183,9 +1183,9 @@
                 const originalContent = btn.innerHTML;
                 btn.innerHTML = '<span class="mdi mdi-check text-success"></span>';
                 btn.classList.add('btn-success', 'bg-success/10');
-                
+
                 window.showToast?.('{{ _("Copied to clipboard") }}', 'success');
-                
+
                 setTimeout(() => {
                     btn.innerHTML = originalContent;
                     btn.classList.remove('btn-success', 'bg-success/10');

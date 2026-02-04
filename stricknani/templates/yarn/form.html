@@ -597,11 +597,11 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         const hiddenInput = document.getElementById('is_ai_enhanced');
         const desktopCheckbox = document.getElementById('is_ai_enhanced_checkbox');
         const mobileCheckbox = document.getElementById('is_ai_enhanced_mobile_checkbox');
-        
+
         if (hiddenInput) hiddenInput.value = isChecked ? '1' : '';
         if (desktopCheckbox && desktopCheckbox !== el) desktopCheckbox.checked = isChecked;
         if (mobileCheckbox && mobileCheckbox !== el) mobileCheckbox.checked = isChecked;
-        
+
         window.unsavedChanges?.setDirty(true);
     }
 
@@ -796,7 +796,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
         ];
 
         const isEnabled = value.length > 0;
-        
+
         [...waybackCheckboxes, ...aiCheckboxes].forEach(cb => {
             if (cb) {
                 const wasDisabled = cb.disabled;
