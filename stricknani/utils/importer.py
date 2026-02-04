@@ -258,7 +258,9 @@ class PatternImporter:
                 detail = self._parse_garnstudio_yarn_string(line)
                 name = detail.get("name")
                 if name and name.lower() in yarn_links:
-                    detail["link"] = yarn_links[name.lower()]
+                    info = yarn_links[name.lower()]
+                    detail["link"] = info.get("link")
+                    detail["image_url"] = info.get("image_url")
                 yarn_details.append(detail)
 
         # Pre-clean Garnstudio soup to remove UI noise globally
@@ -2085,9 +2087,11 @@ class PatternImporter:
         val = " ".join(collected_lines).strip()
         return val or None
 
-    def _extract_garnstudio_yarn_links(self, soup: BeautifulSoup) -> dict[str, str]:
-        """Extract links to yarns from Garnstudio pattern page."""
-        links: dict[str, str] = {}
+    def _extract_garnstudio_yarn_links(
+        self, soup: BeautifulSoup
+    ) -> dict[str, dict[str, str]]:
+        """Extract links and images for yarns from Garnstudio pattern page."""
+        yarn_data: dict[str, dict[str, str]] = {}
 
         # Look for all yarn links
         for a in soup.find_all("a", href=re.compile(r"yarn\.php")):
@@ -2110,8 +2114,9 @@ class PatternImporter:
                 continue
 
             full_url = urljoin(self.url, href)
+            image_url = ""
 
-            # Try to get the yarn name
+            # Try to get the yarn name and image
             # 1. Direct text
             name = a.get_text(strip=True)
             # 2. Strong tag inside
@@ -2120,12 +2125,12 @@ class PatternImporter:
                 if isinstance(strong, Tag):
                     name = strong.get_text(strip=True)
             # 3. Image alt in the same container
-            if not name:
-                # Look in parent or siblings for an image with alt text
-                parent = a.find_parent(["div", "li"])
-                if isinstance(parent, Tag):
-                    img = parent.find("img")
-                    if isinstance(img, Tag):
+            # Look in parent or siblings for an image
+            parent = a.find_parent(["div", "li"])
+            if isinstance(parent, Tag):
+                img = parent.find("img")
+                if isinstance(img, Tag):
+                    if not name:
                         alt_raw = img.get("alt")
                         title_raw = img.get("title")
                         alt = (
@@ -2140,12 +2145,25 @@ class PatternImporter:
                         )
                         name = alt or title
 
+                    src_raw = img.get("src")
+                    if src_raw:
+                        src = (
+                            " ".join(src_raw)
+                            if isinstance(src_raw, list)
+                            else str(src_raw)
+                        )
+                        image_url = urljoin(self.url, src)
+
             if name:
                 cleaned_name = self._clean_yarn_name(name)
                 if cleaned_name:
-                    links[cleaned_name.lower()] = full_url
+                    key = cleaned_name.lower()
+                    if key not in yarn_data:
+                        yarn_data[key] = {"link": full_url, "image_url": image_url}
+                    elif image_url and not yarn_data[key].get("image_url"):
+                        yarn_data[key]["image_url"] = image_url
 
-        return links
+        return yarn_data
 
     def _extract_garnstudio_yarn(self, soup: BeautifulSoup) -> str | None:
         """Extract yarn list from Garnstudio pattern."""

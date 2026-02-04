@@ -911,8 +911,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     yarnDetailsField.value = JSON.stringify(data.yarn_details);
                 }
 
-                if (data.yarn) {
-                    window.yarnSelector?.selectByName(data.yarn);
+                if (data.yarn || data.yarn_details) {
+                    window.yarnSelector?.selectByName(data.yarn, data.yarn_details || []);
                 }
 
                 setFieldValue('stitch_sample', data.stitch_sample);
@@ -1166,7 +1166,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         const yarnOptions = document.querySelectorAll('.yarn-option');
 
         const selectedYarns = new Map();
-        const pendingYarns = new Set(); // Yarns that don't exist in DB yet
+        const pendingYarns = new Map(); // Yarns that don't exist in DB yet: name -> { name, imageUrl }
 
         function selectYarn(id, name, brand, colorway, dyeLot, imageUrl) {
             if (selectedYarns.has(id)) return;
@@ -1177,7 +1177,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             filterOptions();
         }
 
-        function selectPendingYarn(name) {
+        function selectPendingYarn(name, imageUrl = '') {
             const normalized = name.trim();
             if (!normalized || pendingYarns.has(normalized)) return;
 
@@ -1186,7 +1186,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 if (y.name.toLowerCase() === normalized.toLowerCase()) return;
             }
 
-            pendingYarns.add(normalized);
+            pendingYarns.set(normalized, { name: normalized, imageUrl });
             updateSelectedDisplay();
             updateHiddenInput();
         }
@@ -1208,49 +1208,82 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         window.yarnSelector = {
             select: selectYarn,
             remove: removeYarn,
-            selectByName: function (name) {
-                if (!name) return { anySelected: false, remaining: '' };
+            selectByName: function (name, details = []) {
+                if (!name && details.length === 0) return { anySelected: false, remaining: '' };
 
-                let rawNames = [];
-                if (name.includes('\n')) {
-                    rawNames = name.split('\n').map(n => n.trim()).filter(Boolean);
-                } else {
-                    // Smart comma splitting: avoid splitting on commas followed by color names
-                    // or preceded by "Farbe/color" specs (Garnstudio style).
-                    if (/(?:farbe|color|colour)\s*\d+\s*,\s*/i.test(name)) {
-                        rawNames = [name.trim()];
-                    } else {
-                        rawNames = name.split(',').map(n => n.trim()).filter(Boolean);
-                    }
-                }
-                const names = rawNames;
                 let anySelected = false;
 
-                names.forEach(n => {
-                    const nLower = n.toLowerCase();
-                    const option = Array.from(yarnOptions).find(opt => {
-                        const optName = opt.dataset.yarnName.toLowerCase();
-                        const optBrand = (opt.dataset.yarnBrand || '').toLowerCase();
-                        return optName === nLower ||
-                            `${optBrand} ${optName}`.toLowerCase() === nLower ||
-                            (optBrand && nLower.includes(optBrand) && nLower.includes(optName));
-                    });
+                // If we have structured details, use them first
+                if (details && details.length > 0) {
+                    details.forEach(detail => {
+                        const dName = detail.name || detail.yarn;
+                        if (!dName) return;
 
-                    if (option) {
-                        selectYarn(
-                            parseInt(option.dataset.yarnId),
-                            option.dataset.yarnName,
-                            option.dataset.yarnBrand,
-                            option.dataset.yarnColorway,
-                            option.dataset.yarnDyeLot,
-                            option.dataset.yarnImage
-                        );
-                        anySelected = true;
+                        const nLower = dName.toLowerCase();
+                        const dBrand = (detail.brand || '').toLowerCase();
+
+                        const option = Array.from(yarnOptions).find(opt => {
+                            const optName = opt.dataset.yarnName.toLowerCase();
+                            const optBrand = (opt.dataset.yarnBrand || '').toLowerCase();
+                            return optName === nLower ||
+                                `${optBrand} ${optName}`.toLowerCase() === nLower ||
+                                (optBrand && nLower.includes(optBrand) && nLower.includes(optName));
+                        });
+
+                        if (option) {
+                            selectYarn(
+                                parseInt(option.dataset.yarnId),
+                                option.dataset.yarnName,
+                                option.dataset.yarnBrand,
+                                option.dataset.yarnColorway,
+                                option.dataset.yarnDyeLot,
+                                option.dataset.yarnImage
+                            );
+                            anySelected = true;
+                        } else {
+                            selectPendingYarn(dName, detail.image_url || '');
+                            anySelected = true;
+                        }
+                    });
+                } else if (name) {
+                    // Fallback to name parsing if no details provided
+                    let rawNames = [];
+                    if (name.includes('\n')) {
+                        rawNames = name.split('\n').map(n => n.trim()).filter(Boolean);
                     } else {
-                        selectPendingYarn(n);
-                        anySelected = true;
+                        if (/(?:farbe|color|colour)\s*\d+\s*,\s*/i.test(name)) {
+                            rawNames = [name.trim()];
+                        } else {
+                            rawNames = name.split(',').map(n => n.trim()).filter(Boolean);
+                        }
                     }
-                });
+
+                    rawNames.forEach(n => {
+                        const nLower = n.toLowerCase();
+                        const option = Array.from(yarnOptions).find(opt => {
+                            const optName = opt.dataset.yarnName.toLowerCase();
+                            const optBrand = (opt.dataset.yarnBrand || '').toLowerCase();
+                            return optName === nLower ||
+                                `${optBrand} ${optName}`.toLowerCase() === nLower ||
+                                (optBrand && nLower.includes(optBrand) && nLower.includes(optName));
+                        });
+
+                        if (option) {
+                            selectYarn(
+                                parseInt(option.dataset.yarnId),
+                                option.dataset.yarnName,
+                                option.dataset.yarnBrand,
+                                option.dataset.yarnColorway,
+                                option.dataset.yarnDyeLot,
+                                option.dataset.yarnImage
+                            );
+                            anySelected = true;
+                        } else {
+                            selectPendingYarn(n);
+                            anySelected = true;
+                        }
+                    });
+                }
 
                 // Clear the visible search input
                 if (searchInput) {
@@ -1315,12 +1348,18 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             });
 
             // Render pending yarns
-            pendingYarns.forEach(name => {
+            pendingYarns.forEach(yarn => {
+                const name = yarn.name;
                 const chip = document.createElement('div');
                 chip.className = 'flex items-center gap-2 py-2 px-3 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg';
 
+                const imageHtml = yarn.imageUrl
+                    ? `<img src="${yarn.imageUrl}" alt="${name}" class="w-8 h-8 rounded object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
+                    : '';
+
                 chip.innerHTML = `
-                    <div class="relative w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60">
+                    ${imageHtml}
+                    <div class="relative w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? ' hidden' : ''}" data-fallback-icon>
                         <span class="mdi mdi-sheep text-sm" aria-hidden="true"></span>
                         <span class="absolute -top-1.5 -right-1.5 badge badge-secondary font-black text-[8px] h-3 min-h-0 px-1 border-none shadow-sm scale-90">NEW</span>
                     </div>
@@ -1344,14 +1383,14 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
             const yarnTextHidden = document.getElementById('yarn_text_hidden');
             if (yarnTextHidden) {
-                yarnTextHidden.value = Array.from(pendingYarns).join('\n');
+                yarnTextHidden.value = Array.from(pendingYarns.keys()).join('\n');
             }
 
             // Explicitly clear yarn_search if we have pending yarns as chips
             const searchInput = document.getElementById('yarn_search');
             if (searchInput && pendingYarns.size > 0 && document.activeElement !== searchInput) {
                 // If the user isn't typing, make sure it's clean
-                if (searchInput.value.includes('\n') || Array.from(pendingYarns).some(y => searchInput.value.includes(y))) {
+                if (searchInput.value.includes('\n') || Array.from(pendingYarns.keys()).some(y => searchInput.value.includes(y))) {
                     searchInput.value = '';
                 }
             }
@@ -2656,9 +2695,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             yarnDetailsField.value = JSON.stringify(data.yarn_details);
         }
 
-        if (data.yarn) {
-                            window.yarnSelector?.selectByName(data.yarn);
-                        }
+        if (data.yarn || data.yarn_details) {
+            window.yarnSelector?.selectByName(data.yarn, data.yarn_details || []);
+        }
                 setFieldValue('gauge_stitches', data.gauge_stitches);
         setFieldValue('gauge_rows', data.gauge_rows);
         setFieldValue('stitch_sample', data.stitch_sample);
@@ -2960,9 +2999,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         setFieldValue('recommended_needles', data.recommended_needles);
                         setFieldValue('yarn_brand', data.brand);
 
-                                        if (data.yarn) {
-                                            window.yarnSelector?.selectByName(data.yarn);
-                                        }
+                    if (data.yarn || data.yarn_details) {
+                        window.yarnSelector?.selectByName(data.yarn, data.yarn_details || []);
+                    }
                                                 setFieldValue('gauge_stitches', data.gauge_stitches);
                         setFieldValue('gauge_rows', data.gauge_rows);
                         setFieldValue('stitch_sample', data.stitch_sample);
