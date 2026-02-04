@@ -1186,8 +1186,43 @@ class PatternImporter:
         normalized = self._normalize_garnstudio_text(text)
         lines = normalized.splitlines()
 
-        # We are looking for the section between "HINWEISE ZUR ANLEITUNG"
-        # and "DIE ARBEIT BEGINNT HIER"
+        # Instruction start markers (must match _extract_garnstudio_steps)
+        instruction_markers = [
+            "DIE ARBEIT BEGINNT HIER",
+            "START HERE",
+            "KURZBESCHREIBUNG",
+            "ANLEITUNG -",
+            "KLEID",
+            "PULLOVER",
+            "JACKE",
+            "SOCKEN",
+            "MÜTZE",
+            "HANDSCHUHE",
+            "SCHAL",
+            "TUCH",
+            "DECKE",
+            "KISSEN",
+            "DRESS",
+            "SWEATER",
+            "JACKET",
+            "CARDIGAN",
+            "SOCKS",
+            "HAT",
+            "GLOVES",
+            "SCARF",
+            "SHAWL",
+            "BLANKET",
+            "CUSHION",
+        ]
+
+        def is_instruction_start(line_upper: str) -> bool:
+            check_upper = line_upper.lstrip("#").rstrip(":").strip()
+            return any(
+                check_upper == marker or check_upper.startswith(f"{marker} -")
+                for marker in instruction_markers
+            )
+
+        # 1. Try to find section between HINWEISE ZUR ANLEITUNG and instructions
         start_index = -1
         stop_index = -1
 
@@ -1195,10 +1230,7 @@ class PatternImporter:
             upper = line.strip().upper()
             if "### HINWEISE ZUR ANLEITUNG" in upper:
                 start_index = i
-            if start_index != -1 and (
-                "### DIE ARBEIT BEGINNT HIER" in upper
-                or "### KURZBESCHREIBUNG" in upper
-            ):
+            if is_instruction_start(upper):
                 stop_index = i
                 break
 
@@ -1206,29 +1238,36 @@ class PatternImporter:
             if stop_index != -1:
                 notes = "\n".join(lines[start_index + 1 : stop_index]).strip()
             else:
-                # If no clear stop, take a reasonable amount or until next major section
                 notes = "\n".join(lines[start_index + 1 :]).strip()
-
-            # Remove any trailing separators
             notes = re.sub(r"-{3,}", "", notes).strip()
             return notes or None
 
-        # Fallback: if no HINWEISE heading, try to find technical terms
-        tech_terms = {"KRAUSRIPPEN", "RAGLANZUNAHMEN", "STRICKTIPP", "ABNAHMETIPP"}
+        # 2. Fallback: collect any technical tips found before instructions
+        tech_terms = {
+            "TIPP",
+            "INFO",
+            "MUSTER",
+            "PATTERN",
+            "KRAUSRIPPEN",
+            "KNOPFLÖCHER",
+            "ABNAHMEN",
+            "ZUNAHMEN",
+            "DECREASE",
+            "INCREASE",
+        }
         collected = []
-        started = False
         for line in lines:
             upper = line.strip().upper()
-            if any(term in upper for term in tech_terms):
-                started = True
+            if is_instruction_start(upper):
+                break
 
-            if started:
-                if (
-                    "### DIE ARBEIT BEGINNT HIER" in upper
-                    or "### KURZBESCHREIBUNG" in upper
-                ):
-                    break
+            # If it looks like a heading or contains tech terms, keep it
+            if upper.startswith("### ") or any(t in upper for t in tech_terms):
                 collected.append(line)
+            elif collected and line.strip():
+                # Keep text following a collected heading
+                collected.append(line)
+
         if collected:
             return "\n".join(collected).strip()
 
@@ -1416,7 +1455,28 @@ class PatternImporter:
             "DIE ARBEIT BEGINNT HIER",
             "START HERE",
             "KURZBESCHREIBUNG",
-            "ANLEITUNG -",  # Often "ANLEITUNG - KURZBESCHREIBUNG"
+            "ANLEITUNG -",
+            "KLEID",
+            "PULLOVER",
+            "JACKE",
+            "SOCKEN",
+            "MÜTZE",
+            "HANDSCHUHE",
+            "SCHAL",
+            "TUCH",
+            "DECKE",
+            "KISSEN",
+            "DRESS",
+            "SWEATER",
+            "JACKET",
+            "CARDIGAN",
+            "SOCKS",
+            "HAT",
+            "GLOVES",
+            "SCARF",
+            "SHAWL",
+            "BLANKET",
+            "CUSHION",
         ]
 
         lines = text.splitlines()
@@ -1424,7 +1484,13 @@ class PatternImporter:
         found = False
         for i, line in enumerate(lines):
             upper = line.strip().upper()
-            if any(marker in upper for marker in instruction_markers):
+            # Strip Markdown header prefix and trailing colon if present
+            check_upper = upper.lstrip("#").rstrip(":").strip()
+            # Look for markers, either as standalone words or followed by "-"
+            if any(
+                check_upper == marker or check_upper.startswith(f"{marker} -")
+                for marker in instruction_markers
+            ):
                 start_index = i
                 found = True
                 break
@@ -1616,6 +1682,10 @@ class PatternImporter:
             "STREIFEN",
             "KRAUSRIPPEN / KRAUS RECHTS (in Hin- und Rück-Reihen)",
             "KRAUSRIPPEN / KRAUS RECHTS",
+            "DIE ARBEIT BEGINNT HIER",
+            "START HERE",
+            "KURZBESCHREIBUNG",
+            "ANLEITUNG",
         }
 
         for line in lines:
@@ -1837,32 +1907,13 @@ class PatternImporter:
                 if not resolved or resolved in seen:
                     continue
 
+                if self._is_skipped_image(resolved):
+                    continue
+
                 # Extension check
                 if (
                     Path(urlparse(resolved).path).suffix.lower()
                     not in IMPORT_ALLOWED_IMAGE_EXTENSIONS
-                ):
-                    continue
-
-                if any(
-                    x in resolved.lower()
-                    for x in [
-                        "/logo",
-                        "/icon",
-                        "avatar",
-                        "button",
-                        "badge",
-                        "banner",
-                        "/ad/",
-                        "-ad-",
-                        "social",
-                        "facebook",
-                        "twitter",
-                        "instagram",
-                        "pinterest",
-                        "/img/school/lessons/",
-                        "/img/activity/",
-                    ]
                 ):
                     continue
 
@@ -1879,10 +1930,14 @@ class PatternImporter:
                 href = anchor.get("href")
                 if href and isinstance(href, str):
                     resolved = self._resolve_image_url(href)
+                    if not resolved or resolved in seen:
+                        continue
+
+                    if self._is_skipped_image(resolved):
+                        continue
+
                     if (
-                        resolved
-                        and resolved not in seen
-                        and Path(urlparse(resolved).path).suffix.lower()
+                        Path(urlparse(resolved).path).suffix.lower()
                         in IMPORT_ALLOWED_IMAGE_EXTENSIONS
                     ):
                         extracted.append((resolved, anchor))
@@ -1897,10 +1952,14 @@ class PatternImporter:
                 if not self._looks_like_image_url(href):
                     continue
                 resolved = self._resolve_image_url(href)
+                if not resolved or resolved in seen:
+                    continue
+
+                if self._is_skipped_image(resolved):
+                    continue
+
                 if (
-                    not resolved
-                    or resolved in seen
-                    or Path(urlparse(resolved).path).suffix.lower()
+                    Path(urlparse(resolved).path).suffix.lower()
                     not in IMPORT_ALLOWED_IMAGE_EXTENSIONS
                 ):
                     continue
@@ -2002,6 +2061,30 @@ class PatternImporter:
         ):
             return True
         return False
+
+    def _is_skipped_image(self, url: str) -> bool:
+        """Check if an image URL matches any of the skip patterns."""
+        lower_url = url.lower()
+        skip_list = [
+            "/logo",
+            "/icon",
+            "avatar",
+            "button",
+            "badge",
+            "banner",
+            "/ad/",
+            "-ad-",
+            "social",
+            "facebook",
+            "twitter",
+            "instagram",
+            "pinterest",
+            "/img/school/lessons/",
+            "/img/activity/",
+            "/img/products/",
+            "/drops/symbols/",
+        ]
+        return any(x in lower_url for x in skip_list)
 
     def _allow_small_image(self, img: Tag, candidates: list[str]) -> bool:
         if not self.is_garnstudio:
