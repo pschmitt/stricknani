@@ -3,6 +3,9 @@
 # Default port for dev server
 dev_port := env_var_or_default("PORT", "7674")
 
+default:
+  @just --choose
+
 # Setup uv environment
 setup:
   uv venv
@@ -118,6 +121,9 @@ migrate-down:
 # Run alembic with arguments
 alembic *ARGS:
   uv run alembic --config stricknani/alembic.ini {{ARGS}}
+
+sql *ARGS:
+  sqlite3 ./stricknani.db "{{ARGS}}"
 
 # Deploy to production
 deploy commit='':
