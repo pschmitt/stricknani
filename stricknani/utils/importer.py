@@ -339,11 +339,29 @@ class PatternImporter:
         images = self._extract_images(soup)
         description = self._extract_description(soup)
         if self.is_garnstudio:
+            # For yarn pages, try to get the subtitle from the <title> tag
+            # e.g. DROPS Kid-Silk - Eine wunderbare Mischung aus Kid Mohair und Seide
+            if "yarn.php" in self.url:
+                title_tag = soup.find("title")
+                if title_tag:
+                    title_text = title_tag.get_text()
+                    if " - " in title_text:
+                        subtitle = title_text.split(" - ", 1)[1].strip()
+                        if description:
+                            description = f"{subtitle}\n\n{description}"
+                        else:
+                            description = subtitle
+
             garn_notes = self._extract_garnstudio_notes(soup)
             if garn_notes:
                 # For Garnstudio, the technical notes are the most important part
                 # of the description.
-                description = garn_notes
+                if "yarn.php" in self.url and description:
+                    # Append technical notes if it's a yarn page and
+                    # we already have a description
+                    description = f"{description}\n\n{garn_notes}"
+                else:
+                    description = garn_notes
 
         notes = None
         image_urls = images
@@ -475,6 +493,12 @@ class PatternImporter:
     def _extract_yarn(self, soup: BeautifulSoup) -> str | None:
         """Extract yarn information."""
         if self.is_garnstudio:
+            # For Garnstudio yarn pages, the title is usually the best source
+            if "yarn.php" in self.url:
+                title = self._extract_title(soup)
+                if title:
+                    return self._clean_yarn_name(title)
+
             yarn = self._extract_garnstudio_yarn(soup)
             if yarn:
                 return yarn
@@ -489,7 +513,14 @@ class PatternImporter:
         for pattern in patterns:
             match = re.search(pattern, text, re.I)
             if match:
-                yarn_text = match.group(1).strip()
+                val = match.group(1).strip()
+                # Skip known Garnstudio noise if it matched the material pattern
+                if self.is_garnstudio and any(
+                    x in val.lower() for x in ["herkunft", "rohmapterial", "made in"]
+                ):
+                    continue
+
+                yarn_text = val
                 # If the match looks like a whole paragraph, skip it.
                 if len(yarn_text) > 150:
                     yarn_text = None
@@ -584,6 +615,11 @@ class PatternImporter:
         # 5. Clean up the remaining name
         # Handle "Oder:" (alternative yarn)
         cleaned = re.sub(r"\bOder:\s*", "", cleaned, flags=re.I)
+        # Strip "DROPS" prefix if it exists
+        cleaned = re.sub(r"\bDROPS\s+", "", cleaned, flags=re.I)
+        # Handle subtitles in title (e.g. DROPS Kid-Silk - Eine wunderbare...)
+        if " - " in cleaned:
+            cleaned = cleaned.split(" - ", 1)[0]
         # Remove trailing/leading punctuation and extra whitespace
         cleaned = re.sub(r"^\s*[:,-]+", "", cleaned)
         cleaned = re.sub(r"[:,-]+\s*$", "", cleaned)
@@ -600,7 +636,7 @@ class PatternImporter:
         if title:
             known_brands = [
                 "Rico Design",
-                "Drops",
+                "DROPS",
                 "Garnstudio",
                 "Lana Grossa",
                 "Lang Yarns",
@@ -641,7 +677,7 @@ class PatternImporter:
         # 4. Fallback for Garnstudio
         if self.is_garnstudio:
             if title and "drops" in title.lower():
-                return "Drops"
+                return "DROPS"
             return "Garnstudio"
 
         return None
