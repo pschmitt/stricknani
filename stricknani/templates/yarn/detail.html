@@ -201,9 +201,9 @@
         </div>
 
         <!-- Sidebar Column -->
-        <div class="hidden lg:block lg:absolute lg:right-0 lg:top-0 z-30">
+        <div class="hidden lg:block z-30">
             <button type="button" id="details-restore-button"
-                class="flex h-16 w-8 -mr-4 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
+                class="lg:fixed lg:top-20 lg:right-0 flex h-16 w-8 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
                 onclick="restoreSidebarDetails()" title="{{ _('Yarn Details') }}" aria-label="{{ _('Yarn Details') }}">
                 <span class="mdi mdi-chevron-left text-lg"></span>
                 <span class="sr-only">{{ _('Yarn Details') }}</span>

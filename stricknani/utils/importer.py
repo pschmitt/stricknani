@@ -35,6 +35,17 @@ def _is_valid_import_url(url: str) -> bool:
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
+def trim_import_strings(value: Any) -> Any:
+    """Recursively trim leading/trailing whitespace from imported strings."""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, list):
+        return [trim_import_strings(item) for item in value]
+    if isinstance(value, dict):
+        return {key: trim_import_strings(item) for key, item in value.items()}
+    return value
+
+
 # Image import related constants
 IMPORT_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 IMPORT_IMAGE_MAX_COUNT = 10

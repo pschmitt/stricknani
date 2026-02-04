@@ -2,6 +2,7 @@
 
 # Application
 SECRET_KEY=change-me-in-production
+# Optional (auto-generated if unset)
 CSRF_SECRET_KEY=change-me-in-production
 PORT=7674
 DEBUG=false

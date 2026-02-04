@@ -35,6 +35,8 @@ from stricknani.models import Project, User, Yarn, YarnImage, user_favorite_yarn
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
     build_import_filename,
+    compute_checksum,
+    compute_file_checksum,
     create_thumbnail,
     delete_file,
     get_file_url,
@@ -50,6 +52,7 @@ from stricknani.utils.importer import (
     IMPORT_IMAGE_TIMEOUT,
     _is_allowed_import_image,
     _is_valid_import_url,
+    trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
 from stricknani.utils.wayback import (
@@ -58,6 +61,21 @@ from stricknani.utils.wayback import (
 )
 
 router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
+
+
+async def _load_existing_yarn_checksums(
+    db: AsyncSession, yarn_id: int
+) -> dict[str, YarnImage]:
+    """Return existing image checksums for a yarn."""
+    result = await db.execute(select(YarnImage).where(YarnImage.yarn_id == yarn_id))
+    images = result.scalars().all()
+    checksums: dict[str, YarnImage] = {}
+    for image in images:
+        file_path = config.MEDIA_ROOT / "yarns" / str(yarn_id) / image.filename
+        checksum = compute_file_checksum(file_path)
+        if checksum:
+            checksums.setdefault(checksum, image)
+    return checksums
 
 
 async def _import_yarn_images_from_urls(
@@ -73,6 +91,8 @@ async def _import_yarn_images_from_urls(
 
     logger = logging.getLogger("stricknani.imports")
     imported = 0
+    existing_checksums = await _load_existing_yarn_checksums(db, yarn.id)
+    seen_checksums: set[str] = set()
 
     headers = dict(IMPORT_IMAGE_HEADERS)
     if yarn.link:
@@ -104,6 +124,15 @@ async def _import_yarn_images_from_urls(
 
             if not response.content or len(response.content) > IMPORT_IMAGE_MAX_BYTES:
                 logger.info("Skipping empty or large image %s", image_url)
+                continue
+
+            checksum = compute_checksum(response.content)
+            if checksum in existing_checksums or checksum in seen_checksums:
+                logger.info("Skipping duplicate image %s", image_url)
+                if primary_url and image_url == primary_url:
+                    existing = existing_checksums.get(checksum)
+                    if existing and not existing.is_primary:
+                        existing.is_primary = True
                 continue
 
             try:
@@ -154,6 +183,7 @@ async def _import_yarn_images_from_urls(
             )
             db.add(photo)
             imported += 1
+            seen_checksums.add(checksum)
 
     return imported
 
@@ -405,6 +435,7 @@ async def import_yarn(
             importer = PatternImporter(url)
 
         data = await importer.fetch_and_parse()
+        data = trim_import_strings(data)
 
         # Map pattern data to yarn fields
         yarn_data = {

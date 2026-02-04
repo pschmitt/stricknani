@@ -48,6 +48,8 @@ from stricknani.models import (
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
     build_import_filename,
+    compute_checksum,
+    compute_file_checksum,
     create_thumbnail,
     delete_file,
     get_file_url,
@@ -66,6 +68,7 @@ from stricknani.utils.importer import (
     _is_allowed_import_image,
     _is_garnstudio_url,
     _is_valid_import_url,
+    trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
 from stricknani.utils.wayback import (
@@ -189,6 +192,30 @@ def _normalize_for_comparison(text: str) -> str:
     return re.sub(r"\W+", "", text).lower()
 
 
+async def _load_existing_image_checksums(
+    db: AsyncSession,
+    project_id: int,
+    *,
+    step_id: int | None = None,
+) -> dict[str, Image]:
+    """Return existing image checksums for a project or a specific step."""
+    query = select(Image).where(Image.project_id == project_id)
+    if step_id is None:
+        query = query.where(Image.step_id.is_(None))
+    else:
+        query = query.where(Image.step_id == step_id)
+
+    result = await db.execute(query)
+    images = result.scalars().all()
+    checksums: dict[str, Image] = {}
+    for image in images:
+        file_path = config.MEDIA_ROOT / "projects" / str(project_id) / image.filename
+        checksum = compute_file_checksum(file_path)
+        if checksum:
+            checksums.setdefault(checksum, image)
+    return checksums
+
+
 async def _import_images_from_urls(
     db: AsyncSession,
     project: Project,
@@ -202,6 +229,8 @@ async def _import_images_from_urls(
 
     logger = logging.getLogger("stricknani.imports")
     imported = 0
+    existing_checksums = await _load_existing_image_checksums(db, project.id)
+    seen_checksums: set[str] = set()
 
     existing_title_images = await db.execute(
         select(func.count())
@@ -252,6 +281,19 @@ async def _import_images_from_urls(
 
             if len(response.content) > IMPORT_IMAGE_MAX_BYTES:
                 logger.info("Skipping large image %s", image_url)
+                continue
+
+            checksum = compute_checksum(response.content)
+            if checksum in existing_checksums or checksum in seen_checksums:
+                logger.info("Skipping duplicate image %s", image_url)
+                if (
+                    title_url
+                    and image_url == title_url
+                    and title_available
+                    and checksum in existing_checksums
+                ):
+                    existing_checksums[checksum].is_title_image = True
+                    title_available = False
                 continue
             try:
                 from PIL import Image as PilImage
@@ -307,6 +349,7 @@ async def _import_images_from_urls(
             )
             db.add(image)
             imported += 1
+            seen_checksums.add(checksum)
             if is_title:
                 title_available = False
 
@@ -322,6 +365,10 @@ async def _import_step_images(
 
     logger = logging.getLogger("stricknani.imports")
     imported = 0
+    existing_checksums = await _load_existing_image_checksums(
+        db, step.project_id, step_id=step.id
+    )
+    seen_checksums: set[str] = set()
 
     headers = dict(IMPORT_IMAGE_HEADERS)
     # Use project link as referer if available (fetch project associated with step).
@@ -359,6 +406,11 @@ async def _import_step_images(
                     pass
 
             if not response.content or len(response.content) > IMPORT_IMAGE_MAX_BYTES:
+                continue
+
+            checksum = compute_checksum(response.content)
+            if checksum in existing_checksums or checksum in seen_checksums:
+                logger.info("Skipping duplicate step image %s", image_url)
                 continue
             try:
                 from PIL import Image as PilImage
@@ -408,6 +460,7 @@ async def _import_step_images(
             )
             db.add(image)
             imported += 1
+            seen_checksums.add(checksum)
 
     return imported
 
@@ -1032,6 +1085,7 @@ async def import_pattern(
                     },
                 )
                 data["import_trace_id"] = trace.trace_id
+            data = trim_import_strings(data)
             return JSONResponse(content=data)
 
         elif import_type == "text":
@@ -1142,6 +1196,7 @@ async def import_pattern(
                         data["name"] = data.get("title")
                     if trace:
                         data["import_trace_id"] = trace.trace_id
+                    data = trim_import_strings(data)
                     return JSONResponse(content=data)
 
                 except Exception as e:
@@ -1166,6 +1221,7 @@ async def import_pattern(
         if trace:
             data["import_trace_id"] = trace.trace_id
 
+        data = trim_import_strings(data)
         return JSONResponse(content=data)
 
     except HTTPException:

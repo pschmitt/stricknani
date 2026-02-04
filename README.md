@@ -47,7 +47,7 @@ All config is via environment variables or `.envrc` (see `.envrc.sample`).
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `SECRET_KEY` | Secret key for sessions | `dev-secret-key-change-in-production` |
-| `CSRF_SECRET_KEY` | CSRF secret key | `SECRET_KEY` |
+| `CSRF_SECRET_KEY` | CSRF secret key | Auto-generated on startup |
 | `PORT` | Port to listen on | `7674` |
 | `DEBUG` | Enable debug mode | `false` |
 | `TESTING` | Force testing mode | `false` |

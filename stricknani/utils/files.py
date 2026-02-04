@@ -1,5 +1,6 @@
 """File management utilities."""
 
+import hashlib
 import mimetypes
 import uuid
 from datetime import UTC, datetime
@@ -29,6 +30,24 @@ def generate_unique_filename(original_filename: str) -> str:
     short_uuid = str(uuid.uuid4())[:8]
 
     return f"{timestamp}_{short_uuid}{ext}"
+
+
+def compute_checksum(content: bytes) -> str:
+    """Compute a SHA-256 checksum for the given content."""
+    digest = hashlib.sha256()
+    digest.update(content)
+    return digest.hexdigest()
+
+
+def compute_file_checksum(path: Path) -> str | None:
+    """Compute a SHA-256 checksum for a file on disk."""
+    if not path.exists():
+        return None
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def build_import_filename(url: str | None, content_type: str | None) -> str:

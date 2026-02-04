@@ -380,15 +380,13 @@
                             {{ _('Notes') }}
                         </div>
                     </div>
-                    <div class="collapse-content">
-                        <div class="flex justify-end mb-2">
-                            <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
-                                onclick='copyToClipboard({{ (project.notes or '')|tojson }}, this)'
-                                title="{{ _('Copy Notes') }}">
-                                <span class="mdi mdi-content-copy"></span>
-                            </button>
-                        </div>
-                        <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                    <div class="collapse-content relative pt-2">
+                        <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20 absolute top-2 right-2"
+                            onclick='copyToClipboard({{ (project.notes or '')|tojson }}, this)'
+                            title="{{ _('Copy Notes') }}">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
+                        <div class="prose prose-sm prose-compact max-w-none text-base-content/90 pr-8">
                             {{ project.notes_html | safe }}
                         </div>
                     </div>
@@ -405,15 +403,13 @@
                         {{ _('Description') }}
                     </div>
                 </div>
-                <div class="collapse-content">
-                    <div class="flex justify-end mb-2">
-                        <button class="btn btn-ghost btn-xs gap-1"
-                            onclick='copyToClipboard({{ (project.description or '')|tojson }}, this)'
-                            title="{{ _('Copy Description') }}">
-                            <span class="mdi mdi-content-copy"></span>
-                        </button>
-                    </div>
-                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                <div class="collapse-content relative pt-2">
+                    <button class="btn btn-ghost btn-xs gap-1 absolute top-2 right-2"
+                        onclick='copyToClipboard({{ (project.description or '')|tojson }}, this)'
+                        title="{{ _('Copy Description') }}">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90 pr-8">
                         {% if project.description_html %}
                         {{ project.description_html | safe }}
                         {% else %}
@@ -480,9 +476,7 @@
                             <span class="mdi mdi-needle"></span>
                             {{ _('Recommended Needles') }}
                         </h3>
-                        <div class="text-sm font-medium text-base-content/80 bg-base-100 rounded-lg p-3 border border-base-200 whitespace-pre-wrap">
-                            {{ project.needles }}
-                        </div>
+                        <div class="text-sm font-medium text-base-content/80 bg-base-100 rounded-lg p-3 border border-base-200 whitespace-pre-wrap">{{- project.needles | trim -}}</div>
                     </div>
                     {% endif %}
 
@@ -559,18 +553,16 @@
                                     <h3 class="text-lg font-bold text-base-content">{{ step.title }}</h3>
                                 </div>
                             </div>
-                            <div class="collapse-content">
-                                <div class="flex justify-end mb-2">
-                                    <button class="btn btn-ghost btn-xs"
-                                        onclick='copyToClipboard({{ (step.description or '')|tojson }}, this)'
-                                        title="{{ _('Copy Instructions') }}">
-                                        <span class="mdi mdi-content-copy"></span>
-                                    </button>
-                                </div>
+                            <div class="collapse-content relative pt-2">
+                                <button class="btn btn-ghost btn-xs absolute top-2 right-2"
+                                    onclick='copyToClipboard({{ (step.description or '')|tojson }}, this)'
+                                    title="{{ _('Copy Instructions') }}">
+                                    <span class="mdi mdi-content-copy"></span>
+                                </button>
 
                                 {% if step.description_html %}
                                 <div
-                                    class="step-description prose prose-sm prose-compact max-w-none text-base-content/80 mb-4">
+                                    class="step-description prose prose-sm prose-compact max-w-none text-base-content/80 mb-4 pr-8">
                                     {{ step.description_html | safe }}
                                 </div>
                                 {% endif %}
@@ -606,9 +598,9 @@
         </div>
 
         <!-- Sidebar Column -->
-        <div class="hidden lg:block lg:absolute lg:right-0 lg:top-0 z-30">
+        <div class="hidden lg:block z-30">
             <button type="button" id="details-restore-button"
-                class="flex h-16 w-8 -mr-4 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
+                class="lg:fixed lg:top-20 lg:right-0 flex h-16 w-8 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
                 onclick="restoreSidebarDetails()" title="{{ _('Project Details') }}" aria-label="{{ _('Project Details') }}">
                 <span class="mdi mdi-chevron-left text-lg"></span>
                 <span class="sr-only">{{ _('Project Details') }}</span>

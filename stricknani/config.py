@@ -1,6 +1,7 @@
 """Configuration management for Stricknani."""
 
 import os
+import secrets
 from pathlib import Path
 from typing import Literal, cast
 
@@ -18,7 +19,7 @@ class Config:
 
     # Application
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
-    CSRF_SECRET_KEY: str = os.getenv("CSRF_SECRET_KEY", SECRET_KEY)
+    CSRF_SECRET_KEY: str = os.getenv("CSRF_SECRET_KEY") or secrets.token_urlsafe(32)
     PORT: int = int(os.getenv("PORT", "7674"))
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
     TESTING: bool = (

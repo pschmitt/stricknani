@@ -395,19 +395,6 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 </div>
                 <div class="collapse-content p-3 sm:p-6 pt-0">
                     <div class="space-y-6 pt-4">
-                        <!-- Recommended Needles Card -->
-                        <div class="bg-base-200/30 rounded-xl border border-base-200 p-4">
-                            <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
-                                <span class="mdi mdi-needle text-primary"></span>
-                                {{ _('Recommended Needles') }}
-                            </h3>
-                            <div>
-                                <textarea id="needles" name="needles" rows="2"
-                                    class="textarea textarea-bordered w-full"
-                                    placeholder="{{ _('e.g. 4.0mm circular') }}">{{ project.needles if project and project.needles else '' }}</textarea>
-                            </div>
-                        </div>
-
                         <!-- Yarns Card -->
                         <div class="bg-base-200/30 rounded-xl border border-base-200 p-4">
                             <div class="flex items-center justify-between mb-4">
@@ -460,6 +447,19 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                 <div id="selected_yarns" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <!-- Chips populated by JS -->
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Recommended Needles Card -->
+                        <div class="bg-base-200/30 rounded-xl border border-base-200 p-4">
+                            <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                                <span class="mdi mdi-needle text-primary"></span>
+                                {{ _('Recommended Needles') }}
+                            </h3>
+                            <div>
+                                <textarea id="needles" name="needles" rows="2"
+                                    class="textarea textarea-bordered w-full"
+                                    placeholder="{{ _('e.g. 4.0mm circular') }}">{{ project.needles if project and project.needles else '' }}</textarea>
                             </div>
                         </div>
 
@@ -764,6 +764,28 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         window.unsavedChanges?.setDirty(true);
     }
 
+    function dedupeImportImageUrls(urls) {
+        const container = document.getElementById('titleImagesContainer');
+        const existing = new Set();
+        if (container) {
+            container.querySelectorAll('a[href]').forEach(anchor => {
+                const href = anchor.getAttribute('href');
+                if (href) existing.add(href);
+            });
+        }
+        const seen = new Set();
+        const result = [];
+        urls.forEach(url => {
+            if (!url) return;
+            const normalized = url.trim();
+            if (!normalized) return;
+            if (existing.has(normalized) || seen.has(normalized)) return;
+            seen.add(normalized);
+            result.push(normalized);
+        });
+        return result;
+    }
+
     /**
      * Update image visibility in galleries based on their presence in the Markdown text.
      */
@@ -913,8 +935,11 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 // Image URLs (Project level)
                 const importImagesField = document.getElementById('import_image_urls');
                 const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
+                const dedupedImageUrls = dedupeImportImageUrls(imageUrls);
                 if (importImagesField) {
-                    importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
+                    importImagesField.value = dedupedImageUrls.length
+                        ? JSON.stringify(dedupedImageUrls)
+                        : '';
                 }
                 const archiveField = document.getElementById('archive_on_save');
                 if (archiveField) {
@@ -922,8 +947,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 }
 
                 // Render pending images for preview
-                if (imageUrls.length > 0) {
-                    imageUrls.forEach(url => {
+                if (dedupedImageUrls.length > 0) {
+                    dedupedImageUrls.forEach(url => {
                         if (typeof addPendingTitleImageToGallery === 'function') {
                             try { addPendingTitleImageToGallery(url); } catch (e) { console.error(e); }
                         }
@@ -2654,12 +2679,15 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         // Project Image Previews
         const importImagesField = document.getElementById('import_image_urls');
         const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
+        const dedupedImageUrls = dedupeImportImageUrls(imageUrls);
         if (importImagesField) {
-            importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
+            importImagesField.value = dedupedImageUrls.length
+                ? JSON.stringify(dedupedImageUrls)
+                : '';
         }
 
-        if (imageUrls.length > 0) {
-            imageUrls.forEach(url => {
+        if (dedupedImageUrls.length > 0) {
+            dedupedImageUrls.forEach(url => {
                 if (typeof addPendingTitleImageToGallery === 'function') {
                     addPendingTitleImageToGallery(url);
                 }
@@ -2950,17 +2978,20 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                     try {
                         const importImagesField = document.getElementById('import_image_urls');
                         const imageUrls = Array.isArray(data.image_urls) ? data.image_urls : [];
+                        const dedupedImageUrls = dedupeImportImageUrls(imageUrls);
                         if (importImagesField) {
-                            importImagesField.value = imageUrls.length ? JSON.stringify(imageUrls) : '';
+                            importImagesField.value = dedupedImageUrls.length
+                                ? JSON.stringify(dedupedImageUrls)
+                                : '';
                         }
                         const archiveField = document.getElementById('archive_on_save');
                         if (archiveField) {
                             archiveField.value = '1';
                         }
 
-                        if (imageUrls.length > 0) {
+                        if (dedupedImageUrls.length > 0) {
                             window.showToast?.('{{ _("Imported images will be previewed in the gallery") }}', 'info');
-                            imageUrls.forEach(url => {
+                            dedupedImageUrls.forEach(url => {
                                 if (typeof addPendingTitleImageToGallery === 'function') {
                                     try { addPendingTitleImageToGallery(url); } catch (e) { console.error(e); }
                                 }
