@@ -42,15 +42,22 @@ App runs at http://localhost:7674
 
 ## Configuration
 
-All config is via environment variables or `.envrc` (see `.envrc.example`).
+All config is via environment variables or `.envrc` (see `.envrc.sample`).
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `SECRET_KEY` | Secret key for sessions | `dev-secret-key-change-in-production` |
+| `CSRF_SECRET_KEY` | CSRF secret key | `SECRET_KEY` |
 | `PORT` | Port to listen on | `7674` |
 | `DEBUG` | Enable debug mode | `false` |
+| `TESTING` | Force testing mode | `false` |
+| `BIND_HOST` | Host to bind the dev server | `127.0.0.1` |
+| `BIND_PORT` | Port to bind the dev server | `7674` |
 | `DATABASE_URL` | Database connection string | `sqlite:///./stricknani.db` |
 | `MEDIA_ROOT` | Directory for uploaded files | `./media` |
+| `IMPORT_TRACE_ENABLED` | Enable import tracing | `false` |
+| `IMPORT_TRACE_DIR` | Import trace directory | `./media/import-traces` |
+| `IMPORT_TRACE_MAX_CHARS` | Max chars captured per import trace | `12000` |
 | `ALLOWED_HOSTS` | Comma-separated host list | `localhost,127.0.0.1` |
 | `SESSION_COOKIE_SECURE` | Secure session cookies | `false` |
 | `LANGUAGE_COOKIE_SECURE` | Secure language cookie | `false` |
@@ -60,10 +67,15 @@ All config is via environment variables or `.envrc` (see `.envrc.example`).
 | `FEATURE_AI_IMPORT_ENABLED` | Enable AI-powered pattern import | `true` |
 | `DEFAULT_LANGUAGE` | Default language | `de` |
 | `OPENAI_API_KEY` | OpenAI API key for AI import | (optional) |
-| `SENTRY_DSN` | Sentry DSN | (optional) |
+| `SENTRY_DSN_BACKEND` | Sentry DSN for backend | (optional) |
+| `SENTRY_DSN_FRONTEND` | Sentry DSN for frontend | (optional) |
 | `SENTRY_ENVIRONMENT` | Sentry environment name | `production` |
 | `SENTRY_TRACES_SAMPLE_RATE` | Sentry perf sample rate | `0` |
+| `SENTRY_FRONTEND_TRACES_SAMPLE_RATE` | Frontend perf sample rate | `0` |
+| `LOG_LEVEL` | Logging level override | (optional) |
+| `IMPORT_LOG_PATH` | Import log file path | (optional) |
 | `INITIAL_ADMIN_EMAIL` | Bootstrap admin email | (optional) |
+| `INITIAL_ADMIN_USERNAME` | Bootstrap admin username | (optional) |
 | `INITIAL_ADMIN_PASSWORD` | Bootstrap admin password | (optional) |
 
 ## AI-Powered Pattern Import

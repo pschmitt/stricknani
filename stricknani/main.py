@@ -33,12 +33,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 
 configure_logging(debug=config.DEBUG)
-if config.SENTRY_DSN:
+if config.SENTRY_DSN_BACKEND:
     import sentry_sdk
     from sentry_sdk.integrations.fastapi import FastApiIntegration
 
     sentry_sdk.init(
-        dsn=config.SENTRY_DSN,
+        dsn=config.SENTRY_DSN_BACKEND,
         environment=config.SENTRY_ENVIRONMENT,
         traces_sample_rate=config.SENTRY_TRACES_SAMPLE_RATE,
         integrations=[FastApiIntegration()],
@@ -168,13 +168,13 @@ app.mount("/media", StaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
 # Setup templates
 templates_path = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(templates_path))
-templates.env.globals["sentry_frontend_dsn"] = config.SENTRY_FRONTEND_DSN
+templates.env.globals["sentry_frontend_dsn"] = config.SENTRY_DSN_FRONTEND
 templates.env.globals["sentry_frontend_env"] = config.SENTRY_ENVIRONMENT
 templates.env.globals["sentry_frontend_traces_sample_rate"] = (
     config.SENTRY_FRONTEND_TRACES_SAMPLE_RATE
 )
 templates.env.globals["sentry_frontend_enabled"] = bool(
-    config.SENTRY_FRONTEND_DSN
+    config.SENTRY_DSN_FRONTEND
 ) and not (config.DEBUG or config.TESTING)
 
 

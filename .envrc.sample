@@ -1,0 +1,54 @@
+# Stricknani Configuration
+
+# Application
+SECRET_KEY=change-me-in-production
+CSRF_SECRET_KEY=change-me-in-production
+PORT=7674
+DEBUG=false
+TESTING=false
+BIND_HOST=127.0.0.1
+BIND_PORT=7674
+
+# Database
+DATABASE_URL=sqlite:///./stricknani.db
+
+# Media Storage
+MEDIA_ROOT=./media
+
+# Import Trace
+IMPORT_TRACE_ENABLED=false
+IMPORT_TRACE_DIR=./media/import-traces
+IMPORT_TRACE_MAX_CHARS=12000
+
+# Security
+ALLOWED_HOSTS=localhost,127.0.0.1
+SESSION_COOKIE_SECURE=false
+LANGUAGE_COOKIE_SECURE=false
+COOKIE_SAMESITE=strict
+
+# Features
+FEATURE_SIGNUP_ENABLED=false
+FEATURE_WAYBACK_ENABLED=false
+FEATURE_AI_IMPORT_ENABLED=true
+
+# Internationalization
+DEFAULT_LANGUAGE=de
+
+# AI/OpenAI
+OPENAI_API_KEY=
+
+# Sentry
+SENTRY_DSN_BACKEND=
+SENTRY_DSN_FRONTEND=
+SENTRY_ENVIRONMENT=production
+SENTRY_TRACES_SAMPLE_RATE=0
+SENTRY_FRONTEND_TRACES_SAMPLE_RATE=0
+
+# Logging
+LOG_LEVEL=
+IMPORT_LOG_PATH=
+
+# Initial admin bootstrap
+INITIAL_ADMIN_EMAIL=
+INITIAL_ADMIN_USERNAME=
+INITIAL_ADMIN_PASSWORD=

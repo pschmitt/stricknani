@@ -47,6 +47,8 @@ media/
 
 # Environment
 .env*
+!.envrc.example
+!.envrc.sample
 
 # Nix
 result
