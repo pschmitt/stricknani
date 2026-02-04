@@ -370,6 +370,7 @@ class PatternImporter:
 
         data: dict[str, Any] = {
             "title": self._extract_title(soup),
+            "name": yarn_text,
             "needles": self._extract_needles(soup),
             "yarn": yarn_text,
             "yarn_details": yarn_details,
@@ -2160,11 +2161,19 @@ class PatternImporter:
                 strong = a.find("strong")
                 if isinstance(strong, Tag):
                     name = strong.get_text(strip=True)
-            # 3. Image alt in the same container
+            # 3. Image alt in the same container or sibling container
             # Look in parent or siblings for an image
             parent = a.find_parent(["div", "li"])
             if isinstance(parent, Tag):
                 img = parent.find("img")
+
+                # If not found in the same container, look in siblings
+                # (Garnstudio layout)
+                if not img:
+                    row = parent.find_parent("div", class_="row")
+                    if row:
+                        img = row.find("img")
+
                 if isinstance(img, Tag):
                     if not name:
                         alt_raw = img.get("alt")

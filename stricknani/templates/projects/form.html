@@ -425,6 +425,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                         data-yarn-id="{{ yarn.id }}" data-yarn-name="{{ yarn.name }}"
                                         data-yarn-brand="{{ yarn.brand or '' }}" data-yarn-colorway="{{ yarn.colorway or '' }}"
                                         data-yarn-dye-lot="{{ yarn.dye_lot or '' }}"
+                                        data-yarn-link="{{ yarn.link or '' }}"
                                         data-yarn-image="{{ yarn.photos[0].filename if yarn.photos and yarn.photos[0] else '' }}">
                                         <div class="flex items-center gap-2">
                                             <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center shrink-0">
@@ -1220,9 +1221,13 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         if (!dName) return;
 
                         const nLower = dName.toLowerCase();
-                        const dBrand = (detail.brand || '').toLowerCase();
+                        const dLink = detail.link;
 
+                        // Try to find an existing option by link OR name
                         const option = Array.from(yarnOptions).find(opt => {
+                            const optLink = opt.dataset.yarnLink; // We might need to add this to the dataset
+                            if (dLink && optLink === dLink) return true;
+
                             const optName = opt.dataset.yarnName.toLowerCase();
                             const optBrand = (opt.dataset.yarnBrand || '').toLowerCase();
                             return optName === nLower ||
