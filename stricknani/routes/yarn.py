@@ -65,6 +65,7 @@ from stricknani.utils.importer import (
 from stricknani.utils.markdown import render_markdown
 from stricknani.utils.wayback import (
     _should_request_archive,
+    build_wayback_fallback_url,
     store_wayback_snapshot,
 )
 
@@ -837,6 +838,9 @@ async def yarn_detail(
                 "photo_count": len(yarn.photos),
                 "project_count": len(yarn.projects),
             },
+            "link_archive_fallback": (
+                build_wayback_fallback_url(yarn.link) if yarn.link else None
+            ),
         },
     )
 

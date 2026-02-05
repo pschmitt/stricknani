@@ -4,6 +4,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import quote
 
 import waybackpy
 
@@ -19,6 +20,12 @@ def _should_request_archive(raw: str | None) -> bool:
     if raw is None:
         return False
     return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def build_wayback_fallback_url(url: str) -> str:
+    if not url:
+        return "https://web.archive.org/"
+    return f"https://web.archive.org/web/*/{quote(url, safe=':/?&=#')}"
 
 
 async def _request_wayback_snapshot(url: str) -> str | None:

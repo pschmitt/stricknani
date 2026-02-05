@@ -256,9 +256,16 @@ class PatternImporter:
                 if not line.strip():
                     continue
                 detail = self._parse_garnstudio_yarn_string(line)
+                match_key = self._match_garnstudio_yarn_link_name(line, yarn_links)
                 name = detail.get("name")
-                if name and name.lower() in yarn_links:
+                if match_key and match_key in yarn_links:
+                    info = yarn_links[match_key]
+                    detail["name"] = info.get("name") or name
+                    detail["link"] = info.get("link")
+                    detail["image_url"] = info.get("image_url")
+                elif name and name.lower() in yarn_links:
                     info = yarn_links[name.lower()]
+                    detail["name"] = info.get("name") or name
                     detail["link"] = info.get("link")
                     detail["image_url"] = info.get("image_url")
                 yarn_details.append(detail)
@@ -2417,11 +2424,27 @@ class PatternImporter:
                 if cleaned_name:
                     key = cleaned_name.lower()
                     if key not in yarn_data:
-                        yarn_data[key] = {"link": full_url, "image_url": image_url}
+                        yarn_data[key] = {
+                            "link": full_url,
+                            "image_url": image_url,
+                            "name": cleaned_name,
+                        }
                     elif image_url and not yarn_data[key].get("image_url"):
                         yarn_data[key]["image_url"] = image_url
 
         return yarn_data
+
+    def _match_garnstudio_yarn_link_name(
+        self, line: str, yarn_links: dict[str, dict[str, str]]
+    ) -> str | None:
+        if not yarn_links:
+            return None
+
+        line_lower = line.lower()
+        for candidate in sorted(yarn_links.keys(), key=len, reverse=True):
+            if candidate and candidate in line_lower:
+                return candidate
+        return None
 
     def _extract_garnstudio_yarn(self, soup: BeautifulSoup) -> str | None:
         """Extract yarn list from Garnstudio pattern."""
@@ -2468,6 +2491,10 @@ class PatternImporter:
             "KNÖPFE",
             "BUTTONS",
             "KNAPPER",
+            "ZUBEHÖR",
+            "ZUBEHÖR FÜR DIE ARBEIT",
+            "ACCESSORIES",
+            "ACCESSORIES FOR WORK",
         }
 
         collected: list[str] = []

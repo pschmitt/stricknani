@@ -82,6 +82,7 @@ from stricknani.utils.importer import (
 from stricknani.utils.markdown import render_markdown
 from stricknani.utils.wayback import (
     _should_request_archive,
+    build_wayback_fallback_url,
     store_wayback_snapshot,
 )
 
@@ -1998,11 +1999,12 @@ async def get_project(
         else None,
         "link": project.link,
         "link_archive": project.link_archive,
-        "archive_pending": bool(
-            project.link
-            and not project.link_archive
-            and project.link_archive_requested_at
+        "link_archive_failed": project.link_archive_failed,
+        "link_archive_requested_at": project.link_archive_requested_at,
+        "link_archive_fallback": (
+            build_wayback_fallback_url(project.link) if project.link else None
         ),
+        "archive_pending": project.archive_pending,
         "created_at": project.created_at.isoformat(),
         "updated_at": project.updated_at.isoformat(),
         "is_ai_enhanced": project.is_ai_enhanced,
