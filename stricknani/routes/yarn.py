@@ -506,10 +506,10 @@ async def import_yarn(
             "weight_category": data.get("weight_category"),
             "fiber_content": data.get("fiber_content"),
             "recommended_needles": recommended_needles,
-            "description": data.get("notes") or data.get("comment"),
+            "description": data.get("description"),
             "link": url,
             "image_urls": data.get("image_urls", [])[:5],
-            "notes": None,
+            "notes": data.get("notes") or data.get("comment"),
             "is_ai_enhanced": False,
         }
 

@@ -22,6 +22,7 @@ Use this file as the single source of truth for how to work in the Stricknani re
 - Formatting: `just fmt`
 - Tests: `uv run pytest -v`
 - **Server Health Check (Mandatory):** After any code change, you MUST verify the application starts correctly by running the integration tests: `uv run pytest tests/test_health.py`. This catches runtime syntax errors in templates or application logic that static analysis might miss.
+- **Yolo:** If I ask you to "yolo" deploy and commit, you should commit all changes, push them, and then run `just deploy --commit`.
 - Trim trailing whitespace in all edited files.
 
 ### UI Consistency (Projects & Yarns)

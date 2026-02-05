@@ -339,9 +339,43 @@ class PatternImporter:
         images = self._extract_images(soup)
         description = self._extract_description(soup)
         if self.is_garnstudio:
-            # For yarn pages, try to get the subtitle from the <title> tag
-            # e.g. DROPS Kid-Silk - Eine wunderbare Mischung aus Kid Mohair und Seide
             if "yarn.php" in self.url:
+                description_parts = []
+                # 1. Subtitle from <title> tag
+                # e.g. DROPS Kid-Silk - Eine wunderbare Mischung aus Kid Mohair und Seide
+                title_tag = soup.find("title")
+                if title_tag:
+                    title_text = title_tag.get_text()
+                    if " - " in title_text:
+                        subtitle = title_text.split(" - ", 1)[1].strip()
+                        description_parts.append(subtitle)
+
+                # 2. Technical specs
+                specs = self._extract_garnstudio_yarn_specs(soup)
+                if specs:
+                    description_parts.append(specs)
+
+                # 3. "About this yarn" section
+                about_container = soup.select_one("#about") or soup.select_one(
+                    ".yarn-description"
+                )
+                if about_container:
+                    import trafilatura
+
+                    about_text = trafilatura.extract(
+                        about_container.decode(), include_comments=False
+                    )
+                    if not about_text:
+                        about_text = about_container.get_text(
+                            separator="\n\n", strip=True
+                        )
+                    if about_text:
+                        description_parts.append(about_text)
+
+                if description_parts:
+                    description = "\n\n".join(description_parts)
+            else:
+                # For patterns, try to get the subtitle from the <title> tag
                 title_tag = soup.find("title")
                 if title_tag:
                     title_text = title_tag.get_text()
@@ -352,16 +386,14 @@ class PatternImporter:
                         else:
                             description = subtitle
 
-            garn_notes = self._extract_garnstudio_notes(soup)
-            if garn_notes:
-                # For Garnstudio, the technical notes are the most important part
-                # of the description.
-                if "yarn.php" in self.url and description:
-                    # Append technical notes if it's a yarn page and
-                    # we already have a description
-                    description = f"{description}\n\n{garn_notes}"
-                else:
-                    description = garn_notes
+                garn_notes = self._extract_garnstudio_notes(soup)
+                if garn_notes:
+                    # For Garnstudio, the technical notes are the most important part
+                    # of the description.
+                    if description:
+                        description = f"{description}\n\n{garn_notes}"
+                    else:
+                        description = garn_notes
 
         notes = None
         image_urls = images
@@ -1170,6 +1202,72 @@ class PatternImporter:
                     return val
 
         return None
+
+    def _extract_garnstudio_yarn_specs(self, soup: BeautifulSoup) -> str | None:
+        """Extract technical specifications for Garnstudio yarns."""
+        specs = []
+
+        target_labels = [
+            "Zusammensetzung",
+            "Garngruppe",
+            "Garnguppe",  # Garnstudio typo
+            "Gewicht / Lauflänge",
+            "Empfohlene Nadelstärke",
+            "Maschenprobe",
+            "Pflege",
+            "Superwash",
+            "Made in",
+            "Herkunft des Rohmaterials",
+            # English
+            "Composition",
+            "Yarn group",
+            "Weight / yardage",
+            "Recommended needle size",
+            "Gauge",
+            "Care",
+            "Origin of raw material",
+            # Norwegian
+            "Sammensetning",
+            "Vekt / løpelengde",
+            "Anbefalt pinnestørrelse",
+            "Strikkefasthet",
+            "Vask",
+            "Opprinnelse av råmateriale",
+        ]
+
+        # Garnstudio typically uses <strong>Label:</strong> Value
+        for p in soup.find_all("p"):
+            strongs = p.find_all("strong")
+            if not strongs:
+                continue
+
+            p_specs = []
+            for strong in strongs:
+                label_raw = strong.get_text(strip=True)
+                label = label_raw.rstrip(":")
+
+                if any(l.lower() in label.lower() for l in target_labels):
+                    value_parts = []
+                    curr = strong.next_sibling
+                    while curr and (not isinstance(curr, Tag) or curr.name != "strong"):
+                        if isinstance(curr, NavigableString):
+                            value_parts.append(str(curr))
+                        elif isinstance(curr, Tag):
+                            if curr.name == "br":
+                                break
+                            value_parts.append(curr.get_text())
+                        curr = curr.next_sibling
+
+                    value = "".join(value_parts).strip().lstrip(":").strip()
+                    if value:
+                        # Clean up value (remove extra whitespace)
+                        value = " ".join(value.split())
+                        p_specs.append(f"**{label}:** {value}")
+
+            if p_specs:
+                specs.append("\n".join(p_specs))
+
+        return "\n\n".join(specs) if specs else None
 
     def _get_garnstudio_gauge(
         self,
