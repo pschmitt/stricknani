@@ -349,7 +349,8 @@ class PatternImporter:
             if "yarn.php" in self.url:
                 description_parts = []
                 # 1. Subtitle from <title> tag
-                # e.g. DROPS Kid-Silk - Eine wunderbare Mischung aus Kid Mohair und Seide
+                # e.g. DROPS Kid-Silk - Eine wunderbare Mischung aus Kid Mohair und
+                # Seide
                 title_tag = soup.find("title")
                 if title_tag:
                     title_text = title_tag.get_text()
@@ -1253,7 +1254,11 @@ class PatternImporter:
                 label_raw = strong.get_text(strip=True)
                 label = label_raw.rstrip(":")
 
-                if any(l.lower() in label.lower() for l in target_labels):
+                label_lower = label.lower()
+                if any(
+                    target_label.lower() in label_lower
+                    for target_label in target_labels
+                ):
                     value_parts = []
                     curr = strong.next_sibling
                     while curr and (not isinstance(curr, Tag) or curr.name != "strong"):
