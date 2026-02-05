@@ -125,16 +125,10 @@ migrate-down:
 alembic *ARGS:
   uv run alembic --config stricknani/alembic.ini {{ARGS}}
 
-sql *ARGS:
+[positional-arguments]
+sql *args:
   #!/usr/bin/env sh
-  set -eu
-  set -- {{ARGS}}
-  if [ "$#" -eq 0 ]
-  then
-    sqlite3 ./stricknani.db
-  else
-    sqlite3 ./stricknani.db "$@"
-  fi
+  sqlite3 ./stricknani.db "$@"
 
 # Deploy to production
 [positional-arguments]
