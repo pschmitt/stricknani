@@ -100,7 +100,8 @@ cli *ARGS:
 admin-create email password='':
   #!/usr/bin/env bash
   set -euo pipefail
-  if [[ -z "{{password}}" ]]; then
+  if [[ -z "{{password}}" ]]
+  then
     uv run stricknani-cli user create --email "{{email}}" --admin
   else
     uv run stricknani-cli user create --email "{{email}}" --password "{{password}}" --admin
@@ -125,7 +126,15 @@ alembic *ARGS:
   uv run alembic --config stricknani/alembic.ini {{ARGS}}
 
 sql *ARGS:
-  sqlite3 ./stricknani.db "{{ARGS}}"
+  #!/usr/bin/env sh
+  set -eu
+  set -- {{ARGS}}
+  if [ "$#" -eq 0 ]
+  then
+    sqlite3 ./stricknani.db
+  else
+    sqlite3 ./stricknani.db "$@"
+  fi
 
 # Deploy to production
 [positional-arguments]
