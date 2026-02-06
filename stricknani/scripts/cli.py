@@ -24,7 +24,11 @@ from stricknani.config import config
 from stricknani.database import AsyncSessionLocal, init_db
 from stricknani.models import Project, Step, User, Yarn
 from stricknani.utils.auth import get_password_hash, get_user_by_email
-from stricknani.utils.importer import PatternImporter
+from stricknani.utils.importer import (
+    GarnstudioPatternImporter,
+    PatternImporter,
+    _is_garnstudio_url,
+)
 from stricknani.utils.project_import import (
     build_ai_hints,
     import_images_from_urls,
@@ -447,7 +451,11 @@ async def import_project_url(
     url: str, use_ai: bool, import_images: bool, owner_email: str | None = None
 ) -> None:
     """Import a project from a URL."""
-    basic_importer = PatternImporter(url)
+    basic_importer: PatternImporter
+    if _is_garnstudio_url(url):
+        basic_importer = GarnstudioPatternImporter(url)
+    else:
+        basic_importer = PatternImporter(url)
     data = await basic_importer.fetch_and_parse()
 
     if use_ai and config.OPENAI_API_KEY:

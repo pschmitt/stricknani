@@ -2695,17 +2695,16 @@ class GarnstudioPatternImporter(PatternImporter):
                 ]
 
         if legend_markdown:
-            diagram_step = next(
-                (
-                    step
-                    for step in data["steps"]
-                    if "diagram" in step["title"].lower()
-                    or "skizze" in step["title"].lower()
-                ),
-                None,
-            )
+            # Attach legend to all diagram-related steps; some patterns have multiple
+            # "Diagram A.1", "Diagram A.2", ... steps.
+            diagram_steps = [
+                step
+                for step in data["steps"]
+                if "diagram" in step["title"].lower()
+                or "skizze" in step["title"].lower()
+            ]
 
-            if not diagram_step:
+            if not diagram_steps:
                 is_english = "cid=1" in self.url or "dropsdesign.com" in self.url
                 title = "Diagram" if is_english else "Diagramm"
                 diagram_step = {
@@ -2715,13 +2714,18 @@ class GarnstudioPatternImporter(PatternImporter):
                     "images": diagrams,
                 }
                 data["steps"].append(diagram_step)
+                diagram_steps = [diagram_step]
 
-            description = diagram_step.get("description") or ""
-            if description:
-                description = f"{description}\n\n{legend_markdown}"
-            else:
-                description = legend_markdown
-            diagram_step["description"] = description
+            for step in diagram_steps:
+                description = step.get("description") or ""
+                # Avoid duplicating the legend if a page contains multiple legend tables
+                # or import is retried.
+                if "drops/symbols/" in description or legend_markdown in description:
+                    continue
+                if description:
+                    step["description"] = f"{description}\n\n{legend_markdown}"
+                else:
+                    step["description"] = legend_markdown
 
         # Slice back to the requested limit
         data["image_urls"] = data["image_urls"][:image_limit]
@@ -2741,42 +2745,64 @@ class GarnstudioPatternImporter(PatternImporter):
         title = heading.get_text(" ", strip=True) if heading else None
 
         entries: list[dict[str, str]] = []
+        # Garnstudio uses (at least) two legend table layouts:
+        # 1) One symbol per row: [img] [=] [label]
+        # 2) Multiple symbol/label pairs per row (print view):
+        #    [img] [label] [img] [label] ...
         for row in table.find_all("tr"):
             cells = row.find_all("td")
             if not cells:
                 continue
 
-            img = row.find("img")
-            symbol_url = ""
-            if img:
+            i = 0
+            extracted_any = False
+            while i < len(cells):
+                cell = cells[i]
+                img = cell.find("img")
+                if not img:
+                    i += 1
+                    continue
+
+                symbol_url = ""
                 src = img.get("src")
                 if isinstance(src, str) and src.strip():
                     symbol_url = urljoin(self.url, src.strip())
 
-            label = ""
-            if len(cells) >= 3:
-                label = cells[2].get_text(" ", strip=True)
-            elif len(cells) >= 2:
-                label = cells[-1].get_text(" ", strip=True)
-            else:
-                label = row.get_text(" ", strip=True)
+                label = ""
+                # Prefer explicit label from subsequent cells.
+                if i + 1 < len(cells):
+                    next_text = cells[i + 1].get_text(" ", strip=True)
+                    if next_text.strip() in {"=", "=."} and i + 2 < len(cells):
+                        label = cells[i + 2].get_text(" ", strip=True)
+                        i += 3
+                    else:
+                        label = next_text
+                        i += 2
+                else:
+                    i += 1
 
-            label = label.lstrip("=").strip()
-            if not label and img:
-                alt = img.get("alt")
-                if isinstance(alt, str):
-                    label = alt.strip()
+                label = label.lstrip("=").strip()
+                if not label:
+                    alt = img.get("alt")
+                    if isinstance(alt, str) and alt.strip():
+                        label = alt.strip()
 
-            if not label and not symbol_url:
+                if label or symbol_url:
+                    entry: dict[str, str] = {}
+                    if symbol_url:
+                        entry["symbol_url"] = symbol_url
+                    if label:
+                        entry["label"] = label
+                    entries.append(entry)
+                    extracted_any = True
+
+            if extracted_any:
                 continue
 
-            entry: dict[str, str] = {}
-            if symbol_url:
-                entry["symbol_url"] = symbol_url
-            if label:
-                entry["label"] = label
-            if entry:
-                entries.append(entry)
+            # Fallback for odd rows: no <td> with <img> (rare), but still text.
+            fallback_label = row.get_text(" ", strip=True).lstrip("=").strip()
+            if fallback_label:
+                entries.append({"label": fallback_label})
 
         return title, entries
 

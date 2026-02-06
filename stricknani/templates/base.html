@@ -72,6 +72,21 @@
             margin-bottom: 0.5rem;
         }
 
+        /* Garnstudio diagram legend symbols: keep them icon-sized (remote or localized). */
+        .markdown-inline-image[src*="/drops/symbols/"],
+        .markdown-inline-image[data-lightbox-src*="/drops/symbols/"],
+        .markdown-inline-image[src*="/inline/garnstudio-symbols/"],
+        .markdown-inline-image[data-lightbox-src*="/inline/garnstudio-symbols/"] {
+            max-width: 2rem;
+            max-height: 2rem;
+            width: auto;
+            cursor: default;
+            border-radius: 0.25rem;
+            margin: 0 0.25rem 0 0;
+            vertical-align: middle;
+            display: inline-block;
+        }
+
         input::placeholder,
         textarea::placeholder {
             color: color-mix(in srgb, currentColor 55%, transparent);
@@ -1731,6 +1746,10 @@
         document.addEventListener('click', (event) => {
             const markdownImage = event.target.closest('img.markdown-inline-image');
             if (markdownImage) {
+                const src = markdownImage.getAttribute('data-lightbox-src') || markdownImage.src || '';
+                if (src.includes('/drops/symbols/') || src.includes('/inline/garnstudio-symbols/')) {
+                    return;
+                }
                 event.preventDefault();
                 event.stopPropagation();
                 openMarkdownLightbox(markdownImage);

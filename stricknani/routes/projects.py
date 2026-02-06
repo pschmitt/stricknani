@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Annotated, Any
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import (
@@ -96,6 +97,85 @@ class _ImportedSimilarity:
     image: Image
     filename: str
     is_title_image: bool
+
+
+_GARNSTUDIO_SYMBOL_URL_RE = re.compile(
+    r"(https?://[^\s)\"'>]+?/drops/symbols/[^\s)\"'>]+)",
+    re.IGNORECASE,
+)
+
+
+async def _localize_garnstudio_symbol_images(
+    project_id: int,
+    description: str | None,
+    *,
+    referer: str | None = None,
+) -> str | None:
+    if not description or "/drops/symbols/" not in description:
+        return description
+
+    urls = sorted(set(_GARNSTUDIO_SYMBOL_URL_RE.findall(description)))
+    if not urls:
+        return description
+
+    symbol_dir = (
+        config.MEDIA_ROOT
+        / "projects"
+        / str(project_id)
+        / "inline"
+        / "garnstudio-symbols"
+    )
+    symbol_dir.mkdir(parents=True, exist_ok=True)
+
+    headers = dict(IMPORT_IMAGE_HEADERS)
+    if referer:
+        headers["Referer"] = referer
+
+    replacements: dict[str, str] = {}
+    async with httpx.AsyncClient(
+        timeout=IMPORT_IMAGE_TIMEOUT,
+        follow_redirects=True,
+        headers=headers,
+    ) as client:
+        for url in urls:
+            try:
+                response = await client.get(url)
+                response.raise_for_status()
+            except httpx.HTTPError:
+                continue
+
+            if not response.content:
+                continue
+
+            # These are tiny symbol images; we still guard against abuse.
+            if len(response.content) > min(IMPORT_IMAGE_MAX_BYTES, 512 * 1024):
+                continue
+
+            content_type = response.headers.get("content-type")
+            if content_type and not content_type.lower().startswith("image/"):
+                continue
+
+            parsed = urlparse(url)
+            ext = Path(parsed.path).suffix.lower()
+            if not ext:
+                ext = Path(build_import_filename(url, content_type)).suffix.lower()
+            if not ext:
+                ext = ".gif"
+
+            checksum = compute_checksum(response.content)
+            filename = f"{checksum[:16]}{ext}"
+            target_path = symbol_dir / filename
+            if not target_path.exists():
+                target_path.write_bytes(response.content)
+
+            replacements[url] = (
+                f"/media/projects/{project_id}/inline/garnstudio-symbols/{filename}"
+            )
+
+    localized = description
+    for src, dst in replacements.items():
+        localized = localized.replace(src, dst)
+    return localized
 
 
 def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
@@ -2323,6 +2403,13 @@ async def create_project(
     if steps_data:
         steps_list = json.loads(steps_data)
         for step_data in steps_list:
+            step_description = step_data.get("description")
+            if isinstance(step_description, str):
+                step_data["description"] = await _localize_garnstudio_symbol_images(
+                    project.id,
+                    step_description,
+                    referer=project.link,
+                )
             step = Step(
                 title=step_data.get("title", ""),
                 description=step_data.get("description"),
@@ -2490,6 +2577,13 @@ async def update_project(
 
         # Update or create steps
         for step_data in steps_list:
+            step_description = step_data.get("description")
+            if isinstance(step_description, str):
+                step_data["description"] = await _localize_garnstudio_symbol_images(
+                    project.id,
+                    step_description,
+                    referer=project.link,
+                )
             step_id = _coerce_step_id(step_data.get("id"))
             if step_id and step_id in existing_step_ids:
                 # Update existing step
