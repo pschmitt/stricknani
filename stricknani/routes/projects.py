@@ -52,6 +52,7 @@ from stricknani.utils.files import (
     build_import_filename,
     compute_checksum,
     compute_file_checksum,
+    create_pdf_thumbnail,
     create_thumbnail,
     delete_file,
     get_file_url,
@@ -1855,6 +1856,22 @@ async def get_project(
     # Prepare attachments
     project_attachments = []
     for att in project.attachments:
+        thumbnail_url = None
+        if (
+            att.content_type.startswith("image/")
+            or att.content_type == "application/pdf"
+        ):
+            thumb_path = (
+                config.MEDIA_ROOT
+                / "thumbnails"
+                / "projects"
+                / str(project.id)
+                / f"thumb_{Path(att.filename).stem}.jpg"
+            )
+            if thumb_path.exists():
+                thumbnail_url = get_thumbnail_url(
+                    att.filename, project.id, subdir="projects"
+                )
         project_attachments.append(
             {
                 "id": att.id,
@@ -1863,6 +1880,7 @@ async def get_project(
                 "content_type": att.content_type,
                 "size_bytes": att.size_bytes,
                 "url": get_file_url(att.filename, project.id, subdir="projects"),
+                "thumbnail_url": thumbnail_url,
                 "created_at": att.created_at.isoformat(),
             }
         )
@@ -2086,6 +2104,22 @@ async def edit_project_form(
     # Prepare attachments
     project_attachments = []
     for att in project.attachments:
+        thumbnail_url = None
+        if (
+            att.content_type.startswith("image/")
+            or att.content_type == "application/pdf"
+        ):
+            thumb_path = (
+                config.MEDIA_ROOT
+                / "thumbnails"
+                / "projects"
+                / str(project.id)
+                / f"thumb_{Path(att.filename).stem}.jpg"
+            )
+            if thumb_path.exists():
+                thumbnail_url = get_thumbnail_url(
+                    att.filename, project.id, subdir="projects"
+                )
         project_attachments.append(
             {
                 "id": att.id,
@@ -2094,6 +2128,7 @@ async def edit_project_form(
                 "content_type": att.content_type,
                 "size_bytes": att.size_bytes,
                 "url": get_file_url(att.filename, project.id, subdir="projects"),
+                "thumbnail_url": thumbnail_url,
                 "created_at": att.created_at.isoformat(),
             }
         )
@@ -2934,6 +2969,7 @@ async def upload_attachment(
     current_user: User = Depends(require_auth),
 ) -> JSONResponse:
     """Upload an attachment to a project."""
+    logger = logging.getLogger(__name__)
     project = await db.get(Project, project_id)
     if not project:
         raise HTTPException(
@@ -2952,10 +2988,42 @@ async def upload_attachment(
         content, file.filename or "file", project_id
     )
 
+    thumbnail_url: str | None = None
+    content_type = file.content_type or "application/octet-stream"
+    thumb_path = (
+        config.MEDIA_ROOT
+        / "thumbnails"
+        / "projects"
+        / str(project_id)
+        / f"thumb_{Path(filename).stem}.jpg"
+    )
+    if content_type.startswith("image/"):
+        source_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
+        try:
+            await create_thumbnail(source_path, project_id, subdir="projects")
+            if thumb_path.exists():
+                thumbnail_url = get_thumbnail_url(
+                    filename, project_id, subdir="projects"
+                )
+        except Exception:
+            logger.info("Could not create attachment thumbnail for %s", filename)
+    elif content_type == "application/pdf":
+        source_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
+        try:
+            await asyncio.to_thread(
+                create_pdf_thumbnail, source_path, project_id, "projects"
+            )
+            if thumb_path.exists():
+                thumbnail_url = get_thumbnail_url(
+                    filename, project_id, subdir="projects"
+                )
+        except Exception:
+            logger.info("Could not create PDF thumbnail for %s", filename)
+
     attachment = Attachment(
         filename=filename,
         original_filename=original_filename,
-        content_type=file.content_type or "application/octet-stream",
+        content_type=content_type,
         size_bytes=size_bytes,
         project_id=project_id,
     )
@@ -2971,6 +3039,7 @@ async def upload_attachment(
             "content_type": attachment.content_type,
             "size_bytes": attachment.size_bytes,
             "url": get_file_url(attachment.filename, project_id),
+            "thumbnail_url": thumbnail_url,
         }
     )
 

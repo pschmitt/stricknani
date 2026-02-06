@@ -2,6 +2,8 @@
 
 import hashlib
 import mimetypes
+import shutil
+import subprocess
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -166,6 +168,55 @@ async def create_thumbnail(
         img.save(thumb_path, "JPEG", quality=85, optimize=True)
 
         return thumbnail_name
+
+
+def create_pdf_thumbnail(
+    source_path: Path,
+    entity_id: int,
+    subdir: str = "projects",
+    width: int = 300,
+) -> str | None:
+    """Create a thumbnail for the first page of a PDF, if `pdftoppm` is available.
+
+    Returns the thumbnail filename (e.g. `thumb_<stem>.jpg`) or None if thumbnail
+    generation is unavailable/failed.
+    """
+    pdftoppm = shutil.which("pdftoppm")
+    if not pdftoppm:
+        return None
+
+    thumb_dir = config.MEDIA_ROOT / "thumbnails" / subdir / str(entity_id)
+    thumb_dir.mkdir(parents=True, exist_ok=True)
+
+    thumb_basename = f"thumb_{source_path.stem}"
+    out_prefix = thumb_dir / thumb_basename
+    out_path = thumb_dir / f"{thumb_basename}.jpg"
+
+    try:
+        subprocess.run(
+            [
+                pdftoppm,
+                "-f",
+                "1",
+                "-l",
+                "1",
+                "-singlefile",
+                "-jpeg",
+                "-scale-to",
+                str(width),
+                str(source_path),
+                str(out_prefix),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except Exception:
+        return None
+
+    if out_path.exists():
+        return out_path.name
+    return None
 
 
 def delete_file(filename: str, entity_id: int, subdir: str = "projects") -> None:

@@ -251,13 +251,17 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                 data-attachment-name="{{ attachment.original_filename }}"
                                 data-attachment-id="{{ attachment.id }}">
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+                                        {% if attachment.thumbnail_url %}
+                                        <img src="{{ attachment.thumbnail_url }}" alt="" class="w-full h-full object-cover" loading="lazy">
+                                        {% else %}
                                         {% if attachment.content_type == 'application/pdf' %}
                                         <span class="mdi mdi-file-pdf-outline text-2xl"></span>
                                         {% elif attachment.content_type.startswith('image/') %}
                                         <span class="mdi mdi-file-image-outline text-2xl"></span>
                                         {% else %}
                                         <span class="mdi mdi-file-outline text-2xl"></span>
+                                        {% endif %}
                                         {% endif %}
                                     </div>
                                     <div class="min-w-0">
@@ -1941,9 +1945,16 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
         const originalName = escapeHtml(data.original_filename);
         const url = escapeHtml(data.url);
+        const thumbUrl = data.thumbnail_url ? escapeHtml(data.thumbnail_url) : '';
         const kind = data.content_type === 'application/pdf' ? 'pdf'
             : data.content_type.startsWith('image/') ? 'image'
                 : 'other';
+
+        const thumbOrIcon = thumbUrl ? `
+                        <img src="${thumbUrl}" alt="" class="w-full h-full object-cover" loading="lazy">
+        ` : `
+                        <span class="mdi ${icon} text-2xl"></span>
+        `;
 
         const html = `
             <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 bg-base-200/30 group cursor-pointer"
@@ -1955,8 +1966,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                 data-attachment-name="${originalName}"
                 data-attachment-id="${data.id}">
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                        <span class="mdi ${icon} text-2xl"></span>
+                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+                        ${thumbOrIcon}
                     </div>
                     <div class="min-w-0">
                         <p class="font-medium text-sm truncate" title="${originalName}">

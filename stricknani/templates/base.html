@@ -788,11 +788,13 @@
                     </form>
                 </div>
             </div>
-            <div class="flex-1 bg-black/90 p-3 sm:p-4">
+            <div class="flex-1 bg-black/90 p-3 sm:p-4 overflow-auto">
+                <div class="min-h-full flex items-center justify-center">
                 <img id="imageViewerImage"
-                    class="w-full h-full object-contain"
+                    class="block max-w-full max-h-full object-contain"
                     src="about:blank"
                     alt="">
+                </div>
             </div>
         </div>
         {{ dialogs.modal_backdrop() }}

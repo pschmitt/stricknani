@@ -2,6 +2,11 @@ FROM python:3.14-slim
 
 WORKDIR /app
 
+# `pdftoppm` is used for best-effort PDF attachment thumbnails.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends poppler-utils \
+  && rm -rf /var/lib/apt/lists/*
+
 # Install uv
 RUN pip install uv
 

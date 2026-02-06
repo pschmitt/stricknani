@@ -239,13 +239,17 @@
                             data-attachment-url="{{ attachment.url }}"
                             data-attachment-name="{{ attachment.original_filename }}">
                             <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+                                    {% if attachment.thumbnail_url %}
+                                    <img src="{{ attachment.thumbnail_url }}" alt="" class="w-full h-full object-cover" loading="lazy">
+                                    {% else %}
                                     {% if attachment.content_type == 'application/pdf' %}
                                     <span class="mdi mdi-file-pdf-outline text-2xl"></span>
                                     {% elif attachment.content_type.startswith('image/') %}
                                     <span class="mdi mdi-file-image-outline text-2xl"></span>
                                     {% else %}
                                     <span class="mdi mdi-file-outline text-2xl"></span>
+                                    {% endif %}
                                     {% endif %}
                                 </div>
                                 <div class="min-w-0">

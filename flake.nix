@@ -54,6 +54,7 @@
               ruff
               mypy
               statix
+              poppler-utils
             ];
 
             shellHook = ''
