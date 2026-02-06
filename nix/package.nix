@@ -1,5 +1,7 @@
 {
   lib,
+  makeWrapper,
+  poppler-utils,
   python3,
   fastapi-csrf-protect,
 }:
@@ -47,9 +49,18 @@ python.pkgs.buildPythonApplication {
 
   nativeBuildInputs = with python.pkgs; [
     hatchling
+  ] ++ [
+    makeWrapper
   ];
 
   propagatedBuildInputs = pythonDeps;
+
+  postFixup = ''
+    wrapProgram "$out/bin/stricknani" \
+      --prefix PATH : ${lib.makeBinPath [ poppler-utils ]}
+    wrapProgram "$out/bin/stricknani-cli" \
+      --prefix PATH : ${lib.makeBinPath [ poppler-utils ]}
+  '';
 
   meta = {
     description = "A self-hosted web app for managing knitting projects";

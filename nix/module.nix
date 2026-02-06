@@ -12,7 +12,6 @@ let
   stricknaniCliWrapper = pkgs.writeShellScriptBin "stricknani-cli" ''
     exec sudo -u "${user}" -- env \
       DATABASE_URL="${cfg.databaseUrl}" \
-      PATH="${lib.makeBinPath [ pkgs.poppler-utils ]}:$PATH" \
       ${pkgs.runtimeShell} -c '
         cd "${cfg.dataDir}";
         exec "${cfg.package}/bin/stricknani-cli" "$@" \
@@ -98,10 +97,6 @@ in
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
-
-      path = with pkgs; [
-        poppler-utils
-      ];
 
       environment = {
         PORT = toString cfg.port;
