@@ -231,7 +231,13 @@
                 <div class="collapse-content p-0">
                     <div class="p-4 space-y-2">
                         {% for attachment in project.attachments %}
-                        <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:bg-base-200/50 transition-colors group">
+                        <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:bg-base-200/50 transition-colors group cursor-pointer"
+                            role="button"
+                            tabindex="0"
+                            data-action="open-attachment"
+                            data-attachment-kind="{% if attachment.content_type == 'application/pdf' %}pdf{% elif attachment.content_type.startswith('image/') %}image{% else %}other{% endif %}"
+                            data-attachment-url="{{ attachment.url }}"
+                            data-attachment-name="{{ attachment.original_filename }}">
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                                     {% if attachment.content_type == 'application/pdf' %}
@@ -251,7 +257,9 @@
                                     </p>
                                 </div>
                             </div>
-                            <a href="{{ attachment.url }}" target="_blank" class="btn btn-ghost btn-sm btn-circle text-primary opacity-0 group-hover:opacity-100 transition-opacity" title="{{ _('Download') }}">
+                            <a href="{{ attachment.url }}" target="_blank"
+                                class="btn btn-ghost btn-sm btn-circle text-primary"
+                                title="{{ _('Download') }}">
                                 <span class="mdi mdi-download text-xl"></span>
                             </a>
                         </div>

@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from stricknani.config import config
-from stricknani.models import Image, ProjectCategory, Step
+from stricknani.models import Attachment, Image, ProjectCategory, Step
 
 
 async def _fetch_steps(
@@ -30,6 +30,17 @@ async def _fetch_images(
     async with session_factory() as session:
         result = await session.execute(
             select(Image).where(Image.project_id == project_id)
+        )
+        return list(result.scalars())
+
+
+async def _fetch_attachments(
+    session_factory: async_sessionmaker[AsyncSession],
+    project_id: int,
+) -> list[Attachment]:
+    async with session_factory() as session:
+        result = await session.execute(
+            select(Attachment).where(Attachment.project_id == project_id)
         )
         return list(result.scalars())
 
@@ -228,6 +239,81 @@ async def test_upload_step_image_creates_image_record(
     assert media_path.exists()
     assert thumb_path.exists()
     assert any(thumb_path.iterdir())
+
+
+@pytest.mark.asyncio
+async def test_upload_pdf_attachment_renders_preview_button(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, _user_id, project_id, _step_id = test_client
+
+    pdf_bytes = (
+        b"%PDF-1.4\n"
+        b"%fake\n"
+        b"1 0 obj\n"
+        b"<<>>\n"
+        b"endobj\n"
+        b"trailer\n"
+        b"<<>>\n"
+        b"%%EOF\n"
+    )
+    pdf_stream = BytesIO(pdf_bytes)
+    response = await client.post(
+        f"/projects/{project_id}/attachments",
+        files={"file": ("example.pdf", pdf_stream, "application/pdf")},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["content_type"] == "application/pdf"
+    assert data["url"].endswith(".pdf")
+
+    attachments = await _fetch_attachments(session_factory, project_id)
+    assert len(attachments) == 1
+    media_path = (
+        config.MEDIA_ROOT / "projects" / str(project_id) / attachments[0].filename
+    )
+    assert media_path.exists()
+
+    detail = await client.get(f"/projects/{project_id}")
+    assert detail.status_code == 200
+    assert 'data-action="open-attachment"' in detail.text
+    assert data["url"] in detail.text
+
+    edit = await client.get(f"/projects/{project_id}/edit")
+    assert edit.status_code == 200
+    assert 'data-action="open-attachment"' in edit.text
+    assert data["url"] in edit.text
+
+
+@pytest.mark.asyncio
+async def test_upload_image_attachment_renders_preview_button(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, _user_id, project_id, _step_id = test_client
+
+    image_stream = _generate_image_bytes("black")
+    response = await client.post(
+        f"/projects/{project_id}/attachments",
+        files={"file": ("attached.png", image_stream, "image/png")},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["content_type"] == "image/png"
+
+    attachments = await _fetch_attachments(session_factory, project_id)
+    assert len(attachments) == 1
+
+    detail = await client.get(f"/projects/{project_id}")
+    assert detail.status_code == 200
+    assert 'data-action="open-attachment"' in detail.text
+    assert data["url"] in detail.text
+
+    edit = await client.get(f"/projects/{project_id}/edit")
+    assert edit.status_code == 200
+    assert 'data-action="open-attachment"' in edit.text
+    assert data["url"] in edit.text
 
 
 @pytest.mark.asyncio

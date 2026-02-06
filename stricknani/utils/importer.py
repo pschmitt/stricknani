@@ -213,6 +213,7 @@ class PatternImporter:
         self.timeout = timeout
         self.is_garnstudio = _is_garnstudio_url(url)
         self._garnstudio_gauge_cache: tuple[int | None, int | None] | None = None
+        self._last_soup: BeautifulSoup | None = None
 
     async def fetch_and_parse(self, image_limit: int = 10) -> dict[str, Any]:
         """Fetch URL and extract pattern data."""
@@ -243,6 +244,7 @@ class PatternImporter:
             )
 
         soup = BeautifulSoup(response.text, "html.parser")
+        self._last_soup = soup
 
         yarn_text = self._extract_yarn(soup)
         yarn_details = None
@@ -2653,6 +2655,13 @@ class GarnstudioPatternImporter(PatternImporter):
             url for url in data.get("image_urls", []) if self._is_diagram_url(url)
         ]
 
+        legend_title, legend_entries = self._extract_garnstudio_diagram_legend(
+            self._last_soup
+        )
+        legend_markdown = self._format_garnstudio_diagram_legend(
+            legend_title, legend_entries
+        )
+
         if diagrams:
             # Check if we already have a step for diagrams
             has_diagram_step = any(
@@ -2685,6 +2694,111 @@ class GarnstudioPatternImporter(PatternImporter):
                     url for url in data["image_urls"] if url not in diagrams
                 ]
 
+        if legend_markdown:
+            diagram_step = next(
+                (
+                    step
+                    for step in data["steps"]
+                    if "diagram" in step["title"].lower()
+                    or "skizze" in step["title"].lower()
+                ),
+                None,
+            )
+
+            if not diagram_step:
+                is_english = "cid=1" in self.url or "dropsdesign.com" in self.url
+                title = "Diagram" if is_english else "Diagramm"
+                diagram_step = {
+                    "step_number": len(data["steps"]) + 1,
+                    "title": title,
+                    "description": "",
+                    "images": diagrams,
+                }
+                data["steps"].append(diagram_step)
+
+            description = diagram_step.get("description") or ""
+            if description:
+                description = f"{description}\n\n{legend_markdown}"
+            else:
+                description = legend_markdown
+            diagram_step["description"] = description
+
         # Slice back to the requested limit
         data["image_urls"] = data["image_urls"][:image_limit]
         return data
+
+    def _extract_garnstudio_diagram_legend(
+        self, soup: BeautifulSoup | None
+    ) -> tuple[str | None, list[dict[str, str]]]:
+        if soup is None:
+            return None, []
+
+        table = soup.find("table", id="diag_symbols")
+        if not table:
+            return None, []
+
+        heading = table.find_previous(["h2", "h3", "h4", "strong", "b"])
+        title = heading.get_text(" ", strip=True) if heading else None
+
+        entries: list[dict[str, str]] = []
+        for row in table.find_all("tr"):
+            cells = row.find_all("td")
+            if not cells:
+                continue
+
+            img = row.find("img")
+            symbol_url = ""
+            if img:
+                src = img.get("src")
+                if isinstance(src, str) and src.strip():
+                    symbol_url = urljoin(self.url, src.strip())
+
+            label = ""
+            if len(cells) >= 3:
+                label = cells[2].get_text(" ", strip=True)
+            elif len(cells) >= 2:
+                label = cells[-1].get_text(" ", strip=True)
+            else:
+                label = row.get_text(" ", strip=True)
+
+            label = label.lstrip("=").strip()
+            if not label and img:
+                alt = img.get("alt")
+                if isinstance(alt, str):
+                    label = alt.strip()
+
+            if not label and not symbol_url:
+                continue
+
+            entry: dict[str, str] = {}
+            if symbol_url:
+                entry["symbol_url"] = symbol_url
+            if label:
+                entry["label"] = label
+            if entry:
+                entries.append(entry)
+
+        return title, entries
+
+    def _format_garnstudio_diagram_legend(
+        self, title: str | None, entries: list[dict[str, str]]
+    ) -> str:
+        if not entries:
+            return ""
+
+        lines: list[str] = []
+        if title:
+            lines.append(f"**{title}**")
+            lines.append("")
+
+        for entry in entries:
+            label = entry.get("label", "").strip()
+            symbol_url = entry.get("symbol_url", "").strip()
+            if symbol_url and label:
+                lines.append(f"- ![]({symbol_url}) = {label}")
+            elif symbol_url:
+                lines.append(f"- ![]({symbol_url})")
+            elif label:
+                lines.append(f"- {label}")
+
+        return "\n".join(lines).strip()

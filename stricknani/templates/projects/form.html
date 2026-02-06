@@ -242,7 +242,14 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         <div id="attachmentsContainer" class="space-y-2 mb-4">
                             {% if project and project.attachments %}
                             {% for attachment in project.attachments %}
-                            <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 bg-base-200/30 group" data-attachment-id="{{ attachment.id }}">
+                            <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 bg-base-200/30 group cursor-pointer"
+                                role="button"
+                                tabindex="0"
+                                data-action="open-attachment"
+                                data-attachment-kind="{% if attachment.content_type == 'application/pdf' %}pdf{% elif attachment.content_type.startswith('image/') %}image{% else %}other{% endif %}"
+                                data-attachment-url="{{ attachment.url }}"
+                                data-attachment-name="{{ attachment.original_filename }}"
+                                data-attachment-id="{{ attachment.id }}">
                                 <div class="flex items-center gap-3 min-w-0">
                                     <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                                         {% if attachment.content_type == 'application/pdf' %}
@@ -262,9 +269,18 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                         </p>
                                     </div>
                                 </div>
-                                <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="btn btn-ghost btn-sm btn-circle text-error opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span class="mdi mdi-delete-outline text-xl"></span>
-                                </button>
+                                <div class="flex items-center gap-1">
+                                    <a href="{{ attachment.url }}" target="_blank"
+                                        class="btn btn-ghost btn-sm btn-circle text-primary"
+                                        title="{{ _('Download') }}">
+                                        <span class="mdi mdi-download text-xl"></span>
+                                    </a>
+                                    <button type="button" onclick="deleteAttachment({{ attachment.id }})"
+                                        class="btn btn-ghost btn-sm btn-circle text-error"
+                                        title="{{ _('Delete') }}">
+                                        <span class="mdi mdi-delete-outline text-xl"></span>
+                                    </button>
+                                </div>
                             </div>
                             {% endfor %}
                             {% endif %}
@@ -1907,29 +1923,62 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         const container = document.getElementById('attachmentsContainer');
         if (!container) return;
 
+        const escapeHtml = (value) => {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;',
+            };
+            return String(value ?? '').replace(/[&<>"']/g, (m) => map[m]);
+        };
+
         const sizeMb = (data.size_bytes / 1024 / 1024).toFixed(2);
         let icon = 'mdi-file-outline';
         if (data.content_type === 'application/pdf') icon = 'mdi-file-pdf-outline';
         else if (data.content_type.startsWith('image/')) icon = 'mdi-file-image-outline';
 
+        const originalName = escapeHtml(data.original_filename);
+        const url = escapeHtml(data.url);
+        const kind = data.content_type === 'application/pdf' ? 'pdf'
+            : data.content_type.startsWith('image/') ? 'image'
+                : 'other';
+
         const html = `
-            <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 bg-base-200/30 group" data-attachment-id="${data.id}">
+            <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 bg-base-200/30 group cursor-pointer"
+                role="button"
+                tabindex="0"
+                data-action="open-attachment"
+                data-attachment-kind="${kind}"
+                data-attachment-url="${url}"
+                data-attachment-name="${originalName}"
+                data-attachment-id="${data.id}">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                         <span class="mdi ${icon} text-2xl"></span>
                     </div>
                     <div class="min-w-0">
-                        <p class="font-medium text-sm truncate" title="${data.original_filename}">
-                            ${data.original_filename}
+                        <p class="font-medium text-sm truncate" title="${originalName}">
+                            ${originalName}
                         </p>
                         <p class="text-[10px] text-base-content/50 uppercase font-bold tracking-wider">
                             ${sizeMb} MB
                         </p>
                     </div>
                 </div>
-                <button type="button" onclick="deleteAttachment(${data.id})" class="btn btn-ghost btn-sm btn-circle text-error opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span class="mdi mdi-delete-outline text-xl"></span>
-                </button>
+                <div class="flex items-center gap-1">
+                    <a href="${url}" target="_blank"
+                        class="btn btn-ghost btn-sm btn-circle text-primary"
+                        title="{{ _('Download') }}">
+                        <span class="mdi mdi-download text-xl"></span>
+                    </a>
+                    <button type="button" onclick="deleteAttachment(${data.id})"
+                        class="btn btn-ghost btn-sm btn-circle text-error"
+                        title="{{ _('Delete') }}">
+                        <span class="mdi mdi-delete-outline text-xl"></span>
+                    </button>
+                </div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', html);

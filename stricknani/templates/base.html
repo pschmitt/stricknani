@@ -737,6 +737,67 @@
         {{ dialogs.modal_backdrop() }}
     </dialog>
 
+    <dialog id="pdfViewerDialog" class="modal">
+        <div class="modal-box w-screen h-screen max-w-none p-0 overflow-hidden rounded-none flex flex-col">
+            <div class="flex items-center justify-between gap-4 p-4 border-b border-base-200 bg-base-100">
+                <div class="min-w-0">
+                    <h3 class="font-bold text-lg" id="pdfViewerTitle">{{ _('Preview') }}</h3>
+                    <p class="text-xs text-base-content/60 truncate" id="pdfViewerFilename"></p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <a id="pdfViewerDownload"
+                        class="btn btn-ghost btn-sm btn-circle"
+                        target="_blank"
+                        rel="noreferrer"
+                        title="{{ _('Download') }}">
+                        <span class="mdi mdi-download text-xl"></span>
+                    </a>
+                    <form method="dialog">
+                        <button class="btn btn-ghost btn-sm btn-circle" aria-label="{{ _('close') }}">
+                            <span class="mdi mdi-close text-xl"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="flex-1 bg-base-200/30">
+                <iframe id="pdfViewerFrame" class="w-full h-full" src="about:blank" title="{{ _('Preview') }}"></iframe>
+            </div>
+        </div>
+        {{ dialogs.modal_backdrop() }}
+    </dialog>
+
+    <dialog id="imageViewerDialog" class="modal">
+        <div class="modal-box w-screen h-screen max-w-none p-0 overflow-hidden rounded-none flex flex-col">
+            <div class="flex items-center justify-between gap-4 p-4 border-b border-base-200 bg-base-100">
+                <div class="min-w-0">
+                    <h3 class="font-bold text-lg" id="imageViewerTitle">{{ _('Preview') }}</h3>
+                    <p class="text-xs text-base-content/60 truncate" id="imageViewerFilename"></p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <a id="imageViewerDownload"
+                        class="btn btn-ghost btn-sm btn-circle"
+                        target="_blank"
+                        rel="noreferrer"
+                        title="{{ _('Download') }}">
+                        <span class="mdi mdi-download text-xl"></span>
+                    </a>
+                    <form method="dialog">
+                        <button class="btn btn-ghost btn-sm btn-circle" aria-label="{{ _('close') }}">
+                            <span class="mdi mdi-close text-xl"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="flex-1 bg-black/90 p-3 sm:p-4">
+                <img id="imageViewerImage"
+                    class="w-full h-full object-contain"
+                    src="about:blank"
+                    alt="">
+            </div>
+        </div>
+        {{ dialogs.modal_backdrop() }}
+    </dialog>
+
     <script>
         window.confirmAction = (title, message, onConfirm, onCancel = null, options = {}) => {
             const dialog = document.getElementById('confirmationDialog');
@@ -800,6 +861,80 @@
 
             dialog.showModal();
         };
+
+        window.openPdfViewer = (url, filename) => {
+            const dialog = document.getElementById('pdfViewerDialog');
+            const frame = document.getElementById('pdfViewerFrame');
+            const download = document.getElementById('pdfViewerDownload');
+            const nameEl = document.getElementById('pdfViewerFilename');
+
+            if (!dialog || !frame || !download || !nameEl || !url) return;
+
+            nameEl.textContent = filename || '';
+            download.href = url;
+            frame.src = url;
+            dialog.showModal();
+        };
+
+        window.openImageViewer = (url, filename) => {
+            const dialog = document.getElementById('imageViewerDialog');
+            const image = document.getElementById('imageViewerImage');
+            const download = document.getElementById('imageViewerDownload');
+            const nameEl = document.getElementById('imageViewerFilename');
+
+            if (!dialog || !image || !download || !nameEl || !url) return;
+
+            nameEl.textContent = filename || '';
+            download.href = url;
+            image.src = url;
+            image.alt = filename || '';
+            dialog.showModal();
+        };
+
+        document.addEventListener('click', (event) => {
+            const row = event.target.closest('[data-action="open-attachment"]');
+            if (!row) return;
+
+            // Let explicit interactive controls do their thing (e.g. Download button).
+            if (event.target.closest('a,button,input,select,textarea')) return;
+
+            event.preventDefault();
+            const kind = row.dataset.attachmentKind;
+            const url = row.dataset.attachmentUrl;
+            const name = row.dataset.attachmentName;
+
+            if (kind === 'pdf') window.openPdfViewer(url, name);
+            else if (kind === 'image') window.openImageViewer(url, name);
+            else if (url) window.open(url, '_blank', 'noopener,noreferrer');
+        });
+
+        document.addEventListener('keydown', (event) => {
+            const row = document.activeElement?.closest?.('[data-action="open-attachment"]');
+            if (!row) return;
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+
+            const kind = row.dataset.attachmentKind;
+            const url = row.dataset.attachmentUrl;
+            const name = row.dataset.attachmentName;
+
+            if (kind === 'pdf') window.openPdfViewer(url, name);
+            else if (kind === 'image') window.openImageViewer(url, name);
+            else if (url) window.open(url, '_blank', 'noopener,noreferrer');
+        });
+
+        document.getElementById('pdfViewerDialog')?.addEventListener('close', () => {
+            const frame = document.getElementById('pdfViewerFrame');
+            if (frame) frame.src = 'about:blank';
+        });
+
+        document.getElementById('imageViewerDialog')?.addEventListener('close', () => {
+            const image = document.getElementById('imageViewerImage');
+            if (image) {
+                image.src = 'about:blank';
+                image.alt = '';
+            }
+        });
 
         const toastVariants = {
             success: "bg-emerald-500/90 text-white border border-emerald-200/30 shadow-[0_14px_30px_-18px_rgba(16,185,129,0.8)]",
