@@ -227,22 +227,29 @@
                     </h2>
                     <span class="text-xs font-medium text-base-content/50 mr-8">{{ project.attachments|length }} {{
                         _('files') }}</span>
-                </div>
-                <div class="collapse-content p-0">
-                    <div class="p-4 space-y-2">
-                        {% for attachment in project.attachments %}
-                        <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:bg-base-200/50 transition-colors group cursor-pointer"
-                            role="button"
-                            tabindex="0"
-                            data-action="open-attachment"
-                            data-attachment-kind="{% if attachment.content_type == 'application/pdf' %}pdf{% elif attachment.content_type.startswith('image/') %}image{% else %}other{% endif %}"
-                            data-attachment-url="{{ attachment.url }}"
-                            data-attachment-name="{{ attachment.original_filename }}">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
-                                    {% if attachment.thumbnail_url %}
-                                    <img src="{{ attachment.thumbnail_url }}" alt="" class="w-full h-full object-cover" loading="lazy">
-                                    {% else %}
+	                </div>
+	                <div class="collapse-content p-0">
+	                    <div class="p-4 space-y-2 pswp-gallery" data-pswp-gallery>
+	                        {% set ns = namespace(image_index=0) %}
+	                        {% for attachment in project.attachments %}
+	                        {% set is_image_attachment = attachment.content_type.startswith('image/') %}
+	                        {% if is_image_attachment %}
+	                        {% set open_index = ns.image_index %}
+	                        {% set ns.image_index = ns.image_index + 1 %}
+	                        {% endif %}
+	                        <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:bg-base-200/50 transition-colors group cursor-pointer"
+	                            role="button"
+	                            tabindex="0"
+	                            data-action="open-attachment"
+	                            data-attachment-kind="{% if attachment.content_type == 'application/pdf' %}pdf{% elif attachment.content_type.startswith('image/') %}image{% else %}other{% endif %}"
+	                            data-attachment-url="{{ attachment.url }}"
+	                            data-attachment-name="{{ attachment.original_filename }}"
+	                            {% if is_image_attachment %}data-pswp-open-index="{{ open_index }}"{% endif %}>
+	                            <div class="flex items-center gap-3 min-w-0">
+	                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+	                                    {% if attachment.thumbnail_url %}
+	                                    <img src="{{ attachment.thumbnail_url }}" alt="" class="w-full h-full object-cover" loading="lazy">
+	                                    {% else %}
                                     {% if attachment.content_type == 'application/pdf' %}
                                     <span class="mdi mdi-file-pdf-outline text-2xl"></span>
                                     {% elif attachment.content_type.startswith('image/') %}
@@ -261,16 +268,22 @@
                                     </p>
                                 </div>
                             </div>
-                            <a href="{{ attachment.url }}" target="_blank"
-                                class="btn btn-ghost btn-sm btn-circle text-primary"
-                                title="{{ _('Download') }}">
-                                <span class="mdi mdi-download text-xl"></span>
-                            </a>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
+	                            <a href="{{ attachment.url }}" target="_blank"
+	                                class="btn btn-ghost btn-sm btn-circle text-primary"
+	                                title="{{ _('Download') }}">
+	                                <span class="mdi mdi-download text-xl"></span>
+	                            </a>
+	                            {% if is_image_attachment %}
+	                            <a href="{{ attachment.url }}" class="hidden" aria-hidden="true" tabindex="-1"
+	                                data-pswp-width="{{ attachment.width or 1200 }}"
+	                                data-pswp-height="{{ attachment.height or 1200 }}"
+	                                data-pswp-caption="{{ attachment.original_filename }}"></a>
+	                            {% endif %}
+	                        </div>
+	                        {% endfor %}
+	                    </div>
+	                </div>
+	            </div>
             {% endif %}
 
             <!-- Mobile: Details + Notes before steps -->

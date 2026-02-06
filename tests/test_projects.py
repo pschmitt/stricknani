@@ -247,16 +247,7 @@ async def test_upload_pdf_attachment_renders_preview_button(
 ) -> None:
     client, session_factory, _user_id, project_id, _step_id = test_client
 
-    pdf_bytes = (
-        b"%PDF-1.4\n"
-        b"%fake\n"
-        b"1 0 obj\n"
-        b"<<>>\n"
-        b"endobj\n"
-        b"trailer\n"
-        b"<<>>\n"
-        b"%%EOF\n"
-    )
+    pdf_bytes = b"%PDF-1.4\n%fake\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n"
     pdf_stream = BytesIO(pdf_bytes)
     response = await client.post(
         f"/projects/{project_id}/attachments",

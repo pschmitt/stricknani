@@ -1937,6 +1937,7 @@ async def get_project(
     project_attachments = []
     for att in project.attachments:
         thumbnail_url = None
+        width, height = None, None
         if (
             att.content_type.startswith("image/")
             or att.content_type == "application/pdf"
@@ -1952,6 +1953,8 @@ async def get_project(
                 thumbnail_url = get_thumbnail_url(
                     att.filename, project.id, subdir="projects"
                 )
+        if att.content_type.startswith("image/"):
+            width, height = _get_image_dimensions(att.filename, project.id)
         project_attachments.append(
             {
                 "id": att.id,
@@ -1961,6 +1964,8 @@ async def get_project(
                 "size_bytes": att.size_bytes,
                 "url": get_file_url(att.filename, project.id, subdir="projects"),
                 "thumbnail_url": thumbnail_url,
+                "width": width,
+                "height": height,
                 "created_at": att.created_at.isoformat(),
             }
         )
@@ -2185,6 +2190,7 @@ async def edit_project_form(
     project_attachments = []
     for att in project.attachments:
         thumbnail_url = None
+        width, height = None, None
         if (
             att.content_type.startswith("image/")
             or att.content_type == "application/pdf"
@@ -2200,6 +2206,8 @@ async def edit_project_form(
                 thumbnail_url = get_thumbnail_url(
                     att.filename, project.id, subdir="projects"
                 )
+        if att.content_type.startswith("image/"):
+            width, height = _get_image_dimensions(att.filename, project.id)
         project_attachments.append(
             {
                 "id": att.id,
@@ -2209,6 +2217,8 @@ async def edit_project_form(
                 "size_bytes": att.size_bytes,
                 "url": get_file_url(att.filename, project.id, subdir="projects"),
                 "thumbnail_url": thumbnail_url,
+                "width": width,
+                "height": height,
                 "created_at": att.created_at.isoformat(),
             }
         )
@@ -3084,6 +3094,7 @@ async def upload_attachment(
 
     thumbnail_url: str | None = None
     content_type = file.content_type or "application/octet-stream"
+    width, height = None, None
     thumb_path = (
         config.MEDIA_ROOT
         / "thumbnails"
@@ -3091,8 +3102,9 @@ async def upload_attachment(
         / str(project_id)
         / f"thumb_{Path(filename).stem}.jpg"
     )
+    source_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
     if content_type.startswith("image/"):
-        source_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
+        width, height = _get_image_dimensions(filename, project_id)
         try:
             await create_thumbnail(source_path, project_id, subdir="projects")
             if thumb_path.exists():
@@ -3102,7 +3114,6 @@ async def upload_attachment(
         except Exception:
             logger.info("Could not create attachment thumbnail for %s", filename)
     elif content_type == "application/pdf":
-        source_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
         try:
             await asyncio.to_thread(
                 create_pdf_thumbnail, source_path, project_id, "projects"
@@ -3132,8 +3143,10 @@ async def upload_attachment(
             "original_filename": attachment.original_filename,
             "content_type": attachment.content_type,
             "size_bytes": attachment.size_bytes,
-            "url": get_file_url(attachment.filename, project_id),
+            "url": get_file_url(attachment.filename, project_id, subdir="projects"),
             "thumbnail_url": thumbnail_url,
+            "width": width,
+            "height": height,
         }
     )
 

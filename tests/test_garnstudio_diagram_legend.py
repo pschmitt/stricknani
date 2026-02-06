@@ -28,4 +28,3 @@ async def test_garnstudio_diagram_legend_is_attached_to_diagram_steps() -> None:
     )
     assert "drops/symbols/" in descriptions
     assert "Luftmasche" in descriptions
-

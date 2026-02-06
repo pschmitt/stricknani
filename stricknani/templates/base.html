@@ -908,37 +908,50 @@
             dialog.showModal();
         };
 
-        document.addEventListener('click', (event) => {
-            const row = event.target.closest('[data-action="open-attachment"]');
-            if (!row) return;
+	        document.addEventListener('click', (event) => {
+	            const row = event.target.closest('[data-action="open-attachment"]');
+	            if (!row) return;
 
-            // Let explicit interactive controls do their thing (e.g. Download button).
-            if (event.target.closest('a,button,input,select,textarea')) return;
+	            // Let explicit interactive controls do their thing (e.g. Download button).
+	            if (event.target.closest('a,button,input,select,textarea')) return;
 
-            event.preventDefault();
-            const kind = row.dataset.attachmentKind;
-            const url = row.dataset.attachmentUrl;
-            const name = row.dataset.attachmentName;
+	            event.preventDefault();
+	            const kind = row.dataset.attachmentKind;
+	            const url = row.dataset.attachmentUrl;
+	            const name = row.dataset.attachmentName;
 
-            if (kind === 'pdf') window.openPdfViewer(url, name);
-            else if (kind === 'image') window.openImageViewer(url, name);
-            else if (url) window.open(url, '_blank', 'noopener,noreferrer');
-        });
+	            if (kind === 'pdf') window.openPdfViewer(url, name);
+	            else if (kind === 'image') {
+	                // Prefer PhotoSwipe (same viewer as regular galleries) when available.
+	                if (row.hasAttribute('data-pswp-open-index') && window.openPhotoSwipeIndex) {
+	                    window.openPhotoSwipeIndex(row);
+	                } else {
+	                    window.openImageViewer(url, name);
+	                }
+	            }
+	            else if (url) window.open(url, '_blank', 'noopener,noreferrer');
+	        });
 
-        document.addEventListener('keydown', (event) => {
-            const row = document.activeElement?.closest?.('[data-action="open-attachment"]');
-            if (!row) return;
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            event.preventDefault();
+	        document.addEventListener('keydown', (event) => {
+	            const row = document.activeElement?.closest?.('[data-action="open-attachment"]');
+	            if (!row) return;
+	            if (event.key !== 'Enter' && event.key !== ' ') return;
+	            event.preventDefault();
 
-            const kind = row.dataset.attachmentKind;
-            const url = row.dataset.attachmentUrl;
-            const name = row.dataset.attachmentName;
+	            const kind = row.dataset.attachmentKind;
+	            const url = row.dataset.attachmentUrl;
+	            const name = row.dataset.attachmentName;
 
-            if (kind === 'pdf') window.openPdfViewer(url, name);
-            else if (kind === 'image') window.openImageViewer(url, name);
-            else if (url) window.open(url, '_blank', 'noopener,noreferrer');
-        });
+	            if (kind === 'pdf') window.openPdfViewer(url, name);
+	            else if (kind === 'image') {
+	                if (row.hasAttribute('data-pswp-open-index') && window.openPhotoSwipeIndex) {
+	                    window.openPhotoSwipeIndex(row);
+	                } else {
+	                    window.openImageViewer(url, name);
+	                }
+	            }
+	            else if (url) window.open(url, '_blank', 'noopener,noreferrer');
+	        });
 
         document.getElementById('pdfViewerDialog')?.addEventListener('close', () => {
             const frame = document.getElementById('pdfViewerFrame');

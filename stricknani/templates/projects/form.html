@@ -237,23 +237,30 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         {{ _('Attachments') }}
                     </h3>
                 </div>
-                <div class="collapse-content p-3 sm:p-6 pt-0">
-                    <div class="pt-4">
-                        <div id="attachmentsContainer" class="space-y-2 mb-4">
-                            {% if project and project.attachments %}
-                            {% for attachment in project.attachments %}
-                            <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 bg-base-200/30 group cursor-pointer"
-                                role="button"
-                                tabindex="0"
-                                data-action="open-attachment"
-                                data-attachment-kind="{% if attachment.content_type == 'application/pdf' %}pdf{% elif attachment.content_type.startswith('image/') %}image{% else %}other{% endif %}"
-                                data-attachment-url="{{ attachment.url }}"
-                                data-attachment-name="{{ attachment.original_filename }}"
-                                data-attachment-id="{{ attachment.id }}">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
-                                        {% if attachment.thumbnail_url %}
-                                        <img src="{{ attachment.thumbnail_url }}" alt="" class="w-full h-full object-cover" loading="lazy">
+	                <div class="collapse-content p-3 sm:p-6 pt-0">
+	                    <div class="pt-4">
+	                        <div id="attachmentsContainer" class="space-y-2 mb-4 pswp-gallery" data-pswp-gallery>
+	                            {% if project and project.attachments %}
+	                            {% set ns = namespace(image_index=0) %}
+	                            {% for attachment in project.attachments %}
+	                            {% set is_image_attachment = attachment.content_type.startswith('image/') %}
+	                            {% if is_image_attachment %}
+	                            {% set open_index = ns.image_index %}
+	                            {% set ns.image_index = ns.image_index + 1 %}
+	                            {% endif %}
+	                            <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 bg-base-200/30 group cursor-pointer"
+	                                role="button"
+	                                tabindex="0"
+	                                data-action="open-attachment"
+	                                data-attachment-kind="{% if attachment.content_type == 'application/pdf' %}pdf{% elif attachment.content_type.startswith('image/') %}image{% else %}other{% endif %}"
+	                                data-attachment-url="{{ attachment.url }}"
+	                                data-attachment-name="{{ attachment.original_filename }}"
+	                                data-attachment-id="{{ attachment.id }}"
+	                                {% if is_image_attachment %}data-pswp-open-index="{{ open_index }}"{% endif %}>
+	                                <div class="flex items-center gap-3 min-w-0">
+	                                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+	                                        {% if attachment.thumbnail_url %}
+	                                        <img src="{{ attachment.thumbnail_url }}" alt="" class="w-full h-full object-cover" loading="lazy">
                                         {% else %}
                                         {% if attachment.content_type == 'application/pdf' %}
                                         <span class="mdi mdi-file-pdf-outline text-2xl"></span>
@@ -279,16 +286,22 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                                         title="{{ _('Download') }}">
                                         <span class="mdi mdi-download text-xl"></span>
                                     </a>
-                                    <button type="button" onclick="deleteAttachment({{ attachment.id }})"
-                                        class="btn btn-ghost btn-sm btn-circle text-error"
-                                        title="{{ _('Delete') }}">
-                                        <span class="mdi mdi-delete-outline text-xl"></span>
-                                    </button>
-                                </div>
-                            </div>
-                            {% endfor %}
-                            {% endif %}
-                        </div>
+	                                    <button type="button" onclick="deleteAttachment({{ attachment.id }})"
+	                                        class="btn btn-ghost btn-sm btn-circle text-error"
+	                                        title="{{ _('Delete') }}">
+	                                        <span class="mdi mdi-delete-outline text-xl"></span>
+	                                    </button>
+	                                </div>
+	                                {% if is_image_attachment %}
+	                                <a href="{{ attachment.url }}" class="hidden" aria-hidden="true" tabindex="-1"
+	                                    data-pswp-width="{{ attachment.width or 1200 }}"
+	                                    data-pswp-height="{{ attachment.height or 1200 }}"
+	                                    data-pswp-caption="{{ attachment.original_filename }}"></a>
+	                                {% endif %}
+	                            </div>
+	                            {% endfor %}
+	                            {% endif %}
+	                        </div>
 
                         {{ image_upload.upload_dropzone(
                             input_id='attachmentInput',
@@ -1923,9 +1936,9 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         }
     }
 
-    function addAttachmentToUI(data) {
-        const container = document.getElementById('attachmentsContainer');
-        if (!container) return;
+	    function addAttachmentToUI(data) {
+	        const container = document.getElementById('attachmentsContainer');
+	        if (!container) return;
 
         const escapeHtml = (value) => {
             const map = {
@@ -1938,37 +1951,43 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
             return String(value ?? '').replace(/[&<>"']/g, (m) => map[m]);
         };
 
-        const sizeMb = (data.size_bytes / 1024 / 1024).toFixed(2);
-        let icon = 'mdi-file-outline';
-        if (data.content_type === 'application/pdf') icon = 'mdi-file-pdf-outline';
-        else if (data.content_type.startsWith('image/')) icon = 'mdi-file-image-outline';
+	        const sizeMb = (data.size_bytes / 1024 / 1024).toFixed(2);
+	        let icon = 'mdi-file-outline';
+	        if (data.content_type === 'application/pdf') icon = 'mdi-file-pdf-outline';
+	        else if (data.content_type.startsWith('image/')) icon = 'mdi-file-image-outline';
 
-        const originalName = escapeHtml(data.original_filename);
-        const url = escapeHtml(data.url);
-        const thumbUrl = data.thumbnail_url ? escapeHtml(data.thumbnail_url) : '';
-        const kind = data.content_type === 'application/pdf' ? 'pdf'
-            : data.content_type.startsWith('image/') ? 'image'
-                : 'other';
+	        const originalName = escapeHtml(data.original_filename);
+	        const url = escapeHtml(data.url);
+	        const thumbUrl = data.thumbnail_url ? escapeHtml(data.thumbnail_url) : '';
+	        const kind = data.content_type === 'application/pdf' ? 'pdf'
+	            : data.content_type.startsWith('image/') ? 'image'
+	                : 'other';
+	        const openIndex = kind === 'image'
+	            ? container.querySelectorAll('a[data-pswp-width]').length
+	            : null;
 
-        const thumbOrIcon = thumbUrl ? `
-                        <img src="${thumbUrl}" alt="" class="w-full h-full object-cover" loading="lazy">
-        ` : `
-                        <span class="mdi ${icon} text-2xl"></span>
-        `;
+	        const thumbOrIcon = thumbUrl ? `
+	                        <img src="${thumbUrl}" alt="" class="w-full h-full object-cover" loading="lazy">
+	        ` : `
+	                        <span class="mdi ${icon} text-2xl"></span>
+	        `;
 
-        const html = `
-            <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 bg-base-200/30 group cursor-pointer"
-                role="button"
-                tabindex="0"
-                data-action="open-attachment"
-                data-attachment-kind="${kind}"
-                data-attachment-url="${url}"
-                data-attachment-name="${originalName}"
-                data-attachment-id="${data.id}">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
-                        ${thumbOrIcon}
-                    </div>
+	        const pswpWidth = typeof data.width === 'number' ? data.width : 1200;
+	        const pswpHeight = typeof data.height === 'number' ? data.height : 1200;
+	        const html = `
+	            <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 bg-base-200/30 group cursor-pointer"
+	                role="button"
+	                tabindex="0"
+	                data-action="open-attachment"
+	                data-attachment-kind="${kind}"
+	                data-attachment-url="${url}"
+	                data-attachment-name="${originalName}"
+	                data-attachment-id="${data.id}"
+	                ${kind === 'image' ? `data-pswp-open-index="${openIndex}"` : ''}>
+	                <div class="flex items-center gap-3 min-w-0">
+	                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+	                        ${thumbOrIcon}
+	                    </div>
                     <div class="min-w-0">
                         <p class="font-medium text-sm truncate" title="${originalName}">
                             ${originalName}
@@ -1984,16 +2003,25 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
                         title="{{ _('Download') }}">
                         <span class="mdi mdi-download text-xl"></span>
                     </a>
-                    <button type="button" onclick="deleteAttachment(${data.id})"
-                        class="btn btn-ghost btn-sm btn-circle text-error"
-                        title="{{ _('Delete') }}">
-                        <span class="mdi mdi-delete-outline text-xl"></span>
-                    </button>
-                </div>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', html);
-    }
+	                    <button type="button" onclick="deleteAttachment(${data.id})"
+	                        class="btn btn-ghost btn-sm btn-circle text-error"
+	                        title="{{ _('Delete') }}">
+	                        <span class="mdi mdi-delete-outline text-xl"></span>
+	                    </button>
+	                </div>
+	                ${kind === 'image' ? `
+	                    <a href="${url}" class="hidden" aria-hidden="true" tabindex="-1"
+	                        data-pswp-width="${pswpWidth}"
+	                        data-pswp-height="${pswpHeight}"
+	                        data-pswp-caption="${originalName}"></a>
+	                ` : ''}
+	            </div>
+	        `;
+	        container.insertAdjacentHTML('beforeend', html);
+	        if (kind === 'image') {
+	            window.refreshPhotoSwipeGallery?.(container);
+	        }
+	    }
 
     async function deleteAttachment(id) {
         window.confirmAction(
