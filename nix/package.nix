@@ -1,6 +1,5 @@
 {
   lib,
-  poppler_utils,
   python3,
   fastapi-csrf-protect,
 }:
@@ -50,7 +49,7 @@ python.pkgs.buildPythonApplication {
     hatchling
   ];
 
-  propagatedBuildInputs = pythonDeps ++ [ poppler_utils ];
+  propagatedBuildInputs = pythonDeps;
 
   meta = {
     description = "A self-hosted web app for managing knitting projects";
