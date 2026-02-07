@@ -19,6 +19,7 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Query,
     Request,
     Response,
     UploadFile,
@@ -2139,7 +2140,16 @@ async def get_project(
             }
             for yarn in project.yarns
         ],
-        "exclusive_yarns": [{"id": y.id, "name": y.name} for y in exclusive_yarns],
+        "exclusive_yarns": [
+            {
+                "id": yarn.id,
+                "name": yarn.name,
+                "brand": yarn.brand,
+                "colorway": yarn.colorway,
+                **_resolve_yarn_preview(yarn),
+            }
+            for yarn in exclusive_yarns
+        ],
     }
 
     return await render_template(
@@ -2172,6 +2182,7 @@ async def edit_project_form(
             selectinload(Project.attachments),
             selectinload(Project.steps).selectinload(Step.images),
             selectinload(Project.yarns).selectinload(YarnModel.projects),
+            selectinload(Project.yarns).selectinload(YarnModel.photos),
         )
     )
     project = result.scalar_one_or_none()
@@ -2313,7 +2324,16 @@ async def edit_project_form(
         "steps": steps_data,
         "tags": project.tag_list(),
         "yarn_ids": [y.id for y in project.yarns],
-        "exclusive_yarns": [{"id": y.id, "name": y.name} for y in exclusive_yarns],
+        "exclusive_yarns": [
+            {
+                "id": yarn.id,
+                "name": yarn.name,
+                "brand": yarn.brand,
+                "colorway": yarn.colorway,
+                **_resolve_yarn_preview(yarn),
+            }
+            for yarn in exclusive_yarns
+        ],
     }
 
     categories = await _get_user_categories(db, current_user.id)
@@ -2670,6 +2690,7 @@ async def delete_project(
     project_id: int,
     request: Request,
     delete_yarns: bool = False,
+    delete_yarn_ids: list[int] | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> Response:
@@ -2696,9 +2717,19 @@ async def delete_project(
         )
 
     # Handle exclusive yarn deletion
-    if delete_yarns:
+    exclusive_yarns_to_delete: list[YarnModel] = []
+    if delete_yarn_ids:
         exclusive_yarns = await _get_exclusive_yarns(db, project)
-        for yarn in exclusive_yarns:
+        exclusive_by_id = {yarn.id: yarn for yarn in exclusive_yarns}
+        for yarn_id in delete_yarn_ids:
+            yarn = exclusive_by_id.get(yarn_id)
+            if yarn:
+                exclusive_yarns_to_delete.append(yarn)
+    elif delete_yarns:
+        exclusive_yarns_to_delete = await _get_exclusive_yarns(db, project)
+
+    if exclusive_yarns_to_delete:
+        for yarn in exclusive_yarns_to_delete:
             # Delete yarn media if any
             yarn_media_dir = config.MEDIA_ROOT / "yarns" / str(yarn.id)
             yarn_thumb_dir = config.MEDIA_ROOT / "thumbnails" / "yarns" / str(yarn.id)

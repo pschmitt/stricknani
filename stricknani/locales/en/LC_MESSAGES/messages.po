@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-07 11:15+0100\n"
+"POT-Creation-Date: 2026-02-07 12:05+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -41,8 +41,10 @@ msgstr ""
 #: stricknani/templates/admin/users.html:146 stricknani/templates/base.html:457
 #: stricknani/templates/base.html:746 stricknani/templates/base.html:833
 #: stricknani/templates/projects/_import_dialog.html:49
-#: stricknani/templates/projects/detail.html:846
-#: stricknani/templates/projects/form.html:3219
+#: stricknani/templates/projects/detail.html:863
+#: stricknani/templates/projects/detail.html:884
+#: stricknani/templates/projects/form.html:3236
+#: stricknani/templates/projects/form.html:3252
 #: stricknani/templates/shared/form_base.html:19
 #: stricknani/templates/yarn/_import_dialog.html:39
 #: stricknani/templates/yarn/detail.html:472
@@ -964,7 +966,7 @@ msgstr ""
 #: stricknani/templates/projects/detail.html:48
 #: stricknani/templates/projects/form.html:291
 #: stricknani/templates/projects/form.html:2008
-#: stricknani/templates/projects/form.html:3221
+#: stricknani/templates/projects/form.html:3238
 #: stricknani/templates/yarn/detail.html:42
 #, fuzzy
 msgid "Delete"
@@ -1130,6 +1132,8 @@ msgid "Yarns Used"
 msgstr "Yarn deleted"
 
 #: stricknani/templates/projects/detail.html:501
+#: stricknani/templates/projects/detail.html:845
+#: stricknani/templates/projects/form.html:3219
 msgid "Unknown Brand"
 msgstr ""
 
@@ -1176,7 +1180,7 @@ msgid "Step Photos"
 msgstr ""
 
 #: stricknani/templates/projects/detail.html:815
-#: stricknani/templates/projects/detail.html:848
+#: stricknani/templates/projects/detail.html:865
 #: stricknani/templates/projects/form.html:735
 #: stricknani/templates/projects/form.html:3190
 #, fuzzy
@@ -1192,13 +1196,43 @@ msgstr ""
 msgid "Some yarns are only used in this project:"
 msgstr ""
 
-#: stricknani/templates/projects/detail.html:837
-#: stricknani/templates/projects/form.html:3211
-#, fuzzy
-msgid "Also delete these yarns"
-msgstr "Delete Yarn"
+#: stricknani/templates/projects/detail.html:830
+#: stricknani/templates/projects/form.html:3204
+msgid "Select the yarns you want to delete:"
+msgstr ""
 
-#: stricknani/templates/projects/detail.html:968
+#: stricknani/templates/projects/detail.html:854
+#: stricknani/templates/projects/form.html:3228
+msgid "Select all yarns"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:874
+#: stricknani/templates/projects/form.html:3246
+msgid "Session expired"
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:875
+#: stricknani/templates/projects/detail.html:1023
+#: stricknani/templates/projects/form.html:3248
+#: stricknani/templates/projects/form.html:3286
+msgid "Your session has expired. Reload the page to continue."
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:880
+#: stricknani/templates/projects/form.html:3249
+msgid "This can happen after restarting the server."
+msgstr ""
+
+#: stricknani/templates/projects/detail.html:888
+#: stricknani/templates/projects/form.html:3256
+#, fuzzy
+msgid "Reload page"
+msgstr "Open image"
+
+#: stricknani/templates/projects/detail.html:1032
+#: stricknani/templates/projects/detail.html:1051
+#: stricknani/templates/projects/form.html:3291
+#: stricknani/templates/projects/form.html:3293
 #, fuzzy
 msgid "Failed to delete project"
 msgstr "Failed to initialize project"
@@ -2715,3 +2749,7 @@ msgstr "Open image"
 
 #~ msgid "Used Needles"
 #~ msgstr ""
+
+#~ msgid "Also delete these yarns"
+#~ msgstr "Delete Yarn"
+

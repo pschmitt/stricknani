@@ -227,29 +227,29 @@
                     </h2>
                     <span class="text-xs font-medium text-base-content/50 mr-8">{{ project.attachments|length }} {{
                         _('files') }}</span>
-	                </div>
-	                <div class="collapse-content p-0">
-	                    <div class="p-4 space-y-2 pswp-gallery" data-pswp-gallery>
-	                        {% set ns = namespace(image_index=0) %}
-	                        {% for attachment in project.attachments %}
-	                        {% set is_image_attachment = attachment.content_type.startswith('image/') %}
-	                        {% if is_image_attachment %}
-	                        {% set open_index = ns.image_index %}
-	                        {% set ns.image_index = ns.image_index + 1 %}
-	                        {% endif %}
-	                        <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:bg-base-200/50 transition-colors group cursor-pointer"
-	                            role="button"
-	                            tabindex="0"
-	                            data-action="open-attachment"
-	                            data-attachment-kind="{% if attachment.content_type == 'application/pdf' %}pdf{% elif attachment.content_type.startswith('image/') %}image{% else %}other{% endif %}"
-	                            data-attachment-url="{{ attachment.url }}"
-	                            data-attachment-name="{{ attachment.original_filename }}"
-	                            {% if is_image_attachment %}data-pswp-open-index="{{ open_index }}"{% endif %}>
-	                            <div class="flex items-center gap-3 min-w-0">
-	                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
-	                                    {% if attachment.thumbnail_url %}
-	                                    <img src="{{ attachment.thumbnail_url }}" alt="" class="w-full h-full object-cover" loading="lazy">
-	                                    {% else %}
+                    </div>
+                    <div class="collapse-content p-0">
+                        <div class="p-4 space-y-2 pswp-gallery" data-pswp-gallery>
+                            {% set ns = namespace(image_index=0) %}
+                            {% for attachment in project.attachments %}
+                            {% set is_image_attachment = attachment.content_type.startswith('image/') %}
+                            {% if is_image_attachment %}
+                            {% set open_index = ns.image_index %}
+                            {% set ns.image_index = ns.image_index + 1 %}
+                            {% endif %}
+                            <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 hover:bg-base-200/50 transition-colors group cursor-pointer"
+                                role="button"
+                                tabindex="0"
+                                data-action="open-attachment"
+                                data-attachment-kind="{% if attachment.content_type == 'application/pdf' %}pdf{% elif attachment.content_type.startswith('image/') %}image{% else %}other{% endif %}"
+                                data-attachment-url="{{ attachment.url }}"
+                                data-attachment-name="{{ attachment.original_filename }}"
+                                {% if is_image_attachment %}data-pswp-open-index="{{ open_index }}"{% endif %}>
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+                                        {% if attachment.thumbnail_url %}
+                                        <img src="{{ attachment.thumbnail_url }}" alt="" class="w-full h-full object-cover" loading="lazy">
+                                        {% else %}
                                     {% if attachment.content_type == 'application/pdf' %}
                                     <span class="mdi mdi-file-pdf-outline text-2xl"></span>
                                     {% elif attachment.content_type.startswith('image/') %}
@@ -268,22 +268,22 @@
                                     </p>
                                 </div>
                             </div>
-	                            <a href="{{ attachment.url }}" target="_blank"
-	                                class="btn btn-ghost btn-sm btn-circle text-primary"
-	                                title="{{ _('Download') }}">
-	                                <span class="mdi mdi-download text-xl"></span>
-	                            </a>
-	                            {% if is_image_attachment %}
-	                            <a href="{{ attachment.url }}" class="hidden" aria-hidden="true" tabindex="-1"
-	                                data-pswp-width="{{ attachment.width or 1200 }}"
-	                                data-pswp-height="{{ attachment.height or 1200 }}"
-	                                data-pswp-caption="{{ attachment.original_filename }}"></a>
-	                            {% endif %}
-	                        </div>
-	                        {% endfor %}
-	                    </div>
-	                </div>
-	            </div>
+                                <a href="{{ attachment.url }}" target="_blank"
+                                    class="btn btn-ghost btn-sm btn-circle text-primary"
+                                    title="{{ _('Download') }}">
+                                    <span class="mdi mdi-download text-xl"></span>
+                                </a>
+                                {% if is_image_attachment %}
+                                <a href="{{ attachment.url }}" class="hidden" aria-hidden="true" tabindex="-1"
+                                    data-pswp-width="{{ attachment.width or 1200 }}"
+                                    data-pswp-height="{{ attachment.height or 1200 }}"
+                                    data-pswp-caption="{{ attachment.original_filename }}"></a>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             {% endif %}
 
             <!-- Mobile: Details + Notes before steps -->
@@ -821,31 +821,72 @@
         {{ _('Are you sure you want to delete') }} <strong class="text-base-content">{{ project.name }}</strong>?
     </p>
 
-    {% if project.exclusive_yarns %}
-    <div class="bg-warning/10 border-l-4 border-warning p-4 rounded-r-lg">
-        <div class="flex items-start gap-3">
-            <span class="mdi mdi-alert text-warning text-xl"></span>
-            <div class="space-y-2">
-                <p class="text-sm font-medium text-warning-content">{{ _('Some yarns are only used in this project:') }}</p>
-                <ul class="text-xs opacity-80 list-disc list-inside">
-                    {% for yarn in project.exclusive_yarns %}
-                    <li>{{ yarn.name }}</li>
-                    {% endfor %}
-                </ul>
-                <label class="label cursor-pointer justify-start gap-3 p-0 mt-2">
-                    <input type="checkbox" id="delete_exclusive_yarns" class="checkbox checkbox-warning checkbox-sm">
-                    <span class="label-text font-bold">{{ _('Also delete these yarns') }}</span>
-                </label>
+        {% if project.exclusive_yarns %}
+        <div class="bg-warning/10 border-l-4 border-warning p-4 rounded-r-lg">
+            <div class="flex items-start gap-3">
+                <span class="mdi mdi-alert text-warning text-xl"></span>
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-warning-content">{{ _('Some yarns are only used in this project:') }}</p>
+                    <p class="text-xs opacity-80">{{ _('Select the yarns you want to delete:') }}</p>
+                    <div class="space-y-2">
+                        {% for yarn in project.exclusive_yarns %}
+                        <label class="flex items-center gap-3 rounded-lg border border-warning/20 bg-base-100 px-2.5 py-2 text-sm transition hover:border-warning/40">
+                            <input type="checkbox" class="checkbox checkbox-warning checkbox-sm exclusive-yarn-checkbox" value="{{ yarn.id }}">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
+                                {% if yarn.preview_url %}
+                                <img src="{{ yarn.preview_url }}" alt="{{ yarn.preview_alt or yarn.name }}" class="h-full w-full object-cover">
+                                {% else %}
+                                <span class="mdi mdi-sheep text-base-content/40"></span>
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="truncate font-medium">{{ yarn.name }}</div>
+                                <div class="text-xs text-base-content/60 truncate">
+                                    {{ yarn.brand or _('Unknown Brand') }}
+                                    {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
+                                </div>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <label class="label cursor-pointer justify-start gap-3 p-0 mt-3">
+                        <input type="checkbox" id="select_all_exclusive_yarns" class="checkbox checkbox-warning checkbox-sm">
+                        <span class="label-text font-bold">{{ _('Select all yarns') }}</span>
+                    </label>
+                </div>
             </div>
         </div>
-    </div>
-    {% endif %}
+        {% endif %}
 
     <div class="flex justify-end gap-2">
         <form method="dialog">
             {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
         </form>
         {{ dialogs.dialog_danger(_('Delete Project'), attrs='onclick="deleteProject()"') }}
+    </div>
+</div>
+{% endcall %}
+
+{% call dialogs.modal('csrfErrorDialog', box_class='p-0 overflow-hidden') %}
+<div class="bg-error/10 p-6 flex items-center gap-4 text-error">
+    <span class="mdi mdi-shield-alert-outline text-4xl"></span>
+    <div>
+        <h3 class="font-bold text-lg">{{ _('Session expired') }}</h3>
+        <p class="text-sm opacity-90">{{ _('Your session has expired. Reload the page to continue.') }}</p>
+    </div>
+</div>
+<div class="p-6 space-y-6">
+    <p class="text-base-content/80">
+        {{ _('This can happen after restarting the server.') }}
+    </p>
+    <div class="flex justify-end gap-2">
+        <form method="dialog">
+            {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
+        </form>
+        <button type="button" class="btn btn-primary" onclick="window.location.reload()">
+            <span class="mdi mdi-refresh"></span>
+            {{ _('Reload page') }}
+        </button>
     </div>
 </div>
 {% endcall %}
@@ -881,15 +922,16 @@
         toggleSidebarExpansion(sidebarToggle);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initialize sidebar state
-        const sidebarToggle = document.getElementById('details-toggle-sidebar');
-        if (sidebarToggle) toggleSidebarExpansion(sidebarToggle);
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize sidebar state
+            const sidebarToggle = document.getElementById('details-toggle-sidebar');
+            if (sidebarToggle) toggleSidebarExpansion(sidebarToggle);
+            setupExclusiveYarnDeleteSelection();
 
-        function updateDetailImageVisibility() {
-            // Check stitch sample
-            const stitchSampleCard = document.getElementById('stitch-sample-card');
-            if (stitchSampleCard) {
+            function updateDetailImageVisibility() {
+                // Check stitch sample
+                const stitchSampleCard = document.getElementById('stitch-sample-card');
+                if (stitchSampleCard) {
                 const textSection = document.getElementById('stitch-sample-text');
                 const photoSection = document.getElementById('stitch-sample-photos');
                 if (textSection && photoSection) {
@@ -942,32 +984,106 @@
         updateDetailImageVisibility();
     });
 
-    function deleteProject() {
+    async function deleteProject() {
         const btn = document.querySelector('#deleteProjectDialog .btn-error');
+        if (!btn) {
+            return;
+        }
+
         btn.disabled = true;
         btn.classList.add('loading');
 
-        const deleteYarns = document.getElementById('delete_exclusive_yarns')?.checked || false;
         const url = new URL('/projects/{{ project.id }}', window.location.origin);
-        if (deleteYarns) {
-            url.searchParams.set('delete_yarns', 'true');
-        }
+        const yarnIds = Array.from(
+            document.querySelectorAll(
+                '#deleteProjectDialog .exclusive-yarn-checkbox:checked',
+            ),
+        ).map(el => el.value);
+        yarnIds.forEach(id => url.searchParams.append('delete_yarn_ids', id));
 
-        fetch(url, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': '{{ csrf_token }}'
-            }
-        }).then(response => {
+        try {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token }}',
+                },
+            });
+
             if (response.ok) {
                 window.location.href = '/projects?toast=project_deleted';
-            } else {
-                btn.disabled = false;
-                btn.classList.remove('loading');
-                alert("{{ _('Failed to delete project') }}");
+                return;
             }
-        });
+
+            btn.disabled = false;
+            btn.classList.remove('loading');
+
+            if (response.status === 401 || response.status === 403) {
+                window.showToast?.(
+                    '{{ _("Your session has expired. Reload the page to continue.") }}',
+                    'error',
+                );
+                if (typeof openDialog === 'function') {
+                    openDialog('csrfErrorDialog');
+                }
+                return;
+            }
+
+            let message = '{{ _("Failed to delete project") }}';
+            try {
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    const data = await response.json();
+                    if (typeof data?.detail === 'string' && data.detail.trim()) {
+                        message = data.detail;
+                    } else if (typeof data?.message === 'string' && data.message.trim()) {
+                        message = data.message;
+                    }
+                }
+            } catch (e) {
+                // Keep the fallback message.
+            }
+
+            window.showToast?.(message, 'error');
+        } catch (e) {
+            btn.disabled = false;
+            btn.classList.remove('loading');
+            window.showToast?.('{{ _("Failed to delete project") }}', 'error');
+        }
     }
-</script>
-{% endblock %}
+
+        function setupExclusiveYarnDeleteSelection() {
+            const dialog = document.getElementById('deleteProjectDialog');
+            if (!dialog) return;
+
+            const selectAll = dialog.querySelector('#select_all_exclusive_yarns');
+            const yarnCheckboxes = Array.from(dialog.querySelectorAll('.exclusive-yarn-checkbox'));
+            if (!selectAll || yarnCheckboxes.length === 0) return;
+
+            function updateSelectAllState() {
+                const checkedCount = yarnCheckboxes.filter(cb => cb.checked).length;
+                if (checkedCount === 0) {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = false;
+                } else if (checkedCount === yarnCheckboxes.length) {
+                    selectAll.checked = true;
+                    selectAll.indeterminate = false;
+                } else {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = true;
+                }
+            }
+
+            selectAll.addEventListener('change', () => {
+                yarnCheckboxes.forEach(cb => {
+                    cb.checked = selectAll.checked;
+                });
+                selectAll.indeterminate = false;
+            });
+
+            yarnCheckboxes.forEach(cb => {
+                cb.addEventListener('change', updateSelectAllState);
+            });
+        }
+    </script>
+    {% endblock %}

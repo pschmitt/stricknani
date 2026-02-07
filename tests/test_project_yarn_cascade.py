@@ -138,6 +138,53 @@ async def test_delete_project_cascade_yarns(test_client: "TestClientFixture") ->
 
 
 @pytest.mark.asyncio
+async def test_delete_project_deletes_selected_exclusive_yarns_only(
+    test_client: "TestClientFixture",
+) -> None:
+    client, session_factory, user_id, _, _ = test_client
+
+    from stricknani.models import Project, Yarn
+
+    async with session_factory() as db:
+        yarn_excl_1 = Yarn(name="Exclusive 1", owner_id=user_id)
+        yarn_excl_2 = Yarn(name="Exclusive 2", owner_id=user_id)
+        yarn_shared = Yarn(name="Shared", owner_id=user_id)
+        db.add_all([yarn_excl_1, yarn_excl_2, yarn_shared])
+        await db.commit()
+
+        project = Project(name="Delete Me (Selective)", owner_id=user_id)
+        project.yarns = [yarn_excl_1, yarn_excl_2, yarn_shared]
+        other_project = Project(name="Keep Me (Selective)", owner_id=user_id)
+        other_project.yarns = [yarn_shared]
+        db.add_all([project, other_project])
+        await db.commit()
+
+        p_id = project.id
+        excl_1_id = yarn_excl_1.id
+        excl_2_id = yarn_excl_2.id
+        shared_id = yarn_shared.id
+
+    # Delete project, but only delete one exclusive yarn (and attempt to delete shared).
+    response = await client.delete(
+        f"/projects/{p_id}?delete_yarn_ids={excl_1_id}&delete_yarn_ids={shared_id}"
+    )
+    assert response.status_code == 303
+
+    async with session_factory() as db:
+        res = await db.execute(select(Project).where(Project.id == p_id))
+        assert res.scalar_one_or_none() is None
+
+        res = await db.execute(select(Yarn).where(Yarn.id == excl_1_id))
+        assert res.scalar_one_or_none() is None
+
+        res = await db.execute(select(Yarn).where(Yarn.id == excl_2_id))
+        assert res.scalar_one_or_none() is not None
+
+        res = await db.execute(select(Yarn).where(Yarn.id == shared_id))
+        assert res.scalar_one_or_none() is not None
+
+
+@pytest.mark.asyncio
 async def test_delete_project_htmx_status(test_client: "TestClientFixture") -> None:
     """Test that HTMX delete returns 200."""
     client, _, user_id, _, _ = test_client

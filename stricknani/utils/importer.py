@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qs, urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -251,26 +251,43 @@ class PatternImporter:
         if self.is_garnstudio and yarn_text:
             # Collect yarn links for Garnstudio
             yarn_links = self._extract_garnstudio_yarn_links(soup)
-            # If multiple yarns, split and parse each
-            yarn_lines = yarn_text.split("\n")
-            yarn_details = []
-            for line in yarn_lines:
-                if not line.strip():
-                    continue
-                detail = self._parse_garnstudio_yarn_string(line)
-                match_key = self._match_garnstudio_yarn_link_name(line, yarn_links)
-                name = detail.get("name")
-                if match_key and match_key in yarn_links:
-                    info = yarn_links[match_key]
-                    detail["name"] = info.get("name") or name
-                    detail["link"] = info.get("link")
-                    detail["image_url"] = info.get("image_url")
-                elif name and name.lower() in yarn_links:
-                    info = yarn_links[name.lower()]
-                    detail["name"] = info.get("name") or name
-                    detail["link"] = info.get("link")
-                    detail["image_url"] = info.get("image_url")
-                yarn_details.append(detail)
+            if yarn_links:
+                # Prefer links over text splitting. Garnstudio patterns often contain
+                # "Oder:" alternative yarns and other notions in the material block,
+                # and we do not want to auto-create a bunch of yarn entries.
+                yarn_details = []
+                for info in yarn_links.values():
+                    yarn_details.append(
+                        {
+                            "name": info.get("name"),
+                            "brand": "Garnstudio",
+                            "colorway": None,
+                            "weight": None,
+                            "link": info.get("link"),
+                            "image_url": info.get("image_url"),
+                        }
+                    )
+            else:
+                # If multiple yarns, split and parse each
+                yarn_lines = yarn_text.split("\n")
+                yarn_details = []
+                for line in yarn_lines:
+                    if not line.strip():
+                        continue
+                    detail = self._parse_garnstudio_yarn_string(line)
+                    match_key = self._match_garnstudio_yarn_link_name(line, yarn_links)
+                    name = detail.get("name")
+                    if match_key and match_key in yarn_links:
+                        info = yarn_links[match_key]
+                        detail["name"] = info.get("name") or name
+                        detail["link"] = info.get("link")
+                        detail["image_url"] = info.get("image_url")
+                    elif name and name.lower() in yarn_links:
+                        info = yarn_links[name.lower()]
+                        detail["name"] = info.get("name") or name
+                        detail["link"] = info.get("link")
+                        detail["image_url"] = info.get("image_url")
+                    yarn_details.append(detail)
 
         # Pre-clean Garnstudio soup to remove UI noise globally
         if self.is_garnstudio:
@@ -513,6 +530,13 @@ class PatternImporter:
             if val:
                 return val
 
+            # Some Garnstudio patterns list needles inside the "Material" block without
+            # a dedicated "NADELN" heading. Prefer parsing from there over generic
+            # label matching, which can pick up navigation/category noise.
+            material_needles = self._extract_garnstudio_needles_from_material(soup)
+            if material_needles:
+                return material_needles
+
         # Try finding by label first
         val = self._find_info_by_label(
             soup,
@@ -527,7 +551,16 @@ class PatternImporter:
             ],
         )
         if val:
-            return val
+            cleaned = val.strip()
+            # Guard against known Garnstudio UI/category noise such as
+            # "Stricknadeln & Häkelnadeln" leaking into the extraction.
+            if cleaned.startswith("&"):
+                return None
+            if "häkelnadeln" in cleaned.lower() and not any(
+                c.isdigit() for c in cleaned
+            ):
+                return None
+            return cleaned
 
         patterns = [
             r"(?:needle[s]?|nadelstärke|nadeln)\s*[:：]\s*([^\n]+)",
@@ -542,6 +575,53 @@ class PatternImporter:
                 return match.group(1).strip()
 
         return None
+
+    def _extract_garnstudio_needles_from_material(
+        self, soup: BeautifulSoup
+    ) -> str | None:
+        material = soup.find(id=re.compile(r"material_text(_print)?"))
+        if not material:
+            material = soup.select_one(".pattern-material")
+        if not material:
+            return None
+
+        text = material.get_text(separator="\n", strip=True)
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+        blocks: list[str] = []
+        current: list[str] = []
+        for line in lines:
+            upper = line.upper()
+            if upper.startswith("DROPS "):
+                if current:
+                    blocks.append(" ".join(current))
+                current = [line]
+                continue
+            if current:
+                current.append(line)
+        if current:
+            blocks.append(" ".join(current))
+
+        needle_blocks: list[str] = []
+        for block in blocks:
+            lower = block.lower()
+            if any(
+                kw in lower
+                for kw in [
+                    "nadel",
+                    "needle",
+                    "rundnadel",
+                    "nadelspiel",
+                    "häkelnadel",
+                    "crochet",
+                    "hook",
+                    "pinner",
+                ]
+            ) and not any(kw in lower for kw in ["knopf", "button"]):
+                needle_blocks.append(block)
+
+        res = " ".join(needle_blocks).strip()
+        return res or None
 
     def _extract_yarn(self, soup: BeautifulSoup) -> str | None:
         """Extract yarn information."""
@@ -1318,6 +1398,20 @@ class PatternImporter:
         normalized = self._normalize_garnstudio_text(text)
         lines = normalized.splitlines()
 
+        tech_terms = {
+            "TIPP",
+            "TIP",
+            "INFO",
+            "MUSTER",
+            "PATTERN",
+            "KRAUSRIPPEN",
+            "KNOPFLÖCHER",
+            "ABNAHMEN",
+            "ZUNAHMEN",
+            "DECREASE",
+            "INCREASE",
+        }
+
         # Instruction start markers (must match _extract_garnstudio_steps)
         instruction_markers = [
             "DIE ARBEIT BEGINNT HIER",
@@ -1349,10 +1443,46 @@ class PatternImporter:
 
         def is_instruction_start(line_upper: str) -> bool:
             check_upper = line_upper.lstrip("#").rstrip(":").strip()
-            return any(
+            if any(
                 check_upper == marker or check_upper.startswith(f"{marker} -")
                 for marker in instruction_markers
+            ):
+                return True
+
+            # Handle compound headings like "HUNDEPULLOVER" which should be treated
+            # as instruction starts (contains "PULLOVER" marker).
+            return any(
+                marker in check_upper
+                for marker in [
+                    "KLEID",
+                    "PULLOVER",
+                    "JACKE",
+                    "SOCKEN",
+                    "MÜTZE",
+                    "HANDSCHUHE",
+                    "SCHAL",
+                    "TUCH",
+                    "DECKE",
+                    "KISSEN",
+                    "DRESS",
+                    "SWEATER",
+                    "JACKET",
+                    "CARDIGAN",
+                    "SOCKS",
+                    "HAT",
+                    "GLOVES",
+                    "SCARF",
+                    "SHAWL",
+                    "BLANKET",
+                    "CUSHION",
+                ]
             )
+
+        def is_tech_heading(line_upper: str) -> bool:
+            if not line_upper.startswith("### "):
+                return False
+            title_upper = line_upper[4:].strip().rstrip(":").strip().upper()
+            return any(term in title_upper for term in tech_terms)
 
         # 1. Try to find section between HINWEISE ZUR ANLEITUNG and instructions
         start_index = -1
@@ -1362,9 +1492,18 @@ class PatternImporter:
             upper = line.strip().upper()
             if "### HINWEISE ZUR ANLEITUNG" in upper:
                 start_index = i
-            if is_instruction_start(upper):
-                stop_index = i
+
+            # Stop early if we hit the instruction start before the notes heading.
+            if start_index == -1 and is_instruction_start(upper):
                 break
+
+        if start_index != -1:
+            # Find the first "real" instruction heading after the notes section.
+            for j in range(start_index + 1, len(lines)):
+                upper = lines[j].strip().upper()
+                if is_instruction_start(upper):
+                    stop_index = j
+                    break
 
         if start_index != -1:
             if stop_index != -1:
@@ -1375,29 +1514,23 @@ class PatternImporter:
             return notes or None
 
         # 2. Fallback: collect any technical tips found before instructions
-        tech_terms = {
-            "TIPP",
-            "INFO",
-            "MUSTER",
-            "PATTERN",
-            "KRAUSRIPPEN",
-            "KNOPFLÖCHER",
-            "ABNAHMEN",
-            "ZUNAHMEN",
-            "DECREASE",
-            "INCREASE",
-        }
-        collected = []
+        collected: list[str] = []
+        collecting = False
         for line in lines:
             upper = line.strip().upper()
             if is_instruction_start(upper):
                 break
 
-            # If it looks like a heading or contains tech terms, keep it
-            if upper.startswith("### ") or any(t in upper for t in tech_terms):
-                collected.append(line)
-            elif collected and line.strip():
-                # Keep text following a collected heading
+            if upper.startswith("### "):
+                if is_tech_heading(upper):
+                    collecting = True
+                    collected.append(line)
+                    continue
+                if collecting:
+                    break
+                continue
+
+            if collecting and line.strip():
                 collected.append(line)
 
         if collected:
@@ -1620,7 +1753,9 @@ class PatternImporter:
             check_upper = upper.lstrip("#").rstrip(":").strip()
             # Look for markers, either as standalone words or followed by "-"
             if any(
-                check_upper == marker or check_upper.startswith(f"{marker} -")
+                check_upper == marker
+                or check_upper.startswith(f"{marker} -")
+                or marker in check_upper
                 for marker in instruction_markers
             ):
                 start_index = i
@@ -1835,17 +1970,26 @@ class PatternImporter:
             elif (
                 match_line.isupper()
                 and 3 < len(match_line) < 70
-                and any(c.isalpha() for c in match_line)
+                and sum(1 for c in match_line if c.isalpha()) >= 3
+                and match_line[:1].isalpha()
             ):
                 # Heuristic for other all-caps lines that contain at least one letter
                 is_heading = True
-            elif (
-                stripped.endswith(":")
-                and match_line.isupper()
-                and len(match_line) < 70
-                and any(c.isalpha() for c in match_line)
-            ):
-                is_heading = True
+            elif stripped.endswith(":"):
+                # Many Garnstudio sections are not written in all-caps, but still use
+                # a trailing ":" to mark a header (e.g. "Oberer Teil:").
+                words = [w for w in match_line.split() if w]
+                word_count = len(words)
+                is_heading = (
+                    1 <= word_count <= 8
+                    and len(match_line) < 70
+                    and any(c.isalpha() for c in match_line)
+                    and match_line[:1].isalpha()
+                )
+                if is_heading and not match_line.isupper():
+                    # Avoid turning sentences like "Streifen wie folgt stricken:" into
+                    # headings. Mixed-case headings are usually title-like.
+                    is_heading = all(w[:1].isupper() for w in words)
 
             if is_heading:
                 # Use the original capitalization if it's not all-caps,
@@ -2363,6 +2507,23 @@ class PatternImporter:
             if not href_raw:
                 continue
 
+            # Skip navigation/menu links which list all yarns and can pollute imports.
+            if (
+                a.find_parent("nav") is not None
+                or a.find_parent(id=re.compile(r"^menu$", re.I)) is not None
+                or a.find_parent(class_=re.compile(r"\bm-menu\b")) is not None
+                or (a.get("class") and "nav-link" in (a.get("class") or []))
+            ):
+                continue
+
+            # Skip known "related" sections; these are not materials for the pattern.
+            if (
+                a.find_parent(id="related-patterns") is not None
+                or a.find_parent(id="yarn-patterns") is not None
+                or a.find_parent(class_=re.compile(r"\bfeature-cats\b")) is not None
+            ):
+                continue
+
             href = (
                 " ".join(href_raw) if isinstance(href_raw, list) else str(href_raw)
             ).strip()
@@ -2379,6 +2540,21 @@ class PatternImporter:
 
             full_url = urljoin(self.url, href)
             image_url = ""
+
+            # If we have a "show=" slug, we can always derive a stable yarn name.
+            name_from_show = None
+            try:
+                show = parse_qs(urlparse(full_url).query).get("show", [None])[0]
+                if show:
+                    slug = show
+                    if slug.startswith("drops-"):
+                        slug = slug[6:]
+                    if slug:
+                        name_from_show = "-".join(
+                            part.capitalize() for part in slug.split("-") if part
+                        )
+            except Exception:
+                name_from_show = None
 
             # Try to get the yarn name and image
             # 1. Direct text
@@ -2426,18 +2602,27 @@ class PatternImporter:
                         )
                         image_url = urljoin(self.url, src)
 
-            if name:
-                cleaned_name = self._clean_yarn_name(name)
-                if cleaned_name:
-                    key = cleaned_name.lower()
-                    if key not in yarn_data:
-                        yarn_data[key] = {
-                            "link": full_url,
-                            "image_url": image_url,
-                            "name": cleaned_name,
-                        }
-                    elif image_url and not yarn_data[key].get("image_url"):
-                        yarn_data[key]["image_url"] = image_url
+            cleaned_name = self._clean_yarn_name(name) if name else None
+            if cleaned_name:
+                lower_cleaned = cleaned_name.lower()
+                if lower_cleaned in ["yarn", "garn", "garne"]:
+                    cleaned_name = None
+                if "product image" in lower_cleaned or "produktbild" in lower_cleaned:
+                    cleaned_name = None
+
+            if not cleaned_name and name_from_show:
+                cleaned_name = name_from_show
+
+            if cleaned_name:
+                key = cleaned_name.lower()
+                if key not in yarn_data:
+                    yarn_data[key] = {
+                        "link": full_url,
+                        "image_url": image_url,
+                        "name": cleaned_name,
+                    }
+                elif image_url and not yarn_data[key].get("image_url"):
+                    yarn_data[key]["image_url"] = image_url
 
         return yarn_data
 
@@ -2462,9 +2647,8 @@ class PatternImporter:
         if not material:
             return None
 
-        # Use BeautifulSoup directly to preserve structure
         text = material.get_text(separator="\n", strip=True)
-        lines = [line.strip() for line in text.splitlines()]
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
         yarn_headings = {"GARN", "YARN", "MATERIAL", "MATERIALS"}
 
         start_index = -1
@@ -2477,6 +2661,12 @@ class PatternImporter:
         if start_index == -1:
             return None
 
+        # Garnstudio sometimes mixes yarn and notions (needles, hooks, buttons) inside
+        # the same "Material:" block. We group by "DROPS ..." blocks and filter.
+        collected_blocks: list[tuple[str, bool]] = []
+        current: list[str] = []
+        current_is_alternative = False
+        pending_alternative = False
         stop_headings = {
             "NADELN",
             "NEEDLES",
@@ -2487,6 +2677,9 @@ class PatternImporter:
             "CROCHET HOOKS",
             "HEKLENÅL",
             "HEKLENÅLER",
+            "KNÖPFE",
+            "BUTTONS",
+            "KNAPPER",
             "MASCHENPROBE",
             "GAUGE",
             "STRIKKEFASTHET",
@@ -2495,57 +2688,62 @@ class PatternImporter:
             "DIE ARBEIT BEGINNT HIER",
             "START HERE",
             "KURZBESCHREIBUNG",
-            "KNÖPFE",
-            "BUTTONS",
-            "KNAPPER",
-            "ZUBEHÖR",
-            "ZUBEHÖR FÜR DIE ARBEIT",
-            "ACCESSORIES",
-            "ACCESSORIES FOR WORK",
         }
 
-        collected: list[str] = []
         for line in lines[start_index + 1 :]:
-            stripped = line.strip()
-            if not stripped:
-                continue
-
-            upper = stripped.upper()
-            label = stripped[:-1] if stripped.endswith(":") else stripped
-
-            # Check if this line is a stop heading, possibly prefixed with DROPS
-            is_stop = False
-            if label.isupper() and label in stop_headings:
-                is_stop = True
-            elif upper.startswith("DROPS"):
-                # Check if it's "DROPS NADELN" or similar
-                remainder = upper[5:].strip()
-                is_heading = remainder in stop_headings or (
-                    remainder.endswith(":") and remainder[:-1].strip() in stop_headings
-                )
-                if is_heading:
-                    is_stop = True
-
-            if is_stop:
+            heading_key = line.rstrip(":").strip().upper()
+            if heading_key in stop_headings:
+                if current:
+                    collected_blocks.append((" ".join(current), current_is_alternative))
+                    current = []
                 break
 
-            # Garnstudio yarns are often split into name and weight/color
-            # Merge if the current line doesn't look like a new yarn
-            if collected and not any(
-                kw in upper for kw in ["DROPS", "GARNGRUPPE", "ODER:"]
-            ):
-                collected[-1] = f"{collected[-1]} {stripped}"
-            else:
-                collected.append(stripped)
+            lower = line.lower()
+            if lower in ["oder:", "or:"]:
+                pending_alternative = True
+                continue
 
-        # Post-filter: remove entries that aren't actually yarns
-        final_yarns = []
-        for y in collected:
-            # Skip if it's just "DROPS" or similar noise
-            details = self._parse_garnstudio_yarn_string(y)
+            if line.upper().startswith("DROPS "):
+                if current:
+                    collected_blocks.append((" ".join(current), current_is_alternative))
+                current = [line]
+                current_is_alternative = pending_alternative
+                pending_alternative = False
+                continue
+
+            if current:
+                current.append(line)
+
+        if current:
+            collected_blocks.append((" ".join(current), current_is_alternative))
+
+        final_yarns: list[str] = []
+        for block, _is_alternative in collected_blocks:
+            lower = block.lower()
+            if any(
+                kw in lower
+                for kw in [
+                    "nadel",
+                    "needle",
+                    "rundnadel",
+                    "nadelspiel",
+                    "häkelnadel",
+                    "crochet",
+                    "hook",
+                    "knopf",
+                    "button",
+                    "maschenprobe",
+                    "gauge",
+                ]
+            ):
+                continue
+
+            details = self._parse_garnstudio_yarn_string(block)
             name_upper = (details.get("name") or "").upper()
-            if name_upper and name_upper not in ["DROPS", "GARNSTUDIO"]:
-                final_yarns.append(y)
+            if not name_upper or name_upper in ["DROPS", "GARNSTUDIO"]:
+                continue
+
+            final_yarns.append(block)
 
         return "\n".join(final_yarns).strip() or None
 
