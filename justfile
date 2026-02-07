@@ -15,6 +15,22 @@ setup:
 
 # Run dev server with reload. Use -b to skip opening the browser.
 run args='':
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ -z "${IN_NIX_SHELL:-}" ]]
+  then
+    if command -v nix >/dev/null 2>&1
+    then
+      exec nix develop -c just run-raw "{{args}}"
+    else
+      echo "WARNING: nix not found; running without nix develop" >&2
+    fi
+  fi
+
+  just run-raw "{{args}}"
+
+run-raw args='':
   {{ if args == "-b" { "" } else { "(sleep 2 && ${BROWSER:-xdg-open} http://localhost:" + dev_port + " &)" } }}
   IMPORT_TRACE_ENABLED=1 uv run uvicorn stricknani.main:app --reload --host 0.0.0.0 --port {{dev_port}} --log-level debug --access-log
 
@@ -209,7 +225,7 @@ renovate *args='':
 
   echo "Running Renovate using local directory..."
   echo "Using GitHub token: ${GITHUB_TOKEN:0:10}..."
-  
+
   # Run Renovate with the token using current directory
   nix-shell -p renovate --run "\
     RENOVATE_CONFIG_FILE=renovate.json \
