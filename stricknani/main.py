@@ -375,6 +375,7 @@ from stricknani.routes import (  # noqa: E402
     projects,
     search,
     user,
+    utils,
     yarn,
 )
 
@@ -385,6 +386,7 @@ app.include_router(gauge.router)
 app.include_router(user.router)
 app.include_router(yarn.router)
 app.include_router(admin.router)
+app.include_router(utils.router)
 
 
 # Login page
