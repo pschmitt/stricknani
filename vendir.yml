@@ -1,0 +1,61 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+  - path: stricknani/static/vendor
+    contents:
+      # renovate: datasource=npm depName=@mdi/font
+      - path: mdi
+        http:
+          url: https://registry.npmjs.org/@mdi/font/-/font-7.4.47.tgz
+        newRootPath: package
+        includePaths:
+          - package/css/materialdesignicons.min.css
+          - package/fonts/**
+
+      # renovate: datasource=npm depName=photoswipe
+      - path: photoswipe
+        http:
+          url: https://registry.npmjs.org/photoswipe/-/photoswipe-5.4.4.tgz
+        newRootPath: package/dist
+        includePaths:
+          - package/dist/photoswipe.css
+          - package/dist/photoswipe-lightbox.esm.min.js
+          - package/dist/photoswipe.esm.min.js
+
+      # renovate: datasource=npm depName=cropperjs
+      - path: cropperjs
+        http:
+          url: https://registry.npmjs.org/cropperjs/-/cropperjs-2.1.0.tgz
+        newRootPath: package/dist
+        includePaths:
+          - package/dist/cropper.min.js
+
+      # renovate: datasource=npm depName=daisyui
+      - path: daisyui
+        http:
+          url: https://registry.npmjs.org/daisyui/-/daisyui-5.5.18.tgz
+        newRootPath: package
+        includePaths:
+          - package/daisyui.css
+          - package/themes.css
+
+      # renovate: datasource=npm depName=@tailwindcss/browser
+      - path: tailwindcss-browser
+        http:
+          url: https://registry.npmjs.org/@tailwindcss/browser/-/browser-4.1.18.tgz
+        newRootPath: package/dist
+        includePaths:
+          - package/dist/index.global.js
+
+      # renovate: datasource=npm depName=htmx.org
+      - path: htmx
+        http:
+          url: https://registry.npmjs.org/htmx.org/-/htmx.org-2.0.7.tgz
+        newRootPath: package/dist
+        includePaths:
+          - package/dist/htmx.min.js
+
+      # renovate: datasource=github-releases depName=getsentry/sentry-javascript
+      - path: sentry
+        http:
+          url: https://browser.sentry-cdn.com/10.38.0/bundle.tracing.min.js

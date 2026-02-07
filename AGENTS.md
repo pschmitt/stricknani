@@ -4,6 +4,10 @@ Use this file as the single source of truth for how to work in the Stricknani re
 
 ## Critical Requirements
 
+### Vendored Web Dependencies
+- All new frontend dependencies (JS/CSS) must be vendored via `vendir.yml` (no new CDN links).
+- After changing `vendir.yml`, run `just vendor-sync` and commit the resulting `vendir.lock.yml` plus `stricknani/static/vendor/**`.
+
 ### Translations (UI text)
 - Always add new strings to `stricknani/locales/en/LC_MESSAGES/messages.po` and `stricknani/locales/de/LC_MESSAGES/messages.po`.
 - **Avoid multiline strings** in HTML templates (e.g., between `{% trans %}` or in `{{ _(...) }}`). Keep them on a single line to prevent brittle multiline `msgid`s in the catalogs.

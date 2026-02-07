@@ -9,14 +9,9 @@
     {% block head %}{% endblock %}
     <link rel="icon" type="image/svg+xml"
         href="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}">
-    <!-- renovate: datasource=npm depName=@mdi/font -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
-    <!-- renovate: datasource=npm depName=cropperjs -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@2.1.0/dist/cropper.min.css">
-    <!-- renovate: datasource=npm depName=photoswipe -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.css">
-    <!-- renovate: datasource=npm depName=cropperjs -->
-    <script src="https://cdn.jsdelivr.net/npm/cropperjs@2.1.0/dist/cropper.min.js"></script>
+	    <link rel="stylesheet" href="{{ url_for('static', path='vendor/mdi/css/materialdesignicons.min.css') }}">
+	    <link rel="stylesheet" href="{{ url_for('static', path='vendor/photoswipe/photoswipe.css') }}">
+	    <script src="{{ url_for('static', path='vendor/cropperjs/cropper.min.js') }}"></script>
     <script>
         // Theme initialization - MUST run before page renders
         (function () {
@@ -37,14 +32,10 @@
     </script>
 
 
-    <!-- renovate: datasource=npm depName=daisyui -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.5.18/daisyui.css" rel="stylesheet" type="text/css" />
-    <!-- renovate: datasource=npm depName=daisyui -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.5.18/themes.css" rel="stylesheet" type="text/css" />
-    <!-- renovate: datasource=npm depName=tailwindcss -->
-    <script src="https://unpkg.com/@tailwindcss/browser@4.1.18"></script>
-    <!-- renovate: datasource=npm depName=htmx.org -->
-    <script src="https://unpkg.com/htmx.org@2.0.7"></script>
+    <link href="{{ url_for('static', path='vendor/daisyui/daisyui.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ url_for('static', path='vendor/daisyui/themes.css') }}" rel="stylesheet" type="text/css" />
+    <script src="{{ url_for('static', path='vendor/tailwindcss-browser/index.global.js') }}"></script>
+    <script src="{{ url_for('static', path='vendor/htmx/htmx.min.js') }}"></script>
     <script>
         document.addEventListener('htmx:configRequest', (event) => {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -399,10 +390,32 @@
         }
 
         /* PhotoSwipe Custom Button Styling */
+        .pswp__button--zoom {
+            display: none !important;
+        }
+
         .pswp__button--promote-button,
         .pswp__button--delete-button,
-        .pswp__button--download-button {
+        .pswp__button--download-button,
+        .pswp__button--ocr-button {
             overflow: visible !important;
+        }
+
+        /* Bottom-right floating OCR button (outside the top toolbar). */
+        .pswp__button--ocr-button {
+            position: absolute !important;
+            right: 0.75rem !important;
+            bottom: 0.75rem !important;
+            width: 3rem !important;
+            height: 3rem !important;
+            border-radius: 9999px !important;
+            background: rgba(0, 0, 0, 0.55) !important;
+            backdrop-filter: blur(6px);
+            z-index: 100000 !important;
+        }
+
+        .pswp__button--ocr-button:hover {
+            background: rgba(0, 0, 0, 0.7) !important;
         }
 
         .pswp__button--promote-button.is-primary .pswp__icn {
@@ -423,6 +436,7 @@
             opacity: 1;
             color: #fff;
         }
+
     </style>
 </head>
 
@@ -810,7 +824,7 @@
     {% endif %}
 
     <div id="toastContainer"
-        class="fixed inset-x-4 top-[4.5rem] z-[10000] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-[4.5rem] sm:w-80"
+        class="fixed inset-x-4 top-[4.5rem] z-[2147483647] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-[4.5rem] sm:w-80"
         aria-live="polite" aria-atomic="true"></div>
 
     <dialog id="confirmationDialog" class="modal modal-bottom sm:modal-middle">
@@ -1125,12 +1139,32 @@
 
         const toastContainer = document.getElementById("toastContainer");
 
+        const getToastContainer = () => {
+            const openDialogs = Array.from(document.querySelectorAll("dialog[open]"));
+            const activeDialog = openDialogs.length ? openDialogs[openDialogs.length - 1] : null;
+            if (!activeDialog) {
+                return toastContainer;
+            }
+
+            let container = activeDialog.querySelector('[data-toast-container="1"]');
+            if (!container) {
+                container = document.createElement("div");
+                container.setAttribute("data-toast-container", "1");
+                container.className = "fixed inset-x-4 top-[4.5rem] z-[2147483647] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-[4.5rem] sm:w-80";
+                container.setAttribute("aria-live", "polite");
+                container.setAttribute("aria-atomic", "true");
+                activeDialog.appendChild(container);
+            }
+            return container;
+        };
+
         window.showToast = (message, variant = "info") => {
-            if (!toastContainer || !message) {
+            const container = getToastContainer();
+            if (!container || !message) {
                 return;
             }
 
-            toastContainer.replaceChildren();
+            container.replaceChildren();
             const toast = document.createElement("div");
             toast.className = `relative overflow-hidden rounded-2xl px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 translate-x-4 hover:translate-y-1 cursor-pointer ${toastVariants[variant] || toastVariants.info
                 }`;
@@ -1159,7 +1193,7 @@
 
             toast.addEventListener("click", dismiss);
 
-            toastContainer.appendChild(toast);
+            container.appendChild(toast);
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     toast.classList.remove("opacity-0", "translate-y-2", "translate-x-4");
@@ -1635,7 +1669,7 @@
         };
     </script>
     <script type="module">
-        import PhotoSwipeLightbox from 'https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.min.js';
+        import PhotoSwipeLightbox from "{{ url_for('static', path='vendor/photoswipe/photoswipe-lightbox.esm.min.js') }}";
 
         const lightboxes = window.pswpLightboxes || new Map();
         window.pswpLightboxes = lightboxes;
@@ -1653,7 +1687,7 @@
             const lightbox = new PhotoSwipeLightbox({
                 gallery,
                 children: 'a[data-pswp-width]',
-                pswpModule: () => import('https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.esm.min.js'),
+                pswpModule: () => import("{{ url_for('static', path='vendor/photoswipe/photoswipe.esm.min.js') }}"),
             });
 
             // Auto-detect dimensions if they are missing or placeholders (1200)
@@ -2060,7 +2094,7 @@
 
             const lightbox = new PhotoSwipeLightbox({
                 dataSource: items,
-                pswpModule: () => import('https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.esm.min.js'),
+                pswpModule: () => import("{{ url_for('static', path='vendor/photoswipe/photoswipe.esm.min.js') }}"),
             });
             lightbox.on('close', () => {
                 lightbox.destroy();
@@ -2164,9 +2198,7 @@
         });
     </script>
     {% if sentry_frontend_enabled %}
-    <script src="https://browser.sentry-cdn.com/10.38.0/bundle.tracing.min.js"
-        integrity="sha384-COL1vOWQO+0hwStGhZ6r5BKlWlJzd59gOqtCYmcIvfDd0ifnTHrWzzQQYmUNf/Lr"
-        crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', path='vendor/sentry/bundle.tracing.min.js') }}"></script>
     <script>
         Sentry.init({
             dsn: {{ sentry_frontend_dsn | tojson }},

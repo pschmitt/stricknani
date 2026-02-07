@@ -71,6 +71,14 @@ trim:
 test:
   uv run pytest -v
 
+# Sync vendored frontend assets into stricknani/static/vendor.
+vendor-sync:
+  ./hack/vendir-sync.sh
+
+# Ensure vendored frontend assets are up to date.
+vendor-check:
+  ./hack/vendir-check.sh
+
 # Run all checks (lint + test)
 check: lint lint-nix test i18n-check
 
