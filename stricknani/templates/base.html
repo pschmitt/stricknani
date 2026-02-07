@@ -54,14 +54,15 @@
         });
     </script>
     <style>
-        .cropper-view-box,
-        .cropper-face {
-            border-radius: 50%;
+        /* CropperJS v2 uses web components; round the avatar crop selection. */
+        cropper-canvas {
+            width: 100%;
+            height: 100%;
         }
 
-        .cropper-view-box {
-            outline: 0;
-            box-shadow: 0 0 0 1px #39f;
+        cropper-selection {
+            border-radius: 9999px;
+            overflow: hidden;
         }
 
         .markdown-inline-image {
@@ -462,154 +463,211 @@
         {{ dialogs.modal_backdrop() }}
     </dialog>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            let cropper;
-            const input = document.getElementById('profile-image-input');
-            const modal = document.getElementById('crop-modal');
-            const image = document.getElementById('crop-image');
-            const saveBtn = document.getElementById('crop-save');
-            const cancelBtn = document.getElementById('crop-cancel');
-            let targetUserId = {{ current_user.id }};
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                let cropper;
+                const input = document.getElementById('profile-image-input');
+                const modal = document.getElementById('crop-modal');
+                const image = document.getElementById('crop-image');
+                const saveBtn = document.getElementById('crop-save');
+                const cancelBtn = document.getElementById('crop-cancel');
+                let targetUserId = {{ current_user.id }};
 
-            if (!input || !modal || !image || !saveBtn || !cancelBtn) {
-                return;
-            }
-
-            window.triggerProfileImageUpload = function (userId) {
-                targetUserId = userId || {{ current_user.id }};
-                input.click();
-            };
-
-            input.addEventListener('change', function (e) {
-                const files = e.target.files;
-                if (files && files.length > 0) {
-                    const file = files[0];
-                    const reader = new FileReader();
-                    reader.onload = function (readerEvent) {
-                        image.src = readerEvent.target.result;
-                        modal.showModal();
-
-                        if (cropper) {
-                            cropper.destroy();
-                        }
-                        cropper = new Cropper(image, {
-                            aspectRatio: 1,
-                            viewMode: 1,
-                            dragMode: 'move',
-                            autoCropArea: 1,
-                            restore: false,
-                            guides: false,
-                            center: false,
-                            highlight: false,
-                            cropBoxMovable: false,
-                            cropBoxResizable: false,
-                            toggleDragModeOnDblclick: false,
-                            zoomable: true,
-                            zoomOnTouch: true,
-                            zoomOnWheel: true,
-                        });
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-
-            cancelBtn.addEventListener('click', function () {
-                modal.close();
-                input.value = '';
-                if (cropper) {
-                    cropper.destroy();
-                    cropper = null;
-                }
-            });
-
-            saveBtn.addEventListener('click', function () {
-                if (!cropper) {
+                if (!input || !modal || !image || !saveBtn || !cancelBtn) {
                     return;
                 }
 
-                const canvas = cropper.getCroppedCanvas({
-                    width: 400,
-                    height: 400,
-                });
+                window.triggerProfileImageUpload = function (userId) {
+                    targetUserId = userId || {{ current_user.id }};
+                    input.click();
+                };
 
-                canvas.toBlob(function (blob) {
-                    if (!blob) {
-                        showToast('{{ _("Failed to upload image") }}', 'error');
+                function getCropperCtor() {
+                    // CropperJS v2 UMD exposes `window.Cropper.default`.
+                    // CropperJS v1 exposes `window.Cropper` directly.
+                    const cropperNamespace = window.Cropper;
+                    const ctor = cropperNamespace?.default || cropperNamespace;
+
+                    if (typeof ctor !== 'function') {
+                        return null;
+                    }
+
+                    return ctor;
+                }
+
+                function configureCropperSelection() {
+                    if (!cropper || typeof cropper.getCropperSelection !== 'function') {
                         return;
                     }
 
-                    const formData = new FormData();
-                    formData.append('file', blob, 'avatar.png');
+                    const selection = cropper.getCropperSelection();
+                    if (!selection) {
+                        return;
+                    }
 
-                    const originalText = saveBtn.textContent;
-                    saveBtn.textContent = '{{ _("Uploading...") }}';
-                    saveBtn.disabled = true;
+                    // Fixed circular crop: keep selection size fixed and let the user move/zoom the image.
+                    selection.setAttribute('aspect-ratio', '1');
+                    selection.setAttribute('initial-coverage', '1');
+                    selection.removeAttribute('movable');
+                    selection.removeAttribute('resizable');
+                }
 
-                    const url = targetUserId === {{ current_user.id }}
-                        ? '/user/profile-image'
-                        : `/admin/users/${targetUserId}/profile-image`;
+                function getCroppedCanvas() {
+                    if (!cropper) {
+                        return Promise.reject(new Error('Cropper not initialized'));
+                    }
 
-                    fetch(url, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'HX-Request': 'true'
+                    // CropperJS v2: export from the selection element.
+                    if (typeof cropper.getCropperSelection === 'function') {
+                        const selection = cropper.getCropperSelection();
+                        if (selection && typeof selection.$toCanvas === 'function') {
+                            return selection.$toCanvas({
+                                width: 400,
+                                height: 400,
+                            });
                         }
-                    })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Upload failed');
+                    }
+
+                    // CropperJS v1 fallback.
+                    if (typeof cropper.getCroppedCanvas === 'function') {
+                        return Promise.resolve(cropper.getCroppedCanvas({
+                            width: 400,
+                            height: 400,
+                        }));
+                    }
+
+                    return Promise.reject(new Error('Unsupported CropperJS API'));
+                }
+
+                input.addEventListener('change', function (e) {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                        const file = files[0];
+                        const reader = new FileReader();
+                        reader.onload = function (readerEvent) {
+                            image.src = readerEvent.target.result;
+                            modal.showModal();
+
+                            if (cropper) {
+                                cropper.destroy();
                             }
-                            return response.text();
-                        })
-                        .then(html => {
-                            if (targetUserId === {{ current_user.id }}) {
-                                window.location.reload();
+
+                            const ctor = getCropperCtor();
+                            if (!ctor) {
+                                showToast('{{ _("Image cropper failed to load") }}', 'error');
+                                modal.close();
                                 return;
                             }
 
-                            const card = document.getElementById(`user-card-${targetUserId}`);
-                            if (card) {
-                                const parser = new DOMParser();
-                                const doc = parser.parseFromString(html, 'text/html');
+                            cropper = new ctor(image, {});
+                            window.requestAnimationFrame(() => {
+                                configureCropperSelection();
+                            });
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
 
-                                const newCard = doc.getElementById(`user-card-${targetUserId}`);
-                                if (newCard) {
-                                    card.replaceWith(newCard);
-                                    if (window.htmx) {
-                                        window.htmx.process(newCard);
+                cancelBtn.addEventListener('click', function () {
+                    modal.close();
+                    input.value = '';
+                    if (cropper) {
+                        cropper.destroy();
+                        cropper = null;
+                    }
+                });
+
+                saveBtn.addEventListener('click', function () {
+                    if (!cropper) {
+                        return;
+                    }
+
+                    getCroppedCanvas().then((canvas) => {
+                        return new Promise((resolve) => {
+                            canvas.toBlob(function (blob) {
+                                resolve(blob);
+                            }, 'image/png');
+                        });
+                    }).then((blob) => {
+                        if (!blob) {
+                            showToast('{{ _("Failed to upload image") }}', 'error');
+                            return;
+                        }
+
+                        const formData = new FormData();
+                        formData.append('file', blob, 'avatar.png');
+
+                        const originalText = saveBtn.textContent;
+                        saveBtn.textContent = '{{ _("Uploading...") }}';
+                        saveBtn.disabled = true;
+
+                        const url = targetUserId === {{ current_user.id }}
+                            ? '/user/profile-image'
+                            : `/admin/users/${targetUserId}/profile-image`;
+
+                        fetch(url, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'HX-Request': 'true'
+                            }
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Upload failed');
+                                }
+                                return response.text();
+                            })
+                            .then(html => {
+                                if (targetUserId === {{ current_user.id }}) {
+                                    window.location.reload();
+                                    return;
+                                }
+
+                                const card = document.getElementById(`user-card-${targetUserId}`);
+                                if (card) {
+                                    const parser = new DOMParser();
+                                    const doc = parser.parseFromString(html, 'text/html');
+
+                                    const newCard = doc.getElementById(`user-card-${targetUserId}`);
+                                    if (newCard) {
+                                        card.replaceWith(newCard);
+                                        if (window.htmx) {
+                                            window.htmx.process(newCard);
+                                        }
+                                    }
+
+                                    const newCount = doc.getElementById('user-count');
+                                    const currentCount = document.getElementById('user-count');
+                                    if (newCount && currentCount) {
+                                        currentCount.replaceWith(newCount);
                                     }
                                 }
 
-                                const newCount = doc.getElementById('user-count');
-                                const currentCount = document.getElementById('user-count');
-                                if (newCount && currentCount) {
-                                    currentCount.replaceWith(newCount);
+                                modal.close();
+
+                                const editUserDialog = document.getElementById('editUserDialog');
+                                if (editUserDialog && editUserDialog.open) {
+                                    editUserDialog.close();
                                 }
-                            }
 
-                            modal.close();
-
-                            const editUserDialog = document.getElementById('editUserDialog');
-                            if (editUserDialog && editUserDialog.open) {
-                                editUserDialog.close();
-                            }
-
-                            showToast('{{ _("Profile picture updated successfully") }}', 'success');
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            showToast('{{ _("Failed to upload image") }}', 'error');
-                        })
-                        .finally(() => {
-                            saveBtn.textContent = originalText;
-                            saveBtn.disabled = false;
-                        });
-                }, 'image/png');
+                                showToast('{{ _("Profile picture updated successfully") }}', 'success');
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                showToast('{{ _("Failed to upload image") }}', 'error');
+                            })
+                            .finally(() => {
+                                saveBtn.textContent = originalText;
+                                saveBtn.disabled = false;
+                            });
+                    }).catch((err) => {
+                        console.error(err);
+                        showToast('{{ _("Failed to upload image") }}', 'error');
+                    });
+                });
             });
-        });
-    </script>
+        </script>
     {% endif %}
 
     {% if current_user %}
