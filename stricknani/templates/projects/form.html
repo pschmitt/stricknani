@@ -798,25 +798,55 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         window.unsavedChanges?.setDirty(true);
     }
 
+    function canonicalizeImportImageUrl(rawUrl) {
+        if (!rawUrl) {
+            return '';
+        }
+
+        const trimmed = String(rawUrl).trim();
+        if (!trimmed) {
+            return '';
+        }
+
+        // Treat protocol-relative URLs as HTTPS.
+        const withProtocol = trimmed.startsWith('//') ? `https:${trimmed}` : trimmed;
+
+        try {
+            const parsed = new URL(withProtocol);
+            // For import de-duping we want the effective file identity; query/fragment are often
+            // cache-busters or size parameters that don't change the underlying image.
+            return `${parsed.origin}${parsed.pathname}`;
+        } catch (e) {
+            // Not a valid absolute URL; fall back to a conservative key.
+            return withProtocol;
+        }
+    }
+
     function dedupeImportImageUrls(urls) {
         const container = document.getElementById('titleImagesContainer');
-        const existing = new Set();
+        const existingKeys = new Set();
         if (container) {
             container.querySelectorAll('a[href]').forEach(anchor => {
                 const href = anchor.getAttribute('href');
-                if (href) existing.add(href);
+                const key = canonicalizeImportImageUrl(href);
+                if (key) existingKeys.add(key);
             });
         }
-        const seen = new Set();
+
+        const seenKeys = new Set();
         const result = [];
         urls.forEach(url => {
-            if (!url) return;
-            const normalized = url.trim();
+            const normalized = String(url || '').trim();
             if (!normalized) return;
-            if (existing.has(normalized) || seen.has(normalized)) return;
-            seen.add(normalized);
+
+            const key = canonicalizeImportImageUrl(normalized);
+            if (!key) return;
+            if (existingKeys.has(key) || seenKeys.has(key)) return;
+
+            seenKeys.add(key);
             result.push(normalized);
         });
+
         return result;
     }
 
@@ -2053,6 +2083,21 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
     function addPendingTitleImageToGallery(url) {
         const container = document.getElementById('titleImagesContainer');
+        if (!container) {
+            return;
+        }
+
+        // Defensive: avoid showing duplicates even if the import runs multiple times
+        // or returns slightly different variants of the same URL.
+        const key = canonicalizeImportImageUrl(url);
+        if (key) {
+            const alreadyInDom = Array.from(container.querySelectorAll('a[href]')).some(anchor => {
+                return canonicalizeImportImageUrl(anchor.getAttribute('href')) === key;
+            });
+            if (alreadyInDom) {
+                return;
+            }
+        }
         const div = document.createElement('div');
         div.className = 'relative group';
         div.setAttribute('data-pending-url', url);
