@@ -891,6 +891,71 @@
         {{ dialogs.modal_backdrop() }}
     </dialog>
 
+    <dialog id="pswpOcrDialog" class="modal modal-bottom sm:modal-middle">
+        <div
+            class="modal-box w-screen h-screen max-w-none p-0 overflow-hidden rounded-none flex flex-col sm:w-[min(1100px,calc(100vw-4rem))] sm:h-[min(85vh,900px)] sm:rounded-box">
+            <div class="flex items-center justify-between gap-4 p-4 border-b border-base-200 bg-base-100">
+                <div class="min-w-0">
+                    <h3 class="font-bold text-lg">{{ _('OCR') }}</h3>
+                    <p class="text-xs text-base-content/60 truncate" id="pswpOcrFilename"></p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button
+                        id="pswpOcrCopy"
+                        type="button"
+                        class="btn btn-ghost btn-sm btn-circle"
+                        title="{{ _('Copy text') }}"
+                        aria-label="{{ _('Copy text') }}"
+                        disabled
+                    >
+                        <span class="mdi mdi-content-copy text-xl"></span>
+                    </button>
+                    <button
+                        id="pswpOcrRetry"
+                        type="button"
+                        class="btn btn-ghost btn-sm btn-circle"
+                        title="{{ _('Retry') }}"
+                        aria-label="{{ _('Retry') }}"
+                    >
+                        <span class="mdi mdi-refresh text-xl"></span>
+                    </button>
+                    <form method="dialog">
+                        <button class="btn btn-ghost btn-sm btn-circle" aria-label="{{ _('close') }}">
+                            <span class="mdi mdi-close text-xl"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="flex-1 min-h-0 bg-base-100 p-4 overflow-auto">
+                <div class="flex min-h-0 flex-col">
+                    <div id="pswpOcrStatus" class="text-sm text-base-content/70"></div>
+                    <div class="relative mt-3 flex-1 min-h-0">
+                        <div
+                            id="pswpOcrLoadingOverlay"
+                            class="absolute inset-0 hidden rounded-lg border border-base-300 bg-base-100/95 backdrop-blur-sm"
+                        >
+                            <div class="flex h-full w-full items-center justify-center p-4">
+                                <div class="flex items-center gap-3 text-base-content/80">
+                                    <span
+                                        id="pswpOcrSpinner"
+                                        class="loading loading-spinner loading-sm text-primary"
+                                        aria-hidden="true"
+                                    ></span>
+                                    <div id="pswpOcrLoadingStatus" class="text-sm"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <pre
+                            id="pswpOcrText"
+                            class="h-full min-h-40 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-base-300 bg-base-100 p-3 text-sm text-base-content/90"
+                        ></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{ dialogs.modal_backdrop() }}
+    </dialog>
+
     <script>
         window.confirmAction = (title, message, onConfirm, onCancel = null, options = {}) => {
             const dialog = document.getElementById('confirmationDialog');
@@ -1410,42 +1475,59 @@
         window.openDialog = openDialog;
         window.closeDialog = closeDialog;
 
-        async function copyToClipboard(text, btn) {
-            try {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(text);
-                } else {
-                    const textArea = document.createElement("textarea");
-                    textArea.value = text;
-                    textArea.style.position = "fixed";
-                    textArea.style.left = "-9999px";
-                    textArea.style.top = "0";
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-                    try {
-                        const successful = document.execCommand('copy');
-                        if (!successful) throw new Error('execCommand failed');
-                    } finally {
-                        document.body.removeChild(textArea);
-                    }
-                }
+	        async function copyToClipboard(text, btn) {
+	            try {
+	                const execCommandFallback = () => {
+	                    const textArea = document.createElement("textarea");
+	                    textArea.value = text;
+	                    textArea.style.position = "fixed";
+	                    textArea.style.left = "-9999px";
+	                    textArea.style.top = "0";
+	                    document.body.appendChild(textArea);
+	                    textArea.focus();
+	                    textArea.select();
+	                    try {
+	                        const successful = document.execCommand('copy');
+	                        if (!successful) {
+	                            throw new Error('execCommand failed');
+	                        }
+	                    } finally {
+	                        document.body.removeChild(textArea);
+	                    }
+	                };
 
-                const originalContent = btn.innerHTML;
-                btn.innerHTML = '<span class="mdi mdi-check text-success"></span>';
-                btn.classList.add('btn-success', 'bg-success/10');
+	                if (navigator.clipboard && navigator.clipboard.writeText) {
+	                    try {
+	                        await navigator.clipboard.writeText(text);
+	                    } catch (err) {
+	                        // Some browsers/environments expose the Clipboard API but still reject writes
+	                        // (e.g. certain modal/dialog contexts). Fall back to execCommand.
+	                        execCommandFallback();
+	                    }
+	                } else {
+	                    execCommandFallback();
+	                }
 
-                window.showToast?.('{{ _("Copied to clipboard") }}', 'success');
+	                const originalContent = btn ? btn.innerHTML : '';
+	                if (btn) {
+	                    btn.innerHTML = '<span class="mdi mdi-check text-success"></span>';
+	                    btn.classList.add('btn-success', 'bg-success/10');
+	                }
 
-                setTimeout(() => {
-                    btn.innerHTML = originalContent;
-                    btn.classList.remove('btn-success', 'bg-success/10');
-                }, 2000);
-            } catch (err) {
-                console.error('Failed to copy: ', err);
-                window.showToast?.('{{ _("Failed to copy") }}', 'error');
-            }
-        }
+	                window.showToast?.('{{ _("Copied to clipboard") }}', 'success');
+
+	                setTimeout(() => {
+	                    if (!btn) {
+	                        return;
+	                    }
+	                    btn.innerHTML = originalContent;
+	                    btn.classList.remove('btn-success', 'bg-success/10');
+	                }, 2000);
+	            } catch (err) {
+	                console.error('Failed to copy: ', err);
+	                window.showToast?.('{{ _("Failed to copy") }}', 'error');
+	            }
+	        }
         window.copyToClipboard = copyToClipboard;
 
         // Shared Image Upload Widget Logic
@@ -1732,16 +1814,192 @@
                         el.setAttribute('target', '_blank');
                         el.setAttribute('rel', 'noopener');
 
-                        pswp.on('change', () => {
-                            el.href = pswp.currSlide.data.src;
-                        });
+                        const update = () => {
+                            const href = pswp.currSlide?.data?.src || '';
+                            el.href = href;
+                            el.setAttribute('href', href);
+                        };
+                        pswp.on('change', update);
+                        pswp.on('afterInit', update);
                     }
                 });
-            });
-            lightbox.init();
-            lightboxes.set(gallery, lightbox);
-            return lightbox;
-        };
+
+	                // Register OCR button (opens a simple dialog outside PhotoSwipe).
+	                pswp.ui.registerElement({
+	                    name: 'ocr-button',
+	                    ariaLabel: '{{ _("Extract text") }}',
+	                    order: 6,
+	                    isButton: true,
+	                    html: '<span class="pswp__icn mdi mdi-text-recognition"></span>',
+	                    appendTo: 'wrapper',
+	                    onClick: async (event) => {
+	                        event.preventDefault();
+	                        event.stopPropagation();
+
+	                        const dialog = document.getElementById('pswpOcrDialog');
+	                        const statusEl = document.getElementById('pswpOcrStatus');
+	                        const loadingStatusEl = document.getElementById('pswpOcrLoadingStatus');
+	                        const textEl = document.getElementById('pswpOcrText');
+	                        const filenameEl = document.getElementById('pswpOcrFilename');
+	                        const copyBtn = document.getElementById('pswpOcrCopy');
+	                        const retryBtn = document.getElementById('pswpOcrRetry');
+	                        const overlayEl = document.getElementById('pswpOcrLoadingOverlay');
+
+	                        if (!dialog || !statusEl || !loadingStatusEl || !textEl || !filenameEl || !copyBtn || !retryBtn || !overlayEl) {
+	                            return;
+	                        }
+
+	                        const data = pswp.currSlide?.data || pswp.currItem?.data || pswp.currItem || {};
+	                        const src = data?.src || data?.msrc || '';
+	                        const alt = data?.alt || data?.title || '';
+
+	                        const setLoading = (isLoading, message = '') => {
+	                            dialog.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+	                            overlayEl.classList.toggle('hidden', !isLoading);
+	                            loadingStatusEl.textContent = message;
+	                            if (isLoading) {
+	                                copyBtn.disabled = true;
+	                                retryBtn.disabled = true;
+	                            } else {
+	                                retryBtn.disabled = false;
+	                            }
+	                        };
+
+		                        const renderResult = (text, status) => {
+		                            statusEl.textContent = status || '';
+		                            textEl.textContent = text || '';
+		                            copyBtn.disabled = !text;
+		                        };
+
+		                        const runOcr = async (force = false) => {
+		                            if (!src) {
+		                                renderResult('', '{{ _("This image cannot be processed.") }}');
+		                                return;
+	                            }
+
+	                            setLoading(true, '{{ _("Extracting text...") }}');
+	                            renderResult('', '');
+
+	                            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+	                            const headers = {
+	                                'Content-Type': 'application/json',
+	                                ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+	                            };
+
+	                            try {
+	                                const response = await fetch('/utils/ocr', {
+	                                    method: 'POST',
+	                                    headers,
+	                                    body: JSON.stringify({ src, force }),
+	                                });
+
+	                                if (!response.ok) {
+	                                    const payload = await response.json().catch(() => ({}));
+	                                    const detail = payload?.detail || '';
+	                                    if (detail === 'ocr_not_available') {
+	                                        statusEl.textContent = '{{ _("OCR is not available on this server.") }}';
+	                                    } else if (detail === 'invalid_src') {
+	                                        statusEl.textContent = '{{ _("This image cannot be processed.") }}';
+	                                    } else {
+	                                        statusEl.textContent = '{{ _("OCR failed.") }}';
+	                                    }
+	                                    return;
+	                                }
+
+	                                const payload = await response.json();
+	                                const text = (payload?.text || '').trim();
+	                                if (!text) {
+	                                    renderResult('', '{{ _("No text detected.") }}');
+	                                    return;
+	                                }
+
+	                                renderResult(text, '{{ _("Text extracted.") }}');
+	                            } catch (error) {
+	                                console.error('OCR failed', error);
+	                                renderResult('', '{{ _("OCR failed.") }}');
+	                            } finally {
+	                                setLoading(false);
+	                            }
+	                        };
+
+		                        filenameEl.textContent = alt;
+		                        dialog.showModal();
+
+		                        copyBtn.onclick = async () => {
+		                            const fullText = textEl.textContent || '';
+		                            const selection = window.getSelection?.();
+		                            const selectedText = selection ? selection.toString() : '';
+		                            const isSelectionInsideTextEl = (() => {
+		                                if (!selection || selection.rangeCount === 0) {
+		                                    return false;
+		                                }
+		                                const range = selection.getRangeAt(0);
+		                                const container = range.commonAncestorContainer;
+		                                const node = container.nodeType === Node.ELEMENT_NODE ? container : container.parentElement;
+		                                return !!(node && textEl.contains(node));
+		                            })();
+		                            const copyUsingSelection = (range) => {
+		                                if (!selection) {
+		                                    return false;
+		                                }
+		                                const previousRanges = [];
+		                                for (let i = 0; i < selection.rangeCount; i++) {
+		                                    previousRanges.push(selection.getRangeAt(i).cloneRange());
+		                                }
+		                                selection.removeAllRanges();
+		                                selection.addRange(range);
+		                                const ok = document.execCommand('copy');
+		                                selection.removeAllRanges();
+		                                for (const previousRange of previousRanges) {
+		                                    selection.addRange(previousRange);
+		                                }
+		                                return ok;
+		                            };
+
+		                            // In some browsers, Clipboard API writes can fail inside <dialog>, but copying the
+		                            // current selection via execCommand still works. Prefer selection-based copying.
+		                            if (isSelectionInsideTextEl && selectedText) {
+		                                const ok = document.execCommand('copy');
+		                                if (ok) {
+		                                    window.showToast?.('{{ _("Copied to clipboard") }}', 'success');
+		                                    return;
+		                                }
+		                                if (typeof window.copyToClipboard === 'function') {
+		                                    await window.copyToClipboard(selectedText, copyBtn);
+		                                    return;
+		                                }
+		                                window.showToast?.('{{ _("Copy failed") }}', 'error');
+		                                return;
+		                            }
+
+		                            if (fullText) {
+		                                const range = document.createRange();
+		                                range.selectNodeContents(textEl);
+		                                const ok = copyUsingSelection(range);
+		                                if (ok) {
+		                                    window.showToast?.('{{ _("Copied to clipboard") }}', 'success');
+		                                    return;
+		                                }
+		                            }
+
+		                            if (typeof window.copyToClipboard === 'function') {
+		                                await window.copyToClipboard(fullText, copyBtn);
+		                            } else {
+		                                window.showToast?.('{{ _("Copy failed") }}', 'error');
+		                            }
+		                        };
+		                        retryBtn.onclick = async () => {
+		                            await runOcr(true);
+		                        };
+
+	                        await runOcr(false);
+	                    },
+	                });
+	            });
+	            lightbox.init();
+	            lightboxes.set(gallery, lightbox);
+	            return lightbox;
+	        };
 
         window.initPhotoSwipeGallery = initGallery;
         window.refreshPhotoSwipeGallery = (gallery) => {
