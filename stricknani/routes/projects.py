@@ -316,6 +316,35 @@ async def _load_existing_image_checksums(
     return checksums
 
 
+async def _load_existing_image_similarities(
+    db: AsyncSession,
+    project_id: int,
+    *,
+    step_id: int | None = None,
+    limit: int = 25,
+) -> list[SimilarityImage]:
+    """Return existing image similarity payloads for a project or a specific step."""
+    query = select(Image).where(Image.project_id == project_id)
+    if step_id is None:
+        query = query.where(Image.step_id.is_(None))
+    else:
+        query = query.where(Image.step_id == step_id)
+
+    result = await db.execute(query)
+    images = result.scalars().all()
+    similarities: list[SimilarityImage] = []
+
+    for image in images[:limit]:
+        file_path = config.MEDIA_ROOT / "projects" / str(project_id) / image.filename
+        try:
+            with PilImage.open(file_path) as img:
+                similarities.append(build_similarity_image(img))
+        except Exception:
+            continue
+
+    return similarities
+
+
 async def _import_images_from_urls(
     db: AsyncSession,
     project: Project,
@@ -1264,6 +1293,7 @@ async def import_pattern(
             data = trim_import_strings(data)
 
             existing_gallery_checksums: set[str] | None = None
+            existing_gallery_similarities: list[SimilarityImage] | None = None
             if project_id is not None:
                 # When importing into an existing project, skip images that are already
                 # present in the project's gallery (dedupe will also happen on save,
@@ -1281,6 +1311,9 @@ async def import_pattern(
                             await _load_existing_image_checksums(db, project_obj.id)
                         ).keys()
                     )
+                    existing_gallery_similarities = (
+                        await _load_existing_image_similarities(db, project_obj.id)
+                    )
 
             image_urls = data.get("image_urls")
             if isinstance(image_urls, list) and image_urls:
@@ -1288,6 +1321,7 @@ async def import_pattern(
                     image_urls,
                     referer=source_url,
                     skip_checksums=existing_gallery_checksums,
+                    skip_similarities=existing_gallery_similarities,
                 )
 
             steps = data.get("steps")

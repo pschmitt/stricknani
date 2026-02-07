@@ -85,6 +85,7 @@ async def filter_import_image_urls(
     *,
     referer: str | None = None,
     skip_checksums: set[str] | None = None,
+    skip_similarities: Sequence[SimilarityImage] | None = None,
     limit: int = IMPORT_IMAGE_MAX_COUNT,
 ) -> list[str]:
     """Filter import image URLs by validity, size, and similarity."""
@@ -102,6 +103,7 @@ async def filter_import_image_urls(
         headers["Referer"] = referer
 
     accepted: list[_FilteredImageCandidate] = []
+    existing_similarities: list[SimilarityImage] = list(skip_similarities or [])
 
     async with httpx.AsyncClient(
         timeout=IMPORT_IMAGE_TIMEOUT,
@@ -169,6 +171,22 @@ async def filter_import_image_urls(
                     similarity = build_similarity_image(img)
             except Exception as exc:
                 logger.info("Skipping unreadable image %s: %s", image_url, exc)
+                continue
+
+            is_duplicate_existing = False
+            for existing in existing_similarities:
+                score = compute_similarity_score(existing, similarity)
+                if score is None or score < IMPORT_IMAGE_SSIM_THRESHOLD:
+                    continue
+                logger.info(
+                    "Skipping already imported image %s (ssim %.3f)",
+                    image_url,
+                    score,
+                )
+                is_duplicate_existing = True
+                break
+
+            if is_duplicate_existing:
                 continue
 
             skip_thumbnail = False
