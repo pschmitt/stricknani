@@ -30,7 +30,7 @@
                 "\\.html$"
             ],
             "matchStrings": [
-                "<!-- renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?) -->\\s+.*?/(?<packageName>@?[^@\\s]+)@(?<currentValue>[^/\\s\"']+)"
+                "<!-- renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?) -->\\s+<[^>]+(?:href|src)=\"[^\"]*npm/(?<packageName>@?[^@\\s\"]+)@(?<currentValue>[^/\\\"]+)"
             ]
         }
     ],
