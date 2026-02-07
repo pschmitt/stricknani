@@ -9,7 +9,9 @@ import json
 import logging
 import sys
 from datetime import datetime
+from pathlib import Path
 from types import ModuleType
+from typing import Literal, cast
 
 import httpx
 from rich import print_json
@@ -23,6 +25,13 @@ from sqlalchemy.orm import selectinload
 from stricknani.config import config
 from stricknani.database import AsyncSessionLocal, init_db
 from stricknani.models import Project, Step, User, Yarn
+from stricknani.utils.ai_ingest import (
+    DEFAULT_INSTRUCTIONS as AI_DEFAULT_INSTRUCTIONS,
+)
+from stricknani.utils.ai_ingest import (
+    build_schema_for_target,
+    ingest_with_openai,
+)
 from stricknani.utils.auth import get_password_hash, get_user_by_email
 from stricknani.utils.importer import (
     GarnstudioPatternImporter,
@@ -766,6 +775,60 @@ def prompt_password(confirm: bool = True) -> str:
     return first
 
 
+async def ai_print_schema(target: str) -> None:
+    if target not in ("project", "yarn"):
+        raise ValueError("target must be 'project' or 'yarn'")
+    schema = build_schema_for_target(cast(Literal["project", "yarn"], target))
+    output_json(schema)
+
+
+async def ai_ingest(
+    *,
+    target: str,
+    url: str | None,
+    text: str | None,
+    text_file: str | None,
+    file_paths: list[str] | None,
+    schema_file: str | None,
+    instructions_file: str | None,
+    instructions: str | None,
+    model: str,
+    temperature: float | None,
+    max_output_tokens: int,
+) -> None:
+    if target not in ("project", "yarn"):
+        raise ValueError("target must be 'project' or 'yarn'")
+
+    if schema_file:
+        schema = json.loads(Path(schema_file).read_text(encoding="utf-8"))
+    else:
+        schema = build_schema_for_target(cast(Literal["project", "yarn"], target))
+
+    instructions_parts: list[str] = [AI_DEFAULT_INSTRUCTIONS]
+    if instructions_file:
+        instructions_parts.append(Path(instructions_file).read_text(encoding="utf-8"))
+    if instructions:
+        instructions_parts.append(instructions)
+    combined_instructions = "\n".join([p.strip() for p in instructions_parts if p])
+
+    resolved_text = text
+    if text_file:
+        resolved_text = Path(text_file).read_text(encoding="utf-8")
+
+    data = await ingest_with_openai(
+        target=cast(Literal["project", "yarn"], target),
+        schema=schema,
+        source_url=url,
+        source_text=resolved_text,
+        file_paths=[Path(p) for p in file_paths] if file_paths else None,
+        instructions=combined_instructions,
+        model=model,
+        temperature=temperature,
+        max_output_tokens=max_output_tokens,
+    )
+    output_json(data)
+
+
 def main() -> None:
     raw_args = [arg for arg in sys.argv[1:] if arg not in ("--json", "--verbose")]
     global JSON_OUTPUT, VERBOSE
@@ -914,6 +977,75 @@ def main() -> None:
         "--owner-email", help="Ensure the yarn belongs to this user"
     )
 
+    # AI ingestion (CLI-first)
+    ai_parser = subparsers.add_parser("ai", help="AI ingestion helpers (CLI-only)")
+    ai_subparsers = ai_parser.add_subparsers(dest="ai_command", required=True)
+
+    ai_schema_parser = ai_subparsers.add_parser(
+        "schema",
+        help="Print the JSON Schema used for AI ingestion (OpenAI strict json_schema)",
+    )
+    ai_schema_parser.add_argument(
+        "--target",
+        choices=["project", "yarn"],
+        default="project",
+        help="Schema target (default: project)",
+    )
+
+    ai_ingest_parser = ai_subparsers.add_parser(
+        "ingest",
+        help="Ingest from URL/text/file and return strict JSON",
+    )
+    ai_ingest_parser.add_argument(
+        "--target",
+        choices=["project", "yarn"],
+        default="project",
+        help="Ingestion target (default: project)",
+    )
+    ai_source = ai_ingest_parser.add_mutually_exclusive_group(required=True)
+    ai_source.add_argument("--url", help="Source URL")
+    ai_source.add_argument("--text", help="Source text")
+    ai_source.add_argument("--text-file", help="Path to a text file to ingest")
+    ai_source.add_argument(
+        "--file",
+        dest="file_paths",
+        action="append",
+        help="Path to a PDF/image. Repeat to attach multiple files.",
+    )
+
+    ai_ingest_parser.add_argument(
+        "--schema-file",
+        help="Path to a JSON Schema file. If omitted, schema is derived from models.",
+    )
+    ai_ingest_parser.add_argument(
+        "--instructions-file",
+        help="Additional instructions appended to the default prompt.",
+    )
+    ai_ingest_parser.add_argument(
+        "--instructions",
+        help="Additional instructions appended to the default prompt.",
+    )
+    ai_ingest_parser.add_argument(
+        "--model",
+        default="gpt-5-mini",
+        help="OpenAI model (default: gpt-5-mini)",
+    )
+    ai_ingest_parser.add_argument(
+        "--temperature",
+        type=float,
+        default=None,
+        help=(
+            "Sampling temperature. Some models (e.g. GPT-5*) may not support it; "
+            "omit to use the model default."
+        ),
+    )
+    ai_ingest_parser.add_argument(
+        "--max-output-tokens",
+        type=int,
+        default=8000,
+        help="Max output tokens (default: 8000)",
+    )
+
     # API interaction
     api_parser = subparsers.add_parser("api", help="Interact with the API")
     api_parser.add_argument("--url", default="http://localhost:7674", help="API URL")
@@ -965,6 +1097,25 @@ def main() -> None:
             endpoint = "/yarn/"
 
         asyncio.run(api_request(args.url, endpoint, args.email, password))
+    elif args.command == "ai":
+        if args.ai_command == "schema":
+            asyncio.run(ai_print_schema(args.target))
+        elif args.ai_command == "ingest":
+            asyncio.run(
+                ai_ingest(
+                    target=args.target,
+                    url=args.url,
+                    text=args.text,
+                    text_file=args.text_file,
+                    file_paths=args.file_paths,
+                    schema_file=args.schema_file,
+                    instructions_file=args.instructions_file,
+                    instructions=args.instructions,
+                    model=args.model,
+                    temperature=args.temperature,
+                    max_output_tokens=args.max_output_tokens,
+                )
+            )
     elif args.command == "project":
         if args.project_command == "list":
             asyncio.run(list_projects(args.owner_email))

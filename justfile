@@ -96,6 +96,26 @@ demo-reset:
 cli *ARGS:
   uv run stricknani-cli {{ARGS}}
 
+# AI ingestion helpers (CLI-only)
+[positional-arguments]
+ai *args:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  uv run stricknani-cli ai "$@"
+
+# Convenience wrappers
+# Usage:
+# - `just ai-schema` (project)
+# - `just ai-schema yarn`
+ai-schema target="project":
+  uv run stricknani-cli ai schema --target {{target}}
+
+[positional-arguments]
+ai-ingest *args:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  uv run stricknani-cli ai ingest "$@"
+
 # Create or update admin user
 admin-create email password='':
   #!/usr/bin/env bash
