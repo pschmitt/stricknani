@@ -1379,66 +1379,66 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         });
         {% endif %}
 
-        function updateSelectedDisplay() {
-            if (selectedYarns.size === 0 && pendingYarns.size === 0) {
-                selectedContainer.innerHTML = '<span class="text-base-content/40 text-sm">{{ _("No yarns selected") }}</span>';
-                return;
-            }
+	        function updateSelectedDisplay() {
+	            if (selectedYarns.size === 0 && pendingYarns.size === 0) {
+	                selectedContainer.innerHTML = '<span class="text-base-content/40 text-sm">{{ _("No yarns selected") }}</span>';
+	                return;
+	            }
 
             selectedContainer.innerHTML = '';
 
-            // Render existing yarns
-            selectedYarns.forEach((yarn, id) => {
-                const chip = document.createElement('div');
-                chip.className = 'flex items-center gap-2 py-2 px-3 bg-primary/10 text-primary border border-primary/20 rounded-lg';
+	            // Render existing yarns
+	            selectedYarns.forEach((yarn, id) => {
+	                const chip = document.createElement('div');
+	                chip.className = 'flex items-center gap-3 py-2.5 px-3.5 bg-primary/10 text-primary border border-primary/20 rounded-xl';
 
-                const imageHtml = yarn.imageUrl
-                    ? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-8 h-8 rounded object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
-                    : '';
+	                const imageHtml = yarn.imageUrl
+	                    ? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-10 h-10 rounded-lg object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
+	                    : '';
 
-                chip.innerHTML = `
-                    ${imageHtml}
-                    <div class="w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? ' hidden' : ''}" data-fallback-icon>
-                        <span class="mdi mdi-image-off text-sm" aria-hidden="true"></span>
-                    </div>
-                    <span class="text-sm flex-1">
-                        ${yarn.name}${yarn.brand ? ` • ${yarn.brand}` : ''}
-                    </span>
-                    <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-yarn="${id}">
-                        <span class="mdi mdi-close"></span>
-                    </button>
-                `;
-                selectedContainer.appendChild(chip);
+	                chip.innerHTML = `
+	                    ${imageHtml}
+	                    <div class="w-10 h-10 rounded-lg bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? ' hidden' : ''}" data-fallback-icon>
+	                        <span class="mdi mdi-image-off text-base" aria-hidden="true"></span>
+	                    </div>
+	                    <span class="text-base flex-1 min-w-0 truncate">
+	                        ${yarn.name}${yarn.brand ? ` • ${yarn.brand}` : ''}
+	                    </span>
+	                    <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-yarn="${id}">
+	                        <span class="mdi mdi-close"></span>
+	                    </button>
+	                `;
+	                selectedContainer.appendChild(chip);
 
                 chip.querySelector('[data-remove-yarn]').addEventListener('click', () => {
                     removeYarn(id);
                 });
             });
 
-            // Render pending yarns
-            pendingYarns.forEach(yarn => {
-                const name = yarn.name;
-                const chip = document.createElement('div');
-                chip.className = 'flex items-center gap-2 py-2 px-3 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg';
+	            // Render pending yarns
+	            pendingYarns.forEach(yarn => {
+	                const name = yarn.name;
+	                const chip = document.createElement('div');
+	                chip.className = 'flex items-center gap-3 py-2.5 px-3.5 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl';
 
-                const imageHtml = yarn.imageUrl
-                    ? `<img src="${yarn.imageUrl}" alt="${name}" class="w-8 h-8 rounded object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
-                    : '';
+	                const imageHtml = yarn.imageUrl
+	                    ? `<img src="${yarn.imageUrl}" alt="${name}" class="w-10 h-10 rounded-lg object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
+	                    : '';
 
-                chip.innerHTML = `
-                    ${imageHtml}
-                    <div class="relative w-8 h-8 rounded bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? ' hidden' : ''}" data-fallback-icon>
-                        <span class="mdi mdi-sheep text-sm" aria-hidden="true"></span>
-                        <span class="absolute -top-1.5 -right-1.5 badge badge-secondary font-black text-[8px] h-3 min-h-0 px-1 border-none shadow-sm scale-90">NEW</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <span class="text-sm block truncate">${name}</span>
-                    </div>
-                    <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-pending="${name}">
-                        <span class="mdi mdi-close"></span>
-                    </button>
-                `;
-                selectedContainer.appendChild(chip);
+	                chip.innerHTML = `
+	                    ${imageHtml}
+	                    <div class="relative w-10 h-10 rounded-lg bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? ' hidden' : ''}" data-fallback-icon>
+	                        <span class="mdi mdi-sheep text-base" aria-hidden="true"></span>
+	                        <span class="absolute -top-1.5 -right-1.5 badge badge-secondary font-black text-[8px] h-3 min-h-0 px-1 border-none shadow-sm scale-90">NEW</span>
+	                    </div>
+	                    <div class="flex-1 min-w-0">
+	                        <span class="text-base block truncate">${name}</span>
+	                    </div>
+	                    <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-pending="${name}">
+	                        <span class="mdi mdi-close"></span>
+	                    </button>
+	                `;
+	                selectedContainer.appendChild(chip);
 
                 chip.querySelector('[data-remove-pending]').addEventListener('click', () => {
                     removePendingYarn(name);

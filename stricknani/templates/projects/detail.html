@@ -483,26 +483,26 @@
                             <span class="mdi mdi-sheep"></span>
                             {{ _('Yarns Used') }}
                         </h3>
-                        {% if project.linked_yarns %}
-                        <div class="space-y-2">
-                            {% for yarn in project.linked_yarns %}
-                            <a href="/yarn/{{ yarn.id }}"
-                                class="flex items-center gap-2 rounded-lg border border-base-200 bg-base-100 px-2.5 py-2 text-sm transition hover:border-base-300 hover:bg-base-200/40">
-                                <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
-                                    {% if yarn.preview_url %}
-                                    <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}" class="h-full w-full object-cover">
-                                    {% else %}
-                                    <span class="mdi mdi-sheep text-base-content/40"></span>
-                                    {% endif %}
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="truncate font-medium">{{ yarn.name }}</div>
-                                    <div class="text-xs text-base-content/60 truncate">
-                                        {{ yarn.brand or _('Unknown Brand') }}
-                                        {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
-                                    </div>
-                                </div>
-                                <span class="mdi mdi-chevron-right text-base-content/30"></span>
+	                        {% if project.linked_yarns %}
+	                        <div class="space-y-2">
+	                            {% for yarn in project.linked_yarns %}
+	                            <a href="/yarn/{{ yarn.id }}"
+	                                class="flex items-center gap-3 rounded-xl border border-base-200 bg-base-100 px-3 py-3 text-base transition hover:border-base-300 hover:bg-base-200/40">
+	                                <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-base-200">
+	                                    {% if yarn.preview_url %}
+	                                    <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}" class="h-full w-full object-cover">
+	                                    {% else %}
+	                                    <span class="mdi mdi-sheep text-base-content/40 text-lg"></span>
+	                                    {% endif %}
+	                                </div>
+	                                <div class="min-w-0 flex-1">
+	                                    <div class="truncate font-medium">{{ yarn.name }}</div>
+	                                    <div class="text-sm text-base-content/60 truncate">
+	                                        {{ yarn.brand or _('Unknown Brand') }}
+	                                        {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
+	                                    </div>
+	                                </div>
+	                                <span class="mdi mdi-chevron-right text-base-content/30"></span>
                             </a>
                             {% endfor %}
                         </div>
@@ -829,24 +829,24 @@
                     <p class="text-sm font-medium text-warning-content">{{ _('Some yarns are only used in this project:') }}</p>
                     <p class="text-xs opacity-80">{{ _('Select the yarns you want to delete:') }}</p>
                     <div class="space-y-2">
-                        {% for yarn in project.exclusive_yarns %}
-                        <label class="flex items-center gap-3 rounded-lg border border-warning/20 bg-base-100 px-2.5 py-2 text-sm transition hover:border-warning/40">
-                            <input type="checkbox" class="checkbox checkbox-warning checkbox-sm exclusive-yarn-checkbox" value="{{ yarn.id }}">
-                            <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-base-200">
-                                {% if yarn.preview_url %}
-                                <img src="{{ yarn.preview_url }}" alt="{{ yarn.preview_alt or yarn.name }}" class="h-full w-full object-cover">
-                                {% else %}
-                                <span class="mdi mdi-sheep text-base-content/40"></span>
-                                {% endif %}
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="truncate font-medium">{{ yarn.name }}</div>
-                                <div class="text-xs text-base-content/60 truncate">
-                                    {{ yarn.brand or _('Unknown Brand') }}
-                                    {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
-                                </div>
-                            </div>
-                        </label>
+	                        {% for yarn in project.exclusive_yarns %}
+	                        <label class="flex items-center gap-3 rounded-xl border border-warning/20 bg-base-100 px-3 py-3 text-base transition hover:border-warning/40">
+	                            <input type="checkbox" class="checkbox checkbox-warning checkbox-sm exclusive-yarn-checkbox" value="{{ yarn.id }}">
+	                            <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-base-200">
+	                                {% if yarn.preview_url %}
+	                                <img src="{{ yarn.preview_url }}" alt="{{ yarn.preview_alt or yarn.name }}" class="h-full w-full object-cover">
+	                                {% else %}
+	                                <span class="mdi mdi-sheep text-base-content/40 text-lg"></span>
+	                                {% endif %}
+	                            </div>
+	                            <div class="min-w-0 flex-1">
+	                                <div class="truncate font-medium">{{ yarn.name }}</div>
+	                                <div class="text-sm text-base-content/60 truncate">
+	                                    {{ yarn.brand or _('Unknown Brand') }}
+	                                    {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
+	                                </div>
+	                            </div>
+	                        </label>
                         {% endfor %}
                     </div>
                     <label class="label cursor-pointer justify-start gap-3 p-0 mt-3">
