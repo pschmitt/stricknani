@@ -582,6 +582,8 @@
                         return;
                     }
 
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
                     getCroppedCanvas().then((canvas) => {
                         return new Promise((resolve) => {
                             canvas.toBlob(function (blob) {
@@ -609,11 +611,26 @@
                             method: 'POST',
                             body: formData,
                             headers: {
-                                'HX-Request': 'true'
+                                'HX-Request': 'true',
+                                ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
                             }
                         })
                             .then(response => {
                                 if (!response.ok) {
+                                    if (response.status === 401 || response.status === 403) {
+                                        window.showToast?.('{{ _("Your session has expired. Reload the page to continue.") }}', 'error');
+                                        window.confirmAction(
+                                            '{{ _("Session expired") }}',
+                                            '{{ _("Your session has expired. Reload the page to continue.") }}',
+                                            () => window.location.reload(),
+                                            null,
+                                            {
+                                                confirmText: '{{ _("Reload page") }}',
+                                                cancelText: '{{ _("Cancel") }}',
+                                            }
+                                        );
+                                        throw new Error('Upload failed (CSRF)');
+                                    }
                                     throw new Error('Upload failed');
                                 }
                                 return response.text();
