@@ -2715,12 +2715,13 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         }
     }
 
-    async function importFromUrl(url) {
-        if (!url) return;
+	    async function importFromUrl(url) {
+	        if (!url) return;
 
-        const importDialog = document.getElementById('importDialog');
-        const importForm = document.getElementById('importForm');
-        const importLoading = document.getElementById('importLoading');
+	        const existingProjectId = {{ (project.id if project else None) | tojson }};
+	        const importDialog = document.getElementById('importDialog');
+	        const importForm = document.getElementById('importForm');
+	        const importLoading = document.getElementById('importLoading');
 
         if (!importDialog || !importForm || !importLoading) return;
 
@@ -2729,9 +2730,12 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         importForm.classList.add('hidden');
         importLoading.classList.remove('hidden');
 
-        const formData = new FormData();
-        formData.append('url', url);
-        formData.append('type', 'url');
+	        const formData = new FormData();
+	        formData.append('url', url);
+	        formData.append('type', 'url');
+	        if (existingProjectId) {
+	            formData.append('project_id', String(existingProjectId));
+	        }
 
         try {
             const response = await fetch('/projects/import', {
@@ -3009,16 +3013,20 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
 
                 const formData = new FormData();
 
-                if (currentTab === 'url') {
-                    const url = document.getElementById('importUrl').value.trim();
-                    if (!url) {
-                        window.showToast?.("{{ _('Please enter a URL') }}", 'error');
-                        return;
-                    }
-                    formData.append('url', url);
-                    formData.append('type', 'url');
+	                    if (currentTab === 'url') {
+	                        const url = document.getElementById('importUrl').value.trim();
+	                        if (!url) {
+	                            window.showToast?.("{{ _('Please enter a URL') }}", 'error');
+	                            return;
+	                        }
+	                        formData.append('url', url);
+	                        formData.append('type', 'url');
+	                        const existingProjectId = {{ (project.id if project else None) | tojson }};
+	                        if (existingProjectId) {
+	                            formData.append('project_id', String(existingProjectId));
+	                        }
 
-                } else if (currentTab === 'file') {
+	                } else if (currentTab === 'file') {
                     const fileInput = document.getElementById('importFile');
                     const file = fileInput.files[0];
                     if (!file) {

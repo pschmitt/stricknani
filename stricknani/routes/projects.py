@@ -1036,6 +1036,8 @@ async def import_pattern(
     text: Annotated[str | None, Form()] = None,
     file: UploadFile | None = None,
     use_ai: Annotated[bool, Form()] = False,
+    project_id: Annotated[int | None, Form()] = None,
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
 ) -> JSONResponse:
     """Import pattern data from URL, file, or text.
@@ -1261,11 +1263,31 @@ async def import_pattern(
                 data["import_trace_id"] = trace.trace_id
             data = trim_import_strings(data)
 
+            existing_gallery_checksums: set[str] | None = None
+            if project_id is not None:
+                # When importing into an existing project, skip images that are already
+                # present in the project's gallery (dedupe will also happen on save,
+                # but we prefer showing the effective result in the UI).
+                res = await db.execute(
+                    select(Project).where(
+                        Project.id == project_id,
+                        Project.owner_id == current_user.id,
+                    )
+                )
+                project_obj = res.scalar_one_or_none()
+                if project_obj:
+                    existing_gallery_checksums = set(
+                        (
+                            await _load_existing_image_checksums(db, project_obj.id)
+                        ).keys()
+                    )
+
             image_urls = data.get("image_urls")
             if isinstance(image_urls, list) and image_urls:
                 data["image_urls"] = await filter_import_image_urls(
                     image_urls,
                     referer=source_url,
+                    skip_checksums=existing_gallery_checksums,
                 )
 
             steps = data.get("steps")

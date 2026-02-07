@@ -84,6 +84,7 @@ async def filter_import_image_urls(
     image_urls: Sequence[str],
     *,
     referer: str | None = None,
+    skip_checksums: set[str] | None = None,
     limit: int = IMPORT_IMAGE_MAX_COUNT,
 ) -> list[str]:
     """Filter import image URLs by validity, size, and similarity."""
@@ -142,6 +143,14 @@ async def filter_import_image_urls(
             if len(response.content) > IMPORT_IMAGE_MAX_BYTES:
                 logger.info("Skipping large image %s", image_url)
                 continue
+
+            if skip_checksums:
+                from stricknani.utils.files import compute_checksum
+
+                checksum = compute_checksum(response.content)
+                if checksum in skip_checksums:
+                    logger.info("Skipping already imported image %s", image_url)
+                    continue
 
             try:
                 with PilImage.open(BytesIO(response.content)) as img:
