@@ -291,16 +291,16 @@
                 <!-- Details Card (Collapsible) -->
                 <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
                     <input type="checkbox" id="details-toggle-mobile" checked />
-                    <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
+                    <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-sm">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Project Details') }}
                     </div>
-                    <div class="collapse-content space-y-4">
+                    <div class="collapse-content space-y-4 text-base">
                         <div class="pt-2">
                             <!-- Badges Info -->
                             {% if project.category and project.category != 'None' %}
                             <div class="mb-4">
-                                <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
+                                <span class="text-xs font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
                                     }}</span>
                                 <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
                                     class="badge badge-md border {{ project.category|category_color }} font-bold py-3.5 px-4 shadow-sm hover:brightness-95 transition-all">
@@ -312,7 +312,7 @@
 
                             {% if project.tags %}
                             <div class="mb-4">
-                                <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Tags')
+                                <span class="text-xs font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Tags')
                                     }}</span>
                                 <div class="flex flex-wrap gap-2">
                                     {% for tag in project.tags %}
@@ -327,7 +327,7 @@
                             <div class="py-1">
                                 <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created')
                                     }}</span>
-                                <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
+                                <span class="text-base font-medium text-base-content/70 inline-flex items-center gap-1">
                                     <span class="mdi mdi-calendar-plus"></span>
                                     {{ project.created_at[:10] }}
                                 </span>
@@ -348,7 +348,7 @@
                                 {% if project.link %}
                                 <div class="flex items-center gap-2 group/link">
                                     <a href="{{ project.link }}" target="_blank" rel="noreferrer"
-                                        class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
+                                        class="flex items-center gap-2 text-base text-primary hover:underline break-all group">
                                         <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                                         {{ project.link }}
                                     </a>
@@ -360,11 +360,20 @@
                                     </button>
                                 </div>
                                 {% if project.link_archive %}
-                                <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
-                                    class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
-                                    <span class="mdi mdi-archive-outline"></span>
-                                    {{ _('Archived snapshot') }}
-                                </a>
+                                <div class="mt-2 flex flex-wrap items-center gap-2">
+                                    <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
+                                        class="flex items-center gap-2 text-base text-primary hover:underline break-all">
+                                        <span class="mdi mdi-archive-outline"></span>
+                                        {{ _('Archived snapshot') }}
+                                    </a>
+                                    <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                            <span class="mdi mdi-refresh"></span>
+                                            {{ _('Request new snapshot') }}
+                                        </button>
+                                    </form>
+                                </div>
                                 {% elif project.link_archive_failed %}
                                 <div class="mt-2 flex flex-wrap items-center gap-2">
                                     <div
@@ -373,25 +382,29 @@
                                         {{ _('Archive request failed') }}
                                     </div>
                                     <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                         <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
                                             <span class="mdi mdi-refresh"></span>
                                             {{ _('Retry') }}
                                         </button>
                                     </form>
                                 </div>
-                                {% elif project.archive_pending %}
-                                <div
-                                    class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-                                    <span class="mdi mdi-clock-outline"></span>
-                                    {{ _('Archive requested - check back soon') }}
-                                </div>
                                 {% endif %}
                                 {% if project.link_archive_fallback and not project.link_archive %}
-                                <a href="{{ project.link_archive_fallback }}" target="_blank" rel="noreferrer"
-                                    class="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-primary hover:underline">
-                                    <span class="mdi mdi-archive-search-outline"></span>
-                                    {{ _('Open in Wayback Machine') }}
-                                </a>
+                                <div class="mt-2 flex flex-wrap items-center gap-2">
+                                    <a href="{{ project.link_archive_fallback }}" target="_blank" rel="noreferrer"
+                                        class="inline-flex items-center gap-2 text-base font-semibold text-primary hover:underline">
+                                        <span class="mdi mdi-archive-search-outline"></span>
+                                        {{ _('Open in Wayback Machine') }}
+                                    </a>
+                                    <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                            <span class="mdi mdi-refresh"></span>
+                                            {{ _('Request snapshot') }}
+                                        </button>
+                                    </form>
+                                </div>
                                 {% endif %}
                                 {% else %}
                                 <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
@@ -643,19 +656,19 @@
             <!-- Details Card (Collapsible) -->
             <div class="collapse collapse-right collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
                 <input type="checkbox" id="details-toggle-sidebar" checked onchange="toggleSidebarExpansion(this)" />
-                <div class="collapse-title w-full font-bold text-base text-base-content/40 uppercase tracking-widest text-xs">
+                <div class="collapse-title w-full font-bold text-base text-base-content/40 uppercase tracking-widest text-sm">
                     <span class="flex items-center gap-2">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Project Details') }}
                     </span>
                 </div>
 
-                <div class="collapse-content space-y-4">
+                <div class="collapse-content space-y-4 text-base">
                     <div class="pt-2">
                         <!-- Badges Info -->
                         {% if project.category and project.category != 'None' %}
                         <div class="mb-4 sm:mb-6">
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
+                            <span class="text-xs font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
                                 }}</span>
                             <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
                                 class="badge badge-md border {{ project.category|category_color }} font-bold py-3.5 px-4 shadow-sm hover:brightness-95 transition-all">
@@ -667,7 +680,7 @@
 
                         {% if project.tags %}
                         <div class="mb-4 sm:mb-6">
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Tags')
+                            <span class="text-xs font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Tags')
                                 }}</span>
                             <div class="flex flex-wrap gap-2">
                                 {% for tag in project.tags %}
@@ -682,7 +695,7 @@
                         <div class="py-1">
                             <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Created')
                                 }}</span>
-                            <span class="text-xs font-medium text-base-content/70 inline-flex items-center gap-1">
+                            <span class="text-base font-medium text-base-content/70 inline-flex items-center gap-1">
                                 <span class="mdi mdi-calendar-plus"></span>
                                 {{ project.created_at[:10] }}
                             </span>
@@ -703,7 +716,7 @@
                             {% if project.link %}
                             <div class="flex items-center gap-2 group/link">
                                 <a href="{{ project.link }}" target="_blank" rel="noreferrer"
-                                    class="flex items-center gap-2 text-sm text-primary hover:underline break-all group">
+                                    class="flex items-center gap-2 text-base text-primary hover:underline break-all group">
                                     <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                                     {{ project.link }}
                                 </a>
@@ -715,11 +728,20 @@
                                 </button>
                             </div>
                             {% if project.link_archive %}
-                            <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
-                                class="mt-2 flex items-center gap-2 text-sm text-primary hover:underline break-all">
-                                <span class="mdi mdi-archive-outline"></span>
-                                {{ _('Archived snapshot') }}
-                            </a>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <a href="{{ project.link_archive }}" target="_blank" rel="noreferrer"
+                                    class="flex items-center gap-2 text-base text-primary hover:underline break-all">
+                                    <span class="mdi mdi-archive-outline"></span>
+                                    {{ _('Archived snapshot') }}
+                                </a>
+                                <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                        <span class="mdi mdi-refresh"></span>
+                                        {{ _('Request new snapshot') }}
+                                    </button>
+                                </form>
+                            </div>
                             {% elif project.link_archive_failed %}
                             <div class="mt-2 flex flex-wrap items-center gap-2">
                                 <div
@@ -735,19 +757,22 @@
                                     </button>
                                 </form>
                             </div>
-                            {% elif project.archive_pending %}
-                            <div
-                                class="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-                                <span class="mdi mdi-clock-outline"></span>
-                                {{ _('Archive requested - check back soon') }}
-                            </div>
                             {% endif %}
                             {% if project.link_archive_fallback and not project.link_archive %}
-                            <a href="{{ project.link_archive_fallback }}" target="_blank" rel="noreferrer"
-                                class="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-primary hover:underline">
-                                <span class="mdi mdi-archive-search-outline"></span>
-                                {{ _('Open in Wayback Machine') }}
-                            </a>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <a href="{{ project.link_archive_fallback }}" target="_blank" rel="noreferrer"
+                                    class="inline-flex items-center gap-2 text-base font-semibold text-primary hover:underline">
+                                    <span class="mdi mdi-archive-search-outline"></span>
+                                    {{ _('Open in Wayback Machine') }}
+                                </a>
+                                <form action="/projects/{{ project.id }}/retry-archive" method="post" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                        <span class="mdi mdi-refresh"></span>
+                                        {{ _('Request snapshot') }}
+                                    </button>
+                                </form>
+                            </div>
                             {% endif %}
                             {% else %}
                             <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>

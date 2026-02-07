@@ -1120,13 +1120,23 @@
                     'category_created': '{{ _("Category created") }}',
                     'category_updated': '{{ _("Category updated") }}',
                     'category_deleted': '{{ _("Category deleted") }}',
+                    'archive_requested': {
+                        message: '{{ _("Archive snapshot request queued") }}',
+                        variant: 'success',
+                    },
+                    'archive_request_unavailable': {
+                        message: '{{ _("Archive snapshot request unavailable") }}',
+                        variant: 'info',
+                    },
                 };
 
-                                const message = toastMessages[toastKey];
+                                const entry = toastMessages[toastKey];
+                                const message = typeof entry === 'string' ? entry : entry?.message;
 
                                 if (message) {
 
-                                    window.showToast?.(message, 'success');
+                                    const variant = typeof entry === 'string' ? 'success' : entry?.variant || 'success';
+                                    window.showToast?.(message, variant);
 
                                     const url = new URL(window.location.href);
 

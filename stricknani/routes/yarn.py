@@ -1058,8 +1058,13 @@ async def retry_yarn_archive(
         await db.commit()
         asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
 
+        return RedirectResponse(
+            url=f"/yarn/{yarn.id}?toast=archive_requested",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
     return RedirectResponse(
-        url=f"/yarn/{yarn.id}",
+        url=f"/yarn/{yarn.id}?toast=archive_request_unavailable",
         status_code=status.HTTP_303_SEE_OTHER,
     )
 
