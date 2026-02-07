@@ -2104,13 +2104,38 @@ async def get_project(
             }
         )
 
-    favorite_lookup = await db.execute(
+    favorite_rows = await db.execute(
         select(user_favorites.c.project_id).where(
-            user_favorites.c.user_id == current_user.id,
-            user_favorites.c.project_id == project.id,
+            user_favorites.c.user_id == current_user.id
         )
     )
-    is_favorite = favorite_lookup.first() is not None
+    favorite_ids = {row[0] for row in favorite_rows}
+    is_favorite = project.id in favorite_ids
+
+    # Swipe navigation: follow the same ordering as the list view (favorites first, then
+    # name).
+    nav_rows = await db.execute(
+        select(Project.id, Project.name).where(Project.owner_id == current_user.id)
+    )
+    nav_projects = [(row[0], row[1] or "") for row in nav_rows]
+    nav_projects.sort(
+        key=lambda item: (
+            item[0] not in favorite_ids,
+            item[1].casefold(),
+            item[0],
+        )
+    )
+    nav_ids = [item[0] for item in nav_projects]
+    swipe_prev_href = None
+    swipe_next_href = None
+    try:
+        idx = nav_ids.index(project.id)
+    except ValueError:
+        idx = -1
+    if idx > 0:
+        swipe_prev_href = f"/projects/{nav_ids[idx - 1]}"
+    if idx != -1 and idx < len(nav_ids) - 1:
+        swipe_next_href = f"/projects/{nav_ids[idx + 1]}"
     exclusive_yarns = await _get_exclusive_yarns(db, project)
 
     # Check for stale archive request (self-healing)
@@ -2215,6 +2240,8 @@ async def get_project(
             "current_user": current_user,
             "project": project_data,
             "is_ai_enhanced": project.is_ai_enhanced,
+            "swipe_prev_href": swipe_prev_href,
+            "swipe_next_href": swipe_next_href,
         },
     )
 

@@ -787,7 +787,31 @@ async def yarn_detail(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    is_favorite = any(entry.id == yarn.id for entry in current_user.favorite_yarns)
+    favorite_ids = {entry.id for entry in current_user.favorite_yarns}
+    is_favorite = yarn.id in favorite_ids
+
+    nav_rows = await db.execute(
+        select(Yarn.id, Yarn.name).where(Yarn.owner_id == current_user.id)
+    )
+    nav_yarns = [(row[0], row[1] or "") for row in nav_rows]
+    nav_yarns.sort(
+        key=lambda item: (
+            item[0] not in favorite_ids,
+            item[1].casefold(),
+            item[0],
+        )
+    )
+    nav_ids = [item[0] for item in nav_yarns]
+    swipe_prev_href = None
+    swipe_next_href = None
+    try:
+        idx = nav_ids.index(yarn.id)
+    except ValueError:
+        idx = -1
+    if idx > 0:
+        swipe_prev_href = f"/yarn/{nav_ids[idx - 1]}"
+    if idx != -1 and idx < len(nav_ids) - 1:
+        swipe_next_href = f"/yarn/{nav_ids[idx + 1]}"
 
     # Check for stale archive request (self-healing)
     if (
@@ -817,6 +841,8 @@ async def yarn_detail(
             "yarn": yarn,
             "is_favorite": is_favorite,
             "is_ai_enhanced": yarn.is_ai_enhanced,
+            "swipe_prev_href": swipe_prev_href,
+            "swipe_next_href": swipe_next_href,
             "description_html": render_markdown(yarn.description)
             if yarn.description
             else None,

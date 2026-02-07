@@ -45,16 +45,45 @@
         });
     </script>
     <style>
-        /* CropperJS v2 uses web components; round the avatar crop selection. */
-        cropper-canvas {
-            width: 100%;
-            height: 100%;
-        }
+	        /* CropperJS v2 uses web components; provide a circular preview overlay. */
+	        #crop-modal cropper-canvas {
+	            width: 100%;
+	            height: 100%;
+	        }
 
-        cropper-selection {
-            border-radius: 9999px;
-            overflow: hidden;
-        }
+	        #crop-modal .avatar-crop-overlay {
+	            position: absolute;
+	            inset: 0;
+	            pointer-events: none;
+	            --avatar-crop-size: 0px;
+	            --avatar-crop-radius: 0px;
+	        }
+
+	        #crop-modal .avatar-crop-overlay::before {
+	            content: "";
+	            position: absolute;
+	            inset: 0;
+	            background: radial-gradient(
+	                circle at 50% 50%,
+	                transparent 0,
+	                transparent calc(var(--avatar-crop-radius) - 2px),
+	                rgba(0, 0, 0, 0.55) calc(var(--avatar-crop-radius) + 1px)
+	            );
+	        }
+
+	        #crop-modal .avatar-crop-overlay::after {
+	            content: "";
+	            position: absolute;
+	            left: 50%;
+	            top: 50%;
+	            width: var(--avatar-crop-size);
+	            height: var(--avatar-crop-size);
+	            transform: translate(-50%, -50%);
+	            border-radius: 9999px;
+	            border: 2px solid rgba(255, 255, 255, 0.9);
+	            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+	            box-sizing: border-box;
+	        }
 
         .markdown-inline-image {
             max-width: 250px;
@@ -447,9 +476,9 @@
     {# Default navbar - pages can override this block #}
     {% endblock %}
 
-    <main class="flex-grow w-full">
-        {% block content %}{% endblock %}
-    </main>
+	    <main class="flex-grow w-full" {% block main_attrs %}{% endblock %}>
+	        {% block content %}{% endblock %}
+	    </main>
 
     <footer class="mt-8 py-4 text-center text-sm text-base-content/70 bg-base-100 border-t border-base-300">
         <span class="mdi mdi-yarn mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0 | {{ _('GPL-3.0-only')
@@ -463,15 +492,16 @@
     {% if current_user %}
     <!-- Profile Image Upload Tools -->
     <input type="file" id="profile-image-input" class="hidden" accept="image/*">
-    <dialog id="crop-modal" class="modal modal-bottom sm:modal-middle">
-        <div class="modal-box max-w-lg">
-            <h3 class="font-bold text-lg mb-4">{{ _('Crop Profile Picture') }}</h3>
-            <div class="relative h-96 w-full rounded-lg bg-base-300 overflow-hidden">
-                <img id="crop-image" src="" alt="Image to crop" class="max-h-full max-w-full">
-            </div>
-            <div class="modal-action">
-                {{ dialogs.dialog_cancel(_('Cancel'), id='crop-cancel') }}
-                {{ dialogs.dialog_primary(_('Save & Upload'), icon='mdi-cloud-upload', id='crop-save') }}
+	    <dialog id="crop-modal" class="modal modal-bottom sm:modal-middle">
+	        <div class="modal-box max-w-lg">
+	            <h3 class="font-bold text-lg mb-4">{{ _('Crop Profile Picture') }}</h3>
+	            <div id="avatar-crop-container" class="relative h-96 w-full rounded-lg bg-base-300 overflow-hidden">
+	                <img id="crop-image" src="" alt="Image to crop" class="max-h-full max-w-full">
+	                <div id="avatar-crop-overlay" class="avatar-crop-overlay" aria-hidden="true"></div>
+	            </div>
+	            <div class="modal-action">
+	                {{ dialogs.dialog_cancel(_('Cancel'), id='crop-cancel') }}
+	                {{ dialogs.dialog_primary(_('Save & Upload'), icon='mdi-cloud-upload', id='crop-save') }}
             </div>
         </div>
         {{ dialogs.modal_backdrop() }}
@@ -481,15 +511,17 @@
             document.addEventListener('DOMContentLoaded', function () {
                 let cropper;
                 const input = document.getElementById('profile-image-input');
-                const modal = document.getElementById('crop-modal');
-                const image = document.getElementById('crop-image');
-                const saveBtn = document.getElementById('crop-save');
-                const cancelBtn = document.getElementById('crop-cancel');
-                let targetUserId = {{ current_user.id }};
+	                const modal = document.getElementById('crop-modal');
+	                const cropContainer = document.getElementById('avatar-crop-container');
+	                const cropOverlay = document.getElementById('avatar-crop-overlay');
+	                const image = document.getElementById('crop-image');
+	                const saveBtn = document.getElementById('crop-save');
+	                const cancelBtn = document.getElementById('crop-cancel');
+	                let targetUserId = {{ current_user.id }};
 
-                if (!input || !modal || !image || !saveBtn || !cancelBtn) {
-                    return;
-                }
+	                if (!input || !modal || !cropContainer || !cropOverlay || !image || !saveBtn || !cancelBtn) {
+	                    return;
+	                }
 
                 window.triggerProfileImageUpload = function (userId) {
                     targetUserId = userId || {{ current_user.id }};
@@ -509,22 +541,32 @@
                     return ctor;
                 }
 
-                function configureCropperSelection() {
-                    if (!cropper || typeof cropper.getCropperSelection !== 'function') {
-                        return;
-                    }
+	                function configureCropperSelection() {
+	                    if (!cropper || typeof cropper.getCropperSelection !== 'function') {
+	                        return;
+	                    }
 
                     const selection = cropper.getCropperSelection();
                     if (!selection) {
                         return;
                     }
 
-                    // Fixed circular crop: keep selection size fixed and let the user move/zoom the image.
-                    selection.setAttribute('aspect-ratio', '1');
-                    selection.setAttribute('initial-coverage', '1');
-                    selection.removeAttribute('movable');
-                    selection.removeAttribute('resizable');
-                }
+	                    // Fixed circular crop: keep selection size fixed and let the user move/zoom the image.
+	                    selection.setAttribute('aspect-ratio', '1');
+	                    selection.setAttribute('initial-coverage', '1');
+	                    selection.removeAttribute('movable');
+	                    selection.removeAttribute('resizable');
+	                }
+
+	                function updateAvatarCropOverlay() {
+	                    const w = cropContainer.clientWidth;
+	                    const h = cropContainer.clientHeight;
+	                    const size = Math.max(0, Math.floor(Math.min(w, h)));
+	                    const radius = Math.max(0, Math.floor(size / 2));
+
+	                    cropOverlay.style.setProperty('--avatar-crop-size', `${size}px`);
+	                    cropOverlay.style.setProperty('--avatar-crop-radius', `${radius}px`);
+	                }
 
                 function getCroppedCanvas() {
                     if (!cropper) {
@@ -573,14 +615,23 @@
                                 return;
                             }
 
-                            cropper = new ctor(image, {});
-                            window.requestAnimationFrame(() => {
-                                configureCropperSelection();
-                            });
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
+	                            cropper = new ctor(image, {});
+	                            window.requestAnimationFrame(() => {
+	                                configureCropperSelection();
+	                                updateAvatarCropOverlay();
+	                                window.requestAnimationFrame(updateAvatarCropOverlay);
+	                            });
+	                        };
+	                        reader.readAsDataURL(file);
+	                    }
+	                });
+
+	                window.addEventListener('resize', () => {
+	                    if (!modal.open) {
+	                        return;
+	                    }
+	                    updateAvatarCropOverlay();
+	                });
 
                 cancelBtn.addEventListener('click', function () {
                     modal.close();
@@ -2159,17 +2210,17 @@
             initAll();
         });
     </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const navDropdowns = document.querySelectorAll('.navbar-nav-dropdown');
-            if (!navDropdowns.length) {
-                return;
+	    <script>
+	        document.addEventListener('DOMContentLoaded', () => {
+	            const navDropdowns = document.querySelectorAll('.navbar-nav-dropdown');
+	            if (!navDropdowns.length) {
+	                return;
             }
 
-            navDropdowns.forEach((dropdown) => {
-                let closeTimer;
-                const openDropdown = () => {
-                    if (closeTimer) {
+	            navDropdowns.forEach((dropdown) => {
+	                let closeTimer;
+	                const openDropdown = () => {
+	                    if (closeTimer) {
                         clearTimeout(closeTimer);
                         closeTimer = null;
                     }
@@ -2193,14 +2244,165 @@
                 dropdown.addEventListener('mouseenter', openDropdown);
                 dropdown.addEventListener('mouseleave', scheduleClose);
                 dropdown.addEventListener('focusin', openDropdown);
-                dropdown.addEventListener('focusout', scheduleClose);
-            });
-        });
-    </script>
-    {% if sentry_frontend_enabled %}
-    <script src="{{ url_for('static', path='vendor/sentry/bundle.tracing.min.js') }}"></script>
-    <script>
-        Sentry.init({
+	                dropdown.addEventListener('focusout', scheduleClose);
+	            });
+	        });
+	    </script>
+	    <script>
+	        document.addEventListener('DOMContentLoaded', () => {
+	            // Swipe-to-navigate between the primary navbar destinations.
+	            // Disabled on primary form pages to avoid conflicts with horizontal gestures while editing.
+	            const isPrimaryFormPage = !!document.querySelector('main form[data-primary-form="true"]');
+	            if (isPrimaryFormPage) {
+	                return;
+	            }
+
+	            const mainEl = document.querySelector('main');
+	            const detailPrevHref = mainEl?.dataset?.swipePrevHref || '';
+	            const detailNextHref = mainEl?.dataset?.swipeNextHref || '';
+	            const hasDetailNav = !!(detailPrevHref || detailNextHref);
+
+	            const navMenu = document.querySelector('.navbar-dropdown-nav');
+	            const navLinks = navMenu
+	                ? Array.from(navMenu.querySelectorAll('a[href]'))
+	                    .map((a) => a.getAttribute('href') || '')
+	                    .filter((href) => href.startsWith('/'))
+	                : [];
+
+	            const isSwipeEligibleTarget = (target) => {
+	                if (!target) {
+	                    return false;
+	                }
+	                if (document.querySelector('dialog[open]')) {
+	                    return false;
+	                }
+	                if (document.querySelector('.pswp.pswp--open')) {
+	                    return false;
+	                }
+	                if (target.closest('input, textarea, select, button, a, label, [contenteditable="true"]')) {
+	                    return false;
+	                }
+	                if (target.closest('[data-swipe-nav-ignore]')) {
+	                    return false;
+	                }
+	                return true;
+	            };
+
+	            const findCurrentIndex = () => {
+	                if (navLinks.length < 2) {
+	                    return -1;
+	                }
+	                const pathname = window.location.pathname || '/';
+	                let best = { index: -1, length: -1 };
+
+	                navLinks.forEach((href, index) => {
+	                    if (!href) {
+	                        return;
+	                    }
+	                    const isMatch = pathname === href || pathname.startsWith(href + '/');
+	                    if (!isMatch) {
+	                        return;
+	                    }
+	                    if (href.length > best.length) {
+	                        best = { index, length: href.length };
+	                    }
+	                });
+
+	                return best.index;
+	            };
+
+	            let startX = 0;
+	            let startY = 0;
+	            let touchTarget = null;
+	            let cancelled = false;
+
+	            const thresholdX = 60; // px
+	            const thresholdY = 70; // px
+
+	            document.addEventListener('touchstart', (event) => {
+	                if (!event.touches || event.touches.length !== 1) {
+	                    return;
+	                }
+	                const target = event.target;
+	                if (!isSwipeEligibleTarget(target)) {
+	                    touchTarget = null;
+	                    return;
+	                }
+
+	                const touch = event.touches[0];
+	                startX = touch.clientX;
+	                startY = touch.clientY;
+	                touchTarget = target;
+	                cancelled = false;
+	            }, { passive: true });
+
+	            document.addEventListener('touchmove', (event) => {
+	                if (!touchTarget || !event.touches || event.touches.length !== 1) {
+	                    return;
+	                }
+	                const touch = event.touches[0];
+	                const dy = touch.clientY - startY;
+	                if (Math.abs(dy) > thresholdY) {
+	                    cancelled = true;
+	                }
+	            }, { passive: true });
+
+	            document.addEventListener('touchend', (event) => {
+	                if (!touchTarget || cancelled || !event.changedTouches || event.changedTouches.length !== 1) {
+	                    touchTarget = null;
+	                    return;
+	                }
+
+	                if (!isSwipeEligibleTarget(touchTarget)) {
+	                    touchTarget = null;
+	                    return;
+	                }
+
+	                const touch = event.changedTouches[0];
+	                const dx = touch.clientX - startX;
+	                const dy = touch.clientY - startY;
+
+	                // Basic horizontal swipe detection.
+	                if (Math.abs(dx) < thresholdX) {
+	                    touchTarget = null;
+	                    return;
+	                }
+	                if (Math.abs(dy) > thresholdY) {
+	                    touchTarget = null;
+	                    return;
+	                }
+
+	                if (hasDetailNav) {
+	                    const href = dx < 0 ? detailNextHref : detailPrevHref;
+	                    if (href) {
+	                        window.location.href = href;
+	                        touchTarget = null;
+	                        return;
+	                    }
+	                    // If we're at the ends, fall back to global navigation.
+	                }
+
+	                const currentIndex = findCurrentIndex();
+	                if (currentIndex === -1) {
+	                    touchTarget = null;
+	                    return;
+	                }
+
+	                const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
+	                if (nextIndex < 0 || nextIndex >= navLinks.length) {
+	                    touchTarget = null;
+	                    return;
+	                }
+
+	                window.location.href = navLinks[nextIndex];
+	                touchTarget = null;
+	            }, { passive: true });
+	        });
+	    </script>
+	    {% if sentry_frontend_enabled %}
+	    <script src="{{ url_for('static', path='vendor/sentry/bundle.tracing.min.js') }}"></script>
+	    <script>
+	        Sentry.init({
             dsn: {{ sentry_frontend_dsn | tojson }},
             environment: {{ sentry_frontend_env | tojson }},
             tracesSampleRate: {{ sentry_frontend_traces_sample_rate }}

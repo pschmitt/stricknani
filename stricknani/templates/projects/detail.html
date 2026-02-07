@@ -54,6 +54,11 @@
 
 {% endset %}
 
+{% block main_attrs %}
+{% if swipe_prev_href %}data-swipe-prev-href="{{ swipe_prev_href }}"{% endif %}
+{% if swipe_next_href %}data-swipe-next-href="{{ swipe_next_href }}"{% endif %}
+{% endblock %}
+
 {% block head %}
 <style>
     .collapse-right.collapse-arrow > .collapse-title {
