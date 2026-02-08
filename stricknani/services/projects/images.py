@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +17,7 @@ from stricknani.utils.files import (
     get_thumbnail_url,
     save_uploaded_file,
 )
+from stricknani.utils.ocr import is_ocr_available, precompute_ocr_for_media_file
 
 
 async def upload_title_image(
@@ -27,6 +30,14 @@ async def upload_title_image(
     filename, original_filename = await save_uploaded_file(file, project_id)
     file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
     await create_thumbnail(file_path, project_id)
+    if is_ocr_available():
+        asyncio.create_task(
+            precompute_ocr_for_media_file(
+                file_path=file_path,
+                kind="projects",
+                entity_id=project_id,
+            )
+        )
 
     count_result = await db.execute(
         select(func.count(Image.id)).where(
@@ -72,6 +83,14 @@ async def upload_stitch_sample_image(
     filename, original_filename = await save_uploaded_file(file, project_id)
     file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
     await create_thumbnail(file_path, project_id)
+    if is_ocr_available():
+        asyncio.create_task(
+            precompute_ocr_for_media_file(
+                file_path=file_path,
+                kind="projects",
+                entity_id=project_id,
+            )
+        )
 
     image = Image(
         filename=filename,
@@ -109,6 +128,14 @@ async def upload_step_image(
     filename, original_filename = await save_uploaded_file(file, project_id)
     file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
     await create_thumbnail(file_path, project_id)
+    if is_ocr_available():
+        asyncio.create_task(
+            precompute_ocr_for_media_file(
+                file_path=file_path,
+                kind="projects",
+                entity_id=project_id,
+            )
+        )
 
     image = Image(
         filename=filename,
@@ -133,4 +160,3 @@ async def upload_step_image(
         "width": width,
         "height": height,
     }
-

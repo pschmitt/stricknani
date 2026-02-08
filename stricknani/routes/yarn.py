@@ -61,6 +61,7 @@ from stricknani.utils.importer import (
     trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
+from stricknani.utils.ocr import is_ocr_available, precompute_ocr_for_media_file
 from stricknani.utils.search_tokens import (
     extract_search_token,
     parse_import_image_urls,
@@ -648,6 +649,14 @@ async def _handle_photo_uploads(
         )
         source_path = config.MEDIA_ROOT / "yarns" / str(yarn.id) / saved_name
         await create_thumbnail(source_path, yarn.id, subdir="yarns")
+        if is_ocr_available():
+            asyncio.create_task(
+                precompute_ocr_for_media_file(
+                    file_path=source_path,
+                    kind="yarns",
+                    entity_id=yarn.id,
+                )
+            )
         photo = YarnImage(
             filename=saved_name,
             original_filename=original,
@@ -999,6 +1008,14 @@ async def upload_yarn_photo(
     # Create thumbnail
     source_path = config.MEDIA_ROOT / "yarns" / str(yarn_id) / saved_name
     await create_thumbnail(source_path, yarn_id, subdir="yarns")
+    if is_ocr_available():
+        asyncio.create_task(
+            precompute_ocr_for_media_file(
+                file_path=source_path,
+                kind="yarns",
+                entity_id=yarn_id,
+            )
+        )
 
     # Check if a primary image already exists
     count_result = await db.execute(
