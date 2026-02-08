@@ -239,7 +239,8 @@ textarea::placeholder {
   overflow-x: auto;
   pointer-events: auto;
   z-index: 15;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.35) 100%);
+  /* Blend the footer into the PhotoSwipe background; avoid a visible seam. */
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.65) 60%, rgba(0, 0, 0, 0.9) 100%);
 }
 
 .pswp__thumbs::-webkit-scrollbar {
@@ -417,23 +418,6 @@ textarea::placeholder {
   overflow: visible !important;
 }
 
-/* Bottom-right floating OCR button (outside the top toolbar). */
-.pswp__button--ocr-button {
-  position: absolute !important;
-  right: 0.75rem !important;
-  bottom: 0.75rem !important;
-  width: 3rem !important;
-  height: 3rem !important;
-  border-radius: 9999px !important;
-  background: rgba(0, 0, 0, 0.55) !important;
-  backdrop-filter: blur(6px);
-  z-index: 100000 !important;
-}
-
-.pswp__button--ocr-button:hover {
-  background: rgba(0, 0, 0, 0.7) !important;
-}
-
 .pswp__button--promote-button.is-primary .pswp__icn {
   color: #fbbf24 !important; /* amber-400 */
 }
@@ -444,9 +428,12 @@ textarea::placeholder {
 
 .pswp__button .pswp__icn.mdi {
   font-size: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
   opacity: 1;
   color: #fff;
 }
