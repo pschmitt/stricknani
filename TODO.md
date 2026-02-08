@@ -36,7 +36,7 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 | P2 | done | Photoswipe: remove the dark outline/background from the OCR button so it matches the rest of the controls | Medium | Low | `stricknani/static/js/features/photoswipe.js`, `stricknani/static/css/app.css` |
 | P2 | done | Photoswipe: fix the footer gap (lighter line below the thumbnails strip) so the frame blends with the toolbar | Medium | Low | `stricknani/static/js/features/photoswipe.js`, `stricknani/static/css/app.css` |
 | P1 | done | Run OCR automatically on each photo upload so the button becomes instant when users click it | High | Medium | `stricknani/routes/projects.py`, `stricknani/routes/yarn.py`, `stricknani/services/projects/images.py`, `stricknani/utils/ocr.py` |
-| P0 | wip | Nix: ensure OCR works in Nix builds/modules by shipping `tesseract` in the runtime closure (and devShell) | High | Low | `nix/package.nix`, `nix/module.nix`, `flake.nix` |
+| P0 | done | Nix: ensure OCR works in Nix builds/modules by shipping `tesseract` in the runtime closure (and devShell) | High | Low | `nix/package.nix`, `nix/module.nix`, `flake.nix` |
 | P2 | todo | Add `other_materials` text field to projects for extras like buttons/zippers | Medium | Low | `stricknani/templates/projects/form.html`, `stricknani/models/project.py`, `stricknani/routes/projects.py`, `stricknani/services/projects/*` |
 | P3 | todo | Replace runtime Tailwind-in-browser with a prebuilt static CSS bundle for performance and easier CSP | High | High | `stricknani/templates/base.html`, build tooling (`justfile`, `flake.nix`) |
 
