@@ -32,8 +32,11 @@
         const overlay = createOverlay();
         overlay.classList.remove('opacity-0', 'pointer-events-none');
         overlay.classList.add('opacity-100');
-        overlay.querySelector('div').classList.remove('scale-90');
-        overlay.querySelector('div').classList.add('scale-100');
+        const content = overlay.querySelector('div');
+        if (content) {
+            content.classList.remove('scale-90');
+            content.classList.add('scale-100');
+        }
     }
 
     function hideOverlay() {
@@ -41,56 +44,83 @@
         if (!overlay) return;
         overlay.classList.add('opacity-0', 'pointer-events-none');
         overlay.classList.remove('opacity-100');
-        overlay.querySelector('div').classList.add('scale-90');
-        overlay.querySelector('div').classList.remove('scale-100');
+        const content = overlay.querySelector('div');
+        if (content) {
+            content.classList.add('scale-90');
+            content.classList.remove('scale-100');
+        }
+    }
+
+    function isFilesDrag(e) {
+        if (!e.dataTransfer || !e.dataTransfer.types) return false;
+        // console.log('Drag types:', e.dataTransfer.types);
+        for (let i = 0; i < e.dataTransfer.types.length; i++) {
+            if (e.dataTransfer.types[i].toLowerCase() === 'files') return true;
+        }
+        return false;
     }
 
     window.addEventListener('dragenter', (e) => {
-        if (!e.dataTransfer.types.includes('Files')) return;
+        if (!isFilesDrag(e)) return;
         e.preventDefault();
+        e.stopPropagation();
         dragCounter++;
         if (dragCounter === 1) {
+            // console.log('Showing overlay');
             showOverlay();
         }
     });
 
     window.addEventListener('dragover', (e) => {
-        if (!e.dataTransfer.types.includes('Files')) return;
+        if (!isFilesDrag(e)) return;
         e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
     });
 
     window.addEventListener('dragleave', (e) => {
-        if (!e.dataTransfer.types.includes('Files')) return;
+        if (!isFilesDrag(e)) return;
         e.preventDefault();
+        e.stopPropagation();
         dragCounter--;
         if (dragCounter <= 0) {
             dragCounter = 0;
+            // console.log('Hiding overlay');
             hideOverlay();
         }
     });
 
     window.addEventListener('drop', (e) => {
-        if (!e.dataTransfer.types.includes('Files')) return;
+        if (!isFilesDrag(e)) return;
+        // console.log('File dropped');
         e.preventDefault();
+        e.stopPropagation();
         dragCounter = 0;
         hideOverlay();
 
         const files = e.dataTransfer.files;
-        if (files.length === 0) return;
+        if (!files || files.length === 0) return;
 
         // Find the import dialog and components
         const dialog = document.getElementById('importDialog');
-        if (!dialog) return;
+        if (!dialog) {
+            console.warn('Import dialog not found');
+            return;
+        }
 
         const fileInput = dialog.querySelector('[data-import-file-input]');
-        const fileForm = dialog.querySelector('[data-import-panel="file"]');
         const tabBtn = dialog.querySelector('[data-import-tab="file"]');
 
-        if (!fileInput || !fileForm || !tabBtn) return;
+        if (!fileInput || !tabBtn) {
+            console.warn('File input or tab button not found in dialog');
+            return;
+        }
 
         // Open dialog and switch to file tab
         if (typeof dialog.showModal === 'function') {
             dialog.showModal();
+        } else {
+            dialog.setAttribute('open', 'true');
         }
         tabBtn.click();
 
@@ -103,10 +133,17 @@
             // Trigger change event so the dialog UI updates
             fileInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-            // Optionally: automatically submit after a small delay
-            // setTimeout(() => {
-            //     fileForm.dispatchEvent(new Event('submit', { bubbles: true }));
-            // }, 500);
+            // Automatically submit the form to start analysis
+            setTimeout(() => {
+                const submitBtn = dialog.querySelector('[data-import-file-submit]');
+                if (submitBtn && !submitBtn.disabled) {
+                    if (typeof fileForm.requestSubmit === 'function') {
+                        fileForm.requestSubmit();
+                    } else {
+                        submitBtn.click();
+                    }
+                }
+            }, 300);
         } catch (err) {
             console.error('Failed to handle dropped file:', err);
         }
