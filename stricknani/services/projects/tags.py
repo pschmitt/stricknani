@@ -16,7 +16,7 @@ def normalize_tags(raw_tags: str | None) -> list[str]:
     if not raw_tags:
         return []
 
-    candidates = re.split(r"[,#\\s]+", raw_tags)
+    candidates = re.split(r"[,#\s]+", raw_tags)
     seen: set[str] = set()
     tags: list[str] = []
     for candidate in candidates:
