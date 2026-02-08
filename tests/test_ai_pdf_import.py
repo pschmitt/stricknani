@@ -60,7 +60,7 @@ async def test_ai_extractor_pdf_direct_upload() -> None:
     args, kwargs = mock_client.chat.completions.create.call_args
     messages = kwargs["messages"]
     user_content = messages[1]["content"]
-    
+
     found_input_file = False
     found_image_indices = False
     for item in user_content:

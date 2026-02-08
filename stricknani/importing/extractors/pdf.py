@@ -174,9 +174,9 @@ class PDFExtractor(ContentExtractor):
                             images.append(image_bytes)
                             seen_checksums.add(checksum)
 
-                # Strategy 2: If no images were found, or if it's a small number of pages,
-                # render the pages themselves as images. This helps with scanned PDFs
-                # or PDFs where images are drawn differently.
+                # Strategy 2: If no images were found, or if it's a small number
+                # of pages, render the pages themselves as images. This helps
+                # with scanned PDFs or PDFs where images are drawn differently.
                 # We limit the number of pages to avoid excessive memory/tokens.
                 if not images or len(doc) <= 3:
                     # Limit to first 10 pages

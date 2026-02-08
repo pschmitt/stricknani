@@ -971,8 +971,14 @@ async def import_pattern(
                         local_image_filename_map[i] = filename
 
                 # Now map everything to URLs for the UI
-                image_urls = list(extracted.image_urls)
-                
+                # Filter out "Image 1" etc. from the AI's image_urls if it
+                # hallucinated them there
+                image_urls = [
+                    u
+                    for u in extracted.image_urls
+                    if not re.search(r"^Image (\d+)$", str(u), re.I)
+                ]
+
                 # Add local images to the main gallery
                 local_urls = {} # index -> url
                 for i in range(len(pdf_images)):
@@ -987,25 +993,27 @@ async def import_pattern(
                 # Process steps and resolve image references
                 processed_steps = []
                 for step in extracted.steps:
-                    step_dict = {
+                    step_dict: dict[str, Any] = {
                         "step_number": step.step_number,
                         "title": step.title,
                         "description": step.description,
                         "images": [],
                     }
-                    
+
                     for img_ref in step.images:
                         # Handle 'Image 1', 'Image 2', etc.
-                        match = re.search(r"Image (\d+)", img_ref, re.I)
+                        match = re.search(r"Image (\d+)", str(img_ref), re.I)
                         if match:
                             idx = int(match.group(1))
                             if idx in local_urls:
                                 step_dict["images"].append(local_urls[idx])
                             else:
+                                # Keep it as is if it's not a local image
+                                # (e.g. actual URL)
                                 step_dict["images"].append(img_ref)
                         else:
                             step_dict["images"].append(img_ref)
-                    
+
                     processed_steps.append(step_dict)
 
                 data = {

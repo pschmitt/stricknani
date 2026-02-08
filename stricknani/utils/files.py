@@ -265,13 +265,11 @@ def get_file_url(
         URL path to the file
     """
     if pending_token:
-        # Use entity_id as user_id if provided, otherwise it's not strictly
-        # needed for the URL if we mount it appropriately or if we include
-        # the user_id in the URL.
-        # Based on AIPatternImporter and route logic, user_id is part of the path.
         if entity_id is None:
             raise ValueError("entity_id (user_id) is required for pending tokens")
-        return f"/media/imports/{subdir}/{entity_id}/{filename}"
+        # For pending imports, the file is stored as {token}{ext}
+        ext = Path(filename).suffix.lower() or ".jpg"
+        return f"/media/imports/{subdir}/{entity_id}/{pending_token}{ext}"
 
     if entity_id is None:
         raise ValueError("entity_id is required for non-pending files")

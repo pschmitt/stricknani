@@ -272,14 +272,16 @@ class AIExtractor(ContentExtractor):
             model = self.model if "mini" not in self.model else "gpt-4o"
 
             system_prompt = self._build_system_prompt()
-            
+
             image_block = ""
             if local_images:
                 image_block = (
-                    "\n\nThe following images were extracted from the PDF for reference:\n"
+                    "\n\nThe following images were extracted from the PDF "
+                    "for reference:\n"
                     + "\n".join(f"- Image {i+1}" for i in range(len(local_images)))
-                    + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. in the "
-                    "step 'images' field if they are relevant to a specific step."
+                    + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. "
+                    "in the step 'images' field if they are relevant to a "
+                    "specific step."
                 )
 
             user_prompt = (
@@ -394,17 +396,21 @@ class AIExtractor(ContentExtractor):
                 "source_content_type": "application/pdf",
             },
         )
-        
+
         image_hints = ""
         if local_images:
             image_hints = (
-                "\n\nThe following images were extracted from the PDF for reference:\n"
+                "\n\nThe following images were extracted from the PDF "
+                "for reference:\n"
                 + "\n".join(f"- Image {i+1}" for i in range(len(local_images)))
-                + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. in the "
-                "step 'images' field if they are relevant to a specific step."
+                + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. "
+                "in the step 'images' field if they are relevant to a "
+                "specific step."
             )
-            
-        result = await self._extract_from_text(text_content, hints, extra_prompt=image_hints)
+
+        result = await self._extract_from_text(
+            text_content, hints, extra_prompt=image_hints
+        )
 
         # Attach local images to the result
         if local_images:

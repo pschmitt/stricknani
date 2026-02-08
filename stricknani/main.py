@@ -65,7 +65,11 @@ async def csrf_validation_dependency(
     if request.method in {"POST", "PUT", "DELETE", "PATCH"}:
         # Try to get token from form first if it's a form submission
         token = None
-        if request.headers.get("content-type") == "application/x-www-form-urlencoded":
+        content_type = request.headers.get("content-type", "")
+        if (
+            "application/x-www-form-urlencoded" in content_type
+            or "multipart/form-data" in content_type
+        ):
             try:
                 form_data = await request.form()
                 token = form_data.get("csrf_token")
