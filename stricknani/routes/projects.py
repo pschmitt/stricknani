@@ -2298,11 +2298,13 @@ async def create_project(
                 continue
 
             # Save as a regular attachment if it's NOT a gallery image
-            # or it's a PDF image. User specifically wants pdf_images
-            # as attachments.
-            is_pdf_image = original_filename.startswith("pdf_image_")
+            # or it's a PDF image/page. User specifically wants pdf_images
+            # and pdf_pages as attachments.
+            is_pdf_asset = original_filename.startswith(
+                "pdf_image_"
+            ) or original_filename.startswith("pdf_page_")
             if (
-                is_pdf_image
+                is_pdf_asset
                 or not content_type
                 or not content_type.startswith("image/")
             ):
@@ -2676,11 +2678,13 @@ async def update_project(
                 continue
 
             # Save as a regular attachment if it's NOT a gallery image
-            # or it's a PDF image. User specifically wants pdf_images
-            # as attachments.
-            is_pdf_image = original_filename.startswith("pdf_image_")
+            # or it's a PDF image/page. User specifically wants pdf_images
+            # and pdf_pages as attachments.
+            is_pdf_asset = original_filename.startswith(
+                "pdf_image_"
+            ) or original_filename.startswith("pdf_page_")
             if (
-                is_pdf_image
+                is_pdf_asset
                 or not content_type
                 or not content_type.startswith("image/")
             ):

@@ -2905,6 +2905,15 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
             }
         }
 
+        // Source Attachments (PDFs, etc.)
+        if (Array.isArray(data.source_attachments) && data.source_attachments.length > 0) {
+            data.source_attachments.forEach(attachment => {
+                if (typeof addAttachmentToUI === 'function') {
+                    addAttachmentToUI(attachment);
+                }
+            });
+        }
+
         window.showToast?.('{{ _("Pattern imported successfully") }}', 'success');
         window.unsavedChanges?.setDirty(true);
         document.getElementById('name').scrollIntoView({ behavior: 'smooth', block: 'center' });
