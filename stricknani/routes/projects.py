@@ -66,6 +66,12 @@ from stricknani.services.projects.import_images import (
     load_existing_image_checksums,
     load_existing_image_similarities,
 )
+from stricknani.services.projects.steps import (
+    create_step as service_create_step,
+)
+from stricknani.services.projects.steps import (
+    update_step as service_update_step,
+)
 from stricknani.services.projects.tags import (
     get_user_tags,
     normalize_tags,
@@ -2514,16 +2520,23 @@ async def create_step(
     description = data.get("description")
     step_number = data.get("step_number", 1)
 
-    # Create step
-    step = Step(
-        title=title,
-        description=description,
-        step_number=step_number,
+    def _coerce_step_number(raw: object, default: int) -> int:
+        try:
+            if isinstance(raw, bool):
+                return default
+            if isinstance(raw, (int, float, str)):
+                return int(raw)
+        except (TypeError, ValueError):
+            pass
+        return default
+
+    step = await service_create_step(
+        db,
         project_id=project_id,
+        title=str(title),
+        description=description if isinstance(description, str) else None,
+        step_number=_coerce_step_number(step_number, 1),
     )
-    db.add(step)
-    await db.commit()
-    await db.refresh(step)
 
     return {
         "id": step.id,
@@ -2563,12 +2576,29 @@ async def update_step(
 
     # Parse JSON body
     data = await request.json()
-    step.title = data.get("title", step.title)
-    step.description = data.get("description", step.description)
-    step.step_number = data.get("step_number", step.step_number)
+    title = data.get("title")
+    description = data.get("description")
+    step_number = data.get("step_number")
 
-    await db.commit()
-    await db.refresh(step)
+    def _coerce_step_number(raw: object, default: int) -> int:
+        try:
+            if isinstance(raw, bool):
+                return default
+            if isinstance(raw, (int, float, str)):
+                return int(raw)
+        except (TypeError, ValueError):
+            pass
+        return default
+
+    await service_update_step(
+        db,
+        step=step,
+        title=str(title) if isinstance(title, str) else None,
+        description=str(description) if isinstance(description, str) else None,
+        step_number=_coerce_step_number(step_number, step.step_number)
+        if step_number is not None
+        else None,
+    )
 
     return {
         "id": step.id,
