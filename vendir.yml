@@ -55,14 +55,6 @@ directories:
         includePaths:
           - package/dist/htmx.min.js
 
-      # renovate: datasource=npm depName=alpinejs
-      - path: alpinejs
-        http:
-          url: https://registry.npmjs.org/alpinejs/-/alpinejs-3.14.8.tgz
-        newRootPath: package/dist
-        includePaths:
-          - package/dist/cdn.min.js
-
       # renovate: datasource=github-releases depName=getsentry/sentry-javascript
       - path: sentry
         http:

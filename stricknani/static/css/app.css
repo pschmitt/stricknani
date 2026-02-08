@@ -449,7 +449,3 @@ textarea::placeholder {
   opacity: 1;
   color: #fff;
 }
-
-[x-cloak] {
-  display: none !important;
-}

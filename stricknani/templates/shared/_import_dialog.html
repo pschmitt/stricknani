@@ -1,20 +1,16 @@
 {% import "macros/dialogs.html" as dialogs %}
-{% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl', attrs='x-data="importDialog" x-cloak') %}
+{% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl', attrs='data-import-dialog') %}
 <!-- Tab Navigation -->
 <div class="tabs tabs-boxed bg-base-200/50 p-1 rounded-xl mb-6">
     <button type="button"
-        class="tab flex-1 rounded-lg transition-all"
-        :class="{ 'tab-active bg-base-100 shadow-sm': importTab === 'url', 'hover:bg-base-100/50': importTab !== 'url' }"
-        @click="importTab = 'url'"
-        data-tab="url">
+        class="tab flex-1 rounded-lg transition-all tab-active bg-base-100 shadow-sm"
+        data-import-tab="url">
         <span class="mdi mdi-link-variant mr-2"></span>
         {{ _('From URL') }}
     </button>
     <button type="button"
         class="tab flex-1 rounded-lg transition-all"
-        :class="{ 'tab-active bg-base-100 shadow-sm': importTab === 'file', 'hover:bg-base-100/50': importTab !== 'file' }"
-        @click="importTab = 'file'"
-        data-tab="file">
+        data-import-tab="file">
         <span class="mdi mdi-file-upload mr-2"></span>
         {{ _('From File') }}
     </button>
@@ -22,7 +18,7 @@
 
 <!-- URL Import Form -->
 <form id="{{ import_form_id }}" action="{{ import_action }}" method="POST" enctype="multipart/form-data"
-    x-show="importTab === 'url'" x-transition>
+    data-import-panel="url">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="type" value="url">
     {% if import_project_id is not none %}
@@ -77,7 +73,7 @@
 
 <!-- File Import Form -->
 <form id="{{ import_form_id }}File" action="{{ import_action }}" method="POST" enctype="multipart/form-data"
-    x-show="importTab === 'file'" x-transition>
+    data-import-panel="file" hidden>
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="type" value="file">
     {% if import_project_id is not none %}
@@ -111,17 +107,14 @@
             <!-- Drag & Drop Zone -->
             <div id="fileDropZone"
                 class="relative border-2 border-dashed border-base-content/20 rounded-2xl p-8 text-center transition-all hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
-                :class="{ 'border-primary bg-primary/5': isDragging }"
-                @dragover.prevent="isDragging = true"
-                @dragleave.prevent="isDragging = false"
-                @drop.prevent="handleFileDrop($event)"
-                @click="$refs.fileInput.click()">
+                data-import-file-dropzone>
 
-                <input type="file" id="importFile" name="file" ref="fileInput" class="hidden"
+                <input type="file" id="importFile" name="file" class="hidden"
+                    data-import-file-input
                     accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.md,.html,.htm"
-                    @change="handleFileSelect($event)" />
+                    />
 
-                <div x-show="!selectedFile" class="space-y-3">
+                <div class="space-y-3" data-import-file-empty>
                     <div class="w-16 h-16 mx-auto flex items-center justify-center bg-base-200 rounded-full">
                         <span class="mdi mdi-cloud-upload text-3xl text-primary"></span>
                     </div>
@@ -133,15 +126,15 @@
                     </div>
                 </div>
 
-                <div x-show="selectedFile" class="space-y-3" x-cloak>
+                <div class="space-y-3" data-import-file-selected hidden>
                     <div class="w-16 h-16 mx-auto flex items-center justify-center bg-success/10 rounded-full">
                         <span class="mdi mdi-check text-3xl text-success"></span>
                     </div>
                     <div>
-                        <p class="font-medium" x-text="selectedFile.name"></p>
+                        <p class="font-medium" data-import-file-name></p>
                         <p class="text-sm opacity-60 mt-1">
-                            <span x-text="formatFileSize(selectedFile.size)"></span>
-                            <button type="button" @click.stop="clearFile()" class="ml-2 text-error hover:underline">
+                            <span data-import-file-size></span>
+                            <button type="button" data-import-file-clear class="ml-2 text-error hover:underline">
                                 {{ _('Remove') }}
                             </button>
                         </p>
@@ -168,9 +161,8 @@
     <div class="modal-action mt-8">
         {{ dialogs.dialog_cancel(_('Cancel'),
         attrs='data-action="close-dialog" data-dialog-id="importDialog"') }}
-        <button type="submit" class="btn btn-primary sm:btn-wide"
-            :disabled="!selectedFile"
-            :class="{ 'btn-disabled opacity-50': !selectedFile }">
+        <button type="submit" class="btn btn-primary sm:btn-wide btn-disabled opacity-50"
+            data-import-file-submit disabled>
             <span class="mdi mdi-auto-fix mr-2"></span>
             {{ _('Analyze & Import') }}
         </button>
@@ -178,7 +170,7 @@
 </form>
 
 <!-- Loading State -->
-<div id="importLoading" class="hidden text-center py-12 space-y-4">
+<div id="importLoading" class="text-center py-12 space-y-4" hidden>
     <div class="relative inline-block">
         <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         <div class="absolute inset-0 flex items-center justify-center">
@@ -198,67 +190,205 @@
         const redirectUrl = {{ import_redirect_url | tojson }};
         const populateFnName = {{ import_populate_fn | tojson }};
 
-        const initAlpine = () => {
-            if (window.STRICKNANI_IMPORT_DIALOG_INIT) return;
-            window.STRICKNANI_IMPORT_DIALOG_INIT = true;
+        const dialog = document.getElementById('importDialog');
+        if (!dialog) {
+            return;
+        }
 
-            Alpine.data('importDialog', () => ({
-                importTab: 'url',
-                isDragging: false,
-                selectedFile: null,
+        let selectedFile = null;
+        let currentTab = 'url';
 
-                handleFileDrop(event) {
-                    this.isDragging = false;
-                    const files = event.dataTransfer.files;
-                    if (files.length > 0) {
-                        this.selectedFile = files[0];
-                        // Update the actual file input
-                        const input = document.getElementById('importFile');
-                        const dt = new DataTransfer();
-                        dt.items.add(files[0]);
-                        input.files = dt.files;
-                    }
-                },
+        const urlForm = document.getElementById(formId);
+        const fileForm = document.getElementById(formId + 'File');
+        const loading = document.getElementById('importLoading');
 
-                handleFileSelect(event) {
-                    const files = event.target.files;
-                    if (files.length > 0) {
-                        this.selectedFile = files[0];
-                    }
-                },
-
-                clearFile() {
-                    this.selectedFile = null;
-                    const input = document.getElementById('importFile');
-                    input.value = '';
-                },
-
-                formatFileSize(bytes) {
-                    if (bytes === 0) return '0 Bytes';
-                    const k = 1024;
-                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                    const i = Math.floor(Math.log(bytes) / Math.log(k));
-                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-                }
-            }));
+        const tabs = Array.from(dialog.querySelectorAll('[data-import-tab]'));
+        const panels = {
+            url: urlForm,
+            file: fileForm
         };
 
-        if (window.Alpine) {
-            initAlpine();
-        } else {
-            document.addEventListener('alpine:init', initAlpine);
+        const dropZone = dialog.querySelector('[data-import-file-dropzone]');
+        const fileInput = dialog.querySelector('[data-import-file-input]');
+        const emptyState = dialog.querySelector('[data-import-file-empty]');
+        const selectedState = dialog.querySelector('[data-import-file-selected]');
+        const fileNameEl = dialog.querySelector('[data-import-file-name]');
+        const fileSizeEl = dialog.querySelector('[data-import-file-size]');
+        const clearBtn = dialog.querySelector('[data-import-file-clear]');
+        const fileSubmitBtn = dialog.querySelector('[data-import-file-submit]');
+
+        function formatFileSize(bytes) {
+            if (!bytes) {
+                return '0 Bytes';
+            }
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // Handle URL form submission
-        const urlForm = document.getElementById(formId);
+        function setSelectedFile(file) {
+            selectedFile = file || null;
+
+            if (!emptyState || !selectedState || !fileSubmitBtn) {
+                return;
+            }
+
+            if (!selectedFile) {
+                emptyState.hidden = false;
+                selectedState.hidden = true;
+                fileSubmitBtn.disabled = true;
+                fileSubmitBtn.classList.add('btn-disabled', 'opacity-50');
+                if (fileNameEl) {
+                    fileNameEl.textContent = '';
+                }
+                if (fileSizeEl) {
+                    fileSizeEl.textContent = '';
+                }
+                return;
+            }
+
+            emptyState.hidden = true;
+            selectedState.hidden = false;
+            fileSubmitBtn.disabled = false;
+            fileSubmitBtn.classList.remove('btn-disabled', 'opacity-50');
+            if (fileNameEl) {
+                fileNameEl.textContent = selectedFile.name || '';
+            }
+            if (fileSizeEl) {
+                fileSizeEl.textContent = formatFileSize(selectedFile.size || 0);
+            }
+        }
+
+        function setTab(tab) {
+            const nextTab = tab === 'file' ? 'file' : 'url';
+            currentTab = nextTab;
+
+            if (loading) {
+                loading.hidden = true;
+            }
+
+            tabs.forEach((btn) => {
+                const isActive = btn.getAttribute('data-import-tab') === nextTab;
+                btn.classList.toggle('tab-active', isActive);
+                btn.classList.toggle('bg-base-100', isActive);
+                btn.classList.toggle('shadow-sm', isActive);
+                btn.classList.toggle('hover:bg-base-100/50', !isActive);
+            });
+
+            Object.entries(panels).forEach(([key, panel]) => {
+                if (!panel) {
+                    return;
+                }
+                panel.hidden = key !== nextTab;
+            });
+        }
+
+        tabs.forEach((btn) => {
+            if (btn.dataset.importTabInitialized) {
+                return;
+            }
+            btn.dataset.importTabInitialized = '1';
+            btn.addEventListener('click', () => {
+                setTab(btn.getAttribute('data-import-tab') || 'url');
+            });
+        });
+
+        if (dropZone) {
+            if (!dropZone.dataset.importDropInitialized) {
+                dropZone.dataset.importDropInitialized = '1';
+
+                const dragOnClasses = ['border-primary', 'bg-primary/5'];
+
+                function setDragging(isDragging) {
+                    dragOnClasses.forEach((c) => dropZone.classList.toggle(c, isDragging));
+                }
+
+                dropZone.addEventListener('click', () => {
+                    fileInput?.click();
+                });
+
+                dropZone.addEventListener('dragenter', (e) => {
+                    e.preventDefault();
+                    setDragging(true);
+                });
+
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    setDragging(true);
+                });
+
+                dropZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    setDragging(false);
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    setDragging(false);
+
+                    const files = e.dataTransfer?.files;
+                    if (!files || files.length === 0) {
+                        return;
+                    }
+
+                    const file = files[0];
+                    setSelectedFile(file);
+
+                    if (fileInput) {
+                        try {
+                            const dt = new DataTransfer();
+                            dt.items.add(file);
+                            fileInput.files = dt.files;
+                        } catch {
+                            // Some browsers may not allow programmatic assignment; we still keep the file in memory.
+                        }
+                    }
+                });
+            }
+        }
+
+        if (fileInput) {
+            if (!fileInput.dataset.importInputInitialized) {
+                fileInput.dataset.importInputInitialized = '1';
+                fileInput.addEventListener('change', (e) => {
+                    const input = e.target;
+                    const files = input?.files;
+                    setSelectedFile(files && files.length > 0 ? files[0] : null);
+                });
+            }
+        }
+
+        if (clearBtn) {
+            if (!clearBtn.dataset.importClearInitialized) {
+                clearBtn.dataset.importClearInitialized = '1';
+                clearBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (fileInput) {
+                        fileInput.value = '';
+                    }
+                    setSelectedFile(null);
+                });
+            }
+        }
+
+        // Default state
+        setTab('url');
+        setSelectedFile(null);
+
         if (urlForm) {
-            urlForm.addEventListener('submit', handleFormSubmit);
+            if (!urlForm.dataset.importSubmitInitialized) {
+                urlForm.dataset.importSubmitInitialized = '1';
+                urlForm.addEventListener('submit', handleFormSubmit);
+            }
         }
 
-        // Handle File form submission
-        const fileForm = document.getElementById(formId + 'File');
         if (fileForm) {
-            fileForm.addEventListener('submit', handleFormSubmit);
+            if (!fileForm.dataset.importSubmitInitialized) {
+                fileForm.dataset.importSubmitInitialized = '1';
+                fileForm.addEventListener('submit', handleFormSubmit);
+            }
         }
 
         async function handleFormSubmit(e) {
@@ -266,13 +396,21 @@
 
             const form = e.target;
             const formData = new FormData(form);
-            const loading = document.getElementById('importLoading');
-            const dialog = document.getElementById('importDialog');
 
-            // Hide forms and show loading
-            urlForm?.classList.add('hidden');
-            fileForm?.classList.add('hidden');
-            loading?.classList.remove('hidden');
+            currentTab = form === fileForm ? 'file' : 'url';
+            if (currentTab === 'file' && selectedFile && !formData.get('file')) {
+                formData.set('file', selectedFile);
+            }
+
+            if (urlForm) {
+                urlForm.hidden = true;
+            }
+            if (fileForm) {
+                fileForm.hidden = true;
+            }
+            if (loading) {
+                loading.hidden = false;
+            }
 
             try {
                 const response = await fetch(form.action, {
@@ -282,8 +420,7 @@
 
                 if (!response.ok) {
                     const error = await response.json().catch(() => ({}));
-                    alert('Import failed: ' + (error.detail || 'Unknown error'));
-                    return;
+                    throw new Error(error.detail || 'Unknown error');
                 }
 
                 const data = await response.json();
@@ -301,12 +438,12 @@
                 window.location.href = redirectUrl;
             } catch (err) {
                 console.error(err);
-                alert('Import failed: ' + err.message);
+                alert('Import failed: ' + (err?.message || 'Unknown error'));
             } finally {
-                // Reset UI for next time
-                urlForm?.classList.remove('hidden');
-                fileForm?.classList.remove('hidden');
-                loading?.classList.add('hidden');
+                if (loading) {
+                    loading.hidden = true;
+                }
+                setTab(currentTab);
             }
         }
     })();
