@@ -6,6 +6,14 @@
     let dragCounter = 0;
     const overlayId = 'list-drop-overlay';
 
+    function init() {
+        // console.log('Initializing drag and drop handler');
+        window.addEventListener('dragenter', handleDragEnter);
+        window.addEventListener('dragover', handleDragOver);
+        window.addEventListener('dragleave', handleDragLeave);
+        window.addEventListener('drop', handleDrop);
+    }
+
     function createOverlay() {
         let overlay = document.getElementById(overlayId);
         if (overlay) return overlay;
@@ -60,7 +68,7 @@
         return false;
     }
 
-    window.addEventListener('dragenter', (e) => {
+    function handleDragEnter(e) {
         if (!isFilesDrag(e)) return;
         e.preventDefault();
         e.stopPropagation();
@@ -69,16 +77,16 @@
             // console.log('Showing overlay');
             showOverlay();
         }
-    });
+    }
 
-    window.addEventListener('dragover', (e) => {
+    function handleDragOver(e) {
         if (!isFilesDrag(e)) return;
         e.preventDefault();
         e.stopPropagation();
         e.dataTransfer.dropEffect = 'copy';
-    });
+    }
 
-    window.addEventListener('dragleave', (e) => {
+    function handleDragLeave(e) {
         if (!isFilesDrag(e)) return;
         e.preventDefault();
         e.stopPropagation();
@@ -88,9 +96,9 @@
             // console.log('Hiding overlay');
             hideOverlay();
         }
-    });
+    }
 
-    window.addEventListener('drop', (e) => {
+    function handleDrop(e) {
         if (!isFilesDrag(e)) return;
         // console.log('File dropped');
         e.preventDefault();
@@ -109,9 +117,10 @@
         }
 
         const fileInput = dialog.querySelector('[data-import-file-input]');
+        const fileForm = dialog.querySelector('[data-import-panel="file"]');
         const tabBtn = dialog.querySelector('[data-import-tab="file"]');
 
-        if (!fileInput || !tabBtn) {
+        if (!fileInput || !tabBtn || !fileForm) {
             console.warn('File input or tab button not found in dialog');
             return;
         }
@@ -129,7 +138,7 @@
             const dt = new DataTransfer();
             dt.items.add(files[0]);
             fileInput.files = dt.files;
-            
+
             // Trigger change event so the dialog UI updates
             fileInput.dispatchEvent(new Event('change', { bubbles: true }));
 
@@ -147,5 +156,11 @@
         } catch (err) {
             console.error('Failed to handle dropped file:', err);
         }
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();

@@ -67,6 +67,7 @@
 {% endblock %}
 
 {% block page_scripts %}
+{{ super() }}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const toastKey = new URLSearchParams(window.location.search).get('toast');
