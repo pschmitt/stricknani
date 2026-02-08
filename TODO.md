@@ -18,27 +18,10 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 
 ## Task List
 
-| Priority | Status | Task | Impact | Complexity | Primary Files |
-| --- | --- | --- | --- | --- | --- |
-| P0 | done | Extract reusable browser utilities into static JS (`showToast`, `copyToClipboard`, `confirmAction`, PDF viewer helpers) and remove inline copies | High | Medium | `stricknani/templates/base.html`, `stricknani/static/js/app.js` |
-| P0 | done | Remove inline `onclick`/`onchange` handlers by switching to `data-action` plus delegated event listeners (start with projects + yarn forms) | High | Medium | `stricknani/templates/projects/form.html`, `stricknani/templates/yarn/form.html`, `stricknani/static/js/app.js` |
-| P0 | done | Move non-critical inline CSS from templates into `static/css/app.css` (markdown image styles, crop overlay, misc layout fixes) | High | Low | `stricknani/templates/base.html`, `stricknani/static/css/app.css`, `stricknani/static/css/project_detail_print.css`, `stricknani/templates/projects/detail.html`, `stricknani/templates/yarn/detail.html` |
-| P0 | done | Extract unsaved-changes logic from `shared/form_base.html` into `static/js/forms/unsaved_changes.js` | Medium | Low | `stricknani/templates/shared/form_base.html`, `stricknani/static/js/forms/unsaved_changes.js` |
-| P0 | done | Create a small template-emitted JS config/i18n payload for static JS (so static files do not rely on `{{ _("...") }}` inside large inline scripts) | High | Medium | `stricknani/templates/base.html` |
-| P1 | done | Split `routes/projects.py` into services (images, attachments, steps, importing, categories) and make endpoints thin | High | High | `stricknani/routes/projects.py`, `stricknani/services/projects/*`, `stricknani/services/images/*` |
-| P1 | done | Split `utils/importer.py` into an `importing/` package and stop importing underscored helpers from routes | High | High | `stricknani/utils/importer.py`, `stricknani/importing/*` |
-| P1 | done | Remove duplicated helpers between projects/yarn (`_parse_import_image_urls`, `_extract_search_token`) by extracting shared functions | Medium | Low | `stricknani/routes/projects.py`, `stricknani/routes/yarn.py`, `stricknani/utils/search_tokens.py` |
-| P1 | done | Reduce coupling to `stricknani/main.py` by moving templating helpers to a dedicated module (and consider an app-factory) | Medium | Medium | `stricknani/main.py`, `stricknani/routes/*.py`, `stricknani/web/templating.py` |
-| P1 | done | Move blocking PIL/file work off the async event loop (`to_thread`) in upload/thumbnail paths | Medium | Medium | `stricknani/routes/projects.py`, `stricknani/routes/yarn.py`, `stricknani/importing/*`, `stricknani/utils/files.py` |
-| P2 | done | Unify shared UI components between Projects and Yarns (import dialogs, favorite toggle, detail sidebar patterns) to enforce parity | Medium | Medium | `stricknani/templates/projects/*`, `stricknani/templates/yarn/*`, `stricknani/templates/shared/*` |
-| P2 | done | Decompose `base.html` by moving independent features into dedicated static modules (global search, PhotoSwipe init, profile cropper, navbar hover, swipe nav) | Medium | Medium | `stricknani/templates/base.html`, `stricknani/static/js/features/*`, `stricknani/static/js/htmx/*` |
-| P2 | done | Add/expand tests around newly extracted services (importing, image handling) to keep refactors safe | Medium | Medium | `tests/*` |
-| P2 | done | Photoswipe: remove the dark outline/background from the OCR button so it matches the rest of the controls | Medium | Low | `stricknani/static/js/features/photoswipe.js`, `stricknani/static/css/app.css` |
-| P2 | done | Photoswipe: fix the footer gap (lighter line below the thumbnails strip) so the frame blends with the toolbar | Medium | Low | `stricknani/static/js/features/photoswipe.js`, `stricknani/static/css/app.css` |
-| P1 | done | Run OCR automatically on each photo upload so the button becomes instant when users click it | High | Medium | `stricknani/routes/projects.py`, `stricknani/routes/yarn.py`, `stricknani/services/projects/images.py`, `stricknani/utils/ocr.py` |
-| P0 | done | Nix: ensure OCR works in Nix builds/modules by shipping `tesseract` in the runtime closure (and devShell) | High | Low | `nix/package.nix`, `nix/module.nix`, `flake.nix` |
-| P2 | todo | Add `other_materials` text field to projects for extras like buttons/zippers | Medium | Low | `stricknani/templates/projects/form.html`, `stricknani/models/project.py`, `stricknani/routes/projects.py`, `stricknani/services/projects/*` |
-| P3 | todo | Replace runtime Tailwind-in-browser with a prebuilt static CSS bundle for performance and easier CSP | High | High | `stricknani/templates/base.html`, build tooling (`justfile`, `flake.nix`) |
+| Priority | Status | Task                                                                                                 | Impact | Complexity | Primary Files                                                                                                                                |
+| -------- | ------ | ---------------------------------------------------------------------------------------------------- | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| P2       | todo   | Add `other_materials` text field to projects for extras like buttons/zippers                         | Medium | Low        | `stricknani/templates/projects/form.html`, `stricknani/models/project.py`, `stricknani/routes/projects.py`, `stricknani/services/projects/*` |
+| P3       | todo   | Replace runtime Tailwind-in-browser with a prebuilt static CSS bundle for performance and easier CSP | High   | High       | `stricknani/templates/base.html`, build tooling (`justfile`, `flake.nix`)                                                                    |
 
 ## Notes
 
