@@ -1,0 +1,421 @@
+/* Global non-vendor styles (extracted from templates). */
+
+/* CropperJS v2 uses web components; provide a circular preview overlay. */
+#crop-modal cropper-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+#crop-modal .avatar-crop-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --avatar-crop-size: 0px;
+  --avatar-crop-radius: 0px;
+}
+
+#crop-modal .avatar-crop-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    transparent 0,
+    transparent calc(var(--avatar-crop-radius) - 2px),
+    rgba(0, 0, 0, 0.55) calc(var(--avatar-crop-radius) + 1px)
+  );
+}
+
+#crop-modal .avatar-crop-overlay::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--avatar-crop-size);
+  height: var(--avatar-crop-size);
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.markdown-inline-image {
+  max-width: 250px;
+  width: 100%;
+  cursor: zoom-in;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Garnstudio diagram legend symbols: keep them icon-sized (remote or localized). */
+.markdown-inline-image[src*="/drops/symbols/"],
+.markdown-inline-image[data-lightbox-src*="/drops/symbols/"],
+.markdown-inline-image[src*="/inline/garnstudio-symbols/"],
+.markdown-inline-image[data-lightbox-src*="/inline/garnstudio-symbols/"] {
+  max-width: 2rem;
+  max-height: 2rem;
+  width: auto;
+  cursor: default;
+  border-radius: 0.25rem;
+  margin: 0 0.25rem 0 0;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, currentColor 55%, transparent);
+  font-style: italic;
+}
+
+.prose {
+  line-height: 1.6;
+}
+
+.prose > * + * {
+  margin-top: 0.75rem;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose h1 {
+  font-size: 1.35rem;
+}
+
+.prose h2 {
+  font-size: 1.2rem;
+}
+
+.prose h3 {
+  font-size: 1.05rem;
+}
+
+.prose h4 {
+  font-size: 0.95rem;
+}
+
+.prose h5 {
+  font-size: 0.9rem;
+}
+
+.prose h6 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose ul {
+  list-style: disc;
+}
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose li + li {
+  margin-top: 0.25rem;
+}
+
+.prose blockquote {
+  border-left: 3px solid color-mix(in srgb, currentColor 20%, transparent);
+  padding-left: 0.75rem;
+  font-style: italic;
+  color: color-mix(in srgb, currentColor 80%, transparent);
+}
+
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.9em;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.35rem;
+}
+
+.prose pre {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.prose a {
+  color: color-mix(in srgb, currentColor 85%, #1d4ed8);
+  text-decoration: underline;
+}
+
+.prose-compact {
+  font-size: 0.95rem;
+}
+
+.prose-compact > * + * {
+  margin-top: 0.6rem;
+}
+
+.prose-compact h1,
+.prose-compact h2,
+.prose-compact h3,
+.prose-compact h4,
+.prose-compact h5,
+.prose-compact h6 {
+  margin-top: 1rem;
+}
+
+.prose-compact ul,
+.prose-compact ol {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.prose-compact pre {
+  padding: 0.6rem 0.8rem;
+}
+
+.pswp__thumbs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  overflow-x: auto;
+  pointer-events: auto;
+  z-index: 15;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+.pswp__thumbs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.pswp__thumbs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pswp__thumbs::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+.navbar-dropdown-content {
+  max-height: calc(100vh - 4.5rem);
+  max-width: min(90vw, 22rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.navbar-dropdown-nav {
+  margin-top: 0.25rem;
+}
+
+.navbar-dropdown-nav::before {
+  height: 0.75rem;
+  top: -0.75rem;
+}
+
+.ellipsis-dropdown-content {
+  width: auto;
+  min-width: 12rem;
+  max-width: min(92vw, 20rem);
+}
+
+.ellipsis-dropdown-content :is(a, button) {
+  padding: 0.7rem 1rem;
+}
+
+.badge {
+  padding: 0.35rem 0.8rem;
+}
+
+@supports not (position-area: bottom) {
+  .dropdown {
+    position: relative;
+  }
+
+  .dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+  }
+
+  .dropdown-end .dropdown-content {
+    left: auto;
+    right: 0;
+  }
+
+  .dropdown-start .dropdown-content {
+    left: 0;
+    right: auto;
+  }
+
+  .dropdown-top .dropdown-content {
+    top: auto;
+    bottom: 100%;
+  }
+
+  .dropdown-bottom .dropdown-content {
+    top: 100%;
+    bottom: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .dropdown {
+    position: relative;
+    position-area: auto !important;
+  }
+
+  .dropdown-content {
+    position: absolute !important;
+    inset: auto !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: auto !important;
+    transform: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .dropdown-end .dropdown-content {
+    left: auto !important;
+    right: 0 !important;
+  }
+
+  .dropdown-start .dropdown-content {
+    left: 0 !important;
+    right: auto !important;
+  }
+
+  .dropdown-top .dropdown-content {
+    top: auto !important;
+    bottom: 100% !important;
+  }
+
+  .dropdown-bottom .dropdown-content {
+    top: 100% !important;
+    bottom: auto !important;
+  }
+
+  .ellipsis-dropdown-content {
+    width: auto;
+    min-width: 12rem;
+    max-width: min(92vw, 20rem);
+  }
+
+  .navbar-dropdown-content {
+    max-width: min(92vw, 22rem);
+  }
+}
+
+.navbar-dropdown-content::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.5rem;
+  height: 0.5rem;
+  background: transparent;
+}
+
+.pswp__thumb {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.6rem;
+  border: 2px solid transparent;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0;
+  flex: 0 0 auto;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.pswp__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pswp__thumb:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.pswp__thumb.is-active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.4);
+  transform: scale(1.05);
+}
+
+/* PhotoSwipe custom button styling */
+.pswp__button--zoom {
+  display: none !important;
+}
+
+.pswp__button--promote-button,
+.pswp__button--delete-button,
+.pswp__button--download-button,
+.pswp__button--ocr-button {
+  overflow: visible !important;
+}
+
+/* Bottom-right floating OCR button (outside the top toolbar). */
+.pswp__button--ocr-button {
+  position: absolute !important;
+  right: 0.75rem !important;
+  bottom: 0.75rem !important;
+  width: 3rem !important;
+  height: 3rem !important;
+  border-radius: 9999px !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(6px);
+  z-index: 100000 !important;
+}
+
+.pswp__button--ocr-button:hover {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+.pswp__button--promote-button.is-primary .pswp__icn {
+  color: #fbbf24 !important; /* amber-400 */
+}
+
+.pswp__button--delete-button .pswp__icn {
+  color: #ef4444 !important; /* red-500 */
+}
+
+.pswp__button .pswp__icn.mdi {
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  color: #fff;
+}
+

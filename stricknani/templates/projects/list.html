@@ -27,14 +27,14 @@ md:inline-flex') }}
     <button tabindex="0" role="button" class="btn btn-square btn-ghost" aria-label="{{ _('More options') }}">
         <span class="mdi mdi-dots-vertical text-xl"></span>
     </button>
-    <ul tabindex="0"
-        class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
-        <li>
-            <button type="button" onclick="importDialog.showModal()">
-                <span class="mdi mdi-download"></span>
-                {{ _('Import') }}
-            </button>
-        </li>
+	    <ul tabindex="0"
+	        class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
+	        <li>
+	            <button type="button" data-action="open-dialog" data-dialog-id="importDialog">
+	                <span class="mdi mdi-download"></span>
+	                {{ _('Import') }}
+	            </button>
+	        </li>
         <li>
             <a href="/projects/categories">
                 <span class="mdi mdi-shape-outline"></span>

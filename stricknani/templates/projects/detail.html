@@ -41,13 +41,13 @@
                 {{ _('Re-import') }}
             </a>
         </li>
-        <li>
-            <button onclick="document.getElementById('deleteProjectDialog').showModal()"
-                class="text-error hover:bg-error/10 hover:text-error">
-                <span class="mdi mdi-delete-outline text-lg"></span>
-                {{ _('Delete') }}
-            </button>
-        </li>
+	        <li>
+	            <button data-action="open-dialog" data-dialog-id="deleteProjectDialog"
+	                class="text-error hover:bg-error/10 hover:text-error">
+	                <span class="mdi mdi-delete-outline text-lg"></span>
+	                {{ _('Delete') }}
+	            </button>
+	        </li>
     </ul>
 </div>
 
@@ -888,7 +888,7 @@
         <form method="dialog">
             {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
         </form>
-        <button type="button" class="btn btn-primary" onclick="window.location.reload()">
+        <button type="button" class="btn btn-primary" data-action="reload">
             <span class="mdi mdi-refresh"></span>
             {{ _('Reload page') }}
         </button>

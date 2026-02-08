@@ -21,14 +21,14 @@
         <button type="button" class="btn btn-square btn-ghost btn-sm md:btn-md" aria-label="{{ _('More options') }}">
             <span class="mdi mdi-dots-vertical text-xl"></span>
         </button>
-        <ul tabindex="0"
-            class="dropdown-content ellipsis-dropdown-content z-[100] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
-            <li>
-                <button type="button" onclick="document.getElementById('importDialog').showModal()">
-                    <span class="mdi mdi-download"></span>
-                    {{ _('Import') }}
-                </button>
-            </li>
+	        <ul tabindex="0"
+	            class="dropdown-content ellipsis-dropdown-content z-[100] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
+	            <li>
+	                <button type="button" data-action="open-dialog" data-dialog-id="importDialog">
+	                    <span class="mdi mdi-download"></span>
+	                    {{ _('Import') }}
+	                </button>
+	            </li>
         </ul>
     </div>
     {% endif %}
@@ -73,13 +73,13 @@
 {% block form_before %}
 <dialog id="previewDialog"
     class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-2xl">
-    <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-        <h3 class="text-lg font-semibold">{{ _('Preview') }}</h3>
-        <button onclick="document.getElementById('previewDialog').close()"
-            class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-            <span class="mdi mdi-close text-xl"></span>
-        </button>
-    </div>
+	    <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+	        <h3 class="text-lg font-semibold">{{ _('Preview') }}</h3>
+	        <button data-action="close-dialog" data-dialog-id="previewDialog"
+	            class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+	            <span class="mdi mdi-close text-xl"></span>
+	        </button>
+	    </div>
     <div id="previewContent" class="p-6 prose max-w-none dark:prose-invert overflow-y-auto max-h-[70vh]"></div>
 </dialog>
 
@@ -98,7 +98,7 @@ md:sticky md:top-0 md:z-50 bg-base-100 py-4 px-4 -mx-4 shadow-none
 {% block form_actions %}
 {% if not project %}
 {{ buttons.secondary(_('Import'), icon='mdi-download',
-attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='flex-1 sm:flex-none') }}
+attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 sm:flex-none') }}
 {% endif %}
 
 {# Save button logic:
@@ -3287,7 +3287,7 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         </div>
         <div class="modal-action">
             {{ dialogs.dialog_cancel(_('Cancel'),
-            attrs='onclick="document.getElementById(\'deleteProjectDialog\').close()"') }}
+            attrs='data-action="close-dialog" data-dialog-id="deleteProjectDialog"') }}
             {{ dialogs.dialog_danger(_('Delete'), attrs='onclick="deleteProject()"') }}
         </div>
     </div>
@@ -3303,8 +3303,8 @@ attrs='onclick="document.getElementById(\'importDialog\').showModal()"', class='
         </div>
         <div class="modal-action">
             {{ dialogs.dialog_cancel(_('Cancel'),
-            attrs='onclick="document.getElementById(\'csrfErrorDialog\').close()"') }}
-            <button type="button" class="btn btn-primary" onclick="window.location.reload()">
+            attrs='data-action="close-dialog" data-dialog-id="csrfErrorDialog"') }}
+            <button type="button" class="btn btn-primary" data-action="reload">
                 <span class="mdi mdi-refresh"></span>
                 {{ _('Reload page') }}
             </button>

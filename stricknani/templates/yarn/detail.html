@@ -35,13 +35,13 @@
                 {{ _('Re-import') }}
             </a>
         </li>
-        <li>
-            <button onclick="document.getElementById('deleteYarnDialog').showModal()"
-                class="text-error hover:bg-error/10 hover:text-error">
-                <span class="mdi mdi-delete-outline text-lg"></span>
-                {{ _('Delete') }}
-            </button>
-        </li>
+	        <li>
+	            <button data-action="open-dialog" data-dialog-id="deleteYarnDialog"
+	                class="text-error hover:bg-error/10 hover:text-error">
+	                <span class="mdi mdi-delete-outline text-lg"></span>
+	                {{ _('Delete') }}
+	            </button>
+	        </li>
     </ul>
 </div>
 
