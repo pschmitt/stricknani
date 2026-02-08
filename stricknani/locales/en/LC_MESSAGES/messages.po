@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-08 11:20+0100\n"
+"POT-Creation-Date: 2026-02-08 11:23+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -849,26 +849,6 @@ msgstr "Start a project to track photos, gauge notes, and progress."
 msgid "Create Your First Project"
 msgstr ""
 
-#: stricknani/templates/projects/_favorite_toggle.html:4
-#: stricknani/templates/yarn/_favorite_toggle.html:3
-msgid "Unfavorite"
-msgstr ""
-
-#: stricknani/templates/projects/_favorite_toggle.html:4
-#: stricknani/templates/yarn/_favorite_toggle.html:3
-msgid "Favorite"
-msgstr ""
-
-#: stricknani/templates/projects/_favorite_toggle.html:5
-#: stricknani/templates/yarn/_favorite_toggle.html:4
-msgid "Removed from favorites"
-msgstr ""
-
-#: stricknani/templates/projects/_favorite_toggle.html:5
-#: stricknani/templates/yarn/_favorite_toggle.html:4
-msgid "Added to favorites"
-msgstr ""
-
 #: stricknani/templates/projects/_import_dialog.html:2
 #: stricknani/templates/projects/_import_dialog.html:51
 #: stricknani/templates/projects/form.html:29
@@ -1652,6 +1632,22 @@ msgstr "No matching results"
 #: stricknani/templates/shared/_empty_search_state.html:8
 msgid "Clear filters"
 msgstr "Clear filters"
+
+#: stricknani/templates/shared/_favorite_toggle.html:3
+msgid "Unfavorite"
+msgstr ""
+
+#: stricknani/templates/shared/_favorite_toggle.html:3
+msgid "Favorite"
+msgstr ""
+
+#: stricknani/templates/shared/_favorite_toggle.html:4
+msgid "Removed from favorites"
+msgstr ""
+
+#: stricknani/templates/shared/_favorite_toggle.html:4
+msgid "Added to favorites"
+msgstr ""
 
 #: stricknani/templates/shared/_global_search_results.html:28
 #, python-format

@@ -2214,16 +2214,27 @@ async def favorite_project(
         )
     )
 
-    if not favorite_exists.first():
+    is_favorite = False
+    if favorite_exists.first():
+        await db.execute(
+            delete(user_favorites).where(
+                user_favorites.c.user_id == current_user.id,
+                user_favorites.c.project_id == project_id,
+            )
+        )
+    else:
         await db.execute(
             insert(user_favorites).values(
                 user_id=current_user.id, project_id=project_id
             )
         )
-        await db.commit()
+        is_favorite = True
+    await db.commit()
 
     if request.headers.get("HX-Request"):
-        return _render_favorite_toggle(request, project_id, True, variant)
+        if variant == "profile" and not is_favorite:
+            return HTMLResponse(content="")
+        return _render_favorite_toggle(request, project_id, is_favorite, variant)
 
     return RedirectResponse(
         url=f"/projects/{project_id}", status_code=status.HTTP_303_SEE_OTHER

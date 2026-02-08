@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-08 11:20+0100\n"
+"POT-Creation-Date: 2026-02-08 11:23+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -827,26 +827,6 @@ msgstr ""
 msgid "Create Your First Project"
 msgstr ""
 
-#: stricknani/templates/projects/_favorite_toggle.html:4
-#: stricknani/templates/yarn/_favorite_toggle.html:3
-msgid "Unfavorite"
-msgstr ""
-
-#: stricknani/templates/projects/_favorite_toggle.html:4
-#: stricknani/templates/yarn/_favorite_toggle.html:3
-msgid "Favorite"
-msgstr ""
-
-#: stricknani/templates/projects/_favorite_toggle.html:5
-#: stricknani/templates/yarn/_favorite_toggle.html:4
-msgid "Removed from favorites"
-msgstr ""
-
-#: stricknani/templates/projects/_favorite_toggle.html:5
-#: stricknani/templates/yarn/_favorite_toggle.html:4
-msgid "Added to favorites"
-msgstr ""
-
 #: stricknani/templates/projects/_import_dialog.html:2
 #: stricknani/templates/projects/_import_dialog.html:51
 #: stricknani/templates/projects/form.html:29
@@ -1594,6 +1574,22 @@ msgstr ""
 
 #: stricknani/templates/shared/_empty_search_state.html:8
 msgid "Clear filters"
+msgstr ""
+
+#: stricknani/templates/shared/_favorite_toggle.html:3
+msgid "Unfavorite"
+msgstr ""
+
+#: stricknani/templates/shared/_favorite_toggle.html:3
+msgid "Favorite"
+msgstr ""
+
+#: stricknani/templates/shared/_favorite_toggle.html:4
+msgid "Removed from favorites"
+msgstr ""
+
+#: stricknani/templates/shared/_favorite_toggle.html:4
+msgid "Added to favorites"
 msgstr ""
 
 #: stricknani/templates/shared/_global_search_results.html:28
