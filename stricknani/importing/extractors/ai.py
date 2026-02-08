@@ -254,6 +254,14 @@ class AIExtractor(ContentExtractor):
         pdf_extractor = PDFExtractor(extract_images=True)
         local_images = await pdf_extractor.extract_images_from_pdf(content)
 
+        # Also extract text locally to provide as a hint
+        local_text = ""
+        try:
+            local_extracted_data = await pdf_extractor.extract(content, hints=hints)
+            local_text = str(local_extracted_data.extras.get("full_text") or "")
+        except Exception as exc:
+            logger.warning("Failed to extract text locally for PDF hint: %s", exc)
+
         file_id = None
         try:
             # Step 1: Upload PDF to OpenAI with purpose="vision"
@@ -284,10 +292,20 @@ class AIExtractor(ContentExtractor):
                     "specific step."
                 )
 
+            text_block = ""
+            if local_text:
+                text_block = (
+                    "\n\nFor reference, here is the text content extracted locally "
+                    "from the PDF (it might be messy or incomplete, but can help "
+                    "with details):\n\n"
+                    f"{local_text[:8000]}"  # Limit hint text length
+                )
+
             user_prompt = (
                 "Analyze the attached PDF and extract all available knitting pattern "
                 "information. Return the data as JSON."
                 f"{image_block}"
+                f"{text_block}"
             )
 
             response = await client.chat.completions.create(  # type: ignore[call-overload]
@@ -332,7 +350,10 @@ class AIExtractor(ContentExtractor):
                 page_images = await pdf_extractor.render_pages_as_images(content)
                 if page_images:
                     result = await self._extract_from_images(
-                        page_images, hints, local_images=local_images
+                        page_images,
+                        hints,
+                        local_images=local_images,
+                        raw_text=local_text,
                     )
                     # Ensure original local images are still in extras
                     if local_images:
@@ -364,6 +385,7 @@ class AIExtractor(ContentExtractor):
         image_list: list[bytes],
         hints: dict[str, Any] | None,
         local_images: list[bytes] | None = None,
+        raw_text: str | None = None,
     ) -> ExtractedData:
         """Extract data from multiple images using vision API."""
         client = AsyncOpenAI(api_key=self.api_key)
@@ -384,11 +406,20 @@ class AIExtractor(ContentExtractor):
                 "specific step."
             )
 
+        text_block = ""
+        if raw_text:
+            text_block = (
+                "\n\nFor reference, here is the text content extracted from the "
+                "source file:\n\n"
+                f"{raw_text[:8000]}"
+            )
+
         user_prompt = (
             "Analyze the attached images (which are pages from a knitting pattern) "
             "and extract all available knitting pattern information. "
             "Return the data as JSON."
             f"{image_hints}"
+            f"{text_block}"
         )
 
         content_list.append({"type": "text", "text": user_prompt})
