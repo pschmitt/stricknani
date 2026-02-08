@@ -36,8 +36,8 @@ run-raw args='':
 
 # Run linters
 lint:
-  uv run ruff check .
-  uv run mypy .
+  uv run ruff check . --exclude stricknani/static/vendor
+  uv run mypy . --exclude stricknani/static/vendor
 
 # Check translations
 i18n-check:
@@ -57,8 +57,8 @@ i18n-compile:
 
 # Format code
 fmt:
-  uv run ruff format .
-  uv run ruff check --fix .
+  uv run ruff format . --exclude stricknani/static/vendor
+  uv run ruff check --fix . --exclude stricknani/static/vendor
   statix fix flake.nix
   statix fix nix/
 

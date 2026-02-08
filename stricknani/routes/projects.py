@@ -2161,10 +2161,50 @@ async def create_project(
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
-        # Filter out temporary import URLs before passing to regular importer
-        regular_project_urls = [
-            u for u in image_urls if "/media/imports/projects/" not in u
-        ]
+        # Handle both regular URLs and temporary import URLs
+        regular_project_urls = []
+        for url in image_urls:
+            if "/media/imports/projects/" in url:
+                # Extract token from URL
+                match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
+                if match:
+                    token = match.group(1)
+                    try:
+                        (
+                            pending_bytes,
+                            original_filename,
+                            content_type,
+                        ) = await consume_pending_project_import_attachment(
+                            current_user.id,
+                            token=token,
+                        )
+                        # Mock UploadFile for the service
+                        import io
+
+                        from fastapi import UploadFile
+                        from starlette.datastructures import Headers
+
+                        from stricknani.services.projects.images import (
+                            upload_title_image,
+                        )
+
+                        mock_file = UploadFile(
+                            filename=original_filename,
+                            file=io.BytesIO(pending_bytes),
+                            headers=Headers({"content-type": content_type}),
+                        )
+                        await upload_title_image(
+                            db,
+                            project_id=project.id,
+                            file=mock_file,
+                            alt_text=original_filename,
+                        )
+                    except FileNotFoundError:
+                        # Might have been consumed by a step
+                        pass
+            else:
+                regular_project_urls.append(url)
+
         if regular_project_urls:
             await import_project_images_from_urls(
                 db,
@@ -2326,10 +2366,50 @@ async def update_project(
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
-        # Filter out temporary import URLs before passing to regular importer
-        regular_project_urls = [
-            u for u in image_urls if "/media/imports/projects/" not in u
-        ]
+        # Handle both regular URLs and temporary import URLs
+        regular_project_urls = []
+        for url in image_urls:
+            if "/media/imports/projects/" in url:
+                # Extract token from URL
+                match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
+                if match:
+                    token = match.group(1)
+                    try:
+                        (
+                            pending_bytes,
+                            original_filename,
+                            content_type,
+                        ) = await consume_pending_project_import_attachment(
+                            current_user.id,
+                            token=token,
+                        )
+                        # Mock UploadFile for the service
+                        import io
+
+                        from fastapi import UploadFile
+                        from starlette.datastructures import Headers
+
+                        from stricknani.services.projects.images import (
+                            upload_title_image,
+                        )
+
+                        mock_file = UploadFile(
+                            filename=original_filename,
+                            file=io.BytesIO(pending_bytes),
+                            headers=Headers({"content-type": content_type}),
+                        )
+                        await upload_title_image(
+                            db,
+                            project_id=project.id,
+                            file=mock_file,
+                            alt_text=original_filename,
+                        )
+                    except FileNotFoundError:
+                        # Might have been consumed by a step
+                        pass
+            else:
+                regular_project_urls.append(url)
+
         if regular_project_urls:
             await import_project_images_from_urls(db, project, regular_project_urls)
 
