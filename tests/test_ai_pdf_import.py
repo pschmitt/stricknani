@@ -30,6 +30,10 @@ async def test_ai_extractor_pdf_direct_upload() -> None:
     with (
         patch("stricknani.importing.extractors.ai.OPENAI_AVAILABLE", True),
         patch("stricknani.importing.extractors.ai.AsyncOpenAI") as mock_openai_class,
+        patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.extract_images_from_pdf",
+            new=AsyncMock(return_value=[b"fake-image-bytes"]),
+        ),
     ):
         mock_client = mock_openai_class.return_value
         mock_client.files.create = AsyncMock(return_value=mock_file)
@@ -38,10 +42,13 @@ async def test_ai_extractor_pdf_direct_upload() -> None:
 
         result = await extractor.extract(pdf_content)
 
-    assert result.name == "Direct PDF Project"
+        assert result.name == "Direct PDF Project"
+        assert "pdf_images" in result.extras
+        assert len(result.extras["pdf_images"]) == 1
+        assert result.extras["pdf_images"][0] == b"fake-image-bytes"
 
-    # Verify file was uploaded with purpose="vision"
-    mock_client.files.create.assert_called_once()
+        # Verify file was uploaded with purpose="vision"
+        mock_client.files.create.assert_called_once()
     args, kwargs = mock_client.files.create.call_args
     assert kwargs["purpose"] == "vision"
     assert kwargs["file"][0] == "test.pdf"
@@ -79,6 +86,10 @@ async def test_ai_extractor_pdf_fallback_on_error() -> None:
         patch("stricknani.importing.extractors.ai.OPENAI_AVAILABLE", True),
         patch("stricknani.importing.extractors.ai.AsyncOpenAI") as mock_openai_class,
         patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.extract_images_from_pdf",
+            new=AsyncMock(return_value=[b"fake-image-bytes"]),
+        ),
+        patch(
             "stricknani.importing.extractors.pdf.PDFExtractor.can_extract",
             return_value=True,
         ),
@@ -111,4 +122,7 @@ async def test_ai_extractor_pdf_fallback_on_error() -> None:
         result = await extractor.extract(pdf_content)
 
     assert result.name == "Fallback Success"
+    assert "pdf_images" in result.extras
+    assert len(result.extras["pdf_images"]) == 1
+    assert result.extras["pdf_images"][0] == b"fake-image-bytes"
     mock_client.files.create.assert_called_once()

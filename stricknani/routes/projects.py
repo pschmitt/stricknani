@@ -950,6 +950,21 @@ async def import_pattern(
                 ai_extractor = AIExtractor()
                 extracted = await ai_extractor.extract(raw_content)
 
+                # Handle images extracted from PDF
+                import_attachment_tokens: list[str] = []
+                pdf_images = extracted.extras.get("pdf_images", [])
+                if pdf_images:
+                    for img_bytes in pdf_images:
+                        token = await store_pending_project_import_attachment_bytes(
+                            current_user.id,
+                            content=img_bytes,
+                            original_filename=(
+                                f"pdf_image_{len(import_attachment_tokens) + 1}.jpg"
+                            ),
+                            content_type="image/jpeg",
+                        )
+                        import_attachment_tokens.append(token)
+
                 data = {
                     "name": extracted.name,
                     "description": extracted.description,
@@ -969,6 +984,7 @@ async def import_pattern(
                         for step in extracted.steps
                     ],
                     "image_urls": extracted.image_urls,
+                    "import_attachment_tokens": import_attachment_tokens,
                     "link": None,
                     "is_ai_enhanced": True,
                 }

@@ -245,6 +245,12 @@ class AIExtractor(ContentExtractor):
             else content.content.encode()
         )
 
+        # Pre-extract images from PDF to include them as attachments
+        from stricknani.importing.extractors.pdf import PDFExtractor
+
+        pdf_extractor = PDFExtractor(extract_images=True)
+        local_images = await pdf_extractor.extract_images_from_pdf(content)
+
         file_id = None
         try:
             # Step 1: Upload PDF to OpenAI with purpose="vision"
@@ -289,7 +295,14 @@ class AIExtractor(ContentExtractor):
             )
 
             raw_content_str = response.choices[0].message.content or "{}"
-            return self._parse_ai_response(raw_content_str)
+            result = self._parse_ai_response(raw_content_str)
+
+            # Attach local images to the result
+            if local_images:
+                # We store them in extras so the target can handle them
+                result.extras["pdf_images"] = local_images
+
+            return result
 
         except BadRequestError as exc:
             # Fallback to local text extraction if the model/account doesn't support
@@ -327,7 +340,9 @@ class AIExtractor(ContentExtractor):
         """Fallback method using local text extraction."""
         from stricknani.importing.extractors.pdf import PDFExtractor
 
-        pdf_extractor = PDFExtractor(extract_images=False)
+        pdf_extractor = PDFExtractor(extract_images=True)
+        local_images = await pdf_extractor.extract_images_from_pdf(content)
+
         if not pdf_extractor.can_extract(content):
             raise ExtractorError(
                 "PDF extraction is not available (install pypdf or PyMuPDF)",
@@ -365,7 +380,14 @@ class AIExtractor(ContentExtractor):
                 "source_content_type": "application/pdf",
             },
         )
-        return await self._extract_from_text(text_content, hints)
+        result = await self._extract_from_text(text_content, hints)
+
+        # Attach local images to the result
+        if local_images:
+            result.extras["pdf_images"] = local_images
+
+        return result
+
 
     async def _prepare_image(self, image_bytes: bytes, max_size: int = 1024) -> bytes:
         """Resize image if needed to reduce token usage."""
