@@ -31,7 +31,7 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 | P1 | done | Reduce coupling to `stricknani/main.py` by moving templating helpers to a dedicated module (and consider an app-factory) | Medium | Medium | `stricknani/main.py`, `stricknani/routes/*.py`, `stricknani/web/templating.py` |
 | P1 | done | Move blocking PIL/file work off the async event loop (`to_thread`) in upload/thumbnail paths | Medium | Medium | `stricknani/routes/projects.py`, `stricknani/routes/yarn.py`, `stricknani/importing/*`, `stricknani/utils/files.py` |
 | P2 | todo | Unify shared UI components between Projects and Yarns (import dialogs, favorite toggle, detail sidebar patterns) to enforce parity | Medium | Medium | `stricknani/templates/projects/*`, `stricknani/templates/yarn/*`, `stricknani/templates/shared/*` |
-| P2 | todo | Decompose `base.html` by moving independent features into dedicated static modules (global search, PhotoSwipe init, profile cropper, navbar hover, swipe nav) | Medium | Medium | `stricknani/templates/base.html` |
+| P2 | wip | Decompose `base.html` by moving independent features into dedicated static modules (global search, PhotoSwipe init, profile cropper, navbar hover, swipe nav) | Medium | Medium | `stricknani/templates/base.html`, `stricknani/static/js/features/*`, `stricknani/static/js/htmx/*` |
 | P2 | todo | Add/expand tests around newly extracted services (importing, image handling) to keep refactors safe | Medium | Medium | `tests/*` |
 | P3 | todo | Replace runtime Tailwind-in-browser with a prebuilt static CSS bundle for performance and easier CSP | High | High | `stricknani/templates/base.html`, build tooling (`justfile`, `flake.nix`) |
 
