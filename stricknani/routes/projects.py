@@ -2326,6 +2326,7 @@ async def create_project(
                 permanently_saved_tokens.add(token)
             else:
                 # It's a general image (not from PDF pages) - save to gallery
+                # but ONLY if we haven't saved it yet (dedupe)
                 import io
 
                 from fastapi import UploadFile
@@ -2338,6 +2339,7 @@ async def create_project(
                     file=io.BytesIO(pending_bytes),
                     headers=Headers({"content-type": content_type}),
                 )
+                # upload_title_image now has internal checksum deduplication
                 await upload_title_image(
                     db,
                     project_id=project.id,
@@ -2711,6 +2713,7 @@ async def update_project(
                 permanently_saved_tokens.add(token)
             else:
                 # It's a general image (not from PDF pages) - save to gallery
+                # but ONLY if we haven't saved it yet (dedupe)
                 import io
 
                 from fastapi import UploadFile
@@ -2723,6 +2726,7 @@ async def update_project(
                     file=io.BytesIO(pending_bytes),
                     headers=Headers({"content-type": content_type}),
                 )
+                # upload_title_image now has internal checksum deduplication
                 await upload_title_image(
                     db,
                     project_id=project.id,
