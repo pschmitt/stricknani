@@ -30,5 +30,12 @@
         {% block list_extra %}{% endblock %}
     </div>
 </div>
-{% block page_scripts %}{% endblock %}
+{% block page_scripts %}
+<script>
+    window.STRICKNANI_I18N = window.STRICKNANI_I18N || {};
+    window.STRICKNANI_I18N.drop_to_import = '{{ _("Drop to Import") }}';
+    window.STRICKNANI_I18N.drop_files_hint = '{{ _("Release to start AI analysis") }}';
+</script>
+<script src="{{ url_for('static', path='js/features/list_drag_drop.js') }}"></script>
+{% endblock %}
 {% endblock %}
