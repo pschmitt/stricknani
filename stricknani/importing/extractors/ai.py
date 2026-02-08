@@ -136,7 +136,7 @@ class AIExtractor(ContentExtractor):
         hints: dict[str, Any] | None,
     ) -> ExtractedData:
         """Extract data from an image using vision API."""
-        client = AsyncOpenAI(api_key=self.api_key)  # type: ignore[union-attr]
+        client = AsyncOpenAI(api_key=self.api_key)
 
         # Prepare image
         image_bytes = (
@@ -193,7 +193,7 @@ class AIExtractor(ContentExtractor):
         hints: dict[str, Any] | None,
     ) -> ExtractedData:
         """Extract data from text using GPT."""
-        client = AsyncOpenAI(api_key=self.api_key)  # type: ignore[union-attr]
+        client = AsyncOpenAI(api_key=self.api_key)
 
         text = content.get_text()
 
@@ -274,7 +274,8 @@ class AIExtractor(ContentExtractor):
             "- yarn: General yarn information (string)\n"
             "- brand: Yarn brand if visible\n"
             "- colorway: Color name/number\n"
-            "- weight_category: Yarn weight (Lace, Fingering, DK, Worsted, Aran, Bulky)\n"
+            "- weight_category: Yarn weight (Lace, Fingering, DK, Worsted, Aran, "
+            "Bulky)\n"
             "- fiber_content: Material composition\n"
             "- weight_grams: Weight of a single ball in grams (integer)\n"
             "- length_meters: Length of a single ball in meters (integer)\n"

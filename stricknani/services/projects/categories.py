@@ -67,4 +67,3 @@ async def ensure_category(
         return category.name
 
     return category.name
-

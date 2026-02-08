@@ -2,4 +2,3 @@
 
 Routes should stay thin and delegate behavior to services where practical.
 """
-

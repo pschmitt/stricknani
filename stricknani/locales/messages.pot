@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-08 11:31+0100\n"
+"POT-Creation-Date: 2026-02-08 13:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -36,7 +36,8 @@ msgstr ""
 #: stricknani/templates/projects/detail.html:785
 #: stricknani/templates/projects/form.html:3257
 #: stricknani/templates/projects/form.html:3273
-#: stricknani/templates/shared/_import_dialog.html:50
+#: stricknani/templates/shared/_import_dialog.html:72
+#: stricknani/templates/shared/_import_dialog.html:169
 #: stricknani/templates/shared/form_base.html:19
 #: stricknani/templates/yarn/detail.html:452
 #: stricknani/templates/yarn/form.html:508
@@ -847,6 +848,7 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/projects/_import_dialog.html:13
+#: stricknani/templates/yarn/_import_dialog.html:13
 msgid "AI-powered extraction enabled"
 msgstr ""
 
@@ -1223,7 +1225,7 @@ msgstr ""
 #: stricknani/templates/projects/form.html:2903
 #: stricknani/templates/projects/list.html:25
 #: stricknani/templates/shared/_import_dialog.html:2
-#: stricknani/templates/shared/_import_dialog.html:52
+#: stricknani/templates/shared/_import_dialog.html:74
 #: stricknani/templates/yarn/form.html:34
 #: stricknani/templates/yarn/form.html:998
 #: stricknani/templates/yarn/list.html:22
@@ -1370,6 +1372,7 @@ msgstr ""
 
 #: stricknani/templates/projects/form.html:541
 #: stricknani/templates/projects/form.html:2490
+#: stricknani/templates/shared/_import_dialog.html:145
 msgid "Remove"
 msgstr ""
 
@@ -1584,11 +1587,59 @@ msgstr ""
 msgid "No results found for \"%(query)s\""
 msgstr ""
 
-#: stricknani/templates/shared/_import_dialog.html:18
+#: stricknani/templates/shared/_import_dialog.html:11
+msgid "From URL"
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:19
+msgid "From File"
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:42
 msgid "Magic Import"
 msgstr ""
 
-#: stricknani/templates/shared/_import_dialog.html:65
+#: stricknani/templates/shared/_import_dialog.html:97
+msgid "AI Vision Import"
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:99
+msgid ""
+"Upload photos, PDFs, or text files. Our AI will analyze them and extract "
+"pattern details for you."
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:107
+msgid "Upload Files"
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:108
+msgid "Images, PDFs, or text files"
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:129
+msgid "Drop files here or click to browse"
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:131
+msgid "Supports: JPG, PNG, GIF, WebP, PDF, TXT, MD"
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:154
+msgid ""
+"Tip: For best results, upload clear photos of pattern covers, yarn "
+"labels, or instruction pages."
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:162
+msgid "AI-Powered Analysis Enabled"
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:175
+msgid "Analyze & Import"
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:189
 msgid "Working some magic..."
 msgstr ""
 

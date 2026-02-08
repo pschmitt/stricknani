@@ -105,7 +105,7 @@ class PDFExtractor(ContentExtractor):
 
     def _extract_with_pymupdf(self, pdf_bytes: bytes) -> str:
         """Extract text using PyMuPDF (fitz)."""
-        import fitz  # type: ignore[import-not-found]
+        import fitz
 
         text_parts = []
 
@@ -120,7 +120,7 @@ class PDFExtractor(ContentExtractor):
 
     def _extract_with_pypdf(self, pdf_bytes: bytes) -> str:
         """Extract text using pypdf."""
-        from pypdf import PdfReader  # type: ignore[import-not-found]
+        from pypdf import PdfReader
 
         reader = PdfReader(BytesIO(pdf_bytes))
         text_parts = []
@@ -152,7 +152,7 @@ class PDFExtractor(ContentExtractor):
         images = []
 
         try:
-            import fitz  # type: ignore[import-not-found]
+            import fitz
 
             with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
                 for page_num in range(len(doc)):

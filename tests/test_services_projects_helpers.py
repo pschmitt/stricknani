@@ -43,8 +43,8 @@ async def test_get_user_tags_dedup_and_sort(test_client: Any) -> None:
     _client, session_factory, user_id, _project_id, _step_id = test_client
 
     async with session_factory() as db:
-        db.add(Project(name="P1", owner_id=user_id, tags='[\"Foo\", \"bar\"]'))
-        db.add(Project(name="P2", owner_id=user_id, tags='[\"foo\", \"Baz\"]'))
+        db.add(Project(name="P1", owner_id=user_id, tags='["Foo", "bar"]'))
+        db.add(Project(name="P2", owner_id=user_id, tags='["foo", "Baz"]'))
         await db.commit()
 
     async with session_factory() as db:

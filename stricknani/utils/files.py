@@ -145,6 +145,7 @@ async def create_thumbnail(
     Returns:
         Filename of the thumbnail
     """
+
     def _create() -> str:
         # Open and resize image (Pillow is CPU-bound; keep it off the event loop).
         with Image.open(source_path) as img:

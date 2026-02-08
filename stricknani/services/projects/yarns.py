@@ -63,4 +63,3 @@ async def load_owned_yarns(
         )
     )
     return result.scalars().all()
-

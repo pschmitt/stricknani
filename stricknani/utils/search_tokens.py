@@ -64,4 +64,3 @@ def extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
     start, end = match.span()
     remaining = (search[:start] + search[end:]).strip()
     return token.strip(), remaining
-

@@ -192,6 +192,7 @@ async def import_project_images_from_urls(
                 continue
 
             try:
+
                 def _inspect(
                     content: bytes,
                 ) -> tuple[int, int, SimilarityImage | None]:
@@ -361,6 +362,7 @@ async def import_step_images_from_urls(
                 continue
 
             try:
+
                 def _inspect(
                     content: bytes,
                 ) -> tuple[int, int, SimilarityImage | None]:
@@ -426,10 +428,7 @@ async def import_step_images_from_urls(
                     step.project_id,
                 )
                 file_path = (
-                    config.MEDIA_ROOT
-                    / "projects"
-                    / str(step.project_id)
-                    / filename
+                    config.MEDIA_ROOT / "projects" / str(step.project_id) / filename
                 )
                 await create_thumbnail(file_path, step.project_id)
             except Exception as exc:
@@ -509,6 +508,7 @@ async def import_yarn_images_from_urls(
                 continue
 
             try:
+
                 def _inspect(content: bytes) -> SimilarityImage | None:
                     with PilImage.open(BytesIO(content)) as img:
                         width, height = img.size

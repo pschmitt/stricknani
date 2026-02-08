@@ -148,4 +148,3 @@ async def render_template(
 
     csrf.set_csrf_cookie(signed_token, response)
     return response
-

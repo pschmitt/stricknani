@@ -45,4 +45,3 @@ async def update_step(
     await db.commit()
     await db.refresh(step)
     return step
-

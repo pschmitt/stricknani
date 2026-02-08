@@ -33,4 +33,3 @@ async def get_image_dimensions(
             return None, None
 
     return await anyio.to_thread.run_sync(_read, image_path)
-

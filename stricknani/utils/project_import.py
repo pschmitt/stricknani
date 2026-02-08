@@ -141,6 +141,7 @@ async def import_images_from_urls(
                 continue
 
             try:
+
                 def _inspect_image(
                     payload: bytes,
                 ) -> tuple[int, int, SimilarityImage | None]:

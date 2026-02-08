@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import anyio
 import httpx
@@ -160,6 +160,7 @@ async def _import_yarn_images_from_urls(
                 continue
 
             try:
+
                 def _inspect_image(
                     content: bytes,
                 ) -> tuple[int, int, SimilarityImage | None]:
@@ -490,16 +491,16 @@ async def import_yarn(
             # Read file content
             content_bytes = await file.read()
             filename = file.filename or "unknown"
-            
+
             from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
             from stricknani.importing.models import ContentType, RawContent
 
             use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
                 os.getenv("OPENAI_API_KEY")
             )
-            
+
             if not use_ai_enabled or not OPENAI_AVAILABLE:
-                 raise HTTPException(
+                raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="AI analysis requires OpenAI API key",
                 )
@@ -512,15 +513,15 @@ async def import_yarn(
                     content_type = ContentType.PDF
                 elif file.content_type.startswith("text/"):
                     content_type = ContentType.TEXT
-            
+
             if content_type == ContentType.UNKNOWN:
-                 # Fallback based on extension
-                 if filename.lower().endswith(".pdf"):
-                     content_type = ContentType.PDF
-                 elif filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
-                     content_type = ContentType.IMAGE
-                 else:
-                     content_type = ContentType.TEXT
+                # Fallback based on extension
+                if filename.lower().endswith(".pdf"):
+                    content_type = ContentType.PDF
+                elif filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+                    content_type = ContentType.IMAGE
+                else:
+                    content_type = ContentType.TEXT
 
             raw_content = RawContent(
                 content=content_bytes,
@@ -530,7 +531,7 @@ async def import_yarn(
 
             ai_extractor = AIExtractor()
             extracted = await ai_extractor.extract(raw_content)
-            
+
             # Map ExtractedData to dict
             data = {
                 "yarn": extracted.yarn or extracted.name,
@@ -540,12 +541,12 @@ async def import_yarn(
                 "fiber_content": extracted.fiber_content,
                 "needles": extracted.needles,
                 "description": extracted.description,
-                "notes": None, # AI usually puts notes in description
-                "image_urls": [], # Images handled separately
+                "notes": None,  # AI usually puts notes in description
+                "image_urls": [],  # Images handled separately
                 "link": None,
                 "is_ai_enhanced": True,
             }
-            
+
             # Try to parse weight/length if available in extras or generic fields
             if extracted.extras:
                 if "weight_grams" in extracted.extras:
@@ -553,17 +554,16 @@ async def import_yarn(
                 if "length_meters" in extracted.extras:
                     data["length_meters"] = extracted.extras["length_meters"]
 
-
         elif import_type == "text":
             if not text or not text.strip():
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Text is required",
                 )
-            
+
             from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
             from stricknani.importing.models import ContentType, RawContent
-            
+
             use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
                 os.getenv("OPENAI_API_KEY")
             )
@@ -575,7 +575,7 @@ async def import_yarn(
                 )
                 ai_extractor = AIExtractor()
                 extracted = await ai_extractor.extract(raw_content)
-                 # Map ExtractedData to dict
+                # Map ExtractedData to dict
                 data = {
                     "yarn": extracted.yarn or extracted.name,
                     "brand": extracted.brand,
@@ -589,7 +589,7 @@ async def import_yarn(
                     "is_ai_enhanced": True,
                 }
             else:
-                 # Basic text fallback
+                # Basic text fallback
                 data = {
                     "description": text,
                     "notes": None,
@@ -611,14 +611,15 @@ async def import_yarn(
 
         # Determine yarn name
         yarn_name = data.get("yarn") or data.get("title") or data.get("name")
-        
+
         # Determine weight/length if not already set
         weight_grams = data.get("weight_grams")
         length_meters = data.get("length_meters")
-        
+
         # If we have unstructured yarn text (from basic import), try to parse it
         if not weight_grams and not length_meters and isinstance(yarn_name, str):
-            # Simple heuristic or regex could go here, but PatternImporter usually handles it
+            # Simple heuristic or regex could go here, but PatternImporter usually
+            # handles it
             pass
 
         yarn_data = {

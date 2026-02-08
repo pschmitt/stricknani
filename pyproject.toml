@@ -21,6 +21,7 @@ dependencies = [
     "markdown>=3.7",
     "nh3>=0.2.18",
     "openai>=1.57.0",
+    "pypdf>=5.1.0",
     "pillow>=10.4.0",
     "python-dotenv>=1.0.1",
     "python-jose[cryptography]>=3.3.0",
@@ -108,6 +109,7 @@ strict_equality = true
 
 [[tool.mypy.overrides]]
 module = [
+    "fitz",
     "jose.*",
     "openai",
     "skimage.*",
