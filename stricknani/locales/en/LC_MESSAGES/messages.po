@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-08 11:14+0100\n"
+"POT-Creation-Date: 2026-02-08 11:20+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Generated-By: Babel 2.17.0\n"
 
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
-#: stricknani/templates/base.html:98 stricknani/templates/errors/401.html:3
+#: stricknani/templates/base.html:110 stricknani/templates/errors/401.html:3
 #: stricknani/templates/errors/403.html:3
 #: stricknani/templates/errors/404.html:3
 #: stricknani/templates/errors/500.html:3
@@ -31,7 +31,7 @@ msgstr ""
 #: stricknani/templates/admin/users.html:88
 #: stricknani/templates/admin/users.html:126
 #: stricknani/templates/admin/users.html:143 stricknani/templates/base.html:18
-#: stricknani/templates/base.html:117 stricknani/templates/base.html:183
+#: stricknani/templates/base.html:129 stricknani/templates/base.html:195
 #: stricknani/templates/projects/_import_dialog.html:49
 #: stricknani/templates/projects/detail.html:764
 #: stricknani/templates/projects/detail.html:785
@@ -44,12 +44,11 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: stricknani/templates/base.html:19 stricknani/templates/base.html:184
+#: stricknani/templates/base.html:19 stricknani/templates/base.html:196
 msgid "Confirm"
 msgstr "Confirm"
 
-#: stricknani/templates/base.html:20 stricknani/templates/base.html:658
-#: stricknani/templates/base.html:674
+#: stricknani/templates/base.html:20
 msgid "Copied to clipboard"
 msgstr ""
 
@@ -87,17 +86,65 @@ msgid "Only image files are supported"
 msgstr ""
 
 #: stricknani/templates/base.html:29
+msgid "Delete image"
+msgstr "Delete image"
+
+#: stricknani/templates/base.html:30
+msgid "Download image"
+msgstr "Download image"
+
+#: stricknani/templates/base.html:31
+msgid "Extract text"
+msgstr "Extract text"
+
+#: stricknani/templates/base.html:32
+msgid "Extracting text..."
+msgstr "Extracting text..."
+
+#: stricknani/templates/base.html:33
+msgid "Gallery thumbnails"
+msgstr "Gallery thumbnails"
+
+#: stricknani/templates/base.html:34
+msgid "This image cannot be processed."
+msgstr "This image cannot be processed."
+
+#: stricknani/templates/base.html:35
+msgid "No text detected."
+msgstr "No text detected."
+
+#: stricknani/templates/base.html:36
+msgid "OCR failed."
+msgstr "OCR failed."
+
+#: stricknani/templates/base.html:37
+msgid "OCR is not available on this server."
+msgstr "OCR is not available on this server."
+
+#: stricknani/templates/base.html:38
+msgid "Open image"
+msgstr "Open image"
+
+#: stricknani/templates/base.html:39
+msgid "Set as primary"
+msgstr ""
+
+#: stricknani/templates/base.html:40
+msgid "Text extracted."
+msgstr "Text extracted."
+
+#: stricknani/templates/base.html:41
 msgid "Profile picture updated successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:30
+#: stricknani/templates/base.html:42
 #: stricknani/templates/projects/detail.html:789
 #: stricknani/templates/projects/form.html:3277
 #, fuzzy
 msgid "Reload page"
 msgstr "Open image"
 
-#: stricknani/templates/base.html:31
+#: stricknani/templates/base.html:43
 #: stricknani/templates/projects/detail.html:776
 #: stricknani/templates/projects/detail.html:924
 #: stricknani/templates/projects/form.html:3269
@@ -105,190 +152,138 @@ msgstr "Open image"
 msgid "Your session has expired. Reload the page to continue."
 msgstr ""
 
-#: stricknani/templates/base.html:32
+#: stricknani/templates/base.html:44
 #: stricknani/templates/projects/detail.html:775
 #: stricknani/templates/projects/form.html:3267
 msgid "Session expired"
 msgstr ""
 
-#: stricknani/templates/base.html:33
+#: stricknani/templates/base.html:45
 msgid "Something went wrong. Please try again"
 msgstr ""
 
-#: stricknani/templates/base.html:34
+#: stricknani/templates/base.html:46
 msgid "Uploading..."
 msgstr ""
 
-#: stricknani/templates/base.html:37
+#: stricknani/templates/base.html:49
 msgid "Project created successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:38
+#: stricknani/templates/base.html:50
 msgid "Project updated successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:39 stricknani/templates/projects/list.html:79
+#: stricknani/templates/base.html:51 stricknani/templates/projects/list.html:79
 msgid "Project deleted"
 msgstr "Project deleted"
 
-#: stricknani/templates/base.html:40
+#: stricknani/templates/base.html:52
 msgid "Yarn created successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:41
+#: stricknani/templates/base.html:53
 msgid "Yarn updated successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:42 stricknani/templates/yarn/list.html:74
+#: stricknani/templates/base.html:54 stricknani/templates/yarn/list.html:74
 msgid "Yarn deleted"
 msgstr "Yarn deleted"
 
-#: stricknani/templates/base.html:43
+#: stricknani/templates/base.html:55
 msgid "Profile updated successfully"
 msgstr ""
 
-#: stricknani/templates/base.html:44
+#: stricknani/templates/base.html:56
 msgid "Category created"
 msgstr "Category created"
 
-#: stricknani/templates/base.html:45
+#: stricknani/templates/base.html:57
 msgid "Category updated"
 msgstr "Category updated"
 
-#: stricknani/templates/base.html:46
+#: stricknani/templates/base.html:58
 msgid "Category deleted"
 msgstr "Category deleted"
 
-#: stricknani/templates/base.html:48
+#: stricknani/templates/base.html:60
 msgid "Archive snapshot request queued"
 msgstr "Archive snapshot request queued"
 
-#: stricknani/templates/base.html:52
+#: stricknani/templates/base.html:64
 msgid "Archive snapshot request unavailable"
 msgstr "Archive snapshot request unavailable"
 
-#: stricknani/templates/base.html:98
+#: stricknani/templates/base.html:110
 msgid "GPL-3.0-only"
 msgstr ""
 
-#: stricknani/templates/base.html:111
+#: stricknani/templates/base.html:123
 msgid "Crop Profile Picture"
 msgstr ""
 
-#: stricknani/templates/base.html:118
+#: stricknani/templates/base.html:130
 msgid "Save & Upload"
 msgstr ""
 
-#: stricknani/templates/base.html:140
+#: stricknani/templates/base.html:152
 msgid "Search projects, yarns..."
 msgstr ""
 
-#: stricknani/templates/base.html:157
+#: stricknani/templates/base.html:169
 msgid "Start typing to search..."
 msgstr ""
 
-#: stricknani/templates/base.html:161
+#: stricknani/templates/base.html:173
 msgid "↑↓ to navigate"
 msgstr ""
 
-#: stricknani/templates/base.html:162
+#: stricknani/templates/base.html:174
 msgid "Enter to select"
 msgstr ""
 
-#: stricknani/templates/base.html:179
+#: stricknani/templates/base.html:191
 msgid "Confirm Action"
 msgstr ""
 
-#: stricknani/templates/base.html:180
+#: stricknani/templates/base.html:192
 msgid "Are you sure you want to proceed?"
 msgstr "Are you sure you want to proceed?"
 
-#: stricknani/templates/base.html:196 stricknani/templates/base.html:215
-#: stricknani/templates/base.html:225
+#: stricknani/templates/base.html:208 stricknani/templates/base.html:227
+#: stricknani/templates/base.html:237
 #: stricknani/templates/projects/form.html:45
 #: stricknani/templates/yarn/form.html:47
 msgid "Preview"
 msgstr "Preview"
 
-#: stricknani/templates/base.html:204 stricknani/templates/base.html:233
+#: stricknani/templates/base.html:216 stricknani/templates/base.html:245
 #: stricknani/templates/projects/detail.html:176
 #: stricknani/templates/projects/form.html:254
 #: stricknani/templates/projects/form.html:2001
 msgid "Download"
 msgstr "Download"
 
-#: stricknani/templates/base.html:208 stricknani/templates/base.html:237
-#: stricknani/templates/base.html:284
+#: stricknani/templates/base.html:220 stricknani/templates/base.html:249
+#: stricknani/templates/base.html:296
 #: stricknani/templates/macros/dialogs.html:30
 msgid "close"
 msgstr "close"
 
-#: stricknani/templates/base.html:260
+#: stricknani/templates/base.html:272
 msgid "OCR"
 msgstr "OCR"
 
-#: stricknani/templates/base.html:268 stricknani/templates/base.html:269
+#: stricknani/templates/base.html:280 stricknani/templates/base.html:281
 msgid "Copy text"
 msgstr "Copy text"
 
-#: stricknani/templates/base.html:278 stricknani/templates/base.html:279
+#: stricknani/templates/base.html:290 stricknani/templates/base.html:291
 #: stricknani/templates/projects/detail.html:290
 #: stricknani/templates/projects/detail.html:657
 #: stricknani/templates/yarn/detail.html:354
 msgid "Retry"
 msgstr ""
-
-#: stricknani/templates/base.html:336
-msgid "Gallery thumbnails"
-msgstr "Gallery thumbnails"
-
-#: stricknani/templates/base.html:337
-msgid "Open image"
-msgstr "Open image"
-
-#: stricknani/templates/base.html:435
-msgid "Set as primary"
-msgstr ""
-
-#: stricknani/templates/base.html:469
-msgid "Delete image"
-msgstr "Delete image"
-
-#: stricknani/templates/base.html:500
-msgid "Download image"
-msgstr "Download image"
-
-#: stricknani/templates/base.html:524
-msgid "Extract text"
-msgstr "Extract text"
-
-#: stricknani/templates/base.html:570 stricknani/templates/base.html:596
-msgid "This image cannot be processed."
-msgstr "This image cannot be processed."
-
-#: stricknani/templates/base.html:574
-msgid "Extracting text..."
-msgstr "Extracting text..."
-
-#: stricknani/templates/base.html:594
-msgid "OCR is not available on this server."
-msgstr "OCR is not available on this server."
-
-#: stricknani/templates/base.html:598 stricknani/templates/base.html:613
-msgid "OCR failed."
-msgstr "OCR failed."
-
-#: stricknani/templates/base.html:606
-msgid "No text detected."
-msgstr "No text detected."
-
-#: stricknani/templates/base.html:610
-msgid "Text extracted."
-msgstr "Text extracted."
-
-#: stricknani/templates/base.html:665 stricknani/templates/base.html:682
-msgid "Copy failed"
-msgstr "Copy failed"
 
 #: stricknani/templates/admin/_user_card.html:9
 #: stricknani/templates/shared/unified_navbar.html:196
@@ -2799,4 +2794,7 @@ msgstr "Open image"
 
 #~ msgid "Also delete these yarns"
 #~ msgstr "Delete Yarn"
+
+#~ msgid "Copy failed"
+#~ msgstr "Copy failed"
 
