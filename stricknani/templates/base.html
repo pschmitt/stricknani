@@ -21,9 +21,15 @@
             'darkMode': _('Dark Mode'),
             'dismissMessage': _('Dismiss message'),
             'failedToCopy': _('Failed to copy'),
+            'failedToUploadImage': _('Failed to upload image'),
+            'imageCropperFailedToLoad': _('Image cropper failed to load'),
             'lightMode': _('Light Mode'),
             'nothingToPreview': _('Nothing to preview'),
             'onlyImages': _('Only image files are supported'),
+            'profilePictureUpdatedSuccessfully': _('Profile picture updated successfully'),
+            'reloadPage': _('Reload page'),
+            'sessionExpiredMessage': _('Your session has expired. Reload the page to continue.'),
+            'sessionExpiredTitle': _('Session expired'),
             'somethingWentWrong': _('Something went wrong. Please try again'),
             'uploading': _('Uploading...'),
         } | tojson }};
@@ -115,249 +121,13 @@
         {{ dialogs.modal_backdrop() }}
     </dialog>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                let cropper;
-                const input = document.getElementById('profile-image-input');
-	                const modal = document.getElementById('crop-modal');
-	                const cropContainer = document.getElementById('avatar-crop-container');
-	                const cropOverlay = document.getElementById('avatar-crop-overlay');
-	                const image = document.getElementById('crop-image');
-	                const saveBtn = document.getElementById('crop-save');
-	                const cancelBtn = document.getElementById('crop-cancel');
-	                let targetUserId = {{ current_user.id }};
-
-	                if (!input || !modal || !cropContainer || !cropOverlay || !image || !saveBtn || !cancelBtn) {
-	                    return;
-	                }
-
-                window.triggerProfileImageUpload = function (userId) {
-                    targetUserId = userId || {{ current_user.id }};
-                    input.click();
-                };
-
-                function getCropperCtor() {
-                    // CropperJS v2 UMD exposes `window.Cropper.default`.
-                    // CropperJS v1 exposes `window.Cropper` directly.
-                    const cropperNamespace = window.Cropper;
-                    const ctor = cropperNamespace?.default || cropperNamespace;
-
-                    if (typeof ctor !== 'function') {
-                        return null;
-                    }
-
-                    return ctor;
-                }
-
-	                function configureCropperSelection() {
-	                    if (!cropper || typeof cropper.getCropperSelection !== 'function') {
-	                        return;
-	                    }
-
-                    const selection = cropper.getCropperSelection();
-                    if (!selection) {
-                        return;
-                    }
-
-	                    // Fixed circular crop: keep selection size fixed and let the user move/zoom the image.
-	                    selection.setAttribute('aspect-ratio', '1');
-	                    selection.setAttribute('initial-coverage', '1');
-	                    selection.removeAttribute('movable');
-	                    selection.removeAttribute('resizable');
-	                }
-
-	                function updateAvatarCropOverlay() {
-	                    const w = cropContainer.clientWidth;
-	                    const h = cropContainer.clientHeight;
-	                    const size = Math.max(0, Math.floor(Math.min(w, h)));
-	                    const radius = Math.max(0, Math.floor(size / 2));
-
-	                    cropOverlay.style.setProperty('--avatar-crop-size', `${size}px`);
-	                    cropOverlay.style.setProperty('--avatar-crop-radius', `${radius}px`);
-	                }
-
-                function getCroppedCanvas() {
-                    if (!cropper) {
-                        return Promise.reject(new Error('Cropper not initialized'));
-                    }
-
-                    // CropperJS v2: export from the selection element.
-                    if (typeof cropper.getCropperSelection === 'function') {
-                        const selection = cropper.getCropperSelection();
-                        if (selection && typeof selection.$toCanvas === 'function') {
-                            return selection.$toCanvas({
-                                width: 400,
-                                height: 400,
-                            });
-                        }
-                    }
-
-                    // CropperJS v1 fallback.
-                    if (typeof cropper.getCroppedCanvas === 'function') {
-                        return Promise.resolve(cropper.getCroppedCanvas({
-                            width: 400,
-                            height: 400,
-                        }));
-                    }
-
-                    return Promise.reject(new Error('Unsupported CropperJS API'));
-                }
-
-                input.addEventListener('change', function (e) {
-                    const files = e.target.files;
-                    if (files && files.length > 0) {
-                        const file = files[0];
-                        const reader = new FileReader();
-                        reader.onload = function (readerEvent) {
-                            image.src = readerEvent.target.result;
-                            modal.showModal();
-
-                            if (cropper) {
-                                cropper.destroy();
-                            }
-
-                            const ctor = getCropperCtor();
-                            if (!ctor) {
-                                showToast('{{ _("Image cropper failed to load") }}', 'error');
-                                modal.close();
-                                return;
-                            }
-
-	                            cropper = new ctor(image, {});
-	                            window.requestAnimationFrame(() => {
-	                                configureCropperSelection();
-	                                updateAvatarCropOverlay();
-	                                window.requestAnimationFrame(updateAvatarCropOverlay);
-	                            });
-	                        };
-	                        reader.readAsDataURL(file);
-	                    }
-	                });
-
-	                window.addEventListener('resize', () => {
-	                    if (!modal.open) {
-	                        return;
-	                    }
-	                    updateAvatarCropOverlay();
-	                });
-
-                cancelBtn.addEventListener('click', function () {
-                    modal.close();
-                    input.value = '';
-                    if (cropper) {
-                        cropper.destroy();
-                        cropper = null;
-                    }
-                });
-
-                saveBtn.addEventListener('click', function () {
-                    if (!cropper) {
-                        return;
-                    }
-
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-                    getCroppedCanvas().then((canvas) => {
-                        return new Promise((resolve) => {
-                            canvas.toBlob(function (blob) {
-                                resolve(blob);
-                            }, 'image/png');
-                        });
-                    }).then((blob) => {
-                        if (!blob) {
-                            showToast('{{ _("Failed to upload image") }}', 'error');
-                            return;
-                        }
-
-                        const formData = new FormData();
-                        formData.append('file', blob, 'avatar.png');
-
-                        const originalText = saveBtn.textContent;
-                        saveBtn.textContent = '{{ _("Uploading...") }}';
-                        saveBtn.disabled = true;
-
-                        const url = targetUserId === {{ current_user.id }}
-                            ? '/user/profile-image'
-                            : `/admin/users/${targetUserId}/profile-image`;
-
-                        fetch(url, {
-                            method: 'POST',
-                            body: formData,
-                            headers: {
-                                'HX-Request': 'true',
-                                ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-                            }
-                        })
-                            .then(response => {
-                                if (!response.ok) {
-                                    if (response.status === 401 || response.status === 403) {
-                                        window.showToast?.('{{ _("Your session has expired. Reload the page to continue.") }}', 'error');
-                                        window.confirmAction(
-                                            '{{ _("Session expired") }}',
-                                            '{{ _("Your session has expired. Reload the page to continue.") }}',
-                                            () => window.location.reload(),
-                                            null,
-                                            {
-                                                confirmText: '{{ _("Reload page") }}',
-                                                cancelText: '{{ _("Cancel") }}',
-                                            }
-                                        );
-                                        throw new Error('Upload failed (CSRF)');
-                                    }
-                                    throw new Error('Upload failed');
-                                }
-                                return response.text();
-                            })
-                            .then(html => {
-                                if (targetUserId === {{ current_user.id }}) {
-                                    window.location.reload();
-                                    return;
-                                }
-
-                                const card = document.getElementById(`user-card-${targetUserId}`);
-                                if (card) {
-                                    const parser = new DOMParser();
-                                    const doc = parser.parseFromString(html, 'text/html');
-
-                                    const newCard = doc.getElementById(`user-card-${targetUserId}`);
-                                    if (newCard) {
-                                        card.replaceWith(newCard);
-                                        if (window.htmx) {
-                                            window.htmx.process(newCard);
-                                        }
-                                    }
-
-                                    const newCount = doc.getElementById('user-count');
-                                    const currentCount = document.getElementById('user-count');
-                                    if (newCount && currentCount) {
-                                        currentCount.replaceWith(newCount);
-                                    }
-                                }
-
-                                modal.close();
-
-                                const editUserDialog = document.getElementById('editUserDialog');
-                                if (editUserDialog && editUserDialog.open) {
-                                    editUserDialog.close();
-                                }
-
-                                showToast('{{ _("Profile picture updated successfully") }}', 'success');
-                            })
-                            .catch(err => {
-                                console.error(err);
-                                showToast('{{ _("Failed to upload image") }}', 'error');
-                            })
-                            .finally(() => {
-                                saveBtn.textContent = originalText;
-                                saveBtn.disabled = false;
-                            });
-                    }).catch((err) => {
-                        console.error(err);
-                        showToast('{{ _("Failed to upload image") }}', 'error');
-                    });
-                });
-            });
-        </script>
+    <script>
+        window.STRICKNANI = window.STRICKNANI || {};
+        window.STRICKNANI.profileCropper = {
+            currentUserId: {{ current_user.id }},
+        };
+    </script>
+    <script src="{{ url_for('static', path='js/features/profile_cropper.js') }}"></script>
     {% endif %}
 
     {% if current_user %}
