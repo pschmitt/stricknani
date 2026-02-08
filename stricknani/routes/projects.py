@@ -50,6 +50,7 @@ from stricknani.models import (
     Yarn as YarnModel,
 )
 from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.services.images import get_image_dimensions
 from stricknani.services.projects.categories import (
     ensure_category,
     get_user_categories,
@@ -202,26 +203,6 @@ def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
 
 def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
     return extract_search_token(search, prefix)
-
-
-async def _get_image_dimensions(
-    filename: str,
-    entity_id: int,
-    subdir: str = "projects",
-) -> tuple[int | None, int | None]:
-    image_path = config.MEDIA_ROOT / subdir / str(entity_id) / filename
-    if not image_path.exists():
-        return None, None
-
-    def _read() -> tuple[int | None, int | None]:
-        try:
-            with PilImage.open(image_path) as img:
-                width, height = img.size
-                return int(width), int(height)
-        except (OSError, ValueError):
-            return None, None
-
-    return await anyio.to_thread.run_sync(_read)
 
 
 def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
@@ -1857,7 +1838,7 @@ async def get_project(
                     att.filename, project.id, subdir="projects"
                 )
         if att.content_type.startswith("image/"):
-            width, height = await _get_image_dimensions(att.filename, project.id)
+            width, height = await get_image_dimensions(att.filename, project.id)
         project_attachments.append(
             {
                 "id": att.id,
@@ -1885,7 +1866,7 @@ async def get_project(
         if img.step_id is not None:
             continue
 
-        width, height = await _get_image_dimensions(img.filename, project.id)
+        width, height = await get_image_dimensions(img.filename, project.id)
         if img.is_stitch_sample:
             stitch_sample_images.append(
                 {
@@ -1928,7 +1909,7 @@ async def get_project(
     for step in sorted(project.steps, key=lambda s: s.step_number):
         step_images = []
         for img in step.images:
-            width, height = await _get_image_dimensions(img.filename, project.id)
+            width, height = await get_image_dimensions(img.filename, project.id)
             step_images.append(
                 {
                     "id": img.id,
@@ -2147,7 +2128,7 @@ async def edit_project_form(
                     att.filename, project.id, subdir="projects"
                 )
         if att.content_type.startswith("image/"):
-            width, height = await _get_image_dimensions(att.filename, project.id)
+            width, height = await get_image_dimensions(att.filename, project.id)
         project_attachments.append(
             {
                 "id": att.id,
@@ -2173,7 +2154,7 @@ async def edit_project_form(
     for img in sorted_images:
         if img.step_id is not None:
             continue
-        width, height = await _get_image_dimensions(img.filename, project.id)
+        width, height = await get_image_dimensions(img.filename, project.id)
 
         is_title = img.is_title_image
         if not img.is_stitch_sample:
@@ -2207,7 +2188,7 @@ async def edit_project_form(
     for step in sorted(project.steps, key=lambda s: s.step_number):
         step_images = []
         for img in step.images:
-            width, height = await _get_image_dimensions(img.filename, project.id)
+            width, height = await get_image_dimensions(img.filename, project.id)
             step_images.append(
                 {
                     "id": img.id,
@@ -2842,7 +2823,7 @@ async def upload_title_image(
     await db.commit()
     await db.refresh(image)
 
-    width, height = await _get_image_dimensions(filename, project_id)
+    width, height = await get_image_dimensions(filename, project_id)
 
     return JSONResponse(
         {
@@ -2893,7 +2874,7 @@ async def upload_stitch_sample_image(
     await db.commit()
     await db.refresh(image)
 
-    width, height = await _get_image_dimensions(filename, project_id)
+    width, height = await get_image_dimensions(filename, project_id)
 
     return JSONResponse(
         {
@@ -2952,7 +2933,7 @@ async def upload_step_image(
     await db.commit()
     await db.refresh(image)
 
-    width, height = await _get_image_dimensions(filename, project_id)
+    width, height = await get_image_dimensions(filename, project_id)
 
     return JSONResponse(
         {
@@ -3069,7 +3050,7 @@ async def upload_attachment(
     )
     source_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
     if content_type.startswith("image/"):
-        width, height = await _get_image_dimensions(filename, project_id)
+        width, height = await get_image_dimensions(filename, project_id)
         try:
             await create_thumbnail(source_path, project_id, subdir="projects")
             if thumb_path.exists():
