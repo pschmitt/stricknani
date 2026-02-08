@@ -42,13 +42,14 @@ async def test_ai_extractor_pdf_direct_upload() -> None:
 
         result = await extractor.extract(pdf_content)
 
-        assert result.name == "Direct PDF Project"
-        assert "pdf_images" in result.extras
-        assert len(result.extras["pdf_images"]) == 1
-        assert result.extras["pdf_images"][0] == b"fake-image-bytes"
+    assert result.name == "Direct PDF Project"
+    assert "pdf_images" in result.extras
+    assert len(result.extras["pdf_images"]) == 1
+    assert result.extras["pdf_images"][0] == b"fake-image-bytes"
+    assert result.image_urls == []
 
-        # Verify file was uploaded with purpose="vision"
-        mock_client.files.create.assert_called_once()
+    # Verify file was uploaded with purpose="vision"
+    mock_client.files.create.assert_called_once()
     args, kwargs = mock_client.files.create.call_args
     assert kwargs["purpose"] == "vision"
     assert kwargs["file"][0] == "test.pdf"
@@ -125,4 +126,5 @@ async def test_ai_extractor_pdf_fallback_on_error() -> None:
     assert "pdf_images" in result.extras
     assert len(result.extras["pdf_images"]) == 1
     assert result.extras["pdf_images"][0] == b"fake-image-bytes"
+    assert result.image_urls == []
     mock_client.files.create.assert_called_once()

@@ -150,11 +150,15 @@ class PDFExtractor(ContentExtractor):
             else content.content.encode()
         )
         images = []
+        seen_checksums = set()
 
         try:
+            import hashlib
+
             import fitz
 
             with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+                # Strategy 1: Extract embedded images
                 for page_num in range(len(doc)):
                     page = doc.load_page(page_num)
                     image_list = page.get_images()
@@ -163,7 +167,29 @@ class PDFExtractor(ContentExtractor):
                         xref = img[0]
                         base_image = doc.extract_image(xref)
                         image_bytes = base_image["image"]
-                        images.append(image_bytes)
+
+                        # Deduplicate by checksum
+                        checksum = hashlib.md5(image_bytes).hexdigest()
+                        if checksum not in seen_checksums:
+                            images.append(image_bytes)
+                            seen_checksums.add(checksum)
+
+                # Strategy 2: If no images were found, or if it's a small number of pages,
+                # render the pages themselves as images. This helps with scanned PDFs
+                # or PDFs where images are drawn differently.
+                # We limit the number of pages to avoid excessive memory/tokens.
+                if not images or len(doc) <= 3:
+                    # Limit to first 10 pages
+                    for page_num in range(min(len(doc), 10)):
+                        page = doc.load_page(page_num)
+                        # Render page to a high-res image (2.0 zoom)
+                        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+                        img_bytes = pix.tobytes("jpg")
+
+                        checksum = hashlib.md5(img_bytes).hexdigest()
+                        if checksum not in seen_checksums:
+                            images.append(img_bytes)
+                            seen_checksums.add(checksum)
 
         except Exception as exc:
             logger.warning("Failed to extract images from PDF: %s", exc)

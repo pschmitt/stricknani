@@ -952,18 +952,21 @@ async def import_pattern(
 
                 # Handle images extracted from PDF
                 import_attachment_tokens: list[str] = []
+                image_urls = list(extracted.image_urls)
                 pdf_images = extracted.extras.get("pdf_images", [])
                 if pdf_images:
-                    for img_bytes in pdf_images:
+                    from stricknani.utils.files import get_file_url
+
+                    for i, img_bytes in enumerate(pdf_images):
+                        filename = f"pdf_image_{len(import_attachment_tokens) + 1}.jpg"
                         token = await store_pending_project_import_attachment_bytes(
                             current_user.id,
                             content=img_bytes,
-                            original_filename=(
-                                f"pdf_image_{len(import_attachment_tokens) + 1}.jpg"
-                            ),
+                            original_filename=filename,
                             content_type="image/jpeg",
                         )
                         import_attachment_tokens.append(token)
+                        image_urls.append(get_file_url(filename, pending_token=token))
 
                 data = {
                     "name": extracted.name,
@@ -983,7 +986,7 @@ async def import_pattern(
                         }
                         for step in extracted.steps
                     ],
-                    "image_urls": extracted.image_urls,
+                    "image_urls": image_urls,
                     "import_attachment_tokens": import_attachment_tokens,
                     "link": None,
                     "is_ai_enhanced": True,
