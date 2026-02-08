@@ -101,6 +101,38 @@
         </div>
         {% endif %}
     </div>
+    {% elif section == 'context_menu' %}
+    <ul class="menu p-2 bg-base-100 rounded-box border border-base-200 shadow-xl">
+        <li>
+            {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
+            {% include "projects/_favorite_toggle.html" %}
+            {% endwith %}
+        </li>
+        <li>
+            <a href="/projects/{{ project.id }}/edit">
+                <span class="mdi mdi-pencil text-lg"></span>
+                {{ _('Edit') }}
+            </a>
+        </li>
+        <li>
+            <button type="button" data-call="printProject" data-call-args='[{{ project.id }}]'>
+                <span class="mdi mdi-printer text-lg"></span>
+                {{ _('Print') }}
+            </button>
+        </li>
+        <li>
+            <a href="/projects/{{ project.id }}/edit?import=1">
+                <span class="mdi mdi-download text-lg"></span>
+                {{ _('Re-import') }}
+            </a>
+        </li>
+        <li>
+            <button type="button" data-action="open-dialog" data-dialog-id="deleteProjectDialog" data-project-id="{{ project.id }}" data-project-name="{{ project.name }}" class="text-error">
+                <span class="mdi mdi-delete-outline text-lg"></span>
+                {{ _('Delete') }}
+            </button>
+        </li>
+    </ul>
     {% endif %}
     {% endcall %}
     {% endfor %}

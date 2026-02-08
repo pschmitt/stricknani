@@ -6,6 +6,9 @@
     <div class="card-body p-4 sm:p-5">
         {{ caller('body') }}
     </div>
+    <div class="hidden" data-card-context-menu>
+        {{ caller('context_menu') }}
+    </div>
 </div>
 {% endmacro %}
 

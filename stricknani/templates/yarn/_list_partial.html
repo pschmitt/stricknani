@@ -117,6 +117,32 @@
     </div>
 
     <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
+    {% elif section == 'context_menu' %}
+    <ul class="menu p-2 bg-base-100 rounded-box border border-base-200 shadow-xl">
+        <li>
+            {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
+            {% include "yarn/_favorite_toggle.html" %}
+            {% endwith %}
+        </li>
+        <li>
+            <a href="/yarn/{{ yarn.id }}/edit">
+                <span class="mdi mdi-pencil text-lg"></span>
+                {{ _('Edit') }}
+            </a>
+        </li>
+        <li>
+            <a href="/yarn/{{ yarn.id }}/edit?import=1">
+                <span class="mdi mdi-download text-lg"></span>
+                {{ _('Re-import') }}
+            </a>
+        </li>
+        <li>
+            <button type="button" data-action="open-dialog" data-dialog-id="deleteYarnDialog" data-yarn-id="{{ yarn.id }}" data-yarn-name="{{ yarn.name }}" class="text-error">
+                <span class="mdi mdi-delete-outline text-lg"></span>
+                {{ _('Delete') }}
+            </button>
+        </li>
+    </ul>
     {% endif %}
     {% endcall %}
     {% endfor %}

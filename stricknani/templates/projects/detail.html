@@ -748,64 +748,7 @@
     </div>
 </div>
 
-{% call dialogs.modal('deleteProjectDialog', box_class='p-0 overflow-hidden') %}
-<div class="bg-error/10 p-6 flex items-center gap-4 text-error">
-    <span class="mdi mdi-alert-circle text-4xl"></span>
-    <div>
-        <h3 class="font-bold text-lg">{{ _('Delete Project') }}</h3>
-        <p class="text-sm opacity-90">{{ _('This action cannot be undone.') }}</p>
-    </div>
-</div>
-<div class="p-6 space-y-6">
-    <p class="text-base-content/80">
-        {{ _('Are you sure you want to delete') }} <strong class="text-base-content">{{ project.name }}</strong>?
-    </p>
-
-        {% if project.exclusive_yarns %}
-        <div class="bg-warning/10 border-l-4 border-warning p-4 rounded-r-lg">
-            <div class="flex items-start gap-3">
-                <span class="mdi mdi-alert text-warning text-xl"></span>
-                <div class="space-y-2">
-                    <p class="text-sm font-medium text-warning-content">{{ _('Some yarns are only used in this project:') }}</p>
-                    <p class="text-xs opacity-80">{{ _('Select the yarns you want to delete:') }}</p>
-                    <div class="space-y-2">
-	                        {% for yarn in project.exclusive_yarns %}
-	                        <label class="flex items-center gap-3 rounded-xl border border-warning/20 bg-base-100 px-3 py-3 text-base transition hover:border-warning/40">
-	                            <input type="checkbox" class="checkbox checkbox-warning checkbox-sm exclusive-yarn-checkbox" value="{{ yarn.id }}">
-	                            <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-base-200">
-	                                {% if yarn.preview_url %}
-	                                <img src="{{ yarn.preview_url }}" alt="{{ yarn.preview_alt or yarn.name }}" class="h-full w-full object-cover">
-	                                {% else %}
-	                                <span class="mdi mdi-sheep text-base-content/40 text-lg"></span>
-	                                {% endif %}
-	                            </div>
-	                            <div class="min-w-0 flex-1">
-	                                <div class="truncate font-medium">{{ yarn.name }}</div>
-	                                <div class="text-sm text-base-content/60 truncate">
-	                                    {{ yarn.brand or _('Unknown Brand') }}
-	                                    {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
-	                                </div>
-	                            </div>
-	                        </label>
-                        {% endfor %}
-                    </div>
-                    <label class="label cursor-pointer justify-start gap-3 p-0 mt-3">
-                        <input type="checkbox" id="select_all_exclusive_yarns" class="checkbox checkbox-warning checkbox-sm">
-                        <span class="label-text font-bold">{{ _('Select all yarns') }}</span>
-                    </label>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-    <div class="flex justify-end gap-2">
-        <form method="dialog">
-            {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
-        </form>
-        {{ dialogs.dialog_danger(_('Delete Project'), attrs='data-call="deleteProject" data-call-args="[]"') }}
-    </div>
-</div>
-{% endcall %}
+{% include "projects/_delete_dialog.html" %}
 
 {% call dialogs.modal('csrfErrorDialog', box_class='p-0 overflow-hidden') %}
 <div class="bg-error/10 p-6 flex items-center gap-4 text-error">
@@ -890,77 +833,15 @@
         }
 
         updateDetailImageVisibility();
+
+        if (window.location.hash === '#print') {
+            setTimeout(() => {
+                window.print();
+            }, 1000); // Give it a second to render
+        }
     });
 
-    async function deleteProject() {
-        const btn = document.querySelector('#deleteProjectDialog .btn-error');
-        if (!btn) {
-            return;
-        }
-
-        btn.disabled = true;
-        btn.classList.add('loading');
-
-        const url = new URL('/projects/{{ project.id }}', window.location.origin);
-        const yarnIds = Array.from(
-            document.querySelectorAll(
-                '#deleteProjectDialog .exclusive-yarn-checkbox:checked',
-            ),
-        ).map(el => el.value);
-        yarnIds.forEach(id => url.searchParams.append('delete_yarn_ids', id));
-
-        try {
-            const response = await fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': '{{ csrf_token }}',
-                },
-            });
-
-            if (response.ok) {
-                window.location.href = '/projects?toast=project_deleted';
-                return;
-            }
-
-            btn.disabled = false;
-            btn.classList.remove('loading');
-
-            if (response.status === 401 || response.status === 403) {
-                window.showToast?.(
-                    '{{ _("Your session has expired. Reload the page to continue.") }}',
-                    'error',
-                );
-                if (typeof openDialog === 'function') {
-                    openDialog('csrfErrorDialog');
-                }
-                return;
-            }
-
-            let message = '{{ _("Failed to delete project") }}';
-            try {
-                const contentType = response.headers.get('content-type') || '';
-                if (contentType.includes('application/json')) {
-                    const data = await response.json();
-                    if (typeof data?.detail === 'string' && data.detail.trim()) {
-                        message = data.detail;
-                    } else if (typeof data?.message === 'string' && data.message.trim()) {
-                        message = data.message;
-                    }
-                }
-            } catch (e) {
-                // Keep the fallback message.
-            }
-
-            window.showToast?.(message, 'error');
-        } catch (e) {
-            btn.disabled = false;
-            btn.classList.remove('loading');
-            window.showToast?.('{{ _("Failed to delete project") }}', 'error');
-        }
-    }
-
-        function setupExclusiveYarnDeleteSelection() {
+    function setupExclusiveYarnDeleteSelection() {
             const dialog = document.getElementById('deleteProjectDialog');
             if (!dialog) return;
 

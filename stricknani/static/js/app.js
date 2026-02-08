@@ -263,6 +263,16 @@
     return true;
   };
 
+  window.printProject = (id) => {
+    if (!id) {
+      window.print();
+      return;
+    }
+    const printUrl = `/projects/${id}#print`;
+    const win = window.open(printUrl, "_blank");
+    win?.focus();
+  };
+
   const setButtonTextPreservingIcon = (button, text) => {
     if (!button) {
       return;
