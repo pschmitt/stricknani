@@ -56,7 +56,7 @@ from stricknani.services.projects.categories import (
     sync_project_categories,
 )
 from stricknani.services.projects.tags import (
-    deserialize_tags,
+    get_user_tags,
     normalize_tags,
     serialize_tags,
 )
@@ -657,19 +657,6 @@ async def _import_step_images(
 
     return imported
 
-async def _get_user_tags(db: AsyncSession, user_id: int) -> list[str]:
-    """Return a sorted list of unique tags for a user."""
-
-    result = await db.execute(select(Project.tags).where(Project.owner_id == user_id))
-    tag_map: dict[str, str] = {}
-    for (raw_tags,) in result:
-        for tag in deserialize_tags(raw_tags):
-            key = tag.casefold()
-            if key not in tag_map:
-                tag_map[key] = tag
-    return sorted(tag_map.values(), key=str.casefold)
-
-
 def _render_favorite_toggle(
     request: Request,
     project_id: int,
@@ -710,7 +697,7 @@ async def search_suggestions(
         )
         suggestions = [row[0] for row in result]
     elif type == "tag":
-        all_tags = await _get_user_tags(db, current_user.id)
+        all_tags = await get_user_tags(db, current_user.id)
         suggestions = [t for t in all_tags if q.lower() in t.lower()][:10]
     else:
         suggestions = []
@@ -888,7 +875,7 @@ async def new_project_form(
 
     categories = await get_user_categories(db, current_user.id)
     yarn_options = await get_user_yarns(db, current_user.id)
-    tag_suggestions = await _get_user_tags(db, current_user.id)
+    tag_suggestions = await get_user_tags(db, current_user.id)
 
     # Check if OpenAI API key is available for AI import
     has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
@@ -2280,7 +2267,7 @@ async def edit_project_form(
 
     categories = await get_user_categories(db, current_user.id)
     yarn_options = await get_user_yarns(db, current_user.id)
-    tag_suggestions = await _get_user_tags(db, current_user.id)
+    tag_suggestions = await get_user_tags(db, current_user.id)
 
     return await render_template(
         "projects/form.html",

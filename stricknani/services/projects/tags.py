@@ -5,6 +5,11 @@ from __future__ import annotations
 import json
 import re
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from stricknani.models import Project
+
 
 def normalize_tags(raw_tags: str | None) -> list[str]:
     """Convert raw tag input into a list of unique tags."""
@@ -47,3 +52,14 @@ def deserialize_tags(raw: str | None) -> list[str]:
 
     return [segment.strip() for segment in raw.split(",") if segment.strip()]
 
+
+async def get_user_tags(db: AsyncSession, user_id: int) -> list[str]:
+    """Return a sorted list of unique tags for a user."""
+    result = await db.execute(select(Project.tags).where(Project.owner_id == user_id))
+    tag_map: dict[str, str] = {}
+    for (raw_tags,) in result:
+        for tag in deserialize_tags(raw_tags):
+            key = tag.casefold()
+            if key not in tag_map:
+                tag_map[key] = tag
+    return sorted(tag_map.values(), key=str.casefold)
