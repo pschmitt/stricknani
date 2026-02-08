@@ -63,3 +63,4 @@ dmypy.json
 .ruff_cache/
 # Compiled translations
 *.mo
+ingest/
