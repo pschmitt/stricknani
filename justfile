@@ -177,68 +177,8 @@ sql *args:
 # Deploy to production
 [positional-arguments]
 deploy *args='':
-  #!/usr/bin/env zhj
-
-  cd /etc/nixos || exit 9
-
-  zparseopts -D -E -K {c,-commit}=commit
-
-  if ! nix flake update stricknani
-  then
-    echo_error "Failed to update stricknani flake input"
-    exit 1
-  fi
-
-  nixos::rebuild --target "{{ prod_host }}" || exit 3
-
-  if [[ -n "$commit" ]]
-  then
-    if ! git diff --cached --quiet
-    then
-      echo "Won't commit, there are staged changes!"
-      exit 1
-    fi
-
-    git add flake.lock
-    git commit -m "chore: update stricknani"
-    git push
-  fi
+  ./scripts/deploy.sh "$@"
 
 # Run Renovate locally (requires GitHub token)
 renovate *args='':
-  #!/usr/bin/env bash
-  set -euo pipefail
-
-  # Get GitHub token from gh CLI
-  if [[ -z "${GITHUB_TOKEN:-}" ]]; then
-    if ! command -v gh &> /dev/null; then
-      echo "ERROR: GitHub CLI (gh) not found and GITHUB_TOKEN not set"
-      exit 1
-    fi
-    if ! gh auth status &> /dev/null; then
-      echo "ERROR: Not logged in to GitHub CLI. Run 'gh auth login' first."
-      exit 1
-    fi
-    GITHUB_TOKEN=$(gh auth token)
-  fi
-
-  # Get repository slug
-  if [[ -z "${RENOVATE_REPO:-}" ]]; then
-    if ! RENOVATE_REPO=$(git remote get-url origin 2>/dev/null | \
-      sed -E 's#^https?://[^/]+/##; s#^git@[^:]+:##; s#^ssh://git@[^/]+/##; s#^/##; s#\.git$##'); then
-      echo "ERROR: Could not determine repository slug"
-      exit 1
-    fi
-  fi
-
-  echo "Running Renovate using local directory..."
-  echo "Using GitHub token: ${GITHUB_TOKEN:0:10}..."
-
-  # Run Renovate with the token using current directory
-  nix-shell -p renovate --run "\
-    RENOVATE_CONFIG_FILE=renovate.json \
-    renovate \
-    --token ${GITHUB_TOKEN} \
-    --platform local \
-    $*
-  "
+  ./scripts/renovate.sh "$@"
