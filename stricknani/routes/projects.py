@@ -2193,12 +2193,26 @@ async def create_project(
                             file=io.BytesIO(pending_bytes),
                             headers=Headers({"content-type": content_type}),
                         )
-                        await upload_title_image(
+                        # Check if this should be the title image
+                        is_title = url == import_title_image_url
+                        upload_result = await upload_title_image(
                             db,
                             project_id=project.id,
                             file=mock_file,
                             alt_text=original_filename,
                         )
+                        if is_title and "id" in upload_result:
+                            # Force this one as title image
+                            await db.execute(
+                                update(Image)
+                                .where(Image.project_id == project.id)
+                                .values(is_title_image=False)
+                            )
+                            await db.execute(
+                                update(Image)
+                                .where(Image.id == int(str(upload_result["id"])))
+                                .values(is_title_image=True)
+                            )
                     except FileNotFoundError:
                         # Might have been consumed by a step
                         pass
@@ -2214,7 +2228,8 @@ async def create_project(
             )
 
     # Attach imported source files that were uploaded before the project existed.
-    # This also handles any remaining PDF images not already consumed by steps.
+    # This also handles any remaining PDF images not already consumed by steps
+    # or gallery.
     if import_attachment_tokens:
         try:
             raw_tokens = json.loads(import_attachment_tokens)
@@ -2235,23 +2250,47 @@ async def create_project(
                     token=token,
                 )
             except FileNotFoundError:
+                # Might have been consumed by a step or gallery loop above
                 continue
 
-            stored = await store_project_attachment_bytes(
-                project.id,
-                content=pending_bytes,
-                original_filename=original_filename,
-                content_type=content_type,
-            )
-            db.add(
-                Attachment(
-                    filename=stored.filename,
-                    original_filename=stored.original_filename,
-                    content_type=stored.content_type,
-                    size_bytes=stored.size_bytes,
-                    project_id=project.id,
+            # If it's an image, save it as an Image record so it appears in the gallery
+            if content_type and content_type.startswith("image/"):
+                # Mock UploadFile for the service
+                import io
+
+                from fastapi import UploadFile
+                from starlette.datastructures import Headers
+
+                from stricknani.services.projects.images import upload_title_image
+
+                mock_file = UploadFile(
+                    filename=original_filename,
+                    file=io.BytesIO(pending_bytes),
+                    headers=Headers({"content-type": content_type}),
                 )
-            )
+                await upload_title_image(
+                    db,
+                    project_id=project.id,
+                    file=mock_file,
+                    alt_text=original_filename,
+                )
+            else:
+                # Save as a regular attachment (PDF, text, etc.)
+                stored = await store_project_attachment_bytes(
+                    project.id,
+                    content=pending_bytes,
+                    original_filename=original_filename,
+                    content_type=content_type,
+                )
+                db.add(
+                    Attachment(
+                        filename=stored.filename,
+                        original_filename=stored.original_filename,
+                        content_type=stored.content_type,
+                        size_bytes=stored.size_bytes,
+                        project_id=project.id,
+                    )
+                )
 
     await db.commit()
     await db.refresh(project)
@@ -2297,6 +2336,7 @@ async def update_project(
     yarn_details: Annotated[str | None, Form()] = None,
     yarn_brand: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
+    import_title_image_url: Annotated[str | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
     is_ai_enhanced: Annotated[bool | None, Form()] = False,
     db: AsyncSession = Depends(get_db),
@@ -2398,12 +2438,26 @@ async def update_project(
                             file=io.BytesIO(pending_bytes),
                             headers=Headers({"content-type": content_type}),
                         )
-                        await upload_title_image(
+                        # Check if this should be the title image
+                        is_title = url == import_title_image_url
+                        upload_result = await upload_title_image(
                             db,
                             project_id=project.id,
                             file=mock_file,
                             alt_text=original_filename,
                         )
+                        if is_title and "id" in upload_result:
+                            # Force this one as title image
+                            await db.execute(
+                                update(Image)
+                                .where(Image.project_id == project.id)
+                                .values(is_title_image=False)
+                            )
+                            await db.execute(
+                                update(Image)
+                                .where(Image.id == int(str(upload_result["id"])))
+                                .values(is_title_image=True)
+                            )
                     except FileNotFoundError:
                         # Might have been consumed by a step
                         pass

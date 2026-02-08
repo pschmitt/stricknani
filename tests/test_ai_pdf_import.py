@@ -59,6 +59,11 @@ async def test_ai_extractor_pdf_direct_upload() -> None:
     mock_client.chat.completions.create.assert_called_once()
     args, kwargs = mock_client.chat.completions.create.call_args
     messages = kwargs["messages"]
+
+    # Verify system prompt has Markdown instruction
+    system_content = messages[0]["content"]
+    assert "Markdown" in system_content
+
     user_content = messages[1]["content"]
 
     found_input_file = False

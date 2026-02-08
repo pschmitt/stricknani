@@ -26,6 +26,8 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 | P3       | todo   | Add OpenRouter and Groq support for AI imports as an alternative to OpenAI                           | Medium | Medium     | `stricknani/importing/extractors/ai.py`                                    |
 | P1       | todo   | feat: on the project/yarn list views I want to be able to drag and drop files -> automatically run the import from file | High   | Medium     | `stricknani/templates/projects/list.html`, `stricknani/templates/yarn/list.html`, `stricknani/static/js/htmx/` |
 | P1       | todo   | ai import: we should instruct that we should not drop text. If we don't know where to put it, just add it to the description. | Medium | Low        | `stricknani/importing/extractors/ai.py`                                    |
+| P1       | todo   | feat: when import dialog is shown, allow dragging files onto it to auto-switch to "file upload" mode with the dropped files | High   | Medium     | `stricknani/templates/projects/_import_dialog.html`, `stricknani/templates/yarn/_import_dialog.html`, `stricknani/static/js/htmx/` |
+| P2       | todo   | feat: right-click/long-press on project/yarn cards to show favorite/print/re-import/delete context menu (same as "..." button) | Medium | Medium     | `stricknani/templates/projects/_cards.html`, `stricknani/templates/yarn/_cards.html`, `stricknani/static/js/htmx/` |
 
 ## Notes
 
