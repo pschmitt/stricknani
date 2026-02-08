@@ -50,6 +50,11 @@ from stricknani.models import (
     Yarn as YarnModel,
 )
 from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.services.projects.tags import (
+    deserialize_tags,
+    normalize_tags,
+    serialize_tags,
+)
 from stricknani.utils.files import (
     build_import_filename,
     compute_checksum,
@@ -659,52 +664,6 @@ async def _import_step_images(
 
     return imported
 
-
-def _normalize_tags(raw_tags: str | None) -> list[str]:
-    """Convert raw tag input into a list of unique tags."""
-
-    if not raw_tags:
-        return []
-
-    candidates = re.split(r"[,#\s]+", raw_tags)
-    seen: set[str] = set()
-    tags: list[str] = []
-    for candidate in candidates:
-        cleaned = candidate.strip()
-        if not cleaned:
-            continue
-        key = cleaned.lower()
-        if key in seen:
-            continue
-        seen.add(key)
-        tags.append(cleaned)
-    return tags
-
-
-def _serialize_tags(tags: list[str]) -> str | None:
-    """Serialize tags list for storage."""
-
-    if not tags:
-        return None
-    return json.dumps(tags)
-
-
-def _deserialize_tags(raw: str | None) -> list[str]:
-    """Deserialize stored tags string into a list."""
-
-    if not raw:
-        return []
-    try:
-        data = json.loads(raw)
-    except (ValueError, TypeError):
-        data = None
-
-    if isinstance(data, list):
-        return [str(item).strip() for item in data if str(item).strip()]
-
-    return [segment.strip() for segment in raw.split(",") if segment.strip()]
-
-
 async def _sync_project_categories(db: AsyncSession, user_id: int) -> None:
     """Ensure categories used in projects exist in the category table."""
     project_result = await db.execute(
@@ -759,7 +718,7 @@ async def _get_user_tags(db: AsyncSession, user_id: int) -> list[str]:
     result = await db.execute(select(Project.tags).where(Project.owner_id == user_id))
     tag_map: dict[str, str] = {}
     for (raw_tags,) in result:
-        for tag in _deserialize_tags(raw_tags):
+        for tag in deserialize_tags(raw_tags):
             key = tag.casefold()
             if key not in tag_map:
                 tag_map[key] = tag
@@ -2491,7 +2450,7 @@ async def create_project(
     )
 
     normalized_category = await _ensure_category(db, current_user.id, category)
-    normalized_tags = _normalize_tags(tags)
+    normalized_tags = normalize_tags(tags)
 
     project = Project(
         name=name.strip(),
@@ -2502,7 +2461,7 @@ async def create_project(
         notes=notes.strip() if notes else None,
         link=link.strip() if link else None,
         owner_id=current_user.id,
-        tags=_serialize_tags(normalized_tags),
+        tags=serialize_tags(normalized_tags),
         is_ai_enhanced=bool(is_ai_enhanced),
     )
     if project.link and _should_request_archive(archive_on_save):
@@ -2645,7 +2604,7 @@ async def update_project(
     project.description = description.strip() if description else None
     project.notes = notes.strip() if notes else None
     project.link = link.strip() if link else None
-    project.tags = _serialize_tags(_normalize_tags(tags))
+    project.tags = serialize_tags(normalize_tags(tags))
     project.is_ai_enhanced = bool(is_ai_enhanced)
     if project.link and _should_request_archive(archive_on_save):
         project.link_archive_requested_at = datetime.now(UTC)
