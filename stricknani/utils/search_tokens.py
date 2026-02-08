@@ -30,7 +30,11 @@ def parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
                     urls.append(str(data).strip())
             except (ValueError, TypeError):
                 urls.append(item.strip())
-        return [u for u in urls if u.startswith("http")]
+        return [
+            u
+            for u in urls
+            if u.startswith("http") or u.startswith("/media/") or u.startswith("/")
+        ]
 
     try:
         data = json.loads(raw)
@@ -39,7 +43,9 @@ def parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
     except (ValueError, TypeError):
         pass
 
-    if raw and raw.startswith("http"):
+    if raw and (
+        raw.startswith("http") or raw.startswith("/media/") or raw.startswith("/")
+    ):
         return [s.strip() for s in raw.split(",") if s.strip()]
     return []
 

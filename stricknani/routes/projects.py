@@ -955,7 +955,10 @@ async def import_pattern(
                 extracted = await ai_extractor.extract(raw_content)
 
                 # Handle images extracted from PDF
-                import_attachment_tokens: list[str] = []
+                source_file_data = await store_source_file_for_import()
+                import_attachment_tokens: list[str] = list(
+                    source_file_data.get("import_attachment_tokens", [])
+                )
                 # Keep track of local images we saved to tokens
                 local_image_token_map = {}  # index -> token
                 local_image_filename_map = {}  # index -> filename
@@ -1032,11 +1035,13 @@ async def import_pattern(
                     "steps": processed_steps,
                     "image_urls": image_urls,
                     "import_attachment_tokens": import_attachment_tokens,
+                    "source_attachments": source_file_data.get(
+                        "source_attachments", []
+                    ),
                     "link": None,
                     "is_ai_enhanced": True,
                 }
 
-                data.update(await store_source_file_for_import())
                 return JSONResponse(content=data)
 
             else:
@@ -2337,6 +2342,7 @@ async def update_project(
     yarn_brand: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     import_title_image_url: Annotated[str | None, Form()] = None,
+    import_attachment_tokens: Annotated[str | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
     is_ai_enhanced: Annotated[bool | None, Form()] = False,
     db: AsyncSession = Depends(get_db),
@@ -2578,6 +2584,76 @@ async def update_project(
 
                 if regular_urls:
                     await import_step_images_from_urls(db, step, regular_urls)
+
+    # Attach imported source files that were uploaded before the project existed.
+    # This also handles any remaining PDF images not already consumed by steps
+    # or gallery.
+    if import_attachment_tokens:
+        try:
+            raw_tokens = json.loads(import_attachment_tokens)
+        except json.JSONDecodeError:
+            raw_tokens = []
+
+        tokens: list[str] = [
+            t for t in raw_tokens if isinstance(t, str) and len(t) == 32
+        ]
+        for token in tokens:
+            try:
+                (
+                    pending_bytes,
+                    original_filename,
+                    content_type,
+                ) = await consume_pending_project_import_attachment(
+                    current_user.id,
+                    token=token,
+                )
+            except FileNotFoundError:
+                # Might have been consumed by a step or gallery loop above
+                continue
+
+            # If it's an image, save it as an Image record so it appears in the gallery
+            if content_type and content_type.startswith("image/"):
+                # Mock UploadFile for the service
+                import io
+
+                from fastapi import UploadFile
+                from starlette.datastructures import Headers
+
+                from stricknani.services.projects.images import upload_title_image
+
+                mock_file = UploadFile(
+                    filename=original_filename,
+                    file=io.BytesIO(pending_bytes),
+                    headers=Headers({"content-type": content_type}),
+                )
+                await upload_title_image(
+                    db,
+                    project_id=project.id,
+                    file=mock_file,
+                    alt_text=original_filename,
+                )
+            else:
+                # Save as a regular attachment (PDF, text, etc.)
+                from stricknani.models import Attachment
+                from stricknani.services.projects.attachments import (
+                    store_project_attachment_bytes,
+                )
+
+                stored = await store_project_attachment_bytes(
+                    project.id,
+                    content=pending_bytes,
+                    original_filename=original_filename,
+                    content_type=content_type,
+                )
+                db.add(
+                    Attachment(
+                        filename=stored.filename,
+                        original_filename=stored.original_filename,
+                        content_type=stored.content_type,
+                        size_bytes=stored.size_bytes,
+                        project_id=project.id,
+                    )
+                )
 
     await db.commit()
 
