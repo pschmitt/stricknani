@@ -32,7 +32,7 @@
     </button>
 {% endif %}
 
-{% if request and request.headers.get('HX-Request') == 'true' %}
+{% if request and request.headers.get('HX-Request') == 'true' and not is_oob_render %}
     {% if project_id %}
     <span id="project-{{ project_id }}-favorite-heart" hx-swap-oob="innerHTML">
         {% if is_favorite %}
@@ -40,7 +40,7 @@
         {% endif %}
     </span>
     <li id="project-{{ project_id }}-favorite-toggle" data-favorite-toggle hx-swap-oob="innerHTML">
-        {% with variant='detail' %}
+        {% with variant='detail', is_oob_render=true %}
         {% include "projects/_favorite_toggle.html" %}
         {% endwith %}
     </li>
@@ -51,7 +51,7 @@
         {% endif %}
     </span>
     <li id="yarn-{{ yarn_id }}-favorite-toggle" data-favorite-toggle hx-swap-oob="innerHTML">
-        {% with variant='detail' %}
+        {% with variant='detail', is_oob_render=true %}
         {% include "yarn/_favorite_toggle.html" %}
         {% endwith %}
     </li>
