@@ -55,6 +55,7 @@
               mypy
               statix
               poppler-utils
+              tesseract
             ];
 
             shellHook = ''

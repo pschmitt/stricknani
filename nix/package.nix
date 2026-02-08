@@ -2,6 +2,7 @@
   lib,
   makeWrapper,
   poppler-utils,
+  tesseract,
   python3,
   fastapi-csrf-protect,
 }:
@@ -57,9 +58,9 @@ python.pkgs.buildPythonApplication {
 
   postFixup = ''
     wrapProgram "$out/bin/stricknani" \
-      --prefix PATH : ${lib.makeBinPath [ poppler-utils ]}
+      --prefix PATH : ${lib.makeBinPath [ poppler-utils tesseract ]}
     wrapProgram "$out/bin/stricknani-cli" \
-      --prefix PATH : ${lib.makeBinPath [ poppler-utils ]}
+      --prefix PATH : ${lib.makeBinPath [ poppler-utils tesseract ]}
   '';
 
   meta = {
