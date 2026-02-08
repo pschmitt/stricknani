@@ -294,6 +294,49 @@
             });
         });
 
+        function handleDrop(files) {
+            if (!files || files.length === 0) {
+                return;
+            }
+
+            const file = files[0];
+            setSelectedFile(file);
+            setTab('file');
+
+            if (fileInput) {
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                } catch {
+                    // Some browsers may not allow programmatic assignment; we still keep the file in memory.
+                }
+            }
+        }
+
+        if (dialog) {
+            dialog.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                if (dropZone) dropZone.classList.add('border-primary', 'bg-primary/5');
+            });
+            dialog.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (dropZone) dropZone.classList.add('border-primary', 'bg-primary/5');
+            });
+            dialog.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                // Check if we're actually leaving the dialog
+                if (e.relatedTarget === null || !dialog.contains(e.relatedTarget)) {
+                    if (dropZone) dropZone.classList.remove('border-primary', 'bg-primary/5');
+                }
+            });
+            dialog.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (dropZone) dropZone.classList.remove('border-primary', 'bg-primary/5');
+                handleDrop(e.dataTransfer?.files);
+            });
+        }
+
         if (dropZone) {
             if (!dropZone.dataset.importDropInitialized) {
                 dropZone.dataset.importDropInitialized = '1';
@@ -326,24 +369,7 @@
                 dropZone.addEventListener('drop', (e) => {
                     e.preventDefault();
                     setDragging(false);
-
-                    const files = e.dataTransfer?.files;
-                    if (!files || files.length === 0) {
-                        return;
-                    }
-
-                    const file = files[0];
-                    setSelectedFile(file);
-
-                    if (fileInput) {
-                        try {
-                            const dt = new DataTransfer();
-                            dt.items.add(file);
-                            fileInput.files = dt.files;
-                        } catch {
-                            // Some browsers may not allow programmatic assignment; we still keep the file in memory.
-                        }
-                    }
+                    handleDrop(e.dataTransfer?.files);
                 });
             }
         }
