@@ -50,6 +50,11 @@ from stricknani.models import (
     Yarn as YarnModel,
 )
 from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.services.projects.categories import (
+    ensure_category,
+    get_user_categories,
+    sync_project_categories,
+)
 from stricknani.services.projects.tags import (
     deserialize_tags,
     normalize_tags,
@@ -664,38 +669,6 @@ async def _import_step_images(
 
     return imported
 
-async def _sync_project_categories(db: AsyncSession, user_id: int) -> None:
-    """Ensure categories used in projects exist in the category table."""
-    project_result = await db.execute(
-        select(Project.category).where(Project.owner_id == user_id).distinct()
-    )
-    project_categories = {row[0] for row in project_result if row[0]}
-    if not project_categories:
-        return
-
-    existing_result = await db.execute(
-        select(Category.name).where(Category.user_id == user_id)
-    )
-    existing = {row[0] for row in existing_result}
-    missing = project_categories - existing
-    if not missing:
-        return
-
-    for name in sorted(missing):
-        db.add(Category(name=name, user_id=user_id))
-    await db.commit()
-
-
-async def _get_user_categories(db: AsyncSession, user_id: int) -> list[str]:
-    """Return all categories for a user."""
-    await _sync_project_categories(db, user_id)
-
-    result = await db.execute(
-        select(Category).where(Category.user_id == user_id).order_by(Category.name)
-    )
-    return [category.name for category in result.scalars()]
-
-
 async def _get_user_yarns(db: AsyncSession, user_id: int) -> Sequence[YarnModel]:
     """Return all yarns for a user ordered by name."""
 
@@ -740,34 +713,6 @@ async def _load_owned_yarns(
         )
     )
     return result.scalars().all()
-
-
-async def _ensure_category(
-    db: AsyncSession, user_id: int, name: str | None
-) -> str | None:
-    """Ensure category exists for the user and return the sanitized label."""
-
-    if not name:
-        return None
-
-    cleaned = name.strip()
-    if not cleaned:
-        return None
-
-    result = await db.execute(
-        select(Category).where(
-            Category.user_id == user_id,
-            func.lower(Category.name) == cleaned.lower(),
-        )
-    )
-    category = result.scalar_one_or_none()
-    if category is None:
-        category = Category(name=cleaned, user_id=user_id)
-        db.add(category)
-        await db.flush()
-        return category.name
-
-    return category.name
 
 
 def _render_favorite_toggle(
@@ -953,10 +898,10 @@ async def list_projects(
 
     projects_data = [_serialize_project(p) for p in projects]
 
+    categories = await get_user_categories(db, current_user.id)
+
     if request.headers.get("accept") == "application/json":
         return JSONResponse(projects_data)
-
-    categories = await _get_user_categories(db, current_user.id)
 
     return await render_template(
         "projects/list.html",
@@ -986,7 +931,7 @@ async def new_project_form(
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
-    categories = await _get_user_categories(db, current_user.id)
+    categories = await get_user_categories(db, current_user.id)
     yarn_options = await _get_user_yarns(db, current_user.id)
     tag_suggestions = await _get_user_tags(db, current_user.id)
 
@@ -1449,7 +1394,7 @@ async def _render_categories_page(
     message: str | None = None,
     error: str | None = None,
 ) -> HTMLResponse:
-    await _sync_project_categories(db, current_user.id)
+    await sync_project_categories(db, current_user.id)
 
     categories_result = await db.execute(
         select(Category)
@@ -2378,7 +2323,7 @@ async def edit_project_form(
         ],
     }
 
-    categories = await _get_user_categories(db, current_user.id)
+    categories = await get_user_categories(db, current_user.id)
     yarn_options = await _get_user_yarns(db, current_user.id)
     tag_suggestions = await _get_user_tags(db, current_user.id)
 
@@ -2449,7 +2394,7 @@ async def create_project(
         yarn_details=parsed_yarn_details,
     )
 
-    normalized_category = await _ensure_category(db, current_user.id, category)
+    normalized_category = await ensure_category(db, current_user.id, category)
     normalized_tags = normalize_tags(tags)
 
     project = Project(
@@ -2595,7 +2540,7 @@ async def update_project(
         )
 
     project.name = name.strip()
-    project.category = await _ensure_category(db, current_user.id, category)
+    project.category = await ensure_category(db, current_user.id, category)
     selected_yarns = list(await _load_owned_yarns(db, current_user.id, parsed_yarn_ids))
     project.yarns = selected_yarns
     project.yarn = selected_yarns[0].name if selected_yarns else None
