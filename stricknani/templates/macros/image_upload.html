@@ -12,11 +12,20 @@ onchange=None,
 icon=None,
 accept=None
 ) -%}
+{% set onchange_fn = None %}
+{% if onchange %}
+  {% set onchange_fn = onchange %}
+  {% if onchange_fn.endswith('(this)') %}
+    {% set onchange_fn = onchange_fn[:-6] %}
+  {% elif onchange_fn.endswith('()') %}
+    {% set onchange_fn = onchange_fn[:-2] %}
+  {% endif %}
+{% endif %}
 <div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors dark:border-slate-600 dark:hover:border-blue-400 {{ container_class or '' }}"
     {% if container_id %} id="{{ container_id }}" {% endif %}>
     <input type="file" id="{{ input_id }}" {% if input_name %} name="{{ input_name }}" {% endif %}
-        accept="{{ accept or 'image/*' }}" {% if multiple %} multiple{% endif %} class="hidden" {% if onchange %}
-        onchange="{{ onchange }}" {% endif %}>
+        accept="{{ accept or 'image/*' }}" {% if multiple %} multiple{% endif %} class="hidden" {% if onchange_fn %}
+        data-call-change="{{ onchange_fn }}" {% endif %}>
     <label for="{{ input_id }}" class="cursor-pointer block">
         <span class="mdi {{ icon or 'mdi-image-plus' }} mx-auto text-4xl text-slate-400 dark:text-slate-500"></span>
         <p class="upload-instructions mt-2 text-sm text-base-content/70" {% if label_text %}
@@ -66,14 +75,14 @@ disabled_text=None
             class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
     </a>
     {% if show_promote %}
-    <button type="button" onclick="promoteImage({{ project_id }}, {{ image.id }})"
+    <button type="button" data-call="promoteImage" data-call-args='[{{ project_id }},{{ image.id }}]'
         class="title-promote-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all {{ 'bg-amber-400 text-white opacity-100' if image.is_title_image else 'bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500' }} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
         title="{{ _('Make title image') }}">
         <span class="mdi {{ 'mdi-star' if image.is_title_image else 'mdi-star-outline' }}"></span>
     </button>
     {% endif %}
     {% if show_delete %}
-    <button type="button" onclick="deleteImage({{ image.id }})"
+    <button type="button" data-call="deleteImage" data-call-args='[{{ image.id }}]'
         class="absolute top-1 right-1 z-10 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
         <span class="mdi mdi-delete"></span>
     </button>

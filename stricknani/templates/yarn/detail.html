@@ -121,12 +121,11 @@
                                         loading="lazy">
                                 </a>
                                 {% if loop.last and photo_count > 3 %}
-                                <div class="absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
-                                    data-pswp-open-index="2" role="button" tabindex="0" aria-label="{{ _('Open gallery') }}"
-                                    onclick="window.openPhotoSwipeIndex?.(this)"
-                                    onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openPhotoSwipeIndex?.(this); }">
-                                    +{{ photo_count - 3 }}
-                                </div>
+	                                <div class="absolute inset-0 z-20 bg-slate-900/60 flex items-center justify-center text-white text-sm font-semibold cursor-pointer"
+	                                    data-pswp-open-index="2" role="button" tabindex="0" aria-label="{{ _('Open gallery') }}"
+	                                    data-call="openPhotoSwipeIndex">
+	                                    +{{ photo_count - 3 }}
+	                                </div>
                                 {% endif %}
                             </div>
                             {% endfor %}
@@ -203,18 +202,18 @@
 
         <!-- Sidebar Column -->
         <div class="hidden lg:block z-30">
-            <button type="button" id="details-restore-button"
-                class="lg:fixed lg:top-20 lg:right-0 flex h-16 w-8 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
-                onclick="restoreSidebarDetails()" title="{{ _('Yarn Details') }}" aria-label="{{ _('Yarn Details') }}">
-                <span class="mdi mdi-chevron-left text-lg"></span>
-                <span class="sr-only">{{ _('Yarn Details') }}</span>
-            </button>
+	            <button type="button" id="details-restore-button"
+	                class="lg:fixed lg:top-20 lg:right-0 flex h-16 w-8 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
+	                data-call="restoreSidebarDetails" title="{{ _('Yarn Details') }}" aria-label="{{ _('Yarn Details') }}">
+	                <span class="mdi mdi-chevron-left text-lg"></span>
+	                <span class="sr-only">{{ _('Yarn Details') }}</span>
+	            </button>
         </div>
 
         <div id="sidebar-column" class="space-y-6 lg:col-start-3 lg:row-start-1 lg:sticky lg:top-20 lg:self-start transition-all duration-300">
             <!-- Details Card -->
             <div class="collapse collapse-right collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
-                <input type="checkbox" id="details-toggle-sidebar" checked onchange="toggleSidebarExpansion(this)" />
+	                <input type="checkbox" id="details-toggle-sidebar" checked data-call-change="toggleSidebarExpansion" />
                 <div class="collapse-title w-full font-bold text-base text-base-content/40 uppercase tracking-widest text-sm">
                     <span class="flex items-center gap-2">
                         <span class="mdi mdi-information-outline"></span>
@@ -343,10 +342,9 @@
                                     <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                                     {{ yarn.link }}
                                 </a>
-                                <button type="button"
-                                    onclick="copyToClipboard('{{ yarn.link }}', this)"
-                                    class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
-                                    title="{{ _('Copy URL') }}">
+	                                <button type="button" data-call="copyToClipboard" data-call-args='[{{ yarn.link|tojson }},\"$this\"]'
+	                                    class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
+	                                    title="{{ _('Copy URL') }}">
                                     <span class="mdi mdi-content-copy text-xs"></span>
                                 </button>
                             </div>

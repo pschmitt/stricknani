@@ -79,14 +79,13 @@
                         <div class="flex-grow border-t border-base-300"></div>
                     </div>
 
-                    <div class="text-center">
-                        <button type="button" class="btn btn-ghost btn-block gap-2 opacity-70 hover:opacity-100"
-                            onclick="document.getElementById('login-form').classList.add('hidden');
-                            document.getElementById('signup-form').classList.remove('hidden')">
-                            <span class="mdi mdi-account-plus"></span>
-                            {{ _("Create an account") }}
-                        </button>
-                    </div>
+	                    <div class="text-center">
+	                        <button type="button" class="btn btn-ghost btn-block gap-2 opacity-70 hover:opacity-100"
+	                            data-call="toggleAuthForms" data-call-args='["signup-form","login-form"]'>
+	                            <span class="mdi mdi-account-plus"></span>
+	                            {{ _("Create an account") }}
+	                        </button>
+	                    </div>
                     {% endif %}
                 </div>
 
@@ -140,14 +139,13 @@
                         <div class="flex-grow border-t border-base-300"></div>
                     </div>
 
-                    <div class="text-center">
-                        <button type="button" class="btn btn-ghost btn-block gap-2 opacity-70 hover:opacity-100"
-                            onclick="document.getElementById('signup-form').classList.add('hidden');
-                            document.getElementById('login-form').classList.remove('hidden')">
-                            <span class="mdi mdi-login"></span>
-                            {{ _('Already have an account? Sign in') }}
-                        </button>
-                    </div>
+	                    <div class="text-center">
+	                        <button type="button" class="btn btn-ghost btn-block gap-2 opacity-70 hover:opacity-100"
+	                            data-call="toggleAuthForms" data-call-args='["login-form","signup-form"]'>
+	                            <span class="mdi mdi-login"></span>
+	                            {{ _('Already have an account? Sign in') }}
+	                        </button>
+	                    </div>
                 </div>
                 {% endif %}
             </div>

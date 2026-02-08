@@ -202,10 +202,11 @@
                     <div tabindex="0" class="dropdown-content navbar-dropdown-content menu bg-base-100 rounded-box z-[90] w-72 p-0 shadow-xl border border-base-300 mt-2">
                         <div class="flex items-center gap-3 border-b border-base-300 px-4 py-3">
                             <div class="avatar">
-                                <button type="button"
-                                    class="w-12 rounded-full cursor-pointer hover:ring-2 hover:ring-primary transition-all group relative overflow-hidden"
-                                    onclick="document.getElementById('profile-image-input').click()"
-                                    aria-label="{{ _('Change profile picture') }}">
+	                                <button type="button"
+	                                    class="w-12 rounded-full cursor-pointer hover:ring-2 hover:ring-primary transition-all group relative overflow-hidden"
+	                                    data-action="click-target"
+	                                    data-target-id="profile-image-input"
+	                                    aria-label="{{ _('Change profile picture') }}">
                                     {% if current_user_avatar_thumbnail %}
                                     <img src="{{ current_user_avatar_thumbnail }}"
                                         alt="{{ _('Profile picture for %(email)s') % {'email': current_user.email} }}" />
@@ -244,18 +245,18 @@
                                         {{ _('Appearance') }}
                                     </span>
                                 </label>
-                                <div class="join w-full bg-base-200 p-1 rounded-xl">
-                                    <button type="button" id="theme-btn-light" onclick="setTheme('light')"
-                                        class="btn btn-sm flex-1 border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold gap-2">
-                                        <span class="mdi mdi-weather-sunny"></span>
-                                        {{ _('Light') }}
-                                    </button>
-                                    <button type="button" id="theme-btn-dark" onclick="setTheme('dark')"
-                                        class="btn btn-sm flex-1 border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold gap-2">
-                                        <span class="mdi mdi-weather-night"></span>
-                                        {{ _('Dark') }}
-                                    </button>
-                                </div>
+	                                <div class="join w-full bg-base-200 p-1 rounded-xl">
+	                                    <button type="button" id="theme-btn-light" data-call="setTheme" data-call-args='["light"]'
+	                                        class="btn btn-sm flex-1 border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold gap-2">
+	                                        <span class="mdi mdi-weather-sunny"></span>
+	                                        {{ _('Light') }}
+	                                    </button>
+	                                    <button type="button" id="theme-btn-dark" data-call="setTheme" data-call-args='["dark"]'
+	                                        class="btn btn-sm flex-1 border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold gap-2">
+	                                        <span class="mdi mdi-weather-night"></span>
+	                                        {{ _('Dark') }}
+	                                    </button>
+	                                </div>
                             </div>
                         </div>
                         <div class="space-y-2 px-4 py-4">
@@ -271,10 +272,10 @@
                 </div>
                 {% else %}
                 <div class="flex items-center gap-1 sm:gap-2">
-                    <button type="button" onclick="toggleTheme()" class="btn btn-ghost btn-circle hover:bg-base-300 transition-all duration-300"
-                        title="{{ _('Toggle theme') }}">
-                        <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
-                    </button>
+	                    <button type="button" data-call="toggleTheme" class="btn btn-ghost btn-circle hover:bg-base-300 transition-all duration-300"
+	                        title="{{ _('Toggle theme') }}">
+	                        <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
+	                    </button>
 
                     <div class="hidden sm:block min-w-32">
                         {% set container_class = "bg-base-300/50 border border-base-300 rounded-full" %}

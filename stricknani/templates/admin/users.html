@@ -7,10 +7,10 @@
 {% set page_title %}{{ _('Admin') }}{% endset %}
 {% set page_actions %}
 {{ buttons.primary(_('New User'), type='button', icon='mdi-account-plus', class='hidden md:inline-flex',
-attrs='onclick="openCreateUserDialog()"') }}
+attrs='data-call="openCreateUserDialog"') }}
 <!-- Mobile FAB -->
 {{ buttons.fab('mdi-plus', type='button', label=_('New User'), class='md:hidden',
-attrs='onclick="openCreateUserDialog()"') }}
+attrs='data-call="openCreateUserDialog"') }}
 {% endset %}
 
 {% block navbar %}
@@ -56,15 +56,14 @@ attrs='onclick="openCreateUserDialog()"') }}
         <label class="block mb-1">
             <span class=" font-medium">{{ _('Profile Image') }}</span>
         </label>
-        <button type="button" class="btn btn-outline gap-2" onclick="triggerEditUserImageUpload()">
+        <button type="button" class="btn btn-outline gap-2" data-call="triggerEditUserImageUpload">
             <span class="mdi mdi-camera"></span>
             {{ _('Change Photo') }}
         </button>
     </div>
 
     <div class="modal-action">
-        {{ dialogs.dialog_cancel(_('Cancel'),
-        attrs='onclick="document.getElementById(\'editUserDialog\').close()"') }}
+        {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-action="close-dialog" data-dialog-id="editUserDialog"') }}
         {{ dialogs.dialog_primary(_('Save Changes'), icon='mdi-content-save', type='submit') }}
     </div>
 </form>
@@ -86,8 +85,7 @@ attrs='onclick="openCreateUserDialog()"') }}
             class="input  w-full" required />
     </div>
     <div class="modal-action">
-        {{ dialogs.dialog_cancel(_('Cancel'),
-        attrs='onclick="document.getElementById(\'resetPasswordDialog\').close()"') }}
+        {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-action="close-dialog" data-dialog-id="resetPasswordDialog"') }}
         {{ dialogs.dialog_primary(_('Reset password'), icon='mdi-key-variant', type='submit') }}
     </div>
 </form>
@@ -125,8 +123,7 @@ attrs='onclick="openCreateUserDialog()"') }}
         </label>
     </div>
     <div class="modal-action">
-        {{ dialogs.dialog_cancel(_('Cancel'),
-        attrs='onclick="document.getElementById(\'createUserDialog\').close()"') }}
+        {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-action="close-dialog" data-dialog-id="createUserDialog"') }}
         {{ dialogs.dialog_primary(_('Create User'), icon='mdi-account-plus', type='submit') }}
     </div>
 </form>
@@ -143,8 +140,7 @@ attrs='onclick="openCreateUserDialog()"') }}
     <span class="text-sm opacity-70">{{ _('This will permanently remove their projects and yarn.') }}</span>
 </p>
 <div class="modal-action">
-    {{ dialogs.dialog_cancel(_('Cancel'),
-    attrs='onclick="document.getElementById(\'deleteUserDialog\').close()"') }}
+    {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-action="close-dialog" data-dialog-id="deleteUserDialog"') }}
     <form id="deleteUserForm" method="post" action="/admin/users/0/delete" data-toast-message="{{ _('User deleted') }}"
         data-toast-variant="success" data-dialog-close="deleteUserDialog" hx-swap="outerHTML">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

@@ -78,22 +78,23 @@
             const searchInput = document.getElementById('{{ search_id }}');
             const suggestionContainer = document.getElementById('{{ search_id }}-suggestions');
             const suggestionList = document.getElementById('{{ search_id }}-suggestion-list');
-            const clearButton = document.querySelector('#{{ wrapper_id }} [data-search-clear]');
-            let currentPrefix = '';
-            let activeIndex = -1;
+	            const clearButton = document.querySelector('#{{ wrapper_id }} [data-search-clear]');
+	            let currentPrefix = '';
+	            let activeIndex = -1;
+	            let lastSuggestions = [];
+	            let lastMatch = null;
 
-            const prefixes = [
-                { prefix: 'cat:', type: 'cat', icon: 'mdi-tag-outline' },
-                { prefix: 'tag:', type: 'tag', icon: 'mdi-tag-multiple-outline' },
-                { prefix: '#', type: 'tag', icon: 'mdi-tag-multiple-outline' },
-                { prefix: 'brand:', type: 'brand', icon: 'mdi-label-outline' },
-            ];
-            const activeClass = 'bg-base-200';
-            const escapeSingleQuotes = (value) => value.replace(/'/g, "\\'");
-            const formatSuggestionValue = (prefixConfig, suggestion) => {
-                if (prefixConfig.type === 'brand' && /\s/.test(suggestion)) {
-                    return `${prefixConfig.prefix}"${suggestion}"`;
-                }
+	            const prefixes = [
+	                { prefix: 'cat:', type: 'cat', icon: 'mdi-tag-outline' },
+	                { prefix: 'tag:', type: 'tag', icon: 'mdi-tag-multiple-outline' },
+	                { prefix: '#', type: 'tag', icon: 'mdi-tag-multiple-outline' },
+	                { prefix: 'brand:', type: 'brand', icon: 'mdi-label-outline' },
+	            ];
+	            const activeClass = 'bg-base-200';
+	            const formatSuggestionValue = (prefixConfig, suggestion) => {
+	                if (prefixConfig.type === 'brand' && /\s/.test(suggestion)) {
+	                    return `${prefixConfig.prefix}"${suggestion}"`;
+	                }
                 return `${prefixConfig.prefix}${suggestion}`;
             };
 
@@ -157,9 +158,11 @@
                     const type = match.type;
                     const baseUrl = '{{ search_url }}'.replace(/\/+$/, '');
 
-                    try {
-                        const response = await fetch(`${baseUrl}/search-suggestions?type=${type}&q=${encodeURIComponent(q)}`);
-                        const suggestions = await response.json();
+	                    try {
+	                        const response = await fetch(`${baseUrl}/search-suggestions?type=${type}&q=${encodeURIComponent(q)}`);
+	                        const suggestions = await response.json();
+	                        lastSuggestions = suggestions;
+	                        lastMatch = match;
 
                         if (suggestions.length > 0) {
                             const trimmedValue = val.trim();
@@ -172,19 +175,18 @@
                                 closeSuggestions();
                                 return;
                             }
-                            suggestionList.innerHTML = suggestions.map((s, index) => {
-                                const formattedValue = escapeSingleQuotes(formatSuggestionValue(match, s));
-                                return `
-                                <li>
-                                    <button type="button" data-suggestion-index="${index}" class="py-2 px-4 hover:bg-base-200 text-left w-full transition-colors flex items-center gap-2" onclick="window.selectSearchSuggestion('{{ search_id }}', '${formattedValue}')">
-                                        <span class="mdi ${match.icon} text-base-content/50"></span>
-                                        <span>${s}</span>
-                                    </button>
-                                </li>
-                            `;
-                            }).join('');
-                            openSuggestions();
-                            clearActiveState();
+	                            suggestionList.innerHTML = suggestions.map((s, index) => {
+	                                return `
+	                                <li>
+	                                    <button type="button" data-suggestion-index="${index}" class="py-2 px-4 hover:bg-base-200 text-left w-full transition-colors flex items-center gap-2">
+	                                        <span class="mdi ${match.icon} text-base-content/50"></span>
+	                                        <span>${s}</span>
+	                                    </button>
+	                                </li>
+	                            `;
+	                            }).join('');
+	                            openSuggestions();
+	                            clearActiveState();
                         } else {
                             closeSuggestions();
                         }
@@ -226,11 +228,25 @@
             });
 
             // Close suggestions on click outside
-            document.addEventListener('click', (e) => {
-                if (!searchInput.contains(e.target) && !suggestionContainer.contains(e.target)) {
-                    closeSuggestions();
-                }
-            });
+	            document.addEventListener('click', (e) => {
+	                if (!searchInput.contains(e.target) && !suggestionContainer.contains(e.target)) {
+	                    closeSuggestions();
+	                }
+	            });
+
+	            suggestionList.addEventListener('click', (e) => {
+	                const button = e.target.closest('[data-suggestion-index]');
+	                if (!button) {
+	                    return;
+	                }
+	                const index = Number.parseInt(button.getAttribute('data-suggestion-index') || '0', 10);
+	                const suggestion = lastSuggestions[index];
+	                if (!suggestion || !lastMatch) {
+	                    return;
+	                }
+	                const formattedValue = formatSuggestionValue(lastMatch, suggestion);
+	                window.selectSearchSuggestion('{{ search_id }}', formattedValue);
+	            });
 
             window.selectSearchSuggestion = (id, val) => {
                 const input = document.getElementById(id);

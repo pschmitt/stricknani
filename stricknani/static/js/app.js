@@ -538,6 +538,13 @@
     }
   };
 
+  window.toggleAuthForms = (showId, hideId) => {
+    const showEl = showId ? document.getElementById(showId) : null;
+    const hideEl = hideId ? document.getElementById(hideId) : null;
+    hideEl?.classList.add("hidden");
+    showEl?.classList.remove("hidden");
+  };
+
   document.addEventListener("DOMContentLoaded", () => {
     // Theme UI init.
     const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
@@ -621,6 +628,116 @@
           }
         }
       }
+    });
+
+    const resolveCallArg = (arg, element, eventObj) => {
+      if (arg === "$this") {
+        return element;
+      }
+      if (arg === "$event") {
+        return eventObj;
+      }
+      if (arg === "$value") {
+        return element?.value;
+      }
+      if (arg === "$checked") {
+        return element?.checked;
+      }
+      if (typeof arg === "string" && arg.startsWith("$value:")) {
+        const selector = arg.slice("$value:".length);
+        const target = selector ? document.querySelector(selector) : null;
+        return target?.value;
+      }
+      if (typeof arg === "string" && arg.startsWith("$text:")) {
+        const selector = arg.slice("$text:".length);
+        const target = selector ? document.querySelector(selector) : null;
+        return target?.textContent || "";
+      }
+      if (typeof arg === "string" && arg.startsWith("$dataset:")) {
+        const key = arg.slice("$dataset:".length);
+        return key ? element?.dataset?.[key] : undefined;
+      }
+      return arg;
+    };
+
+    const parseCallArgs = (raw) => {
+      if (!raw) {
+        return null;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const invokeCall = (element, eventObj, fnName, rawArgs) => {
+      if (!fnName) {
+        return;
+      }
+      const fn = window[fnName];
+      if (typeof fn !== "function") {
+        return;
+      }
+
+      const args = parseCallArgs(rawArgs);
+      if (args) {
+        const resolvedArgs = args.map((arg) => resolveCallArg(arg, element, eventObj));
+        fn(...resolvedArgs);
+      } else {
+        fn(element);
+      }
+    };
+
+    // Generic function calls for click/input/change.
+    document.addEventListener("click", (event) => {
+      const el = event.target.closest("[data-call]");
+      if (!el) {
+        return;
+      }
+      event.preventDefault();
+      invokeCall(el, event, el.getAttribute("data-call"), el.getAttribute("data-call-args"));
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const el = event.target.closest?.("[data-call]");
+      if (!el) {
+        return;
+      }
+
+      // Avoid hijacking typing in form controls.
+      if (event.target.closest("input,textarea,select")) {
+        return;
+      }
+
+      // Let native elements handle their own key behavior.
+      const tag = el.tagName.toLowerCase();
+      if (tag === "button" || tag === "a") {
+        return;
+      }
+
+      event.preventDefault();
+      invokeCall(el, event, el.getAttribute("data-call"), el.getAttribute("data-call-args"));
+    });
+
+    document.addEventListener("input", (event) => {
+      const el = event.target.closest("[data-call-input]");
+      if (!el) {
+        return;
+      }
+      invokeCall(el, event, el.getAttribute("data-call-input"), el.getAttribute("data-call-input-args"));
+    });
+
+    document.addEventListener("change", (event) => {
+      const el = event.target.closest("[data-call-change]");
+      if (!el) {
+        return;
+      }
+      invokeCall(el, event, el.getAttribute("data-call-change"), el.getAttribute("data-call-change-args"));
     });
 
     document.addEventListener("keydown", (event) => {
