@@ -233,21 +233,11 @@ class AIExtractor(ContentExtractor):
         content: RawContent,
         hints: dict[str, Any] | None,
     ) -> ExtractedData:
-        """Extract data from PDF by uploading it directly to OpenAI.
+        """Extract data from PDF by converting it to images first.
 
-        This uses the multimodal capabilities of gpt-4o to analyze the PDF
-        directly instead of relying on local text extraction.
+        This uses the multimodal capabilities of vision models to analyze the PDF
+        pages as images, which is more reliable than direct PDF upload.
         """
-        from openai import BadRequestError
-
-        client = AsyncOpenAI(api_key=self.api_key)
-
-        pdf_bytes = (
-            content.content
-            if isinstance(content.content, bytes)
-            else content.content.encode()
-        )
-
         # Pre-extract images from PDF to include them as attachments
         from stricknani.importing.extractors.pdf import PDFExtractor
 
@@ -262,123 +252,24 @@ class AIExtractor(ContentExtractor):
         except Exception as exc:
             logger.warning("Failed to extract text locally for PDF hint: %s", exc)
 
-        file_id = None
-        try:
-            # Step 1: Upload PDF to OpenAI with purpose="vision"
-            # Note: We use a generic filename
-            filename = content.metadata.get("filename", "pattern.pdf")
-            uploaded_file = await client.files.create(
-                file=(filename, pdf_bytes, "application/pdf"),
-                purpose="vision",
-            )
-            file_id = uploaded_file.id
-            logger.info("Uploaded PDF to OpenAI: %s", file_id)
+        # Render PDF pages as high-res images
+        page_images = await pdf_extractor.render_pages_as_images(content)
+        if not page_images:
+            # Absolute fallback to text extraction if rendering failed
+            return await self._extract_from_pdf_fallback(content, hints)
 
-            # Step 2: Extract data using chat completions with the file_id
-            # We use gpt-4o specifically for PDFs as it has the best multimodal support
-            # and gpt-4o-mini might not support input_file yet in all regions.
-            model = self.model if "mini" not in self.model else "gpt-4o"
+        result = await self._extract_from_images(
+            page_images,
+            hints,
+            local_images=local_images,
+            raw_text=local_text,
+        )
 
-            system_prompt = self._build_system_prompt()
+        # Attach original local images to the result
+        if local_images:
+            result.extras["pdf_images"] = local_images
 
-            image_block = ""
-            if local_images:
-                image_block = (
-                    "\n\nThe following images were extracted from the PDF "
-                    "for reference:\n"
-                    + "\n".join(f"- Image {i + 1}" for i in range(len(local_images)))
-                    + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. "
-                    "in the step 'images' field if they are relevant to a "
-                    "specific step."
-                )
-
-            text_block = ""
-            if local_text:
-                text_block = (
-                    "\n\nFor reference, here is the text content extracted locally "
-                    "from the PDF (it might be messy or incomplete, but can help "
-                    "with details):\n\n"
-                    f"{local_text[:8000]}"  # Limit hint text length
-                )
-
-            user_prompt = (
-                "Analyze the attached PDF and extract all available knitting pattern "
-                "information. Return the data as JSON."
-                f"{image_block}"
-                f"{text_block}"
-            )
-
-            response = await client.chat.completions.create(  # type: ignore[call-overload]
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": user_prompt},
-                            {
-                                "type": "input_file",
-                                "input_file": {"file_id": file_id},
-                            },
-                        ],
-                    },
-                ],
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-                response_format={"type": "json_object"},
-            )
-
-            raw_content_str = response.choices[0].message.content or "{}"
-            result = self._parse_ai_response(raw_content_str)
-
-            # Attach local images to the result
-            if local_images:
-                # We store them in extras so the target can handle them
-                result.extras["pdf_images"] = local_images
-
-            return result
-
-        except BadRequestError as exc:
-            # Fallback to PDF-to-image conversion if the model/account doesn't support
-            # PDF upload
-            if "application/pdf" in str(exc) or "input_file" in str(exc):
-                logger.warning(
-                    "OpenAI direct PDF upload not supported, "
-                    "falling back to page rendering: %s",
-                    exc,
-                )
-                page_images = await pdf_extractor.render_pages_as_images(content)
-                if page_images:
-                    result = await self._extract_from_images(
-                        page_images,
-                        hints,
-                        local_images=local_images,
-                        raw_text=local_text,
-                    )
-                    # Ensure original local images are still in extras
-                    if local_images:
-                        result.extras["pdf_images"] = local_images
-                    return result
-
-                # Absolute fallback to text extraction if rendering failed
-                return await self._extract_from_pdf_fallback(content, hints)
-            raise
-        except Exception as exc:
-            logger.error("AI PDF extraction failed: %s", exc)
-            raise ExtractorError(
-                f"AI PDF extraction failed: {exc}",
-                extractor_name=self.name,
-            ) from exc
-        finally:
-            # Step 3: Clean up the file from OpenAI
-            if file_id:
-                try:
-                    await client.files.delete(file_id)
-                    logger.debug("Deleted PDF from OpenAI: %s", file_id)
-                except Exception as exc:
-                    logger.warning(
-                        "Failed to delete PDF from OpenAI %s: %s", file_id, exc
-                    )
+        return result
 
     async def _extract_from_images(
         self,

@@ -9,141 +9,8 @@ from stricknani.importing.models import ContentType, ExtractedData, RawContent
 
 
 @pytest.mark.asyncio
-async def test_ai_extractor_pdf_direct_upload() -> None:
-    extractor = AIExtractor(api_key="test-key")
-
-    pdf_content = RawContent(
-        content=b"%PDF-1.4 fake",
-        content_type=ContentType.PDF,
-        metadata={"filename": "test.pdf"},
-    )
-
-    # Mock OpenAI client and responses
-    mock_file = MagicMock()
-    mock_file.id = "file-123"
-
-    mock_completion = MagicMock()
-    mock_completion.choices = [
-        MagicMock(message=MagicMock(content='{"name": "Direct PDF Project"}'))
-    ]
-
-    with (
-        patch("stricknani.importing.extractors.ai.OPENAI_AVAILABLE", True),
-        patch("stricknani.importing.extractors.ai.AsyncOpenAI") as mock_openai_class,
-        patch(
-            "stricknani.importing.extractors.pdf.PDFExtractor.extract_images_from_pdf",
-            new=AsyncMock(return_value=[b"fake-image-bytes"]),
-        ),
-    ):
-        mock_client = mock_openai_class.return_value
-        mock_client.files.create = AsyncMock(return_value=mock_file)
-        mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
-        mock_client.files.delete = AsyncMock()
-
-        result = await extractor.extract(pdf_content)
-
-    assert result.name == "Direct PDF Project"
-    assert "pdf_images" in result.extras
-    assert len(result.extras["pdf_images"]) == 1
-    assert result.extras["pdf_images"][0] == b"fake-image-bytes"
-    assert result.image_urls == []
-
-    # Verify file was uploaded with purpose="vision"
-    mock_client.files.create.assert_called_once()
-    args, kwargs = mock_client.files.create.call_args
-    assert kwargs["purpose"] == "vision"
-    assert kwargs["file"][0] == "test.pdf"
-    assert kwargs["file"][2] == "application/pdf"
-
-    # Verify chat completion was called with input_file
-    mock_client.chat.completions.create.assert_called_once()
-    args, kwargs = mock_client.chat.completions.create.call_args
-    messages = kwargs["messages"]
-
-    # Verify system prompt has Markdown instruction
-    system_content = messages[0]["content"]
-    assert "Markdown" in system_content
-
-    user_content = messages[1]["content"]
-
-    found_input_file = False
-    found_image_indices = False
-    for item in user_content:
-        if item["type"] == "input_file":
-            assert item["input_file"]["file_id"] == "file-123"
-            found_input_file = True
-        if item["type"] == "text" and "Image 1" in item["text"]:
-            found_image_indices = True
-    assert found_input_file
-    assert found_image_indices
-
-    # Verify file was deleted
-    mock_client.files.delete.assert_called_once_with("file-123")
-
-
-@pytest.mark.asyncio
-async def test_ai_extractor_pdf_fallback_on_error() -> None:
-    from openai import BadRequestError
-
-    extractor = AIExtractor(api_key="test-key")
-
-    pdf_content = RawContent(
-        content=b"%PDF-1.4 fake",
-        content_type=ContentType.PDF,
-        metadata={"filename": "test.pdf"},
-    )
-
-    with (
-        patch("stricknani.importing.extractors.ai.OPENAI_AVAILABLE", True),
-        patch("stricknani.importing.extractors.ai.AsyncOpenAI") as mock_openai_class,
-        patch(
-            "stricknani.importing.extractors.pdf.PDFExtractor.extract_images_from_pdf",
-            new=AsyncMock(return_value=[b"fake-image-bytes"]),
-        ),
-        patch(
-            "stricknani.importing.extractors.pdf.PDFExtractor.can_extract",
-            return_value=True,
-        ),
-        patch(
-            "stricknani.importing.extractors.pdf.PDFExtractor.extract",
-            new=AsyncMock(
-                return_value=ExtractedData(
-                    description="Fallback description",
-                    extras={"full_text": "extracted text"},
-                )
-            ),
-        ),
-        patch.object(
-            AIExtractor,
-            "_extract_from_text",
-            new=AsyncMock(return_value=ExtractedData(name="Fallback Success")),
-        ),
-    ):
-        mock_client = mock_openai_class.return_value
-
-        # Simulate OpenAI error for PDF upload
-        mock_response = MagicMock()
-        mock_response.status_code = 400
-        mock_client.files.create.side_effect = BadRequestError(
-            "Invalid file format application/pdf",
-            response=mock_response,
-            body={"error": {"message": "Invalid file format application/pdf"}},
-        )
-
-        result = await extractor.extract(pdf_content)
-
-    assert result.name == "Fallback Success"
-    assert "pdf_images" in result.extras
-    assert len(result.extras["pdf_images"]) == 1
-    assert result.extras["pdf_images"][0] == b"fake-image-bytes"
-    assert result.image_urls == []
-    mock_client.files.create.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_ai_extractor_pdf_to_image_fallback() -> None:
-    from openai import BadRequestError
-
+async def test_ai_extractor_pdf_rendering_primary() -> None:
+    """Verify that PDF is rendered as images for AI extraction (primary method)."""
     extractor = AIExtractor(api_key="test-key")
 
     pdf_content = RawContent(
@@ -154,7 +21,7 @@ async def test_ai_extractor_pdf_to_image_fallback() -> None:
 
     mock_completion = MagicMock()
     mock_completion.choices = [
-        MagicMock(message=MagicMock(content='{"name": "Image Fallback Success"}'))
+        MagicMock(message=MagicMock(content='{"name": "Rendered PDF Project"}'))
     ]
 
     with (
@@ -168,35 +35,96 @@ async def test_ai_extractor_pdf_to_image_fallback() -> None:
             "stricknani.importing.extractors.pdf.PDFExtractor.render_pages_as_images",
             new=AsyncMock(return_value=[b"fake-rendered-page"]),
         ),
+        patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.extract",
+            new=AsyncMock(
+                return_value=ExtractedData(
+                    description="PDF desc",
+                    extras={"full_text": "local text"},
+                )
+            ),
+        ),
     ):
         mock_client = mock_openai_class.return_value
-
-        # Simulate OpenAI error for PDF upload
-        mock_response = MagicMock()
-        mock_response.status_code = 400
-        mock_client.files.create.side_effect = BadRequestError(
-            "input_file not supported",
-            response=mock_response,
-            body={"error": {"message": "input_file not supported"}},
-        )
         mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
 
         result = await extractor.extract(pdf_content)
 
-    assert result.name == "Image Fallback Success"
+    assert result.name == "Rendered PDF Project"
     assert "pdf_images" in result.extras
     assert result.extras["pdf_images"][0] == b"fake-local-image"
 
-    # Verify multimodal chat completion was called with base64 image
+    # Verify multimodal chat completion was called with base64 images
     mock_client.chat.completions.create.assert_called_once()
     args, kwargs = mock_client.chat.completions.create.call_args
     messages = kwargs["messages"]
-    user_content = messages[1]["content"]
 
+    # System prompt
+    assert "Markdown" in messages[0]["content"]
+
+    # User content
+    user_content = messages[1]["content"]
+    assert isinstance(user_content, list)
+
+    found_text_with_hint = False
     found_image = False
     for item in user_content:
+        if item["type"] == "text":
+            assert "Analyze the attached images" in item["text"]
+            assert "local text" in item["text"]
+            found_text_with_hint = True
         if item["type"] == "image_url":
             assert "data:image/jpeg;base64," in item["image_url"]["url"]
             found_image = True
+
+    assert found_text_with_hint
     assert found_image
 
+    # Verify files.create (PDF upload) was NOT called
+    assert mock_client.files.create.called is False
+
+
+@pytest.mark.asyncio
+async def test_ai_extractor_pdf_rendering_fallback_to_text() -> None:
+    """Verify that we fallback to text extraction if PDF rendering returns no images."""
+    extractor = AIExtractor(api_key="test-key")
+
+    pdf_content = RawContent(
+        content=b"%PDF-1.4 fake",
+        content_type=ContentType.PDF,
+        metadata={"filename": "test.pdf"},
+    )
+
+    with (
+        patch("stricknani.importing.extractors.ai.OPENAI_AVAILABLE", True),
+        patch("stricknani.importing.extractors.ai.AsyncOpenAI"),
+        patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.extract_images_from_pdf",
+            new=AsyncMock(return_value=[]),
+        ),
+        patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.render_pages_as_images",
+            new=AsyncMock(return_value=[]), # Rendering failed
+        ),
+        patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.can_extract",
+            return_value=True,
+        ),
+        patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.extract",
+            new=AsyncMock(
+                return_value=ExtractedData(
+                    description="Local Text",
+                    extras={"full_text": "Local Text"},
+                )
+            ),
+        ),
+        patch.object(
+            AIExtractor,
+            "_extract_from_text",
+            new=AsyncMock(return_value=ExtractedData(name="Text Fallback Success")),
+        ),
+    ):
+        result = await extractor.extract(pdf_content)
+
+    assert result.name == "Text Fallback Success"
