@@ -11,7 +11,11 @@
         document.addEventListener('touchstart', handleTouchStart, { passive: true });
         document.addEventListener('touchend', handleTouchEnd);
         document.addEventListener('touchmove', handleTouchMove);
-        document.addEventListener('click', hideMenu);
+        document.addEventListener('click', (e) => {
+            if (currentMenu && !currentMenu.contains(e.target)) {
+                hideMenu();
+            }
+        });
         window.addEventListener('resize', hideMenu);
         window.addEventListener('scroll', hideMenu, true);
     }
@@ -79,6 +83,13 @@
         if (window.htmx) {
             window.htmx.process(menu);
         }
+        
+        // Auto-hide menu when clicking a link
+        menu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                setTimeout(hideMenu, 100);
+            });
+        });
         
         // Re-bind events for the cloned menu
         menu.querySelectorAll('[data-call]').forEach(el => {
