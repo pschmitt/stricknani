@@ -84,10 +84,10 @@
             window.htmx.process(menu);
         }
         
-        // Auto-hide menu when clicking a link
-        menu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                setTimeout(hideMenu, 100);
+        // Auto-hide menu when clicking a link or button
+        menu.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('click', () => {
+                setTimeout(hideMenu, 150);
             });
         });
         

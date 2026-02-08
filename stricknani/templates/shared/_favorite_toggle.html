@@ -32,17 +32,19 @@
     </button>
 {% endif %}
 
-{% if project_id %}
-<span id="project-{{ project_id }}-favorite-heart" hx-swap-oob="innerHTML">
-    {% if is_favorite %}
-    <span class="mdi mdi-heart text-pink-500 text-sm" title="{{ _('In favorites') }}"></span>
+{% if request and request.headers.get('HX-Request') == 'true' %}
+    {% if project_id %}
+    <span id="project-{{ project_id }}-favorite-heart" hx-swap-oob="innerHTML">
+        {% if is_favorite %}
+        <span class="mdi mdi-heart text-pink-500 text-sm" title="{{ _('In favorites') }}"></span>
+        {% endif %}
+    </span>
+    {% elif yarn_id %}
+    <span id="yarn-{{ yarn_id }}-favorite-heart" hx-swap-oob="innerHTML">
+        {% if is_favorite %}
+        <span class="mdi mdi-heart text-pink-500 text-sm" title="{{ _('In favorites') }}"></span>
+        {% endif %}
+    </span>
     {% endif %}
-</span>
-{% elif yarn_id %}
-<span id="yarn-{{ yarn_id }}-favorite-heart" hx-swap-oob="innerHTML">
-    {% if is_favorite %}
-    <span class="mdi mdi-heart text-pink-500 text-sm" title="{{ _('In favorites') }}"></span>
-    {% endif %}
-</span>
 {% endif %}
 
