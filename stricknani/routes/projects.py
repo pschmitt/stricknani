@@ -1015,9 +1015,9 @@ async def import_pattern(
                             if idx in local_urls:
                                 step_dict["images"].append(local_urls[idx])
                             else:
-                                # Keep it as is if it's not a local image
-                                # (e.g. actual URL)
-                                step_dict["images"].append(img_ref)
+                                # Placeholder not found in extracted images, drop it
+                                # so we don't have broken previews.
+                                pass
                         else:
                             step_dict["images"].append(img_ref)
 
@@ -2094,6 +2094,16 @@ async def create_project(
     db.add(project)
     await db.flush()  # Get project ID
 
+    # Cache for consumed tokens to allow same image in multiple places
+    token_cache: dict[str, tuple[bytes, str, str]] = {}
+
+    async def get_token_data(t: str) -> tuple[bytes, str, str]:
+        if t in token_cache:
+            return token_cache[t]
+        data = await consume_pending_project_import_attachment(current_user.id, token=t)
+        token_cache[t] = data
+        return data
+
     # Create steps if provided
     if steps_data:
         steps_list = json.loads(steps_data)
@@ -2129,10 +2139,7 @@ async def create_project(
                                     pending_bytes,
                                     original_filename,
                                     content_type,
-                                ) = await consume_pending_project_import_attachment(
-                                    current_user.id,
-                                    token=token,
-                                )
+                                ) = await get_token_data(token)
                                 # Mock UploadFile for the service
                                 import io
 
@@ -2179,10 +2186,7 @@ async def create_project(
                             pending_bytes,
                             original_filename,
                             content_type,
-                        ) = await consume_pending_project_import_attachment(
-                            current_user.id,
-                            token=token,
-                        )
+                        ) = await get_token_data(token)
                         # Mock UploadFile for the service
                         import io
 
@@ -2250,10 +2254,7 @@ async def create_project(
                     pending_bytes,
                     original_filename,
                     content_type,
-                ) = await consume_pending_project_import_attachment(
-                    current_user.id,
-                    token=token,
-                )
+                ) = await get_token_data(token)
             except FileNotFoundError:
                 # Might have been consumed by a step or gallery loop above
                 continue
@@ -2410,6 +2411,16 @@ async def update_project(
     if project.link and _should_request_archive(archive_on_save):
         project.link_archive_requested_at = datetime.now(UTC)
 
+    # Cache for consumed tokens to allow same image in multiple places
+    token_cache: dict[str, tuple[bytes, str, str]] = {}
+
+    async def get_token_data(t: str) -> tuple[bytes, str, str]:
+        if t in token_cache:
+            return token_cache[t]
+        data = await consume_pending_project_import_attachment(current_user.id, token=t)
+        token_cache[t] = data
+        return data
+
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
         # Handle both regular URLs and temporary import URLs
@@ -2425,10 +2436,7 @@ async def update_project(
                             pending_bytes,
                             original_filename,
                             content_type,
-                        ) = await consume_pending_project_import_attachment(
-                            current_user.id,
-                            token=token,
-                        )
+                        ) = await get_token_data(token)
                         # Mock UploadFile for the service
                         import io
 
@@ -2550,10 +2558,7 @@ async def update_project(
                                     pending_bytes,
                                     original_filename,
                                     content_type,
-                                ) = await consume_pending_project_import_attachment(
-                                    current_user.id,
-                                    token=token,
-                                )
+                                ) = await get_token_data(token)
                                 # Mock UploadFile for the service
                                 import io
 
@@ -2603,10 +2608,7 @@ async def update_project(
                     pending_bytes,
                     original_filename,
                     content_type,
-                ) = await consume_pending_project_import_attachment(
-                    current_user.id,
-                    token=token,
-                )
+                ) = await get_token_data(token)
             except FileNotFoundError:
                 # Might have been consumed by a step or gallery loop above
                 continue
