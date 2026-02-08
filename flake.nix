@@ -34,10 +34,6 @@
               # Python
               ruff.enable = true;
               ruff-format.enable = true;
-              mypy = {
-                enable = true;
-                settings.binPath = "${pkgs.uv}/bin/uv run mypy";
-              };
 
               # Nix
               statix.enable = true;
@@ -71,7 +67,6 @@
           };
 
           devShells.default = pkgs.mkShell {
-            inherit (pre-commit-check) shellHook;
             buildInputs = with pkgs; [
               python
               uv
