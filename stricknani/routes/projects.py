@@ -33,7 +33,6 @@ from stricknani.models import (
     Attachment,
     Category,
     Image,
-    ImageType,
     Project,
     Step,
     User,
@@ -50,6 +49,15 @@ from stricknani.services.projects.categories import (
     ensure_category,
     get_user_categories,
     sync_project_categories,
+)
+from stricknani.services.projects.images import (
+    upload_step_image as service_upload_step_image,
+)
+from stricknani.services.projects.images import (
+    upload_stitch_sample_image as service_upload_stitch_sample_image,
+)
+from stricknani.services.projects.images import (
+    upload_title_image as service_upload_title_image,
 )
 from stricknani.services.projects.import_images import (
     import_project_images_from_urls,
@@ -71,11 +79,9 @@ from stricknani.services.projects.yarns import (
 from stricknani.utils.files import (
     build_import_filename,
     compute_checksum,
-    create_thumbnail,
     delete_file,
     get_file_url,
     get_thumbnail_url,
-    save_uploaded_file,
 )
 from stricknani.utils.i18n import install_i18n
 from stricknani.utils.image_similarity import (
@@ -2273,49 +2279,13 @@ async def upload_title_image(
     if not project or project.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    # Save file
-    filename, original_filename = await save_uploaded_file(file, project_id)
-
-    # Create thumbnail
-    file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
-    await create_thumbnail(file_path, project_id)
-
-    # Check if a title image already exists
-    count_result = await db.execute(
-        select(func.count(Image.id)).where(
-            Image.project_id == project_id,
-            Image.is_title_image.is_(True),
-            Image.is_stitch_sample.is_(False),
-            Image.step_id.is_(None),
-        )
-    )
-    has_title_image = (count_result.scalar() or 0) > 0
-
-    # Create database record
-    image = Image(
-        filename=filename,
-        original_filename=original_filename,
-        image_type=ImageType.PHOTO.value,
-        alt_text=alt_text or original_filename,
-        is_title_image=not has_title_image,
+    payload = await service_upload_title_image(
+        db,
         project_id=project_id,
+        file=file,
+        alt_text=alt_text,
     )
-    db.add(image)
-    await db.commit()
-    await db.refresh(image)
-
-    width, height = await get_image_dimensions(filename, project_id)
-
-    return JSONResponse(
-        {
-            "id": image.id,
-            "url": get_file_url(filename, project_id),
-            "thumbnail_url": get_thumbnail_url(filename, project_id),
-            "alt_text": image.alt_text,
-            "width": width,
-            "height": height,
-        }
-    )
+    return JSONResponse(payload)
 
 
 @router.post("/{project_id}/images/stitch-sample")
@@ -2334,39 +2304,13 @@ async def upload_stitch_sample_image(
     if not project or project.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    # Save file
-    filename, original_filename = await save_uploaded_file(file, project_id)
-
-    # Create thumbnail
-    file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
-    await create_thumbnail(file_path, project_id)
-
-    # Create database record
-    image = Image(
-        filename=filename,
-        original_filename=original_filename,
-        image_type=ImageType.PHOTO.value,
-        alt_text=alt_text or original_filename,
-        is_title_image=False,
-        is_stitch_sample=True,
+    payload = await service_upload_stitch_sample_image(
+        db,
         project_id=project_id,
+        file=file,
+        alt_text=alt_text,
     )
-    db.add(image)
-    await db.commit()
-    await db.refresh(image)
-
-    width, height = await get_image_dimensions(filename, project_id)
-
-    return JSONResponse(
-        {
-            "id": image.id,
-            "url": get_file_url(filename, project_id),
-            "thumbnail_url": get_thumbnail_url(filename, project_id),
-            "alt_text": image.alt_text,
-            "width": width,
-            "height": height,
-        }
-    )
+    return JSONResponse(payload)
 
 
 @router.post("/{project_id}/steps/{step_id}/images")
@@ -2393,39 +2337,14 @@ async def upload_step_image(
     if owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    # Save file
-    filename, original_filename = await save_uploaded_file(file, project_id)
-
-    # Create thumbnail
-    file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
-    await create_thumbnail(file_path, project_id)
-
-    # Create database record
-    image = Image(
-        filename=filename,
-        original_filename=original_filename,
-        image_type=ImageType.PHOTO.value,
-        alt_text=alt_text or original_filename,
-        is_title_image=False,
+    payload = await service_upload_step_image(
+        db,
         project_id=project_id,
         step_id=step_id,
+        file=file,
+        alt_text=alt_text,
     )
-    db.add(image)
-    await db.commit()
-    await db.refresh(image)
-
-    width, height = await get_image_dimensions(filename, project_id)
-
-    return JSONResponse(
-        {
-            "id": image.id,
-            "url": get_file_url(filename, project_id),
-            "thumbnail_url": get_thumbnail_url(filename, project_id),
-            "alt_text": image.alt_text,
-            "width": width,
-            "height": height,
-        }
-    )
+    return JSONResponse(payload)
 
 
 @router.delete("/{project_id}/images/{image_id}")
