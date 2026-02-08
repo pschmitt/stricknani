@@ -64,3 +64,4 @@ dmypy.json
 # Compiled translations
 *.mo
 ingest/
+.direnv
