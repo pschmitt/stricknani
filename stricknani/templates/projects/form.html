@@ -1026,6 +1026,19 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                     }
                 }
 
+                // Source Attachments (PDFs, etc.)
+                if (Array.isArray(data.source_attachments) && data.source_attachments.length > 0) {
+                    data.source_attachments.forEach(attachment => {
+                        if (typeof addAttachmentToUI === 'function') {
+                            try {
+                                addAttachmentToUI(attachment);
+                            } catch (e) {
+                                console.error('Failed to add attachment from storage', e, attachment);
+                            }
+                        }
+                    });
+                }
+
                 sessionStorage.removeItem('importedData');
                 window.unsavedChanges?.setDirty(true);
                 window.showToast?.('{{ _("Pattern data loaded - please review and save") }}', 'success');
@@ -1982,6 +1995,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
             const kind = data.content_type === 'application/pdf' ? 'pdf'
                 : data.content_type.startsWith('image/') ? 'image'
                     : 'other';
+            const token = data.token ? escapeHtml(data.token) : '';
             const openIndex = kind === 'image'
                 ? container.querySelectorAll('a[data-pswp-width]').length
                 : null;
@@ -2023,8 +2037,8 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                         title="{{ _('Download') }}">
                         <span class="mdi mdi-download text-xl"></span>
                     </a>
-                    <button type="button" data-call="deleteAttachment" 
-                        data-call-args='[${data.id ? data.id : `"$dataset:pendingToken"`}]'
+                    <button type="button" data-call="deleteAttachment"
+                        data-call-args='[${data.id ? data.id : `"${token}"`}]'
                         class="btn btn-ghost btn-sm btn-circle text-error"
                         title="{{ _('Delete') }}">
                         <span class="mdi mdi-delete-outline text-xl"></span>

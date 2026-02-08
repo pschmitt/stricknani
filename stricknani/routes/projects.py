@@ -959,27 +959,18 @@ async def import_pattern(
                 import_attachment_tokens: list[str] = list(
                     source_file_data.get("import_attachment_tokens", [])
                 )
-                # Keep track of local images we saved to tokens
-                local_image_token_map = {}  # index -> token
-                local_image_filename_map = {}  # index -> filename
 
-                pdf_images = extracted.extras.get("pdf_images", [])
-                if pdf_images:
-                    for i, img_bytes in enumerate(pdf_images):
-                        filename = f"pdf_image_{i + 1}.jpg"
-                        token = await store_pending_project_import_attachment_bytes(
-                            current_user.id,
-                            content=img_bytes,
-                            original_filename=filename,
-                            content_type="image/jpeg",
-                        )
-                        import_attachment_tokens.append(token)
-                        local_image_token_map[i] = token
-                        local_image_filename_map[i] = filename
-
-                # Also handle rendered PDF pages as attachments
-                pdf_page_urls = []
+                # We handle two image sources from PDFs:
+                # 1) Rendered pages (page screenshots) -> attachments
+                # 2) Embedded images (illustrations/photos) -> gallery / steps
                 rendered_pages = extracted.extras.get("pdf_rendered_pages", [])
+                pdf_images = extracted.extras.get("pdf_images", [])
+
+                # Expose rendered pages as pending attachments so /projects/new can
+                # render them immediately (they'll be persisted on Save via tokens).
+                pdf_page_urls: list[str] = []
+                pdf_page_attachments: list[dict[str, Any]] = []
+                page_urls: list[str] = []
                 for i, img_bytes in enumerate(rendered_pages):
                     filename = f"pdf_page_{i + 1}.jpg"
                     token = await store_pending_project_import_attachment_bytes(
@@ -993,6 +984,38 @@ async def import_pattern(
                         filename, entity_id=current_user.id, pending_token=token
                     )
                     pdf_page_urls.append(url)
+                    page_urls.append(url)
+                    pdf_page_attachments.append(
+                        {
+                            "id": None,  # Pending
+                            "token": token,
+                            "original_filename": filename,
+                            "content_type": "image/jpeg",
+                            "size_bytes": len(img_bytes),
+                            "url": url,
+                            # Use the page image itself as "thumbnail".
+                            "thumbnail_url": url,
+                        }
+                    )
+
+                # Store embedded images (non-text illustrations/photos) as pending
+                # URLs so they can be used in steps (via "Image N") and/or shown in
+                # the main gallery.
+                embedded_urls: dict[int, str] = {}  # 1-based index -> url
+                if pdf_images:
+                    for i, img_bytes in enumerate(pdf_images):
+                        filename = f"pdf_image_{i + 1}.jpg"
+                        token = await store_pending_project_import_attachment_bytes(
+                            current_user.id,
+                            content=img_bytes,
+                            original_filename=filename,
+                            content_type="image/jpeg",
+                        )
+                        import_attachment_tokens.append(token)
+                        url = get_file_url(
+                            filename, entity_id=current_user.id, pending_token=token
+                        )
+                        embedded_urls[i + 1] = url
 
                 # Now map everything to URLs for the UI
                 # Filter out "Image 1" etc. from the AI's image_urls if it
@@ -1003,16 +1026,10 @@ async def import_pattern(
                     if not re.search(r"^Image (\d+)$", str(u), re.I)
                 ]
 
-                # Add local images to the main gallery
-                local_urls = {}  # index -> url
-                for i in range(len(pdf_images)):
-                    token = local_image_token_map[i]
-                    filename = local_image_filename_map[i]
-                    url = get_file_url(
-                        filename, entity_id=current_user.id, pending_token=token
-                    )
-                    image_urls.append(url)
-                    local_urls[i + 1] = url
+                # Add embedded images to the main gallery (these are the "real" images
+                # from within the PDF, not the page screenshots).
+                if embedded_urls:
+                    image_urls.extend(list(embedded_urls.values()))
 
                 # Process steps and resolve image references
                 processed_steps = []
@@ -1033,12 +1050,10 @@ async def import_pattern(
                         match = re.search(r"Image (\d+)", str(img_ref), re.I)
                         if match:
                             idx = int(match.group(1))
-                            if idx in local_urls:
-                                step_dict["images"].append(local_urls[idx])
-                            else:
-                                # Placeholder not found in extracted images, drop it
-                                # so we don't have broken previews.
-                                pass
+                            # Prefer embedded image mapping; fall back to nothing.
+                            # (We intentionally do not map Image N to rendered pages.)
+                            if idx in embedded_urls:
+                                step_dict["images"].append(embedded_urls[idx])
                         else:
                             step_dict["images"].append(img_ref)
 
@@ -1075,6 +1090,8 @@ async def import_pattern(
                         )
                     except Exception:
                         pass
+                if pdf_page_attachments:
+                    source_attachments.extend(pdf_page_attachments)
 
                 data = {
                     "name": extracted.name,
@@ -1579,6 +1596,45 @@ async def _get_exclusive_yarns(db: AsyncSession, project: Project) -> list[YarnM
     return exclusive
 
 
+def _dedupe_project_attachments(
+    attachments: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Deduplicate attachment dicts for display.
+
+    We prefer `pdf_page_N.*` over `pdf_image_N.*` when both exist.
+    """
+    out: list[dict[str, Any]] = []
+    index_by_key: dict[tuple[object, ...], int] = {}
+    priority_by_key: dict[tuple[object, ...], int] = {}
+
+    for att in attachments:
+        original = str(att.get("original_filename") or "")
+        content_type = str(att.get("content_type") or "")
+        size_bytes = int(att.get("size_bytes") or 0)
+
+        m = re.match(r"^(pdf_page|pdf_image)_(\d+)\.[a-z0-9]+$", original, re.I)
+        if m:
+            kind = m.group(1).lower()
+            idx = int(m.group(2))
+            key: tuple[object, ...] = ("pdf_page_idx", idx)
+            prio = 2 if kind == "pdf_page" else 1
+        else:
+            key = ("exact", content_type, original, size_bytes)
+            prio = 0
+
+        if key not in index_by_key:
+            index_by_key[key] = len(out)
+            priority_by_key[key] = prio
+            out.append(att)
+            continue
+
+        if prio > priority_by_key.get(key, 0):
+            out[index_by_key[key]] = att
+            priority_by_key[key] = prio
+
+    return out
+
+
 @router.get("/{project_id}", response_class=HTMLResponse)
 async def get_project(
     request: Request,
@@ -1649,6 +1705,7 @@ async def get_project(
                 "created_at": att.created_at.isoformat(),
             }
         )
+    project_attachments = _dedupe_project_attachments(project_attachments)
 
     # Prepare project-level images (exclude step images)
     title_images = []
@@ -1945,6 +2002,7 @@ async def edit_project_form(
                 "created_at": att.created_at.isoformat(),
             }
         )
+    project_attachments = _dedupe_project_attachments(project_attachments)
 
     title_images = []
     stitch_sample_images = []
@@ -2250,11 +2308,9 @@ async def create_project(
                         if token in permanently_saved_tokens:
                             continue
 
-                        # Guard: Skip PDF assets in the gallery
-                        # they should be attachments only.
-                        if original_filename.startswith(
-                            "pdf_image_"
-                        ) or original_filename.startswith("pdf_page_"):
+                        # Guard: Skip rendered PDF pages in the gallery
+                        # (embedded images are allowed in the gallery).
+                        if original_filename.startswith("pdf_page_"):
                             continue
 
                         # Mock UploadFile for the service
@@ -2335,11 +2391,8 @@ async def create_project(
                 continue
 
             # Save as a regular attachment if it's NOT a gallery image
-            # or it's a PDF image/page. User specifically wants pdf_images
-            # and pdf_pages as attachments.
-            is_pdf_asset = original_filename.startswith(
-                "pdf_image_"
-            ) or original_filename.startswith("pdf_page_")
+            # or it's a rendered PDF page.
+            is_pdf_asset = original_filename.startswith("pdf_page_")
             if (
                 is_pdf_asset
                 or not content_type
@@ -2724,11 +2777,8 @@ async def update_project(
                 continue
 
             # Save as a regular attachment if it's NOT a gallery image
-            # or it's a PDF image/page. User specifically wants pdf_images
-            # and pdf_pages as attachments.
-            is_pdf_asset = original_filename.startswith(
-                "pdf_image_"
-            ) or original_filename.startswith("pdf_page_")
+            # or it's a rendered PDF page.
+            is_pdf_asset = original_filename.startswith("pdf_page_")
             if (
                 is_pdf_asset
                 or not content_type
