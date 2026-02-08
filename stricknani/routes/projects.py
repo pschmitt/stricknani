@@ -2113,7 +2113,7 @@ async def create_project(
             )
             db.add(step)
             await db.flush()  # Get step ID
-            step_images = step_data.get("image_urls")
+            step_images = step_data.get("images")
             if step_images:
                 # Handle both regular URLs and temporary pdf_image URLs
                 regular_urls = []
@@ -2535,7 +2535,7 @@ async def update_project(
                 db.add(step)
                 await db.flush()
 
-            step_images = step_data.get("image_urls")
+            step_images = step_data.get("images")
             if step_images:
                 # Handle both regular URLs and temporary pdf_image URLs
                 regular_urls = []

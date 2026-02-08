@@ -2526,16 +2526,19 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
             <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
         </h4>
         <div class="step-images mb-2 grid grid-cols-3 gap-2 pswp-gallery ${stepImages.length > 0 ? '' : 'hidden'}" data-pswp-gallery>
-            ${stepImages.map(url => `
-            <div class="relative" data-pending-url="${url}">
-                <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" data-pswp-delete="true" class="block">
-                    <img src="${url}" class="h-20 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" draggable="true" ondragstart="handleImageDragStart(event)">
-                </a>
-	                <button type="button" data-call="removePendingStepImage" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
-	                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-	                </button>
-            </div>
-            `).join('')}
+            ${stepImages.map(img => {
+                const url = typeof img === 'string' ? img : img.url;
+                return `
+                <div class="relative" data-pending-url="${url}">
+                    <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" data-pswp-delete="true" class="block">
+                        <img src="${url}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" draggable="true" ondragstart="handleImageDragStart(event)">
+                    </a>
+                    <button type="button" data-call="removePendingStepImage" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                `;
+            }).join('')}
         </div>
         <div class="step-image-dropzone border-2 border-dashed border-slate-300 dark:border-slate-600 p-4 sm:p-8 text-center transition-colors dark:border-slate-600 dark:hover:border-blue-400" data-step-id="">
             <input type="file" class="step-image-input hidden" accept="image/*" multiple data-step-id="" id="${inputId}">
@@ -2895,7 +2898,8 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                 stepsContainer.innerHTML = '';
                 data.steps.forEach((step, index) => {
                     if (typeof addStep === 'function') {
-                        addStep(step.title || `Step ${index + 1}`, step.description || '', step.images || []);
+                        const stepImages = step.images || step.image_urls || [];
+                        addStep(step.title || `Step ${index + 1}`, step.description || '', stepImages);
                     }
                 });
             }
