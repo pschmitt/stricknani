@@ -45,6 +45,7 @@ from stricknani.models import (
 )
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.services.images import get_image_dimensions
+from stricknani.services.projects.attachments import store_project_attachment
 from stricknani.services.projects.categories import (
     ensure_category,
     get_user_categories,
@@ -70,12 +71,10 @@ from stricknani.services.projects.yarns import (
 from stricknani.utils.files import (
     build_import_filename,
     compute_checksum,
-    create_pdf_thumbnail,
     create_thumbnail,
     delete_file,
     get_file_url,
     get_thumbnail_url,
-    save_bytes,
     save_uploaded_file,
 )
 from stricknani.utils.i18n import install_i18n
@@ -2501,7 +2500,6 @@ async def upload_attachment(
     current_user: User = Depends(require_auth),
 ) -> JSONResponse:
     """Upload an attachment to a project."""
-    logger = logging.getLogger(__name__)
     project = await db.get(Project, project_id)
     if not project:
         raise HTTPException(
@@ -2512,52 +2510,13 @@ async def upload_attachment(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    content = await file.read()
-    size_bytes = len(content)
-
-    # Save file
-    filename, original_filename = save_bytes(
-        content, file.filename or "file", project_id
-    )
-
-    thumbnail_url: str | None = None
-    content_type = file.content_type or "application/octet-stream"
-    width, height = None, None
-    thumb_path = (
-        config.MEDIA_ROOT
-        / "thumbnails"
-        / "projects"
-        / str(project_id)
-        / f"thumb_{Path(filename).stem}.jpg"
-    )
-    source_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
-    if content_type.startswith("image/"):
-        width, height = await get_image_dimensions(filename, project_id)
-        try:
-            await create_thumbnail(source_path, project_id, subdir="projects")
-            if thumb_path.exists():
-                thumbnail_url = get_thumbnail_url(
-                    filename, project_id, subdir="projects"
-                )
-        except Exception:
-            logger.info("Could not create attachment thumbnail for %s", filename)
-    elif content_type == "application/pdf":
-        try:
-            await asyncio.to_thread(
-                create_pdf_thumbnail, source_path, project_id, "projects"
-            )
-            if thumb_path.exists():
-                thumbnail_url = get_thumbnail_url(
-                    filename, project_id, subdir="projects"
-                )
-        except Exception:
-            logger.info("Could not create PDF thumbnail for %s", filename)
+    stored = await store_project_attachment(project_id, file)
 
     attachment = Attachment(
-        filename=filename,
-        original_filename=original_filename,
-        content_type=content_type,
-        size_bytes=size_bytes,
+        filename=stored.filename,
+        original_filename=stored.original_filename,
+        content_type=stored.content_type,
+        size_bytes=stored.size_bytes,
         project_id=project_id,
     )
     db.add(attachment)
@@ -2572,9 +2531,9 @@ async def upload_attachment(
             "content_type": attachment.content_type,
             "size_bytes": attachment.size_bytes,
             "url": get_file_url(attachment.filename, project_id, subdir="projects"),
-            "thumbnail_url": thumbnail_url,
-            "width": width,
-            "height": height,
+            "thumbnail_url": stored.thumbnail_url,
+            "width": stored.width,
+            "height": stored.height,
         }
     )
 
