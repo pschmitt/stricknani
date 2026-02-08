@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-prod_host="rofl-10.brkn.lol"
+PROD_HOST="rofl-10.brkn.lol"
 
 usage() {
   cat <<EOF
@@ -13,31 +13,6 @@ EOF
 }
 
 deploy() {
-  local commit
-  commit=false
-
-  # Parse arguments
-  while [[ -n $* ]]
-  do
-    case "$1" in
-      --commit|-c)
-        commit=1
-        shift
-        ;;
-      --help|-h)
-        usage
-        return 0
-        ;;
-      --)
-        shift
-        break
-        ;;
-      *)
-        break
-        ;;
-    esac
-  done
-
   # Change to nixos directory
   cd /etc/nixos || return 1
 
@@ -49,14 +24,14 @@ deploy() {
   fi
 
   # Rebuild with nixos
-  if ! nixos::rebuild --target "${prod_host}"
+  if ! zhj nixos::rebuild --target "$PROD_HOST"
   then
     echo "ERROR: nixos::rebuild failed" >&2
     return 3
   fi
 
   # Commit changes if requested
-  if [[ -n "${commit:-}" ]]
+  if [[ -n "${COMMIT:-}" ]]
   then
     if ! git diff --cached --quiet
     then
@@ -65,12 +40,13 @@ deploy() {
     fi
 
     git add flake.lock
-    git commit -m "chore: update stricknani"
+    git commit -m "${COMMIT_MSG:-chore: update stricknani}"
     git push
   fi
 }
 
 main() {
+  local COMMIT
 
   # global flags
   while [[ -n $* ]]
@@ -84,6 +60,10 @@ main() {
         set -x
         shift
         ;;
+      --commit|-c)
+        COMMIT=1
+        shift
+        ;;
       --)
         shift
         break
@@ -94,7 +74,6 @@ main() {
     esac
   done
 
-  # Default action is to deploy
   deploy "$@"
 }
 

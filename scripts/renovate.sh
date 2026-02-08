@@ -6,7 +6,6 @@ Usage: $(basename "$0") [OPTIONS]
 
 Options:
   --help, -h      Show this help message
-  --version, -v   Show Renovate version
   --token TOKEN   GitHub token (optional, uses gh CLI if not provided)
 EOF
 }
@@ -30,6 +29,9 @@ run_renovate() {
     return 1
   fi
 
+  # Change to git root directory for --platform local
+  cd "$(git rev-parse --show-toplevel)" || return 9
+
   echo "Running Renovate in $(pwd)..."
   echo "Using GitHub token: ${github_token:0:10}..."
 
@@ -41,9 +43,6 @@ run_renovate() {
 }
 
 main() {
-  # Change to git root directory for --platform local
-  cd "$(git rev-parse --show-toplevel)" || return 9
-
   # global flags
   while [[ -n $* ]]
   do

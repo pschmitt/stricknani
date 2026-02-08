@@ -172,13 +172,13 @@ alembic *ARGS:
 [positional-arguments]
 sql *args:
   #!/usr/bin/env sh
-  sqlite3 ./stricknani.db "$@"
+  sqlite3 ./stricknani.db {{ args }}
 
 # Deploy to production
 [positional-arguments]
-deploy *args='':
-  ./scripts/deploy.sh "$@"
+deploy *args:
+  ./scripts/deploy.sh {{ args }}
 
 # Run Renovate locally (requires GitHub token)
-renovate *args='':
-  ./scripts/renovate.sh "$@"
+renovate *args:
+  ./scripts/renovate.sh {{ args }}
