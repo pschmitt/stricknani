@@ -20,6 +20,7 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 
 | Priority | Status | Task                                                                                                 | Impact | Complexity | Primary Files                                                              |
 | -------- | ------ | ---------------------------------------------------------------------------------------------------- | ------ | ---------- | -------------------------------------------------------------------------- |
+| P1       | done   | ai import: use PDF-to-image conversion as fallback when direct PDF upload to OpenAI fails            | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/extractors/pdf.py` |
 | P0       | done   | bug: imported images from PDF are not saved when project is created (lost on save)                    | High   | Medium     | `stricknani/routes/projects.py`, `stricknani/services/projects/`           |
 | P0       | done   | AI import: Direct PDF upload support instead of local text extraction                                | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/routes/projects.py`   |
 | P1       | done   | AI import: Support for step images (investigate schema/model tweaks)                                 | Medium | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/models.py`  |

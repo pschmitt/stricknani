@@ -196,5 +196,42 @@ class PDFExtractor(ContentExtractor):
 
         return images
 
+    async def render_pages_as_images(
+        self, content: RawContent, max_pages: int = 15
+    ) -> list[bytes]:
+        """Render PDF pages as images for AI multimodal analysis.
+
+        Args:
+            content: Raw PDF content
+            max_pages: Maximum number of pages to render
+
+        Returns:
+            List of image bytes (JPG)
+        """
+        if not PYMUPDF_AVAILABLE:
+            logger.warning("PyMuPDF not available, cannot render PDF pages as images")
+            return []
+
+        pdf_bytes = (
+            content.content
+            if isinstance(content.content, bytes)
+            else content.content.encode()
+        )
+        images = []
+
+        try:
+            import fitz
+
+            with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+                for page_num in range(min(len(doc), max_pages)):
+                    page = doc.load_page(page_num)
+                    # Render page to a high-res image (2.0 zoom)
+                    pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+                    images.append(pix.tobytes("jpg"))
+        except Exception as exc:
+            logger.error("Failed to render PDF pages as images: %s", exc)
+
+        return images
+
 
 __all__ = ["PDFExtractor"]

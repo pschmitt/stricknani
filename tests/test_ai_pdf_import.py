@@ -138,3 +138,65 @@ async def test_ai_extractor_pdf_fallback_on_error() -> None:
     assert result.extras["pdf_images"][0] == b"fake-image-bytes"
     assert result.image_urls == []
     mock_client.files.create.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_ai_extractor_pdf_to_image_fallback() -> None:
+    from openai import BadRequestError
+
+    extractor = AIExtractor(api_key="test-key")
+
+    pdf_content = RawContent(
+        content=b"%PDF-1.4 fake",
+        content_type=ContentType.PDF,
+        metadata={"filename": "test.pdf"},
+    )
+
+    mock_completion = MagicMock()
+    mock_completion.choices = [
+        MagicMock(message=MagicMock(content='{"name": "Image Fallback Success"}'))
+    ]
+
+    with (
+        patch("stricknani.importing.extractors.ai.OPENAI_AVAILABLE", True),
+        patch("stricknani.importing.extractors.ai.AsyncOpenAI") as mock_openai_class,
+        patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.extract_images_from_pdf",
+            new=AsyncMock(return_value=[b"fake-local-image"]),
+        ),
+        patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.render_pages_as_images",
+            new=AsyncMock(return_value=[b"fake-rendered-page"]),
+        ),
+    ):
+        mock_client = mock_openai_class.return_value
+
+        # Simulate OpenAI error for PDF upload
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_client.files.create.side_effect = BadRequestError(
+            "input_file not supported",
+            response=mock_response,
+            body={"error": {"message": "input_file not supported"}},
+        )
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
+
+        result = await extractor.extract(pdf_content)
+
+    assert result.name == "Image Fallback Success"
+    assert "pdf_images" in result.extras
+    assert result.extras["pdf_images"][0] == b"fake-local-image"
+
+    # Verify multimodal chat completion was called with base64 image
+    mock_client.chat.completions.create.assert_called_once()
+    args, kwargs = mock_client.chat.completions.create.call_args
+    messages = kwargs["messages"]
+    user_content = messages[1]["content"]
+
+    found_image = False
+    for item in user_content:
+        if item["type"] == "image_url":
+            assert "data:image/jpeg;base64," in item["image_url"]["url"]
+            found_image = True
+    assert found_image
+

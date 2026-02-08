@@ -24,7 +24,7 @@ from stricknani.importing.models import (
 )
 
 if TYPE_CHECKING:
-    pass
+    from openai.types.chat import ChatCompletionContentPartParam
 
 logger = logging.getLogger("stricknani.imports")
 
@@ -321,14 +321,25 @@ class AIExtractor(ContentExtractor):
             return result
 
         except BadRequestError as exc:
-            # Fallback to local text extraction if the model/account doesn't support
+            # Fallback to PDF-to-image conversion if the model/account doesn't support
             # PDF upload
             if "application/pdf" in str(exc) or "input_file" in str(exc):
                 logger.warning(
                     "OpenAI direct PDF upload not supported, "
-                    "falling back to text extraction: %s",
+                    "falling back to page rendering: %s",
                     exc,
                 )
+                page_images = await pdf_extractor.render_pages_as_images(content)
+                if page_images:
+                    result = await self._extract_from_images(
+                        page_images, hints, local_images=local_images
+                    )
+                    # Ensure original local images are still in extras
+                    if local_images:
+                        result.extras["pdf_images"] = local_images
+                    return result
+
+                # Absolute fallback to text extraction if rendering failed
                 return await self._extract_from_pdf_fallback(content, hints)
             raise
         except Exception as exc:
@@ -347,6 +358,78 @@ class AIExtractor(ContentExtractor):
                     logger.warning(
                         "Failed to delete PDF from OpenAI %s: %s", file_id, exc
                     )
+
+    async def _extract_from_images(
+        self,
+        image_list: list[bytes],
+        hints: dict[str, Any] | None,
+        local_images: list[bytes] | None = None,
+    ) -> ExtractedData:
+        """Extract data from multiple images using vision API."""
+        client = AsyncOpenAI(api_key=self.api_key)
+
+        content_list: list[ChatCompletionContentPartParam] = []
+
+        # System prompt and base user prompt
+        system_prompt = self._build_system_prompt()
+
+        image_hints = ""
+        if local_images:
+            image_hints = (
+                "\n\nThe following images were also extracted from the source "
+                "for reference:\n"
+                + "\n".join(f"- Image {i + 1}" for i in range(len(local_images)))
+                + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. "
+                "in the step 'images' field if they are relevant to a "
+                "specific step."
+            )
+
+        user_prompt = (
+            "Analyze the attached images (which are pages from a knitting pattern) "
+            "and extract all available knitting pattern information. "
+            "Return the data as JSON."
+            f"{image_hints}"
+        )
+
+        content_list.append({"type": "text", "text": user_prompt})
+
+        # Process and add each image (up to a limit to stay within token limits)
+        # OpenAI supports up to 10 images in some models, but we'll be conservative.
+        for _i, image_bytes in enumerate(image_list[:10]):
+            processed_image = await self._prepare_image(image_bytes)
+            base64_image = base64.b64encode(processed_image).decode("utf-8")
+            content_list.append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}",
+                    },
+                }
+            )
+
+        try:
+            response = await client.chat.completions.create(
+                model=self.model if "mini" not in self.model else "gpt-4o",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": content_list,
+                    },
+                ],
+                max_tokens=self.max_tokens,
+                temperature=self.temperature,
+                response_format={"type": "json_object"},
+            )
+
+            raw_content_str = response.choices[0].message.content or "{}"
+            return self._parse_ai_response(raw_content_str)
+
+        except Exception as exc:
+            raise ExtractorError(
+                f"AI multi-image extraction failed: {exc}",
+                extractor_name=self.name,
+            ) from exc
 
     async def _extract_from_pdf_fallback(
         self,
