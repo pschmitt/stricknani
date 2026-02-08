@@ -1,18 +1,12 @@
-{% extends "errors/base.html" %}
-
-{% block title %}401 - {{ _('Unauthorized') }} - {{ _('Stricknani') }}{% endblock %}
-
-{% block error_icon %}mdi-lock-outline{% endblock %}
-{% block error_icon_color %}text-error{% endblock %}
-{% block error_code %}401{% endblock %}
-{% block error_title %}{{ _('Members only') }}{% endblock %}
-{% block error_message %}
-    {{ _("You need to be signed in to access this area of Stricknani. Please log in to continue your knitting journey.") }}
-{% endblock %}
-
-{% block extra_actions %}
+{% extends "errors/base.html" %} {% block title %}401 - {{ _('Unauthorized') }}
+- {{ _('Stricknani') }}{% endblock %} {% block error_icon %}mdi-lock-outline{%
+endblock %} {% block error_icon_color %}text-error{% endblock %} {% block
+error_code %}401{% endblock %} {% block error_title %}{{ _('Members only') }}{%
+endblock %} {% block error_message %} {{ _("You need to be signed in to access
+this area of Stricknani. Please log in to continue your knitting journey.") }}
+{% endblock %} {% block extra_actions %}
 <a href="/login" class="btn btn-ghost">
-    <span class="mdi mdi-login mr-2"></span>
-    {{ _('Login') }}
+  <span class="mdi mdi-login mr-2"></span>
+  {{ _('Login') }}
 </a>
 {% endblock %}

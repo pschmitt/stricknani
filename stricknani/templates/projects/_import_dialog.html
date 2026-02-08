@@ -1,24 +1,17 @@
-{% set import_form_id = 'importForm' %}
-{% set import_action = '/projects/import' %}
-{% set import_url_label = _('Pattern URL') %}
-{% set import_url_placeholder = _('e.g. https://www.garnstudio.com/pattern.php?id=...') %}
-{% set import_url_value = project.link if project and project.link else '' %}
-{% set import_description = _("Paste a URL from Ravelry, a blog, or any knitting site. We'll try to extract all the
-details for you.") %}
-{% set import_analyzing_description = _('We are analyzing the pattern and extracting details. This usually takes 10-20
-seconds.') %}
-{% set import_storage_key = 'importedData' %}
-{% set import_redirect_url = '/projects/new' %}
-{% set import_populate_fn = 'populateProjectForm' %}
-{% set import_project_id = project.id if project else none %}
-{% set import_use_ai = has_openai_key %}
-{% set import_ai_notice = _('AI-powered extraction enabled') if has_openai_key else '' %}
-{% set import_attachments = [] %}
-{% if project and project.attachments %}
-{% for att in project.attachments %}
-{% if att.content_type == 'application/pdf' or att.content_type.startswith('image/') %}
-{% do import_attachments.append(att) %}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% include "shared/_import_dialog.html" %}
+{% set import_form_id = 'importForm' %} {% set import_action =
+'/projects/import' %} {% set import_url_label = _('Pattern URL') %} {% set
+import_url_placeholder = _('e.g. https://www.garnstudio.com/pattern.php?id=...')
+%} {% set import_url_value = project.link if project and project.link else '' %}
+{% set import_description = _("Paste a URL from Ravelry, a blog, or any knitting
+site. We'll try to extract all the details for you.") %} {% set
+import_analyzing_description = _('We are analyzing the pattern and extracting
+details. This usually takes 10-20 seconds.') %} {% set import_storage_key =
+'importedData' %} {% set import_redirect_url = '/projects/new' %} {% set
+import_populate_fn = 'populateProjectForm' %} {% set import_project_id =
+project.id if project else none %} {% set import_use_ai = has_openai_key %} {%
+set import_ai_notice = _('AI-powered extraction enabled') if has_openai_key else
+'' %} {% set import_attachments = [] %} {% if project and project.attachments %}
+{% for att in project.attachments %} {% if att.content_type == 'application/pdf'
+or att.content_type.startswith('image/') %} {% do import_attachments.append(att)
+%} {% endif %} {% endfor %} {% endif %} {% include "shared/_import_dialog.html"
+%}

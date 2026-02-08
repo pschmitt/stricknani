@@ -17,16 +17,16 @@
   };
 
   const getCsrfToken = () =>
-    document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") ||
-    "";
+    document
+      .querySelector('meta[name="csrf-token"]')
+      ?.getAttribute("content") || "";
 
   const toastVariants = {
     success:
       "bg-emerald-500/90 text-white border border-emerald-200/30 shadow-[0_14px_30px_-18px_rgba(16,185,129,0.8)]",
     error:
       "bg-red-600/90 text-white border border-red-200/30 shadow-[0_14px_30px_-18px_rgba(239,68,68,0.8)]",
-    info:
-      "bg-slate-900/90 text-white border border-slate-500/20 shadow-[0_14px_30px_-18px_rgba(15,23,42,0.8)]",
+    info: "bg-slate-900/90 text-white border border-slate-500/20 shadow-[0_14px_30px_-18px_rgba(15,23,42,0.8)]",
   };
   const toastAccents = {
     success: "bg-emerald-200/70",
@@ -43,7 +43,9 @@
 
   const getToastContainer = () => {
     const openDialogs = Array.from(document.querySelectorAll("dialog[open]"));
-    const activeDialog = openDialogs.length ? openDialogs[openDialogs.length - 1] : null;
+    const activeDialog = openDialogs.length
+      ? openDialogs[openDialogs.length - 1]
+      : null;
     if (!activeDialog) {
       return getBaseToastContainer();
     }
@@ -159,7 +161,10 @@
         btn.classList.add("btn-success", "bg-success/10");
       }
 
-      window.showToast?.(getI18n("copiedToClipboard", "Copied to clipboard"), "success");
+      window.showToast?.(
+        getI18n("copiedToClipboard", "Copied to clipboard"),
+        "success",
+      );
 
       setTimeout(() => {
         if (!btn) {
@@ -176,7 +181,8 @@
 
   const extractErrorMessage = async (response, fallback) => {
     const defaultMessage =
-      fallback || getI18n("somethingWentWrong", "Something went wrong. Please try again");
+      fallback ||
+      getI18n("somethingWentWrong", "Something went wrong. Please try again");
     if (!response) {
       return defaultMessage;
     }
@@ -286,7 +292,13 @@
     button.appendChild(document.createTextNode(text));
   };
 
-  window.confirmAction = (title, message, onConfirm, onCancel = null, options = {}) => {
+  window.confirmAction = (
+    title,
+    message,
+    onConfirm,
+    onCancel = null,
+    options = {},
+  ) => {
     const dialog = document.getElementById("confirmationDialog");
     const titleEl = document.getElementById("confirmationTitle");
     const messageEl = document.getElementById("confirmationMessage");
@@ -396,7 +408,9 @@
       dropzone.classList.toggle("cursor-wait", isUploading);
       dropzone.setAttribute("aria-busy", String(Boolean(isUploading)));
       if (instructions) {
-        instructions.textContent = isUploading ? uploadingMessage : getEnabledText();
+        instructions.textContent = isUploading
+          ? uploadingMessage
+          : getEnabledText();
       }
     };
 
@@ -415,7 +429,10 @@
         ? fileList.filter((file) => file.type.startsWith("image/"))
         : fileList;
       if (!acceptedFiles.length) {
-        window.showToast?.(getI18n("onlyImages", "Only image files are supported"), "error");
+        window.showToast?.(
+          getI18n("onlyImages", "Only image files are supported"),
+          "error",
+        );
         return;
       }
 
@@ -455,14 +472,18 @@
   };
 
   window.previewMarkdown = async (source) => {
-    const textarea = typeof source === "string" ? document.getElementById(source) : source;
+    const textarea =
+      typeof source === "string" ? document.getElementById(source) : source;
     if (!textarea) {
       return;
     }
 
     const content = textarea.value;
     if (!content.trim()) {
-      window.showToast?.(getI18n("nothingToPreview", "Nothing to preview"), "info");
+      window.showToast?.(
+        getI18n("nothingToPreview", "Nothing to preview"),
+        "info",
+      );
       return;
     }
 
@@ -506,7 +527,8 @@
   };
 
   window.toggleTheme = () => {
-    const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
+    const currentTheme =
+      document.documentElement.getAttribute("data-theme") || "light";
     const newTheme = currentTheme === "dark" ? "light" : "dark";
     window.setTheme(newTheme);
   };
@@ -561,7 +583,8 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     // Theme UI init.
-    const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
+    const currentTheme =
+      document.documentElement.getAttribute("data-theme") || "light";
     window.updateThemeUI?.(currentTheme);
 
     // Toast via query param.
@@ -572,7 +595,8 @@
       const entry = toastMessages[toastKey];
       const message = typeof entry === "string" ? entry : entry?.message;
       if (message) {
-        const variant = typeof entry === "string" ? "success" : entry?.variant || "success";
+        const variant =
+          typeof entry === "string" ? "success" : entry?.variant || "success";
         window.showToast?.(message, variant);
 
         const url = new URL(window.location.href);
@@ -599,7 +623,10 @@
       if (kind === "pdf") {
         window.openPdfViewer(url, name);
       } else if (kind === "image") {
-        if (row.hasAttribute("data-pswp-open-index") && window.openPhotoSwipeIndex) {
+        if (
+          row.hasAttribute("data-pswp-open-index") &&
+          window.openPhotoSwipeIndex
+        ) {
           window.openPhotoSwipeIndex(row);
         } else {
           window.openImageViewer(url, name);
@@ -697,7 +724,9 @@
 
       const args = parseCallArgs(rawArgs);
       if (args) {
-        const resolvedArgs = args.map((arg) => resolveCallArg(arg, element, eventObj));
+        const resolvedArgs = args.map((arg) =>
+          resolveCallArg(arg, element, eventObj),
+        );
         fn(...resolvedArgs);
       } else {
         if (rawArgs) {
@@ -714,7 +743,12 @@
         return;
       }
       event.preventDefault();
-      invokeCall(el, event, el.getAttribute("data-call"), el.getAttribute("data-call-args"));
+      invokeCall(
+        el,
+        event,
+        el.getAttribute("data-call"),
+        el.getAttribute("data-call-args"),
+      );
     });
 
     document.addEventListener("keydown", (event) => {
@@ -738,7 +772,12 @@
       }
 
       event.preventDefault();
-      invokeCall(el, event, el.getAttribute("data-call"), el.getAttribute("data-call-args"));
+      invokeCall(
+        el,
+        event,
+        el.getAttribute("data-call"),
+        el.getAttribute("data-call-args"),
+      );
     });
 
     document.addEventListener("input", (event) => {
@@ -746,7 +785,12 @@
       if (!el) {
         return;
       }
-      invokeCall(el, event, el.getAttribute("data-call-input"), el.getAttribute("data-call-input-args"));
+      invokeCall(
+        el,
+        event,
+        el.getAttribute("data-call-input"),
+        el.getAttribute("data-call-input-args"),
+      );
     });
 
     document.addEventListener("change", (event) => {
@@ -754,11 +798,18 @@
       if (!el) {
         return;
       }
-      invokeCall(el, event, el.getAttribute("data-call-change"), el.getAttribute("data-call-change-args"));
+      invokeCall(
+        el,
+        event,
+        el.getAttribute("data-call-change"),
+        el.getAttribute("data-call-change-args"),
+      );
     });
 
     document.addEventListener("keydown", (event) => {
-      const row = document.activeElement?.closest?.('[data-action="open-attachment"]');
+      const row = document.activeElement?.closest?.(
+        '[data-action="open-attachment"]',
+      );
       if (!row) {
         return;
       }
@@ -774,7 +825,10 @@
       if (kind === "pdf") {
         window.openPdfViewer(url, name);
       } else if (kind === "image") {
-        if (row.hasAttribute("data-pswp-open-index") && window.openPhotoSwipeIndex) {
+        if (
+          row.hasAttribute("data-pswp-open-index") &&
+          window.openPhotoSwipeIndex
+        ) {
           window.openPhotoSwipeIndex(row);
         } else {
           window.openImageViewer(url, name);
@@ -784,20 +838,24 @@
       }
     });
 
-    document.getElementById("pdfViewerDialog")?.addEventListener("close", () => {
-      const frame = document.getElementById("pdfViewerFrame");
-      if (frame) {
-        frame.src = "about:blank";
-      }
-    });
+    document
+      .getElementById("pdfViewerDialog")
+      ?.addEventListener("close", () => {
+        const frame = document.getElementById("pdfViewerFrame");
+        if (frame) {
+          frame.src = "about:blank";
+        }
+      });
 
-    document.getElementById("imageViewerDialog")?.addEventListener("close", () => {
-      const image = document.getElementById("imageViewerImage");
-      if (image) {
-        image.src = "about:blank";
-        image.alt = "";
-      }
-    });
+    document
+      .getElementById("imageViewerDialog")
+      ?.addEventListener("close", () => {
+        const image = document.getElementById("imageViewerImage");
+        if (image) {
+          image.src = "about:blank";
+          image.alt = "";
+        }
+      });
 
     // Close daisyUI dropdowns on Escape and on outside click.
     const closeDropdowns = () => {

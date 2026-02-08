@@ -1,42 +1,36 @@
-{% extends "base.html" %}
-
-{% block navbar %}
-{% include "shared/unified_navbar.html" %}
-{% endblock %}
-
-{% block content %}
-{% block list_styles %}{% endblock %}
+{% extends "base.html" %} {% block navbar %} {% include
+"shared/unified_navbar.html" %} {% endblock %} {% block content %} {% block
+list_styles %}{% endblock %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-    <div class="flex flex-col gap-8">
-        <!-- Filters & Search -->
-        {% block list_filters_container %}
-        <div
-            class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="w-full md:flex-1">
-                {% block list_filters %}{% endblock %}
-            </div>
-            <!-- Optional: Sort or View toggles could go here -->
-            <div class="text-sm text-base-content/50 font-medium">
-                {% block list_stats %}{% endblock %}
-            </div>
-        </div>
-        {% endblock %}
-
-        <!-- Content Grid -->
-        <div {% block list_container_attrs %}id="list-content" {% endblock %}>
-            {% block list_content %}{% endblock %}
-        </div>
-
-        {% block list_extra %}{% endblock %}
+  <div class="flex flex-col gap-8">
+    <!-- Filters & Search -->
+    {% block list_filters_container %}
+    <div
+      class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-4 flex flex-col md:flex-row items-center justify-between gap-4"
+    >
+      <div class="w-full md:flex-1">{% block list_filters %}{% endblock %}</div>
+      <!-- Optional: Sort or View toggles could go here -->
+      <div class="text-sm text-base-content/50 font-medium">
+        {% block list_stats %}{% endblock %}
+      </div>
     </div>
+    {% endblock %}
+
+    <!-- Content Grid -->
+    <div {% block list_container_attrs %}id="list-content" {% endblock %}>
+      {% block list_content %}{% endblock %}
+    </div>
+
+    {% block list_extra %}{% endblock %}
+  </div>
 </div>
 {% block page_scripts %}
 <script>
-    window.STRICKNANI_I18N = window.STRICKNANI_I18N || {};
-    window.STRICKNANI_I18N.drop_to_import = '{{ _("Drop to Import") }}';
-    window.STRICKNANI_I18N.drop_files_hint = '{{ _("Release to start AI analysis") }}';
+  window.STRICKNANI_I18N = window.STRICKNANI_I18N || {};
+  window.STRICKNANI_I18N.drop_to_import = '{{ _("Drop to Import") }}';
+  window.STRICKNANI_I18N.drop_files_hint =
+    '{{ _("Release to start AI analysis") }}';
 </script>
 <script src="{{ url_for('static', path='js/features/list_drag_drop.js') }}"></script>
 <script src="{{ url_for('static', path='js/features/context_menu.js') }}"></script>
-{% endblock %}
-{% endblock %}
+{% endblock %} {% endblock %}

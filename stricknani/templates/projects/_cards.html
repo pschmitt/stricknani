@@ -1,144 +1,189 @@
-{% import "macros/cards.html" as cards %}
-
-{% if projects %}
+{% import "macros/cards.html" as cards %} {% if projects %}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for project in projects %}
-    {% if project.yarn_count and project.yarn_names %}
-    {% if project.yarn_count == 1 %}
-    {% set tooltip_text = _('%(count)s linked yarn: %(names)s') % {'count': project.yarn_count, 'names':
-    project.yarn_names|join(', ')} %}
-    {% else %}
-    {% set tooltip_text = _('%(count)s linked yarns: %(names)s') % {'count': project.yarn_count, 'names':
-    project.yarn_names|join(', ')} %}
-    {% endif %}
-    {% else %}
-    {% set tooltip_text = _('No linked yarns') %}
-    {% endif %}
-    {% set card_attrs = 'data-project-card data-project-id="%s" title="%s"' % (project.id, tooltip_text) %}
-    {% call(section) cards.list_card(data_attrs=card_attrs) %}
-    {% if section == 'media' %}
-    <a href="/projects/{{ project.id }}" class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
-        title="{{ tooltip_text }}">
-        {% if project.preview_images %}
-        {% if project.preview_images|length == 1 %}
-        <div class="relative h-full w-full">
-            <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}"
-                class="h-full w-full object-cover" loading="lazy">
-        </div>
-        {% elif project.preview_images|length == 2 %}
-        <div class="grid grid-cols-2 h-full w-full gap-0.5">
-            <div class="relative h-full w-full">
-                <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}"
-                    class="h-full w-full object-cover">
-            </div>
-            <div class="relative h-full w-full">
-                <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}"
-                    class="h-full w-full object-cover">
-            </div>
-        </div>
-        {% else %}
-        <div class="grid grid-cols-3 grid-rows-2 h-full w-full gap-0.5">
-            <div class="relative col-span-2 row-span-2 h-full w-full">
-                <img src="{{ project.preview_images[0].url }}" alt="{{ project.preview_images[0].alt }}"
-                    class="h-full w-full object-cover">
-            </div>
-            <div class="relative col-span-1 row-span-1 h-full w-full">
-                <img src="{{ project.preview_images[1].url }}" alt="{{ project.preview_images[1].alt }}"
-                    class="h-full w-full object-cover">
-            </div>
-            <div class="relative col-span-1 row-span-1 h-full w-full">
-                <img src="{{ project.preview_images[2].url }}" alt="{{ project.preview_images[2].alt }}"
-                    class="h-full w-full object-cover">
-            </div>
-        </div>
-        {% endif %}
-        {% else %}
-        <div class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center opacity-50">
-            <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
-            <span class="text-sm font-semibold line-clamp-2">{{ project.name }}</span>
-            <span class="sr-only">{{ _('Open project details') }}</span>
-        </div>
-        {% endif %}
-        <span class="sr-only">{{ _('Open project details for %(name)s') % {'name': project.name} }}</span>
-    </a>
-    <div class="absolute top-3 right-3 z-10">
-        <div class="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-            <a href="/projects/{{ project.id }}/edit"
-               class="btn btn-circle bg-black/20 backdrop-blur-md border-white/20 text-white hover:bg-white hover:text-primary transition-all h-9 w-9 min-h-0 text-lg shadow-sm"
-               title="{{ _('Edit %(name)s') % {'name': project.name} }}">
-                <span class="mdi mdi-pencil" aria-hidden="true"></span>
-                <span class="sr-only">{{ _('Edit') }}</span>
-            </a>
-        </div>
+  {% for project in projects %} {% if project.yarn_count and project.yarn_names
+  %} {% if project.yarn_count == 1 %} {% set tooltip_text = _('%(count)s linked
+  yarn: %(names)s') % {'count': project.yarn_count, 'names':
+  project.yarn_names|join(', ')} %} {% else %} {% set tooltip_text =
+  _('%(count)s linked yarns: %(names)s') % {'count': project.yarn_count,
+  'names': project.yarn_names|join(', ')} %} {% endif %} {% else %} {% set
+  tooltip_text = _('No linked yarns') %} {% endif %} {% set card_attrs =
+  'data-project-card data-project-id="%s" title="%s"' % (project.id,
+  tooltip_text) %} {% call(section) cards.list_card(data_attrs=card_attrs) %} {%
+  if section == 'media' %}
+  <a
+    href="/projects/{{ project.id }}"
+    class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
+    title="{{ tooltip_text }}"
+  >
+    {% if project.preview_images %} {% if project.preview_images|length == 1 %}
+    <div class="relative h-full w-full">
+      <img
+        src="{{ project.preview_images[0].url }}"
+        alt="{{ project.preview_images[0].alt }}"
+        class="h-full w-full object-cover"
+        loading="lazy"
+      />
     </div>
-    {% elif section == 'body' %}
-    <div class="flex flex-col h-full">
-        <div class="flex justify-between items-start mb-3">
-            <h3 class="card-title min-w-0 flex-1 flex items-center gap-2">
-                <a href="/projects/{{ project.id }}" class="hover:text-primary block truncate" title="{{ project.name }}">
-                    {{ project.name }}
-                </a>
-                <span id="project-{{ project.id }}-favorite-heart" class="shrink-0">
-                    {% if project.is_favorite %}
-                    <span class="mdi mdi-heart text-pink-500 text-sm" title="{{ _('In favorites') }}"></span>
-                    {% endif %}
-                </span>
-                {% if project.is_ai_enhanced %}
-                <span class="badge badge-ghost border-primary/20 text-primary/70 font-black text-[8px] tracking-tighter uppercase px-1.5 h-4 min-h-0 shrink-0" title="{{ _('AI Enhanced') }}">AI</span>
-                {% endif %}
-            </h3>
-            {% if project.category and project.category != 'None' %}
-            <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
-               class="badge border {{ project.category|category_color }} shrink-0 ml-2 font-medium py-2.5">
-                {{ _(project.category) }}
-            </a>
-            {% endif %}
-        </div>
-        {% if project.tags %}
-        <div class="mb-4 flex flex-wrap gap-2 -ml-2">
-            {% for tag in project.tags %}
-            <a href="/projects?search={{ ('#' ~ tag)|urlencode }}"
-               class="badge badge-sm border-base-300 bg-base-200/50 text-base-content/70 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all duration-200">#{{ tag }}</a>
-            {% endfor %}
-        </div>
-        {% endif %}
+    {% elif project.preview_images|length == 2 %}
+    <div class="grid grid-cols-2 h-full w-full gap-0.5">
+      <div class="relative h-full w-full">
+        <img
+          src="{{ project.preview_images[0].url }}"
+          alt="{{ project.preview_images[0].alt }}"
+          class="h-full w-full object-cover"
+        />
+      </div>
+      <div class="relative h-full w-full">
+        <img
+          src="{{ project.preview_images[1].url }}"
+          alt="{{ project.preview_images[1].alt }}"
+          class="h-full w-full object-cover"
+        />
+      </div>
     </div>
-    {% elif section == 'context_menu' %}
-    <ul class="menu p-2 bg-base-100 rounded-box border border-base-200 shadow-xl">
-        <li id="project-{{ project.id }}-favorite-toggle" data-favorite-toggle>
-            {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
-            {% include "projects/_favorite_toggle.html" %}
-            {% endwith %}
-        </li>
-        <li>
-            <a href="/projects/{{ project.id }}/edit">
-                <span class="mdi mdi-pencil text-lg"></span>
-                {{ _('Edit') }}
-            </a>
-        </li>
-        <li>
-            <button type="button" data-call="printProject" data-call-args='[{{ project.id }}]'>
-                <span class="mdi mdi-printer text-lg"></span>
-                {{ _('Print') }}
-            </button>
-        </li>
-        <li>
-            <a href="/projects/{{ project.id }}/edit?import=1">
-                <span class="mdi mdi-download text-lg"></span>
-                {{ _('Re-import') }}
-            </a>
-        </li>
-        <li>
-            <button type="button" data-action="open-dialog" data-dialog-id="deleteProjectDialog" data-project-id="{{ project.id }}" data-project-name="{{ project.name }}" class="text-error">
-                <span class="mdi mdi-delete-outline text-lg"></span>
-                {{ _('Delete') }}
-            </button>
-        </li>
-    </ul>
+    {% else %}
+    <div class="grid grid-cols-3 grid-rows-2 h-full w-full gap-0.5">
+      <div class="relative col-span-2 row-span-2 h-full w-full">
+        <img
+          src="{{ project.preview_images[0].url }}"
+          alt="{{ project.preview_images[0].alt }}"
+          class="h-full w-full object-cover"
+        />
+      </div>
+      <div class="relative col-span-1 row-span-1 h-full w-full">
+        <img
+          src="{{ project.preview_images[1].url }}"
+          alt="{{ project.preview_images[1].alt }}"
+          class="h-full w-full object-cover"
+        />
+      </div>
+      <div class="relative col-span-1 row-span-1 h-full w-full">
+        <img
+          src="{{ project.preview_images[2].url }}"
+          alt="{{ project.preview_images[2].alt }}"
+          class="h-full w-full object-cover"
+        />
+      </div>
+    </div>
+    {% endif %} {% else %}
+    <div
+      class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center opacity-50"
+    >
+      <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
+      <span class="text-sm font-semibold line-clamp-2">{{ project.name }}</span>
+      <span class="sr-only">{{ _('Open project details') }}</span>
+    </div>
     {% endif %}
-    {% endcall %}
-    {% endfor %}
+    <span class="sr-only"
+      >{{ _('Open project details for %(name)s') % {'name': project.name}
+      }}</span
+    >
+  </a>
+  <div class="absolute top-3 right-3 z-10">
+    <div
+      class="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300"
+    >
+      <a
+        href="/projects/{{ project.id }}/edit"
+        class="btn btn-circle bg-black/20 backdrop-blur-md border-white/20 text-white hover:bg-white hover:text-primary transition-all h-9 w-9 min-h-0 text-lg shadow-sm"
+        title="{{ _('Edit %(name)s') % {'name': project.name} }}"
+      >
+        <span class="mdi mdi-pencil" aria-hidden="true"></span>
+        <span class="sr-only">{{ _('Edit') }}</span>
+      </a>
+    </div>
+  </div>
+  {% elif section == 'body' %}
+  <div class="flex flex-col h-full">
+    <div class="flex justify-between items-start mb-3">
+      <h3 class="card-title min-w-0 flex-1 flex items-center gap-2">
+        <a
+          href="/projects/{{ project.id }}"
+          class="hover:text-primary block truncate"
+          title="{{ project.name }}"
+        >
+          {{ project.name }}
+        </a>
+        <span id="project-{{ project.id }}-favorite-heart" class="shrink-0">
+          {% if project.is_favorite %}
+          <span
+            class="mdi mdi-heart text-pink-500 text-sm"
+            title="{{ _('In favorites') }}"
+          ></span>
+          {% endif %}
+        </span>
+        {% if project.is_ai_enhanced %}
+        <span
+          class="badge badge-ghost border-primary/20 text-primary/70 font-black text-[8px] tracking-tighter uppercase px-1.5 h-4 min-h-0 shrink-0"
+          title="{{ _('AI Enhanced') }}"
+          >AI</span
+        >
+        {% endif %}
+      </h3>
+      {% if project.category and project.category != 'None' %}
+      <a
+        href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
+        class="badge border {{ project.category|category_color }} shrink-0 ml-2 font-medium py-2.5"
+      >
+        {{ _(project.category) }}
+      </a>
+      {% endif %}
+    </div>
+    {% if project.tags %}
+    <div class="mb-4 flex flex-wrap gap-2 -ml-2">
+      {% for tag in project.tags %}
+      <a
+        href="/projects?search={{ ('#' ~ tag)|urlencode }}"
+        class="badge badge-sm border-base-300 bg-base-200/50 text-base-content/70 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all duration-200"
+        >#{{ tag }}</a
+      >
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% elif section == 'context_menu' %}
+  <ul class="menu p-2 bg-base-100 rounded-box border border-base-200 shadow-xl">
+    <li id="project-{{ project.id }}-favorite-toggle" data-favorite-toggle>
+      {% with project_id=project.id, is_favorite=project.is_favorite,
+      variant='detail', extra_classes='flex justify-start gap-2' %} {% include
+      "projects/_favorite_toggle.html" %} {% endwith %}
+    </li>
+    <li>
+      <a href="/projects/{{ project.id }}/edit">
+        <span class="mdi mdi-pencil text-lg"></span>
+        {{ _('Edit') }}
+      </a>
+    </li>
+    <li>
+      <button
+        type="button"
+        data-call="printProject"
+        data-call-args="[{{ project.id }}]"
+      >
+        <span class="mdi mdi-printer text-lg"></span>
+        {{ _('Print') }}
+      </button>
+    </li>
+    <li>
+      <a href="/projects/{{ project.id }}/edit?import=1">
+        <span class="mdi mdi-download text-lg"></span>
+        {{ _('Re-import') }}
+      </a>
+    </li>
+    <li>
+      <button
+        type="button"
+        data-action="open-dialog"
+        data-dialog-id="deleteProjectDialog"
+        data-project-id="{{ project.id }}"
+        data-project-name="{{ project.name }}"
+        class="text-error"
+      >
+        <span class="mdi mdi-delete-outline text-lg"></span>
+        {{ _('Delete') }}
+      </button>
+    </li>
+  </ul>
+  {% endif %} {% endcall %} {% endfor %}
 </div>
-{% else %}
-{% include "projects/_empty_state.html" %}
-{% endif %}
+{% else %} {% include "projects/_empty_state.html" %} {% endif %}

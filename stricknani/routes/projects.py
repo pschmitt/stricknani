@@ -489,8 +489,8 @@ async def import_pattern(
     import_type: Annotated[str, Form(alias="type")] = "url",
     url: Annotated[str | None, Form()] = None,
     text: Annotated[str | None, Form()] = None,
-    files: list[UploadFile] = [],
-    attachment_ids: Annotated[list[int], Form()] = [],
+    files: list[UploadFile] | None = None,
+    attachment_ids: Annotated[list[int] | None, Form()] = None,
     use_ai: Annotated[bool, Form()] = False,
     project_id: Annotated[int | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
@@ -502,11 +502,17 @@ async def import_pattern(
         import_type: Type of import ('url', 'file', or 'text')
         url: The URL to import from (when type='url')
         text: Plain text to parse (when type='text')
-        file: Uploaded file (when type='file')
+        files: Uploaded files (when type='file')
+        attachment_ids: IDs of existing attachments to import
         use_ai: If True, use AI-powered extraction (requires OPENAI_API_KEY)
+        project_id: Optional project ID to import into
+        db: Database session
         current_user: Authenticated user
     """
     import os
+
+    files = files or []
+    attachment_ids = attachment_ids or []
 
     trace: ImportTrace | None = None
     if config.IMPORT_TRACE_ENABLED:
@@ -526,7 +532,7 @@ async def import_pattern(
     try:
         content_text = ""
         source_url = None
-        source_contents: list[dict] = [] # Temporary storage before RawContent creation
+        source_contents: list[dict[str, Any]] = []  # Temporary storage
 
         # Helper to simplify content type detection
         from stricknani.importing.models import ContentType, RawContent
@@ -534,7 +540,9 @@ async def import_pattern(
         def get_content_type(mime: str | None, filename: str | None) -> ContentType:
             mime = mime or ""
             filename = filename or ""
-            if mime.startswith("image/") or filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".gif")):
+            if mime.startswith("image/") or filename.lower().endswith(
+                (".jpg", ".jpeg", ".png", ".webp", ".gif")
+            ):
                 return ContentType.IMAGE
             if mime == "application/pdf" or filename.lower().endswith(".pdf"):
                 return ContentType.PDF
@@ -544,16 +552,18 @@ async def import_pattern(
         for f in files:
             content = await f.read()
             c_type = get_content_type(f.content_type, f.filename)
-            source_contents.append({
-                "content": content,
-                "content_type": c_type,
-                "filename": f.filename,
-                "original_mime": f.content_type
-            })
+            source_contents.append(
+                {
+                    "content": content,
+                    "content_type": c_type,
+                    "filename": f.filename,
+                    "original_mime": f.content_type,
+                }
+            )
 
         # Collect attachments
         if attachment_ids:
-             # Fetch attachments ensuring they belong to user's project
+            # Fetch attachments ensuring they belong to user's project
             # optimizing with one query
             res = await db.execute(
                 select(Attachment)
@@ -564,25 +574,24 @@ async def import_pattern(
                 )
             )
             attachments = res.scalars().all()
-            
+
             for att in attachments:
                 file_path = (
-                    config.MEDIA_ROOT
-                    / "projects"
-                    / str(att.project_id)
-                    / att.filename
+                    config.MEDIA_ROOT / "projects" / str(att.project_id) / att.filename
                 )
                 if file_path.exists():
                     content = file_path.read_bytes()
                     c_type = get_content_type(att.content_type, att.original_filename)
-                    source_contents.append({
-                        "content": content,
-                        "content_type": c_type,
-                        "filename": att.original_filename,
-                        "original_mime": att.content_type,
-                        "is_attachment": True, # Flag to avoid re-saving if possible?
-                        "attachment_id": att.id
-                    })
+                    source_contents.append(
+                        {
+                            "content": content,
+                            "content_type": c_type,
+                            "filename": att.original_filename,
+                            "original_mime": att.content_type,
+                            "is_attachment": True,  # Flag to avoid re-saving
+                            "attachment_id": att.id,
+                        }
+                    )
 
         use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
             os.getenv("OPENAI_API_KEY")
@@ -594,7 +603,7 @@ async def import_pattern(
 
             tokens = []
             attachments_meta = []
-            
+
             # If project_id exists, we are adding to a project directly
             if project_id is not None:
                 res = await db.execute(
@@ -605,35 +614,45 @@ async def import_pattern(
                 )
                 project_obj = res.scalar_one_or_none()
                 if not project_obj:
-                     return {"import_attachment_tokens": [], "source_attachments": []}
+                    return {"import_attachment_tokens": [], "source_attachments": []}
 
             for item in source_contents:
-                # If it's already an attachment from THIS project, we might skip saving?
-                # But imports usually create new derived data. For now, let's treat it as a source.
-                # If we are importing FROM an attachment, we don't need to re-save it as an attachment usually?
+                # If it's already an attachment from THIS project, we might
+                # skip saving? But imports usually create new derived data.
+                # For now, let's treat it as a source.
+                # If we are importing FROM an attachment, we don't need to
+                # re-save it as an attachment usually?
                 # User flow: "From File" -> Select "Attachment.pdf".
-                # We use it for ANALYSIS. We don't necessarily need to DUPLICATE it as "Source Attachment".
-                # BUT the `source_attachments` list is used to show what was imported.
-                # Let's simple check if we need to save.
-                
+                # We use it for ANALYSIS. We don't necessarily need to
+                # DUPLICATE it as "Source Attachment".
+                # BUT the `source_attachments` list is used to show what was
+                # imported. Let's simple check if we need to save.
+
                 if item.get("is_attachment"):
                     # Use existing attachment info
-                    # We might need to query it again or just use what we have? 
+                    # We might need to query it again or just use what we have?
                     # We fetched it above.
-                   att_id = item["attachment_id"]
-                   # Retrieve full object again or pass it? Simple query again to get URL logic standardized
-                   stored_att = await db.get(Attachment, att_id) # Should exist
-                   if stored_att:
-                       attachments_meta.append({
-                            "id": stored_att.id,
-                            "filename": stored_att.filename,
-                            "original_filename": stored_att.original_filename,
-                            "content_type": stored_att.content_type,
-                            "size_bytes": stored_att.size_bytes,
-                            "url": get_file_url(stored_att.filename, stored_att.project_id, subdir="projects"),
-                            # thumbnail?
-                        })
-                   continue
+                    att_id = item["attachment_id"]
+                    # Retrieve full object again or pass it? Simple query again
+                    # to get URL logic standardized
+                    stored_att = await db.get(Attachment, att_id)  # Should exist
+                    if stored_att:
+                        attachments_meta.append(
+                            {
+                                "id": stored_att.id,
+                                "filename": stored_att.filename,
+                                "original_filename": stored_att.original_filename,
+                                "content_type": stored_att.content_type,
+                                "size_bytes": stored_att.size_bytes,
+                                "url": get_file_url(
+                                    stored_att.filename,
+                                    stored_att.project_id,
+                                    subdir="projects",
+                                ),
+                                # thumbnail?
+                            }
+                        )
+                    continue
 
                 # It's a new upload
                 if project_id is not None:
@@ -653,22 +672,24 @@ async def import_pattern(
                     db.add(attachment)
                     await db.commit()
                     await db.refresh(attachment)
-                    
-                    attachments_meta.append({
-                        "id": attachment.id,
-                        "filename": attachment.filename,
-                        "original_filename": attachment.original_filename,
-                        "content_type": attachment.content_type,
-                        "size_bytes": attachment.size_bytes,
-                        "url": get_file_url(
-                            attachment.filename,
-                            project_id,
-                            subdir="projects",
-                        ),
-                        "thumbnail_url": stored.thumbnail_url,
-                        "width": stored.width,
-                        "height": stored.height,
-                    })
+
+                    attachments_meta.append(
+                        {
+                            "id": attachment.id,
+                            "filename": attachment.filename,
+                            "original_filename": attachment.original_filename,
+                            "content_type": attachment.content_type,
+                            "size_bytes": attachment.size_bytes,
+                            "url": get_file_url(
+                                attachment.filename,
+                                project_id,
+                                subdir="projects",
+                            ),
+                            "thumbnail_url": stored.thumbnail_url,
+                            "width": stored.width,
+                            "height": stored.height,
+                        }
+                    )
                 else:
                     token = await store_pending_project_import_attachment_bytes(
                         current_user.id,
@@ -914,52 +935,63 @@ async def import_pattern(
 
         elif should_use_files:
             # File / Attachment Import Logic
-            from stricknani.importing.models import RawContent, ContentType
             from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
+            from stricknani.importing.models import ContentType, RawContent
 
             if use_ai_enabled and not OPENAI_AVAILABLE:
-                  # If user requested AI but it's not installed/configured
-                  # (Though earlier check might have handled OPENAI_API_KEY)
-                  # If files are images/PDF, we generally need AI.
-                  # If pure text, we might survive.
-                  pass 
+                # If user requested AI but it's not installed/configured
+                # (Though earlier check might have handled OPENAI_API_KEY)
+                # If files are images/PDF, we generally need AI.
+                # If pure text, we might survive.
+                pass
 
             # Prepare raw contents
             raw_input_list = []
             for item in source_contents:
-                 # Determine proper content type enum if not already
-                 ctype = ContentType.UNKNOWN
-                 existing_type = item["content_type"]
-                 
-                 if isinstance(existing_type, ContentType):
-                     ctype = existing_type
-                 else:
-                     # Fallback if it somehow is a string
-                     if existing_type == "application/pdf":
-                          ctype = ContentType.PDF
-                     elif isinstance(existing_type, str) and existing_type.startswith("image/"):
-                          ctype = ContentType.IMAGE
-                     elif isinstance(existing_type, str) and (existing_type.startswith("text/") or existing_type in ("application/json",)):
-                          ctype = ContentType.TEXT
-                 
-                 raw_input_list.append(RawContent(
-                      content=item["content"],
-                      content_type=ctype,
-                      metadata={"filename": item["filename"]}
-                 ))
+                # Determine proper content type enum if not already
+                ctype = ContentType.UNKNOWN
+                existing_type = item["content_type"]
+
+                if isinstance(existing_type, ContentType):
+                    ctype = existing_type
+                else:
+                    # Fallback if it somehow is a string
+                    if existing_type == "application/pdf":
+                        ctype = ContentType.PDF
+                    elif isinstance(existing_type, str) and existing_type.startswith(
+                        "image/"
+                    ):
+                        ctype = ContentType.IMAGE
+                    elif isinstance(existing_type, str) and (
+                        existing_type.startswith("text/")
+                        or existing_type in ("application/json",)
+                    ):
+                        ctype = ContentType.TEXT
+
+                raw_input_list.append(
+                    RawContent(
+                        content=item["content"],
+                        content_type=ctype,
+                        metadata={"filename": item["filename"]},
+                    )
+                )
 
             # If AI is enabled (preferred for files)
             if use_ai_enabled:
                 if not OPENAI_AVAILABLE:
-                     raise HTTPException(status_code=503, detail="AI libraries not available")
-                
+                    raise HTTPException(
+                        status_code=503, detail="AI libraries not available"
+                    )
+
                 extractor = AIExtractor()
                 try:
                     extracted = await extractor.extract(raw_input_list)
                 except Exception as e:
                     logger.error(f"AI Extraction failed: {e}")
-                    raise HTTPException(status_code=400, detail=f"Analysis failed: {str(e)}") from e
-                
+                    raise HTTPException(
+                        status_code=400, detail=f"Analysis failed: {str(e)}"
+                    ) from e
+
                 # Map extracted data
                 data = {
                     "name": extracted.name,
@@ -979,7 +1011,8 @@ async def import_pattern(
                         }
                         for step in extracted.steps
                     ],
-                    # Don't add uploaded images to gallery - they should be attachments only
+                    # Don't add uploaded images to gallery
+                    # - they should be attachments only
                     "image_urls": [],
                     "link": None,
                     "is_ai_enhanced": True,
@@ -987,61 +1020,86 @@ async def import_pattern(
 
                 # Handle PDF Pages from extras
                 if extracted.extras and "pdf_rendered_pages" in extracted.extras:
-                     rendered_pages = extracted.extras["pdf_rendered_pages"]
-                     tokens = []
-                     src_atts = []
-                     for i, img_bytes in enumerate(rendered_pages):
-                          fname = f"pdf_page_{i+1}.jpg"
-                          token = await store_pending_project_import_attachment_bytes(
-                              current_user.id, content=img_bytes, original_filename=fname, content_type="image/jpeg"
-                          )
-                          tokens.append(token)
-                          url = get_file_url(fname, entity_id=current_user.id, pending_token=token)
-                          src_atts.append({
-                               "id": None, "token": token, "original_filename": fname, 
-                               "content_type": "image/jpeg", "size_bytes": len(img_bytes), 
-                               "url": url, "thumbnail_url": url
-                          })
-                     
-                     data.setdefault("import_attachment_tokens", []).extend(tokens)
-                     data.setdefault("source_attachments", []).extend(src_atts)
-                
+                    rendered_pages = extracted.extras["pdf_rendered_pages"]
+                    tokens = []
+                    src_atts = []
+                    for i, img_bytes in enumerate(rendered_pages):
+                        fname = f"pdf_page_{i + 1}.jpg"
+                        token = await store_pending_project_import_attachment_bytes(
+                            current_user.id,
+                            content=img_bytes,
+                            original_filename=fname,
+                            content_type="image/jpeg",
+                        )
+                        tokens.append(token)
+                        url = get_file_url(
+                            fname, entity_id=current_user.id, pending_token=token
+                        )
+                        src_atts.append(
+                            {
+                                "id": None,
+                                "token": token,
+                                "original_filename": fname,
+                                "content_type": "image/jpeg",
+                                "size_bytes": len(img_bytes),
+                                "url": url,
+                                "thumbnail_url": url,
+                            }
+                        )
+
+                    data.setdefault("import_attachment_tokens", []).extend(tokens)
+                    data.setdefault("source_attachments", []).extend(src_atts)
+
                 # Store the uploaded source files/attachments
                 source_file_data = await store_source_files_for_import()
                 if source_file_data.get("import_attachment_tokens"):
-                     data.setdefault("import_attachment_tokens", []).extend(source_file_data["import_attachment_tokens"])
+                    data.setdefault("import_attachment_tokens", []).extend(
+                        source_file_data["import_attachment_tokens"]
+                    )
                 if source_file_data.get("source_attachments"):
-                     data.setdefault("source_attachments", []).extend(source_file_data["source_attachments"])
+                    data.setdefault("source_attachments", []).extend(
+                        source_file_data["source_attachments"]
+                    )
 
                 data = trim_import_strings(data)
                 return JSONResponse(content=data)
 
             else:
-                 # AI Disabled - Basic processing
-                 # For now, just raise error for images/PDF if AI disabled?
-                 # Or treat as text if possible?
-                 raise HTTPException(status_code=400, detail="AI processing is required for file imports (enable AI)")
+                # AI Disabled - Basic processing
+                # For now, just raise error for images/PDF if AI disabled?
+                # Or treat as text if possible?
+                raise HTTPException(
+                    status_code=400,
+                    detail="AI processing is required for file imports (enable AI)",
+                )
 
         elif import_type == "text":
             if not text or not text.strip():
-                 raise HTTPException(status_code=400, detail="Text required")
+                raise HTTPException(status_code=400, detail="Text required")
             content_text = text.strip()
-            
-            if use_ai_enabled:
-                 from stricknani.importing.models import RawContent, ContentType
-                 from stricknani.importing.extractors.ai import AIExtractor, OPENAI_AVAILABLE
-                 
-                 if not OPENAI_AVAILABLE:
-                      raise HTTPException(status_code=503, detail="AI libraries not available")
 
-                 extractor = AIExtractor()
-                 extracted = await extractor.extract(RawContent(
-                      content=content_text.encode("utf-8"), 
-                      content_type=ContentType.TEXT,
-                      metadata={"filename": "text_import.txt"}
-                 ))
-                 
-                 data = {
+            if use_ai_enabled:
+                from stricknani.importing.extractors.ai import (
+                    OPENAI_AVAILABLE,
+                    AIExtractor,
+                )
+                from stricknani.importing.models import ContentType, RawContent
+
+                if not OPENAI_AVAILABLE:
+                    raise HTTPException(
+                        status_code=503, detail="AI libraries not available"
+                    )
+
+                extractor = AIExtractor()
+                extracted = await extractor.extract(
+                    RawContent(
+                        content=content_text.encode("utf-8"),
+                        content_type=ContentType.TEXT,
+                        metadata={"filename": "text_import.txt"},
+                    )
+                )
+
+                data = {
                     "name": extracted.name,
                     "description": extracted.description,
                     "category": extracted.category,
@@ -1062,26 +1120,29 @@ async def import_pattern(
                     "image_urls": extracted.image_urls,
                     "link": None,
                     "is_ai_enhanced": True,
-                 }
-                 data = trim_import_strings(data)
-                 return JSONResponse(content=data)
+                }
+                data = trim_import_strings(data)
+                return JSONResponse(content=data)
             else:
-                 # Basic Parser fallback logic (replicated/simplified)
-                 from stricknani.utils.importer import PatternImporter
-                 # PatternImporter takes URL, cannot easily parse raw text?
-                 # The original code just did nothing or had logic in `finally`?
-                 # I'll just return basic object.
-                 data = {
-                      "name": "Imported Text",
-                      "description": content_text,
-                      "steps": [{"step_number": 1, "description": content_text}],
-                      "is_ai_enhanced": False
-                 }
-                 data = trim_import_strings(data)
-                 return JSONResponse(content=data)
-                 
+                # Basic Parser fallback logic (replicated/simplified)
+                from stricknani.utils.importer import PatternImporter
+
+                # PatternImporter takes URL, cannot easily parse raw text?
+                # The original code just did nothing or had logic in `finally`?
+                # I'll just return basic object.
+                data = {
+                    "name": "Imported Text",
+                    "description": content_text,
+                    "steps": [{"step_number": 1, "description": content_text}],
+                    "is_ai_enhanced": False,
+                }
+                data = trim_import_strings(data)
+                return JSONResponse(content=data)
+
         else:
-             raise HTTPException(status_code=400, detail=f"Invalid import type: {import_type}")
+            raise HTTPException(
+                status_code=400, detail=f"Invalid import type: {import_type}"
+            )
 
     except HTTPException:
         raise

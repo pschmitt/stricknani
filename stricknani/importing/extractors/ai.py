@@ -24,7 +24,7 @@ from stricknani.importing.models import (
 )
 
 if TYPE_CHECKING:
-    from openai.types.chat import ChatCompletionContentPartParam
+    pass
 
 logger = logging.getLogger("stricknani.imports")
 
@@ -130,7 +130,8 @@ class AIExtractor(ContentExtractor):
         )
 
         try:
-            # Strategy: If any visual content (Image/PDF), treat EVERYTHING as visual context if possible?
+            # Strategy: If any visual content (Image/PDF), treat EVERYTHING
+            # as visual context if possible?
             # Or convert PDF to images and process as images.
             if has_image or has_pdf:
                 # Resolve PDF to images
@@ -145,40 +146,56 @@ class AIExtractor(ContentExtractor):
                     if c.content_type == ContentType.IMAGE:
                         final_images.append(c)
                     elif c.content_type == ContentType.PDF:
-                        # Render PDF pages as high-res images (preferred for AI analysis)
+                        # Render PDF pages as high-res images
+                        # (preferred for AI analysis)
                         page_images = await pdf_extractor.render_pages_as_images(c)
                         if page_images:
                             for i, img_bytes in enumerate(page_images):
                                 final_images.append(
                                     RawContent(
-                                        content=img_bytes, 
+                                        content=img_bytes,
                                         content_type=ContentType.IMAGE,
-                                        metadata={"filename": f"{c.metadata.get('filename', 'doc')}_page_{i+1}.jpg"}
+                                        metadata={
+                                            "filename": (
+                                                f"{c.metadata.get('filename', 'doc')}"
+                                                f"_page_{i + 1}.jpg"
+                                            )
+                                        },
                                     )
                                 )
-                        
+
                         # Also get text as hint/context
                         try:
                             text_data = await pdf_extractor.extract(c)
-                            if text_data.get("description"):
-                                extra_text.append(f"Context from PDF {c.metadata.get('filename')}:\n{text_data['description']}")
+                            if text_data.description:
+                                filename = c.metadata.get("filename")
+                                extra_text.append(
+                                    f"Context from PDF {filename}:\n"
+                                    f"{text_data.description}"
+                                )
                         except Exception:
                             pass
                     elif c.content_type in (ContentType.TEXT, ContentType.HTML):
-                         extra_text.append(f"Context from {c.metadata.get('filename')}:\n{c.get_text()}")
+                        filename = c.metadata.get("filename")
+                        extra_text.append(f"Context from {filename}:\n{c.get_text()}")
 
                 # Process all images
-                result = await self._extract_from_images(final_images, hints, extra_context="\n\n".join(extra_text))
-                
-                # Collect rendered PDF pages to return in extras (for UI attachment display)
+                result = await self._extract_from_images(
+                    final_images, hints, extra_context="\n\n".join(extra_text)
+                )
+
+                # Collect rendered PDF pages to return in extras
+                # (for UI attachment display)
                 rendered_pages = []
                 for img in final_images:
                     # Identify pages by metadata or source checks?
                     # We constructed metadata as "..._page_N.jpg"
-                    if img.metadata.get("filename", "").endswith(".jpg") and "_page_" in img.metadata.get("filename", ""):
-                         if isinstance(img.content, bytes):
-                             rendered_pages.append(img.content)
-                
+                    if img.metadata.get("filename", "").endswith(
+                        ".jpg"
+                    ) and "_page_" in img.metadata.get("filename", ""):
+                        if isinstance(img.content, bytes):
+                            rendered_pages.append(img.content)
+
                 if rendered_pages:
                     # Ensure extras dict exists
                     if result.extras is None:
@@ -199,13 +216,14 @@ class AIExtractor(ContentExtractor):
                 return await self._extract_from_text(combined, hints)
 
             else:
-                 raise ExtractorError(
-                    f"Unsupported content types in: {[c.content_type for c in contents]}",
+                types = [c.content_type for c in contents]
+                raise ExtractorError(
+                    f"Unsupported content types in: {types}",
                     extractor_name=self.name,
                 )
 
         except Exception as e:
-             raise ExtractorError(
+            raise ExtractorError(
                 f"AI extraction failed: {str(e)}",
                 extractor_name=self.name,
             ) from e
@@ -225,7 +243,7 @@ class AIExtractor(ContentExtractor):
         if extra_context:
             base_prompt += f"\n\nAdditional Context:\n{extra_context}"
 
-        user_content = [{"type": "text", "text": base_prompt}]
+        user_content: list[dict[str, Any]] = [{"type": "text", "text": base_prompt}]
 
         for content in contents:
             image_bytes = (
@@ -235,19 +253,21 @@ class AIExtractor(ContentExtractor):
             )
             # Resize if needed to stay within token limits
             processed_image = await self._prepare_image(image_bytes)
-            
+
             # Convert to base64
             base64_image = base64.b64encode(processed_image).decode("utf-8")
-            
-            user_content.append({
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{base64_image}",
-                },
-            })
+
+            user_content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}",
+                    },
+                }
+            )
 
         try:
-            response = await client.chat.completions.create(
+            response = await client.chat.completions.create(  # type: ignore[call-overload]
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -342,18 +362,22 @@ class AIExtractor(ContentExtractor):
             "and return it as JSON.\n\n"
             "CRITICAL INSTRUCTIONS:\n"
             "1. LANGUAGE: Output MUST be in the same language as the source text. "
-            "   Do NOT translate content. If the pattern is in German, the description, "
-            "   steps, and notes MUST be in German.\n"
-            "2. COMPLETENESS: Capture ALL text content. Do not summarize aggressively. "
-            "   If there are 'Information', 'Attention', 'Notes', or 'Warning' sections "
-            "   that don't fit into a specific step, you MUST include them in the "
-            "   'description' field. Do not drop them.\n"
+            "   Do NOT translate content. If the pattern is in German, the "
+            "   description, steps, and notes MUST be in German.\n"
+            "2. COMPLETENESS: Capture ALL text content. Do not summarize "
+            "   aggressively. If there are 'Information', 'Attention', 'Notes', "
+            "   or 'Warning' sections that don't fit into a specific step, "
+            "   you MUST include them in the 'description' field. "
+            "   Do not drop them.\n"
             "3. FORMATTING: Use Markdown for all text fields to preserve structure.\n"
             "4. IMAGES:\n"
-            "   - 'image_urls': Should contain ONLY images of the FINISHED object (title images).\n"
-            "   - 'steps.images': Should contain images that illustrate that SPECIFIC step.\n"
-            "   - Do NOT put finished object images in the last step unless it is explicitly "
-            "     about finishing/blocking and shows that process.\n\n"
+            "   - 'image_urls': Should contain ONLY images of the FINISHED "
+            "     object (title images).\n"
+            "   - 'steps.images': Should contain images that illustrate that "
+            "     SPECIFIC step.\n"
+            "   - Do NOT put finished object images in the last step unless "
+            "     it is explicitly about finishing/blocking and shows "
+            "     that process.\n\n"
             "Fields to extract:\n"
             "- name: Project/pattern name\n"
             "- description: Full description, including general info/warnings\n"

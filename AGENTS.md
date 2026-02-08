@@ -5,11 +5,13 @@ Use this file as the single source of truth for how to work in the Stricknani re
 ## Critical Requirements
 
 ### Vendored Web Dependencies
+
 - All new frontend dependencies (JS/CSS) must be vendored via `vendir.yml` (no new CDN links).
 - After changing `vendir.yml`, run `just vendor-sync` and commit the resulting `vendir.lock.yml` plus `stricknani/static/vendor/**`.
 - Prefer **vanilla JS** for new UI behavior. Do not introduce new JS dependencies unless there is a strong technical reason and existing capabilities (HTMX, browser APIs) are insufficient.
 
 ### Translations (UI text)
+
 - Always add new strings to `stricknani/locales/en/LC_MESSAGES/messages.po` and `stricknani/locales/de/LC_MESSAGES/messages.po`.
 - **Avoid multiline strings** in HTML templates (e.g., between `{% trans %}` or in `{{ _(...) }}`). Keep them on a single line to prevent brittle multiline `msgid`s in the catalogs.
 - Update catalogs after template changes:
@@ -20,6 +22,7 @@ Use this file as the single source of truth for how to work in the Stricknani re
   `just i18n-check`
 
 ### Database Migrations
+
 - **Always create a migration** when modifying SQLAlchemy models (adding/removing columns, changing constraints, etc.).
 - Use Alembic to generate migrations:
   `uv run alembic -c stricknani/alembic.ini revision -m "description_of_change"`
@@ -30,6 +33,7 @@ Use this file as the single source of truth for how to work in the Stricknani re
 - Include the migration in your commit.
 
 ### Code Quality
+
 - **Zero Tolerance Policy:** If you notice a formatting or linting error, you MUST fix it immediately.
 - **TODO Management:**
   - When starting a task from `TODO.md`, you MUST mark it as `wip` immediately.
@@ -44,10 +48,12 @@ Use this file as the single source of truth for how to work in the Stricknani re
 - Trim trailing whitespace in all edited files.
 
 ### UI Consistency (Projects & Yarns)
+
 - The projects and yarn pages should maintain a consistent UI/UX and visual theme.
 - Layout or styling changes applied to project views should also be applied to the corresponding yarn views (and vice versa).
 
 ### Release/CI Parity
+
 - `just check` runs `lint`, `test`, and `i18n-check`.
 - When touching build/deploy or release paths, also run:
   - `nix flake check`
@@ -111,20 +117,21 @@ It lets users organize projects with photos, gauge calculations, and notes in a 
 
 ### 4.1 Project Data
 
-| Field | Type | Required | Description |
-|-------|------|-----------|--------------|
-| Name | string | ✓ | Project title |
-| Category | enum | ✓ | Pullover, Jacke, Schal, Mütze, Stirnband (extensible) |
-| Yarn | string |  | Yarn type/brand |
-| Needles | string |  | Needle size/type |
-| Instructions | markdown |  | Rendered safely |
-| Diagrams | images |  | Optional |
-| Photos | images |  | Multiple uploads |
-| Notes | text |  | Free-form note |
-| Owner | user ref | ✓ | Creator |
-| Created/Updated | timestamp | ✓ | Auto-set |
+| Field           | Type      | Required | Description                                           |
+| --------------- | --------- | -------- | ----------------------------------------------------- |
+| Name            | string    | ✓        | Project title                                         |
+| Category        | enum      | ✓        | Pullover, Jacke, Schal, Mütze, Stirnband (extensible) |
+| Yarn            | string    |          | Yarn type/brand                                       |
+| Needles         | string    |          | Needle size/type                                      |
+| Instructions    | markdown  |          | Rendered safely                                       |
+| Diagrams        | images    |          | Optional                                              |
+| Photos          | images    |          | Multiple uploads                                      |
+| Notes           | text      |          | Free-form note                                        |
+| Owner           | user ref  | ✓        | Creator                                               |
+| Created/Updated | timestamp | ✓        | Auto-set                                              |
 
 Operations:
+
 - CRUD by owner.
 - Filter and sort by category, date, or name.
 - Multi-image upload with thumbnail gallery.
@@ -160,13 +167,13 @@ Operations:
 
 ## 5. Non-Functional Requirements
 
-| Area | Requirement |
-|------|--------------|
-| UI/UX | Modern, responsive layout; light/dark mode; WCAG AA accessibility. |
-| Performance | Fast initial load (<200 KB critical path). |
-| Security | HTTPS-only, CSP, secure cookies, validated uploads. |
-| Extensibility | Modular design for additional features (inventory, patterns). |
-| Reliability | Versioned DB migrations, documented backup process. |
+| Area          | Requirement                                                        |
+| ------------- | ------------------------------------------------------------------ |
+| UI/UX         | Modern, responsive layout; light/dark mode; WCAG AA accessibility. |
+| Performance   | Fast initial load (<200 KB critical path).                         |
+| Security      | HTTPS-only, CSP, secure cookies, validated uploads.                |
+| Extensibility | Modular design for additional features (inventory, patterns).      |
+| Reliability   | Versioned DB migrations, documented backup process.                |
 
 ---
 
@@ -202,19 +209,20 @@ Operations:
 
 ### 8.1 Toolchain
 
-| Tool | Purpose |
-|------|----------|
-| Python 3.13+ | Language runtime |
-| uv | Dependency management |
-| pytest | Unit & integration tests |
-| ruff | Linter + formatter |
-| mypy (strict) | Type checking |
-| just | Task runner |
-| nix | Reproducible builds |
+| Tool          | Purpose                  |
+| ------------- | ------------------------ |
+| Python 3.13+  | Language runtime         |
+| uv            | Dependency management    |
+| pytest        | Unit & integration tests |
+| ruff          | Linter + formatter       |
+| mypy (strict) | Type checking            |
+| just          | Task runner              |
+| nix           | Reproducible builds      |
 
 ### 8.2 Linting Policy
 
 Linting is mandatory in CI.
+
 - Ruff enforces style, formatting, and common error checks.
 - MyPy runs in strict mode (`--strict`) for full typing discipline.
 - All code must be Ruff- and MyPy-clean before merge.
@@ -222,19 +230,19 @@ Linting is mandatory in CI.
 
 ### 8.3 justfile Tasks (expected)
 
-| Command | Description |
-|----------|--------------|
-| `just setup` | Setup uv environment |
-| `just run` | Run dev server with reload |
-| `just lint` | Run Ruff + MyPy |
-| `just fmt` | Format code |
-| `just trim` | Trim trailing whitespace |
-| `just test` | Run pytest |
-| `just build-image` | Build Docker image |
-| `just push-image` | Push image to GHCR |
-| `just check` | Aggregate lint + test + i18n checks |
-| `just demo-data` | Seed demo user and sample projects |
-| `just demo-reset` | Reset and re-seed demo data |
+| Command            | Description                         |
+| ------------------ | ----------------------------------- |
+| `just setup`       | Setup uv environment                |
+| `just run`         | Run dev server with reload          |
+| `just lint`        | Run Ruff + MyPy                     |
+| `just fmt`         | Format code                         |
+| `just trim`        | Trim trailing whitespace            |
+| `just test`        | Run pytest                          |
+| `just build-image` | Build Docker image                  |
+| `just push-image`  | Push image to GHCR                  |
+| `just check`       | Aggregate lint + test + i18n checks |
+| `just demo-data`   | Seed demo user and sample projects  |
+| `just demo-reset`  | Reset and re-seed demo data         |
 
 ### 8.4 Nix Flake
 
@@ -264,13 +272,13 @@ Linting is mandatory in CI.
 
 ### 10.1 Navigation
 
-| Section | Content |
-|----------|----------|
-| Projects | List + filters |
-| New Project | Form + inline gauge tool |
-| Gauge Calculator | Standalone tool |
-| User Menu | Login / Signup / Logout |
-| Footer | Version + Privacy note |
+| Section          | Content                  |
+| ---------------- | ------------------------ |
+| Projects         | List + filters           |
+| New Project      | Form + inline gauge tool |
+| Gauge Calculator | Standalone tool          |
+| User Menu        | Login / Signup / Logout  |
+| Footer           | Version + Privacy note   |
 
 ### 10.2 Screens
 
@@ -300,11 +308,11 @@ Linting is mandatory in CI.
 
 ## 13. Configuration & Environments
 
-| Env | Description |
-|-----|--------------|
-| Dev | SQLite, local media, `.envrc` file for secrets |
-| Prod | Configurable DB URL, media volume mount, HTTPS reverse proxy |
-| Flags | `FEATURE_SIGNUP_ENABLED` (toggleable) |
+| Env   | Description                                                  |
+| ----- | ------------------------------------------------------------ |
+| Dev   | SQLite, local media, `.envrc` file for secrets               |
+| Prod  | Configurable DB URL, media volume mount, HTTPS reverse proxy |
+| Flags | `FEATURE_SIGNUP_ENABLED` (toggleable)                        |
 
 ---
 
@@ -462,22 +470,26 @@ stricknani/
 ## API Endpoints
 
 ### Health & Info
+
 - `GET /healthz` - Health check endpoint
 - `GET /` - Welcome message with version
 
 ### Authentication
+
 - `POST /auth/signup` - Create new user account
 - `POST /auth/login` - Login and get session cookie
 - `POST /auth/logout` - Logout and clear session
 - `GET /auth/me` - Get current user info
 
 ### Projects
+
 - `GET /projects/` - List all projects (with optional filters)
 - `GET /projects/{id}` - Get single project details
 - `POST /projects/` - Create new project
 - `DELETE /projects/{id}` - Delete project
 
 ### Gauge Calculator
+
 - `POST /gauge/calculate` - Calculate adjusted stitches and rows
 
 ## Usage
@@ -524,6 +536,7 @@ docker run -d \
 ### Configuration
 
 Environment variables:
+
 - `SECRET_KEY` - JWT secret (required in production)
 - `PORT` - Server port (default: 7674 dev, 7674 prod)
 - `DATABASE_URL` - Database connection string
@@ -533,10 +546,11 @@ Environment variables:
 ## Demo Data
 
 Run `just demo-data` to create:
+
 - Demo user: `demo@stricknani.local` / `demo`
 - Sample projects: Baby Blanket, Winter Scarf, Spring Pullover, City Beanie, Lace Headband, Weekend Cardigan
 - Sample yarns: Merino Soft, Sock Delight, Chunky Monkey, Linen Breeze, Alpaca Cloud, Highland Tweed
-Run `just demo-reset` to delete existing demo data and re-seed it.
+  Run `just demo-reset` to delete existing demo data and re-seed it.
 
 ## Technical Decisions
 
@@ -559,6 +573,7 @@ Run `just demo-reset` to delete existing demo data and re-seed it.
 ## Conclusion
 
 The core backend implementation of Stricknani is complete and functional. The application:
+
 - Follows the specification architecture
 - Uses established libraries (FastAPI, SQLAlchemy, bcrypt)
 - Has comprehensive test coverage

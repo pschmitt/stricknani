@@ -82,7 +82,8 @@
       }
       event.preventDefault();
       const target =
-        event.currentTarget.getAttribute("href") || event.currentTarget.dataset.href;
+        event.currentTarget.getAttribute("href") ||
+        event.currentTarget.dataset.href;
       showUnsavedDialog(target);
     };
 
@@ -181,4 +182,3 @@
     install();
   }
 })();
-

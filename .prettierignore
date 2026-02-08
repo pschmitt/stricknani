@@ -1,0 +1,11 @@
+stricknani/static/vendor/
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+node_modules/
+media/
+*.db
+*.html

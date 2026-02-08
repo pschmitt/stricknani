@@ -103,7 +103,10 @@
               const button = document.createElement("button");
               button.type = "button";
               button.className = "pswp__thumb";
-              button.setAttribute("aria-label", `${pswpThumbActionLabel} ${index + 1}`);
+              button.setAttribute(
+                "aria-label",
+                `${pswpThumbActionLabel} ${index + 1}`,
+              );
               button.setAttribute("data-pswp-thumb-index", `${index}`);
               const img = document.createElement("img");
               img.src = thumbSrc;
@@ -144,7 +147,10 @@
         appendTo: "bar",
         onClick: () => {
           const item = pswp.currItem;
-          const element = item?.element || item?.data?.element || pswp.currSlide?.data?.element;
+          const element =
+            item?.element ||
+            item?.data?.element ||
+            pswp.currSlide?.data?.element;
           if (!element) {
             return;
           }
@@ -158,9 +164,12 @@
           const update = () => {
             const item = pswpInstance.currItem;
             const element =
-              item?.element || item?.data?.element || pswpInstance.currSlide?.data?.element;
+              item?.element ||
+              item?.data?.element ||
+              pswpInstance.currSlide?.data?.element;
             const isPromotable = element?.hasAttribute("data-pswp-promote");
-            const isAlreadyPrimary = element?.getAttribute("data-pswp-is-primary") === "true";
+            const isAlreadyPrimary =
+              element?.getAttribute("data-pswp-is-primary") === "true";
 
             el.style.display = isPromotable ? "inline-flex" : "none";
             el.classList.toggle("is-primary", isAlreadyPrimary);
@@ -180,7 +189,10 @@
         appendTo: "bar",
         onClick: () => {
           const item = pswp.currItem;
-          const element = item?.element || item?.data?.element || pswp.currSlide?.data?.element;
+          const element =
+            item?.element ||
+            item?.data?.element ||
+            pswp.currSlide?.data?.element;
           if (!element) {
             return;
           }
@@ -194,7 +206,9 @@
           const update = () => {
             const item = pswpInstance.currItem;
             const element =
-              item?.element || item?.data?.element || pswpInstance.currSlide?.data?.element;
+              item?.element ||
+              item?.data?.element ||
+              pswpInstance.currSlide?.data?.element;
             const isDeletable = element?.hasAttribute("data-pswp-delete");
             el.style.display = isDeletable ? "inline-flex" : "none";
           };
@@ -241,7 +255,9 @@
 
           const dialog = document.getElementById("pswpOcrDialog");
           const statusEl = document.getElementById("pswpOcrStatus");
-          const loadingStatusEl = document.getElementById("pswpOcrLoadingStatus");
+          const loadingStatusEl = document.getElementById(
+            "pswpOcrLoadingStatus",
+          );
           const textEl = document.getElementById("pswpOcrText");
           const filenameEl = document.getElementById("pswpOcrFilename");
           const copyBtn = document.getElementById("pswpOcrCopy");
@@ -261,7 +277,8 @@
             return;
           }
 
-          const data = pswp.currSlide?.data || pswp.currItem?.data || pswp.currItem || {};
+          const data =
+            pswp.currSlide?.data || pswp.currItem?.data || pswp.currItem || {};
           const src = data?.src || data?.msrc || "";
           const alt = data?.alt || data?.title || "";
 
@@ -285,7 +302,13 @@
 
           const runOcr = async (force = false) => {
             if (!src) {
-              renderResult("", t("pswpImageCannotBeProcessed", "This image cannot be processed."));
+              renderResult(
+                "",
+                t(
+                  "pswpImageCannotBeProcessed",
+                  "This image cannot be processed.",
+                ),
+              );
               return;
             }
 
@@ -356,7 +379,9 @@
               const range = selection.getRangeAt(0);
               const container = range.commonAncestorContainer;
               const node =
-                container.nodeType === Node.ELEMENT_NODE ? container : container.parentElement;
+                container.nodeType === Node.ELEMENT_NODE
+                  ? container
+                  : container.parentElement;
               return !!(node && textEl.contains(node));
             })();
 
@@ -383,7 +408,10 @@
             if (isSelectionInsideTextEl && selectedText) {
               const ok = document.execCommand("copy");
               if (ok) {
-                window.showToast?.(t("copiedToClipboard", "Copied to clipboard"), "success");
+                window.showToast?.(
+                  t("copiedToClipboard", "Copied to clipboard"),
+                  "success",
+                );
                 return;
               }
               if (typeof window.copyToClipboard === "function") {
@@ -399,7 +427,10 @@
               range.selectNodeContents(textEl);
               const ok = copyUsingSelection(range);
               if (ok) {
-                window.showToast?.(t("copiedToClipboard", "Copied to clipboard"), "success");
+                window.showToast?.(
+                  t("copiedToClipboard", "Copied to clipboard"),
+                  "success",
+                );
                 return;
               }
             }
@@ -453,7 +484,9 @@
     }
     const group = image.getAttribute("data-lightbox-group") || "markdown";
     const images = Array.from(
-      document.querySelectorAll(`img.markdown-inline-image[data-lightbox-group="${group}"]`),
+      document.querySelectorAll(
+        `img.markdown-inline-image[data-lightbox-group="${group}"]`,
+      ),
     );
     if (!images.length) {
       return;
@@ -527,8 +560,14 @@
   document.addEventListener("click", (event) => {
     const markdownImage = event.target.closest("img.markdown-inline-image");
     if (markdownImage) {
-      const src = markdownImage.getAttribute("data-lightbox-src") || markdownImage.src || "";
-      if (src.includes("/drops/symbols/") || src.includes("/inline/garnstudio-symbols/")) {
+      const src =
+        markdownImage.getAttribute("data-lightbox-src") ||
+        markdownImage.src ||
+        "";
+      if (
+        src.includes("/drops/symbols/") ||
+        src.includes("/inline/garnstudio-symbols/")
+      ) {
         return;
       }
       event.preventDefault();

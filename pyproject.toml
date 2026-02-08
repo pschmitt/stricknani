@@ -75,6 +75,9 @@ include = [
 [tool.ruff]
 line-length = 88
 target-version = "py313"
+exclude = [
+    "stricknani/static/vendor",
+]
 
 [tool.ruff.lint]
 select = [
@@ -107,6 +110,9 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_no_return = true
 strict_equality = true
+exclude = [
+    "stricknani/static/vendor",
+]
 
 [[tool.mypy.overrides]]
 module = [

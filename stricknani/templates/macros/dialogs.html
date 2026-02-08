@@ -1,47 +1,83 @@
-{# Dialog action buttons – always include icons. Use for modal-action footers. #}
-
-{% macro dialog_cancel(text, type='button', id=None, class='', attrs='') %}
-<button type="{{ type }}" class="btn btn-ghost gap-2 {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{ attrs|safe }}>
-    <span class="mdi mdi-close"></span>
-    {{ text }}
+{# Dialog action buttons – always include icons. Use for modal-action footers.
+#} {% macro dialog_cancel(text, type='button', id=None, class='', attrs='') %}
+<button
+  type="{{ type }}"
+  class="btn btn-ghost gap-2 {{ class }}"
+  {%
+  if
+  id
+  %}id="{{ id }}"
+  {%
+  endif
+  %}
+  {{
+  attrs|safe
+  }}
+>
+  <span class="mdi mdi-close"></span>
+  {{ text }}
 </button>
-{% endmacro %}
-
-{% macro dialog_primary(text, icon='mdi-check', type='button', id=None, class='', attrs='') %}
-<button type="{{ type }}" class="btn btn-primary gap-2 {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{ attrs|safe
-    }}>
-    <span class="mdi {{ icon }}"></span>
-    {{ text }}
+{% endmacro %} {% macro dialog_primary(text, icon='mdi-check', type='button',
+id=None, class='', attrs='') %}
+<button
+  type="{{ type }}"
+  class="btn btn-primary gap-2 {{ class }}"
+  {%
+  if
+  id
+  %}id="{{ id }}"
+  {%
+  endif
+  %}
+  {{
+  attrs|safe
+  }}
+>
+  <span class="mdi {{ icon }}"></span>
+  {{ text }}
 </button>
-{% endmacro %}
-
-{% macro dialog_danger(text, icon='mdi-delete-forever', type='button', id=None, class='', attrs='') %}
-<button type="{{ type }}" class="btn btn-error text-white gap-2 {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{
-    attrs|safe }}>
-    <span class="mdi {{ icon }}"></span>
-    {{ text }}
+{% endmacro %} {% macro dialog_danger(text, icon='mdi-delete-forever',
+type='button', id=None, class='', attrs='') %}
+<button
+  type="{{ type }}"
+  class="btn btn-error text-white gap-2 {{ class }}"
+  {%
+  if
+  id
+  %}id="{{ id }}"
+  {%
+  endif
+  %}
+  {{
+  attrs|safe
+  }}
+>
+  <span class="mdi {{ icon }}"></span>
+  {{ text }}
 </button>
-{% endmacro %}
-
-{% macro modal_backdrop() %}
+{% endmacro %} {% macro modal_backdrop() %}
 <form method="dialog" class="modal-backdrop">
-    <button type="submit" aria-label="{{ _('Close dialog') }}"></button>
+  <button type="submit" aria-label="{{ _('Close dialog') }}"></button>
 </form>
-{% endmacro %}
-
-{% macro modal(id, title=None, class='', box_class='', attrs='') %}
-<dialog id="{{ id }}" class="modal modal-top sm:modal-middle {{ class }}" {{ attrs|safe }}>
-    <div class="modal-box {{ box_class }}">
-        <form method="dialog">
-            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                <span class="mdi mdi-close text-xl"></span>
-            </button>
-        </form>
-        {% if title %}
-        <h3 class="font-bold text-lg mb-4">{{ title }}</h3>
-        {% endif %}
-        {{ caller() }}
-    </div>
-    {{ modal_backdrop() }}
+{% endmacro %} {% macro modal(id, title=None, class='', box_class='', attrs='')
+%}
+<dialog
+  id="{{ id }}"
+  class="modal modal-top sm:modal-middle {{ class }}"
+  {{
+  attrs|safe
+  }}
+>
+  <div class="modal-box {{ box_class }}">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+        <span class="mdi mdi-close text-xl"></span>
+      </button>
+    </form>
+    {% if title %}
+    <h3 class="font-bold text-lg mb-4">{{ title }}</h3>
+    {% endif %} {{ caller() }}
+  </div>
+  {{ modal_backdrop() }}
 </dialog>
 {% endmacro %}

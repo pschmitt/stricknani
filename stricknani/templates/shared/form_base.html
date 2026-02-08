@@ -1,27 +1,22 @@
-{% extends "base.html" %}
-{% import "macros/dialogs.html" as dialogs %}
-
-{% block navbar %}
-{% include "shared/unified_navbar.html" %}
-{% endblock %}
-
-{% block content %}
-{% block form_styles %}{% endblock %}
-{% block form_before %}{% endblock %}
+{% extends "base.html" %} {% import "macros/dialogs.html" as dialogs %} {% block
+navbar %} {% include "shared/unified_navbar.html" %} {% endblock %} {% block
+content %} {% block form_styles %}{% endblock %} {% block form_before %}{%
+endblock %}
 <div
-    class="{% block form_container_class %}max-w-7xl{% endblock %} mx-auto px-0 sm:px-6 lg:px-8 py-2 md:py-8 space-y-4 md:space-y-6">
-    <!-- Form Content -->
-    {% block form_body %}{% endblock %}
+  class="{% block form_container_class %}max-w-7xl{% endblock %} mx-auto px-0 sm:px-6 lg:px-8 py-2 md:py-8 space-y-4 md:space-y-6"
+>
+  <!-- Form Content -->
+  {% block form_body %}{% endblock %}
 </div>
 {% call dialogs.modal('unsavedChangesDialog', title=_('Unsaved changes')) %}
 <p class="py-4">{{ _('You have unsaved changes. Save before leaving?') }}</p>
 <div class="modal-action">
-    {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-unsaved-cancel') }}
-    {{ dialogs.dialog_danger(_('Discard'), icon='mdi-trash-can-outline', attrs='data-unsaved-leave') }}
-    {{ dialogs.dialog_primary(_('Save'), icon='mdi-content-save', attrs='data-unsaved-save') }}
+  {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-unsaved-cancel') }} {{
+  dialogs.dialog_danger(_('Discard'), icon='mdi-trash-can-outline',
+  attrs='data-unsaved-leave') }} {{ dialogs.dialog_primary(_('Save'),
+  icon='mdi-content-save', attrs='data-unsaved-save') }}
 </div>
-{% endcall %}
-{% block page_scripts %}{% endblock %}
+{% endcall %} {% block page_scripts %}{% endblock %}
 
 <script src="{{ url_for('static', path='js/forms/unsaved_changes.js') }}"></script>
 {% endblock %}

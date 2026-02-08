@@ -31,7 +31,8 @@
 
     window.triggerProfileImageUpload = function (userId) {
       const parsed = Number.parseInt(String(userId || ""), 10);
-      targetUserId = Number.isFinite(parsed) && parsed > 0 ? parsed : currentUserId;
+      targetUserId =
+        Number.isFinite(parsed) && parsed > 0 ? parsed : currentUserId;
       input.click();
     };
 
@@ -245,7 +246,10 @@
                 editUserDialog.close();
               }
 
-              window.showToast?.(i18n.profilePictureUpdatedSuccessfully, "success");
+              window.showToast?.(
+                i18n.profilePictureUpdatedSuccessfully,
+                "success",
+              );
             })
             .catch((err) => {
               console.error(err);
@@ -263,4 +267,3 @@
     });
   });
 })();
-

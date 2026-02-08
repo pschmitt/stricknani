@@ -104,7 +104,7 @@ async def test_ai_extractor_pdf_rendering_fallback_to_text() -> None:
         ),
         patch(
             "stricknani.importing.extractors.pdf.PDFExtractor.render_pages_as_images",
-            new=AsyncMock(return_value=[]), # Rendering failed
+            new=AsyncMock(return_value=[]),  # Rendering failed
         ),
         patch(
             "stricknani.importing.extractors.pdf.PDFExtractor.can_extract",

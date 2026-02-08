@@ -1,77 +1,52 @@
 {
-    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": [
-        "config:recommended"
-    ],
-    "allowedPostUpgradeCommands": [
-        "^\\./hack/vendir-sync\\.sh$"
-    ],
-    "packageRules": [
-        {
-            "matchUpdateTypes": [
-                "minor",
-                "patch",
-                "pin",
-                "digest"
-            ],
-            "automerge": true
-        },
-        {
-            "matchPackageNames": [
-                "daisyui",
-                "tailwindcss",
-                "htmx.org"
-            ],
-            "groupName": "frontend dependencies"
-        },
-        {
-            "matchManagers": [
-                "regex"
-            ],
-            "matchFileNames": [
-                "vendir.yml"
-            ],
-            "postUpgradeTasks": {
-                "commands": [
-                    "./hack/vendir-sync.sh"
-                ],
-                "fileFilters": [
-                    "stricknani/static/vendor/**"
-                ]
-            }
-        }
-    ],
-    "customManagers": [
-        {
-            "customType": "regex",
-            "description": "Update CDN links in HTML files",
-            "fileMatch": [
-                "\\.html$"
-            ],
-            "matchStrings": [
-                "<!-- renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?) -->\\s+<[^>]+(?:href|src)=\"[^\"]*npm/(?<packageName>@?[^@\\s\"]+)@(?<currentValue>[^/\\\"]+)"
-            ]
-        },
-        {
-            "customType": "regex",
-            "description": "Update vendir URLs (npm tarballs, Sentry CDN)",
-            "fileMatch": [
-                "^vendir\\.yml$"
-            ],
-            "matchStrings": [
-                "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*url:\\s*https://registry\\.npmjs\\.org/(?<packageName>[^\\s]+?)/-/[^\\s-]+-(?<currentValue>[^\\s/]+)\\.tgz",
-                "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*url:\\s*https://browser\\.sentry-cdn\\.com/(?<currentValue>[^/\\s]+)/bundle\\.tracing\\.min\\.js"
-            ]
-        }
-    ],
-    "pep621": {
-        "enabled": true
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "allowedPostUpgradeCommands": ["^\\./hack/vendir-sync\\.sh$"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
     },
-    "nix": {
-        "enabled": true
+    {
+      "matchPackageNames": ["daisyui", "tailwindcss", "htmx.org"],
+      "groupName": "frontend dependencies"
     },
-    "lockFileMaintenance": {
-        "enabled": true,
-        "automerge": true
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["vendir.yml"],
+      "postUpgradeTasks": {
+        "commands": ["./hack/vendir-sync.sh"],
+        "fileFilters": ["stricknani/static/vendor/**"]
+      }
     }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update CDN links in HTML files",
+      "fileMatch": ["\\.html$"],
+      "matchStrings": [
+        "<!-- renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?) -->\\s+<[^>]+(?:href|src)=\"[^\"]*npm/(?<packageName>@?[^@\\s\"]+)@(?<currentValue>[^/\\\"]+)"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Update vendir URLs (npm tarballs, Sentry CDN)",
+      "fileMatch": ["^vendir\\.yml$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*url:\\s*https://registry\\.npmjs\\.org/(?<packageName>[^\\s]+?)/-/[^\\s-]+-(?<currentValue>[^\\s/]+)\\.tgz",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*url:\\s*https://browser\\.sentry-cdn\\.com/(?<currentValue>[^/\\s]+)/bundle\\.tracing\\.min\\.js"
+      ]
+    }
+  ],
+  "pep621": {
+    "enabled": true
+  },
+  "nix": {
+    "enabled": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  }
 }

@@ -1,155 +1,222 @@
-{% extends "base.html" %}
-{% import "macros/buttons.html" as buttons %}
-
-{% block title %}{{ _('Login') }} - {{ _('Stricknani') }}{% endblock %}
-
-{% block navbar %}
-{% include "shared/unified_navbar.html" %}
-{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% import "macros/buttons.html" as buttons %} {% block
+title %}{{ _('Login') }} - {{ _('Stricknani') }}{% endblock %} {% block navbar
+%} {% include "shared/unified_navbar.html" %} {% endblock %} {% block content %}
 <div class="min-h-[calc(100vh-8rem)] flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 ring-1 ring-primary/20">
-                <img src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}"
-                    alt="" class="h-12 w-12" />
-            </div>
-            <h1 class="text-3xl font-black tracking-tight text-base-content">{{ _('Welcome to Stricknani') }}</h1>
-            <p class="text-base-content/60 mt-2">{{ _('Please sign in below') }}</p>
-        </div>
-
-        <div class="card bg-base-100 shadow-2xl border border-base-300">
-            <div class="card-body p-8">
-                {% if login_error %}
-                <div class="alert alert-error mb-6 shadow-sm">
-                    <span class="mdi mdi-alert-decagram text-xl"></span>
-                    <div class="text-xs">
-                        <p class="font-bold mb-1">{{ _('Login failed') }}</p>
-                        <p>{{ _('Please check your credentials and try again.') }}</p>
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- Login Form -->
-                <div id="login-form" class="space-y-6">
-                    <form action="/auth/login" method="post" class="space-y-5">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <div class="form-control">
-                            <label for="login-email" class="label py-1">
-                                <span class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60">{{ _('Email Address') }}</span>
-                            </label>
-                            <div class="relative group">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-primary transition-colors">
-                                    <span class="mdi mdi-email-outline text-lg"></span>
-                                </span>
-                                <input type="email" id="login-email" name="email" required autocomplete="username"
-                                    aria-invalid="{{ 'true' if login_error else 'false' }}"
-                                    class="input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-primary/20 transition-all {{ 'input-error' if login_error else '' }}"
-                                    placeholder="name@example.com" value="{{ login_email|default('') }}">
-                            </div>
-                        </div>
-
-                        <div class="form-control">
-                            <div class="flex justify-between items-center mb-1">
-                                <label for="login-password" class="label py-0">
-                                    <span class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60">{{ _('Password') }}</span>
-                                </label>
-                            </div>
-                            <div class="relative group">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-primary transition-colors">
-                                    <span class="mdi mdi-lock-outline text-lg"></span>
-                                </span>
-                                <input type="password" id="login-password" name="password" required
-                                    autocomplete="current-password" aria-invalid="{{ 'true' if login_error else 'false' }}"
-                                    class="input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-primary/20 transition-all {{ 'input-error' if login_error else '' }}"
-                                    placeholder="••••••••">
-                            </div>
-                        </div>
-
-                        <div class="pt-2">
-                            {{ buttons.primary(_('Sign In'), type='submit', icon='mdi-login', class='w-full btn-lg font-bold shadow-lg shadow-primary/20') }}
-                        </div>
-                    </form>
-
-                    {% if signup_enabled %}
-                    <div class="relative flex py-2 items-center">
-                        <div class="flex-grow border-t border-base-300"></div>
-                        <span class="flex-shrink mx-4 text-xs font-bold uppercase tracking-widest opacity-30">{{ _('OR') }}</span>
-                        <div class="flex-grow border-t border-base-300"></div>
-                    </div>
-
-	                    <div class="text-center">
-	                        <button type="button" class="btn btn-ghost btn-block gap-2 opacity-70 hover:opacity-100"
-	                            data-call="toggleAuthForms" data-call-args='["signup-form","login-form"]'>
-	                            <span class="mdi mdi-account-plus"></span>
-	                            {{ _("Create an account") }}
-	                        </button>
-	                    </div>
-                    {% endif %}
-                </div>
-
-                {% if signup_enabled %}
-                <!-- Signup Form -->
-                <div id="signup-form" class="space-y-6 hidden">
-                    <div class="text-center mb-2">
-                        <h3 class="text-xl font-bold">{{ _('Create Account') }}</h3>
-                        <p class="text-xs opacity-60 mt-1">{{ _('Join our knitting community') }}</p>
-                    </div>
-
-                    <form action="/auth/signup" method="post" class="space-y-5">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <div class="form-control">
-                            <label for="signup-email" class="label py-1">
-                                <span class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60">{{ _('Email Address') }}</span>
-                            </label>
-                            <div class="relative group">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-success transition-colors">
-                                    <span class="mdi mdi-email-outline text-lg"></span>
-                                </span>
-                                <input type="email" id="signup-email" name="email" required class="input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-success/20 transition-all"
-                                    placeholder="name@example.com">
-                            </div>
-                        </div>
-
-                        <div class="form-control">
-                            <label for="signup-password" class="label py-1">
-                                <span class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60">{{ _('Password') }}</span>
-                            </label>
-                            <div class="relative group">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-success transition-colors">
-                                    <span class="mdi mdi-lock-outline text-lg"></span>
-                                </span>
-                                <input type="password" id="signup-password" name="password" required minlength="8"
-                                    class="input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-success/20 transition-all" placeholder="••••••••">
-                            </div>
-                            <label class="label py-1">
-                                <span class="label-text-alt opacity-50">{{ _('At least 8 characters') }}</span>
-                            </label>
-                        </div>
-
-                        <div class="pt-2">
-                            {{ buttons.success(_('Create Account'), type='submit', icon='mdi-account-check', class='w-full btn-lg font-bold shadow-lg shadow-success/20') }}
-                        </div>
-                    </form>
-
-                    <div class="relative flex py-2 items-center">
-                        <div class="flex-grow border-t border-base-300"></div>
-                        <span class="flex-shrink mx-4 text-xs font-bold uppercase tracking-widest opacity-30">{{ _('OR') }}</span>
-                        <div class="flex-grow border-t border-base-300"></div>
-                    </div>
-
-	                    <div class="text-center">
-	                        <button type="button" class="btn btn-ghost btn-block gap-2 opacity-70 hover:opacity-100"
-	                            data-call="toggleAuthForms" data-call-args='["login-form","signup-form"]'>
-	                            <span class="mdi mdi-login"></span>
-	                            {{ _('Already have an account? Sign in') }}
-	                        </button>
-	                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <div
+        class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 ring-1 ring-primary/20"
+      >
+        <img
+          src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}"
+          alt=""
+          class="h-12 w-12"
+        />
+      </div>
+      <h1 class="text-3xl font-black tracking-tight text-base-content">
+        {{ _('Welcome to Stricknani') }}
+      </h1>
+      <p class="text-base-content/60 mt-2">{{ _('Please sign in below') }}</p>
     </div>
+
+    <div class="card bg-base-100 shadow-2xl border border-base-300">
+      <div class="card-body p-8">
+        {% if login_error %}
+        <div class="alert alert-error mb-6 shadow-sm">
+          <span class="mdi mdi-alert-decagram text-xl"></span>
+          <div class="text-xs">
+            <p class="font-bold mb-1">{{ _('Login failed') }}</p>
+            <p>{{ _('Please check your credentials and try again.') }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Login Form -->
+        <div id="login-form" class="space-y-6">
+          <form action="/auth/login" method="post" class="space-y-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <div class="form-control">
+              <label for="login-email" class="label py-1">
+                <span
+                  class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60"
+                  >{{ _('Email Address') }}</span
+                >
+              </label>
+              <div class="relative group">
+                <span
+                  class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-primary transition-colors"
+                >
+                  <span class="mdi mdi-email-outline text-lg"></span>
+                </span>
+                <input
+                  type="email"
+                  id="login-email"
+                  name="email"
+                  required
+                  autocomplete="username"
+                  aria-invalid="{{ 'true' if login_error else 'false' }}"
+                  class="input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-primary/20 transition-all {{ 'input-error' if login_error else '' }}"
+                  placeholder="name@example.com"
+                  value="{{ login_email|default('') }}"
+                />
+              </div>
+            </div>
+
+            <div class="form-control">
+              <div class="flex justify-between items-center mb-1">
+                <label for="login-password" class="label py-0">
+                  <span
+                    class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60"
+                    >{{ _('Password') }}</span
+                  >
+                </label>
+              </div>
+              <div class="relative group">
+                <span
+                  class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-primary transition-colors"
+                >
+                  <span class="mdi mdi-lock-outline text-lg"></span>
+                </span>
+                <input
+                  type="password"
+                  id="login-password"
+                  name="password"
+                  required
+                  autocomplete="current-password"
+                  aria-invalid="{{ 'true' if login_error else 'false' }}"
+                  class="input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-primary/20 transition-all {{ 'input-error' if login_error else '' }}"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <div class="pt-2">
+              {{ buttons.primary(_('Sign In'), type='submit', icon='mdi-login',
+              class='w-full btn-lg font-bold shadow-lg shadow-primary/20') }}
+            </div>
+          </form>
+
+          {% if signup_enabled %}
+          <div class="relative flex py-2 items-center">
+            <div class="flex-grow border-t border-base-300"></div>
+            <span
+              class="flex-shrink mx-4 text-xs font-bold uppercase tracking-widest opacity-30"
+              >{{ _('OR') }}</span
+            >
+            <div class="flex-grow border-t border-base-300"></div>
+          </div>
+
+          <div class="text-center">
+            <button
+              type="button"
+              class="btn btn-ghost btn-block gap-2 opacity-70 hover:opacity-100"
+              data-call="toggleAuthForms"
+              data-call-args='["signup-form","login-form"]'
+            >
+              <span class="mdi mdi-account-plus"></span>
+              {{ _("Create an account") }}
+            </button>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if signup_enabled %}
+        <!-- Signup Form -->
+        <div id="signup-form" class="space-y-6 hidden">
+          <div class="text-center mb-2">
+            <h3 class="text-xl font-bold">{{ _('Create Account') }}</h3>
+            <p class="text-xs opacity-60 mt-1">
+              {{ _('Join our knitting community') }}
+            </p>
+          </div>
+
+          <form action="/auth/signup" method="post" class="space-y-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <div class="form-control">
+              <label for="signup-email" class="label py-1">
+                <span
+                  class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60"
+                  >{{ _('Email Address') }}</span
+                >
+              </label>
+              <div class="relative group">
+                <span
+                  class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-success transition-colors"
+                >
+                  <span class="mdi mdi-email-outline text-lg"></span>
+                </span>
+                <input
+                  type="email"
+                  id="signup-email"
+                  name="email"
+                  required
+                  class="input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-success/20 transition-all"
+                  placeholder="name@example.com"
+                />
+              </div>
+            </div>
+
+            <div class="form-control">
+              <label for="signup-password" class="label py-1">
+                <span
+                  class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60"
+                  >{{ _('Password') }}</span
+                >
+              </label>
+              <div class="relative group">
+                <span
+                  class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-success transition-colors"
+                >
+                  <span class="mdi mdi-lock-outline text-lg"></span>
+                </span>
+                <input
+                  type="password"
+                  id="signup-password"
+                  name="password"
+                  required
+                  minlength="8"
+                  class="input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-success/20 transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+              <label class="label py-1">
+                <span class="label-text-alt opacity-50"
+                  >{{ _('At least 8 characters') }}</span
+                >
+              </label>
+            </div>
+
+            <div class="pt-2">
+              {{ buttons.success(_('Create Account'), type='submit',
+              icon='mdi-account-check', class='w-full btn-lg font-bold shadow-lg
+              shadow-success/20') }}
+            </div>
+          </form>
+
+          <div class="relative flex py-2 items-center">
+            <div class="flex-grow border-t border-base-300"></div>
+            <span
+              class="flex-shrink mx-4 text-xs font-bold uppercase tracking-widest opacity-30"
+              >{{ _('OR') }}</span
+            >
+            <div class="flex-grow border-t border-base-300"></div>
+          </div>
+
+          <div class="text-center">
+            <button
+              type="button"
+              class="btn btn-ghost btn-block gap-2 opacity-70 hover:opacity-100"
+              data-call="toggleAuthForms"
+              data-call-args='["login-form","signup-form"]'
+            >
+              <span class="mdi mdi-login"></span>
+              {{ _('Already have an account? Sign in') }}
+            </button>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

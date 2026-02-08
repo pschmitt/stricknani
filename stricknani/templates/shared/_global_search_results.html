@@ -1,30 +1,51 @@
 {% if results %}
 <div class="py-2">
-    {% for result in results %}
-    <a href="{{ result.url }}" class="flex items-center gap-4 px-5 py-4 hover:bg-primary/10 transition-colors group border-b border-base-200 last:border-0">
-        <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 shrink-0 flex items-center justify-center">
-            {% if result.thumbnail_url %}
-            <img src="{{ result.thumbnail_url }}" alt="" class="w-full h-full object-cover">
-            {% else %}
-            <span class="mdi {{ result.icon }} text-2xl opacity-40 group-hover:opacity-100 group-hover:text-primary transition-all"></span>
-            {% endif %}
-        </div>
-        <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2">
-                <span class="font-bold truncate text-lg leading-tight text-base-content group-hover:text-primary transition-colors">{{ result.title }}</span>
-                <span class="badge badge-sm {% if result.type == 'project' %}badge-primary{% else %}badge-secondary{% endif %} opacity-70 uppercase font-black text-[10px] tracking-tight">{{ result.type }}</span>
-            </div>
-            {% if result.subtitle %}
-            <p class="text-sm opacity-60 truncate">{{ result.subtitle }}</p>
-            {% endif %}
-        </div>
-        <span class="mdi mdi-chevron-right text-lg text-base-content/20 group-hover:text-primary transition-colors"></span>
-    </a>
-    {% endfor %}
+  {% for result in results %}
+  <a
+    href="{{ result.url }}"
+    class="flex items-center gap-4 px-5 py-4 hover:bg-primary/10 transition-colors group border-b border-base-200 last:border-0"
+  >
+    <div
+      class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 shrink-0 flex items-center justify-center"
+    >
+      {% if result.thumbnail_url %}
+      <img
+        src="{{ result.thumbnail_url }}"
+        alt=""
+        class="w-full h-full object-cover"
+      />
+      {% else %}
+      <span
+        class="mdi {{ result.icon }} text-2xl opacity-40 group-hover:opacity-100 group-hover:text-primary transition-all"
+      ></span>
+      {% endif %}
+    </div>
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center gap-2">
+        <span
+          class="font-bold truncate text-lg leading-tight text-base-content group-hover:text-primary transition-colors"
+          >{{ result.title }}</span
+        >
+        <span
+          class="badge badge-sm {% if result.type == 'project' %}badge-primary{% else %}badge-secondary{% endif %} opacity-70 uppercase font-black text-[10px] tracking-tight"
+          >{{ result.type }}</span
+        >
+      </div>
+      {% if result.subtitle %}
+      <p class="text-sm opacity-60 truncate">{{ result.subtitle }}</p>
+      {% endif %}
+    </div>
+    <span
+      class="mdi mdi-chevron-right text-lg text-base-content/20 group-hover:text-primary transition-colors"
+    ></span>
+  </a>
+  {% endfor %}
 </div>
 {% else %}
 <div class="py-12 text-center">
-    <span class="mdi mdi-magnify-close text-5xl opacity-20 block mb-4"></span>
-    <p class="text-base-content/50">{{ _('No results found for "%(query)s"') % {'query': query} }}</p>
+  <span class="mdi mdi-magnify-close text-5xl opacity-20 block mb-4"></span>
+  <p class="text-base-content/50">
+    {{ _('No results found for "%(query)s"') % {'query': query} }}
+  </p>
 </div>
 {% endif %}

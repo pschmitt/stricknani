@@ -175,7 +175,8 @@ textarea::placeholder {
 }
 
 .prose code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
   font-size: 0.9em;
   background: color-mix(in srgb, currentColor 8%, transparent);
@@ -387,7 +388,10 @@ textarea::placeholder {
   background: rgba(0, 0, 0, 0.25);
   padding: 0;
   flex: 0 0 auto;
-  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .pswp__thumb img {

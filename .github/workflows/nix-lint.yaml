@@ -2,13 +2,13 @@ name: Nix Lint
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - '**/*.nix'
+      - "**/*.nix"
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - '**/*.nix'
+      - "**/*.nix"
 
 jobs:
   statix:

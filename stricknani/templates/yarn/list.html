@@ -1,83 +1,63 @@
-{% extends "shared/list_base.html" %}
-{% import "macros/buttons.html" as buttons %}
-{% import "macros/cards.html" as cards %}
-
-{% block title %}{{ _('Yarn') }} - {{ _('Stricknani') }}{% endblock %}
-
-{# Set variables for the unified navbar #}
+{% extends "shared/list_base.html" %} {% import "macros/buttons.html" as buttons
+%} {% import "macros/cards.html" as cards %} {% block title %}{{ _('Yarn') }} -
+{{ _('Stricknani') }}{% endblock %} {# Set variables for the unified navbar #}
 {% set page_icon %}<span class="mdi mdi-sheep text-primary"></span>{% endset %}
-{% set page_title %}{{ _('Yarns') }}{% endset %}
-{% set page_actions %}
-{{ buttons.primary(_('New Yarn'), icon='mdi-plus-circle-outline', href='/yarn/new', class='hidden md:inline-flex') }}
+{% set page_title %}{{ _('Yarns') }}{% endset %} {% set page_actions %} {{
+buttons.primary(_('New Yarn'), icon='mdi-plus-circle-outline', href='/yarn/new',
+class='hidden md:inline-flex') }}
 
 <div class="dropdown dropdown-end dropdown-bottom">
-    <button tabindex="0" role="button" class="btn btn-square btn-ghost" aria-label="{{ _('More options') }}">
-        <span class="mdi mdi-dots-vertical text-xl"></span>
-    </button>
-	    <ul tabindex="0"
-	        class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
-	        <li>
-	            <button type="button" data-action="open-dialog" data-dialog-id="importDialog">
-	                <span class="mdi mdi-download"></span>
-	                {{ _('Import') }}
-	            </button>
-	        </li>
-    </ul>
+  <button
+    tabindex="0"
+    role="button"
+    class="btn btn-square btn-ghost"
+    aria-label="{{ _('More options') }}"
+  >
+    <span class="mdi mdi-dots-vertical text-xl"></span>
+  </button>
+  <ul
+    tabindex="0"
+    class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200"
+  >
+    <li>
+      <button
+        type="button"
+        data-action="open-dialog"
+        data-dialog-id="importDialog"
+      >
+        <span class="mdi mdi-download"></span>
+        {{ _('Import') }}
+      </button>
+    </li>
+  </ul>
 </div>
 
-{{ buttons.fab('mdi-plus', href='/yarn/new', class='md:hidden', label=_('New Yarn')) }}
-{% endset %}
-
-{# Keep for backwards compatibility #}
-{% block list_icon %}
+{{ buttons.fab('mdi-plus', href='/yarn/new', class='md:hidden', label=_('New
+Yarn')) }} {% endset %} {# Keep for backwards compatibility #} {% block
+list_icon %}
 <span class="mdi mdi-sheep text-primary"></span>
-{% endblock %}
-
-{% block list_title %}{{ _('Yarns') }}{% endblock %}
-
-{% block list_filters %}
-{% set search_id = "search" %}
-{% set search_name = "search" %}
-{% if search %}
-{% set search_value = search %}
-{% elif selected_brand %}
-{% if ' ' in selected_brand %}
-{% set search_value = 'brand:"' ~ selected_brand ~ '"' %}
-{% else %}
-{% set search_value = 'brand:' ~ selected_brand %}
-{% endif %}
-{% else %}
-{% set search_value = '' %}
-{% endif %}
-{% set search_placeholder = _('Search') %}
-{% set search_url = "/yarn" %}
-{% set search_target = "#yarn-content" %}
-{% set wrapper_id = "yarn-search" %}
-{% include "shared/_search_bar.html" with context %}
-{% endblock %}
-
-{% block list_container_attrs %}id="yarn-content"{% endblock %}
-
-{% block list_content %}
-{% include "yarn/_list_partial.html" %}
-{% endblock %}
-
-{% block list_extra %}
-{% include "yarn/_import_dialog.html" %}
-{% include "yarn/_delete_dialog.html" %}
-{% endblock %}
-
-{% block page_scripts %}
-{{ super() }}
+{% endblock %} {% block list_title %}{{ _('Yarns') }}{% endblock %} {% block
+list_filters %} {% set search_id = "search" %} {% set search_name = "search" %}
+{% if search %} {% set search_value = search %} {% elif selected_brand %} {% if
+' ' in selected_brand %} {% set search_value = 'brand:"' ~ selected_brand ~ '"'
+%} {% else %} {% set search_value = 'brand:' ~ selected_brand %} {% endif %} {%
+else %} {% set search_value = '' %} {% endif %} {% set search_placeholder =
+_('Search') %} {% set search_url = "/yarn" %} {% set search_target =
+"#yarn-content" %} {% set wrapper_id = "yarn-search" %} {% include
+"shared/_search_bar.html" with context %} {% endblock %} {% block
+list_container_attrs %}id="yarn-content"{% endblock %} {% block list_content %}
+{% include "yarn/_list_partial.html" %} {% endblock %} {% block list_extra %} {%
+include "yarn/_import_dialog.html" %} {% include "yarn/_delete_dialog.html" %}
+{% endblock %} {% block page_scripts %} {{ super() }}
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const toastKey = new URLSearchParams(window.location.search).get('toast');
-        if (toastKey === 'yarn_deleted') {
-            window.showToast?.('{{ _("Yarn deleted") }}', 'success');
-            const url = new URL(window.location.href);
-            url.searchParams.delete('toast');
-            window.history.replaceState({}, '', url.toString());
-        }
-    });
+  document.addEventListener("DOMContentLoaded", () => {
+    const toastKey = new URLSearchParams(window.location.search).get("toast");
+    if (toastKey === "yarn_deleted") {
+      window.showToast?.('{{ _("Yarn deleted") }}', "success");
+      const url = new URL(window.location.href);
+      url.searchParams.delete("toast");
+      window.history.replaceState({}, "", url.toString());
+    }
+  });
 </script>
 {% endblock %}

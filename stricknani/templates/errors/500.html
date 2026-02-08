@@ -1,11 +1,7 @@
-{% extends "errors/base.html" %}
-
-{% block title %}500 - {{ _('Internal Server Error') }} - {{ _('Stricknani') }}{% endblock %}
-
-{% block error_icon %}mdi-cog-off-outline{% endblock %}
-{% block error_icon_color %}text-error{% endblock %}
-{% block error_code %}500{% endblock %}
-{% block error_title %}{{ _('Dropped a stitch') }}{% endblock %}
-{% block error_message %}
-    {{ _("Something went wrong on our end. We've encountered an unexpected error and are looking into it. Please try again later.") }}
-{% endblock %}
+{% extends "errors/base.html" %} {% block title %}500 - {{ _('Internal Server
+Error') }} - {{ _('Stricknani') }}{% endblock %} {% block error_icon
+%}mdi-cog-off-outline{% endblock %} {% block error_icon_color %}text-error{%
+endblock %} {% block error_code %}500{% endblock %} {% block error_title %}{{
+_('Dropped a stitch') }}{% endblock %} {% block error_message %} {{ _("Something
+went wrong on our end. We've encountered an unexpected error and are looking
+into it. Please try again later.") }} {% endblock %}

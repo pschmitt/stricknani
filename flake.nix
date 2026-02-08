@@ -56,6 +56,7 @@
               statix
               poppler-utils
               tesseract
+              nodePackages.prettier
             ];
 
             shellHook = ''

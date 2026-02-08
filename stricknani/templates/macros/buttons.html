@@ -1,112 +1,147 @@
-{% macro primary(text, href=None, icon=None, type='button', class='', attrs='') %}
-{% set base_classes = "btn btn-primary" %}
-{% if href %}
+{% macro primary(text, href=None, icon=None, type='button', class='', attrs='')
+%} {% set base_classes = "btn btn-primary" %} {% if href %}
 <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
-    <span>{{ text }}</span>
+  {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
+  <span>{{ text }}</span>
 </a>
 {% else %}
-<button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
-    <span>{{ text }}</span>
+<button
+  type="{{ type }}"
+  class="{{ base_classes }} {{ class }}"
+  {{
+  attrs|safe
+  }}
+>
+  {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
+  <span>{{ text }}</span>
 </button>
-{% endif %}
-{% endmacro %}
-
-{% macro danger(text, href=None, icon=None, type='button', class='', attrs='') %}
-{% set base_classes = "btn btn-error text-white" %}
-{% if href %}
+{% endif %} {% endmacro %} {% macro danger(text, href=None, icon=None,
+type='button', class='', attrs='') %} {% set base_classes = "btn btn-error
+text-white" %} {% if href %}
 <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
-    <span>{{ text }}</span>
+  {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
+  <span>{{ text }}</span>
 </a>
 {% else %}
-<button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
-    <span>{{ text }}</span>
+<button
+  type="{{ type }}"
+  class="{{ base_classes }} {{ class }}"
+  {{
+  attrs|safe
+  }}
+>
+  {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
+  <span>{{ text }}</span>
 </button>
-{% endif %}
-{% endmacro %}
-
-{% macro secondary(text, href=None, icon=None, type='button', class='', attrs='') %}
-{% set base_classes = "btn btn-outline border-base-300 hover:border-base-content/20 hover:bg-base-200
-hover:text-base-content" %}
-{% if href %}
+{% endif %} {% endmacro %} {% macro secondary(text, href=None, icon=None,
+type='button', class='', attrs='') %} {% set base_classes = "btn btn-outline
+border-base-300 hover:border-base-content/20 hover:bg-base-200
+hover:text-base-content" %} {% if href %}
 <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
-    <span>{{ text }}</span>
+  {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
+  <span>{{ text }}</span>
 </a>
 {% else %}
-<button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
-    <span>{{ text }}</span>
+<button
+  type="{{ type }}"
+  class="{{ base_classes }} {{ class }}"
+  {{
+  attrs|safe
+  }}
+>
+  {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
+  <span>{{ text }}</span>
 </button>
-{% endif %}
-{% endmacro %}
-
-{% macro favorite(text, href=None, icon=None, type='button', class='', attrs='') %}
-{% set base_classes = "btn btn-outline border-pink-200 text-pink-600 hover:bg-pink-50 hover:border-pink-300
-dark:border-pink-900 dark:text-pink-400 dark:hover:bg-pink-900/20" %}
-{% if href %}
+{% endif %} {% endmacro %} {% macro favorite(text, href=None, icon=None,
+type='button', class='', attrs='') %} {% set base_classes = "btn btn-outline
+border-pink-200 text-pink-600 hover:bg-pink-50 hover:border-pink-300
+dark:border-pink-900 dark:text-pink-400 dark:hover:bg-pink-900/20" %} {% if href
+%}
 <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
-    <span>{{ text }}</span>
+  {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
+  <span>{{ text }}</span>
 </a>
 {% else %}
-<button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
-    <span>{{ text }}</span>
+<button
+  type="{{ type }}"
+  class="{{ base_classes }} {{ class }}"
+  {{
+  attrs|safe
+  }}
+>
+  {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
+  <span>{{ text }}</span>
 </button>
-{% endif %}
-{% endmacro %}
-
-{% macro favorite_menu_item(text, icon=None, attrs='') %}
-<button type="button" class="flex items-center gap-2 w-full text-left" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-lg"></span>{% endif %}
-    {{ text }}
+{% endif %} {% endmacro %} {% macro favorite_menu_item(text, icon=None,
+attrs='') %}
+<button
+  type="button"
+  class="flex items-center gap-2 w-full text-left"
+  {{
+  attrs|safe
+  }}
+>
+  {% if icon %}<span class="mdi {{ icon }} text-lg"></span>{% endif %} {{ text
+  }}
 </button>
-{% endmacro %}
-
-{% macro back(text, href=None, class='', attrs='') %}
-{% set base_classes = "btn btn-ghost btn-sm text-base-content/60 hover:text-base-content gap-2" %}
+{% endmacro %} {% macro back(text, href=None, class='', attrs='') %} {% set
+base_classes = "btn btn-ghost btn-sm text-base-content/60
+hover:text-base-content gap-2" %}
 <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    <span class="mdi mdi-arrow-left text-lg"></span>
-    {{ text }}
+  <span class="mdi mdi-arrow-left text-lg"></span>
+  {{ text }}
 </a>
-{% endmacro %}
-
-{% macro back_circle(href, label=None, attrs='') %}
-<a href="{{ href }}" class="btn btn-circle btn-ghost btn-sm text-base-content/60" aria-label="{{ label or _('Back') }}"
-    {{ attrs|safe }}>
-    <span class="mdi mdi-arrow-left text-xl"></span>
+{% endmacro %} {% macro back_circle(href, label=None, attrs='') %}
+<a
+  href="{{ href }}"
+  class="btn btn-circle btn-ghost btn-sm text-base-content/60"
+  aria-label="{{ label or _('Back') }}"
+  {{
+  attrs|safe
+  }}
+>
+  <span class="mdi mdi-arrow-left text-xl"></span>
 </a>
-{% endmacro %}
-
-{% macro ghost(text, href=None, icon=None, type='button', class='', attrs='') %}
-{% set base_classes = "btn btn-ghost" %}
-{% if href %}
+{% endmacro %} {% macro ghost(text, href=None, icon=None, type='button',
+class='', attrs='') %} {% set base_classes = "btn btn-ghost" %} {% if href %}
 <a href="{{ href }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
-    <span>{{ text }}</span>
+  {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
+  <span>{{ text }}</span>
 </a>
 {% else %}
-<button type="{{ type }}" class="{{ base_classes }} {{ class }}" {{ attrs|safe }}>
-    {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
-    <span>{{ text }}</span>
+<button
+  type="{{ type }}"
+  class="{{ base_classes }} {{ class }}"
+  {{
+  attrs|safe
+  }}
+>
+  {% if icon %}<span class="mdi {{ icon }} text-xl"></span>{% endif %}
+  <span>{{ text }}</span>
 </button>
-{% endif %}
-{% endmacro %}
-
-{% macro fab(icon, href=None, type='button', label='', class='', attrs='') %}
-{% set base_classes = "btn btn-circle btn-primary fixed bottom-6 right-6 shadow-xl z-50 h-14 w-14 min-h-0 p-0 flex
-items-center justify-center" %}
-{% if href %}
-<a href="{{ href }}" class="{{ base_classes }} {{ class }}" aria-label="{{ label }}" {{ attrs|safe }}>
-    <span class="mdi {{ icon }} text-2xl"></span>
+{% endif %} {% endmacro %} {% macro fab(icon, href=None, type='button',
+label='', class='', attrs='') %} {% set base_classes = "btn btn-circle
+btn-primary fixed bottom-6 right-6 shadow-xl z-50 h-14 w-14 min-h-0 p-0 flex
+items-center justify-center" %} {% if href %}
+<a
+  href="{{ href }}"
+  class="{{ base_classes }} {{ class }}"
+  aria-label="{{ label }}"
+  {{
+  attrs|safe
+  }}
+>
+  <span class="mdi {{ icon }} text-2xl"></span>
 </a>
 {% else %}
-<button type="{{ type }}" class="{{ base_classes }} {{ class }}" aria-label="{{ label }}" {{ attrs|safe }}>
-    <span class="mdi {{ icon }} text-2xl"></span>
+<button
+  type="{{ type }}"
+  class="{{ base_classes }} {{ class }}"
+  aria-label="{{ label }}"
+  {{
+  attrs|safe
+  }}
+>
+  <span class="mdi {{ icon }} text-2xl"></span>
 </button>
-{% endif %}
-{% endmacro %}
+{% endif %} {% endmacro %}
