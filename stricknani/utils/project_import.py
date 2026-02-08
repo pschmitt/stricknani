@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from dataclasses import dataclass
@@ -140,20 +141,32 @@ async def import_images_from_urls(
                 continue
 
             try:
-                with PilImage.open(BytesIO(content)) as img:
-                    width, height = img.size
-                    if (
-                        width < IMPORT_IMAGE_MIN_DIMENSION
-                        or height < IMPORT_IMAGE_MIN_DIMENSION
-                    ):
-                        logger.warning(
-                            "Skipping small image %s (%sx%s)",
-                            image_url,
-                            width,
-                            height,
-                        )
-                        continue
-                    similarity = build_similarity_image(img)
+                def _inspect_image(
+                    payload: bytes,
+                ) -> tuple[int, int, SimilarityImage | None]:
+                    with PilImage.open(BytesIO(payload)) as img:
+                        width, height = img.size
+                        width_i = int(width)
+                        height_i = int(height)
+                        if (
+                            width_i < IMPORT_IMAGE_MIN_DIMENSION
+                            or height_i < IMPORT_IMAGE_MIN_DIMENSION
+                        ):
+                            return width_i, height_i, None
+                        return width_i, height_i, build_similarity_image(img)
+
+                width, height, similarity = await asyncio.to_thread(
+                    _inspect_image,
+                    content,
+                )
+                if similarity is None:
+                    logger.warning(
+                        "Skipping small image %s (%sx%s)",
+                        image_url,
+                        width,
+                        height,
+                    )
+                    continue
             except Exception as exc:
                 logger.warning("Skipping unreadable image %s: %s", image_url, exc)
                 continue

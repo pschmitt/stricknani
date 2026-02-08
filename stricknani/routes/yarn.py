@@ -9,6 +9,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Annotated
 
+import anyio
 import httpx
 from fastapi import (
     APIRouter,
@@ -157,20 +158,32 @@ async def _import_yarn_images_from_urls(
                 continue
 
             try:
-                with PilImage.open(BytesIO(response.content)) as img:
-                    width, height = img.size
-                    if (
-                        width < IMPORT_IMAGE_MIN_DIMENSION
-                        or height < IMPORT_IMAGE_MIN_DIMENSION
-                    ):
-                        logger.info(
-                            "Skipping small image %s (%sx%s)",
-                            image_url,
-                            width,
-                            height,
-                        )
-                        continue
-                    similarity = build_similarity_image(img)
+                def _inspect_image(
+                    content: bytes,
+                ) -> tuple[int, int, SimilarityImage | None]:
+                    with PilImage.open(BytesIO(content)) as img:
+                        width, height = img.size
+                        width_i = int(width)
+                        height_i = int(height)
+                        if (
+                            width_i < IMPORT_IMAGE_MIN_DIMENSION
+                            or height_i < IMPORT_IMAGE_MIN_DIMENSION
+                        ):
+                            return width_i, height_i, None
+                        return width_i, height_i, build_similarity_image(img)
+
+                width, height, similarity = await anyio.to_thread.run_sync(
+                    _inspect_image,
+                    response.content,
+                )
+                if similarity is None:
+                    logger.info(
+                        "Skipping small image %s (%sx%s)",
+                        image_url,
+                        width,
+                        height,
+                    )
+                    continue
             except Exception as exc:
                 logger.info("Skipping unreadable image %s: %s", image_url, exc)
                 continue
@@ -807,7 +820,7 @@ async def yarn_detail(
             else None,
             "notes_html": render_markdown(yarn.notes) if yarn.notes else None,
             "preview_url": _resolve_preview(yarn),
-            "photos": _serialize_photos(yarn),
+            "photos": await anyio.to_thread.run_sync(_serialize_photos, yarn),
             "linked_projects": [
                 {
                     "id": project.id,
@@ -863,7 +876,7 @@ async def edit_yarn(
         {
             "current_user": current_user,
             "yarn": yarn,
-            "photos": _serialize_photos(yarn),
+            "photos": await anyio.to_thread.run_sync(_serialize_photos, yarn),
             "is_ai_enhanced": yarn.is_ai_enhanced,
         },
     )

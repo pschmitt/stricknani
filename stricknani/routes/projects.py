@@ -303,11 +303,16 @@ async def _load_existing_image_similarities(
 
     for image in images[:limit]:
         file_path = config.MEDIA_ROOT / "projects" / str(project_id) / image.filename
-        try:
-            with PilImage.open(file_path) as img:
-                similarities.append(build_similarity_image(img))
-        except Exception:
-            continue
+        def _build(path: Path) -> SimilarityImage | None:
+            try:
+                with PilImage.open(path) as img:
+                    return build_similarity_image(img)
+            except Exception:
+                return None
+
+        similarity = await anyio.to_thread.run_sync(_build, file_path)
+        if similarity is not None:
+            similarities.append(similarity)
 
     return similarities
 
@@ -393,22 +398,32 @@ async def _import_images_from_urls(
                     title_available = False
                 continue
             try:
-                from PIL import Image as PilImage
+                def _inspect_image(
+                    content: bytes,
+                ) -> tuple[int, int, SimilarityImage | None]:
+                    with PilImage.open(BytesIO(content)) as img:
+                        width, height = img.size
+                        width_i = int(width)
+                        height_i = int(height)
+                        if (
+                            width_i < IMPORT_IMAGE_MIN_DIMENSION
+                            or height_i < IMPORT_IMAGE_MIN_DIMENSION
+                        ):
+                            return width_i, height_i, None
+                        return width_i, height_i, build_similarity_image(img)
 
-                with PilImage.open(BytesIO(response.content)) as img:
-                    width, height = img.size
-                    if (
-                        width < IMPORT_IMAGE_MIN_DIMENSION
-                        or height < IMPORT_IMAGE_MIN_DIMENSION
-                    ):
-                        logger.info(
-                            "Skipping small image %s (%sx%s)",
-                            image_url,
-                            width,
-                            height,
-                        )
-                        continue
-                    similarity = build_similarity_image(img)
+                width, height, similarity = await anyio.to_thread.run_sync(
+                    _inspect_image,
+                    response.content,
+                )
+                if similarity is None:
+                    logger.info(
+                        "Skipping small image %s (%sx%s)",
+                        image_url,
+                        width,
+                        height,
+                    )
+                    continue
             except Exception as exc:
                 logger.info("Skipping unreadable image %s: %s", image_url, exc)
                 continue
@@ -549,22 +564,32 @@ async def _import_step_images(
                 logger.info("Skipping duplicate step image %s", image_url)
                 continue
             try:
-                from PIL import Image as PilImage
+                def _inspect_step_image(
+                    content: bytes,
+                ) -> tuple[int, int, SimilarityImage | None]:
+                    with PilImage.open(BytesIO(content)) as img:
+                        width, height = img.size
+                        width_i = int(width)
+                        height_i = int(height)
+                        if (
+                            width_i < IMPORT_IMAGE_MIN_DIMENSION
+                            or height_i < IMPORT_IMAGE_MIN_DIMENSION
+                        ):
+                            return width_i, height_i, None
+                        return width_i, height_i, build_similarity_image(img)
 
-                with PilImage.open(BytesIO(response.content)) as img:
-                    width, height = img.size
-                    if (
-                        width < IMPORT_IMAGE_MIN_DIMENSION
-                        or height < IMPORT_IMAGE_MIN_DIMENSION
-                    ):
-                        logger.info(
-                            "Skipping small step image %s (%sx%s)",
-                            image_url,
-                            width,
-                            height,
-                        )
-                        continue
-                    similarity = build_similarity_image(img)
+                width, height, similarity = await anyio.to_thread.run_sync(
+                    _inspect_step_image,
+                    response.content,
+                )
+                if similarity is None:
+                    logger.info(
+                        "Skipping small step image %s (%sx%s)",
+                        image_url,
+                        width,
+                        height,
+                    )
+                    continue
             except Exception as exc:
                 logger.info("Skipping unreadable step image %s: %s", image_url, exc)
                 continue
@@ -1670,14 +1695,22 @@ async def _import_yarn_images_from_urls(
                 continue
 
             try:
-                with PilImage.open(BytesIO(response.content)) as img:
-                    width, height = img.size
-                    if (
-                        width < IMPORT_IMAGE_MIN_DIMENSION
-                        or height < IMPORT_IMAGE_MIN_DIMENSION
-                    ):
-                        continue
-                    similarity = build_similarity_image(img)
+                def _inspect_yarn_image(content: bytes) -> SimilarityImage | None:
+                    with PilImage.open(BytesIO(content)) as img:
+                        width, height = img.size
+                        if (
+                            int(width) < IMPORT_IMAGE_MIN_DIMENSION
+                            or int(height) < IMPORT_IMAGE_MIN_DIMENSION
+                        ):
+                            return None
+                        return build_similarity_image(img)
+
+                similarity = await anyio.to_thread.run_sync(
+                    _inspect_yarn_image,
+                    response.content,
+                )
+                if similarity is None:
+                    continue
             except Exception:
                 continue
 

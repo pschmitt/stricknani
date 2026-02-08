@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urljoin, urlparse
 
+import anyio
 import httpx
 from bs4 import BeautifulSoup
 from bs4.element import AttributeValueList, NavigableString, PageElement, Tag
@@ -165,20 +166,32 @@ async def filter_import_image_urls(
                     continue
 
             try:
-                with PilImage.open(BytesIO(response.content)) as img:
-                    width, height = img.size
-                    if (
-                        width < IMPORT_IMAGE_MIN_DIMENSION
-                        or height < IMPORT_IMAGE_MIN_DIMENSION
-                    ):
-                        logger.info(
-                            "Skipping small image %s (%sx%s)",
-                            image_url,
-                            width,
-                            height,
-                        )
-                        continue
-                    similarity = build_similarity_image(img)
+                def _inspect_image(
+                    content: bytes,
+                ) -> tuple[int, int, SimilarityImage | None]:
+                    with PilImage.open(BytesIO(content)) as img:
+                        width, height = img.size
+                        width_i = int(width)
+                        height_i = int(height)
+                        if (
+                            width_i < IMPORT_IMAGE_MIN_DIMENSION
+                            or height_i < IMPORT_IMAGE_MIN_DIMENSION
+                        ):
+                            return width_i, height_i, None
+                        return width_i, height_i, build_similarity_image(img)
+
+                width, height, similarity = await anyio.to_thread.run_sync(
+                    _inspect_image,
+                    response.content,
+                )
+                if similarity is None:
+                    logger.info(
+                        "Skipping small image %s (%sx%s)",
+                        image_url,
+                        width,
+                        height,
+                    )
+                    continue
             except Exception as exc:
                 logger.info("Skipping unreadable image %s: %s", image_url, exc)
                 continue
