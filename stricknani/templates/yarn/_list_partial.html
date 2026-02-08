@@ -63,9 +63,11 @@
             <a href="/yarn/{{ yarn.id }}" class="hover:text-primary truncate">
                 {{ yarn.name }}
             </a>
-            {% if yarn.is_favorite %}
-            <span class="mdi mdi-heart text-pink-500 text-sm shrink-0" title="{{ _('In favorites') }}"></span>
-            {% endif %}
+            <span id="yarn-{{ yarn.id }}-favorite-heart" class="shrink-0">
+                {% if yarn.is_favorite %}
+                <span class="mdi mdi-heart text-pink-500 text-sm" title="{{ _('In favorites') }}"></span>
+                {% endif %}
+            </span>
             {% if yarn.is_ai_enhanced %}
             <span class="badge badge-ghost border-primary/20 text-primary/70 font-black text-[8px] tracking-tighter uppercase px-1.5 h-4 min-h-0 shrink-0" title="{{ _('AI Enhanced') }}">AI</span>
             {% endif %}
