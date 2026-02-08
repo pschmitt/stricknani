@@ -83,6 +83,7 @@ from stricknani.utils.importer import (
     trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
+from stricknani.utils.search_tokens import extract_search_token, parse_import_image_urls
 from stricknani.utils.wayback import (
     _should_request_archive,
     build_wayback_fallback_url,
@@ -180,50 +181,11 @@ async def _localize_garnstudio_symbol_images(
 
 
 def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
-    """Parse image URLs sent from the import form."""
-    if not raw:
-        return []
-
-    if isinstance(raw, list):
-        urls = []
-        for item in raw:
-            if not item:
-                continue
-            try:
-                data = json.loads(item)
-                if isinstance(data, list):
-                    urls.extend([str(u).strip() for u in data if u])
-                else:
-                    urls.append(str(data).strip())
-            except (ValueError, TypeError):
-                urls.append(item.strip())
-        return [u for u in urls if u.startswith("http")]
-
-    try:
-        data = json.loads(raw)
-        if isinstance(data, list):
-            return [str(item).strip() for item in data if str(item).strip()]
-    except (ValueError, TypeError):
-        pass
-
-    if raw and raw.startswith("http"):
-        return [s.strip() for s in raw.split(",") if s.strip()]
-    return []
+    return parse_import_image_urls(raw)
 
 
 def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
-    """Extract a prefix token (with optional quotes) and remaining text."""
-
-    pattern = rf"(?i)(?:^|\s){re.escape(prefix)}(?:\"([^\"]+)\"|'([^']+)'|(\S+))"
-    match = re.search(pattern, search)
-    if not match:
-        return None, search
-    token = next((group for group in match.groups() if group), None)
-    if token is None:
-        return None, search
-    start, end = match.span()
-    remaining = (search[:start] + search[end:]).strip()
-    return token.strip(), remaining
+    return extract_search_token(search, prefix)
 
 
 def _resolve_yarn_preview(yarn: YarnModel) -> dict[str, str | None]:

@@ -27,7 +27,7 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 | P0 | done | Create a small template-emitted JS config/i18n payload for static JS (so static files do not rely on `{{ _("...") }}` inside large inline scripts) | High | Medium | `stricknani/templates/base.html` |
 | P1 | todo | Split `routes/projects.py` into services (images, attachments, steps, importing, categories) and make endpoints thin | High | High | `stricknani/routes/projects.py` |
 | P1 | todo | Split `utils/importer.py` into an `importing/` package and stop importing underscored helpers from routes | High | High | `stricknani/utils/importer.py` |
-| P1 | todo | Remove duplicated helpers between projects/yarn (`_parse_import_image_urls`, `_extract_search_token`) by extracting shared functions | Medium | Low | `stricknani/routes/projects.py`, `stricknani/routes/yarn.py` |
+| P1 | done | Remove duplicated helpers between projects/yarn (`_parse_import_image_urls`, `_extract_search_token`) by extracting shared functions | Medium | Low | `stricknani/routes/projects.py`, `stricknani/routes/yarn.py`, `stricknani/utils/search_tokens.py` |
 | P1 | todo | Reduce coupling to `stricknani/main.py` by moving templating helpers to a dedicated module (and consider an app-factory) | Medium | Medium | `stricknani/main.py`, `stricknani/routes/*.py` |
 | P1 | todo | Move blocking PIL/file work off the async event loop (`to_thread`) in upload/thumbnail paths | Medium | Medium | `stricknani/routes/projects.py`, `stricknani/utils/files.py` |
 | P2 | todo | Unify shared UI components between Projects and Yarns (import dialogs, favorite toggle, detail sidebar patterns) to enforce parity | Medium | Medium | `stricknani/templates/projects/*`, `stricknani/templates/yarn/*`, `stricknani/templates/shared/*` |
