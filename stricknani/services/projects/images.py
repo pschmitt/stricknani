@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
+import anyio
 from fastapi import UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,10 +13,11 @@ from stricknani.config import config
 from stricknani.models import Image, ImageType
 from stricknani.services.images import get_image_dimensions
 from stricknani.utils.files import (
+    compute_checksum,
     create_thumbnail,
     get_file_url,
     get_thumbnail_url,
-    save_uploaded_file,
+    save_bytes,
 )
 from stricknani.utils.ocr import is_ocr_available, precompute_ocr_for_media_file
 
@@ -27,7 +29,28 @@ async def upload_title_image(
     file: UploadFile,
     alt_text: str = "",
 ) -> dict[str, object]:
-    filename, original_filename = await save_uploaded_file(file, project_id)
+    content = await file.read()
+    checksum = compute_checksum(content)
+
+    # Check for existing image with same checksum in this project
+    from stricknani.services.projects.import_images import load_existing_image_checksums
+
+    existing = await load_existing_image_checksums(db, project_id)
+    if checksum in existing:
+        image = existing[checksum]
+        width, height = await get_image_dimensions(image.filename, project_id)
+        return {
+            "id": image.id,
+            "url": get_file_url(image.filename, project_id),
+            "thumbnail_url": get_thumbnail_url(image.filename, project_id),
+            "alt_text": image.alt_text,
+            "width": width,
+            "height": height,
+        }
+
+    filename, original_filename = await anyio.to_thread.run_sync(
+        save_bytes, content, file.filename or "image.jpg", project_id
+    )
     file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
     await create_thumbnail(file_path, project_id)
     if is_ocr_available():
@@ -58,7 +81,7 @@ async def upload_title_image(
         project_id=project_id,
     )
     db.add(image)
-    await db.commit()
+    await db.flush()
     await db.refresh(image)
 
     width, height = await get_image_dimensions(filename, project_id)
@@ -80,7 +103,27 @@ async def upload_stitch_sample_image(
     file: UploadFile,
     alt_text: str = "",
 ) -> dict[str, object]:
-    filename, original_filename = await save_uploaded_file(file, project_id)
+    content = await file.read()
+    checksum = compute_checksum(content)
+
+    from stricknani.services.projects.import_images import load_existing_image_checksums
+
+    existing = await load_existing_image_checksums(db, project_id)
+    if checksum in existing:
+        image = existing[checksum]
+        width, height = await get_image_dimensions(image.filename, project_id)
+        return {
+            "id": image.id,
+            "url": get_file_url(image.filename, project_id),
+            "thumbnail_url": get_thumbnail_url(image.filename, project_id),
+            "alt_text": image.alt_text,
+            "width": width,
+            "height": height,
+        }
+
+    filename, original_filename = await anyio.to_thread.run_sync(
+        save_bytes, content, file.filename or "image.jpg", project_id
+    )
     file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
     await create_thumbnail(file_path, project_id)
     if is_ocr_available():
@@ -102,7 +145,7 @@ async def upload_stitch_sample_image(
         project_id=project_id,
     )
     db.add(image)
-    await db.commit()
+    await db.flush()
     await db.refresh(image)
 
     width, height = await get_image_dimensions(filename, project_id)
@@ -125,7 +168,27 @@ async def upload_step_image(
     file: UploadFile,
     alt_text: str = "",
 ) -> dict[str, object]:
-    filename, original_filename = await save_uploaded_file(file, project_id)
+    content = await file.read()
+    checksum = compute_checksum(content)
+
+    from stricknani.services.projects.import_images import load_existing_image_checksums
+
+    existing = await load_existing_image_checksums(db, project_id, step_id=step_id)
+    if checksum in existing:
+        image = existing[checksum]
+        width, height = await get_image_dimensions(image.filename, project_id)
+        return {
+            "id": image.id,
+            "url": get_file_url(image.filename, project_id),
+            "thumbnail_url": get_thumbnail_url(image.filename, project_id),
+            "alt_text": image.alt_text,
+            "width": width,
+            "height": height,
+        }
+
+    filename, original_filename = await anyio.to_thread.run_sync(
+        save_bytes, content, file.filename or "image.jpg", project_id
+    )
     file_path = config.MEDIA_ROOT / "projects" / str(project_id) / filename
     await create_thumbnail(file_path, project_id)
     if is_ocr_available():
@@ -147,7 +210,7 @@ async def upload_step_image(
         step_id=step_id,
     )
     db.add(image)
-    await db.commit()
+    await db.flush()
     await db.refresh(image)
 
     width, height = await get_image_dimensions(filename, project_id)

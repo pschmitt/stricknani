@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from io import BytesIO
@@ -116,6 +117,7 @@ async def import_project_images_from_urls(
     image_urls: Sequence[str],
     *,
     title_url: str | None = None,
+    permanently_saved_tokens: set[str] | None = None,
 ) -> int:
     """Download and attach imported images to a project."""
     if not image_urls:
@@ -145,6 +147,13 @@ async def import_project_images_from_urls(
         for image_url in image_urls:
             if imported >= IMPORT_IMAGE_MAX_COUNT:
                 break
+
+            # Skip if it's a token that was already saved
+            if permanently_saved_tokens and "/media/imports/projects/" in image_url:
+                match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", image_url)
+                if match and match.group(1) in permanently_saved_tokens:
+                    continue
+
             if not is_valid_import_url(image_url):
                 logger.info("Skipping invalid image URL: %s", image_url)
                 continue
@@ -290,6 +299,12 @@ async def import_project_images_from_urls(
             db.add(image)
             imported += 1
             seen_checksums.add(checksum)
+
+            if permanently_saved_tokens and "/media/imports/projects/" in image_url:
+                match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", image_url)
+                if match:
+                    permanently_saved_tokens.add(match.group(1))
+
             imported_similarities.append(
                 ImportedSimilarity(
                     similarity=similarity,
@@ -308,6 +323,8 @@ async def import_step_images_from_urls(
     db: AsyncSession,
     step: Step,
     image_urls: Sequence[str],
+    *,
+    permanently_saved_tokens: set[str] | None = None,
 ) -> int:
     """Download and attach imported images to a step."""
     if not image_urls:
@@ -331,6 +348,13 @@ async def import_step_images_from_urls(
         for image_url in image_urls:
             if imported >= IMPORT_IMAGE_MAX_COUNT:
                 break
+
+            # Skip if it's a token that was already saved
+            if permanently_saved_tokens and "/media/imports/projects/" in image_url:
+                match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", image_url)
+                if match and match.group(1) in permanently_saved_tokens:
+                    continue
+
             if not is_valid_import_url(image_url):
                 continue
 
@@ -449,6 +473,12 @@ async def import_step_images_from_urls(
             db.add(image)
             imported += 1
             seen_checksums.add(checksum)
+
+            if permanently_saved_tokens and "/media/imports/projects/" in image_url:
+                match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", image_url)
+                if match:
+                    permanently_saved_tokens.add(match.group(1))
+
             imported_similarities.append(
                 ImportedSimilarity(
                     similarity=similarity,

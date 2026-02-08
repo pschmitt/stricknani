@@ -31,6 +31,8 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 | P1       | done   | ai import: we should instruct that we should not drop text. If we don't know where to put it, just add it to the description. | Medium | Low        | `stricknani/importing/extractors/ai.py`                                    |
 | P1       | done   | feat: when import dialog is shown, allow dragging files onto it to auto-switch to "file upload" mode with the dropped files | High   | Medium     | `stricknani/templates/projects/_import_dialog.html`, `stricknani/templates/yarn/_import_dialog.html`, `stricknani/static/js/htmx/` |
 | P2       | done   | feat: right-click/long-press on project/yarn cards to show favorite/print/re-import/delete context menu (same as "..." button) | Medium | Medium     | `stricknani/templates/projects/_cards.html`, `stricknani/templates/yarn/_cards.html`, `stricknani/static/js/htmx/` |
+| P0       | todo   | bug: spinning circle in project deletion confirmation dialog is transparent (no color) and looks weird | High   | Low        | `stricknani/templates/projects/_cards.html`, `stricknani/static/css/app.css` |
+| P0       | todo   | AI import: never upload PDFs directly, always convert to images first for better reliability and consistency | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/extractors/pdf.py` |
 
 ## Notes
 

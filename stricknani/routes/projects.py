@@ -2096,6 +2096,7 @@ async def create_project(
 
     # Cache for consumed tokens to allow same image in multiple places
     token_cache: dict[str, tuple[bytes, str, str]] = {}
+    permanently_saved_tokens: set[str] = set()
 
     async def get_token_data(t: str) -> tuple[bytes, str, str]:
         if t in token_cache:
@@ -2161,6 +2162,7 @@ async def create_project(
                                     project_id=project.id,
                                     file=mock_file,
                                 )
+                                permanently_saved_tokens.add(token)
                             except FileNotFoundError:
                                 logger.warning(
                                     "Could not find pending image for token %s", token
@@ -2169,7 +2171,12 @@ async def create_project(
                         regular_urls.append(url)
 
                 if regular_urls:
-                    await import_step_images_from_urls(db, step, regular_urls)
+                    await import_step_images_from_urls(
+                        db,
+                        step,
+                        regular_urls,
+                        permanently_saved_tokens=permanently_saved_tokens,
+                    )
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
@@ -2187,6 +2194,11 @@ async def create_project(
                             original_filename,
                             content_type,
                         ) = await get_token_data(token)
+
+                        # Skip if it was already saved to a step
+                        if token in permanently_saved_tokens:
+                            continue
+
                         # Mock UploadFile for the service
                         import io
 
@@ -2210,6 +2222,7 @@ async def create_project(
                             file=mock_file,
                             alt_text=original_filename,
                         )
+                        permanently_saved_tokens.add(token)
                         if is_title and "id" in upload_result:
                             # Force this one as title image
                             await db.execute(
@@ -2234,6 +2247,7 @@ async def create_project(
                 project,
                 regular_project_urls,
                 title_url=import_title_image_url,
+                permanently_saved_tokens=permanently_saved_tokens,
             )
 
     # Attach imported source files that were uploaded before the project existed.
@@ -2249,6 +2263,9 @@ async def create_project(
             t for t in raw_tokens if isinstance(t, str) and len(t) == 32
         ]
         for token in tokens:
+            if token in permanently_saved_tokens:
+                continue
+
             try:
                 (
                     pending_bytes,
@@ -2259,9 +2276,33 @@ async def create_project(
                 # Might have been consumed by a step or gallery loop above
                 continue
 
-            # If it's an image, save it as an Image record so it appears in the gallery
-            if content_type and content_type.startswith("image/"):
-                # Mock UploadFile for the service
+            # Save as a regular attachment if it's NOT a gallery image
+            # or it's a PDF image. User specifically wants pdf_images
+            # as attachments.
+            is_pdf_image = original_filename.startswith("pdf_image_")
+            if (
+                is_pdf_image
+                or not content_type
+                or not content_type.startswith("image/")
+            ):
+                stored = await store_project_attachment_bytes(
+                    project.id,
+                    content=pending_bytes,
+                    original_filename=original_filename,
+                    content_type=content_type,
+                )
+                db.add(
+                    Attachment(
+                        filename=stored.filename,
+                        original_filename=stored.original_filename,
+                        content_type=stored.content_type,
+                        size_bytes=stored.size_bytes,
+                        project_id=project.id,
+                    )
+                )
+                permanently_saved_tokens.add(token)
+            else:
+                # It's a general image (not from PDF pages) - save to gallery
                 import io
 
                 from fastapi import UploadFile
@@ -2280,23 +2321,7 @@ async def create_project(
                     file=mock_file,
                     alt_text=original_filename,
                 )
-            else:
-                # Save as a regular attachment (PDF, text, etc.)
-                stored = await store_project_attachment_bytes(
-                    project.id,
-                    content=pending_bytes,
-                    original_filename=original_filename,
-                    content_type=content_type,
-                )
-                db.add(
-                    Attachment(
-                        filename=stored.filename,
-                        original_filename=stored.original_filename,
-                        content_type=stored.content_type,
-                        size_bytes=stored.size_bytes,
-                        project_id=project.id,
-                    )
-                )
+                permanently_saved_tokens.add(token)
 
     await db.commit()
     await db.refresh(project)
@@ -2413,6 +2438,7 @@ async def update_project(
 
     # Cache for consumed tokens to allow same image in multiple places
     token_cache: dict[str, tuple[bytes, str, str]] = {}
+    permanently_saved_tokens: set[str] = set()
 
     async def get_token_data(t: str) -> tuple[bytes, str, str]:
         if t in token_cache:
@@ -2437,6 +2463,11 @@ async def update_project(
                             original_filename,
                             content_type,
                         ) = await get_token_data(token)
+
+                        # Skip if it was already saved to a step
+                        if token in permanently_saved_tokens:
+                            continue
+
                         # Mock UploadFile for the service
                         import io
 
@@ -2460,6 +2491,7 @@ async def update_project(
                             file=mock_file,
                             alt_text=original_filename,
                         )
+                        permanently_saved_tokens.add(token)
                         if is_title and "id" in upload_result:
                             # Force this one as title image
                             await db.execute(
@@ -2580,6 +2612,7 @@ async def update_project(
                                     project_id=project.id,
                                     file=mock_file,
                                 )
+                                permanently_saved_tokens.add(token)
                             except FileNotFoundError:
                                 logger.warning(
                                     "Could not find pending image for token %s", token
@@ -2588,7 +2621,12 @@ async def update_project(
                         regular_urls.append(url)
 
                 if regular_urls:
-                    await import_step_images_from_urls(db, step, regular_urls)
+                    await import_step_images_from_urls(
+                        db,
+                        step,
+                        regular_urls,
+                        permanently_saved_tokens=permanently_saved_tokens,
+                    )
 
     # Attach imported source files that were uploaded before the project existed.
     # This also handles any remaining PDF images not already consumed by steps
@@ -2603,6 +2641,9 @@ async def update_project(
             t for t in raw_tokens if isinstance(t, str) and len(t) == 32
         ]
         for token in tokens:
+            if token in permanently_saved_tokens:
+                continue
+
             try:
                 (
                     pending_bytes,
@@ -2612,6 +2653,58 @@ async def update_project(
             except FileNotFoundError:
                 # Might have been consumed by a step or gallery loop above
                 continue
+
+            # Save as a regular attachment if it's NOT a gallery image
+            # or it's a PDF image. User specifically wants pdf_images
+            # as attachments.
+            is_pdf_image = original_filename.startswith("pdf_image_")
+            if (
+                is_pdf_image
+                or not content_type
+                or not content_type.startswith("image/")
+            ):
+                from stricknani.models import Attachment
+                from stricknani.services.projects.attachments import (
+                    store_project_attachment_bytes,
+                )
+
+                stored = await store_project_attachment_bytes(
+                    project.id,
+                    content=pending_bytes,
+                    original_filename=original_filename,
+                    content_type=content_type,
+                )
+                db.add(
+                    Attachment(
+                        filename=stored.filename,
+                        original_filename=stored.original_filename,
+                        content_type=stored.content_type,
+                        size_bytes=stored.size_bytes,
+                        project_id=project.id,
+                    )
+                )
+                permanently_saved_tokens.add(token)
+            else:
+                # It's a general image (not from PDF pages) - save to gallery
+                import io
+
+                from fastapi import UploadFile
+                from starlette.datastructures import Headers
+
+                from stricknani.services.projects.images import upload_title_image
+
+                mock_file = UploadFile(
+                    filename=original_filename,
+                    file=io.BytesIO(pending_bytes),
+                    headers=Headers({"content-type": content_type}),
+                )
+                await upload_title_image(
+                    db,
+                    project_id=project.id,
+                    file=mock_file,
+                    alt_text=original_filename,
+                )
+                permanently_saved_tokens.add(token)
 
             # If it's an image, save it as an Image record so it appears in the gallery
             if content_type and content_type.startswith("image/"):
@@ -2920,6 +3013,7 @@ async def upload_title_image(
         file=file,
         alt_text=alt_text,
     )
+    await db.commit()
     return JSONResponse(payload)
 
 
@@ -2945,6 +3039,7 @@ async def upload_stitch_sample_image(
         file=file,
         alt_text=alt_text,
     )
+    await db.commit()
     return JSONResponse(payload)
 
 
@@ -2979,6 +3074,7 @@ async def upload_step_image(
         file=file,
         alt_text=alt_text,
     )
+    await db.commit()
     return JSONResponse(payload)
 
 
