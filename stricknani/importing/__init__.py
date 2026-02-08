@@ -1,11 +1,12 @@
-"""Compatibility shim for the legacy import path.
+"""Pattern importing package.
 
-New code should import from :mod:`stricknani.importing`.
+Prefer importing from this package instead of :mod:`stricknani.utils.importer`.
+The old module remains as a compatibility shim.
 """
 
 from __future__ import annotations
 
-from stricknani.importing.importer import (
+from .importer import (
     IMPORT_ALLOWED_IMAGE_EXTENSIONS,
     IMPORT_ALLOWED_IMAGE_TYPES,
     IMPORT_IMAGE_HEADERS,
@@ -16,9 +17,6 @@ from stricknani.importing.importer import (
     IMPORT_IMAGE_TIMEOUT,
     GarnstudioPatternImporter,
     PatternImporter,
-    _is_allowed_import_image,
-    _is_garnstudio_url,
-    _is_valid_import_url,
     filter_import_image_urls,
     trim_import_strings,
 )
@@ -34,9 +32,6 @@ __all__ = [
     "IMPORT_IMAGE_SSIM_THRESHOLD",
     "IMPORT_IMAGE_TIMEOUT",
     "PatternImporter",
-    "_is_allowed_import_image",
-    "_is_garnstudio_url",
-    "_is_valid_import_url",
     "filter_import_image_urls",
     "trim_import_strings",
 ]
