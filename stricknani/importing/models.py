@@ -99,6 +99,7 @@ class ExtractedData:
     yarn: str | None = None  # Legacy: combined yarn string
     yarns: list[ExtractedYarn] = field(default_factory=list)
     needles: str | None = None
+    other_materials: str | None = None
 
     # Gauge / technical
     stitch_sample: str | None = None
@@ -131,6 +132,7 @@ class ExtractedData:
             "category": self.category,
             "yarn": self.yarn,
             "needles": self.needles,
+            "other_materials": self.other_materials,
             "stitch_sample": self.stitch_sample,
             "link": self.link,
             "brand": self.brand,

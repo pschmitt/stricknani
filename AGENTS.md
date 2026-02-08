@@ -31,7 +31,7 @@ Use this file as the single source of truth for how to work in the Stricknani re
 
 ### Code Quality
 - **Zero Tolerance Policy:** If you notice a formatting or linting error, you MUST fix it immediately.
-- **TODO Management:** 
+- **TODO Management:**
   - When starting a task from `TODO.md`, you MUST mark it as `wip` immediately.
   - If explicitly asked to "clean up", you should remove all tasks marked as `done` from `TODO.md`.
 - Linting: `uv run ruff check .`

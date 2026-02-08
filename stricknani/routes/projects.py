@@ -897,6 +897,7 @@ async def import_pattern(
                     "category": extracted.category,
                     "yarn": extracted.yarn,
                     "needles": extracted.needles,
+                    "other_materials": extracted.other_materials,
                     "stitch_sample": extracted.stitch_sample,
                     "brand": extracted.brand,
                     "steps": [
@@ -954,6 +955,7 @@ async def import_pattern(
                     "category": extracted.category,
                     "yarn": extracted.yarn,
                     "needles": extracted.needles,
+                    "other_materials": extracted.other_materials,
                     "stitch_sample": extracted.stitch_sample,
                     "brand": extracted.brand,
                     "steps": [

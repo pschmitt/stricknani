@@ -184,6 +184,9 @@ class HTMLExtractor(ContentExtractor):
             description=description,
             yarn=yarn_text,
             yarns=yarn_details or [],
+            other_materials=importer._extract_garnstudio_other_materials(soup)
+            if importer.is_garnstudio
+            else None,
             needles=importer._extract_needles(soup),
             stitch_sample=importer._extract_stitch_sample(soup),
             brand=importer._extract_brand(soup),

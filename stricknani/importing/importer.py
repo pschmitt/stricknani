@@ -449,6 +449,10 @@ class PatternImporter:
                     else:
                         description = garn_notes
 
+        other_materials = None
+        if self.is_garnstudio:
+            other_materials = self._extract_garnstudio_other_materials(soup)
+
         notes = None
         image_urls = images
 
@@ -477,6 +481,7 @@ class PatternImporter:
             "length_meters": self._extract_length_meters(soup),
             "weight_category": self._extract_weight_category(soup),
             "stitch_sample": self._extract_stitch_sample(soup),
+            "other_materials": other_materials,
             "description": description,
             "notes": notes,
             "steps": steps,
@@ -2773,6 +2778,89 @@ class PatternImporter:
             final_yarns.append(block)
 
         return "\n".join(final_yarns).strip() or None
+
+    def _extract_garnstudio_other_materials(self, soup: BeautifulSoup) -> str | None:
+        """Extract buttons and other notions from Garnstudio material block."""
+        material = soup.find(id=re.compile(r"material_text(_print)?"))
+        if not material:
+            material = soup.select_one(".pattern-material")
+
+        if not material:
+            return None
+
+        text = material.get_text(separator="\n", strip=True)
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        material_headings = {"GARN", "YARN", "MATERIAL", "MATERIALS", "ZUBEHÖR", "ACCESSORIES", "TILBEHØR"}
+
+        start_index = -1
+        for i, line in enumerate(lines):
+            upper = line.strip().rstrip(":").upper()
+            if upper in material_headings:
+                start_index = i
+                break
+
+        if start_index == -1:
+            return None
+
+        collected_blocks: list[str] = []
+        current: list[str] = []
+        stop_headings = {
+            "NADELN",
+            "NEEDLES",
+            "PINNER",
+            "HÄKELNADEL",
+            "HÄKELNADELN",
+            "CROCHET HOOK",
+            "CROCHET HOOKS",
+            "HEKLENÅL",
+            "HEKLENÅLER",
+            "MASCHENPROBE",
+            "GAUGE",
+            "STRIKKEFASTHET",
+            "ABMESSUNGEN",
+            "MEASUREMENTS",
+            "DIE ARBEIT BEGINNT HIER",
+            "START HERE",
+            "KURZBESCHREIBUNG",
+        }
+
+        for line in lines[start_index + 1 :]:
+            heading_key = line.rstrip(":").strip().upper()
+            if heading_key in stop_headings:
+                if current:
+                    collected_blocks.append(" ".join(current))
+                    current = []
+                break
+
+            if line.upper().startswith("DROPS "):
+                if current:
+                    collected_blocks.append(" ".join(current))
+                current = [line]
+                continue
+
+            if current:
+                current.append(line)
+
+        if current:
+            collected_blocks.append(" ".join(current))
+
+        notions: list[str] = []
+        for block in collected_blocks:
+            lower = block.lower()
+            if any(
+                kw in lower
+                for kw in [
+                    "knopf",
+                    "button",
+                    "knapper",
+                    "reißverschluss",
+                    "zipper",
+                    "glidelås",
+                ]
+            ):
+                notions.append(block)
+
+        return "\n".join(notions).strip() or None
 
     def _extract_garnstudio_text(self, soup: BeautifulSoup) -> str:
         """Extract clean text from Garnstudio pattern page using trafilatura."""

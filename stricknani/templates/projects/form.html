@@ -163,20 +163,6 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                 placeholder="{{ _('Personal notes about this project...') }}">{{ project.notes if project and project.notes else '' }}</textarea>
                             <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
                         </div>
-
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label for="other_materials"
-                                    class=" text-sm font-medium inline-flex items-center gap-2">
-                                    <span class="mdi mdi-package-variant-closed text-base-content/70"></span>
-                                    {{ _('Other Materials') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
-                                        }}</span>
-                                </label>
-                            </div>
-                            <textarea id="other_materials" name="other_materials" rows="3" class="textarea textarea-bordered w-full"
-                                placeholder="{{ _('e.g. Buttons, zippers, ribbon, etc.') }}">{{ project.other_materials if project and project.other_materials else '' }}</textarea>
-                            <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -464,6 +450,20 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                 <div id="selected_yarns" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <!-- Chips populated by JS -->
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Other Materials Card -->
+                        <div class="bg-base-200/30 rounded-xl border border-base-200 p-4">
+                            <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                                <span class="mdi mdi-package-variant-closed text-primary"></span>
+                                {{ _('Other Materials') }}
+                            </h3>
+                            <div>
+                                <textarea id="other_materials" name="other_materials" rows="3"
+                                    class="textarea textarea-bordered w-full"
+                                    placeholder="{{ _('e.g. Buttons, zippers, ribbon, etc.') }}">{{ project.other_materials if project and project.other_materials else '' }}</textarea>
+                                <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
                             </div>
                         </div>
 
@@ -2833,6 +2833,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                 setFieldValue('gauge_stitches', data.gauge_stitches);
         setFieldValue('gauge_rows', data.gauge_rows);
         setFieldValue('stitch_sample', data.stitch_sample);
+        setFieldValue('other_materials', data.other_materials);
         setFieldValue('description', data.description);
         setFieldValue('notes', data.notes);
         setFieldValue('link', data.link);

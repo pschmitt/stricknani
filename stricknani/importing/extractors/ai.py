@@ -323,6 +323,7 @@ class AIExtractor(ContentExtractor):
             "- weight_grams: Weight of a single ball in grams (integer)\n"
             "- length_meters: Length of a single ball in meters (integer)\n"
             "- needles: Needle size and type\n"
+            "- other_materials: Buttons, zippers, or other notions needed\n"
             "- stitch_sample: Gauge information\n"
             "- steps: Array of instruction steps with step_number, title, "
             "description\n"
@@ -390,6 +391,7 @@ class AIExtractor(ContentExtractor):
             weight_category=data.get("weight_category"),
             fiber_content=data.get("fiber_content"),
             needles=data.get("needles"),
+            other_materials=data.get("other_materials"),
             stitch_sample=data.get("stitch_sample"),
             steps=steps,
             extras={
@@ -406,6 +408,7 @@ class AIExtractor(ContentExtractor):
                     "weight_category",
                     "fiber_content",
                     "needles",
+                    "other_materials",
                     "stitch_sample",
                     "steps",
                     "image_urls",
