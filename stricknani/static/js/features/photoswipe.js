@@ -234,7 +234,7 @@
         order: 6,
         isButton: true,
         html: '<span class="pswp__icn mdi mdi-text-recognition"></span>',
-        appendTo: "bar",
+        appendTo: "wrapper",
         onClick: async (event) => {
           event.preventDefault();
           event.stopPropagation();
