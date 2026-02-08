@@ -116,7 +116,13 @@ from stricknani.utils.wayback import (
 )
 from stricknani.web.templating import get_language, render_template, templates
 
-router: APIRouter = APIRouter(prefix="/projects", tags=["projects"])
+logger = logging.getLogger(__name__)
+
+router = APIRouter(
+    prefix="/projects",
+    tags=["projects"],
+    responses={404: {"description": "Not found"}},
+)
 
 
 _GARNSTUDIO_SYMBOL_URL_RE = re.compile(
@@ -499,10 +505,8 @@ async def import_pattern(
         use_ai: If True, use AI-powered extraction (requires OPENAI_API_KEY)
         current_user: Authenticated user
     """
-    import logging
     import os
 
-    logger = logging.getLogger(__name__)
     trace: ImportTrace | None = None
     if config.IMPORT_TRACE_ENABLED:
         trace = ImportTrace.create(
@@ -980,7 +984,7 @@ async def import_pattern(
                 ]
 
                 # Add local images to the main gallery
-                local_urls = {} # index -> url
+                local_urls = {}  # index -> url
                 for i in range(len(pdf_images)):
                     token = local_image_token_map[i]
                     filename = local_image_filename_map[i]
@@ -1430,7 +1434,6 @@ async def _ensure_yarns_by_text(
                             )
 
                     except Exception as e:
-                        logger = logging.getLogger("stricknani.imports")
                         logger.warning(
                             f"Failed to auto-import yarn from {db_yarn_obj.link}: {e}"
                         )
@@ -2107,18 +2110,71 @@ async def create_project(
             await db.flush()  # Get step ID
             step_images = step_data.get("image_urls")
             if step_images:
-                await import_step_images_from_urls(db, step, step_images)
+                # Handle both regular URLs and temporary pdf_image URLs
+                regular_urls = []
+                for url in step_images:
+                    if "/media/imports/projects/" in url:
+                        # Extract token from URL
+                        # Format: /media/imports/projects/{user_id}/{token}{ext}
+                        match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
+                        if match:
+                            token = match.group(1)
+                            try:
+                                (
+                                    pending_bytes,
+                                    original_filename,
+                                    content_type,
+                                ) = await consume_pending_project_import_attachment(
+                                    current_user.id,
+                                    token=token,
+                                )
+                                # Mock UploadFile for the service
+                                import io
+
+                                from fastapi import UploadFile
+                                from starlette.datastructures import Headers
+
+                                from stricknani.services.projects.images import (
+                                    upload_step_image,
+                                )
+
+                                mock_file = UploadFile(
+                                    filename=original_filename,
+                                    file=io.BytesIO(pending_bytes),
+                                    headers=Headers({"content-type": content_type}),
+                                )
+                                await upload_step_image(
+                                    db,
+                                    step_id=step.id,
+                                    project_id=project.id,
+                                    file=mock_file,
+                                )
+                            except FileNotFoundError:
+                                logger.warning(
+                                    "Could not find pending image for token %s", token
+                                )
+                    else:
+                        regular_urls.append(url)
+
+                if regular_urls:
+                    await import_step_images_from_urls(db, step, regular_urls)
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
-        await import_project_images_from_urls(
-            db,
-            project,
-            image_urls,
-            title_url=import_title_image_url,
-        )
+        # Filter out temporary import URLs before passing to regular importer
+        regular_project_urls = [
+            u for u in image_urls if "/media/imports/projects/" not in u
+        ]
+        if regular_project_urls:
+            await import_project_images_from_urls(
+                db,
+                project,
+                regular_project_urls,
+                title_url=import_title_image_url,
+            )
 
     # Attach imported source files that were uploaded before the project existed.
+    # This also handles any remaining PDF images not already consumed by steps.
     if import_attachment_tokens:
         try:
             raw_tokens = json.loads(import_attachment_tokens)
@@ -2270,7 +2326,12 @@ async def update_project(
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
-        await import_project_images_from_urls(db, project, image_urls)
+        # Filter out temporary import URLs before passing to regular importer
+        regular_project_urls = [
+            u for u in image_urls if "/media/imports/projects/" not in u
+        ]
+        if regular_project_urls:
+            await import_project_images_from_urls(db, project, regular_project_urls)
 
     # Update steps
     if steps_data:
@@ -2333,9 +2394,56 @@ async def update_project(
                 )
                 db.add(step)
                 await db.flush()
-                step_images = step_data.get("image_urls")
-                if step_images:
-                    await import_step_images_from_urls(db, step, step_images)
+
+            step_images = step_data.get("image_urls")
+            if step_images:
+                # Handle both regular URLs and temporary pdf_image URLs
+                regular_urls = []
+                for url in step_images:
+                    if "/media/imports/projects/" in url:
+                        # Extract token from URL
+                        match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
+                        if match:
+                            token = match.group(1)
+                            try:
+                                (
+                                    pending_bytes,
+                                    original_filename,
+                                    content_type,
+                                ) = await consume_pending_project_import_attachment(
+                                    current_user.id,
+                                    token=token,
+                                )
+                                # Mock UploadFile for the service
+                                import io
+
+                                from fastapi import UploadFile
+                                from starlette.datastructures import Headers
+
+                                from stricknani.services.projects.images import (
+                                    upload_step_image,
+                                )
+
+                                mock_file = UploadFile(
+                                    filename=original_filename,
+                                    file=io.BytesIO(pending_bytes),
+                                    headers=Headers({"content-type": content_type}),
+                                )
+                                await upload_step_image(
+                                    db,
+                                    step_id=step.id,
+                                    project_id=project.id,
+                                    file=mock_file,
+                                )
+                            except FileNotFoundError:
+                                logger.warning(
+                                    "Could not find pending image for token %s", token
+                                )
+                    else:
+                        regular_urls.append(url)
+
+                if regular_urls:
+                    await import_step_images_from_urls(db, step, regular_urls)
 
     await db.commit()
 

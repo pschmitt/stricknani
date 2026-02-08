@@ -2071,11 +2071,13 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
         );
     }
 
-    function addPendingTitleImageToGallery(url) {
+    function addPendingTitleImageToGallery(url, options = {}) {
         const container = document.getElementById('titleImagesContainer');
         if (!container) {
             return;
         }
+
+        const skipAutoPromote = options.skipAutoPromote === true;
 
         // Defensive: avoid showing duplicates even if the import runs multiple times
         // or returns slightly different variants of the same URL.
@@ -2110,9 +2112,11 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
         container.appendChild(div);
 
         // If this is the first image, automatically promote it
-        const currentTitleUrl = document.getElementById('import_title_image_url').value;
-        if (!currentTitleUrl) {
-            promotePendingImage(div.querySelector('.promote-pending-btn'), url);
+        if (!skipAutoPromote) {
+            const currentTitleUrl = document.getElementById('import_title_image_url').value;
+            if (!currentTitleUrl) {
+                promotePendingImage(div.querySelector('.promote-pending-btn'), url);
+            }
         }
 
         window.refreshPhotoSwipeGallery?.(container);
@@ -2866,11 +2870,22 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
         }
 
         if (dedupedImageUrls.length > 0) {
+            // Find the best title image: prefer regular URLs over /media/imports/
+            const bestTitleUrl = dedupedImageUrls.find(u => !u.includes('/media/imports/')) || dedupedImageUrls[0];
+            
             dedupedImageUrls.forEach(url => {
                 if (typeof addPendingTitleImageToGallery === 'function') {
-                    addPendingTitleImageToGallery(url);
+                    addPendingTitleImageToGallery(url, { 
+                        skipAutoPromote: true 
+                    });
                 }
             });
+
+            // Explicitly promote the best one
+            const bestImgBtn = document.querySelector(`.promote-pending-btn[data-url="${bestTitleUrl}"]`);
+            if (bestImgBtn) {
+                promotePendingImage(bestImgBtn, bestTitleUrl);
+            }
         }
 
         // Steps

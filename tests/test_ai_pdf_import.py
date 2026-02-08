@@ -79,6 +79,7 @@ async def test_ai_extractor_pdf_direct_upload() -> None:
 @pytest.mark.asyncio
 async def test_ai_extractor_pdf_fallback_on_error() -> None:
     from openai import BadRequestError
+
     extractor = AIExtractor(api_key="test-key")
 
     pdf_content = RawContent(
@@ -121,7 +122,7 @@ async def test_ai_extractor_pdf_fallback_on_error() -> None:
         mock_client.files.create.side_effect = BadRequestError(
             "Invalid file format application/pdf",
             response=mock_response,
-            body={"error": {"message": "Invalid file format application/pdf"}}
+            body={"error": {"message": "Invalid file format application/pdf"}},
         )
 
         result = await extractor.extract(pdf_content)

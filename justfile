@@ -59,7 +59,8 @@ i18n-compile:
 fmt:
   uv run ruff format .
   uv run ruff check --fix .
-  statix fix .
+  statix fix flake.nix
+  statix fix nix/
 
 # Trim trailing whitespace
 trim:
@@ -84,7 +85,8 @@ check: lint lint-nix test i18n-check
 
 # Lint Nix files
 lint-nix:
-  statix check
+  statix check flake.nix
+  statix check nix/
 
 # Build with Nix
 build-nix:

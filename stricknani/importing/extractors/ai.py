@@ -278,7 +278,7 @@ class AIExtractor(ContentExtractor):
                 image_block = (
                     "\n\nThe following images were extracted from the PDF "
                     "for reference:\n"
-                    + "\n".join(f"- Image {i+1}" for i in range(len(local_images)))
+                    + "\n".join(f"- Image {i + 1}" for i in range(len(local_images)))
                     + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. "
                     "in the step 'images' field if they are relevant to a "
                     "specific step."
@@ -402,7 +402,7 @@ class AIExtractor(ContentExtractor):
             image_hints = (
                 "\n\nThe following images were extracted from the PDF "
                 "for reference:\n"
-                + "\n".join(f"- Image {i+1}" for i in range(len(local_images)))
+                + "\n".join(f"- Image {i + 1}" for i in range(len(local_images)))
                 + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. "
                 "in the step 'images' field if they are relevant to a "
                 "specific step."
@@ -417,7 +417,6 @@ class AIExtractor(ContentExtractor):
             result.extras["pdf_images"] = local_images
 
         return result
-
 
     async def _prepare_image(self, image_bytes: bytes, max_size: int = 1024) -> bytes:
         """Resize image if needed to reduce token usage."""
@@ -448,6 +447,9 @@ class AIExtractor(ContentExtractor):
             "You are an expert at analyzing knitting patterns and projects. "
             "Extract as much information as possible from the provided content "
             "and return it as JSON.\n\n"
+            "IMPORTANT: Use Markdown formatting for all text fields (description, "
+            "notes, other_materials, stitch_sample, and step descriptions) to "
+            "preserve structure, lists, and emphasis.\n\n"
             "Fields to extract:\n"
             "- name: Project/pattern name\n"
             "- description: Brief description or summary\n"
