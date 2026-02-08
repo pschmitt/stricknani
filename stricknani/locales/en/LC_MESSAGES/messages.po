@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-08 11:25+0100\n"
+"POT-Creation-Date: 2026-02-08 11:31+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -145,7 +145,7 @@ msgstr "Open image"
 
 #: stricknani/templates/base.html:43
 #: stricknani/templates/projects/detail.html:776
-#: stricknani/templates/projects/detail.html:924
+#: stricknani/templates/projects/detail.html:892
 #: stricknani/templates/projects/form.html:3269
 #: stricknani/templates/projects/form.html:3307
 msgid "Your session has expired. Reload the page to continue."
@@ -1226,8 +1226,8 @@ msgstr ""
 msgid "This can happen after restarting the server."
 msgstr ""
 
-#: stricknani/templates/projects/detail.html:933
-#: stricknani/templates/projects/detail.html:952
+#: stricknani/templates/projects/detail.html:901
+#: stricknani/templates/projects/detail.html:920
 #: stricknani/templates/projects/form.html:3312
 #: stricknani/templates/projects/form.html:3314
 #, fuzzy

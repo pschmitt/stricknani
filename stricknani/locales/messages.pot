@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-08 11:25+0100\n"
+"POT-Creation-Date: 2026-02-08 11:31+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -144,7 +144,7 @@ msgstr ""
 
 #: stricknani/templates/base.html:43
 #: stricknani/templates/projects/detail.html:776
-#: stricknani/templates/projects/detail.html:924
+#: stricknani/templates/projects/detail.html:892
 #: stricknani/templates/projects/form.html:3269
 #: stricknani/templates/projects/form.html:3307
 msgid "Your session has expired. Reload the page to continue."
@@ -1188,8 +1188,8 @@ msgstr ""
 msgid "This can happen after restarting the server."
 msgstr ""
 
-#: stricknani/templates/projects/detail.html:933
-#: stricknani/templates/projects/detail.html:952
+#: stricknani/templates/projects/detail.html:901
+#: stricknani/templates/projects/detail.html:920
 #: stricknani/templates/projects/form.html:3312
 #: stricknani/templates/projects/form.html:3314
 msgid "Failed to delete project"
