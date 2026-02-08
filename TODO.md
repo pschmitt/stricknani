@@ -24,6 +24,9 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 | P0       | done   | Refactor entire import mechanism for better extensibility and maintainability                        | High   | Medium     | Import-related modules, service layer refactoring                                                                                            |
 | P3       | todo   | Add `other_materials` text field to projects for extras like buttons/zippers                         | Medium | Low        | `stricknani/templates/projects/form.html`, `stricknani/models/project.py`, `stricknani/routes/projects.py`, `stricknani/services/projects/*` |
 | P3       | todo   | Replace runtime Tailwind-in-browser with a prebuilt static CSS bundle for performance and easier CSP | High   | High       | `stricknani/templates/base.html`, build tooling (`justfile`, `flake.nix`)                                                                    |
+| P0       | todo   | Re-import from files: support re-importing projects with new source files and redesign the UI      | High   | Medium     | Import pipeline, project templates and routes, UI components                                                                                  |
+| P0       | todo   | PDF import improvements: support step images and gallery images, improve text extraction accuracy | High   | Medium     | `stricknani/importing/extractors/pdf.py`, AI extractor, image handling                                                                        |
+| P0       | todo   | File-based AI import: upload source files verbatim without pre-processing for better re-import flow | High   | Low        | `stricknani/importing/sources/file.py`, AI extractor configuration                                                                                                  |
 
 ## Notes
 

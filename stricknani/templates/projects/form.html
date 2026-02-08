@@ -90,6 +90,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
     <input type="hidden" id="import_title_image_url" name="import_title_image_url" value="">
+    <input type="hidden" id="import_attachment_tokens" name="import_attachment_tokens" value="">
     <input type="hidden" id="archive_on_save" name="archive_on_save" value="">
     <input type="hidden" id="is_ai_enhanced" name="is_ai_enhanced" value="{{ '1' if project and project.is_ai_enhanced else '' }}">
     <input type="hidden" id="yarn_brand" name="yarn_brand" value="">
@@ -972,6 +973,13 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                     importImagesField.value = dedupedImageUrls.length
                         ? JSON.stringify(dedupedImageUrls)
                         : '';
+                }
+                const importAttachmentTokensField = document.getElementById('import_attachment_tokens');
+                if (importAttachmentTokensField && Array.isArray(data.import_attachment_tokens)) {
+                    let existingTokens = [];
+                    try { existingTokens = JSON.parse(importAttachmentTokensField.value || '[]'); } catch (e) { existingTokens = []; }
+                    const merged = [...new Set([...(Array.isArray(existingTokens) ? existingTokens : []), ...data.import_attachment_tokens])];
+                    importAttachmentTokensField.value = JSON.stringify(merged);
                 }
                 const archiveField = document.getElementById('archive_on_save');
                 if (archiveField) {
@@ -2833,6 +2841,13 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
             importImagesField.value = dedupedImageUrls.length
                 ? JSON.stringify(dedupedImageUrls)
                 : '';
+        }
+        const importAttachmentTokensField = document.getElementById('import_attachment_tokens');
+        if (importAttachmentTokensField && Array.isArray(data.import_attachment_tokens)) {
+            let existingTokens = [];
+            try { existingTokens = JSON.parse(importAttachmentTokensField.value || '[]'); } catch (e) { existingTokens = []; }
+            const merged = [...new Set([...(Array.isArray(existingTokens) ? existingTokens : []), ...data.import_attachment_tokens])];
+            importAttachmentTokensField.value = JSON.stringify(merged);
         }
 
         if (dedupedImageUrls.length > 0) {

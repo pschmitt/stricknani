@@ -1621,62 +1621,60 @@ msgid "No results found for \"%(query)s\""
 msgstr "Keine Ergebnisse gefunden für \"%(query)s\""
 
 #: stricknani/templates/shared/_import_dialog.html:11
-#, fuzzy
 msgid "From URL"
-msgstr "Garn-URL"
+msgstr "Aus URL"
 
 #: stricknani/templates/shared/_import_dialog.html:19
-#, fuzzy
 msgid "From File"
-msgstr "OCR fehlgeschlagen."
+msgstr "Aus Datei"
 
 #: stricknani/templates/shared/_import_dialog.html:42
 msgid "Magic Import"
 msgstr "Magischer Import"
 
 #: stricknani/templates/shared/_import_dialog.html:97
-#, fuzzy
 msgid "AI Vision Import"
-msgstr "Magischer Import"
+msgstr "KI-Bildimport"
 
 #: stricknani/templates/shared/_import_dialog.html:99
 msgid ""
 "Upload photos, PDFs, or text files. Our AI will analyze them and extract "
 "pattern details for you."
 msgstr ""
+"Lade Fotos, PDFs oder Textdateien hoch. Unsere KI analysiert sie und "
+"extrahiert die Musterdetails fuer dich."
 
 #: stricknani/templates/shared/_import_dialog.html:107
-#, fuzzy
 msgid "Upload Files"
-msgstr "Hochladen fehlgeschlagen"
+msgstr "Dateien hochladen"
 
 #: stricknani/templates/shared/_import_dialog.html:108
 msgid "Images, PDFs, or text files"
-msgstr ""
+msgstr "Bilder, PDFs oder Textdateien"
 
 #: stricknani/templates/shared/_import_dialog.html:129
-#, fuzzy
 msgid "Drop files here or click to browse"
-msgstr "Bilder hierher ziehen oder zum Hochladen klicken"
+msgstr "Dateien hierher ziehen oder zum Auswaehlen klicken"
 
 #: stricknani/templates/shared/_import_dialog.html:131
 msgid "Supports: JPG, PNG, GIF, WebP, PDF, TXT, MD"
-msgstr ""
+msgstr "Unterstuetzt: JPG, PNG, GIF, WebP, PDF, TXT, MD"
 
 #: stricknani/templates/shared/_import_dialog.html:154
 msgid ""
 "Tip: For best results, upload clear photos of pattern covers, yarn "
 "labels, or instruction pages."
 msgstr ""
+"Tipp: Fuer beste Ergebnisse lade klare Fotos von Muster-Covern, "
+"Garnetiketten oder Anleitungsseiten hoch."
 
 #: stricknani/templates/shared/_import_dialog.html:162
-#, fuzzy
 msgid "AI-Powered Analysis Enabled"
-msgstr "KI-gestützte Extraktion aktiviert"
+msgstr "KI-gestuetzte Analyse aktiviert"
 
 #: stricknani/templates/shared/_import_dialog.html:175
 msgid "Analyze & Import"
-msgstr ""
+msgstr "Analysieren & Importieren"
 
 #: stricknani/templates/shared/_import_dialog.html:189
 msgid "Working some magic..."
@@ -3235,4 +3233,3 @@ msgstr "Bild entfernen"
 
 #~ msgid "Copy failed"
 #~ msgstr "Kopieren fehlgeschlagen"
-

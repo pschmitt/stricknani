@@ -44,7 +44,12 @@ from stricknani.models import (
 )
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.services.images import get_image_dimensions
-from stricknani.services.projects.attachments import store_project_attachment
+from stricknani.services.projects.attachments import (
+    consume_pending_project_import_attachment,
+    store_pending_project_import_attachment_bytes,
+    store_project_attachment,
+    store_project_attachment_bytes,
+)
 from stricknani.services.projects.categories import (
     ensure_category,
     get_user_categories,
@@ -516,10 +521,77 @@ async def import_pattern(
     try:
         content_text = ""
         source_url = None
+        uploaded_file_bytes: bytes | None = None
+        uploaded_file_name: str | None = None
+        uploaded_file_content_type: str | None = None
 
         use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
             os.getenv("OPENAI_API_KEY")
         )
+
+        async def store_source_file_for_import() -> dict[str, Any]:
+            if uploaded_file_bytes is None or uploaded_file_name is None:
+                return {"import_attachment_tokens": [], "source_attachments": []}
+
+            if project_id is not None:
+                res = await db.execute(
+                    select(Project).where(
+                        Project.id == project_id,
+                        Project.owner_id == current_user.id,
+                    )
+                )
+                project_obj = res.scalar_one_or_none()
+                if not project_obj:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Project not found",
+                    )
+
+                stored = await store_project_attachment_bytes(
+                    project_id,
+                    content=uploaded_file_bytes,
+                    original_filename=uploaded_file_name,
+                    content_type=uploaded_file_content_type,
+                )
+                attachment = Attachment(
+                    filename=stored.filename,
+                    original_filename=stored.original_filename,
+                    content_type=stored.content_type,
+                    size_bytes=stored.size_bytes,
+                    project_id=project_id,
+                )
+                db.add(attachment)
+                await db.commit()
+                await db.refresh(attachment)
+
+                return {
+                    "import_attachment_tokens": [],
+                    "source_attachments": [
+                        {
+                            "id": attachment.id,
+                            "filename": attachment.filename,
+                            "original_filename": attachment.original_filename,
+                            "content_type": attachment.content_type,
+                            "size_bytes": attachment.size_bytes,
+                            "url": get_file_url(
+                                attachment.filename,
+                                project_id,
+                                subdir="projects",
+                            ),
+                            "thumbnail_url": stored.thumbnail_url,
+                            "width": stored.width,
+                            "height": stored.height,
+                        }
+                    ],
+                }
+
+            token = await store_pending_project_import_attachment_bytes(
+                current_user.id,
+                content=uploaded_file_bytes,
+                original_filename=uploaded_file_name,
+                content_type=uploaded_file_content_type,
+            )
+            return {"import_attachment_tokens": [token], "source_attachments": []}
 
         # Extract content based on import type
         if import_type == "url":
@@ -768,6 +840,9 @@ async def import_pattern(
 
             # Read file content
             content_bytes = await file.read()
+            uploaded_file_bytes = content_bytes
+            uploaded_file_name = file.filename or "file"
+            uploaded_file_content_type = file.content_type or "application/octet-stream"
             if trace:
                 trace.add_event(
                     "file_upload",
@@ -837,9 +912,7 @@ async def import_pattern(
                     "is_ai_enhanced": True,
                 }
 
-                # Store extracted images as attachments
-                # TODO: Handle saving uploaded image as project photo
-
+                data.update(await store_source_file_for_import())
                 return JSONResponse(content=data)
 
             elif file.filename and file.filename.lower().endswith(".pdf"):
@@ -896,6 +969,7 @@ async def import_pattern(
                     "is_ai_enhanced": True,
                 }
 
+                data.update(await store_source_file_for_import())
                 return JSONResponse(content=data)
 
             else:
@@ -966,6 +1040,7 @@ async def import_pattern(
                     if trace:
                         data["import_trace_id"] = trace.trace_id
                     data = trim_import_strings(data)
+                    data.update(await store_source_file_for_import())
                     return JSONResponse(content=data)
 
                 except Exception as e:
@@ -991,6 +1066,7 @@ async def import_pattern(
             data["import_trace_id"] = trace.trace_id
 
         data = trim_import_strings(data)
+        data.update(await store_source_file_for_import())
         return JSONResponse(content=data)
 
     except HTTPException:
@@ -1881,6 +1957,7 @@ async def create_project(
     yarn_brand: Annotated[str | None, Form()] = None,
     import_image_urls: Annotated[list[str] | None, Form()] = None,
     import_title_image_url: Annotated[str | None, Form()] = None,
+    import_attachment_tokens: Annotated[str | None, Form()] = None,
     archive_on_save: Annotated[str | None, Form()] = None,
     is_ai_enhanced: Annotated[bool | None, Form()] = False,
     db: AsyncSession = Depends(get_db),
@@ -1968,6 +2045,45 @@ async def create_project(
             image_urls,
             title_url=import_title_image_url,
         )
+
+    # Attach imported source files that were uploaded before the project existed.
+    if import_attachment_tokens:
+        try:
+            raw_tokens = json.loads(import_attachment_tokens)
+        except json.JSONDecodeError:
+            raw_tokens = []
+
+        tokens: list[str] = [
+            t for t in raw_tokens if isinstance(t, str) and len(t) == 32
+        ]
+        for token in tokens:
+            try:
+                (
+                    pending_bytes,
+                    original_filename,
+                    content_type,
+                ) = await consume_pending_project_import_attachment(
+                    current_user.id,
+                    token=token,
+                )
+            except FileNotFoundError:
+                continue
+
+            stored = await store_project_attachment_bytes(
+                project.id,
+                content=pending_bytes,
+                original_filename=original_filename,
+                content_type=content_type,
+            )
+            db.add(
+                Attachment(
+                    filename=stored.filename,
+                    original_filename=stored.original_filename,
+                    content_type=stored.content_type,
+                    size_bytes=stored.size_bytes,
+                    project_id=project.id,
+                )
+            )
 
     await db.commit()
     await db.refresh(project)

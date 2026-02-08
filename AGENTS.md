@@ -7,6 +7,7 @@ Use this file as the single source of truth for how to work in the Stricknani re
 ### Vendored Web Dependencies
 - All new frontend dependencies (JS/CSS) must be vendored via `vendir.yml` (no new CDN links).
 - After changing `vendir.yml`, run `just vendor-sync` and commit the resulting `vendir.lock.yml` plus `stricknani/static/vendor/**`.
+- Prefer **vanilla JS** for new UI behavior. Do not introduce new JS dependencies unless there is a strong technical reason and existing capabilities (HTMX, browser APIs) are insufficient.
 
 ### Translations (UI text)
 - Always add new strings to `stricknani/locales/en/LC_MESSAGES/messages.po` and `stricknani/locales/de/LC_MESSAGES/messages.po`.

@@ -230,13 +230,56 @@ class AIExtractor(ContentExtractor):
         content: RawContent,
         hints: dict[str, Any] | None,
     ) -> ExtractedData:
-        """Extract data from PDF (treat as image for now).
+        """Extract data from PDF.
 
-        TODO: Implement proper PDF text extraction + vision for diagrams.
+        OpenAI vision endpoints only accept image formats (png/jpeg/gif/webp),
+        so we must not send raw PDFs as "images".
+
+        Current strategy:
+        - Extract text from the PDF using `PDFExtractor` (pypdf/PyMuPDF).
+        - Feed that text into the text extraction flow.
         """
-        # For now, treat PDF as binary and use vision
-        # In the future, we could extract text first, then use vision for diagrams
-        return await self._extract_from_image(content, hints)
+        from stricknani.importing.extractors.pdf import PDFExtractor
+
+        pdf_extractor = PDFExtractor(extract_images=False)
+        if not pdf_extractor.can_extract(content):
+            raise ExtractorError(
+                "PDF extraction is not available (install pypdf or PyMuPDF)",
+                extractor_name=self.name,
+            )
+
+        try:
+            pdf_data = await pdf_extractor.extract(content, hints=hints)
+        except ExtractorError as exc:
+            raise ExtractorError(
+                f"AI PDF preprocessing failed: {exc}",
+                extractor_name=self.name,
+            ) from exc
+
+        full_text = ""
+        if pdf_data.extras:
+            full_text = str(pdf_data.extras.get("full_text") or "")
+        if not full_text.strip():
+            full_text = str(pdf_data.description or "")
+
+        if not full_text.strip():
+            raise ExtractorError(
+                "PDF contains no extractable text. If this is a scanned PDF, "
+                "upload images instead (or install PyMuPDF to enable "
+                "image-based extraction).",
+                extractor_name=self.name,
+            )
+
+        # Re-route through the text pipeline.
+        text_content = RawContent(
+            content=full_text,
+            content_type=ContentType.TEXT,
+            metadata={
+                **(content.metadata or {}),
+                "source_content_type": "application/pdf",
+            },
+        )
+        return await self._extract_from_text(text_content, hints)
 
     async def _prepare_image(self, image_bytes: bytes, max_size: int = 1024) -> bytes:
         """Resize image if needed to reduce token usage."""
