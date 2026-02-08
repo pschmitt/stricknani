@@ -4,6 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
   };
 
   outputs =
@@ -11,6 +12,7 @@
       self,
       nixpkgs,
       flake-utils,
+      pre-commit-hooks,
     }:
     let
       eachSystem = flake-utils.lib.eachDefaultSystem (
@@ -24,6 +26,28 @@
           stricknani = pkgs.callPackage ./nix/package.nix {
             python3 = python;
             inherit fastapi-csrf-protect;
+          };
+
+          pre-commit-check = pre-commit-hooks.lib.${system}.run {
+            src = ./.;
+            hooks = {
+              # Python
+              ruff.enable = true;
+              ruff-format.enable = true;
+              mypy = {
+                enable = true;
+                settings.binPath = "${pkgs.uv}/bin/uv run mypy";
+              };
+
+              # Nix
+              statix.enable = true;
+
+              # JS/CSS
+              prettier = {
+                enable = true;
+                settings.binPath = "${pkgs.nodePackages.prettier}/bin/prettier";
+              };
+            };
           };
         in
         {
@@ -47,6 +71,7 @@
           };
 
           devShells.default = pkgs.mkShell {
+            inherit (pre-commit-check) shellHook;
             buildInputs = with pkgs; [
               python
               uv
@@ -60,6 +85,7 @@
             ];
 
             shellHook = ''
+              ${pre-commit-check.shellHook}
               echo "Stricknani development environment"
               echo "Run 'just setup' to initialize the project"
               echo "Run 'just run' to start the development server"
@@ -68,6 +94,7 @@
 
           checks = {
             build = stricknani;
+            inherit pre-commit-check;
           };
         }
       );
