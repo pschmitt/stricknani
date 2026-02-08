@@ -60,6 +60,11 @@ from stricknani.services.projects.tags import (
     normalize_tags,
     serialize_tags,
 )
+from stricknani.services.projects.yarns import (
+    get_user_yarns,
+    load_owned_yarns,
+    resolve_yarn_preview,
+)
 from stricknani.utils.files import (
     build_import_filename,
     compute_checksum,
@@ -197,23 +202,6 @@ def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
 
 def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
     return extract_search_token(search, prefix)
-
-
-def _resolve_yarn_preview(yarn: YarnModel) -> dict[str, str | None]:
-    """Return preview image data for a yarn if a photo exists."""
-
-    if not yarn.photos:
-        return {"preview_url": None, "preview_alt": None}
-
-    first = yarn.photos[0]
-    return {
-        "preview_url": get_thumbnail_url(
-            first.filename,
-            yarn.id,
-            subdir="yarns",
-        ),
-        "preview_alt": first.alt_text or yarn.name,
-    }
 
 
 async def _get_image_dimensions(
@@ -669,22 +657,6 @@ async def _import_step_images(
 
     return imported
 
-async def _get_user_yarns(db: AsyncSession, user_id: int) -> Sequence[YarnModel]:
-    """Return all yarns for a user ordered by name."""
-
-    result = await db.execute(
-        select(YarnModel)
-        .where(YarnModel.owner_id == user_id)
-        .order_by(YarnModel.name)
-        .options(selectinload(YarnModel.photos))
-    )
-    yarns = result.scalars().all()
-    for yarn in yarns:
-        for photo in yarn.photos:
-            photo.filename = get_thumbnail_url(photo.filename, yarn.id, subdir="yarns")
-    return yarns
-
-
 async def _get_user_tags(db: AsyncSession, user_id: int) -> list[str]:
     """Return a sorted list of unique tags for a user."""
 
@@ -696,23 +668,6 @@ async def _get_user_tags(db: AsyncSession, user_id: int) -> list[str]:
             if key not in tag_map:
                 tag_map[key] = tag
     return sorted(tag_map.values(), key=str.casefold)
-
-
-async def _load_owned_yarns(
-    db: AsyncSession, user_id: int, yarn_ids: list[int]
-) -> Sequence[YarnModel]:
-    """Load yarns that belong to the user from provided IDs."""
-
-    if not yarn_ids:
-        return []
-
-    result = await db.execute(
-        select(YarnModel).where(
-            YarnModel.owner_id == user_id,
-            YarnModel.id.in_(yarn_ids),
-        )
-    )
-    return result.scalars().all()
 
 
 def _render_favorite_toggle(
@@ -932,7 +887,7 @@ async def new_project_form(
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     categories = await get_user_categories(db, current_user.id)
-    yarn_options = await _get_user_yarns(db, current_user.id)
+    yarn_options = await get_user_yarns(db, current_user.id)
     tag_suggestions = await _get_user_tags(db, current_user.id)
 
     # Check if OpenAI API key is available for AI import
@@ -2121,7 +2076,7 @@ async def get_project(
                 "name": yarn.name,
                 "brand": yarn.brand,
                 "colorway": yarn.colorway,
-                **_resolve_yarn_preview(yarn),
+                **resolve_yarn_preview(yarn),
             }
             for yarn in project.yarns
         ],
@@ -2131,7 +2086,7 @@ async def get_project(
                 "name": yarn.name,
                 "brand": yarn.brand,
                 "colorway": yarn.colorway,
-                **_resolve_yarn_preview(yarn),
+                **resolve_yarn_preview(yarn),
             }
             for yarn in exclusive_yarns
         ],
@@ -2317,14 +2272,14 @@ async def edit_project_form(
                 "name": yarn.name,
                 "brand": yarn.brand,
                 "colorway": yarn.colorway,
-                **_resolve_yarn_preview(yarn),
+                **resolve_yarn_preview(yarn),
             }
             for yarn in exclusive_yarns
         ],
     }
 
     categories = await get_user_categories(db, current_user.id)
-    yarn_options = await _get_user_yarns(db, current_user.id)
+    yarn_options = await get_user_yarns(db, current_user.id)
     tag_suggestions = await _get_user_tags(db, current_user.id)
 
     return await render_template(
@@ -2411,7 +2366,7 @@ async def create_project(
     )
     if project.link and _should_request_archive(archive_on_save):
         project.link_archive_requested_at = datetime.now(UTC)
-    project.yarns = list(await _load_owned_yarns(db, current_user.id, parsed_yarn_ids))
+    project.yarns = list(await load_owned_yarns(db, current_user.id, parsed_yarn_ids))
     project.yarn = project.yarns[0].name if project.yarns else None
     db.add(project)
     await db.flush()  # Get project ID
@@ -2541,7 +2496,7 @@ async def update_project(
 
     project.name = name.strip()
     project.category = await ensure_category(db, current_user.id, category)
-    selected_yarns = list(await _load_owned_yarns(db, current_user.id, parsed_yarn_ids))
+    selected_yarns = list(await load_owned_yarns(db, current_user.id, parsed_yarn_ids))
     project.yarns = selected_yarns
     project.yarn = selected_yarns[0].name if selected_yarns else None
     project.needles = needles.strip() if needles else None
