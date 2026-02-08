@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -433,11 +434,16 @@ def _serialize_yarn_cards(
 
 @router.post("/import")
 async def import_yarn(
-    url: Annotated[str, Form()],
+    import_type: Annotated[str, Form(alias="type")] = "url",
+    url: Annotated[str | None, Form()] = None,
+    text: Annotated[str | None, Form()] = None,
+    file: UploadFile | None = None,
+    use_ai: Annotated[bool, Form()] = False,
     current_user: User = Depends(require_auth),
 ) -> JSONResponse:
-    """Import yarn data from URL."""
+    """Import yarn data from URL, file, or text."""
     import logging
+    import os
 
     from stricknani.utils.importer import (
         GarnstudioPatternImporter,
@@ -447,60 +453,202 @@ async def import_yarn(
 
     logger = logging.getLogger(__name__)
 
-    if not url or not url.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="URL is required",
-        )
-
-    url = url.strip()
-    if not url.startswith(("http://", "https://")):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid URL format",
-        )
-
     try:
-        importer: PatternImporter
-        if is_garnstudio_url(url):
-            importer = GarnstudioPatternImporter(url)
-        else:
-            importer = PatternImporter(url)
+        data: dict[str, Any] = {}
+        source_url = None
 
-        data = await importer.fetch_and_parse()
+        if import_type == "url":
+            if not url or not url.strip():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="URL is required",
+                )
+
+            url = url.strip()
+            if not url.startswith(("http://", "https://")):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid URL format",
+                )
+
+            source_url = url
+            importer: PatternImporter
+            if is_garnstudio_url(url):
+                importer = GarnstudioPatternImporter(url)
+            else:
+                importer = PatternImporter(url)
+
+            data = await importer.fetch_and_parse()
+
+        elif import_type == "file":
+            if not file:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="File is required",
+                )
+
+            # Read file content
+            content_bytes = await file.read()
+            filename = file.filename or "unknown"
+            
+            from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
+            from stricknani.importing.models import ContentType, RawContent
+
+            use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
+                os.getenv("OPENAI_API_KEY")
+            )
+            
+            if not use_ai_enabled or not OPENAI_AVAILABLE:
+                 raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="AI analysis requires OpenAI API key",
+                )
+
+            content_type = ContentType.UNKNOWN
+            if file.content_type:
+                if file.content_type.startswith("image/"):
+                    content_type = ContentType.IMAGE
+                elif file.content_type == "application/pdf":
+                    content_type = ContentType.PDF
+                elif file.content_type.startswith("text/"):
+                    content_type = ContentType.TEXT
+            
+            if content_type == ContentType.UNKNOWN:
+                 # Fallback based on extension
+                 if filename.lower().endswith(".pdf"):
+                     content_type = ContentType.PDF
+                 elif filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+                     content_type = ContentType.IMAGE
+                 else:
+                     content_type = ContentType.TEXT
+
+            raw_content = RawContent(
+                content=content_bytes,
+                content_type=content_type,
+                metadata={"filename": filename},
+            )
+
+            ai_extractor = AIExtractor()
+            extracted = await ai_extractor.extract(raw_content)
+            
+            # Map ExtractedData to dict
+            data = {
+                "yarn": extracted.yarn or extracted.name,
+                "brand": extracted.brand,
+                "colorway": extracted.colorway,
+                "weight_category": extracted.weight_category,
+                "fiber_content": extracted.fiber_content,
+                "needles": extracted.needles,
+                "description": extracted.description,
+                "notes": None, # AI usually puts notes in description
+                "image_urls": [], # Images handled separately
+                "link": None,
+                "is_ai_enhanced": True,
+            }
+            
+            # Try to parse weight/length if available in extras or generic fields
+            if extracted.extras:
+                if "weight_grams" in extracted.extras:
+                    data["weight_grams"] = extracted.extras["weight_grams"]
+                if "length_meters" in extracted.extras:
+                    data["length_meters"] = extracted.extras["length_meters"]
+
+
+        elif import_type == "text":
+            if not text or not text.strip():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Text is required",
+                )
+            
+            from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
+            from stricknani.importing.models import ContentType, RawContent
+            
+            use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
+                os.getenv("OPENAI_API_KEY")
+            )
+
+            if use_ai_enabled and OPENAI_AVAILABLE:
+                raw_content = RawContent(
+                    content=text,
+                    content_type=ContentType.TEXT,
+                )
+                ai_extractor = AIExtractor()
+                extracted = await ai_extractor.extract(raw_content)
+                 # Map ExtractedData to dict
+                data = {
+                    "yarn": extracted.yarn or extracted.name,
+                    "brand": extracted.brand,
+                    "colorway": extracted.colorway,
+                    "weight_category": extracted.weight_category,
+                    "fiber_content": extracted.fiber_content,
+                    "needles": extracted.needles,
+                    "description": extracted.description,
+                    "notes": None,
+                    "link": None,
+                    "is_ai_enhanced": True,
+                }
+            else:
+                 # Basic text fallback
+                data = {
+                    "description": text,
+                    "notes": None,
+                    "link": None,
+                }
+
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid import type: {import_type}",
+            )
+
         data = trim_import_strings(data)
 
-        # Map pattern data to yarn fields
+        # Map extracted data to yarn fields (normalization)
         recommended_needles = data.get("needles")
         if isinstance(recommended_needles, str):
             recommended_needles = recommended_needles.strip() or None
 
+        # Determine yarn name
+        yarn_name = data.get("yarn") or data.get("title") or data.get("name")
+        
+        # Determine weight/length if not already set
+        weight_grams = data.get("weight_grams")
+        length_meters = data.get("length_meters")
+        
+        # If we have unstructured yarn text (from basic import), try to parse it
+        if not weight_grams and not length_meters and isinstance(yarn_name, str):
+            # Simple heuristic or regex could go here, but PatternImporter usually handles it
+            pass
+
         yarn_data = {
-            "name": data.get("yarn") or data.get("title"),
+            "name": yarn_name,
             "brand": data.get("brand"),
             "colorway": data.get("colorway"),
-            "weight_grams": data.get("weight_grams"),
-            "length_meters": data.get("length_meters"),
+            "weight_grams": weight_grams,
+            "length_meters": length_meters,
             "weight_category": data.get("weight_category"),
             "fiber_content": data.get("fiber_content"),
             "recommended_needles": recommended_needles,
             "description": data.get("description"),
-            "link": url,
+            "link": source_url or data.get("link"),
             "image_urls": data.get("image_urls", [])[:5],
             "notes": data.get("notes") or data.get("comment"),
-            "is_ai_enhanced": False,
+            "is_ai_enhanced": data.get("is_ai_enhanced", False),
         }
 
         image_urls = yarn_data.get("image_urls")
         if isinstance(image_urls, list) and image_urls:
             yarn_data["image_urls"] = await filter_import_image_urls(
                 image_urls,
-                referer=url,
+                referer=source_url,
                 limit=5,
             )
 
         return JSONResponse(content=yarn_data)
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Yarn import failed: {e}", exc_info=True)
         raise HTTPException(
@@ -601,6 +749,10 @@ async def list_yarns(
     if request.headers.get("accept") == "application/json":
         return JSONResponse(_serialize_yarn_cards(yarns, current_user))
 
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
+        os.getenv("OPENAI_API_KEY")
+    )
+
     return await render_template(
         "yarn/list.html",
         request,
@@ -609,6 +761,7 @@ async def list_yarns(
             "yarns": _serialize_yarn_cards(yarns, current_user),
             "search": search or "",
             "selected_brand": brand,
+            "has_openai_key": has_openai_key,
         },
     )
 
@@ -620,12 +773,17 @@ async def new_yarn(
 ) -> HTMLResponse:
     """Show creation form."""
 
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
+        os.getenv("OPENAI_API_KEY")
+    )
+
     return await render_template(
         "yarn/form.html",
         request,
         {
             "current_user": current_user,
             "yarn": None,
+            "has_openai_key": has_openai_key,
         },
     )
 
@@ -883,6 +1041,10 @@ async def edit_yarn(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
+        os.getenv("OPENAI_API_KEY")
+    )
+
     return await render_template(
         "yarn/form.html",
         request,
@@ -891,6 +1053,7 @@ async def edit_yarn(
             "yarn": yarn,
             "photos": await anyio.to_thread.run_sync(_serialize_photos, yarn),
             "is_ai_enhanced": yarn.is_ai_enhanced,
+            "has_openai_key": has_openai_key,
         },
     )
 

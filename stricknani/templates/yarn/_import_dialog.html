@@ -9,6 +9,6 @@
 {% set import_redirect_url = '/yarn/new' %}
 {% set import_populate_fn = 'populateYarnForm' %}
 {% set import_project_id = none %}
-{% set import_use_ai = false %}
-{% set import_ai_notice = '' %}
+{% set import_use_ai = has_openai_key %}
+{% set import_ai_notice = _('AI-powered extraction enabled') if has_openai_key else '' %}
 {% include "shared/_import_dialog.html" %}

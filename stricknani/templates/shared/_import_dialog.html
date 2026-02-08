@@ -1,13 +1,37 @@
 {% import "macros/dialogs.html" as dialogs %}
 {% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl') %}
-<form id="{{ import_form_id }}" action="{{ import_action }}" method="POST">
+<!-- Tab Navigation -->
+<div class="tabs tabs-boxed bg-base-200/50 p-1 rounded-xl mb-6">
+    <button type="button"
+        class="tab flex-1 rounded-lg transition-all"
+        :class="{ 'tab-active bg-base-100 shadow-sm': importTab === 'url', 'hover:bg-base-100/50': importTab !== 'url' }"
+        @click="importTab = 'url'"
+        data-tab="url">
+        <span class="mdi mdi-link-variant mr-2"></span>
+        {{ _('From URL') }}
+    </button>
+    <button type="button"
+        class="tab flex-1 rounded-lg transition-all"
+        :class="{ 'tab-active bg-base-100 shadow-sm': importTab === 'file', 'hover:bg-base-100/50': importTab !== 'file' }"
+        @click="importTab = 'file'"
+        data-tab="file">
+        <span class="mdi mdi-file-upload mr-2"></span>
+        {{ _('From File') }}
+    </button>
+</div>
+
+<!-- URL Import Form -->
+<form id="{{ import_form_id }}" action="{{ import_action }}" method="POST" enctype="multipart/form-data"
+    x-show="importTab === 'url'" x-transition>
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="type" value="url">
     {% if import_project_id is not none %}
     <input type="hidden" name="project_id" value="{{ import_project_id }}">
     {% endif %}
     {% if import_use_ai %}
     <input type="hidden" name="use_ai" value="true">
     {% endif %}
+
     <div class="space-y-6 py-2">
         <!-- Magic Header -->
         <div class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
@@ -29,14 +53,12 @@
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/40 group-focus-within:text-primary transition-colors">
                     <span class="mdi mdi-link-variant text-xl"></span>
                 </div>
-                <input type="url" id="importUrl" name="url" required
+                <input type="url" id="importUrl" name="url"
                     placeholder="{{ import_url_placeholder }}"
                     value="{{ import_url_value }}"
                     class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 transition-all border-base-content/10 focus:border-primary" />
             </div>
         </div>
-
-        <input type="hidden" name="type" value="url">
 
         {% if import_ai_notice %}
         <div class="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/10">
@@ -48,8 +70,110 @@
 
     <div class="modal-action mt-8">
         {{ dialogs.dialog_cancel(_('Cancel'),
-        attrs='data-action=\"close-dialog\" data-dialog-id=\"importDialog\"') }}
+        attrs='data-action="close-dialog" data-dialog-id="importDialog"') }}
         {{ dialogs.dialog_primary(_('Import'), icon='mdi-auto-fix', type='submit', class='sm:btn-wide') }}
+    </div>
+</form>
+
+<!-- File Import Form -->
+<form id="{{ import_form_id }}File" action="{{ import_action }}" method="POST" enctype="multipart/form-data"
+    x-show="importTab === 'file'" x-transition>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="type" value="file">
+    {% if import_project_id is not none %}
+    <input type="hidden" name="project_id" value="{{ import_project_id }}">
+    {% endif %}
+    {% if import_use_ai %}
+    <input type="hidden" name="use_ai" value="true">
+    {% endif %}
+
+    <div class="space-y-6 py-2">
+        <!-- AI Vision Header -->
+        <div class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl">
+                <span class="mdi mdi-image-search text-2xl"></span>
+            </div>
+            <div>
+                <h4 class="font-bold text-base">{{ _('AI Vision Import') }}</h4>
+                <p class="text-xs opacity-70 leading-relaxed">
+                    {{ _('Upload photos, PDFs, or text files. Our AI will analyze them and extract pattern details for you.') }}
+                </p>
+            </div>
+        </div>
+
+        <!-- File Upload Zone -->
+        <div class="form-control w-full">
+            <label class="label pt-0">
+                <span class="label-text font-semibold">{{ _('Upload Files') }}</span>
+                <span class="label-text-alt text-xs opacity-60">{{ _('Images, PDFs, or text files') }}</span>
+            </label>
+
+            <!-- Drag & Drop Zone -->
+            <div id="fileDropZone"
+                class="relative border-2 border-dashed border-base-content/20 rounded-2xl p-8 text-center transition-all hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
+                :class="{ 'border-primary bg-primary/5': isDragging }"
+                @dragover.prevent="isDragging = true"
+                @dragleave.prevent="isDragging = false"
+                @drop.prevent="handleFileDrop($event)"
+                @click="$refs.fileInput.click()">
+
+                <input type="file" id="importFile" name="file" ref="fileInput" class="hidden"
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.md,.html,.htm"
+                    @change="handleFileSelect($event)" />
+
+                <div x-show="!selectedFile" class="space-y-3">
+                    <div class="w-16 h-16 mx-auto flex items-center justify-center bg-base-200 rounded-full">
+                        <span class="mdi mdi-cloud-upload text-3xl text-primary"></span>
+                    </div>
+                    <div>
+                        <p class="font-medium">{{ _('Drop files here or click to browse') }}</p>
+                        <p class="text-sm opacity-60 mt-1">
+                            {{ _('Supports: JPG, PNG, GIF, WebP, PDF, TXT, MD') }}
+                        </p>
+                    </div>
+                </div>
+
+                <div x-show="selectedFile" class="space-y-3" x-cloak>
+                    <div class="w-16 h-16 mx-auto flex items-center justify-center bg-success/10 rounded-full">
+                        <span class="mdi mdi-check text-3xl text-success"></span>
+                    </div>
+                    <div>
+                        <p class="font-medium" x-text="selectedFile.name"></p>
+                        <p class="text-sm opacity-60 mt-1">
+                            <span x-text="formatFileSize(selectedFile.size)"></span>
+                            <button type="button" @click.stop="clearFile()" class="ml-2 text-error hover:underline">
+                                {{ _('Remove') }}
+                            </button>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Multiple Files Note -->
+            <p class="text-xs opacity-60 mt-2 text-center">
+                {{ _('Tip: For best results, upload clear photos of pattern covers, yarn labels, or instruction pages.') }}
+            </p>
+        </div>
+
+        {% if import_ai_notice %}
+        <div class="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/10">
+            <span class="mdi mdi-brain text-primary text-sm"></span>
+            <span class="text-[10px] uppercase font-bold tracking-wider text-primary/70">
+                {{ _('AI-Powered Analysis Enabled') }}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="modal-action mt-8">
+        {{ dialogs.dialog_cancel(_('Cancel'),
+        attrs='data-action="close-dialog" data-dialog-id="importDialog"') }}
+        <button type="submit" class="btn btn-primary sm:btn-wide"
+            :disabled="!selectedFile"
+            :class="{ 'btn-disabled opacity-50': !selectedFile }">
+            <span class="mdi mdi-auto-fix mr-2"></span>
+            {{ _('Analyze & Import') }}
+        </button>
     </div>
 </form>
 
@@ -74,22 +198,73 @@
         const redirectUrl = {{ import_redirect_url | tojson }};
         const populateFnName = {{ import_populate_fn | tojson }};
 
-        const form = document.getElementById(formId);
-        const loading = document.getElementById('importLoading');
-        const dialog = document.getElementById('importDialog');
+        // Alpine.js data for file upload
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('importDialog', () => ({
+                importTab: 'url',
+                isDragging: false,
+                selectedFile: null,
 
-        if (!form || !loading) {
-            return;
+                handleFileDrop(event) {
+                    this.isDragging = false;
+                    const files = event.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.selectedFile = files[0];
+                        // Update the actual file input
+                        const input = document.getElementById('importFile');
+                        const dt = new DataTransfer();
+                        dt.items.add(files[0]);
+                        input.files = dt.files;
+                    }
+                },
+
+                handleFileSelect(event) {
+                    const files = event.target.files;
+                    if (files.length > 0) {
+                        this.selectedFile = files[0];
+                    }
+                },
+
+                clearFile() {
+                    this.selectedFile = null;
+                    const input = document.getElementById('importFile');
+                    input.value = '';
+                },
+
+                formatFileSize(bytes) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                }
+            }));
+        });
+
+        // Handle URL form submission
+        const urlForm = document.getElementById(formId);
+        if (urlForm) {
+            urlForm.addEventListener('submit', handleFormSubmit);
         }
 
-        form.addEventListener('submit', async function (e) {
+        // Handle File form submission
+        const fileForm = document.getElementById(formId + 'File');
+        if (fileForm) {
+            fileForm.addEventListener('submit', handleFormSubmit);
+        }
+
+        async function handleFormSubmit(e) {
             e.preventDefault();
 
+            const form = e.target;
             const formData = new FormData(form);
+            const loading = document.getElementById('importLoading');
+            const dialog = document.getElementById('importDialog');
 
-            // Hide form and show loading
-            form.classList.add('hidden');
-            loading.classList.remove('hidden');
+            // Hide forms and show loading
+            urlForm?.classList.add('hidden');
+            fileForm?.classList.add('hidden');
+            loading?.classList.remove('hidden');
 
             try {
                 const response = await fetch(form.action, {
@@ -121,11 +296,11 @@
                 alert('Import failed: ' + err.message);
             } finally {
                 // Reset UI for next time
-                form.classList.remove('hidden');
-                loading.classList.add('hidden');
+                urlForm?.classList.remove('hidden');
+                fileForm?.classList.remove('hidden');
+                loading?.classList.add('hidden');
             }
-        });
+        }
     })();
 </script>
 {% endcall %}
-

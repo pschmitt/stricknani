@@ -778,21 +778,128 @@ async def import_pattern(
                     },
                 )
 
-            # Handle different file types
-            if file.filename and file.filename.lower().endswith(".pdf"):
-                # TODO: Add PDF parsing with pypdf or similar
-                raise HTTPException(
-                    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                    detail="PDF parsing not yet implemented",
+            # Handle different file types using the new import pipeline
+            from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
+            from stricknani.importing.models import ContentType, RawContent
+
+            ai_available = OPENAI_AVAILABLE and config.FEATURE_AI_IMPORT_ENABLED
+
+            if file.content_type and file.content_type.startswith("image/"):
+                # Use AI vision to extract data from images
+                if not ai_available:
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="AI image analysis requires OpenAI API key",
+                    )
+
+                # Validate image file before sending to AI
+                try:
+                    import io
+
+                    from PIL import Image
+
+                    img = Image.open(io.BytesIO(content_bytes))
+                    img.verify()  # Verify it's a valid image
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Invalid image file: {str(e)}",
+                    ) from e
+
+                raw_content = RawContent(
+                    content=content_bytes,
+                    content_type=ContentType.IMAGE,
+                    metadata={"filename": file.filename},
                 )
-            elif file.content_type and file.content_type.startswith("image/"):
-                # TODO: Add OCR with tesseract or similar
-                raise HTTPException(
-                    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                    detail="Image OCR not yet implemented",
+
+                ai_extractor = AIExtractor()
+                extracted = await ai_extractor.extract(raw_content)
+
+                # Convert ExtractedData to dict format expected by frontend
+                data = {
+                    "name": extracted.name,
+                    "description": extracted.description,
+                    "category": extracted.category,
+                    "yarn": extracted.yarn,
+                    "needles": extracted.needles,
+                    "stitch_sample": extracted.stitch_sample,
+                    "brand": extracted.brand,
+                    "steps": [
+                        {
+                            "step_number": step.step_number,
+                            "title": step.title,
+                            "description": step.description,
+                        }
+                        for step in extracted.steps
+                    ],
+                    "image_urls": [],  # Images are uploaded separately
+                    "link": None,
+                    "is_ai_enhanced": True,
+                }
+
+                # Store extracted images as attachments
+                # TODO: Handle saving uploaded image as project photo
+
+                return JSONResponse(content=data)
+
+            elif file.filename and file.filename.lower().endswith(".pdf"):
+                # Use AI to extract data from PDF
+                if not ai_available:
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="AI PDF analysis requires OpenAI API key",
+                    )
+
+                # Validate PDF file before sending to AI
+                try:
+                    import io
+
+                    from pypdf import PdfReader
+
+                    reader = PdfReader(io.BytesIO(content_bytes))
+                    # Try to read first page to validate
+                    if len(reader.pages) > 0:
+                        _ = reader.pages[0].extract_text()
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Invalid PDF file: {str(e)}",
+                    ) from e
+
+                raw_content = RawContent(
+                    content=content_bytes,
+                    content_type=ContentType.PDF,
+                    metadata={"filename": file.filename},
                 )
+
+                ai_extractor = AIExtractor()
+                extracted = await ai_extractor.extract(raw_content)
+
+                data = {
+                    "name": extracted.name,
+                    "description": extracted.description,
+                    "category": extracted.category,
+                    "yarn": extracted.yarn,
+                    "needles": extracted.needles,
+                    "stitch_sample": extracted.stitch_sample,
+                    "brand": extracted.brand,
+                    "steps": [
+                        {
+                            "step_number": step.step_number,
+                            "title": step.title,
+                            "description": step.description,
+                        }
+                        for step in extracted.steps
+                    ],
+                    "image_urls": [],
+                    "link": None,
+                    "is_ai_enhanced": True,
+                }
+
+                return JSONResponse(content=data)
+
             else:
-                # Assume text file
+                # Assume text file - use existing text extraction
                 try:
                     content_text = content_bytes.decode("utf-8")
                 except UnicodeDecodeError as e:
@@ -800,6 +907,7 @@ async def import_pattern(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="File is not valid UTF-8 text",
                     ) from e
+
             if content_text and trace:
                 trace.record_text_blob("source_text", content_text)
 
@@ -845,10 +953,10 @@ async def import_pattern(
                         temperature=0.1,
                     )
 
-                    raw_content = response.choices[0].message.content or ""
+                    ai_response_content = response.choices[0].message.content or ""
                     if trace:
-                        trace.record_ai_response(raw_content)
-                    data = json.loads(raw_content or "{}")
+                        trace.record_ai_response(ai_response_content)
+                    data = json.loads(ai_response_content or "{}")
                     if not data.get("description"):
                         data["description"] = content_text[:2000]
                     if source_url:

@@ -9,6 +9,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from PIL import Image
 
+from stricknani.config import config
+
 if TYPE_CHECKING:
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -424,33 +426,49 @@ async def test_import_text_file(test_client: "TestClientFixture") -> None:
 
 
 @pytest.mark.asyncio
-async def test_import_pdf_not_implemented(test_client: "TestClientFixture") -> None:
-    """Test that PDF import returns not implemented."""
+async def test_import_pdf_requires_ai(test_client: "TestClientFixture") -> None:
+    """Test that PDF import requires AI when AI is not enabled."""
     client, _, _, _, _ = test_client
 
-    response = await client.post(
-        "/projects/import",
-        data={"type": "file", "use_ai": False},
-        files={"file": ("pattern.pdf", BytesIO(b"fake pdf"), "application/pdf")},
-    )
+    # Temporarily disable AI import feature
+    original_ai_setting = config.FEATURE_AI_IMPORT_ENABLED
+    config.FEATURE_AI_IMPORT_ENABLED = False
 
-    assert response.status_code == 501
-    assert "not yet implemented" in response.json()["detail"].lower()
+    try:
+        response = await client.post(
+            "/projects/import",
+            data={"type": "file", "use_ai": False},
+            files={"file": ("pattern.pdf", BytesIO(b"fake pdf"), "application/pdf")},
+        )
+
+        # Without AI enabled, should return 503 (service unavailable)
+        assert response.status_code == 503
+        assert "ai" in response.json()["detail"].lower()
+    finally:
+        config.FEATURE_AI_IMPORT_ENABLED = original_ai_setting
 
 
 @pytest.mark.asyncio
-async def test_import_image_not_implemented(test_client: "TestClientFixture") -> None:
-    """Test that image OCR returns not implemented."""
+async def test_import_image_requires_ai(test_client: "TestClientFixture") -> None:
+    """Test that image import requires AI when AI is not enabled."""
     client, _, _, _, _ = test_client
 
-    response = await client.post(
-        "/projects/import",
-        data={"type": "file", "use_ai": False},
-        files={"file": ("pattern.jpg", BytesIO(b"fake image"), "image/jpeg")},
-    )
+    # Temporarily disable AI import feature
+    original_ai_setting = config.FEATURE_AI_IMPORT_ENABLED
+    config.FEATURE_AI_IMPORT_ENABLED = False
 
-    assert response.status_code == 501
-    assert "not yet implemented" in response.json()["detail"].lower()
+    try:
+        response = await client.post(
+            "/projects/import",
+            data={"type": "file", "use_ai": False},
+            files={"file": ("pattern.jpg", BytesIO(b"fake image"), "image/jpeg")},
+        )
+
+        # Without AI enabled, should return 503 (service unavailable)
+        assert response.status_code == 503
+        assert "ai" in response.json()["detail"].lower()
+    finally:
+        config.FEATURE_AI_IMPORT_ENABLED = original_ai_setting
 
 
 @pytest.mark.asyncio

@@ -271,10 +271,15 @@ class AIExtractor(ContentExtractor):
             "- name: Project/pattern name\n"
             "- description: Brief description or summary\n"
             "- category: Type (Pullover, Schal, Mütze, etc.)\n"
-            "- yarn: Yarn information\n"
+            "- yarn: General yarn information (string)\n"
+            "- brand: Yarn brand if visible\n"
+            "- colorway: Color name/number\n"
+            "- weight_category: Yarn weight (Lace, Fingering, DK, Worsted, Aran, Bulky)\n"
+            "- fiber_content: Material composition\n"
+            "- weight_grams: Weight of a single ball in grams (integer)\n"
+            "- length_meters: Length of a single ball in meters (integer)\n"
             "- needles: Needle size and type\n"
             "- stitch_sample: Gauge information\n"
-            "- brand: Yarn brand if visible\n"
             "- steps: Array of instruction steps with step_number, title, "
             "description\n"
             "\nReturn valid JSON only. Use null for unknown fields."
@@ -286,7 +291,7 @@ class AIExtractor(ContentExtractor):
             "Analyze this knitting pattern image and extract all available "
             "information. Look for:\n"
             "- Pattern name and description\n"
-            "- Yarn requirements (brand, weight, color)\n"
+            "- Yarn requirements (brand, weight, color, yardage)\n"
             "- Needle sizes\n"
             "- Gauge/stitch sample information\n"
             "- Written instructions or charts\n"
@@ -336,9 +341,12 @@ class AIExtractor(ContentExtractor):
             description=data.get("description"),
             category=data.get("category"),
             yarn=data.get("yarn"),
+            brand=data.get("brand"),
+            colorway=data.get("colorway"),
+            weight_category=data.get("weight_category"),
+            fiber_content=data.get("fiber_content"),
             needles=data.get("needles"),
             stitch_sample=data.get("stitch_sample"),
-            brand=data.get("brand"),
             steps=steps,
             extras={
                 k: v
@@ -349,9 +357,12 @@ class AIExtractor(ContentExtractor):
                     "description",
                     "category",
                     "yarn",
+                    "brand",
+                    "colorway",
+                    "weight_category",
+                    "fiber_content",
                     "needles",
                     "stitch_sample",
-                    "brand",
                     "steps",
                     "image_urls",
                     "link",
