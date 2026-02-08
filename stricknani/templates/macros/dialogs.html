@@ -32,8 +32,8 @@
 </form>
 {% endmacro %}
 
-{% macro modal(id, title=None, class='', box_class='') %}
-<dialog id="{{ id }}" class="modal modal-top sm:modal-middle {{ class }}">
+{% macro modal(id, title=None, class='', box_class='', attrs='') %}
+<dialog id="{{ id }}" class="modal modal-top sm:modal-middle {{ class }}" {{ attrs|safe }}>
     <div class="modal-box {{ box_class }}">
         <form method="dialog">
             <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">

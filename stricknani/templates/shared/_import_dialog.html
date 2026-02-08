@@ -1,5 +1,5 @@
 {% import "macros/dialogs.html" as dialogs %}
-{% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl') %}
+{% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl', attrs='x-data="importDialog" x-cloak') %}
 <!-- Tab Navigation -->
 <div class="tabs tabs-boxed bg-base-200/50 p-1 rounded-xl mb-6">
     <button type="button"
@@ -198,8 +198,10 @@
         const redirectUrl = {{ import_redirect_url | tojson }};
         const populateFnName = {{ import_populate_fn | tojson }};
 
-        // Alpine.js data for file upload
-        document.addEventListener('alpine:init', () => {
+        const initAlpine = () => {
+            if (window.STRICKNANI_IMPORT_DIALOG_INIT) return;
+            window.STRICKNANI_IMPORT_DIALOG_INIT = true;
+
             Alpine.data('importDialog', () => ({
                 importTab: 'url',
                 isDragging: false,
@@ -239,7 +241,13 @@
                     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
                 }
             }));
-        });
+        };
+
+        if (window.Alpine) {
+            initAlpine();
+        } else {
+            document.addEventListener('alpine:init', initAlpine);
+        }
 
         // Handle URL form submission
         const urlForm = document.getElementById(formId);

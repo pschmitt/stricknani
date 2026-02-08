@@ -14,6 +14,8 @@ directories:
   - http: {}
     path: htmx
   - http: {}
+    path: alpinejs
+  - http: {}
     path: sentry
   path: stricknani/static/vendor
 kind: LockConfig
