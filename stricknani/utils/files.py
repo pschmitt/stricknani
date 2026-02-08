@@ -104,7 +104,8 @@ async def save_uploaded_file(
     # Save file
     file_path = project_dir / filename
     content = await upload_file.read()
-    file_path.write_bytes(content)
+    # Avoid blocking the event loop on disk IO.
+    await anyio.to_thread.run_sync(file_path.write_bytes, content)
 
     return filename, upload_file.filename
 

@@ -198,11 +198,12 @@ async def import_images_from_urls(
             parsed = urlparse(image_url)
             original_name = Path(parsed.path).name or f"imported-image-{index}.jpg"
 
-            filename, original_filename = save_bytes(
+            filename, original_filename = await asyncio.to_thread(
+                save_bytes,
                 content,
                 original_name,
                 project.id,
-                subdir="projects",
+                "projects",
             )
             file_path = config.MEDIA_ROOT / "projects" / str(project.id) / filename
             try:

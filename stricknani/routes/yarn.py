@@ -217,8 +217,12 @@ async def _import_yarn_images_from_urls(
             original_filename = build_import_filename(image_url, content_type)
             filename = ""
             try:
-                filename, original_filename = save_bytes(
-                    response.content, original_filename, yarn.id, subdir="yarns"
+                filename, original_filename = await anyio.to_thread.run_sync(
+                    save_bytes,
+                    response.content,
+                    original_filename,
+                    yarn.id,
+                    "yarns",
                 )
                 file_path = config.MEDIA_ROOT / "yarns" / str(yarn.id) / filename
                 await create_thumbnail(file_path, yarn.id, subdir="yarns")
