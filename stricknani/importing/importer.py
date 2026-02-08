@@ -38,10 +38,20 @@ def _is_garnstudio_url(url: str) -> bool:
     )
 
 
+def is_garnstudio_url(url: str) -> bool:
+    """Public wrapper for Garnstudio URL detection."""
+    return _is_garnstudio_url(url)
+
+
 def _is_valid_import_url(url: str) -> bool:
     """Ensure the import URL uses http(s) and has a host."""
     parsed = urlparse(url)
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def is_valid_import_url(url: str) -> bool:
+    """Public wrapper for import URL validation."""
+    return _is_valid_import_url(url)
 
 
 def trim_import_strings(value: Any) -> Any:
@@ -113,7 +123,7 @@ async def filter_import_image_urls(
         for image_url in image_urls:
             if len(accepted) >= limit:
                 break
-            if not _is_valid_import_url(image_url):
+            if not is_valid_import_url(image_url):
                 logger.info("Skipping invalid image URL: %s", image_url)
                 continue
 
@@ -125,7 +135,7 @@ async def filter_import_image_urls(
                 continue
 
             content_type = response.headers.get("content-type")
-            if not _is_allowed_import_image(content_type, image_url):
+            if not is_allowed_import_image(content_type, image_url):
                 logger.info("Skipping non-image URL: %s", image_url)
                 continue
 
@@ -231,6 +241,11 @@ def _is_allowed_import_image(content_type: str | None, url: str) -> bool:
     return extension in IMPORT_ALLOWED_IMAGE_EXTENSIONS
 
 
+def is_allowed_import_image(content_type: str | None, url: str) -> bool:
+    """Public wrapper for image content-type / extension validation."""
+    return _is_allowed_import_image(content_type, url)
+
+
 class PatternImporter:
     """Extract knitting pattern data from URLs."""
 
@@ -238,7 +253,7 @@ class PatternImporter:
         """Initialize with URL to import."""
         self.url = url
         self.timeout = timeout
-        self.is_garnstudio = _is_garnstudio_url(url)
+        self.is_garnstudio = is_garnstudio_url(url)
         self._garnstudio_gauge_cache: tuple[int | None, int | None] | None = None
         self._last_soup: BeautifulSoup | None = None
 

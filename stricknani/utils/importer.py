@@ -20,6 +20,9 @@ from stricknani.importing.importer import (
     _is_garnstudio_url,
     _is_valid_import_url,
     filter_import_image_urls,
+    is_allowed_import_image,
+    is_garnstudio_url,
+    is_valid_import_url,
     trim_import_strings,
 )
 
@@ -38,5 +41,8 @@ __all__ = [
     "_is_garnstudio_url",
     "_is_valid_import_url",
     "filter_import_image_urls",
+    "is_allowed_import_image",
+    "is_garnstudio_url",
+    "is_valid_import_url",
     "trim_import_strings",
 ]

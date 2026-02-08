@@ -75,10 +75,10 @@ from stricknani.utils.importer import (
     IMPORT_IMAGE_MIN_DIMENSION,
     IMPORT_IMAGE_SSIM_THRESHOLD,
     IMPORT_IMAGE_TIMEOUT,
-    _is_allowed_import_image,
-    _is_garnstudio_url,
-    _is_valid_import_url,
     filter_import_image_urls,
+    is_allowed_import_image,
+    is_garnstudio_url,
+    is_valid_import_url,
     trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
@@ -342,7 +342,7 @@ async def _import_images_from_urls(
         for image_url in image_urls:
             if imported >= IMPORT_IMAGE_MAX_COUNT:
                 break
-            if not _is_valid_import_url(image_url):
+            if not is_valid_import_url(image_url):
                 logger.info("Skipping invalid image URL: %s", image_url)
                 continue
 
@@ -354,7 +354,7 @@ async def _import_images_from_urls(
                 continue
 
             content_type = response.headers.get("content-type")
-            if not _is_allowed_import_image(content_type, image_url):
+            if not is_allowed_import_image(content_type, image_url):
                 logger.info("Skipping non-image URL: %s", image_url)
                 continue
 
@@ -514,7 +514,7 @@ async def _import_step_images(
         for image_url in image_urls:
             if imported >= IMPORT_IMAGE_MAX_COUNT:
                 break
-            if not _is_valid_import_url(image_url):
+            if not is_valid_import_url(image_url):
                 continue
 
             try:
@@ -525,7 +525,7 @@ async def _import_step_images(
                 continue
 
             content_type = response.headers.get("content-type")
-            if not _is_allowed_import_image(content_type, image_url):
+            if not is_allowed_import_image(content_type, image_url):
                 continue
 
             content_length = response.headers.get("content-length")
@@ -1100,7 +1100,7 @@ async def import_pattern(
             )
 
             basic_importer: PatternImporter
-            if _is_garnstudio_url(url):
+            if is_garnstudio_url(url):
                 basic_importer = GarnstudioPatternImporter(url)
             else:
                 basic_importer = PatternImporter(url)
@@ -1125,7 +1125,7 @@ async def import_pattern(
             )
 
             # Skip AI for Garnstudio URLs as the basic parser is now high quality
-            if use_ai_enabled and not _is_garnstudio_url(url):
+            if use_ai_enabled and not is_garnstudio_url(url):
                 try:
                     from stricknani.utils.ai_importer import AIPatternImporter
 
@@ -1643,7 +1643,7 @@ async def _import_yarn_images_from_urls(
         for image_url in image_urls:
             if imported >= 5:
                 break
-            if not _is_valid_import_url(image_url):
+            if not is_valid_import_url(image_url):
                 continue
 
             try:
@@ -1654,7 +1654,7 @@ async def _import_yarn_images_from_urls(
                 continue
 
             content_type = response.headers.get("content-type")
-            if not _is_allowed_import_image(content_type, image_url):
+            if not is_allowed_import_image(content_type, image_url):
                 continue
 
             if not response.content or len(response.content) > IMPORT_IMAGE_MAX_BYTES:
@@ -1772,11 +1772,11 @@ async def _ensure_yarns_by_text(
                         from stricknani.utils.importer import (
                             GarnstudioPatternImporter,
                             PatternImporter,
-                            _is_garnstudio_url,
+                            is_garnstudio_url,
                         )
 
                         im_ptr: PatternImporter
-                        if _is_garnstudio_url(db_yarn_obj.link):
+                        if is_garnstudio_url(db_yarn_obj.link):
                             im_ptr = GarnstudioPatternImporter(db_yarn_obj.link)
                         else:
                             im_ptr = PatternImporter(db_yarn_obj.link)

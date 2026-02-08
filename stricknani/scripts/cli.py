@@ -36,7 +36,7 @@ from stricknani.utils.auth import get_password_hash, get_user_by_email
 from stricknani.utils.importer import (
     GarnstudioPatternImporter,
     PatternImporter,
-    _is_garnstudio_url,
+    is_garnstudio_url,
 )
 from stricknani.utils.project_import import (
     build_ai_hints,
@@ -461,7 +461,7 @@ async def import_project_url(
 ) -> None:
     """Import a project from a URL."""
     basic_importer: PatternImporter
-    if _is_garnstudio_url(url):
+    if is_garnstudio_url(url):
         basic_importer = GarnstudioPatternImporter(url)
     else:
         basic_importer = PatternImporter(url)

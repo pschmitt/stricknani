@@ -54,9 +54,9 @@ from stricknani.utils.importer import (
     IMPORT_IMAGE_MIN_DIMENSION,
     IMPORT_IMAGE_SSIM_THRESHOLD,
     IMPORT_IMAGE_TIMEOUT,
-    _is_allowed_import_image,
-    _is_valid_import_url,
     filter_import_image_urls,
+    is_allowed_import_image,
+    is_valid_import_url,
     trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
@@ -127,7 +127,7 @@ async def _import_yarn_images_from_urls(
         for image_url in image_urls:
             if imported >= IMPORT_IMAGE_MAX_COUNT:
                 break
-            if not _is_valid_import_url(image_url):
+            if not is_valid_import_url(image_url):
                 logger.info("Skipping invalid image URL: %s", image_url)
                 continue
 
@@ -139,7 +139,7 @@ async def _import_yarn_images_from_urls(
                 continue
 
             content_type = response.headers.get("content-type")
-            if not _is_allowed_import_image(content_type, image_url):
+            if not is_allowed_import_image(content_type, image_url):
                 logger.info("Skipping non-image URL: %s", image_url)
                 continue
 
@@ -424,7 +424,7 @@ async def import_yarn(
     from stricknani.utils.importer import (
         GarnstudioPatternImporter,
         PatternImporter,
-        _is_garnstudio_url,
+        is_garnstudio_url,
     )
 
     logger = logging.getLogger(__name__)
@@ -444,7 +444,7 @@ async def import_yarn(
 
     try:
         importer: PatternImporter
-        if _is_garnstudio_url(url):
+        if is_garnstudio_url(url):
             importer = GarnstudioPatternImporter(url)
         else:
             importer = PatternImporter(url)

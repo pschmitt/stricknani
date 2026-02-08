@@ -18,6 +18,9 @@ from .importer import (
     GarnstudioPatternImporter,
     PatternImporter,
     filter_import_image_urls,
+    is_allowed_import_image,
+    is_garnstudio_url,
+    is_valid_import_url,
     trim_import_strings,
 )
 
@@ -33,5 +36,8 @@ __all__ = [
     "IMPORT_IMAGE_TIMEOUT",
     "PatternImporter",
     "filter_import_image_urls",
+    "is_allowed_import_image",
+    "is_garnstudio_url",
+    "is_valid_import_url",
     "trim_import_strings",
 ]

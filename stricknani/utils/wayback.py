@@ -9,7 +9,7 @@ from urllib.parse import quote
 import waybackpy
 
 from stricknani.database import AsyncSessionLocal
-from stricknani.utils.importer import _is_valid_import_url
+from stricknani.utils.importer import is_valid_import_url
 
 WAYBACK_SAVE_TIMEOUT = 15
 
@@ -29,7 +29,7 @@ def build_wayback_fallback_url(url: str) -> str:
 
 
 async def _request_wayback_snapshot(url: str) -> str | None:
-    if not _is_valid_import_url(url):
+    if not is_valid_import_url(url):
         return None
 
     loop = asyncio.get_running_loop()
