@@ -25,10 +25,7 @@
 
 {% macro modal_backdrop() %}
 <form method="dialog" class="modal-backdrop">
-    <button type="submit" class="btn btn-ghost btn-sm gap-1">
-        <span class="mdi mdi-close"></span>
-        {{ _('close') }}
-    </button>
+    <button type="submit" aria-label="{{ _('Close dialog') }}"></button>
 </form>
 {% endmacro %}
 

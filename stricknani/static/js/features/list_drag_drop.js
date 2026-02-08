@@ -2,7 +2,7 @@
  * Drag and drop handler for list views (projects/yarns).
  * Automatically opens the import dialog when a file is dropped.
  */
-(function() {
+(function () {
     let dragCounter = 0;
     const overlayId = 'list-drop-overlay';
 
@@ -133,28 +133,21 @@
         }
         tabBtn.click();
 
-        // Assign file and trigger the import
+        // Assign ALL files to the input (not just the first one)
         try {
             const dt = new DataTransfer();
-            dt.items.add(files[0]);
+            for (let i = 0; i < files.length; i++) {
+                dt.items.add(files[i]);
+            }
             fileInput.files = dt.files;
 
-            // Trigger change event so the dialog UI updates
+            // Trigger change event so the dialog UI updates and shows all files
             fileInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-            // Automatically submit the form to start analysis
-            setTimeout(() => {
-                const submitBtn = dialog.querySelector('[data-import-file-submit]');
-                if (submitBtn && !submitBtn.disabled) {
-                    if (typeof fileForm.requestSubmit === 'function') {
-                        fileForm.requestSubmit();
-                    } else {
-                        submitBtn.click();
-                    }
-                }
-            }, 300);
+            // DO NOT auto-submit - let the user review and confirm
+            // The user can click the "Analyze & Import" button when ready
         } catch (err) {
-            console.error('Failed to handle dropped file:', err);
+            console.error('Failed to handle dropped files:', err);
         }
     }
 

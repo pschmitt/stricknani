@@ -19,6 +19,7 @@ from stricknani.utils.i18n import install_i18n
 
 templates_path = Path(__file__).resolve().parents[1] / "templates"
 templates = Jinja2Templates(directory=str(templates_path))
+templates.env.add_extension("jinja2.ext.do")
 
 templates.env.globals["sentry_frontend_dsn"] = config.SENTRY_DSN_FRONTEND
 templates.env.globals["sentry_frontend_env"] = config.SENTRY_ENVIRONMENT

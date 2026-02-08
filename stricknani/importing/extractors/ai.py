@@ -90,14 +90,14 @@ class AIExtractor(ContentExtractor):
 
     async def extract(
         self,
-        content: RawContent,
+        content: RawContent | list[RawContent],
         *,
         hints: dict[str, Any] | None = None,
     ) -> ExtractedData:
         """Extract pattern data using AI.
 
         Args:
-            content: Raw content to analyze
+            content: Raw content or list of contents to analyze
             hints: Optional hints from previous extractors
 
         Returns:
@@ -118,42 +118,133 @@ class AIExtractor(ContentExtractor):
                 extractor_name=self.name,
             )
 
-        if content.content_type == ContentType.IMAGE:
-            return await self._extract_from_image(content, hints)
-        elif content.content_type in (ContentType.TEXT, ContentType.HTML):
-            return await self._extract_from_text(content, hints)
-        elif content.content_type == ContentType.PDF:
-            return await self._extract_from_pdf(content, hints)
-        else:
-            raise ExtractorError(
-                f"Unsupported content type: {content.content_type}",
-                extractor_name=self.name,
-            )
+        contents = content if isinstance(content, list) else [content]
+        if not contents:
+            raise ExtractorError("No content provided", extractor_name=self.name)
 
-    async def _extract_from_image(
-        self,
-        content: RawContent,
-        hints: dict[str, Any] | None,
-    ) -> ExtractedData:
-        """Extract data from an image using vision API."""
-        client = AsyncOpenAI(api_key=self.api_key)
-
-        # Prepare image
-        image_bytes = (
-            content.content
-            if isinstance(content.content, bytes)
-            else content.content.encode()
+        # Check content types
+        has_image = any(c.content_type == ContentType.IMAGE for c in contents)
+        has_pdf = any(c.content_type == ContentType.PDF for c in contents)
+        has_text = any(
+            c.content_type in (ContentType.TEXT, ContentType.HTML) for c in contents
         )
 
-        # Resize if needed to stay within token limits
-        processed_image = await self._prepare_image(image_bytes)
+        try:
+            # Strategy: If any visual content (Image/PDF), treat EVERYTHING as visual context if possible?
+            # Or convert PDF to images and process as images.
+            if has_image or has_pdf:
+                # Resolve PDF to images
+                final_images: list[RawContent] = []
+                extra_text = []
 
-        # Convert to base64
-        base64_image = base64.b64encode(processed_image).decode("utf-8")
+                from stricknani.importing.extractors.pdf import PDFExtractor
+
+                pdf_extractor = PDFExtractor(extract_images=True)
+
+                for c in contents:
+                    if c.content_type == ContentType.IMAGE:
+                        final_images.append(c)
+                    elif c.content_type == ContentType.PDF:
+                        # Render PDF pages as high-res images (preferred for AI analysis)
+                        page_images = await pdf_extractor.render_pages_as_images(c)
+                        if page_images:
+                            for i, img_bytes in enumerate(page_images):
+                                final_images.append(
+                                    RawContent(
+                                        content=img_bytes, 
+                                        content_type=ContentType.IMAGE,
+                                        metadata={"filename": f"{c.metadata.get('filename', 'doc')}_page_{i+1}.jpg"}
+                                    )
+                                )
+                        
+                        # Also get text as hint/context
+                        try:
+                            text_data = await pdf_extractor.extract(c)
+                            if text_data.get("description"):
+                                extra_text.append(f"Context from PDF {c.metadata.get('filename')}:\n{text_data['description']}")
+                        except Exception:
+                            pass
+                    elif c.content_type in (ContentType.TEXT, ContentType.HTML):
+                         extra_text.append(f"Context from {c.metadata.get('filename')}:\n{c.get_text()}")
+
+                # Process all images
+                result = await self._extract_from_images(final_images, hints, extra_context="\n\n".join(extra_text))
+                
+                # Collect rendered PDF pages to return in extras (for UI attachment display)
+                rendered_pages = []
+                for img in final_images:
+                    # Identify pages by metadata or source checks?
+                    # We constructed metadata as "..._page_N.jpg"
+                    if img.metadata.get("filename", "").endswith(".jpg") and "_page_" in img.metadata.get("filename", ""):
+                         if isinstance(img.content, bytes):
+                             rendered_pages.append(img.content)
+                
+                if rendered_pages:
+                    # Ensure extras dict exists
+                    if result.extras is None:
+                        result.extras = {}
+                    result.extras["pdf_rendered_pages"] = rendered_pages
+
+                return result
+
+            elif has_text:
+                # Concatenate all text
+                full_text = "\n\n".join([c.get_text() for c in contents])
+                # Mock a combined content object
+                combined = RawContent(
+                    content=full_text.encode("utf-8"),
+                    content_type=ContentType.TEXT,
+                    metadata={"filename": "combined_text.txt"},
+                )
+                return await self._extract_from_text(combined, hints)
+
+            else:
+                 raise ExtractorError(
+                    f"Unsupported content types in: {[c.content_type for c in contents]}",
+                    extractor_name=self.name,
+                )
+
+        except Exception as e:
+             raise ExtractorError(
+                f"AI extraction failed: {str(e)}",
+                extractor_name=self.name,
+            ) from e
+
+    async def _extract_from_images(
+        self,
+        contents: list[RawContent],
+        hints: dict[str, Any] | None,
+        extra_context: str = "",
+    ) -> ExtractedData:
+        """Extract data from images using vision API."""
+        client = AsyncOpenAI(api_key=self.api_key)
 
         # Build prompt
         system_prompt = self._build_system_prompt()
-        user_prompt = self._build_image_prompt(hints)
+        base_prompt = self._build_image_prompt(hints)
+        if extra_context:
+            base_prompt += f"\n\nAdditional Context:\n{extra_context}"
+
+        user_content = [{"type": "text", "text": base_prompt}]
+
+        for content in contents:
+            image_bytes = (
+                content.content
+                if isinstance(content.content, bytes)
+                else content.content.encode()
+            )
+            # Resize if needed to stay within token limits
+            processed_image = await self._prepare_image(image_bytes)
+            
+            # Convert to base64
+            base64_image = base64.b64encode(processed_image).decode("utf-8")
+            
+            user_content.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{base64_image}",
+                },
+            })
 
         try:
             response = await client.chat.completions.create(
@@ -162,15 +253,7 @@ class AIExtractor(ContentExtractor):
                     {"role": "system", "content": system_prompt},
                     {
                         "role": "user",
-                        "content": [
-                            {"type": "text", "text": user_prompt},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{base64_image}",
-                                },
-                            },
-                        ],
+                        "content": user_content,
                     },
                 ],
                 max_tokens=self.max_tokens,
@@ -227,225 +310,6 @@ class AIExtractor(ContentExtractor):
                 f"AI text extraction failed: {exc}",
                 extractor_name=self.name,
             ) from exc
-
-    async def _extract_from_pdf(
-        self,
-        content: RawContent,
-        hints: dict[str, Any] | None,
-    ) -> ExtractedData:
-        """Extract data from PDF by converting it to images first.
-
-        This uses the multimodal capabilities of vision models to analyze the PDF
-        pages as images, which is more reliable than direct PDF upload.
-        """
-        # Pre-extract images from PDF to include them as attachments
-        from stricknani.importing.extractors.pdf import PDFExtractor
-
-        pdf_extractor = PDFExtractor(extract_images=True)
-        local_images = await pdf_extractor.extract_images_from_pdf(content)
-
-        # Also extract text locally to provide as a hint
-        local_text = ""
-        try:
-            local_extracted_data = await pdf_extractor.extract(content, hints=hints)
-            local_text = str(local_extracted_data.extras.get("full_text") or "")
-        except Exception as exc:
-            logger.warning("Failed to extract text locally for PDF hint: %s", exc)
-
-        # Render PDF pages as high-res images
-        page_images = await pdf_extractor.render_pages_as_images(content)
-        if not page_images:
-            # Absolute fallback to text extraction if rendering failed
-            return await self._extract_from_pdf_fallback(content, hints)
-
-        result = await self._extract_from_images(
-            page_images,
-            hints,
-            local_images=local_images,
-            raw_text=local_text,
-            is_pdf_pages=True,
-        )
-
-        # Attach original local images to the result
-        if local_images:
-            result.extras["pdf_images"] = local_images
-
-        # Also attach rendered pages as attachments
-        result.extras["pdf_rendered_pages"] = page_images
-
-        return result
-
-    async def _extract_from_images(
-        self,
-        image_list: list[bytes],
-        hints: dict[str, Any] | None,
-        local_images: list[bytes] | None = None,
-        raw_text: str | None = None,
-        is_pdf_pages: bool = False,
-    ) -> ExtractedData:
-        """Extract data from multiple images using vision API."""
-        client = AsyncOpenAI(api_key=self.api_key)
-
-        content_list: list[ChatCompletionContentPartParam] = []
-
-        # System prompt and base user prompt
-        system_prompt = self._build_system_prompt()
-
-        image_hints = ""
-        if local_images:
-            image_hints = (
-                "\n\nThe following images were also extracted from the source "
-                "for reference:\n"
-                + "\n".join(f"- Image {i + 1}" for i in range(len(local_images)))
-                + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. "
-                "in the step 'images' field if they are relevant to a "
-                "specific step.\n"
-                "Refinement Tip: 'Image 1' is typically the cover/title image. "
-                "Unless it clearly depicts a specific instruction, it usually "
-                "belongs in the top-level 'image_urls' (gallery) rather than "
-                "in a step."
-            )
-
-        text_block = ""
-        if raw_text:
-            text_block = (
-                "\n\nFor reference, here is the text content extracted from the "
-                "source file:\n\n"
-                f"{raw_text[:8000]}"
-            )
-
-        if is_pdf_pages:
-            user_prompt = (
-                "Analyze the attached images (which are WHOLE PAGES from a knitting "
-                "pattern PDF) and extract all available knitting pattern information. "
-                "Return the data as JSON.\n\n"
-                "IMPORTANT regarding images:\n"
-                "1. The visual images provided in this message are ENTIRE PAGES. "
-                "   Do NOT use these pages as images for individual steps.\n"
-                "2. We have separately extracted individual images (photos, charts) "
-                "   from the file. You should refer to these as 'Image 1', 'Image 2', "
-                "   etc. in the 'images' list for steps, corresponding to the "
-                "   order they appear in the document.\n"
-                f"{image_hints}"
-                f"{text_block}"
-            )
-        else:
-            user_prompt = (
-                "Analyze the attached images and extract all available knitting "
-                "pattern information. Return the data as JSON."
-                f"{image_hints}"
-                f"{text_block}"
-            )
-
-        content_list.append({"type": "text", "text": user_prompt})
-
-        # Process and add each image (up to a limit to stay within token limits)
-        # OpenAI supports up to 10 images in some models, but we'll be conservative.
-        for _i, image_bytes in enumerate(image_list[:10]):
-            processed_image = await self._prepare_image(image_bytes)
-            base64_image = base64.b64encode(processed_image).decode("utf-8")
-            content_list.append(
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64_image}",
-                    },
-                }
-            )
-
-        try:
-            response = await client.chat.completions.create(
-                model=self.model if "mini" not in self.model else "gpt-4o",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {
-                        "role": "user",
-                        "content": content_list,
-                    },
-                ],
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-                response_format={"type": "json_object"},
-            )
-
-            raw_content_str = response.choices[0].message.content or "{}"
-            return self._parse_ai_response(raw_content_str)
-
-        except Exception as exc:
-            raise ExtractorError(
-                f"AI multi-image extraction failed: {exc}",
-                extractor_name=self.name,
-            ) from exc
-
-    async def _extract_from_pdf_fallback(
-        self,
-        content: RawContent,
-        hints: dict[str, Any] | None,
-    ) -> ExtractedData:
-        """Fallback method using local text extraction."""
-        from stricknani.importing.extractors.pdf import PDFExtractor
-
-        pdf_extractor = PDFExtractor(extract_images=True)
-        local_images = await pdf_extractor.extract_images_from_pdf(content)
-
-        if not pdf_extractor.can_extract(content):
-            raise ExtractorError(
-                "PDF extraction is not available (install pypdf or PyMuPDF)",
-                extractor_name=self.name,
-            )
-
-        try:
-            pdf_data = await pdf_extractor.extract(content, hints=hints)
-        except ExtractorError as exc:
-            raise ExtractorError(
-                f"AI PDF preprocessing failed: {exc}",
-                extractor_name=self.name,
-            ) from exc
-
-        full_text = ""
-        if pdf_data.extras:
-            full_text = str(pdf_data.extras.get("full_text") or "")
-        if not full_text.strip():
-            full_text = str(pdf_data.description or "")
-
-        if not full_text.strip():
-            raise ExtractorError(
-                "PDF contains no extractable text. If this is a scanned PDF, "
-                "upload images instead (or install PyMuPDF to enable "
-                "image-based extraction).",
-                extractor_name=self.name,
-            )
-
-        # Re-route through the text pipeline.
-        text_content = RawContent(
-            content=full_text,
-            content_type=ContentType.TEXT,
-            metadata={
-                **(content.metadata or {}),
-                "source_content_type": "application/pdf",
-            },
-        )
-
-        image_hints = ""
-        if local_images:
-            image_hints = (
-                "\n\nThe following images were extracted from the PDF "
-                "for reference:\n"
-                + "\n".join(f"- Image {i + 1}" for i in range(len(local_images)))
-                + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. "
-                "in the step 'images' field if they are relevant to a "
-                "specific step."
-            )
-
-        result = await self._extract_from_text(
-            text_content, hints, extra_prompt=image_hints
-        )
-
-        # Attach local images to the result
-        if local_images:
-            result.extras["pdf_images"] = local_images
-
-        return result
 
     async def _prepare_image(self, image_bytes: bytes, max_size: int = 1024) -> bytes:
         """Resize image if needed to reduce token usage."""
@@ -550,6 +414,26 @@ class AIExtractor(ContentExtractor):
                 extractor_name=self.name,
             ) from exc
 
+        def normalize_to_string(value: Any) -> str | None:
+            """Convert AI response values to strings, handling objects/arrays."""
+            if value is None:
+                return None
+            if isinstance(value, str):
+                return value if value.strip() else None
+            if isinstance(value, (list, tuple)):
+                # Join list items into a string
+                items = [str(item) for item in value if item]
+                return ", ".join(items) if items else None
+            if isinstance(value, dict):
+                # Convert dict to a readable string
+                parts = []
+                for k, v in value.items():
+                    if v:
+                        parts.append(f"{k}: {v}")
+                return ", ".join(parts) if parts else None
+            # For numbers, booleans, etc.
+            return str(value)
+
         # Parse steps
         steps: list[ExtractedStep] = []
         for step_data in data.get("steps", []):
@@ -564,17 +448,17 @@ class AIExtractor(ContentExtractor):
                 )
 
         return ExtractedData(
-            name=data.get("name"),
-            description=data.get("description"),
-            category=data.get("category"),
-            yarn=data.get("yarn"),
-            brand=data.get("brand"),
-            colorway=data.get("colorway"),
-            weight_category=data.get("weight_category"),
-            fiber_content=data.get("fiber_content"),
-            needles=data.get("needles"),
-            other_materials=data.get("other_materials"),
-            stitch_sample=data.get("stitch_sample"),
+            name=normalize_to_string(data.get("name")),
+            description=normalize_to_string(data.get("description")),
+            category=normalize_to_string(data.get("category")),
+            yarn=normalize_to_string(data.get("yarn")),
+            brand=normalize_to_string(data.get("brand")),
+            colorway=normalize_to_string(data.get("colorway")),
+            weight_category=normalize_to_string(data.get("weight_category")),
+            fiber_content=normalize_to_string(data.get("fiber_content")),
+            needles=normalize_to_string(data.get("needles")),
+            other_materials=normalize_to_string(data.get("other_materials")),
+            stitch_sample=normalize_to_string(data.get("stitch_sample")),
             steps=steps,
             image_urls=data.get("image_urls", []),
             extras={
