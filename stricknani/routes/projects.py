@@ -977,6 +977,23 @@ async def import_pattern(
                         local_image_token_map[i] = token
                         local_image_filename_map[i] = filename
 
+                # Also handle rendered PDF pages as attachments
+                pdf_page_urls = []
+                rendered_pages = extracted.extras.get("pdf_rendered_pages", [])
+                for i, img_bytes in enumerate(rendered_pages):
+                    filename = f"pdf_page_{i + 1}.jpg"
+                    token = await store_pending_project_import_attachment_bytes(
+                        current_user.id,
+                        content=img_bytes,
+                        original_filename=filename,
+                        content_type="image/jpeg",
+                    )
+                    import_attachment_tokens.append(token)
+                    url = get_file_url(
+                        filename, entity_id=current_user.id, pending_token=token
+                    )
+                    pdf_page_urls.append(url)
+
                 # Now map everything to URLs for the UI
                 # Filter out "Image 1" etc. from the AI's image_urls if it
                 # hallucinated them there
@@ -1008,6 +1025,10 @@ async def import_pattern(
                     }
 
                     for img_ref in step.images:
+                        # Guard: explicitly forbid association with rendered PDF pages
+                        if img_ref in pdf_page_urls:
+                            continue
+
                         # Handle 'Image 1', 'Image 2', etc.
                         match = re.search(r"Image (\d+)", str(img_ref), re.I)
                         if match:

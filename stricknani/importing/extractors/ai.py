@@ -263,11 +263,15 @@ class AIExtractor(ContentExtractor):
             hints,
             local_images=local_images,
             raw_text=local_text,
+            is_pdf_pages=True,
         )
 
         # Attach original local images to the result
         if local_images:
             result.extras["pdf_images"] = local_images
+
+        # Also attach rendered pages as attachments
+        result.extras["pdf_rendered_pages"] = page_images
 
         return result
 
@@ -277,6 +281,7 @@ class AIExtractor(ContentExtractor):
         hints: dict[str, Any] | None,
         local_images: list[bytes] | None = None,
         raw_text: str | None = None,
+        is_pdf_pages: bool = False,
     ) -> ExtractedData:
         """Extract data from multiple images using vision API."""
         client = AsyncOpenAI(api_key=self.api_key)
@@ -305,13 +310,25 @@ class AIExtractor(ContentExtractor):
                 f"{raw_text[:8000]}"
             )
 
-        user_prompt = (
-            "Analyze the attached images (which are pages from a knitting pattern) "
-            "and extract all available knitting pattern information. "
-            "Return the data as JSON."
-            f"{image_hints}"
-            f"{text_block}"
-        )
+        if is_pdf_pages:
+            user_prompt = (
+                "Analyze the attached images (which are pages from a knitting pattern) "
+                "and extract all available knitting pattern information. "
+                "Return the data as JSON.\n\n"
+                "IMPORTANT: The main attached images are WHOLE PAGES from the PDF. "
+                "DO NOT use them in the 'images' field for individual steps. "
+                "Only use the extracted images listed below for step images if "
+                "relevant."
+                f"{image_hints}"
+                f"{text_block}"
+            )
+        else:
+            user_prompt = (
+                "Analyze the attached images and extract all available knitting "
+                "pattern information. Return the data as JSON."
+                f"{image_hints}"
+                f"{text_block}"
+            )
 
         content_list.append({"type": "text", "text": user_prompt})
 

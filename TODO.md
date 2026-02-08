@@ -33,6 +33,7 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 | P2       | done   | feat: right-click/long-press on project/yarn cards to show favorite/print/re-import/delete context menu (same as "..." button) | Medium | Medium     | `stricknani/templates/projects/_cards.html`, `stricknani/templates/yarn/_cards.html`, `stricknani/static/js/htmx/` |
 | P0       | done   | bug: spinning circle in project deletion confirmation dialog is transparent (no color) and looks weird | High   | Low        | `stricknani/templates/projects/_cards.html`, `stricknani/static/css/app.css` |
 | P0       | done   | AI import: never upload PDFs directly, always convert to images first for better reliability and consistency | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/extractors/pdf.py` |
+| P0       | todo   | bug: AI importer sometimes incorrectly attaches PDF page images to random steps instead of as project attachments | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/models.py`, `stricknani/prompts/ai_ingest_baseline.txt` |
 
 ## Notes
 
