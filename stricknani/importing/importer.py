@@ -2790,7 +2790,15 @@ class PatternImporter:
 
         text = material.get_text(separator="\n", strip=True)
         lines = [line.strip() for line in text.splitlines() if line.strip()]
-        material_headings = {"GARN", "YARN", "MATERIAL", "MATERIALS", "ZUBEHÖR", "ACCESSORIES", "TILBEHØR"}
+        material_headings = {
+            "GARN",
+            "YARN",
+            "MATERIAL",
+            "MATERIALS",
+            "ZUBEHÖR",
+            "ACCESSORIES",
+            "TILBEHØR",
+        }
 
         start_index = -1
         for i, line in enumerate(lines):

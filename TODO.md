@@ -20,9 +20,10 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 
 | Priority | Status | Task                                                                                                 | Impact | Complexity | Primary Files                                                              |
 | -------- | ------ | ---------------------------------------------------------------------------------------------------- | ------ | ---------- | -------------------------------------------------------------------------- |
-| P1       | done   | Populate "other materials" field when importing Garnstudio patterns                                   | Medium | Medium     | `stricknani/importing/extractors/html.py`                                  |
-| P2       | done   | Move "other materials" below linked yarns on project view and edit pages                            | Low    | Low        | Template files for project detail/form                            |
+| P0       | done   | AI import: Direct PDF upload support instead of local text extraction                                | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/routes/projects.py`   |
+| P1       | todo   | AI import: Support for step images (investigate schema/model tweaks)                                 | Medium | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/models.py`  |
 | P2       | todo   | Replace runtime Tailwind-in-browser with a prebuilt static CSS bundle for performance and easier CSP | High   | High       | `stricknani/templates/base.html`, build tooling (`justfile`, `flake.nix`) |
+| P3       | todo   | Add OpenRouter and Groq support for AI imports as an alternative to OpenAI                           | Medium | Medium     | `stricknani/importing/extractors/ai.py`                                    |
 
 ## Notes
 

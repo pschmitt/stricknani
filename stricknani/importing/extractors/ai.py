@@ -230,15 +230,96 @@ class AIExtractor(ContentExtractor):
         content: RawContent,
         hints: dict[str, Any] | None,
     ) -> ExtractedData:
-        """Extract data from PDF.
+        """Extract data from PDF by uploading it directly to OpenAI.
 
-        OpenAI vision endpoints only accept image formats (png/jpeg/gif/webp),
-        so we must not send raw PDFs as "images".
-
-        Current strategy:
-        - Extract text from the PDF using `PDFExtractor` (pypdf/PyMuPDF).
-        - Feed that text into the text extraction flow.
+        This uses the multimodal capabilities of gpt-4o to analyze the PDF
+        directly instead of relying on local text extraction.
         """
+        from openai import BadRequestError
+
+        client = AsyncOpenAI(api_key=self.api_key)
+
+        pdf_bytes = (
+            content.content
+            if isinstance(content.content, bytes)
+            else content.content.encode()
+        )
+
+        file_id = None
+        try:
+            # Step 1: Upload PDF to OpenAI with purpose="vision"
+            # Note: We use a generic filename
+            filename = content.metadata.get("filename", "pattern.pdf")
+            uploaded_file = await client.files.create(
+                file=(filename, pdf_bytes, "application/pdf"),
+                purpose="vision",
+            )
+            file_id = uploaded_file.id
+            logger.info("Uploaded PDF to OpenAI: %s", file_id)
+
+            # Step 2: Extract data using chat completions with the file_id
+            # We use gpt-4o specifically for PDFs as it has the best multimodal support
+            # and gpt-4o-mini might not support input_file yet in all regions.
+            model = self.model if "mini" not in self.model else "gpt-4o"
+
+            system_prompt = self._build_system_prompt()
+            user_prompt = "Analyze the attached PDF and extract all available knitting pattern information. Return the data as JSON."
+
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": user_prompt},
+                            {
+                                "type": "input_file",
+                                "input_file": {"file_id": file_id},
+                            },
+                        ],
+                    },
+                ],
+                max_tokens=self.max_tokens,
+                temperature=self.temperature,
+                response_format={"type": "json_object"},
+            )
+
+            raw_content_str = response.choices[0].message.content or "{}"
+            return self._parse_ai_response(raw_content_str)
+
+        except BadRequestError as exc:
+            # Fallback to local text extraction if the model/account doesn't support PDF upload
+            if "application/pdf" in str(exc) or "input_file" in str(exc):
+                logger.warning(
+                    "OpenAI direct PDF upload not supported, falling back to text extraction: %s",
+                    exc,
+                )
+                return await self._extract_from_pdf_fallback(content, hints)
+            raise
+        except Exception as exc:
+            logger.error("AI PDF extraction failed: %s", exc)
+            raise ExtractorError(
+                f"AI PDF extraction failed: {exc}",
+                extractor_name=self.name,
+            ) from exc
+        finally:
+            # Step 3: Clean up the file from OpenAI
+            if file_id:
+                try:
+                    await client.files.delete(file_id)
+                    logger.debug("Deleted PDF from OpenAI: %s", file_id)
+                except Exception as exc:
+                    logger.warning(
+                        "Failed to delete PDF from OpenAI %s: %s", file_id, exc
+                    )
+
+    async def _extract_from_pdf_fallback(
+        self,
+        content: RawContent,
+        hints: dict[str, Any] | None,
+    ) -> ExtractedData:
+        """Fallback method using local text extraction."""
         from stricknani.importing.extractors.pdf import PDFExtractor
 
         pdf_extractor = PDFExtractor(extract_images=False)
