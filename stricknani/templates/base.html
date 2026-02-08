@@ -7,67 +7,72 @@
     <title>{% block title %}{{ _('Stricknani') }}{% endblock %}</title>
     <meta name="csrf-token" content="{{ csrf_token }}">
     {% block head %}{% endblock %}
-	    <link rel="icon" type="image/svg+xml"
-	        href="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}">
-		    <link rel="stylesheet" href="{{ url_for('static', path='vendor/mdi/css/materialdesignicons.min.css') }}">
-		    <link rel="stylesheet" href="{{ url_for('static', path='vendor/photoswipe/photoswipe.css') }}">
-        <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
-	    <script>
-	        window.STRICKNANI = window.STRICKNANI || {};
-	        window.STRICKNANI.i18n = {{ {
-	            'cancel': _('Cancel'),
-            'confirm': _('Confirm'),
-            'copiedToClipboard': _('Copied to clipboard'),
-            'darkMode': _('Dark Mode'),
-            'dismissMessage': _('Dismiss message'),
-            'failedToCopy': _('Failed to copy'),
-            'failedToUploadImage': _('Failed to upload image'),
-            'imageCropperFailedToLoad': _('Image cropper failed to load'),
-            'lightMode': _('Light Mode'),
-            'nothingToPreview': _('Nothing to preview'),
-            'onlyImages': _('Only image files are supported'),
-            'pswpDeleteImage': _('Delete image'),
-            'pswpDownloadImage': _('Download image'),
-            'pswpExtractText': _('Extract text'),
-            'pswpExtractingText': _('Extracting text...'),
-            'pswpGalleryThumbnails': _('Gallery thumbnails'),
-            'pswpImageCannotBeProcessed': _('This image cannot be processed.'),
-            'pswpNoTextDetected': _('No text detected.'),
-            'pswpOcrFailed': _('OCR failed.'),
-            'pswpOcrNotAvailable': _('OCR is not available on this server.'),
-            'pswpOpenImage': _('Open image'),
-            'pswpSetAsPrimary': _('Set as primary'),
-            'pswpTextExtracted': _('Text extracted.'),
-            'profilePictureUpdatedSuccessfully': _('Profile picture updated successfully'),
-            'reloadPage': _('Reload page'),
-            'sessionExpiredMessage': _('Your session has expired. Reload the page to continue.'),
-            'sessionExpiredTitle': _('Session expired'),
-            'somethingWentWrong': _('Something went wrong. Please try again'),
-            'uploading': _('Uploading...'),
-        } | tojson }};
-        window.STRICKNANI.toastMessages = {{ {
-            'project_created': _('Project created successfully'),
-            'project_updated': _('Project updated successfully'),
-            'project_deleted': _('Project deleted'),
-            'yarn_created': _('Yarn created successfully'),
-            'yarn_updated': _('Yarn updated successfully'),
-            'yarn_deleted': _('Yarn deleted'),
-            'profile_updated': _('Profile updated successfully'),
-            'category_created': _('Category created'),
-            'category_updated': _('Category updated'),
-            'category_deleted': _('Category deleted'),
-            'archive_requested': {
-                'message': _('Archive snapshot request queued'),
-                'variant': 'success',
+    <link rel="icon" type="image/svg+xml"
+        href="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}">
+    <link rel="stylesheet" href="{{ url_for('static', path='vendor/mdi/css/materialdesignicons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='vendor/photoswipe/photoswipe.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='vendor/cropperjs/cropper.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+    <script>
+        window.STRICKNANI = window.STRICKNANI || {};
+        window.STRICKNANI.i18n = {{
+            {
+                'cancel': _('Cancel'),
+                    'confirm': _('Confirm'),
+                        'copiedToClipboard': _('Copied to clipboard'),
+                            'darkMode': _('Dark Mode'),
+                                'dismissMessage': _('Dismiss message'),
+                                    'failedToCopy': _('Failed to copy'),
+                                        'failedToUploadImage': _('Failed to upload image'),
+                                            'imageCropperFailedToLoad': _('Image cropper failed to load'),
+                                                'lightMode': _('Light Mode'),
+                                                    'nothingToPreview': _('Nothing to preview'),
+                                                        'onlyImages': _('Only image files are supported'),
+                                                            'pswpDeleteImage': _('Delete image'),
+                                                                'pswpDownloadImage': _('Download image'),
+                                                                    'pswpExtractText': _('Extract text'),
+                                                                        'pswpExtractingText': _('Extracting text...'),
+                                                                            'pswpGalleryThumbnails': _('Gallery thumbnails'),
+                                                                                'pswpImageCannotBeProcessed': _('This image cannot be processed.'),
+                                                                                    'pswpNoTextDetected': _('No text detected.'),
+                                                                                        'pswpOcrFailed': _('OCR failed.'),
+                                                                                            'pswpOcrNotAvailable': _('OCR is not available on this server.'),
+                                                                                                'pswpOpenImage': _('Open image'),
+                                                                                                    'pswpSetAsPrimary': _('Set as primary'),
+                                                                                                        'pswpTextExtracted': _('Text extracted.'),
+                                                                                                            'profilePictureUpdatedSuccessfully': _('Profile picture updated successfully'),
+                                                                                                                'reloadPage': _('Reload page'),
+                                                                                                                    'sessionExpiredMessage': _('Your session has expired. Reload the page to continue.'),
+                                                                                                                        'sessionExpiredTitle': _('Session expired'),
+                                                                                                                            'somethingWentWrong': _('Something went wrong. Please try again'),
+                                                                                                                                'uploading': _('Uploading...'),
+        } | tojson
+        }};
+        window.STRICKNANI.toastMessages = {{
+            {
+                'project_created': _('Project created successfully'),
+                    'project_updated': _('Project updated successfully'),
+                        'project_deleted': _('Project deleted'),
+                            'yarn_created': _('Yarn created successfully'),
+                                'yarn_updated': _('Yarn updated successfully'),
+                                    'yarn_deleted': _('Yarn deleted'),
+                                        'profile_updated': _('Profile updated successfully'),
+                                            'category_created': _('Category created'),
+                                                'category_updated': _('Category updated'),
+                                                    'category_deleted': _('Category deleted'),
+                                                        'archive_requested': {
+                    'message': _('Archive snapshot request queued'),
+                        'variant': 'success',
             },
-            'archive_request_unavailable': {
-                'message': _('Archive snapshot request unavailable'),
-                'variant': 'info',
+                'archive_request_unavailable': {
+                    'message': _('Archive snapshot request unavailable'),
+                        'variant': 'info',
             },
-        } | tojson }};
+            } | tojson
+        }};
     </script>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
-	    <script src="{{ url_for('static', path='vendor/cropperjs/cropper.min.js') }}"></script>
+    <script src="{{ url_for('static', path='vendor/cropperjs/cropper.min.js') }}"></script>
     <script>
         // Theme initialization - MUST run before page renders
         (function () {
@@ -93,7 +98,7 @@
     <script src="{{ url_for('static', path='vendor/tailwindcss-browser/index.global.js') }}"></script>
     <script src="{{ url_for('static', path='vendor/htmx/htmx.min.js') }}"></script>
     <script src="{{ url_for('static', path='js/htmx/csrf.js') }}"></script>
-	</head>
+</head>
 
 <body class="min-h-screen bg-base-300 flex flex-col">
     {% import "macros/dialogs.html" as dialogs %}
@@ -102,9 +107,9 @@
     {# Default navbar - pages can override this block #}
     {% endblock %}
 
-	    <main class="flex-grow w-full" {% block main_attrs %}{% endblock %}>
-	        {% block content %}{% endblock %}
-	    </main>
+    <main class="flex-grow w-full" {% block main_attrs %}{% endblock %}>
+        {% block content %}{% endblock %}
+    </main>
 
     <footer class="mt-8 py-4 text-center text-sm text-base-content/70 bg-base-100 border-t border-base-300">
         <span class="mdi mdi-yarn mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0 | {{ _('GPL-3.0-only')
@@ -118,16 +123,16 @@
     {% if current_user %}
     <!-- Profile Image Upload Tools -->
     <input type="file" id="profile-image-input" class="hidden" accept="image/*">
-	    <dialog id="crop-modal" class="modal modal-bottom sm:modal-middle">
-	        <div class="modal-box max-w-lg">
-	            <h3 class="font-bold text-lg mb-4">{{ _('Crop Profile Picture') }}</h3>
-	            <div id="avatar-crop-container" class="relative h-96 w-full rounded-lg bg-base-300 overflow-hidden">
-	                <img id="crop-image" src="" alt="Image to crop" class="max-h-full max-w-full">
-	                <div id="avatar-crop-overlay" class="avatar-crop-overlay" aria-hidden="true"></div>
-	            </div>
-	            <div class="modal-action">
-	                {{ dialogs.dialog_cancel(_('Cancel'), id='crop-cancel') }}
-	                {{ dialogs.dialog_primary(_('Save & Upload'), icon='mdi-cloud-upload', id='crop-save') }}
+    <dialog id="crop-modal" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box max-w-lg">
+            <h3 class="font-bold text-lg mb-4">{{ _('Crop Profile Picture') }}</h3>
+            <div id="avatar-crop-container" class="relative h-96 w-full rounded-lg bg-base-300 overflow-hidden">
+                <img id="crop-image" src="" alt="Image to crop" class="max-h-full max-w-full">
+                <div id="avatar-crop-overlay" class="avatar-crop-overlay" aria-hidden="true"></div>
+            </div>
+            <div class="modal-action">
+                {{ dialogs.dialog_cancel(_('Cancel'), id='crop-cancel') }}
+                {{ dialogs.dialog_primary(_('Save & Upload'), icon='mdi-cloud-upload', id='crop-save') }}
             </div>
         </div>
         {{ dialogs.modal_backdrop() }}
@@ -143,19 +148,16 @@
     {% endif %}
 
     {% if current_user %}
-    <dialog id="globalSearchModal" class="modal modal-top sm:modal-middle backdrop:bg-base-300/80 backdrop:backdrop-blur-sm">
-        <div class="modal-box max-w-2xl p-0 overflow-hidden shadow-2xl border border-base-300 bg-base-100 rounded-2xl sm:mt-0 mt-4 mx-2 sm:mx-auto">
+    <dialog id="globalSearchModal"
+        class="modal modal-top sm:modal-middle backdrop:bg-base-300/80 backdrop:backdrop-blur-sm">
+        <div
+            class="modal-box max-w-2xl p-0 overflow-hidden shadow-2xl border border-base-300 bg-base-100 rounded-2xl sm:mt-0 mt-4 mx-2 sm:mx-auto">
             <div class="relative flex items-center border-b border-base-300 px-4 py-2 bg-base-200/50">
                 <span class="mdi mdi-magnify text-2xl opacity-40 mr-3"></span>
-                <input type="text" id="globalSearchInput"
-                    name="q"
-                    placeholder="{{ _('Search projects, yarns...') }}"
+                <input type="text" id="globalSearchInput" name="q" placeholder="{{ _('Search projects, yarns...') }}"
                     class="input border-none bg-transparent w-full focus:outline-none focus:ring-0 px-0 h-12 text-lg font-medium"
-                    hx-get="/search/global"
-                    hx-trigger="keyup changed delay:300ms"
-                    hx-target="#globalSearchResults"
-                    hx-indicator="#globalSearchIndicator"
-                    autocomplete="off">
+                    hx-get="/search/global" hx-trigger="keyup changed delay:300ms" hx-target="#globalSearchResults"
+                    hx-indicator="#globalSearchIndicator" autocomplete="off">
                 <div id="globalSearchIndicator" class="htmx-indicator ml-2">
                     <span class="loading loading-spinner loading-sm opacity-40"></span>
                 </div>
@@ -169,7 +171,8 @@
                     <p>{{ _('Start typing to search...') }}</p>
                 </div>
             </div>
-            <div class="bg-base-200/50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest opacity-40 flex justify-between border-t border-base-300">
+            <div
+                class="bg-base-200/50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest opacity-40 flex justify-between border-t border-base-300">
                 <span>{{ _('↑↓ to navigate') }}</span>
                 <span>{{ _('Enter to select') }}</span>
             </div>
@@ -180,7 +183,7 @@
     </dialog>
 
     <script src="{{ url_for('static', path='js/features/global_search_modal.js') }}"></script>
-	    {% endif %}
+    {% endif %}
 
     <div id="toastContainer"
         class="fixed inset-x-4 top-[4.5rem] z-[2147483647] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-[4.5rem] sm:w-80"
@@ -209,10 +212,7 @@
                     <p class="text-xs text-base-content/60 truncate" id="pdfViewerFilename"></p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <a id="pdfViewerDownload"
-                        class="btn btn-ghost btn-sm btn-circle"
-                        target="_blank"
-                        rel="noreferrer"
+                    <a id="pdfViewerDownload" class="btn btn-ghost btn-sm btn-circle" target="_blank" rel="noreferrer"
                         title="{{ _('Download') }}">
                         <span class="mdi mdi-download text-xl"></span>
                     </a>
@@ -238,10 +238,7 @@
                     <p class="text-xs text-base-content/60 truncate" id="imageViewerFilename"></p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <a id="imageViewerDownload"
-                        class="btn btn-ghost btn-sm btn-circle"
-                        target="_blank"
-                        rel="noreferrer"
+                    <a id="imageViewerDownload" class="btn btn-ghost btn-sm btn-circle" target="_blank" rel="noreferrer"
                         title="{{ _('Download') }}">
                         <span class="mdi mdi-download text-xl"></span>
                     </a>
@@ -254,10 +251,8 @@
             </div>
             <div class="flex-1 bg-black/90 p-3 sm:p-4 overflow-auto">
                 <div class="min-h-full flex items-center justify-center">
-                <img id="imageViewerImage"
-                    class="block max-w-full max-h-full object-contain"
-                    src="about:blank"
-                    alt="">
+                    <img id="imageViewerImage" class="block max-w-full max-h-full object-contain" src="about:blank"
+                        alt="">
                 </div>
             </div>
         </div>
@@ -273,23 +268,12 @@
                     <p class="text-xs text-base-content/60 truncate" id="pswpOcrFilename"></p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <button
-                        id="pswpOcrCopy"
-                        type="button"
-                        class="btn btn-ghost btn-sm btn-circle"
-                        title="{{ _('Copy text') }}"
-                        aria-label="{{ _('Copy text') }}"
-                        disabled
-                    >
+                    <button id="pswpOcrCopy" type="button" class="btn btn-ghost btn-sm btn-circle"
+                        title="{{ _('Copy text') }}" aria-label="{{ _('Copy text') }}" disabled>
                         <span class="mdi mdi-content-copy text-xl"></span>
                     </button>
-                    <button
-                        id="pswpOcrRetry"
-                        type="button"
-                        class="btn btn-ghost btn-sm btn-circle"
-                        title="{{ _('Retry') }}"
-                        aria-label="{{ _('Retry') }}"
-                    >
+                    <button id="pswpOcrRetry" type="button" class="btn btn-ghost btn-sm btn-circle"
+                        title="{{ _('Retry') }}" aria-label="{{ _('Retry') }}">
                         <span class="mdi mdi-refresh text-xl"></span>
                     </button>
                     <form method="dialog">
@@ -303,25 +287,18 @@
                 <div class="flex min-h-0 flex-col">
                     <div id="pswpOcrStatus" class="text-sm text-base-content/70"></div>
                     <div class="relative mt-3 flex-1 min-h-0">
-                        <div
-                            id="pswpOcrLoadingOverlay"
-                            class="absolute inset-0 hidden rounded-lg border border-base-300 bg-base-100/95 backdrop-blur-sm"
-                        >
+                        <div id="pswpOcrLoadingOverlay"
+                            class="absolute inset-0 hidden rounded-lg border border-base-300 bg-base-100/95 backdrop-blur-sm">
                             <div class="flex h-full w-full items-center justify-center p-4">
                                 <div class="flex items-center gap-3 text-base-content/80">
-                                    <span
-                                        id="pswpOcrSpinner"
-                                        class="loading loading-spinner loading-sm text-primary"
-                                        aria-hidden="true"
-                                    ></span>
+                                    <span id="pswpOcrSpinner" class="loading loading-spinner loading-sm text-primary"
+                                        aria-hidden="true"></span>
                                     <div id="pswpOcrLoadingStatus" class="text-sm"></div>
                                 </div>
                             </div>
                         </div>
-                        <pre
-                            id="pswpOcrText"
-                            class="h-full min-h-40 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-base-300 bg-base-100 p-3 text-sm text-base-content/90"
-                        ></pre>
+                        <pre id="pswpOcrText"
+                            class="h-full min-h-40 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-base-300 bg-base-100 p-3 text-sm text-base-content/90"></pre>
                     </div>
                 </div>
             </div>
@@ -329,16 +306,62 @@
         {{ dialogs.modal_backdrop() }}
     </dialog>
 
-    <div id="swipe-indicator-left" class="fixed left-4 top-1/2 -translate-y-1/2 z-[100] transition-all duration-200 opacity-0 pointer-events-none scale-75">
-        <div class="bg-base-100/90 backdrop-blur-sm rounded-full p-4 shadow-xl border border-base-content/10 text-primary">
+    <dialog id="pswpCropDialog" class="modal">
+        <div
+            class="modal-box w-screen h-screen max-w-none p-0 overflow-hidden rounded-none flex flex-col sm:w-[min(1100px,calc(100vw-4rem))] sm:h-[min(85vh,900px)) sm:rounded-box">
+            <div class="flex items-center justify-between gap-4 p-4 border-b border-base-200 bg-base-100">
+                <div class="min-w-0">
+                    <h3 class="font-bold text-lg">{{ _('Crop Image') }}</h3>
+                    <p class="text-xs text-base-content/60">{{ _('Drag to reposition, resize handles to crop') }}</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="pswpCropReset" type="button" class="btn btn-ghost btn-sm btn-circle"
+                        title="{{ _('Reset') }}" aria-label="{{ _('Reset') }}">
+                        <span class="mdi mdi-refresh text-xl"></span>
+                    </button>
+                    <button id="pswpCropCancel" type="button" class="btn btn-ghost btn-sm btn-circle"
+                        aria-label="{{ _('Cancel') }}">
+                        <span class="mdi mdi-close text-xl"></span>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 min-h-0 bg-base-200/30 p-4 overflow-hidden relative">
+                <div id="pswpCropLoadingOverlay"
+                    class="absolute inset-0 hidden rounded-lg border border-base-300 bg-base-100/95 backdrop-blur-sm z-10">
+                    <div class="flex h-full w-full items-center justify-center p-4">
+                        <div class="flex items-center gap-3 text-base-content/80">
+                            <span class="loading loading-spinner loading-sm text-primary" aria-hidden="true"></span>
+                            <div id="pswpCropLoadingStatus" class="text-sm"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="h-full w-full flex items-center justify-center">
+                    <img id="pswpCropImage" src="" alt="{{ _('Image to crop') }}" class="max-w-full max-h-full block">
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 p-4 border-t border-base-200 bg-base-100">
+                {{ dialogs.dialog_cancel(_('Cancel'), id='pswpCropCancelBtn',
+                attrs='onclick="document.getElementById(\'pswpCropCancel\').click()"') }}
+                {{ dialogs.dialog_primary(_('Save'), icon='mdi-content-save', id='pswpCropSave') }}
+            </div>
+        </div>
+        {{ dialogs.modal_backdrop() }}
+    </dialog>
+
+    <div id="swipe-indicator-left"
+        class="fixed left-4 top-1/2 -translate-y-1/2 z-[100] transition-all duration-200 opacity-0 pointer-events-none scale-75">
+        <div
+            class="bg-base-100/90 backdrop-blur-sm rounded-full p-4 shadow-xl border border-base-content/10 text-primary">
             <span class="mdi mdi-arrow-left text-4xl"></span>
         </div>
     </div>
-	    <div id="swipe-indicator-right" class="fixed right-4 top-1/2 -translate-y-1/2 z-[100] transition-all duration-200 opacity-0 pointer-events-none scale-75">
-	        <div class="bg-base-100/90 backdrop-blur-sm rounded-full p-4 shadow-xl border border-base-content/10 text-primary">
-	            <span class="mdi mdi-arrow-right text-4xl"></span>
-	        </div>
-	    </div>
+    <div id="swipe-indicator-right"
+        class="fixed right-4 top-1/2 -translate-y-1/2 z-[100] transition-all duration-200 opacity-0 pointer-events-none scale-75">
+        <div
+            class="bg-base-100/90 backdrop-blur-sm rounded-full p-4 shadow-xl border border-base-content/10 text-primary">
+            <span class="mdi mdi-arrow-right text-4xl"></span>
+        </div>
+    </div>
 
     <script>
         window.STRICKNANI = window.STRICKNANI || {};
@@ -352,12 +375,13 @@
         window.STRICKNANI.photoswipe.PhotoSwipeLightbox = PhotoSwipeLightbox;
         import("{{ url_for('static', path='js/features/photoswipe.js') }}");
     </script>
-        <script src="{{ url_for('static', path='js/features/navbar_dropdowns.js') }}"></script>
-        <script src="{{ url_for('static', path='js/features/swipe_nav.js') }}"></script>
-		    {% if sentry_frontend_enabled %}
-		    <script src="{{ url_for('static', path='vendor/sentry/bundle.tracing.min.js') }}"></script>
-		    <script>
-		        Sentry.init({
+    <script src="{{ url_for('static', path='js/features/photoswipe_crop.js') }}"></script>
+    <script src="{{ url_for('static', path='js/features/navbar_dropdowns.js') }}"></script>
+    <script src="{{ url_for('static', path='js/features/swipe_nav.js') }}"></script>
+    {% if sentry_frontend_enabled %}
+    <script src="{{ url_for('static', path='vendor/sentry/bundle.tracing.min.js') }}"></script>
+    <script>
+        Sentry.init({
             dsn: {{ sentry_frontend_dsn | tojson }},
             environment: {{ sentry_frontend_env | tojson }},
             tracesSampleRate: {{ sentry_frontend_traces_sample_rate }}

@@ -99,7 +99,8 @@
                                 class="relative aspect-square rounded-lg overflow-hidden bg-base-100 shadow-sm border border-base-200 {% if loop.index > 3 %}hidden print:block{% endif %}">
                                 <a href="{{ image.url }}" class="block h-full w-full"
                                     data-pswp-width="{{ image.width or 1200 }}"
-                                    data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}">
+                                    data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}"
+                                    data-image-id="{{ image.id }}">
                                     <img src="{{ image.url }}" alt="{{ image.alt_text }}"
                                         class="h-full w-full object-cover cursor-zoom-in transition duration-300 hover:scale-105"
                                         loading="lazy">
@@ -491,7 +492,8 @@
                                 <a href="{{ image.url }}"
                                     class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
                                     data-pswp-width="{{ image.width or 1200 }}" data-pswp-height="{{ image.height or 1200 }}"
-                                    data-pswp-caption="{{ image.alt_text }} ({{ _('Stitch Sample') }})">
+                                    data-pswp-caption="{{ image.alt_text }} ({{ _('Stitch Sample') }})"
+                                    data-image-id="{{ image.id }}">
                                     <img src="{{ image.url }}" alt="{{ image.alt_text }}"
                                         class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
                                         loading="lazy">
@@ -565,7 +567,8 @@
                                             class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
                                             data-pswp-width="{{ image.width or 1200 }}"
                                             data-pswp-height="{{ image.height or 1200 }}"
-                                            data-pswp-caption="{{ image.alt_text }} ({{ step.title }})">
+                                            data-pswp-caption="{{ image.alt_text }} ({{ step.title }})"
+                                            data-image-id="{{ image.id }}">
                                             <img src="{{ image.url }}" alt="{{ image.alt_text }}"
                                                 class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
                                                 loading="lazy">

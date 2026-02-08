@@ -265,7 +265,8 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                     <a href="{{ attachment.url }}" class="hidden" aria-hidden="true" tabindex="-1"
                                         data-pswp-width="{{ attachment.width or 1200 }}"
                                         data-pswp-height="{{ attachment.height or 1200 }}"
-                                        data-pswp-caption="{{ attachment.original_filename }}"></a>
+                                        data-pswp-caption="{{ attachment.original_filename }}"
+                                        data-attachment-id="{{ attachment.id }}"></a>
                                     {% endif %}
                                 </div>
                                 {% endfor %}
@@ -1636,6 +1637,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                data-pswp-width="${pswpWidth}"
                data-pswp-height="${pswpHeight}"
                data-pswp-caption="${altText}"
+               data-image-id="${imageData.id}"
                ${showPromote ? 'data-pswp-promote="true"' : ''}
                ${showDelete ? 'data-pswp-delete="true"' : ''}
                data-pswp-is-primary="${isPrimary ? 'true' : 'false'}"
