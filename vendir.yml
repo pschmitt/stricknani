@@ -29,7 +29,6 @@ directories:
         newRootPath: package/dist
         includePaths:
           - package/dist/cropper.min.js
-          - package/dist/cropper.css
 
       # renovate: datasource=npm depName=daisyui
       - path: daisyui

@@ -82,8 +82,8 @@
               typeof pswpInstance.getNumItems === "function"
                 ? pswpInstance.getNumItems()
                 : pswpInstance.options?.dataSource?.length ||
-                pswpInstance.options?.dataSource?.items?.length ||
-                0;
+                  pswpInstance.options?.dataSource?.items?.length ||
+                  0;
             el.innerHTML = "";
             if (!count || count <= 1) {
               return;
@@ -94,8 +94,8 @@
                 typeof pswpInstance.getItemData === "function"
                   ? pswpInstance.getItemData(index)
                   : pswpInstance.options?.dataSource?.[index] ||
-                  pswpInstance.options?.dataSource?.items?.[index] ||
-                  {};
+                    pswpInstance.options?.dataSource?.items?.[index] ||
+                    {};
               const thumbSrc = item?.msrc || item?.src;
               if (!thumbSrc) {
                 continue;
@@ -197,53 +197,6 @@
               item?.element || item?.data?.element || pswpInstance.currSlide?.data?.element;
             const isDeletable = element?.hasAttribute("data-pswp-delete");
             el.style.display = isDeletable ? "inline-flex" : "none";
-          };
-          pswpInstance.on("change", update);
-          pswpInstance.on("afterInit", update);
-        },
-      });
-
-      // Register Crop/Edit button.
-      pswp.ui.registerElement({
-        name: "crop-button",
-        ariaLabel: t("pswpCropImage", "Crop image"),
-        order: 7.5,
-        isButton: true,
-        html: '<span class="pswp__icn mdi mdi-crop"></span>',
-        appendTo: "bar",
-        onClick: (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-
-          const item = pswp.currItem;
-          const element = item?.element || item?.data?.element || pswp.currSlide?.data?.element;
-          const src = pswp.currSlide?.data?.src || item?.data?.src || item?.src;
-
-          if (!src) {
-            console.warn('No image source found');
-            return;
-          }
-
-          // Close PhotoSwipe before opening crop dialog
-          pswp.close();
-
-          // Open crop dialog
-          setTimeout(() => {
-            if (typeof window.openCropDialog === 'function') {
-              window.openCropDialog(src, element);
-            } else {
-              console.error('Crop dialog not available');
-            }
-          }, 300);
-        },
-        onInit: (el, pswpInstance) => {
-          const update = () => {
-            const item = pswpInstance.currItem;
-            const element =
-              item?.element || item?.data?.element || pswpInstance.currSlide?.data?.element;
-            // Only show crop button for images that have an ID (uploaded/saved images)
-            const hasImageId = element?.hasAttribute("data-image-id") || element?.hasAttribute("data-attachment-id");
-            el.style.display = hasImageId ? "inline-flex" : "none";
           };
           pswpInstance.on("change", update);
           pswpInstance.on("afterInit", update);

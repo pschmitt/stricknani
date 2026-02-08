@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import shutil
-from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
-import anyio
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +15,6 @@ from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.models import Project, User, Yarn
 from stricknani.routes.auth import require_auth
-from stricknani.utils.files import create_thumbnail, get_file_url
 from stricknani.utils.ocr import DEFAULT_OCR_LANG, extract_text_from_media_file
 
 router: APIRouter = APIRouter(prefix="/utils", tags=["utils"])
@@ -132,69 +129,4 @@ async def ocr_image(
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "ocr_failed"},
-        )
-
-
-@router.post("/crop-image")
-async def crop_image(
-    src: str = Form(...),
-    cropped_image: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
-) -> JSONResponse:
-    """Crop and save an image, overwriting the original."""
-    try:
-        kind, entity_id, file_path = _resolve_media_file(src)
-
-        if not file_path.is_file():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
-            )
-
-        # Access control
-        if kind == "projects":
-            project = await db.get(Project, entity_id)
-            if not project or project.owner_id != current_user.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-                )
-            # Update timestamp
-            # project.updated_at is updated automatically by onupdate in model?
-            # SA warning: "onupdate" only triggers on UPDATE statements.
-            # Here we are not updating the DB row, only the file.
-            # We should touch the project to reflect the activity.
-            project.updated_at = datetime.now(UTC)
-            db.add(project)
-
-        elif kind == "yarns":
-            yarn = await db.get(Yarn, entity_id)
-            if not yarn or yarn.owner_id != current_user.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-                )
-            yarn.updated_at = datetime.now(UTC)
-            db.add(yarn)
-
-        # Read cropped bytes
-        content = await cropped_image.read()
-
-        # Overwrite file
-        await anyio.to_thread.run_sync(file_path.write_bytes, content)
-
-        # Regenerate thumbnail
-        # Note: 'kind' is "projects" or "yarns", which matches what create_thumbnail expects as subdir
-        await create_thumbnail(file_path, entity_id, subdir=kind)
-
-        await db.commit()
-
-        # Return the URL (same as input src, but the browser needs to reload it)
-        url = get_file_url(file_path.name, entity_id, subdir=kind)
-        return JSONResponse({"url": url})
-
-    except HTTPException as exc:
-        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-    except Exception as e:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"detail": str(e)},
         )

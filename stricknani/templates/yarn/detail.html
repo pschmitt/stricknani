@@ -92,8 +92,7 @@
                                     class="block h-full w-full{% if loop.last and photo_count > 3 %} pointer-events-none{% endif %}"
                                     data-pswp-width="{{ photo.width or 1200 }}"
                                     data-pswp-height="{{ photo.height or 1200 }}"
-                                    data-pswp-caption="{{ photo.alt_text or yarn.name }}"
-                                    data-image-id="{{ photo.id }}">
+                                    data-pswp-caption="{{ photo.alt_text or yarn.name }}">
                                     <img src="{{ photo.thumbnail_url }}" alt="{{ photo.alt_text or yarn.name }}"
                                         class="h-full w-full object-cover cursor-zoom-in transition duration-300 hover:scale-105"
                                         loading="lazy">
@@ -110,8 +109,7 @@
                             {% for photo in photos[3:] %}
                             <a href="{{ photo.full_url }}" class="hidden" data-pswp-width="{{ photo.width or 1200 }}"
                                 data-pswp-height="{{ photo.height or 1200 }}"
-                                data-pswp-caption="{{ photo.alt_text or yarn.name }}"
-                                data-image-id="{{ photo.id }}"></a>
+                                data-pswp-caption="{{ photo.alt_text or yarn.name }}"></a>
                             {% endfor %}
                         </div>
                         {% else %}

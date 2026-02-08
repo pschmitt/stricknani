@@ -280,7 +280,6 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                         class="relative group aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
                         <a href="{{ photo.full_url }}" data-pswp-width="{{ photo.width or 1200 }}"
                             data-pswp-height="{{ photo.height or 1200 }}" data-pswp-caption="{{ photo.alt_text }}"
-                            data-image-id="{{ photo.id }}"
                             data-pswp-promote="true" data-pswp-delete="true"
                             data-pswp-is-primary="{{ 'true' if photo.is_primary else 'false' }}"
                             class="block h-full w-full">
@@ -896,7 +895,6 @@ attrs='data-action="open-dialog" data-dialog-id="deleteYarnDialog"', class="w-fu
             class="relative group aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
             <a href="${photo.full_url}" data-pswp-width="${photo.width || 1200}"
                 data-pswp-height="${photo.height || 1200}" data-pswp-caption="${photo.alt_text}"
-                data-image-id="${photo.id}"
                 data-pswp-promote="true" data-pswp-delete="true"
                 data-pswp-is-primary="${photo.is_primary ? 'true' : 'false'}"
                 class="block h-full w-full">
