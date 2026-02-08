@@ -905,10 +905,11 @@ async def import_pattern(
                             "step_number": step.step_number,
                             "title": step.title,
                             "description": step.description,
+                            "images": step.images,
                         }
                         for step in extracted.steps
                     ],
-                    "image_urls": [],  # Images are uploaded separately
+                    "image_urls": extracted.image_urls,
                     "link": None,
                     "is_ai_enhanced": True,
                 }
@@ -963,10 +964,11 @@ async def import_pattern(
                             "step_number": step.step_number,
                             "title": step.title,
                             "description": step.description,
+                            "images": step.images,
                         }
                         for step in extracted.steps
                     ],
-                    "image_urls": [],
+                    "image_urls": extracted.image_urls,
                     "link": None,
                     "is_ai_enhanced": True,
                 }

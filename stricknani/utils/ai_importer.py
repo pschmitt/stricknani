@@ -204,6 +204,14 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
                 "step_number": {"type": "integer"},
                 "title": {"type": "string"},
                 "description": {"type": "string"},
+                "images": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "URLs of images from the provided list that are "
+                        "directly relevant to this step"
+                    ),
+                },
             },
         },
     }
@@ -234,11 +242,13 @@ def _build_example_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
                     "step_number": 1,
                     "title": "Cast On",
                     "description": "Cast on 40 stitches",
+                    "images": ["https://example.com/img1.jpg"],
                 },
                 {
                     "step_number": 2,
                     "title": "Body",
                     "description": "Knit in stockinette stitch",
+                    "images": [],
                 },
             ]
         elif props.get("nullable"):
@@ -448,6 +458,20 @@ class AIPatternImporter:
                 extracted_data["image_urls"] = images[:10]
         else:
             extracted_data["image_urls"] = images[:10]
+
+        # Process step images
+        ai_steps = extracted_data.get("steps")
+        if isinstance(ai_steps, list):
+            for step in ai_steps:
+                if not isinstance(step, dict):
+                    continue
+                step_images = step.get("images")
+                if step_images and isinstance(step_images, list):
+                    # Verify AI didn't hallucinate new URLs
+                    valid_step_images = [u for u in step_images if u in images]
+                    step["images"] = valid_step_images[:10]
+                else:
+                    step["images"] = []
 
         logger.info(
             "AI import extracted name=%s needles=%s yarn=%s steps=%s images=%s",

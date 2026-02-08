@@ -21,7 +21,7 @@ async def test_ai_extractor_pdf_direct_upload() -> None:
     # Mock OpenAI client and responses
     mock_file = MagicMock()
     mock_file.id = "file-123"
-    
+
     mock_completion = MagicMock()
     mock_completion.choices = [
         MagicMock(message=MagicMock(content='{"name": "Direct PDF Project"}'))
@@ -39,7 +39,7 @@ async def test_ai_extractor_pdf_direct_upload() -> None:
         result = await extractor.extract(pdf_content)
 
     assert result.name == "Direct PDF Project"
-    
+
     # Verify file was uploaded with purpose="vision"
     mock_client.files.create.assert_called_once()
     args, kwargs = mock_client.files.create.call_args
@@ -52,7 +52,7 @@ async def test_ai_extractor_pdf_direct_upload() -> None:
     args, kwargs = mock_client.chat.completions.create.call_args
     messages = kwargs["messages"]
     user_content = messages[1]["content"]
-    
+
     found_input_file = False
     for item in user_content:
         if item["type"] == "input_file":
@@ -75,23 +75,35 @@ async def test_ai_extractor_pdf_fallback_on_error() -> None:
         metadata={"filename": "test.pdf"},
     )
 
-    # Mock OpenAI client to fail on upload or completion
     with (
         patch("stricknani.importing.extractors.ai.OPENAI_AVAILABLE", True),
         patch("stricknani.importing.extractors.ai.AsyncOpenAI") as mock_openai_class,
-        patch("stricknani.importing.extractors.pdf.PDFExtractor.can_extract", return_value=True),
-        patch("stricknani.importing.extractors.pdf.PDFExtractor.extract", new=AsyncMock(
-            return_value=ExtractedData(description="Fallback description", extras={"full_text": "extracted text"})
-        )),
-        patch.object(AIExtractor, "_extract_from_text", new=AsyncMock(return_value=ExtractedData(name="Fallback Success")))
+        patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.can_extract",
+            return_value=True,
+        ),
+        patch(
+            "stricknani.importing.extractors.pdf.PDFExtractor.extract",
+            new=AsyncMock(
+                return_value=ExtractedData(
+                    description="Fallback description",
+                    extras={"full_text": "extracted text"},
+                )
+            ),
+        ),
+        patch.object(
+            AIExtractor,
+            "_extract_from_text",
+            new=AsyncMock(return_value=ExtractedData(name="Fallback Success")),
+        ),
     ):
         mock_client = mock_openai_class.return_value
-        
+
         # Simulate OpenAI error for PDF upload
         mock_response = MagicMock()
         mock_response.status_code = 400
         mock_client.files.create.side_effect = BadRequestError(
-            "Invalid file format application/pdf", 
+            "Invalid file format application/pdf",
             response=mock_response,
             body={"error": {"message": "Invalid file format application/pdf"}}
         )

@@ -263,9 +263,12 @@ class AIExtractor(ContentExtractor):
             model = self.model if "mini" not in self.model else "gpt-4o"
 
             system_prompt = self._build_system_prompt()
-            user_prompt = "Analyze the attached PDF and extract all available knitting pattern information. Return the data as JSON."
+            user_prompt = (
+                "Analyze the attached PDF and extract all available knitting pattern "
+                "information. Return the data as JSON."
+            )
 
-            response = await client.chat.completions.create(
+            response = await client.chat.completions.create(  # type: ignore[call-overload]
                 model=model,
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -289,10 +292,12 @@ class AIExtractor(ContentExtractor):
             return self._parse_ai_response(raw_content_str)
 
         except BadRequestError as exc:
-            # Fallback to local text extraction if the model/account doesn't support PDF upload
+            # Fallback to local text extraction if the model/account doesn't support
+            # PDF upload
             if "application/pdf" in str(exc) or "input_file" in str(exc):
                 logger.warning(
-                    "OpenAI direct PDF upload not supported, falling back to text extraction: %s",
+                    "OpenAI direct PDF upload not supported, "
+                    "falling back to text extraction: %s",
                     exc,
                 )
                 return await self._extract_from_pdf_fallback(content, hints)
@@ -407,7 +412,8 @@ class AIExtractor(ContentExtractor):
             "- other_materials: Buttons, zippers, or other notions needed\n"
             "- stitch_sample: Gauge information\n"
             "- steps: Array of instruction steps with step_number, title, "
-            "description\n"
+            "description, and images (array of URLs or identifiers)\n"
+            "- image_urls: Array of general gallery image URLs or identifiers\n"
             "\nReturn valid JSON only. Use null for unknown fields."
         )
 
@@ -459,6 +465,7 @@ class AIExtractor(ContentExtractor):
                         step_number=step_data.get("step_number", len(steps) + 1),
                         title=step_data.get("title"),
                         description=step_data.get("description"),
+                        images=step_data.get("images", []),
                     )
                 )
 
@@ -475,6 +482,7 @@ class AIExtractor(ContentExtractor):
             other_materials=data.get("other_materials"),
             stitch_sample=data.get("stitch_sample"),
             steps=steps,
+            image_urls=data.get("image_urls", []),
             extras={
                 k: v
                 for k, v in data.items()
