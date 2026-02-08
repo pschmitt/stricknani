@@ -163,6 +163,20 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                 placeholder="{{ _('Personal notes about this project...') }}">{{ project.notes if project and project.notes else '' }}</textarea>
                             <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
                         </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label for="other_materials"
+                                    class=" text-sm font-medium inline-flex items-center gap-2">
+                                    <span class="mdi mdi-package-variant-closed text-base-content/70"></span>
+                                    {{ _('Other Materials') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
+                                        }}</span>
+                                </label>
+                            </div>
+                            <textarea id="other_materials" name="other_materials" rows="3" class="textarea textarea-bordered w-full"
+                                placeholder="{{ _('e.g. Buttons, zippers, ribbon, etc.') }}">{{ project.other_materials if project and project.other_materials else '' }}</textarea>
+                            <p class="text-xs text-base-content/70 mt-1">{{ _('Supports Markdown formatting') }}</p>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -169,6 +169,10 @@ def _build_schema_from_model(model_class: type) -> dict[str, Any]:
             description = "Project category (e.g. 'Pullover', 'Schal', 'Mütze')"
         elif name == "name":
             description = "The pattern or project name"
+        elif name == "other_materials":
+            description = (
+                "Other materials needed (e.g. buttons, zippers, ribbon, elastic)"
+            )
             schema["required"].append(name)
 
         prop: dict[str, Any] = {"type": json_type, "description": description}
@@ -220,6 +224,8 @@ def _build_example_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
             example[field] = "A simple beginner-friendly scarf pattern"
         elif field == "notes":
             example[field] = "Remember to use a softer yarn for the edges"
+        elif field == "other_materials":
+            example[field] = "4 buttons, elastic band"
         elif field == "category":
             example[field] = "Schal"
         elif field == "steps":
@@ -416,7 +422,8 @@ class AIPatternImporter:
             if not extracted_data.get("brand") and self.hints.get("brand"):
                 extracted_data["brand"] = self.hints["brand"]
 
-        # Move extracted notes to description if applicable
+        # Merge any notes from AI into description - the notes field is reserved
+        # for user-added notes only, not for content from imported patterns
         ai_notes = extracted_data.get("notes")
         ai_description = extracted_data.get("description")
         if ai_notes and ai_notes.strip():

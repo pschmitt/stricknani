@@ -339,6 +339,28 @@
                     </div>
                 </div>
                 {% endif %}
+
+                {% if project.other_materials %}
+                <div
+                    class="collapse collapse-arrow bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30">
+                    <input type="checkbox" checked />
+                    <div class="collapse-title font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest flex items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="mdi mdi-package-variant-closed"></span>
+                            {{ _('Other Materials') }}
+                        </div>
+                    </div>
+                    <div class="collapse-content relative pt-2">
+                        <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                            {% if project.other_materials_html %}
+                            {{ project.other_materials_html | safe }}
+                            {% else %}
+                            {{ project.other_materials }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             {% if project.description %}
@@ -424,6 +446,23 @@
                             {{ _('Recommended Needles') }}
                         </h3>
                         <div class="text-sm font-medium text-base-content/80 bg-base-100 rounded-lg p-3 border border-base-200 whitespace-normal">{{- project.needles | trim -}}</div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Other Materials -->
+                    {% if project.other_materials %}
+                    <div class="bg-base-200/30 rounded-xl border border-base-200 p-5">
+                        <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
+                            <span class="mdi mdi-package-variant-closed"></span>
+                            {{ _('Other Materials') }}
+                        </h3>
+                        <div class="prose prose-sm max-w-none text-base-content/80">
+                            {% if project.other_materials_html %}
+                            {{ project.other_materials_html | safe }}
+                            {% else %}
+                            {{ project.other_materials }}
+                            {% endif %}
+                        </div>
                     </div>
                     {% endif %}
 

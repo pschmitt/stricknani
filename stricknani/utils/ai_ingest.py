@@ -44,8 +44,9 @@ DEFAULT_INSTRUCTIONS = (
     "- Use null for unknown / missing values.\n"
     "- Do not invent data that is not present in the source.\n"
     "- Preserve the original language of the source text in all descriptive fields.\n"
-    "- Do not populate 'notes' (always use null). Put relevant content into\n"
-    "  'description' or step descriptions instead.\n"
+    "- Do NOT populate 'notes' (always set to null). The 'notes' field is reserved\n"
+    "  for user-added notes only. Put any notes or tips from the original pattern\n"
+    "  into 'description' or step descriptions instead.\n"
     "- Do not populate 'tags' (always use null).\n"
     "- The 'name' field is the pattern/project title (e.g. 'Gledesspreder'),\n"
     "  NOT the category. Never set 'name' to values like 'Pullover'.\n"
@@ -56,6 +57,9 @@ DEFAULT_INSTRUCTIONS = (
     "  weight_grams, link). Prefer one entry per distinct yarn.\n"
     "- If candidate yarn URLs are provided, use them for Yarn.link. Do not\n"
     "  invent/hallucinate Yarn.link URLs.\n"
+    "- For 'other_materials': extract notions like buttons, zippers, ribbon,\n"
+    "  elastic, or other non-yarn accessories mentioned in the pattern\n"
+    "  (e.g., 'DROPS Knopf Nr. 535: 4 Stk.').\n"
     "- When ingesting from images/PDFs: do a careful full-text transcription of\n"
     "  all visible text first (including small print, abbreviations, and\n"
     "  legends), then extract structured fields from that content.\n"
@@ -168,6 +172,10 @@ def _model_to_openai_json_schema(
             description = "Project category"
         elif name == "name":
             description = "The project/pattern name"
+        elif name == "other_materials":
+            description = (
+                "Other materials needed (e.g. buttons, zippers, ribbon, elastic)"
+            )
 
         # OpenAI strict JSON schema requires `required` to include every property key.
         # So we model optionality via `null` instead of missing keys.

@@ -1683,6 +1683,12 @@ async def get_project(
         "notes_html": render_markdown(project.notes, f"project-{project.id}")
         if project.notes
         else None,
+        "other_materials": project.other_materials or "",
+        "other_materials_html": render_markdown(
+            project.other_materials, f"project-{project.id}"
+        )
+        if project.other_materials
+        else None,
         "link": project.link,
         "link_archive": project.link_archive,
         "link_archive_failed": project.link_archive_failed,
@@ -1894,6 +1900,7 @@ async def edit_project_form(
         "stitch_sample": project.stitch_sample or "",
         "description": project.description or "",
         "notes": project.notes or "",
+        "other_materials": project.other_materials or "",
         "link": project.link,
         "link_archive": project.link_archive,
         "archive_pending": bool(
@@ -1946,6 +1953,7 @@ async def create_project(
     category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
+    other_materials: Annotated[str | None, Form()] = None,
     stitch_sample: Annotated[str | None, Form()] = None,
     description: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
@@ -2002,6 +2010,7 @@ async def create_project(
         stitch_sample=stitch_sample.strip() if stitch_sample else None,
         description=description.strip() if description else None,
         notes=notes.strip() if notes else None,
+        other_materials=other_materials.strip() if other_materials else None,
         link=link.strip() if link else None,
         owner_id=current_user.id,
         tags=serialize_tags(normalized_tags),
@@ -2118,6 +2127,7 @@ async def update_project(
     category: Annotated[str | None, Form()] = None,
     needles: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
+    other_materials: Annotated[str | None, Form()] = None,
     stitch_sample: Annotated[str | None, Form()] = None,
     description: Annotated[str | None, Form()] = None,
     tags: Annotated[str | None, Form()] = None,
@@ -2188,6 +2198,7 @@ async def update_project(
     project.stitch_sample = stitch_sample.strip() if stitch_sample else None
     project.description = description.strip() if description else None
     project.notes = notes.strip() if notes else None
+    project.other_materials = other_materials.strip() if other_materials else None
     project.link = link.strip() if link else None
     project.tags = serialize_tags(normalize_tags(tags))
     project.is_ai_enhanced = bool(is_ai_enhanced)

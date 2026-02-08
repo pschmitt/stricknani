@@ -19,6 +19,16 @@ Use this file as the single source of truth for how to work in the Stricknani re
 - Verify translations:
   `just i18n-check`
 
+### Database Migrations
+- **Always create a migration** when modifying SQLAlchemy models (adding/removing columns, changing constraints, etc.).
+- Use Alembic to generate migrations:
+  `uv run alembic -c stricknani/alembic.ini revision -m "description_of_change"`
+- After creating the migration, review and edit it if needed.
+- **Always run migrations after creating them** to verify they work:
+  `uv run alembic -c stricknani/alembic.ini upgrade head`
+- Migrations should be in `stricknani/alembic/versions/`.
+- Include the migration in your commit.
+
 ### Code Quality
 - **Zero Tolerance Policy:** If you notice a formatting or linting error, you MUST fix it immediately.
 - Linting: `uv run ruff check .`
