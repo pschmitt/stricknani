@@ -350,7 +350,7 @@
     <script type="module">
         import PhotoSwipeLightbox from "{{ url_for('static', path='vendor/photoswipe/photoswipe-lightbox.esm.min.js') }}";
         window.STRICKNANI.photoswipe.PhotoSwipeLightbox = PhotoSwipeLightbox;
-        import "{{ url_for('static', path='js/features/photoswipe.js') }}";
+        import("{{ url_for('static', path='js/features/photoswipe.js') }}");
     </script>
         <script src="{{ url_for('static', path='js/features/navbar_dropdowns.js') }}"></script>
         <script src="{{ url_for('static', path='js/features/swipe_nav.js') }}"></script>
