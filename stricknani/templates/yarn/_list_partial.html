@@ -1,168 +1,154 @@
-{% import "macros/buttons.html" as buttons %} {% import "macros/cards.html" as
-cards %} {% if yarns %}
+{% import "macros/buttons.html" as buttons %}
+{% import "macros/cards.html" as cards %}
+
+{% if yarns %}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  {% for card in yarns %} {% set yarn = card.yarn %} {% set tooltip_parts =
-  [yarn.name] %} {% if yarn.brand %} {% set tooltip_parts = tooltip_parts +
-  [(_('Brand: %(brand)s') % {'brand': yarn.brand})] %} {% endif %} {% if
-  yarn.colorway %} {% set tooltip_parts = tooltip_parts + [(_('Colorway:
-  %(colorway)s') % {'colorway': yarn.colorway})] %} {% endif %} {% if
-  yarn.project_count %} {% if yarn.project_count == 1 %} {% set tooltip_parts =
-  tooltip_parts + [(_('%(count)s linked project') % {'count':
-  yarn.project_count})] %} {% else %} {% set tooltip_parts = tooltip_parts +
-  [(_('%(count)s linked projects') % {'count': yarn.project_count})] %} {% endif
-  %} {% else %} {% set tooltip_parts = tooltip_parts + [(_('No linked
-  projects'))] %} {% endif %} {% set tooltip_text = tooltip_parts | join(' | ')
-  %} {% set card_attrs = 'data-yarn-card data-yarn-id="%s" title="%s"' %
-  (yarn.id, tooltip_text) %} {% call(section)
-  cards.list_card(data_attrs=card_attrs) %} {% if section == 'media' %}
-  <a
-    href="/yarn/{{ yarn.id }}"
-    class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
-    title="{{ tooltip_text }}"
-  >
-    {% if card.preview_url %}
-    <img
-      src="{{ card.preview_url }}"
-      alt="{{ _('Photo for %(name)s', name=yarn.name) }}"
-      class="h-full w-full object-cover"
-      onerror="const parent = this.closest('a'); const fallback = parent.querySelector('[data-fallback-icon]'); if (fallback) { this.replaceWith(fallback.cloneNode(true)); fallback.classList.remove('hidden'); }"
-    />
-    {% else %}
-    <div
-      class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500"
-    >
-      <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
-      <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
-      <span class="sr-only">{{ _('Open yarn details') }}</span>
-    </div>
+    {% for card in yarns %}
+    {% set yarn = card.yarn %}
+    {% set tooltip_parts = [yarn.name] %}
+    {% if yarn.brand %}
+    {% set tooltip_parts = tooltip_parts + [(_('Brand: %(brand)s') % {'brand': yarn.brand})] %}
     {% endif %}
-    <div
-      class="hidden flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500"
-      data-fallback-icon
-    >
-      <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
-      <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
-      <span class="sr-only">{{ _('Open yarn details') }}</span>
-    </div>
-    <span class="sr-only"
-      >{{ _('Open yarn details for %(name)s') % {'name': yarn.name} }}</span
-    >
-  </a>
-  <div class="absolute top-3 right-3 z-10">
-    <div
-      class="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300"
-    >
-      <a
-        href="/yarn/{{ yarn.id }}/edit"
-        class="btn btn-circle bg-black/20 backdrop-blur-md border-white/20 text-white hover:bg-white hover:text-primary transition-all h-9 w-9 min-h-0 text-lg shadow-sm"
-        title="{{ _('Edit %(name)s') % {'name': yarn.name} }}"
-      >
-        <span class="mdi mdi-pencil" aria-hidden="true"></span>
-        <span class="sr-only">{{ _('Edit') }}</span>
-      </a>
-    </div>
-  </div>
-  {% elif section == 'body' %}
-  <div class="flex justify-between items-start mb-3">
-    <h3 class="card-title flex items-center gap-2 min-w-0">
-      <a href="/yarn/{{ yarn.id }}" class="hover:text-primary truncate">
-        {{ yarn.name }}
-      </a>
-      <span id="yarn-{{ yarn.id }}-favorite-heart" class="shrink-0">
-        {% if yarn.is_favorite %}
-        <span
-          class="mdi mdi-heart text-pink-500 text-sm"
-          title="{{ _('In favorites') }}"
-        ></span>
-        {% endif %}
-      </span>
-      {% if yarn.is_ai_enhanced %}
-      <span
-        class="badge badge-ghost border-primary/20 text-primary/70 font-black text-[8px] tracking-tighter uppercase px-1.5 h-4 min-h-0 shrink-0"
-        title="{{ _('AI Enhanced') }}"
-        >AI</span
-      >
-      {% endif %}
-    </h3>
-  </div>
-  {% if yarn.brand %}
-  <p class="text-sm text-base-content/60 mb-3">
-    <a href="/yarn?brand={{ yarn.brand|urlencode }}" class="hover:text-primary"
-      >{{ yarn.brand }}</a
-    >
-  </p>
-  {% endif %}
-
-  <div class="grid grid-cols-2 gap-2 text-xs mb-4">
     {% if yarn.colorway %}
-    <div class="flex items-center gap-1.5">
-      <span class="mdi mdi-palette"></span>
-      <span>{{ yarn.colorway }}</span>
-    </div>
-    {% endif %} {% if yarn.dye_lot %}
-    <div class="flex items-center gap-1.5">
-      <span class="mdi mdi-shaker-outline"></span>
-      <span>{{ yarn.dye_lot }}</span>
-    </div>
-    {% endif %} {% if yarn.weight_category %}
-    <div class="flex items-center gap-1.5">
-      <span class="mdi mdi-weight"></span>
-      <span>{{ yarn.weight_category }}</span>
-    </div>
-    {% endif %} {% if yarn.fiber_content %}
-    <div class="flex items-center gap-1.5">
-      <span class="mdi mdi-leaf"></span>
-      <span>{{ yarn.fiber_content }}</span>
-    </div>
-    {% endif %} {% if yarn.weight_grams %}
-    <div class="flex items-center gap-1.5">
-      <span class="mdi mdi-scale"></span>
-      <span>{{ yarn.weight_grams }}g</span>
-    </div>
-    {% endif %} {% if yarn.length_meters %}
-    <div class="flex items-center gap-1.5">
-      <span class="mdi mdi-ruler"></span>
-      <span>{{ yarn.length_meters }}m</span>
-    </div>
+    {% set tooltip_parts = tooltip_parts + [(_('Colorway: %(colorway)s') % {'colorway': yarn.colorway})] %}
     {% endif %}
-  </div>
+    {% if yarn.project_count %}
+    {% if yarn.project_count == 1 %}
+    {% set tooltip_parts = tooltip_parts + [(_('%(count)s linked project') % {'count': yarn.project_count})] %}
+    {% else %}
+    {% set tooltip_parts = tooltip_parts + [(_('%(count)s linked projects') % {'count': yarn.project_count})] %}
+    {% endif %}
+    {% else %}
+    {% set tooltip_parts = tooltip_parts + [(_('No linked projects'))] %}
+    {% endif %}
+    {% set tooltip_text = tooltip_parts | join(' | ') %}
+    {% set card_attrs = 'data-yarn-card data-yarn-id="%s" title="%s"' % (yarn.id, tooltip_text) %}
+    {% call(section) cards.list_card(data_attrs=card_attrs) %}
+    {% if section == 'media' %}
+    <a href="/yarn/{{ yarn.id }}" class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
+        title="{{ tooltip_text }}">
+        {% if card.preview_url %}
+        <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}"
+            class="h-full w-full object-cover"
+            onerror="const parent = this.closest('a'); const fallback = parent.querySelector('[data-fallback-icon]'); if (fallback) { this.replaceWith(fallback.cloneNode(true)); fallback.classList.remove('hidden'); }">
+        {% else %}
+        <div
+            class="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500">
+            <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
+            <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
+            <span class="sr-only">{{ _('Open yarn details') }}</span>
+        </div>
+        {% endif %}
+        <div class="hidden flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-slate-400 dark:text-slate-500"
+            data-fallback-icon>
+            <span class="mdi mdi-image-off text-3xl" aria-hidden="true"></span>
+            <span class="text-sm font-semibold line-clamp-2">{{ yarn.name }}</span>
+            <span class="sr-only">{{ _('Open yarn details') }}</span>
+        </div>
+        <span class="sr-only">{{ _('Open yarn details for %(name)s') % {'name': yarn.name} }}</span>
+    </a>
+    <div class="absolute top-3 right-3 z-10">
+        <div class="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+            <a href="/yarn/{{ yarn.id }}/edit"
+               class="btn btn-circle bg-black/20 backdrop-blur-md border-white/20 text-white hover:bg-white hover:text-primary transition-all h-9 w-9 min-h-0 text-lg shadow-sm"
+               title="{{ _('Edit %(name)s') % {'name': yarn.name} }}">
+                <span class="mdi mdi-pencil" aria-hidden="true"></span>
+                <span class="sr-only">{{ _('Edit') }}</span>
+            </a>
+        </div>
+    </div>
+    {% elif section == 'body' %}
+    <div class="flex justify-between items-start mb-3">
+        <h3 class="card-title flex items-center gap-2 min-w-0">
+            <a href="/yarn/{{ yarn.id }}" class="hover:text-primary truncate">
+                {{ yarn.name }}
+            </a>
+            <span id="yarn-{{ yarn.id }}-favorite-heart" class="shrink-0">
+                {% if yarn.is_favorite %}
+                <span class="mdi mdi-heart text-pink-500 text-sm" title="{{ _('In favorites') }}"></span>
+                {% endif %}
+            </span>
+            {% if yarn.is_ai_enhanced %}
+            <span class="badge badge-ghost border-primary/20 text-primary/70 font-black text-[8px] tracking-tighter uppercase px-1.5 h-4 min-h-0 shrink-0" title="{{ _('AI Enhanced') }}">AI</span>
+            {% endif %}
+        </h3>
+    </div>
+    {% if yarn.brand %}
+    <p class="text-sm text-base-content/60 mb-3">
+        <a href="/yarn?brand={{ yarn.brand|urlencode }}" class="hover:text-primary">{{ yarn.brand }}</a>
+    </p>
+    {% endif %}
 
-  <p class="line-clamp-2 text-sm opacity-70 mb-4">
-    {{ yarn.description or _('No description yet.') }}
-  </p>
-  {% elif section == 'context_menu' %}
-  <ul class="menu p-2 bg-base-100 rounded-box border border-base-200 shadow-xl">
-    <li id="yarn-{{ yarn.id }}-favorite-toggle" data-favorite-toggle>
-      {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='detail',
-      extra_classes='flex justify-start gap-2' %} {% include
-      "yarn/_favorite_toggle.html" %} {% endwith %}
-    </li>
-    <li>
-      <a href="/yarn/{{ yarn.id }}/edit">
-        <span class="mdi mdi-pencil text-lg"></span>
-        {{ _('Edit') }}
-      </a>
-    </li>
-    <li>
-      <a href="/yarn/{{ yarn.id }}/edit?import=1">
-        <span class="mdi mdi-download text-lg"></span>
-        {{ _('Re-import') }}
-      </a>
-    </li>
-    <li>
-      <button
-        type="button"
-        data-action="open-dialog"
-        data-dialog-id="deleteYarnDialog"
-        data-yarn-id="{{ yarn.id }}"
-        data-yarn-name="{{ yarn.name }}"
-        class="text-error"
-      >
-        <span class="mdi mdi-delete-outline text-lg"></span>
-        {{ _('Delete') }}
-      </button>
-    </li>
-  </ul>
-  {% endif %} {% endcall %} {% endfor %}
+    <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+        {% if yarn.colorway %}
+        <div class="flex items-center gap-1.5">
+            <span class="mdi mdi-palette"></span>
+            <span>{{ yarn.colorway }}</span>
+        </div>
+        {% endif %}
+        {% if yarn.dye_lot %}
+        <div class="flex items-center gap-1.5">
+            <span class="mdi mdi-shaker-outline"></span>
+            <span>{{ yarn.dye_lot }}</span>
+        </div>
+        {% endif %}
+        {% if yarn.weight_category %}
+        <div class="flex items-center gap-1.5">
+            <span class="mdi mdi-weight"></span>
+            <span>{{ yarn.weight_category }}</span>
+        </div>
+        {% endif %}
+        {% if yarn.fiber_content %}
+        <div class="flex items-center gap-1.5">
+            <span class="mdi mdi-leaf"></span>
+            <span>{{ yarn.fiber_content }}</span>
+        </div>
+        {% endif %}
+        {% if yarn.weight_grams %}
+        <div class="flex items-center gap-1.5">
+            <span class="mdi mdi-scale"></span>
+            <span>{{ yarn.weight_grams }}g</span>
+        </div>
+        {% endif %}
+        {% if yarn.length_meters %}
+        <div class="flex items-center gap-1.5">
+            <span class="mdi mdi-ruler"></span>
+            <span>{{ yarn.length_meters }}m</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
+    {% elif section == 'context_menu' %}
+    <ul class="menu p-2 bg-base-100 rounded-box border border-base-200 shadow-xl">
+        <li id="yarn-{{ yarn.id }}-favorite-toggle" data-favorite-toggle>
+            {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
+            {% include "yarn/_favorite_toggle.html" %}
+            {% endwith %}
+        </li>
+        <li>
+            <a href="/yarn/{{ yarn.id }}/edit">
+                <span class="mdi mdi-pencil text-lg"></span>
+                {{ _('Edit') }}
+            </a>
+        </li>
+        <li>
+            <a href="/yarn/{{ yarn.id }}/edit?import=1">
+                <span class="mdi mdi-download text-lg"></span>
+                {{ _('Re-import') }}
+            </a>
+        </li>
+        <li>
+            <button type="button" data-action="open-dialog" data-dialog-id="deleteYarnDialog" data-yarn-id="{{ yarn.id }}" data-yarn-name="{{ yarn.name }}" class="text-error">
+                <span class="mdi mdi-delete-outline text-lg"></span>
+                {{ _('Delete') }}
+            </button>
+        </li>
+    </ul>
+    {% endif %}
+    {% endcall %}
+    {% endfor %}
 </div>
-{% else %} {% include "yarn/_empty_state.html" %} {% endif %}
+{% else %}
+{% include "yarn/_empty_state.html" %}
+{% endif %}

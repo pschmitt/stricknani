@@ -8,4 +8,10 @@ dist/
 node_modules/
 media/
 *.db
-*.html
+**/*.html
+**/*.yaml
+**/*.yml
+**/*.md
+stricknani/alembic/
+# Jinja2 templates
+stricknani/templates/

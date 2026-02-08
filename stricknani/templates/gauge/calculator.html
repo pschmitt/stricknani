@@ -1,276 +1,214 @@
-{% extends "base.html" %} {% import "macros/buttons.html" as buttons %} {% block
-title %}Gauge Calculator - Stricknani{% endblock %} {# Set variables for the
-unified navbar #} {% set page_title %}{{ _('Gauge Calculator') }}{% endset %} {%
-block navbar %} {% include "shared/unified_navbar.html" %} {% endblock %} {%
-block content %}
+{% extends "base.html" %}
+{% import "macros/buttons.html" as buttons %}
+
+{% block title %}Gauge Calculator - Stricknani{% endblock %}
+
+{# Set variables for the unified navbar #}
+{% set page_title %}{{ _('Gauge Calculator') }}{% endset %}
+
+{% block navbar %}
+{% include "shared/unified_navbar.html" %}
+{% endblock %}
+
+{% block content %}
 <div class="max-w-4xl mx-auto">
-  <div class="card bg-base-200 shadow-xl">
-    <div class="card-body">
-      <p class="opacity-70 mb-6">
-        {{ _("Calculate how many stitches to cast on and rows to knit based on
-        your gauge and the pattern's gauge.") }}
-      </p>
 
-      <!-- Help Section -->
-      <div class="alert alert-info mb-6">
-        <span class="mdi mdi-help-circle-outline text-2xl"></span>
-        <div>
-          <h3 class="font-bold">{{ _('How to use this calculator') }}</h3>
-          <ol class="list-decimal list-inside space-y-2 text-sm mt-2">
-            <li>
-              {{ _('Enter the gauge from your pattern (stitches and rows per
-              10cm)') }}
-            </li>
-            <li>
-              {{ _('Enter your actual gauge from your swatch (stitches and rows
-              per 10cm)') }}
-            </li>
-            <li>
-              {{ _('Enter the stitch count from your pattern (cast-on
-              stitches)') }}
-            </li>
-            <li>
-              {{ _('Click Calculate to see how many stitches and rows you need')
-              }}
-            </li>
-          </ol>
+    <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+            <p class="opacity-70 mb-6">
+                {{ _("Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge.") }}
+            </p>
+
+            <!-- Help Section -->
+            <div class="alert alert-info mb-6">
+                <span class="mdi mdi-help-circle-outline text-2xl"></span>
+                <div>
+                    <h3 class="font-bold">{{ _('How to use this calculator') }}</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-sm mt-2">
+                        <li>{{ _('Enter the gauge from your pattern (stitches and rows per 10cm)') }}</li>
+                        <li>{{ _('Enter your actual gauge from your swatch (stitches and rows per 10cm)') }}</li>
+                        <li>{{ _('Enter the stitch count from your pattern (cast-on stitches)') }}</li>
+                        <li>{{ _('Click Calculate to see how many stitches and rows you need') }}</li>
+                    </ol>
+                </div>
+            </div>
+
+            <form hx-post="/gauge/calculate" hx-target="#result" hx-swap="innerHTML" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Pattern Gauge -->
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-semibold mb-3 inline-flex items-center gap-2">
+                            <span class="mdi mdi-ruler-square text-base-content/70"></span>
+                            {{ _('Pattern Gauge (per 10cm)') }}
+                        </h3>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="pattern_gauge_stitches" class="block mb-1">
+                            <span class=" inline-flex items-center gap-2">
+                                <span class="mdi mdi-grid text-base-content/70"></span>
+                                {{ _('Stitches') }} <span class="text-error">*</span>
+                            </span>
+                        </label>
+                        <input type="number" id="pattern_gauge_stitches" name="pattern_gauge_stitches" required min="1"
+                            class="input  w-full" placeholder="e.g. 20">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="pattern_gauge_rows" class="block mb-1">
+                            <span class=" inline-flex items-center gap-2">
+                                <span class="mdi mdi-view-stream text-base-content/70"></span>
+                                {{ _('Rows') }} <span class="text-error">*</span>
+                            </span>
+                        </label>
+                        <input type="number" id="pattern_gauge_rows" name="pattern_gauge_rows" required min="1"
+                            class="input  w-full" placeholder="e.g. 28">
+                    </div>
+
+                    <!-- Your Gauge -->
+                    <div class="md:col-span-2 mt-4">
+                        <h3 class="text-lg font-semibold mb-3 inline-flex items-center gap-2">
+                            <span class="mdi mdi-ruler text-base-content/70"></span>
+                            {{ _('Your Gauge (per 10cm)') }}
+                        </h3>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="user_gauge_stitches" class="block mb-1">
+                            <span class=" inline-flex items-center gap-2">
+                                <span class="mdi mdi-grid text-base-content/70"></span>
+                                {{ _('Stitches') }} <span class="text-error">*</span>
+                            </span>
+                        </label>
+                        <input type="number" id="user_gauge_stitches" name="user_gauge_stitches" required min="1"
+                            class="input  w-full" placeholder="e.g. 22">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="user_gauge_rows" class="block mb-1">
+                            <span class=" inline-flex items-center gap-2">
+                                <span class="mdi mdi-view-stream text-base-content/70"></span>
+                                {{ _('Rows') }} <span class="text-error">*</span>
+                            </span>
+                        </label>
+                        <input type="number" id="user_gauge_rows" name="user_gauge_rows" required min="1"
+                            class="input  w-full" placeholder="e.g. 30">
+                    </div>
+
+                    <!-- Pattern Counts -->
+                    <div class="md:col-span-2 mt-4">
+                        <h3 class="text-lg font-semibold mb-3 inline-flex items-center gap-2">
+                            <span class="mdi mdi-counter text-base-content/70"></span>
+                            {{ _('Pattern Counts') }}
+                        </h3>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="pattern_cast_on_stitches" class="block mb-1">
+                            <span class=" inline-flex items-center gap-2">
+                                <span class="mdi mdi-format-list-numbered text-base-content/70"></span>
+                                {{ _('Stitches to cast on') }} <span class="text-error">*</span>
+                            </span>
+                        </label>
+                        <input type="number" id="pattern_cast_on_stitches" name="pattern_cast_on_stitches" required
+                            min="1" class="input  w-full" placeholder="e.g. 120">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="pattern_row_count" class="block mb-1">
+                            <span class=" inline-flex items-center gap-2">
+                                <span class="mdi mdi-format-list-bulleted text-base-content/70"></span>
+                                {{ _('Rows to knit') }} <span class="opacity-60">({{ _('optional') }})</span>
+                            </span>
+                        </label>
+                        <input type="number" id="pattern_row_count" name="pattern_row_count" min="1"
+                            class="input  w-full" placeholder="e.g. 80">
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-6">
+                    {{ buttons.primary(_('Calculate'), type='submit', icon='mdi-calculator', class='w-full') }}
+                </div>
+            </form>
+
+            <!-- Results -->
+            <div id="result" class="mt-8"></div>
         </div>
-      </div>
-
-      <form
-        hx-post="/gauge/calculate"
-        hx-target="#result"
-        hx-swap="innerHTML"
-        class="space-y-6"
-      >
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Pattern Gauge -->
-          <div class="md:col-span-2">
-            <h3
-              class="text-lg font-semibold mb-3 inline-flex items-center gap-2"
-            >
-              <span class="mdi mdi-ruler-square text-base-content/70"></span>
-              {{ _('Pattern Gauge (per 10cm)') }}
-            </h3>
-          </div>
-
-          <div class="mb-4">
-            <label for="pattern_gauge_stitches" class="block mb-1">
-              <span class="inline-flex items-center gap-2">
-                <span class="mdi mdi-grid text-base-content/70"></span>
-                {{ _('Stitches') }} <span class="text-error">*</span>
-              </span>
-            </label>
-            <input
-              type="number"
-              id="pattern_gauge_stitches"
-              name="pattern_gauge_stitches"
-              required
-              min="1"
-              class="input w-full"
-              placeholder="e.g. 20"
-            />
-          </div>
-
-          <div class="mb-4">
-            <label for="pattern_gauge_rows" class="block mb-1">
-              <span class="inline-flex items-center gap-2">
-                <span class="mdi mdi-view-stream text-base-content/70"></span>
-                {{ _('Rows') }} <span class="text-error">*</span>
-              </span>
-            </label>
-            <input
-              type="number"
-              id="pattern_gauge_rows"
-              name="pattern_gauge_rows"
-              required
-              min="1"
-              class="input w-full"
-              placeholder="e.g. 28"
-            />
-          </div>
-
-          <!-- Your Gauge -->
-          <div class="md:col-span-2 mt-4">
-            <h3
-              class="text-lg font-semibold mb-3 inline-flex items-center gap-2"
-            >
-              <span class="mdi mdi-ruler text-base-content/70"></span>
-              {{ _('Your Gauge (per 10cm)') }}
-            </h3>
-          </div>
-
-          <div class="mb-4">
-            <label for="user_gauge_stitches" class="block mb-1">
-              <span class="inline-flex items-center gap-2">
-                <span class="mdi mdi-grid text-base-content/70"></span>
-                {{ _('Stitches') }} <span class="text-error">*</span>
-              </span>
-            </label>
-            <input
-              type="number"
-              id="user_gauge_stitches"
-              name="user_gauge_stitches"
-              required
-              min="1"
-              class="input w-full"
-              placeholder="e.g. 22"
-            />
-          </div>
-
-          <div class="mb-4">
-            <label for="user_gauge_rows" class="block mb-1">
-              <span class="inline-flex items-center gap-2">
-                <span class="mdi mdi-view-stream text-base-content/70"></span>
-                {{ _('Rows') }} <span class="text-error">*</span>
-              </span>
-            </label>
-            <input
-              type="number"
-              id="user_gauge_rows"
-              name="user_gauge_rows"
-              required
-              min="1"
-              class="input w-full"
-              placeholder="e.g. 30"
-            />
-          </div>
-
-          <!-- Pattern Counts -->
-          <div class="md:col-span-2 mt-4">
-            <h3
-              class="text-lg font-semibold mb-3 inline-flex items-center gap-2"
-            >
-              <span class="mdi mdi-counter text-base-content/70"></span>
-              {{ _('Pattern Counts') }}
-            </h3>
-          </div>
-
-          <div class="mb-4">
-            <label for="pattern_cast_on_stitches" class="block mb-1">
-              <span class="inline-flex items-center gap-2">
-                <span
-                  class="mdi mdi-format-list-numbered text-base-content/70"
-                ></span>
-                {{ _('Stitches to cast on') }} <span class="text-error">*</span>
-              </span>
-            </label>
-            <input
-              type="number"
-              id="pattern_cast_on_stitches"
-              name="pattern_cast_on_stitches"
-              required
-              min="1"
-              class="input w-full"
-              placeholder="e.g. 120"
-            />
-          </div>
-
-          <div class="mb-4">
-            <label for="pattern_row_count" class="block mb-1">
-              <span class="inline-flex items-center gap-2">
-                <span
-                  class="mdi mdi-format-list-bulleted text-base-content/70"
-                ></span>
-                {{ _('Rows to knit') }}
-                <span class="opacity-60">({{ _('optional') }})</span>
-              </span>
-            </label>
-            <input
-              type="number"
-              id="pattern_row_count"
-              name="pattern_row_count"
-              min="1"
-              class="input w-full"
-              placeholder="e.g. 80"
-            />
-          </div>
-        </div>
-
-        <!-- Submit Button -->
-        <div class="mt-6">
-          {{ buttons.primary(_('Calculate'), type='submit',
-          icon='mdi-calculator', class='w-full') }}
-        </div>
-      </form>
-
-      <!-- Results -->
-      <div id="result" class="mt-8"></div>
     </div>
-  </div>
 </div>
 
 <script>
-      document.addEventListener('DOMContentLoaded', () => {
-          const patternStitches = document.getElementById('pattern_gauge_stitches');
-          const patternRows = document.getElementById('pattern_gauge_rows');
-          const userStitches = document.getElementById('user_gauge_stitches');
-          const userRows = document.getElementById('user_gauge_rows');
+    document.addEventListener('DOMContentLoaded', () => {
+        const patternStitches = document.getElementById('pattern_gauge_stitches');
+        const patternRows = document.getElementById('pattern_gauge_rows');
+        const userStitches = document.getElementById('user_gauge_stitches');
+        const userRows = document.getElementById('user_gauge_rows');
 
-          const mirrorIfEmpty = (source, target) => {
-              if (!target || !source) {
-                  return;
-              }
-              const wasAutofilled = target.dataset.autofilled === 'true';
-              if (!target.value || wasAutofilled) {
-                  target.value = source.value;
-                  if (source.value) {
-                      target.dataset.autofilled = 'true';
-                  } else {
-                      delete target.dataset.autofilled;
-                  }
-              }
-          };
+        const mirrorIfEmpty = (source, target) => {
+            if (!target || !source) {
+                return;
+            }
+            const wasAutofilled = target.dataset.autofilled === 'true';
+            if (!target.value || wasAutofilled) {
+                target.value = source.value;
+                if (source.value) {
+                    target.dataset.autofilled = 'true';
+                } else {
+                    delete target.dataset.autofilled;
+                }
+            }
+        };
 
-          const stopAutofill = (target) => {
-              if (target) {
-                  delete target.dataset.autofilled;
-              }
-          };
+        const stopAutofill = (target) => {
+            if (target) {
+                delete target.dataset.autofilled;
+            }
+        };
 
-          patternStitches?.addEventListener('input', () => mirrorIfEmpty(patternStitches, userStitches));
-          patternRows?.addEventListener('input', () => mirrorIfEmpty(patternRows, userRows));
-          userStitches?.addEventListener('input', () => stopAutofill(userStitches));
-          userRows?.addEventListener('input', () => stopAutofill(userRows));
-      });
+        patternStitches?.addEventListener('input', () => mirrorIfEmpty(patternStitches, userStitches));
+        patternRows?.addEventListener('input', () => mirrorIfEmpty(patternRows, userRows));
+        userStitches?.addEventListener('input', () => stopAutofill(userStitches));
+        userRows?.addEventListener('input', () => stopAutofill(userRows));
+    });
 
-      document.body.addEventListener('htmx:afterRequest', function (event) {
-          if (event.detail.target.id === 'result') {
-              try {
-                  const data = JSON.parse(event.detail.xhr.responseText);
-                  const adjustedRows = data.adjusted_rows === null ? '{{ _('N/A') }}' : data.adjusted_rows;
-      const patternRows = data.pattern_row_count === null ? '' : ` {{ _('and') }} ${data.pattern_row_count} {{ _('rows') }}`;
-      const resultHtml = `
-                  <div class="alert alert-success">
-                      <span class="mdi mdi-check-decagram text-2xl"></span>
-                      <div class="w-full">
-                          <h3 class="font-bold mb-4">{{ _('Calculation Results') }}</h3>
-                          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div class="stats shadow">
-                                  <div class="stat">
-                                      <div class="stat-title">{{ _('Adjusted Stitches') }}</div>
-                                      <div class="stat-value text-primary">${data.adjusted_stitches}</div>
-                                  </div>
-                              </div>
-                              <div class="stats shadow">
-                                  <div class="stat">
-                                      <div class="stat-title">{{ _('Adjusted Rows') }}</div>
-                                      <div class="stat-value text-primary">${adjustedRows}</div>
-                                  </div>
-                              </div>
-                          </div>
-                          <div class="mt-4 text-sm opacity-70">
-                              <p>{{ _('Based on a pattern cast-on of') }} ${data.pattern_cast_on_stitches} {{ _('stitches') }}${patternRows}.</p>
-                          </div>
-                      </div>
-                  </div>
-              `;
-      event.detail.target.innerHTML = resultHtml;
-          } catch (e) {
-          console.error('Error parsing gauge calculation result:', e);
-      }
-      }
-  });
+    document.body.addEventListener('htmx:afterRequest', function (event) {
+        if (event.detail.target.id === 'result') {
+            try {
+                const data = JSON.parse(event.detail.xhr.responseText);
+                const adjustedRows = data.adjusted_rows === null ? '{{ _('N/A') }}' : data.adjusted_rows;
+    const patternRows = data.pattern_row_count === null ? '' : ` {{ _('and') }} ${data.pattern_row_count} {{ _('rows') }}`;
+    const resultHtml = `
+                <div class="alert alert-success">
+                    <span class="mdi mdi-check-decagram text-2xl"></span>
+                    <div class="w-full">
+                        <h3 class="font-bold mb-4">{{ _('Calculation Results') }}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="stats shadow">
+                                <div class="stat">
+                                    <div class="stat-title">{{ _('Adjusted Stitches') }}</div>
+                                    <div class="stat-value text-primary">${data.adjusted_stitches}</div>
+                                </div>
+                            </div>
+                            <div class="stats shadow">
+                                <div class="stat">
+                                    <div class="stat-title">{{ _('Adjusted Rows') }}</div>
+                                    <div class="stat-value text-primary">${adjustedRows}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-sm opacity-70">
+                            <p>{{ _('Based on a pattern cast-on of') }} ${data.pattern_cast_on_stitches} {{ _('stitches') }}${patternRows}.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+    event.detail.target.innerHTML = resultHtml;
+        } catch (e) {
+        console.error('Error parsing gauge calculation result:', e);
+    }
+    }
+});
 </script>
 {% endblock %}

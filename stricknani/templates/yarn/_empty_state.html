@@ -1,7 +1,12 @@
-{% if search or selected_brand %} {% set clear_url = "/yarn" %} {% include
-"shared/_empty_search_state.html" with context %} {% else %} {% set empty_icon =
-"mdi-yarn" %} {% set empty_title = _('Start your stash') %} {% set empty_body =
-_('Track skeins, colorways, and notes so you know what you can use next.') %} {%
-set empty_action_url = "/yarn/new" %} {% set empty_action_label = _('Add your
-first yarn') %} {% set empty_action_icon = "mdi-plus" %} {% include
-"shared/_empty_state.html" with context %} {% endif %}
+{% if search or selected_brand %}
+{% set clear_url = "/yarn" %}
+{% include "shared/_empty_search_state.html" with context %}
+{% else %}
+{% set empty_icon = "mdi-yarn" %}
+{% set empty_title = _('Start your stash') %}
+{% set empty_body = _('Track skeins, colorways, and notes so you know what you can use next.') %}
+{% set empty_action_url = "/yarn/new" %}
+{% set empty_action_label = _('Add your first yarn') %}
+{% set empty_action_icon = "mdi-plus" %}
+{% include "shared/_empty_state.html" with context %}
+{% endif %}

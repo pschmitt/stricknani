@@ -1,7 +1,11 @@
-{% extends "errors/base.html" %} {% block title %}403 - {{ _('Forbidden') }} -
-{{ _('Stricknani') }}{% endblock %} {% block error_icon
-%}mdi-shield-lock-outline{% endblock %} {% block error_icon_color %}text-error{%
-endblock %} {% block error_code %}403{% endblock %} {% block error_title %}{{
-_('No entry') }}{% endblock %} {% block error_message %} {{ _("You don't have
-permission to view this project or area. If you believe this is a mistake,
-please check with the owner.") }} {% endblock %}
+{% extends "errors/base.html" %}
+
+{% block title %}403 - {{ _('Forbidden') }} - {{ _('Stricknani') }}{% endblock %}
+
+{% block error_icon %}mdi-shield-lock-outline{% endblock %}
+{% block error_icon_color %}text-error{% endblock %}
+{% block error_code %}403{% endblock %}
+{% block error_title %}{{ _('No entry') }}{% endblock %}
+{% block error_message %}
+    {{ _("You don't have permission to view this project or area. If you believe this is a mistake, please check with the owner.") }}
+{% endblock %}

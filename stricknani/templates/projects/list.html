@@ -1,75 +1,91 @@
-{% extends "shared/list_base.html" %} {% import "macros/buttons.html" as buttons
-%} {% block title %}{{ _('Projects') }} - Stricknani{% endblock %} {% block
-list_styles %} {% endblock %} {# Set variables for the unified navbar #} {% set
-page_icon %}<span class="mdi mdi-folder-multiple-outline text-primary"></span>{%
-endset %} {% set page_title %}{{ _('Projects') }}{% endset %} {% set
-page_actions %} {{ buttons.primary(_('New Project'),
-icon='mdi-plus-circle-outline', href='/projects/new', class='hidden
+{% extends "shared/list_base.html" %}
+{% import "macros/buttons.html" as buttons %}
+
+{% block title %}{{ _('Projects') }} - Stricknani{% endblock %}
+
+{% block list_styles %}
+{% endblock %}
+
+{# Set variables for the unified navbar #}
+{% set page_icon %}<span class="mdi mdi-folder-multiple-outline text-primary"></span>{% endset %}
+{% set page_title %}{{ _('Projects') }}{% endset %}
+{% set page_actions %}
+{{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='hidden
 md:inline-flex') }}
 
 <div class="dropdown dropdown-end dropdown-bottom">
-  <button
-    tabindex="0"
-    role="button"
-    class="btn btn-square btn-ghost"
-    aria-label="{{ _('More options') }}"
-  >
-    <span class="mdi mdi-dots-vertical text-xl"></span>
-  </button>
-  <ul
-    tabindex="0"
-    class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200"
-  >
-    <li>
-      <button
-        type="button"
-        data-action="open-dialog"
-        data-dialog-id="importDialog"
-      >
-        <span class="mdi mdi-download"></span>
-        {{ _('Import') }}
-      </button>
-    </li>
-    <li>
-      <a href="/projects/categories">
-        <span class="mdi mdi-shape-outline"></span>
-        {{ _('Manage Categories') }}
-      </a>
-    </li>
-  </ul>
+    <button tabindex="0" role="button" class="btn btn-square btn-ghost" aria-label="{{ _('More options') }}">
+        <span class="mdi mdi-dots-vertical text-xl"></span>
+    </button>
+	    <ul tabindex="0"
+	        class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
+	        <li>
+	            <button type="button" data-action="open-dialog" data-dialog-id="importDialog">
+	                <span class="mdi mdi-download"></span>
+	                {{ _('Import') }}
+	            </button>
+	        </li>
+        <li>
+            <a href="/projects/categories">
+                <span class="mdi mdi-shape-outline"></span>
+                {{ _('Manage Categories') }}
+            </a>
+        </li>
+    </ul>
 </div>
 
 <!-- Mobile FAB -->
-{{ buttons.fab('mdi-plus', href='/projects/new', class='md:hidden', label=_('New
-Project')) }} {% endset %} {# Keep these for backwards compatibility but they
-won't be used #} {% block list_icon %}
-<span class="mdi mdi-folder-multiple-outline text-primary"></span>
-{% endblock %} {% block list_title %}{{ _('Projects') }}{% endblock %} {% block
-list_filters %} {% set search_id = "search" %} {% set search_name = "search" %}
-{% set search_value = search or ('cat:' ~ selected_category if selected_category
-else '') or ('#' ~ selected_tag if selected_tag else '') %} {% set
-search_placeholder = _('Search') %} {% set search_url = "/projects" %} {% set
-search_target = "#projects-list" %} {% set wrapper_id = "project-search" %} {%
-include "shared/_search_bar.html" with context %} {% endblock %} {% block
-list_container_attrs %}id="projects-list"{% endblock %} {% block list_content %}
-{% include "projects/_cards.html" %} {% endblock %} {% block list_extra %} {%
-include "projects/_import_dialog.html" %} {% include
-"projects/_delete_dialog.html" %} {% endblock %} {% block page_scripts %} {{
-super() }}
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const toastKey = new URLSearchParams(window.location.search).get("toast");
-    if (toastKey === "project_deleted") {
-      setTimeout(() => {
-        if (window.showToast) {
-          window.showToast('{{ _("Project deleted") }}', "success");
-        }
-      }, 100);
+{{ buttons.fab('mdi-plus', href='/projects/new', class='md:hidden', label=_('New Project')) }}
+{% endset %}
 
-      const url = new URL(window.location.href);
-      url.searchParams.delete("toast");
-      window.history.replaceState({}, "", url.toString());
-    }
-  });
+{# Keep these for backwards compatibility but they won't be used #}
+{% block list_icon %}
+<span class="mdi mdi-folder-multiple-outline text-primary"></span>
+{% endblock %}
+
+{% block list_title %}{{ _('Projects') }}{% endblock %}
+
+
+{% block list_filters %}
+{% set search_id = "search" %}
+{% set search_name = "search" %}
+{% set search_value = search
+or ('cat:' ~ selected_category if selected_category else '')
+or ('#' ~ selected_tag if selected_tag else '') %}
+{% set search_placeholder = _('Search') %}
+{% set search_url = "/projects" %}
+{% set search_target = "#projects-list" %}
+{% set wrapper_id = "project-search" %}
+{% include "shared/_search_bar.html" with context %}
+{% endblock %}
+
+{% block list_container_attrs %}id="projects-list"{% endblock %}
+
+{% block list_content %}
+{% include "projects/_cards.html" %}
+{% endblock %}
+
+{% block list_extra %}
+{% include "projects/_import_dialog.html" %}
+{% include "projects/_delete_dialog.html" %}
+{% endblock %}
+
+{% block page_scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toastKey = new URLSearchParams(window.location.search).get('toast');
+        if (toastKey === 'project_deleted') {
+            setTimeout(() => {
+                if (window.showToast) {
+                    window.showToast('{{ _("Project deleted") }}', 'success');
+                }
+            }, 100);
+
+            const url = new URL(window.location.href);
+            url.searchParams.delete('toast');
+            window.history.replaceState({}, '', url.toString());
+        }
+    });
 </script>
 {% endblock %}

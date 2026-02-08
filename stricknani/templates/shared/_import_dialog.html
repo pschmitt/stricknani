@@ -1,522 +1,447 @@
-{% import "macros/dialogs.html" as dialogs %} {% call
-dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl',
-attrs='data-import-dialog') %}
+{% import "macros/dialogs.html" as dialogs %}
+{% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl', attrs='data-import-dialog') %}
 <!-- Tab Navigation -->
 <div class="tabs tabs-boxed bg-base-200/50 p-1 rounded-xl mb-6">
-  <button
-    type="button"
-    class="tab flex-1 rounded-lg transition-all tab-active bg-base-100 shadow-sm"
-    data-import-tab="url"
-  >
-    <span class="mdi mdi-link-variant mr-2"></span>
-    {{ _('From URL') }}
-  </button>
-  <button
-    type="button"
-    class="tab flex-1 rounded-lg transition-all"
-    data-import-tab="file"
-  >
-    <span class="mdi mdi-file-document-multiple mr-2"></span>
-    {{ _('From File') }}
-  </button>
+    <button type="button" class="tab flex-1 rounded-lg transition-all tab-active bg-base-100 shadow-sm"
+        data-import-tab="url">
+        <span class="mdi mdi-link-variant mr-2"></span>
+        {{ _('From URL') }}
+    </button>
+    <button type="button" class="tab flex-1 rounded-lg transition-all" data-import-tab="file">
+        <span class="mdi mdi-file-document-multiple mr-2"></span>
+        {{ _('From File') }}
+    </button>
 </div>
 
 <!-- URL Import Form -->
-<form
-  id="{{ import_form_id }}"
-  action="{{ import_action }}"
-  method="POST"
-  enctype="multipart/form-data"
-  data-import-panel="url"
->
-  <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-  <input type="hidden" name="type" value="url" />
-  {% if import_project_id is not none %}
-  <input type="hidden" name="project_id" value="{{ import_project_id }}" />
-  {% endif %} {% if import_use_ai %}
-  <input type="hidden" name="use_ai" value="true" />
-  {% endif %}
-
-  <div class="space-y-6 py-2">
-    <!-- Magic Header -->
-    <div
-      class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10"
-    >
-      <div
-        class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl"
-      >
-        <span class="mdi mdi-auto-fix text-2xl"></span>
-      </div>
-      <div>
-        <h4 class="font-bold text-base">{{ _('Magic Import') }}</h4>
-        <p class="text-xs opacity-70 leading-relaxed">
-          {{ import_description }}
-        </p>
-      </div>
-    </div>
-
-    <!-- URL Input -->
-    <div class="form-control w-full">
-      <label class="label pt-0">
-        <span class="label-text font-semibold">{{ import_url_label }}</span>
-      </label>
-      <div class="relative group">
-        <div
-          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/40 group-focus-within:text-primary transition-colors"
-        >
-          <span class="mdi mdi-link-variant text-xl"></span>
-        </div>
-        <input
-          type="url"
-          id="importUrl"
-          name="url"
-          placeholder="{{ import_url_placeholder }}"
-          value="{{ import_url_value }}"
-          class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 transition-all border-base-content/10 focus:border-primary"
-        />
-      </div>
-    </div>
-
-    {% if import_ai_notice %}
-    <div
-      class="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/10"
-    >
-      <span class="mdi mdi-information-outline text-primary text-sm"></span>
-      <span
-        class="text-[10px] uppercase font-bold tracking-wider text-primary/70"
-        >{{ import_ai_notice }}</span
-      >
-    </div>
+<form id="{{ import_form_id }}" action="{{ import_action }}" method="POST" enctype="multipart/form-data"
+    data-import-panel="url">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="type" value="url">
+    {% if import_project_id is not none %}
+    <input type="hidden" name="project_id" value="{{ import_project_id }}">
     {% endif %}
-  </div>
+    {% if import_use_ai %}
+    <input type="hidden" name="use_ai" value="true">
+    {% endif %}
 
-  <div class="modal-action mt-8">
-    {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-action="close-dialog"
-    data-dialog-id="importDialog"') }} {{ dialogs.dialog_primary(_('Import'),
-    icon='mdi-auto-fix', type='submit', class='sm:btn-wide') }}
-  </div>
+    <div class="space-y-6 py-2">
+        <!-- Magic Header -->
+        <div class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl">
+                <span class="mdi mdi-auto-fix text-2xl"></span>
+            </div>
+            <div>
+                <h4 class="font-bold text-base">{{ _('Magic Import') }}</h4>
+                <p class="text-xs opacity-70 leading-relaxed">{{ import_description }}</p>
+            </div>
+        </div>
+
+        <!-- URL Input -->
+        <div class="form-control w-full">
+            <label class="label pt-0">
+                <span class="label-text font-semibold">{{ import_url_label }}</span>
+            </label>
+            <div class="relative group">
+                <div
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/40 group-focus-within:text-primary transition-colors">
+                    <span class="mdi mdi-link-variant text-xl"></span>
+                </div>
+                <input type="url" id="importUrl" name="url" placeholder="{{ import_url_placeholder }}"
+                    value="{{ import_url_value }}"
+                    class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 transition-all border-base-content/10 focus:border-primary" />
+            </div>
+        </div>
+
+        {% if import_ai_notice %}
+        <div class="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/10">
+            <span class="mdi mdi-information-outline text-primary text-sm"></span>
+            <span class="text-[10px] uppercase font-bold tracking-wider text-primary/70">{{ import_ai_notice }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="modal-action mt-8">
+        {{ dialogs.dialog_cancel(_('Cancel'),
+        attrs='data-action="close-dialog" data-dialog-id="importDialog"') }}
+        {{ dialogs.dialog_primary(_('Import'), icon='mdi-auto-fix', type='submit', class='sm:btn-wide') }}
+    </div>
 </form>
 
 <!-- Unified File Import Form -->
-<form
-  id="{{ import_form_id }}File"
-  action="{{ import_action }}"
-  method="POST"
-  enctype="multipart/form-data"
-  data-import-panel="file"
-  hidden
->
-  <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-  <!-- 'type' will be updated by JS to 'file' or 'attachment' -->
-  <input type="hidden" name="type" value="file" id="importFileType" />
-  <input type="hidden" name="attachment_id" id="importAttachmentId" disabled />
+<form id="{{ import_form_id }}File" action="{{ import_action }}" method="POST" enctype="multipart/form-data"
+    data-import-panel="file" hidden>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <!-- 'type' will be updated by JS to 'file' or 'attachment' -->
+    <input type="hidden" name="type" value="file" id="importFileType">
+    <input type="hidden" name="attachment_id" id="importAttachmentId" disabled>
 
-  {% if import_project_id is not none %}
-  <input type="hidden" name="project_id" value="{{ import_project_id }}" />
-  {% endif %} {% if import_use_ai %}
-  <input type="hidden" name="use_ai" value="true" />
-  {% endif %}
-
-  <div class="space-y-6 py-2">
-    <!-- Header -->
-    <div
-      class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10"
-    >
-      <div
-        class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl"
-      >
-        <span class="mdi mdi-file-document-multiple text-2xl"></span>
-      </div>
-      <div>
-        <h4 class="font-bold text-base">{{ _('File Import') }}</h4>
-        <p class="text-xs opacity-70 leading-relaxed">
-          {{ _('Select an existing file or upload a new one to analyze.') }}
-        </p>
-      </div>
-    </div>
-
-    <div class="form-control w-full space-y-4">
-      <!-- File List (Attachments + New Uploads) -->
-      <div
-        id="importFileList"
-        class="space-y-2 max-h-60 overflow-y-auto pr-2 {% if not import_attachments %}hidden{% endif %}"
-      >
-        <label class="label pt-0 pb-1">
-          <span class="label-text font-semibold">{{ _('Select File') }}</span>
-        </label>
-
-        {% for att in import_attachments %}
-        <label
-          class="flex items-center gap-4 p-3 rounded-xl border border-base-200 cursor-pointer hover:bg-base-200/50 transition-colors group has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-1 has-[:checked]:ring-primary relative overflow-hidden"
-        >
-          <input
-            type="checkbox"
-            name="attachment_ids"
-            value="{{ att.id }}"
-            class="checkbox checkbox-primary checkbox-sm"
-            data-import-source="attachment"
-          />
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <span
-                class="font-medium truncate"
-                title="{{ att.original_filename }}"
-                >{{ att.original_filename }}</span
-              >
-              <span class="badge badge-sm badge-ghost"
-                >{{ (att.size_bytes / 1024 / 1024)|round(2) }} MB</span
-              >
-            </div>
-          </div>
-          {% if att.content_type == 'application/pdf' %}
-          <div class="text-xs opacity-60 flex items-center gap-1">
-            <span class="mdi mdi-file-pdf-outline"></span> PDF
-          </div>
-          {% else %}
-          <div class="text-xs opacity-60 flex items-center gap-1">
-            <span class="mdi mdi-file-image-outline"></span> Image
-          </div>
-          {% endif %}
-        </label>
-        {% endfor %}
-
-        <!-- New uploads will be appended here by JS -->
-      </div>
-
-      <!-- Drag & Drop Zone -->
-      <div
-        class="divider text-xs opacity-50 m-0 {% if not import_attachments %}hidden{% endif %}"
-      >
-        {{ _('OR') }}
-      </div>
-
-      <div
-        id="fileDropZone"
-        class="relative border-2 border-dashed border-base-content/20 rounded-2xl p-6 text-center transition-all hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
-        data-import-file-dropzone
-      >
-        <input
-          type="file"
-          id="importFile"
-          name="files"
-          multiple
-          class="hidden"
-          data-import-file-input
-          accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.md,.html,.htm"
-        />
-
-        <div class="space-y-2">
-          <div
-            class="w-10 h-10 mx-auto flex items-center justify-center bg-base-200 rounded-full"
-          >
-            <span class="mdi mdi-plus text-xl text-primary"></span>
-          </div>
-          <div>
-            <p class="font-medium text-sm">{{ _('Upload New File') }}</p>
-            <p class="text-xs opacity-60">
-              {{ _('Drag & drop or click to browse') }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {% if import_ai_notice %}
-    <div
-      class="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/10"
-    >
-      <span class="mdi mdi-brain text-primary text-sm"></span>
-      <span
-        class="text-[10px] uppercase font-bold tracking-wider text-primary/70"
-      >
-        {{ _('AI-Powered Analysis Enabled') }}
-      </span>
-    </div>
+    {% if import_project_id is not none %}
+    <input type="hidden" name="project_id" value="{{ import_project_id }}">
     {% endif %}
-  </div>
+    {% if import_use_ai %}
+    <input type="hidden" name="use_ai" value="true">
+    {% endif %}
 
-  <div class="modal-action mt-8">
-    {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-action="close-dialog"
-    data-dialog-id="importDialog"') }}
-    <button
-      type="submit"
-      class="btn btn-primary sm:btn-wide btn-disabled opacity-50"
-      data-import-file-submit
-      disabled
-    >
-      <span class="mdi mdi-auto-fix mr-2"></span>
-      {{ _('Analyze & Import') }}
-    </button>
-  </div>
+    <div class="space-y-6 py-2">
+        <!-- Header -->
+        <div class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl">
+                <span class="mdi mdi-file-document-multiple text-2xl"></span>
+            </div>
+            <div>
+                <h4 class="font-bold text-base">{{ _('File Import') }}</h4>
+                <p class="text-xs opacity-70 leading-relaxed">
+                    {{ _('Select an existing file or upload a new one to analyze.') }}
+                </p>
+            </div>
+        </div>
+
+        <div class="form-control w-full space-y-4">
+            <!-- File List (Attachments + New Uploads) -->
+            <div id="importFileList"
+                class="space-y-2 max-h-60 overflow-y-auto pr-2 {% if not import_attachments %}hidden{% endif %}">
+                <label class="label pt-0 pb-1">
+                    <span class="label-text font-semibold">{{ _('Select File') }}</span>
+                </label>
+
+                {% for att in import_attachments %}
+                <label
+                    class="flex items-center gap-4 p-3 rounded-xl border border-base-200 cursor-pointer hover:bg-base-200/50 transition-colors group has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-1 has-[:checked]:ring-primary relative overflow-hidden">
+                    <input type="checkbox" name="attachment_ids" value="{{ att.id }}"
+                        class="checkbox checkbox-primary checkbox-sm" data-import-source="attachment">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="font-medium truncate" title="{{ att.original_filename }}">{{
+                                att.original_filename }}</span>
+                            <span class="badge badge-sm badge-ghost">{{ (att.size_bytes / 1024 / 1024)|round(2) }}
+                                MB</span>
+                        </div>
+                    </div>
+                    {% if att.content_type == 'application/pdf' %}
+                    <div class="text-xs opacity-60 flex items-center gap-1">
+                        <span class="mdi mdi-file-pdf-outline"></span> PDF
+                    </div>
+                    {% else %}
+                    <div class="text-xs opacity-60 flex items-center gap-1">
+                        <span class="mdi mdi-file-image-outline"></span> Image
+                    </div>
+                    {% endif %}
+                </label>
+                {% endfor %}
+
+                <!-- New uploads will be appended here by JS -->
+            </div>
+
+            <!-- Drag & Drop Zone -->
+            <div class="divider text-xs opacity-50 m-0 {% if not import_attachments %}hidden{% endif %}">{{ _('OR') }}
+            </div>
+
+            <div id="fileDropZone"
+                class="relative border-2 border-dashed border-base-content/20 rounded-2xl p-6 text-center transition-all hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
+                data-import-file-dropzone>
+
+                <input type="file" id="importFile" name="files" multiple class="hidden" data-import-file-input
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.md,.html,.htm" />
+
+                <div class="space-y-2">
+                    <div class="w-10 h-10 mx-auto flex items-center justify-center bg-base-200 rounded-full">
+                        <span class="mdi mdi-plus text-xl text-primary"></span>
+                    </div>
+                    <div>
+                        <p class="font-medium text-sm">{{ _('Upload New File') }}</p>
+                        <p class="text-xs opacity-60">
+                            {{ _('Drag & drop or click to browse') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if import_ai_notice %}
+        <div class="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/10">
+            <span class="mdi mdi-brain text-primary text-sm"></span>
+            <span class="text-[10px] uppercase font-bold tracking-wider text-primary/70">
+                {{ _('AI-Powered Analysis Enabled') }}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="modal-action mt-8">
+        {{ dialogs.dialog_cancel(_('Cancel'),
+        attrs='data-action="close-dialog" data-dialog-id="importDialog"') }}
+        <button type="submit" class="btn btn-primary sm:btn-wide btn-disabled opacity-50" data-import-file-submit
+            disabled>
+            <span class="mdi mdi-auto-fix mr-2"></span>
+            {{ _('Analyze & Import') }}
+        </button>
+    </div>
 </form>
 
 <!-- Loading State -->
 <div id="importLoading" class="text-center py-12 space-y-4" hidden>
-  <div class="relative inline-block">
-    <div
-      class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"
-    ></div>
-    <div class="absolute inset-0 flex items-center justify-center">
-      <span class="mdi mdi-auto-fix text-primary text-xl animate-pulse"></span>
+    <div class="relative inline-block">
+        <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+            <span class="mdi mdi-auto-fix text-primary text-xl animate-pulse"></span>
+        </div>
     </div>
-  </div>
-  <div class="space-y-1">
-    <p class="text-lg font-bold">{{ _('Working some magic...') }}</p>
-    <p class="text-sm opacity-60 max-w-xs mx-auto">
-      {{ import_analyzing_description }}
-    </p>
-  </div>
+    <div class="space-y-1">
+        <p class="text-lg font-bold">{{ _('Working some magic...') }}</p>
+        <p class="text-sm opacity-60 max-w-xs mx-auto">{{ import_analyzing_description }}</p>
+    </div>
 </div>
 
 <script>
-  (function () {
-      const formId = {{ import_form_id | tojson
-  }};
-  const storageKey = {{ import_storage_key | tojson }};
-  const redirectUrl = {{ import_redirect_url | tojson }};
-  const populateFnName = {{ import_populate_fn | tojson }};
+    (function () {
+        const formId = {{ import_form_id | tojson
+    }};
+    const storageKey = {{ import_storage_key | tojson }};
+    const redirectUrl = {{ import_redirect_url | tojson }};
+    const populateFnName = {{ import_populate_fn | tojson }};
 
-  const dialog = document.getElementById('importDialog');
-  if (!dialog) {
-      return;
-  }
+    const dialog = document.getElementById('importDialog');
+    if (!dialog) {
+        return;
+    }
 
-  let currentTab = 'url';
+    let currentTab = 'url';
 
-  const urlForm = document.getElementById(formId);
-  const fileForm = document.getElementById(formId + 'File');
-  const loading = document.getElementById('importLoading');
+    const urlForm = document.getElementById(formId);
+    const fileForm = document.getElementById(formId + 'File');
+    const loading = document.getElementById('importLoading');
 
-  const tabs = Array.from(dialog.querySelectorAll('[data-import-tab]'));
-  const panels = {
-      url: urlForm,
-      file: fileForm
-  };
+    const tabs = Array.from(dialog.querySelectorAll('[data-import-tab]'));
+    const panels = {
+        url: urlForm,
+        file: fileForm
+    };
 
-  const dropZone = dialog.querySelector('[data-import-file-dropzone]');
-  const fileInput = dialog.querySelector('[data-import-file-input]');
-  const fileSubmitBtn = dialog.querySelector('[data-import-file-submit]');
+    const dropZone = dialog.querySelector('[data-import-file-dropzone]');
+    const fileInput = dialog.querySelector('[data-import-file-input]');
+    const fileSubmitBtn = dialog.querySelector('[data-import-file-submit]');
 
-  const fileListEl = document.getElementById('importFileList');
-  const filesToUpload = new Map(); // filename -> File object
-  let nextFileId = 0;
+    const fileListEl = document.getElementById('importFileList');
+    const filesToUpload = new Map(); // filename -> File object
+    let nextFileId = 0;
 
-  function getCheckedItems() {
-      if (!fileListEl) return [];
-      return Array.from(fileListEl.querySelectorAll('input[type="checkbox"]:checked'));
-  }
+    function getCheckedItems() {
+        if (!fileListEl) return [];
+        return Array.from(fileListEl.querySelectorAll('input[type="checkbox"]:checked'));
+    }
 
-  function updateSubmitButton() {
-      if (!fileSubmitBtn) return;
-      const count = getCheckedItems().length;
-      fileSubmitBtn.disabled = count === 0;
-      if (count > 0) {
-          fileSubmitBtn.classList.remove('btn-disabled', 'opacity-50');
-          fileSubmitBtn.innerHTML = `<span class="mdi mdi-auto-fix mr-2"></span> ${'Analyze & Import'} <span class="badge badge-sm badge-ghost ml-2">${count}</span>`;
-      } else {
-          fileSubmitBtn.classList.add('btn-disabled', 'opacity-50');
-          fileSubmitBtn.innerHTML = `<span class="mdi mdi-auto-fix mr-2"></span> Analyze & Import`;
-      }
-  }
+    function updateSubmitButton() {
+        if (!fileSubmitBtn) return;
+        const count = getCheckedItems().length;
+        fileSubmitBtn.disabled = count === 0;
+        if (count > 0) {
+            fileSubmitBtn.classList.remove('btn-disabled', 'opacity-50');
+            fileSubmitBtn.innerHTML = `<span class="mdi mdi-auto-fix mr-2"></span> ${'Analyze & Import'} <span class="badge badge-sm badge-ghost ml-2">${count}</span>`;
+        } else {
+            fileSubmitBtn.classList.add('btn-disabled', 'opacity-50');
+            fileSubmitBtn.innerHTML = `<span class="mdi mdi-auto-fix mr-2"></span> Analyze & Import`;
+        }
+    }
 
-  // Initial binding for existing attachments
-  if (fileListEl) {
-      fileListEl.addEventListener('change', (e) => {
-          if (e.target.matches('input[type="checkbox"]')) {
-              updateSubmitButton();
-          }
-      });
-  }
+    // Initial binding for existing attachments
+    if (fileListEl) {
+        fileListEl.addEventListener('change', (e) => {
+            if (e.target.matches('input[type="checkbox"]')) {
+                updateSubmitButton();
+            }
+        });
+    }
 
-  function formatFileSize(bytes) {
-      if (!bytes) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
+    function formatFileSize(bytes) {
+        if (!bytes) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
 
-  function handleNewFiles(fileList) {
-      if (!fileListEl) return;
+    function handleNewFiles(fileList) {
+        if (!fileListEl) return;
 
-      fileListEl.classList.remove('hidden');
-      const divider = dialog.querySelector('.divider');
-      if (divider) divider.classList.remove('hidden');
+        fileListEl.classList.remove('hidden');
+        const divider = dialog.querySelector('.divider');
+        if (divider) divider.classList.remove('hidden');
 
-      Array.from(fileList).forEach(file => {
-          if (filesToUpload.has(file.name)) return;
+        Array.from(fileList).forEach(file => {
+            if (filesToUpload.has(file.name)) return;
 
-          filesToUpload.set(file.name, file);
-          nextFileId++;
+            filesToUpload.set(file.name, file);
+            nextFileId++;
 
-          const label = document.createElement('label');
-          label.className = "flex items-center gap-4 p-3 rounded-xl border border-base-200 cursor-pointer hover:bg-base-200/50 transition-colors group has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-1 has-[:checked]:ring-primary relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300";
+            const label = document.createElement('label');
+            label.className = "flex items-center gap-4 p-3 rounded-xl border border-base-200 cursor-pointer hover:bg-base-200/50 transition-colors group has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-1 has-[:checked]:ring-primary relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300";
 
-          let icon = "mdi-file-outline";
-          if (file.type.includes('image')) icon = "mdi-file-image-outline";
-          else if (file.type.includes('pdf')) icon = "mdi-file-pdf-outline";
+            let icon = "mdi-file-outline";
+            if (file.type.includes('image')) icon = "mdi-file-image-outline";
+            else if (file.type.includes('pdf')) icon = "mdi-file-pdf-outline";
 
-          label.innerHTML = `
-              <input type="checkbox" name="new_files_checked" value="${file.name}" class="checkbox checkbox-primary checkbox-sm" checked>
-              <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                      <span class="font-medium truncate" title="${file.name}">${file.name}</span>
-                      <span class="badge badge-sm badge-secondary font-bold text-xs">NEW</span>
-                  </div>
-                  <div class="text-xs opacity-60 flex items-center gap-1 min-w-fit">
-                      <span class="mdi ${icon}"></span> ${formatFileSize(file.size)}
-                  </div>
-              </div>
-              <button type="button" class="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10" onclick="event.preventDefault(); this.parentElement.remove(); updateSubmitButton();">
-                  <span class="mdi mdi-close"></span>
-              </button>
-          `;
+            label.innerHTML = `
+                <input type="checkbox" name="new_files_checked" value="${file.name}" class="checkbox checkbox-primary checkbox-sm" checked>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="font-medium truncate" title="${file.name}">${file.name}</span>
+                        <span class="badge badge-sm badge-secondary font-bold text-xs">NEW</span>
+                    </div>
+                    <div class="text-xs opacity-60 flex items-center gap-1 min-w-fit">
+                        <span class="mdi ${icon}"></span> ${formatFileSize(file.size)}
+                    </div>
+                </div>
+                <button type="button" class="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10" onclick="event.preventDefault(); this.parentElement.remove(); updateSubmitButton();">
+                    <span class="mdi mdi-close"></span>
+                </button>
+            `;
 
-          fileListEl.appendChild(label);
-      });
+            fileListEl.appendChild(label);
+        });
 
-      updateSubmitButton();
-      if (currentTab !== 'file') setTab('file');
-  }
+        updateSubmitButton();
+        if (currentTab !== 'file') setTab('file');
+    }
 
-  function setTab(tab) {
-      let nextTab = tab;
-      if (!panels[nextTab]) nextTab = 'url';
-      currentTab = nextTab;
+    function setTab(tab) {
+        let nextTab = tab;
+        if (!panels[nextTab]) nextTab = 'url';
+        currentTab = nextTab;
 
-      if (loading) loading.hidden = true;
+        if (loading) loading.hidden = true;
 
-      tabs.forEach((btn) => {
-          const isActive = btn.getAttribute('data-import-tab') === nextTab;
-          btn.classList.toggle('tab-active', isActive);
-          btn.classList.toggle('bg-base-100', isActive);
-          btn.classList.toggle('shadow-sm', isActive);
-          btn.classList.toggle('hover:bg-base-100/50', !isActive);
-      });
+        tabs.forEach((btn) => {
+            const isActive = btn.getAttribute('data-import-tab') === nextTab;
+            btn.classList.toggle('tab-active', isActive);
+            btn.classList.toggle('bg-base-100', isActive);
+            btn.classList.toggle('shadow-sm', isActive);
+            btn.classList.toggle('hover:bg-base-100/50', !isActive);
+        });
 
-      Object.entries(panels).forEach(([key, panel]) => {
-          if (!panel) return;
-          panel.hidden = key !== nextTab;
-      });
-  }
+        Object.entries(panels).forEach(([key, panel]) => {
+            if (!panel) return;
+            panel.hidden = key !== nextTab;
+        });
+    }
 
-  tabs.forEach((btn) => {
-      if (btn.dataset.importTabInitialized) return;
-      btn.dataset.importTabInitialized = '1';
-      btn.addEventListener('click', () => setTab(btn.getAttribute('data-import-tab') || 'url'));
-  });
+    tabs.forEach((btn) => {
+        if (btn.dataset.importTabInitialized) return;
+        btn.dataset.importTabInitialized = '1';
+        btn.addEventListener('click', () => setTab(btn.getAttribute('data-import-tab') || 'url'));
+    });
 
-  function handleDrop(files) {
-      if (!files || files.length === 0) return;
-      handleNewFiles(files);
-  }
+    function handleDrop(files) {
+        if (!files || files.length === 0) return;
+        handleNewFiles(files);
+    }
 
-  if (dialog) {
-      const handleDrag = (e, add) => {
-          e.preventDefault();
-          if (dropZone) {
-              if (add) dropZone.classList.add('border-primary', 'bg-primary/5');
-              else dropZone.classList.remove('border-primary', 'bg-primary/5');
-          }
-      };
-      dialog.addEventListener('dragenter', e => handleDrag(e, true));
-      dialog.addEventListener('dragover', e => handleDrag(e, true));
-      dialog.addEventListener('dragleave', e => {
-          if (e.relatedTarget === null || !dialog.contains(e.relatedTarget)) handleDrag(e, false);
-      });
-      dialog.addEventListener('drop', e => {
-          handleDrag(e, false);
-          handleDrop(e.dataTransfer?.files);
-      });
-  }
+    if (dialog) {
+        const handleDrag = (e, add) => {
+            e.preventDefault();
+            if (dropZone) {
+                if (add) dropZone.classList.add('border-primary', 'bg-primary/5');
+                else dropZone.classList.remove('border-primary', 'bg-primary/5');
+            }
+        };
+        dialog.addEventListener('dragenter', e => handleDrag(e, true));
+        dialog.addEventListener('dragover', e => handleDrag(e, true));
+        dialog.addEventListener('dragleave', e => {
+            if (e.relatedTarget === null || !dialog.contains(e.relatedTarget)) handleDrag(e, false);
+        });
+        dialog.addEventListener('drop', e => {
+            handleDrag(e, false);
+            handleDrop(e.dataTransfer?.files);
+        });
+    }
 
-  if (dropZone && !dropZone.dataset.importDropInitialized) {
-      dropZone.dataset.importDropInitialized = '1';
-      dropZone.addEventListener('click', () => fileInput?.click());
-      dropZone.addEventListener('dragenter', e => e.preventDefault());
-      dropZone.addEventListener('dragover', e => e.preventDefault());
-      dropZone.addEventListener('dragleave', e => e.preventDefault());
-      dropZone.addEventListener('drop', e => {
-          e.preventDefault();
-          handleDrop(e.dataTransfer?.files);
-      });
-  }
+    if (dropZone && !dropZone.dataset.importDropInitialized) {
+        dropZone.dataset.importDropInitialized = '1';
+        dropZone.addEventListener('click', () => fileInput?.click());
+        dropZone.addEventListener('dragenter', e => e.preventDefault());
+        dropZone.addEventListener('dragover', e => e.preventDefault());
+        dropZone.addEventListener('dragleave', e => e.preventDefault());
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            handleDrop(e.dataTransfer?.files);
+        });
+    }
 
-  if (fileInput && !fileInput.dataset.importInputInitialized) {
-      fileInput.dataset.importInputInitialized = '1';
-      fileInput.addEventListener('change', (e) => {
-          handleNewFiles(e.target.files);
-          e.target.value = '';
-      });
-  }
+    if (fileInput && !fileInput.dataset.importInputInitialized) {
+        fileInput.dataset.importInputInitialized = '1';
+        fileInput.addEventListener('change', (e) => {
+            handleNewFiles(e.target.files);
+            e.target.value = '';
+        });
+    }
 
-  // Default state - use 'file' tab if no URL is provided
-  const hasUrl = {{ 'true' if import_url_value else 'false' }};
-  setTab(hasUrl ? 'url' : 'file');
-  updateSubmitButton();
+    // Default state - use 'file' tab if no URL is provided
+    const hasUrl = {{ 'true' if import_url_value else 'false' }};
+    setTab(hasUrl ? 'url' : 'file');
+    updateSubmitButton();
 
-  [urlForm, fileForm].forEach(form => {
-      if (!form || form.dataset.importSubmitInitialized) return;
-      form.dataset.importSubmitInitialized = '1';
-      form.addEventListener('submit', handleFormSubmit);
-  });
+    [urlForm, fileForm].forEach(form => {
+        if (!form || form.dataset.importSubmitInitialized) return;
+        form.dataset.importSubmitInitialized = '1';
+        form.addEventListener('submit', handleFormSubmit);
+    });
 
-  async function handleFormSubmit(e) {
-      e.preventDefault();
-      const form = e.target;
-      const formData = new FormData(form);
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
 
-      if (form === fileForm) {
-          currentTab = 'file';
+        if (form === fileForm) {
+            currentTab = 'file';
 
-          const checkedNewInputs = fileListEl.querySelectorAll('input[name="new_files_checked"]:checked');
-          formData.delete('files');
+            const checkedNewInputs = fileListEl.querySelectorAll('input[name="new_files_checked"]:checked');
+            formData.delete('files');
 
-          checkedNewInputs.forEach(input => {
-              const file = filesToUpload.get(input.value);
-              if (file) formData.append('files', file);
-          });
+            checkedNewInputs.forEach(input => {
+                const file = filesToUpload.get(input.value);
+                if (file) formData.append('files', file);
+            });
 
-          if (!formData.has('type')) formData.set('type', 'file');
+            if (!formData.has('type')) formData.set('type', 'file');
 
-      } else {
-          currentTab = 'url';
-      }
+        } else {
+            currentTab = 'url';
+        }
 
-      if (urlForm) urlForm.hidden = true;
-      if (fileForm) fileForm.hidden = true;
-      if (loading) loading.hidden = false;
+        if (urlForm) urlForm.hidden = true;
+        if (fileForm) fileForm.hidden = true;
+        if (loading) loading.hidden = false;
 
-      try {
-          const response = await fetch(form.action, {
-              method: 'POST',
-              body: formData
-          });
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData
+            });
 
-          if (!response.ok) {
-              const error = await response.json().catch(() => ({}));
-              throw new Error(error.detail || 'Unknown error');
-          }
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.detail || 'Unknown error');
+            }
 
-          const data = await response.json();
-          const populate = populateFnName ? window[populateFnName] : null;
+            const data = await response.json();
+            const populate = populateFnName ? window[populateFnName] : null;
 
-          if (typeof populate === 'function') {
-              populate(data);
-              dialog?.close();
-              return;
-          }
+            if (typeof populate === 'function') {
+                populate(data);
+                dialog?.close();
+                return;
+            }
 
-          sessionStorage.setItem(storageKey, JSON.stringify(data));
-          window.location.href = redirectUrl;
-      } catch (err) {
-          console.error(err);
-          alert('Import failed: ' + (err?.message || 'Unknown error'));
-      } finally {
-          if (loading) loading.hidden = true;
-          setTab(currentTab);
-      }
-  }
-  }) ();
+            sessionStorage.setItem(storageKey, JSON.stringify(data));
+            window.location.href = redirectUrl;
+        } catch (err) {
+            console.error(err);
+            alert('Import failed: ' + (err?.message || 'Unknown error'));
+        } finally {
+            if (loading) loading.hidden = true;
+            setTab(currentTab);
+        }
+    }
+    }) ();
 </script>
 {% endcall %}

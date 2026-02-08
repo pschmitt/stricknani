@@ -1,29 +1,31 @@
-{% import "macros/buttons.html" as buttons %} {% macro header(back_label,
-back_href) %}
-<div
-  class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
->
-  <div>{{ buttons.back(back_label, href=back_href) }}</div>
-  <div class="flex flex-wrap items-center gap-2">{{ caller() }}</div>
+{% import "macros/buttons.html" as buttons %}
+
+{% macro header(back_label, back_href) %}
+<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+        {{ buttons.back(back_label, href=back_href) }}
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+        {{ caller() }}
+    </div>
 </div>
-{% endmacro %} {% macro media_section(title, icon=None) %}
+{% endmacro %}
+
+{% macro media_section(title, icon=None) %}
 <div class="mb-8">
-  <h3
-    class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2"
-  >
-    {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %} {{ title }}
-  </h3>
-  {{ caller() }}
-</div>
-{% endmacro %} {% macro detail_box(title) %}
-<div>
-  <h3
-    class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-2"
-  >
-    {{ title }}
-  </h3>
-  <div class="bg-base-200 rounded-lg p-4 dark:bg-base-300/50">
+    <h3 class="text-xl font-semibold text-base-content mb-4 flex items-center gap-2">
+        {% if icon %}<span class="mdi {{ icon }}"></span>{% endif %}
+        {{ title }}
+    </h3>
     {{ caller() }}
-  </div>
+</div>
+{% endmacro %}
+
+{% macro detail_box(title) %}
+<div>
+    <h3 class="text-sm font-medium text-base-content/70 uppercase tracking-wide mb-2">{{ title }}</h3>
+    <div class="bg-base-200 rounded-lg p-4 dark:bg-base-300/50">
+        {{ caller() }}
+    </div>
 </div>
 {% endmacro %}

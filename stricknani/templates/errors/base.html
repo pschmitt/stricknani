@@ -1,34 +1,30 @@
-{% extends "base.html" %} {% block navbar %} {% include
-"shared/unified_navbar.html" %} {% endblock %} {% block content %}
-<div class="min-h-[calc(100vh-16rem)] flex items-center justify-center p-4">
-  <div class="max-w-md w-full text-center">
-    <div class="mb-8">
-      <div
-        class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-base-200 mb-4 ring-8 ring-base-100 shadow-inner"
-      >
-        <span
-          class="mdi {% block error_icon %}mdi-alert-circle-outline{% endblock %} text-5xl {% block error_icon_color %}text-primary{% endblock %}"
-        ></span>
-      </div>
-      <h1 class="text-6xl font-black text-base-content mb-2">
-        {% block error_code %}Error{% endblock %}
-      </h1>
-      <h2 class="text-2xl font-bold text-base-content/80 mb-4">
-        {% block error_title %}Something went wrong{% endblock %}
-      </h2>
-      <p class="text-base-content/60 mb-8 leading-relaxed">
-        {% block error_message %}We couldn't find what you were looking for or
-        something unexpected happened.{% endblock %}
-      </p>
+{% extends "base.html" %}
 
-      <div class="flex flex-col sm:flex-row gap-3 justify-center">
-        <a href="/" class="btn btn-primary px-8">
-          <span class="mdi mdi-home mr-2"></span>
-          {{ _('Go Home') }}
-        </a>
-        {% block extra_actions %}{% endblock %}
-      </div>
+{% block navbar %}
+{% include "shared/unified_navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-16rem)] flex items-center justify-center p-4">
+    <div class="max-w-md w-full text-center">
+        <div class="mb-8">
+            <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-base-200 mb-4 ring-8 ring-base-100 shadow-inner">
+                <span class="mdi {% block error_icon %}mdi-alert-circle-outline{% endblock %} text-5xl {% block error_icon_color %}text-primary{% endblock %}"></span>
+            </div>
+            <h1 class="text-6xl font-black text-base-content mb-2">{% block error_code %}Error{% endblock %}</h1>
+            <h2 class="text-2xl font-bold text-base-content/80 mb-4">{% block error_title %}Something went wrong{% endblock %}</h2>
+            <p class="text-base-content/60 mb-8 leading-relaxed">
+                {% block error_message %}We couldn't find what you were looking for or something unexpected happened.{% endblock %}
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="/" class="btn btn-primary px-8">
+                    <span class="mdi mdi-home mr-2"></span>
+                    {{ _('Go Home') }}
+                </a>
+                {% block extra_actions %}{% endblock %}
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}

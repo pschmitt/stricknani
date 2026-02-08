@@ -1,145 +1,122 @@
-{% extends "shared/list_base.html" %} {% import "macros/buttons.html" as buttons
-%} {% block title %}{{ _('Manage Categories') }} - Stricknani{% endblock %} {#
-Set variables for the unified navbar #} {% set page_icon %}<span
-  class="mdi mdi-shape-outline text-primary"
-></span
->{% endset %} {% set page_title %}{{ _('Manage Categories') }}{% endset %} {%
-set page_actions %} {{ buttons.back_circle('/projects', label=_('Back to
-Projects')) }} {% endset %} {# Keep for backwards compatibility #} {% block
-list_icon %}
+{% extends "shared/list_base.html" %}
+{% import "macros/buttons.html" as buttons %}
+
+{% block title %}{{ _('Manage Categories') }} - Stricknani{% endblock %}
+
+{# Set variables for the unified navbar #}
+{% set page_icon %}<span class="mdi mdi-shape-outline text-primary"></span>{% endset %}
+{% set page_title %}{{ _('Manage Categories') }}{% endset %}
+{% set page_actions %}
+{{ buttons.back_circle('/projects', label=_('Back to Projects')) }}
+{% endset %}
+
+{# Keep for backwards compatibility #}
+{% block list_icon %}
 <span class="mdi mdi-shape-outline text-primary"></span>
-{% endblock %} {% block list_title %}{{ _('Manage Categories') }}{% endblock %}
-{% block list_subtitle %} {{ _('Create, rename, or remove project categories.')
-}} {% endblock %} {% block list_nav %} {{ buttons.back_circle('/projects',
-label=_('Back to Projects')) }} {% endblock %} {% block list_filters_container
-%}
+{% endblock %}
+
+{% block list_title %}{{ _('Manage Categories') }}{% endblock %}
+
+{% block list_subtitle %}
+{{ _('Create, rename, or remove project categories.') }}
+{% endblock %}
+
+{% block list_nav %}
+{{ buttons.back_circle('/projects', label=_('Back to Projects')) }}
+{% endblock %}
+
+{% block list_filters_container %}
 <!-- Hidden filters -->
-{% endblock %} {% block list_content %}
+{% endblock %}
+
+{% block list_content %}
 <!-- New Category Input -->
 <div class="card bg-base-100 shadow-sm border border-base-200 mb-6">
-  <div class="card-body p-4 sm:p-6">
-    <h2 class="card-title text-base mb-4">{{ _('Add New Category') }}</h2>
-    <form
-      action="/projects/categories"
-      method="post"
-      class="flex flex-col sm:flex-row gap-4"
-    >
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-      <div class="flex-grow">
-        <label for="new-category-name" class="sr-only"
-          >{{ _('Category Name') }}</label
-        >
-        <input
-          type="text"
-          id="new-category-name"
-          name="name"
-          required
-          placeholder="{{ _('e.g., Socks, Shawl, Amigurumi') }}"
-          class="input w-full"
-        />
-      </div>
-      {{ buttons.primary(_('Create'), type='submit', icon='mdi-plus',
-      class='flex-none') }}
-    </form>
-  </div>
+    <div class="card-body p-4 sm:p-6">
+        <h2 class="card-title text-base mb-4">{{ _('Add New Category') }}</h2>
+        <form action="/projects/categories" method="post" class="flex flex-col sm:flex-row gap-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="flex-grow">
+                <label for="new-category-name" class="sr-only">{{ _('Category Name') }}</label>
+                <input type="text" id="new-category-name" name="name" required
+                    placeholder="{{ _('e.g., Socks, Shawl, Amigurumi') }}" class="input  w-full">
+            </div>
+            {{ buttons.primary(_('Create'), type='submit', icon='mdi-plus', class='flex-none') }}
+        </form>
+    </div>
 </div>
 
 <!-- Category List -->
 <div class="grid gap-2">
-  {% for category in categories %}
-  <div
-    class="card bg-base-100 shadow-sm border border-base-200 group hover:border-base-300 transition-colors"
-  >
-    <div class="card-body p-4">
-      <form
-        action="/projects/categories/{{ category.id }}"
-        method="post"
-        class="flex items-center gap-4"
-      >
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-        <div class="flex-grow">
-          <label for="category-{{ category.id }}" class="sr-only"
-            >{{ _('Category Name') }}</label
-          >
-          <input
-            type="text"
-            id="category-{{ category.id }}"
-            name="name"
-            value="{{ category.name }}"
-            required
-            class="input input-ghost w-full font-medium focus: text-lg px-2 -ml-2 h-auto py-1"
-          />
-          <p class="text-xs text-base-content/60 mt-1 px-2">
-            {{ ngettext('%(num)d project', '%(num)d projects',
-            category.project_count) % {'num': category.project_count} }}
-          </p>
-        </div>
+    {% for category in categories %}
+    <div class="card bg-base-100 shadow-sm border border-base-200 group hover:border-base-300 transition-colors">
+        <div class="card-body p-4">
+            <form action="/projects/categories/{{ category.id }}" method="post" class="flex items-center gap-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="flex-grow">
+                    <label for="category-{{ category.id }}" class="sr-only">{{ _('Category Name') }}</label>
+                    <input type="text" id="category-{{ category.id }}" name="name" value="{{ category.name }}" required
+                        class="input input-ghost w-full font-medium focus: text-lg px-2 -ml-2 h-auto py-1">
+                    <p class="text-xs text-base-content/60 mt-1 px-2">
+                        {{ ngettext('%(num)d project', '%(num)d projects', category.project_count) % {'num':
+                        category.project_count} }}
+                    </p>
+                </div>
 
-        <div
-          class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity focus-within:opacity-100"
-        >
-          {{ buttons.secondary(_('Save'), type='submit',
-          icon='mdi-content-save-outline', class='btn-sm btn-ghost gap-2',
-          attrs='title="' + _('Save changes') + '"') }}
+                <div
+                    class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity focus-within:opacity-100">
+                    {{ buttons.secondary(_('Save'), type='submit', icon='mdi-content-save-outline', class='btn-sm
+                    btn-ghost gap-2', attrs='title="' + _('Save changes') + '"') }}
 
-          <button
-            type="button"
-            class="btn btn-sm btn-ghost text-error"
-            data-category-id="{{ category.id }}"
-            data-category-name="{{ category.name }}"
-            data-project-count="{{ category.project_count }}"
-            title="{{ _('Delete category') }}"
-            aria-label="{{ _('Delete category') }}"
-          >
-            <span class="mdi mdi-trash-can-outline text-lg"></span>
-          </button>
+                    <button type="button" class="btn btn-sm btn-ghost text-error" data-category-id="{{ category.id }}"
+                        data-category-name="{{ category.name }}" data-project-count="{{ category.project_count }}"
+                        title="{{ _('Delete category') }}" aria-label="{{ _('Delete category') }}">
+                        <span class="mdi mdi-trash-can-outline text-lg"></span>
+                    </button>
+                </div>
+            </form>
+            <form id="delete-category-{{ category.id }}" action="/projects/categories/{{ category.id }}/delete"
+                method="post" class="hidden" aria-hidden="true">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            </form>
         </div>
-      </form>
-      <form
-        id="delete-category-{{ category.id }}"
-        action="/projects/categories/{{ category.id }}/delete"
-        method="post"
-        class="hidden"
-        aria-hidden="true"
-      >
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-      </form>
     </div>
-  </div>
-  {% else %}
-  <div class="text-center py-12 text-base-content/50">
-    <span class="mdi mdi-shape-plus text-5xl mb-3 block opacity-20"></span>
-    <p>{{ _('You have no custom categories yet.') }}</p>
-  </div>
-  {% endfor %}
+    {% else %}
+    <div class="text-center py-12 text-base-content/50">
+        <span class="mdi mdi-shape-plus text-5xl mb-3 block opacity-20"></span>
+        <p>{{ _('You have no custom categories yet.') }}</p>
+    </div>
+    {% endfor %}
 </div>
-{% endblock %} {% block page_scripts %}
+{% endblock %}
+
+{% block page_scripts %}
 <script>
-      document.addEventListener('DOMContentLoaded', () => {
-          {% if error %}
-          window.showToast?.({{ error | tojson }}, 'error');
-      {% endif %}
+    document.addEventListener('DOMContentLoaded', () => {
+        {% if error %}
+        window.showToast?.({{ error | tojson }}, 'error');
+    {% endif %}
 
-      const deleteConfirmTitle = {{ _('Delete category') | tojson }};
-      const deleteConfirmMessage = {{ _('Are you sure you want to delete this category?') | tojson }};
-      const deleteConfirmInUseMessage = {{ _('This category is used by %(num)s project(s). They will be uncategorized. Delete anyway?') | tojson }};
+    const deleteConfirmTitle = {{ _('Delete category') | tojson }};
+    const deleteConfirmMessage = {{ _('Are you sure you want to delete this category?') | tojson }};
+    const deleteConfirmInUseMessage = {{ _('This category is used by %(num)s project(s). They will be uncategorized. Delete anyway?') | tojson }};
 
-      document.querySelectorAll('[data-category-id]').forEach((btn) => {
-          btn.addEventListener('click', () => {
-              const id = btn.getAttribute('data-category-id');
-              const count = parseInt(btn.getAttribute('data-project-count') || '0', 10);
-              const form = document.getElementById('delete-category-' + id);
-              if (!form) return;
+    document.querySelectorAll('[data-category-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-category-id');
+            const count = parseInt(btn.getAttribute('data-project-count') || '0', 10);
+            const form = document.getElementById('delete-category-' + id);
+            if (!form) return;
 
-              const message = count > 0
-                  ? deleteConfirmInUseMessage.replace('%(num)s', String(count))
-                  : deleteConfirmMessage;
+            const message = count > 0
+                ? deleteConfirmInUseMessage.replace('%(num)s', String(count))
+                : deleteConfirmMessage;
 
-              window.confirmAction(deleteConfirmTitle, message, () => {
-                  form.submit();
-              });
-          });
-      });
-  });
+            window.confirmAction(deleteConfirmTitle, message, () => {
+                form.submit();
+            });
+        });
+    });
+});
 </script>
 {% endblock %}

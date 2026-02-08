@@ -1,8 +1,12 @@
-{% if search or selected_category or selected_tag %} {% set clear_url =
-"/projects" %} {% include "shared/_empty_search_state.html" with context %} {%
-else %} {% set empty_icon = "mdi-folder-multiple-outline" %} {% set empty_title
-= _('No projects yet') %} {% set empty_body = _('Start a project to track
-photos, gauge notes, and progress.') %} {% set empty_action_url =
-"/projects/new" %} {% set empty_action_label = _('Create Your First Project') %}
-{% set empty_action_icon = "mdi-plus-circle-multiple-outline" %} {% include
-"shared/_empty_state.html" with context %} {% endif %}
+{% if search or selected_category or selected_tag %}
+{% set clear_url = "/projects" %}
+{% include "shared/_empty_search_state.html" with context %}
+{% else %}
+{% set empty_icon = "mdi-folder-multiple-outline" %}
+{% set empty_title = _('No projects yet') %}
+{% set empty_body = _('Start a project to track photos, gauge notes, and progress.') %}
+{% set empty_action_url = "/projects/new" %}
+{% set empty_action_label = _('Create Your First Project') %}
+{% set empty_action_icon = "mdi-plus-circle-multiple-outline" %}
+{% include "shared/_empty_state.html" with context %}
+{% endif %}
