@@ -2002,7 +2002,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                     data-attachment-kind="${kind}"
                     data-attachment-url="${url}"
                     data-attachment-name="${originalName}"
-                    data-attachment-id="${data.id}"
+                    ${data.id ? `data-attachment-id="${data.id}"` : `data-pending-token="${data.token}"`}
                     ${kind === 'image' ? `data-pswp-open-index="${openIndex}"` : ''}>
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
@@ -2023,12 +2023,13 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                         title="{{ _('Download') }}">
                         <span class="mdi mdi-download text-xl"></span>
                     </a>
-	                        <button type="button" data-call="deleteAttachment" data-call-args='[${data.id}]'
-	                            class="btn btn-ghost btn-sm btn-circle text-error"
-	                            title="{{ _('Delete') }}">
-	                            <span class="mdi mdi-delete-outline text-xl"></span>
-	                        </button>
-                    </div>
+                    <button type="button" data-call="deleteAttachment" 
+                        data-call-args='[${data.id ? data.id : `"$dataset:pendingToken"`}]'
+                        class="btn btn-ghost btn-sm btn-circle text-error"
+                        title="{{ _('Delete') }}">
+                        <span class="mdi mdi-delete-outline text-xl"></span>
+                    </button>
+                </div>
                     ${kind === 'image' ? `
                         <a href="${url}" class="hidden" aria-hidden="true" tabindex="-1"
                             data-pswp-width="${pswpWidth}"
@@ -2043,11 +2044,30 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
             }
         }
 
-    async function deleteAttachment(id) {
+    async function deleteAttachment(idOrToken) {
         window.confirmAction(
             '{{ _("Delete Attachment") }}',
             '{{ _("Are you sure you want to delete this attachment?") }}',
             async () => {
+                if (typeof idOrToken === 'string' && idOrToken.length === 32) {
+                    // It's a pending token
+                    const token = idOrToken;
+                    const el = document.querySelector(`[data-pending-token="${token}"]`);
+                    el?.remove();
+                    
+                    const input = document.getElementById('import_attachment_tokens');
+                    if (input && input.value) {
+                        try {
+                            const tokens = JSON.parse(input.value);
+                            const updated = tokens.filter(t => t !== token);
+                            input.value = JSON.stringify(updated);
+                        } catch (e) { console.error(e); }
+                    }
+                    window.unsavedChanges?.setDirty(true);
+                    return;
+                }
+
+                const id = idOrToken;
                 try {
                     const response = await fetch(`/projects/${projectId}/attachments/${id}`, {
                         method: 'DELETE',

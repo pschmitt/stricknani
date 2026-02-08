@@ -1044,6 +1044,39 @@ async def import_pattern(
 
                     processed_steps.append(step_dict)
 
+                source_attachments = source_file_data.get("source_attachments", [])
+                if not source_attachments and import_attachment_tokens:
+                    # If we don't have permanent source_attachments yet (new project),
+                    # create a temporary one for the UI to show the main PDF.
+                    main_token = import_attachment_tokens[0]
+                    # PDF rendered pages might have tokens too, but the first one is the main PDF.
+                    # We can use get_file_url to create a preview URL for it.
+                    try:
+                        # Find the main PDF token (the first one added by store_source_file_for_import)
+                        # Actually, store_source_file_for_import returns it in import_attachment_tokens.
+                        # For PDF import, it's the first token in the list.
+                        url = get_file_url(
+                            uploaded_file_name or "pattern.pdf",
+                            entity_id=current_user.id,
+                            pending_token=main_token,
+                        )
+                        source_attachments.append(
+                            {
+                                "id": None,  # Pending
+                                "token": main_token,
+                                "original_filename": uploaded_file_name
+                                or "pattern.pdf",
+                                "content_type": uploaded_file_content_type
+                                or "application/pdf",
+                                "size_bytes": len(uploaded_file_bytes)
+                                if uploaded_file_bytes
+                                else 0,
+                                "url": url,
+                            }
+                        )
+                    except Exception:
+                        pass
+
                 data = {
                     "name": extracted.name,
                     "description": extracted.description,
@@ -1056,9 +1089,7 @@ async def import_pattern(
                     "steps": processed_steps,
                     "image_urls": image_urls,
                     "import_attachment_tokens": import_attachment_tokens,
-                    "source_attachments": source_file_data.get(
-                        "source_attachments", []
-                    ),
+                    "source_attachments": source_attachments,
                     "link": None,
                     "is_ai_enhanced": True,
                 }
