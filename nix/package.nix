@@ -25,6 +25,8 @@ let
     markdown
     openai
     pillow
+    pymupdf
+    pypdf
     python-dotenv
     python-jose
     python-multipart

@@ -60,13 +60,17 @@ async def test_ai_extractor_pdf_direct_upload() -> None:
     args, kwargs = mock_client.chat.completions.create.call_args
     messages = kwargs["messages"]
     user_content = messages[1]["content"]
-
+    
     found_input_file = False
+    found_image_indices = False
     for item in user_content:
         if item["type"] == "input_file":
             assert item["input_file"]["file_id"] == "file-123"
             found_input_file = True
+        if item["type"] == "text" and "Image 1" in item["text"]:
+            found_image_indices = True
     assert found_input_file
+    assert found_image_indices
 
     # Verify file was deleted
     mock_client.files.delete.assert_called_once_with("file-123")

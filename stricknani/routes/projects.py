@@ -952,13 +952,14 @@ async def import_pattern(
 
                 # Handle images extracted from PDF
                 import_attachment_tokens: list[str] = []
-                image_urls = list(extracted.image_urls)
+                # Keep track of local images we saved to tokens
+                local_image_token_map = {}  # index -> token
+                local_image_filename_map = {}  # index -> filename
+
                 pdf_images = extracted.extras.get("pdf_images", [])
                 if pdf_images:
-                    from stricknani.utils.files import get_file_url
-
                     for i, img_bytes in enumerate(pdf_images):
-                        filename = f"pdf_image_{len(import_attachment_tokens) + 1}.jpg"
+                        filename = f"pdf_image_{i + 1}.jpg"
                         token = await store_pending_project_import_attachment_bytes(
                             current_user.id,
                             content=img_bytes,
@@ -966,7 +967,46 @@ async def import_pattern(
                             content_type="image/jpeg",
                         )
                         import_attachment_tokens.append(token)
-                        image_urls.append(get_file_url(filename, pending_token=token))
+                        local_image_token_map[i] = token
+                        local_image_filename_map[i] = filename
+
+                # Now map everything to URLs for the UI
+                image_urls = list(extracted.image_urls)
+                
+                # Add local images to the main gallery
+                local_urls = {} # index -> url
+                for i in range(len(pdf_images)):
+                    token = local_image_token_map[i]
+                    filename = local_image_filename_map[i]
+                    url = get_file_url(
+                        filename, entity_id=current_user.id, pending_token=token
+                    )
+                    image_urls.append(url)
+                    local_urls[i + 1] = url
+
+                # Process steps and resolve image references
+                processed_steps = []
+                for step in extracted.steps:
+                    step_dict = {
+                        "step_number": step.step_number,
+                        "title": step.title,
+                        "description": step.description,
+                        "images": [],
+                    }
+                    
+                    for img_ref in step.images:
+                        # Handle 'Image 1', 'Image 2', etc.
+                        match = re.search(r"Image (\d+)", img_ref, re.I)
+                        if match:
+                            idx = int(match.group(1))
+                            if idx in local_urls:
+                                step_dict["images"].append(local_urls[idx])
+                            else:
+                                step_dict["images"].append(img_ref)
+                        else:
+                            step_dict["images"].append(img_ref)
+                    
+                    processed_steps.append(step_dict)
 
                 data = {
                     "name": extracted.name,
@@ -977,15 +1017,7 @@ async def import_pattern(
                     "other_materials": extracted.other_materials,
                     "stitch_sample": extracted.stitch_sample,
                     "brand": extracted.brand,
-                    "steps": [
-                        {
-                            "step_number": step.step_number,
-                            "title": step.title,
-                            "description": step.description,
-                            "images": step.images,
-                        }
-                        for step in extracted.steps
-                    ],
+                    "steps": processed_steps,
                     "image_urls": image_urls,
                     "import_attachment_tokens": import_attachment_tokens,
                     "link": None,

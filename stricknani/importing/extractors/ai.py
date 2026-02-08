@@ -191,6 +191,7 @@ class AIExtractor(ContentExtractor):
         self,
         content: RawContent,
         hints: dict[str, Any] | None,
+        extra_prompt: str | None = None,
     ) -> ExtractedData:
         """Extract data from text using GPT."""
         client = AsyncOpenAI(api_key=self.api_key)
@@ -203,6 +204,8 @@ class AIExtractor(ContentExtractor):
 
         system_prompt = self._build_system_prompt()
         user_prompt = self._build_text_prompt(text, hints)
+        if extra_prompt:
+            user_prompt += f"\n\n{extra_prompt}"
 
         try:
             response = await client.chat.completions.create(
@@ -269,9 +272,20 @@ class AIExtractor(ContentExtractor):
             model = self.model if "mini" not in self.model else "gpt-4o"
 
             system_prompt = self._build_system_prompt()
+            
+            image_block = ""
+            if local_images:
+                image_block = (
+                    "\n\nThe following images were extracted from the PDF for reference:\n"
+                    + "\n".join(f"- Image {i+1}" for i in range(len(local_images)))
+                    + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. in the "
+                    "step 'images' field if they are relevant to a specific step."
+                )
+
             user_prompt = (
                 "Analyze the attached PDF and extract all available knitting pattern "
                 "information. Return the data as JSON."
+                f"{image_block}"
             )
 
             response = await client.chat.completions.create(  # type: ignore[call-overload]
@@ -380,7 +394,17 @@ class AIExtractor(ContentExtractor):
                 "source_content_type": "application/pdf",
             },
         )
-        result = await self._extract_from_text(text_content, hints)
+        
+        image_hints = ""
+        if local_images:
+            image_hints = (
+                "\n\nThe following images were extracted from the PDF for reference:\n"
+                + "\n".join(f"- Image {i+1}" for i in range(len(local_images)))
+                + "\n\nYou can refer to these as 'Image 1', 'Image 2', etc. in the "
+                "step 'images' field if they are relevant to a specific step."
+            )
+            
+        result = await self._extract_from_text(text_content, hints, extra_prompt=image_hints)
 
         # Attach local images to the result
         if local_images:

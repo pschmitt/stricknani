@@ -247,17 +247,35 @@ def delete_file(filename: str, entity_id: int, subdir: str = "projects") -> None
         thumb_path.unlink()
 
 
-def get_file_url(filename: str, entity_id: int, subdir: str = "projects") -> str:
+def get_file_url(
+    filename: str,
+    entity_id: int | None = None,
+    subdir: str = "projects",
+    pending_token: str | None = None,
+) -> str:
     """Get the URL for a media file.
 
     Args:
         filename: Filename
         entity_id: ID of the entity directory
         subdir: Subdirectory under media root
+        pending_token: Token for pending imports (if entity_id is not set)
 
     Returns:
         URL path to the file
     """
+    if pending_token:
+        # Use entity_id as user_id if provided, otherwise it's not strictly
+        # needed for the URL if we mount it appropriately or if we include
+        # the user_id in the URL.
+        # Based on AIPatternImporter and route logic, user_id is part of the path.
+        if entity_id is None:
+            raise ValueError("entity_id (user_id) is required for pending tokens")
+        return f"/media/imports/{subdir}/{entity_id}/{filename}"
+
+    if entity_id is None:
+        raise ValueError("entity_id is required for non-pending files")
+
     return f"/media/{subdir}/{entity_id}/{filename}"
 
 
