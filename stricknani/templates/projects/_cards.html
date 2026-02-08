@@ -105,7 +105,7 @@
     </div>
     {% elif section == 'context_menu' %}
     <ul class="menu p-2 bg-base-100 rounded-box border border-base-200 shadow-xl">
-        <li data-favorite-toggle>
+        <li id="project-{{ project.id }}-favorite-toggle" data-favorite-toggle>
             {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
             {% include "projects/_favorite_toggle.html" %}
             {% endwith %}

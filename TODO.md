@@ -33,7 +33,10 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 | P2       | done   | feat: right-click/long-press on project/yarn cards to show favorite/print/re-import/delete context menu (same as "..." button) | Medium | Medium     | `stricknani/templates/projects/_cards.html`, `stricknani/templates/yarn/_cards.html`, `stricknani/static/js/htmx/` |
 | P0       | done   | bug: spinning circle in project deletion confirmation dialog is transparent (no color) and looks weird | High   | Low        | `stricknani/templates/projects/_cards.html`, `stricknani/static/css/app.css` |
 | P0       | done   | AI import: never upload PDFs directly, always convert to images first for better reliability and consistency | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/extractors/pdf.py` |
-| P0       | todo   | bug: AI importer sometimes incorrectly attaches PDF page images to random steps instead of as project attachments | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/models.py`, `stricknani/prompts/ai_ingest_baseline.txt` |
+| P0       | done   | bug: AI importer sometimes incorrectly attaches PDF page images to random steps instead of as project attachments | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/models.py`, `stricknani/prompts/ai_ingest_baseline.txt` |
+| P1       | done   | bug: context menu favorite/unfavorite actions don't update menu item text after successful operation | Medium | Low        | `stricknani/templates/projects/_cards.html`, `stricknani/templates/yarn/_list_partial.html`, `stricknani/static/js/features/context_menu.js` |
+| P0       | todo   | bug: PDF file not showing in attachments list on new project form (though it saves correctly) | High   | Medium     | `stricknani/templates/projects/form.html`, `stricknani/routes/projects.py` |
+| P0       | todo   | bug: PDF page images we created are not saved as attachments (but appear in gallery incorrectly) | High   | Medium     | `stricknani/routes/projects.py`, `stricknani/services/projects/attachments.py` |
 
 ## Notes
 

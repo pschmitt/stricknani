@@ -39,12 +39,22 @@
         <span class="mdi mdi-heart text-pink-500 text-sm" title="{{ _('In favorites') }}"></span>
         {% endif %}
     </span>
+    <li id="project-{{ project_id }}-favorite-toggle" data-favorite-toggle hx-swap-oob="innerHTML">
+        {% with variant='detail' %}
+        {% include "projects/_favorite_toggle.html" %}
+        {% endwith %}
+    </li>
     {% elif yarn_id %}
     <span id="yarn-{{ yarn_id }}-favorite-heart" hx-swap-oob="innerHTML">
         {% if is_favorite %}
         <span class="mdi mdi-heart text-pink-500 text-sm" title="{{ _('In favorites') }}"></span>
         {% endif %}
     </span>
+    <li id="yarn-{{ yarn_id }}-favorite-toggle" data-favorite-toggle hx-swap-oob="innerHTML">
+        {% with variant='detail' %}
+        {% include "yarn/_favorite_toggle.html" %}
+        {% endwith %}
+    </li>
     {% endif %}
 {% endif %}
 

@@ -61,6 +61,9 @@
         menu.classList.remove('hidden');
         menu.classList.add('fixed', 'z-[2000]', 'opacity-0', 'transition-opacity', 'duration-200');
         
+        // Remove IDs from cloned items to avoid duplicate ID issues and OOB swap confusion
+        menu.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+        
         // Position the menu
         document.body.appendChild(menu);
         
@@ -87,7 +90,17 @@
         // Auto-hide menu when clicking a link or button
         menu.querySelectorAll('a, button').forEach(el => {
             el.addEventListener('click', () => {
-                setTimeout(hideMenu, 150);
+                // If it's an htmx element, we wait for afterRequest
+                if (el.hasAttribute('hx-post') || el.hasAttribute('hx-get') || 
+                    el.hasAttribute('hx-put') || el.hasAttribute('hx-delete') || 
+                    el.hasAttribute('hx-patch')) {
+                    el.addEventListener('htmx:afterRequest', () => {
+                        setTimeout(hideMenu, 100);
+                    }, { once: true });
+                } else {
+                    // Regular link or button
+                    setTimeout(hideMenu, 150);
+                }
             });
         });
         

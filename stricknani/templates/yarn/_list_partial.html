@@ -121,7 +121,7 @@
     <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
     {% elif section == 'context_menu' %}
     <ul class="menu p-2 bg-base-100 rounded-box border border-base-200 shadow-xl">
-        <li data-favorite-toggle>
+        <li id="yarn-{{ yarn.id }}-favorite-toggle" data-favorite-toggle>
             {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
             {% include "yarn/_favorite_toggle.html" %}
             {% endwith %}
