@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
+import anyio
 from fastapi import UploadFile
 from PIL import Image
 
@@ -143,31 +144,37 @@ async def create_thumbnail(
     Returns:
         Filename of the thumbnail
     """
-    # Open and resize image
-    with Image.open(source_path) as img:
-        # Convert RGBA to RGB if necessary
-        if img.mode in ("RGBA", "LA", "P"):
-            background = Image.new("RGB", img.size, (255, 255, 255))
-            if img.mode == "P":
-                img = img.convert("RGBA")
-            background.paste(img, mask=img.split()[-1] if img.mode == "RGBA" else None)
-            img = background
+    def _create() -> str:
+        # Open and resize image (Pillow is CPU-bound; keep it off the event loop).
+        with Image.open(source_path) as img:
+            # Convert RGBA to RGB if necessary
+            if img.mode in ("RGBA", "LA", "P"):
+                background = Image.new("RGB", img.size, (255, 255, 255))
+                if img.mode == "P":
+                    img = img.convert("RGBA")
+                background.paste(
+                    img,
+                    mask=img.split()[-1] if img.mode == "RGBA" else None,
+                )
+                img = background
 
-        # Resize maintaining aspect ratio
-        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            # Resize maintaining aspect ratio
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
 
-        # Generate thumbnail filename
-        thumbnail_name = f"thumb_{source_path.stem}.jpg"
+            # Generate thumbnail filename
+            thumbnail_name = f"thumb_{source_path.stem}.jpg"
 
-        # Create directory structure
-        thumb_dir = config.MEDIA_ROOT / "thumbnails" / subdir / str(entity_id)
-        thumb_dir.mkdir(parents=True, exist_ok=True)
+            # Create directory structure
+            thumb_dir = config.MEDIA_ROOT / "thumbnails" / subdir / str(entity_id)
+            thumb_dir.mkdir(parents=True, exist_ok=True)
 
-        # Save thumbnail
-        thumb_path = thumb_dir / thumbnail_name
-        img.save(thumb_path, "JPEG", quality=85, optimize=True)
+            # Save thumbnail
+            thumb_path = thumb_dir / thumbnail_name
+            img.save(thumb_path, "JPEG", quality=85, optimize=True)
 
-        return thumbnail_name
+            return thumbnail_name
+
+    return await anyio.to_thread.run_sync(_create)
 
 
 def create_pdf_thumbnail(
