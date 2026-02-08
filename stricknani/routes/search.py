@@ -9,10 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from stricknani.database import get_db
-from stricknani.main import render_template
 from stricknani.models import Project, User, Yarn
 from stricknani.routes.auth import require_auth
 from stricknani.utils.files import get_thumbnail_url
+from stricknani.web.templating import render_template
 
 router: APIRouter = APIRouter(prefix="/search", tags=["search"])
 

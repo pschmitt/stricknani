@@ -33,7 +33,6 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from stricknani.config import config
 from stricknani.database import get_db
-from stricknani.main import get_language, render_template, templates
 from stricknani.models import (
     Attachment,
     Category,
@@ -89,6 +88,7 @@ from stricknani.utils.wayback import (
     build_wayback_fallback_url,
     store_wayback_snapshot,
 )
+from stricknani.web.templating import get_language, render_template, templates
 
 router: APIRouter = APIRouter(prefix="/projects", tags=["projects"])
 

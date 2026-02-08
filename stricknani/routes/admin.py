@@ -14,7 +14,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.config import config
 from stricknani.database import get_db
-from stricknani.main import get_language, render_template, templates
 from stricknani.models import User
 from stricknani.routes.auth import require_admin
 from stricknani.utils.auth import get_password_hash
@@ -25,6 +24,7 @@ from stricknani.utils.files import (
 )
 from stricknani.utils.gravatar import gravatar_url
 from stricknani.utils.i18n import gettext, install_i18n
+from stricknani.web.templating import get_language, render_template, templates
 
 router: APIRouter = APIRouter(prefix="/admin", tags=["admin"])
 

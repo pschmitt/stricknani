@@ -29,7 +29,6 @@ from sqlalchemy.orm import selectinload
 
 from stricknani.config import config
 from stricknani.database import get_db
-from stricknani.main import render_template
 from stricknani.models import Project, User, Yarn, YarnImage, user_favorite_yarns
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.files import (
@@ -71,6 +70,7 @@ from stricknani.utils.wayback import (
     build_wayback_fallback_url,
     store_wayback_snapshot,
 )
+from stricknani.web.templating import render_template
 
 router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
 

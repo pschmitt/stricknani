@@ -5,7 +5,7 @@ from pathlib import Path
 from babel.messages.pofile import read_po
 from starlette.requests import Request
 
-from stricknani.main import get_language
+from stricknani.web.templating import get_language
 
 LOCALES_DIR = Path(__file__).resolve().parents[1] / "stricknani" / "locales"
 

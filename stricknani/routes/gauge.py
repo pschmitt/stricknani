@@ -5,10 +5,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from stricknani.main import render_template
 from stricknani.models import User
 from stricknani.routes.auth import get_current_user
 from stricknani.utils.gauge import calculate_gauge
+from stricknani.web.templating import render_template
 
 router: APIRouter = APIRouter(prefix="/gauge", tags=["gauge"])
 

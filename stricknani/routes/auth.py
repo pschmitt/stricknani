@@ -18,7 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.config import config
 from stricknani.database import get_db
-from stricknani.main import render_template
 from stricknani.models import User
 from stricknani.utils.auth import (
     authenticate_user,
@@ -27,6 +26,7 @@ from stricknani.utils.auth import (
     decode_access_token,
     get_user_by_email,
 )
+from stricknani.web.templating import render_template
 
 router: APIRouter = APIRouter(prefix="/auth", tags=["auth"])
 
