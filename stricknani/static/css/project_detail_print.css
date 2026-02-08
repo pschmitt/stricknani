@@ -1,0 +1,79 @@
+@media print {
+  /* Hide UI elements */
+  .navbar,
+  .footer,
+  .btn,
+  .dropdown,
+  .toast-container,
+  .mdi-arrow-left,
+  .mdi-dots-vertical,
+  nav,
+  header,
+  aside,
+  button,
+  input,
+  .no-print,
+  #stitch-sample-photos {
+    display: none !important;
+  }
+
+  /* Reset background and text colors */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Main layout linearization */
+  .grid {
+    display: block !important;
+  }
+
+  .col-span-2,
+  .lg\:col-span-3,
+  .lg\:col-span-2 {
+    width: 100% !important;
+  }
+
+  /* Force mobile details view, hide sidebar */
+  .lg\:hidden {
+    display: block !important;
+  }
+
+  .hidden.lg\:block {
+    display: none !important;
+  }
+
+  /* Gallery tweaks */
+  .pswp-gallery {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+  }
+
+  .pswp-gallery > div,
+  .pswp-gallery > a {
+    display: block !important;
+    aspect-ratio: auto !important;
+    height: auto !important;
+    break-inside: avoid;
+  }
+
+  .pswp-gallery img {
+    object-fit: contain !important;
+    height: auto !important;
+    max-height: 400px !important;
+    width: 100% !important;
+    border-radius: 4px !important;
+  }
+
+  /* Expand text */
+  .prose {
+    max-width: none !important;
+  }
+
+  /* Hide the "more images" overlay */
+  .absolute.inset-0.bg-slate-900\\/60 {
+    display: none !important;
+  }
+}
+

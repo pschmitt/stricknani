@@ -36,38 +36,6 @@
 {% endset %}
 
 {% block form_styles %}
-<style>
-    .tab-content {
-        display: block;
-        min-height: 200px;
-    }
-
-    .tab-content.hidden {
-        display: none;
-    }
-
-    .collapse-right.collapse-arrow > .collapse-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        position: relative;
-        padding-right: 3rem;
-        cursor: pointer;
-    }
-
-    .collapse-right.collapse-arrow > .collapse-title::after {
-        right: 1.25rem;
-        transform: translateY(-50%) rotate(-45deg);
-    }
-
-    .collapse-right.collapse-arrow > input:checked ~ .collapse-title::after {
-        transform: translateY(-50%) rotate(-45deg);
-    }
-
-    .collapse-right > input:not(:checked) ~ .collapse-content {
-        padding-right: 2.5rem;
-    }
-</style>
 {% endblock %}
 
 {% block form_before %}

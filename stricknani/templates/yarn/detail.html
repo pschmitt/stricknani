@@ -57,30 +57,7 @@
 {% include "shared/unified_navbar.html" %}
 {% endblock %}
 
-{% block head %}
-<style>
-    .collapse-right.collapse-arrow > .collapse-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        position: relative;
-        padding-right: 3rem;
-    }
-
-    .collapse-right.collapse-arrow > .collapse-title::after {
-        right: 1.25rem;
-        transform: translateY(-50%) rotate(-45deg);
-    }
-
-    .collapse-right.collapse-arrow > input:checked ~ .collapse-title::after {
-        transform: translateY(-50%) rotate(-45deg);
-    }
-
-    .collapse-right > input:not(:checked) ~ .collapse-content {
-        padding-right: 2.5rem;
-    }
-</style>
-{% endblock %}
+{% block head %}{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">

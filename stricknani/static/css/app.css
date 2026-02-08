@@ -1,5 +1,37 @@
 /* Global non-vendor styles (extracted from templates). */
 
+/* Tabs: used by list/form pages. */
+.tab-content {
+  display: block;
+  min-height: 200px;
+}
+
+.tab-content.hidden {
+  display: none;
+}
+
+/* Right-aligned collapse arrow variant used in detail + form sidebars. */
+.collapse-right.collapse-arrow > .collapse-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  padding-right: 3rem;
+}
+
+.collapse-right.collapse-arrow > .collapse-title::after {
+  right: 1.25rem;
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+.collapse-right.collapse-arrow > input:checked ~ .collapse-title::after {
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+.collapse-right > input:not(:checked) ~ .collapse-content {
+  padding-right: 2.5rem;
+}
+
 /* CropperJS v2 uses web components; provide a circular preview overlay. */
 #crop-modal cropper-canvas {
   width: 100%;
@@ -418,4 +450,3 @@ textarea::placeholder {
   opacity: 1;
   color: #fff;
 }
-

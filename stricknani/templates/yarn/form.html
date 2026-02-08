@@ -8,29 +8,6 @@
 {% block form_container_class %}max-w-5xl{% endblock %}
 
 {% block form_styles %}
-<style>
-    .collapse-right.collapse-arrow > .collapse-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        position: relative;
-        padding-right: 3rem;
-        cursor: pointer;
-    }
-
-    .collapse-right.collapse-arrow > .collapse-title::after {
-        right: 1.25rem;
-        transform: translateY(-50%) rotate(-45deg);
-    }
-
-    .collapse-right.collapse-arrow > input:checked ~ .collapse-title::after {
-        transform: translateY(-50%) rotate(-45deg);
-    }
-
-    .collapse-right > input:not(:checked) ~ .collapse-content {
-        padding-right: 2.5rem;
-    }
-</style>
 {% endblock %}
 
 {# Set variables for the unified navbar #}
