@@ -2098,12 +2098,12 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
             class="block">
             <img src="${url}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
         </a>
-	        <button type="button" data-call="promotePendingImage" data-call-args='[\"$this\",\"$dataset:url\"]' data-url="${url}"
+	        <button type="button" data-call="promotePendingImage" data-call-args='["$this","$dataset:url"]' data-url="${url}"
 	            class="promote-pending-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
 	            title="{{ _('Make title image') }}">
 	            <span class="mdi mdi-star-outline"></span>
 	        </button>
-	        <button type="button" data-call="deletePendingImage" data-call-args='[\"$this\",\"$dataset:url\"]' data-url="${url}" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+	        <button type="button" data-call="deletePendingImage" data-call-args='["$this","$dataset:url"]' data-url="${url}" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
 	            <span class="mdi mdi-delete"></span>
 	        </button>
     `;

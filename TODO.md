@@ -18,10 +18,9 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 
 ## Task List
 
-| Priority | Status | Task                                                                                                 | Impact | Complexity | Primary Files                                                                                                                                |
-| -------- | ------ | ---------------------------------------------------------------------------------------------------- | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| P0       | todo   | Bug: Copy-to-clipboard buttons next to source URLs put "[object HTMLButtonElement]" into clipboard | High   | Low        | Template files with copy buttons, JavaScript clipboard functionality                                                                         |
-| P2       | todo   | Replace runtime Tailwind-in-browser with a prebuilt static CSS bundle for performance and easier CSP | High   | High       | `stricknani/templates/base.html`, build tooling (`justfile`, `flake.nix`)                                                                    |
+| Priority | Status | Task                                                                                                 | Impact | Complexity | Primary Files                                                              |
+| -------- | ------ | ---------------------------------------------------------------------------------------------------- | ------ | ---------- | -------------------------------------------------------------------------- |
+| P2       | todo   | Replace runtime Tailwind-in-browser with a prebuilt static CSS bundle for performance and easier CSP | High   | High       | `stricknani/templates/base.html`, build tooling (`justfile`, `flake.nix`) |
 
 ## Notes
 

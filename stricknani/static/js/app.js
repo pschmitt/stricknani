@@ -138,6 +138,10 @@
   };
 
   window.copyToClipboard = async (text, btn) => {
+    if (typeof text !== "string" || !text) {
+      console.warn("copyToClipboard called with invalid text:", text);
+      return;
+    }
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         try {
@@ -686,6 +690,9 @@
         const resolvedArgs = args.map((arg) => resolveCallArg(arg, element, eventObj));
         fn(...resolvedArgs);
       } else {
+        if (rawArgs) {
+          console.warn(`Failed to parse call args for ${fnName}:`, rawArgs);
+        }
         fn(element);
       }
     };

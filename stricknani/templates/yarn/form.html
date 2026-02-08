@@ -654,7 +654,7 @@ attrs='data-action="open-dialog" data-dialog-id="deleteYarnDialog"', class="w-fu
                 <img src="${url}" class="h-full w-full object-cover cursor-zoom-in">
             </a>
             <input type="hidden" name="import_image_urls" value="${url}">
-	            <button type="button" data-call="promotePendingYarnImage" data-call-args='[\"$this\",\"$dataset:url\"]' data-url="${url}"
+	            <button type="button" data-call="promotePendingYarnImage" data-call-args='["$this","$dataset:url"]' data-url="${url}"
 	                class="promote-pending-yarn-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
 	                title="{{ _('Make primary photo') }}">
 	                <span class="mdi mdi-star-outline text-sm"></span>

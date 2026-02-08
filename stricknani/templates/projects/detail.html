@@ -255,7 +255,7 @@
                                         <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                                         {{ project.link }}
                                     </a>
-	                                    <button type="button" data-call="copyToClipboard" data-call-args='[{{ project.link|tojson }},\"$this\"]'
+	                                    <button type="button" data-call="copyToClipboard" data-call-args='[{{ project.link|tojson }},"$this"]'
 	                                        class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
 	                                        title="{{ _('Copy URL') }}">
                                         <span class="mdi mdi-content-copy text-xs"></span>
@@ -661,7 +661,7 @@
                                     <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                                     {{ project.link }}
                                 </a>
-	                                <button type="button" data-call="copyToClipboard" data-call-args='[{{ project.link|tojson }},\"$this\"]'
+	                                <button type="button" data-call="copyToClipboard" data-call-args='[{{ project.link|tojson }},"$this"]'
 	                                    class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
 	                                    title="{{ _('Copy URL') }}">
                                     <span class="mdi mdi-content-copy text-xs"></span>
