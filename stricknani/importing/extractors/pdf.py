@@ -174,20 +174,10 @@ class PDFExtractor(ContentExtractor):
                             images.append(image_bytes)
                             seen_checksums.add(checksum)
 
-                # Strategy 2: Always render the first 10 pages as images.
-                # This ensures we capture diagrams, charts, and text that might
-                # be important context for the AI, even if they aren't embedded
-                # as separate image objects. Deduplication handles overlap.
-                for page_num in range(min(len(doc), 10)):
-                    page = doc.load_page(page_num)
-                    # Render page to a high-res image (2.0 zoom)
-                    pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-                    img_bytes = pix.tobytes("jpg")
-
-                    checksum = hashlib.md5(img_bytes).hexdigest()
-                    if checksum not in seen_checksums:
-                        images.append(img_bytes)
-                        seen_checksums.add(checksum)
+                # Strategy 2: REMOVED.
+                # We used to render pages as images here, but that caused full pages
+                # to appear in the gallery (as "extracted images") and confused the AI.
+                # Project pages are now handled explicitly via render_pages_as_images.
 
         except Exception as exc:
             logger.warning("Failed to extract images from PDF: %s", exc)

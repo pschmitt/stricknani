@@ -1018,18 +1018,23 @@ async def import_pattern(
                         embedded_urls[i + 1] = url
 
                 # Now map everything to URLs for the UI
-                # Filter out "Image 1" etc. from the AI's image_urls if it
-                # hallucinated them there
-                image_urls = [
-                    u
-                    for u in extracted.image_urls
-                    if not re.search(r"^Image (\d+)$", str(u), re.I)
-                ]
+                # We trust the AI to select which images belong in the main gallery (image_urls)
+                # versus which belong in steps.
+                image_urls = []
+                if extracted.image_urls:
+                    for u in extracted.image_urls:
+                        match = re.search(r"Image (\d+)", str(u), re.I)
+                        if match:
+                            idx = int(match.group(1))
+                            if idx in embedded_urls:
+                                image_urls.append(embedded_urls[idx])
+                        else:
+                            image_urls.append(u)
 
-                # Add embedded images to the main gallery (these are the "real" images
-                # from within the PDF, not the page screenshots).
-                if embedded_urls:
-                    image_urls.extend(list(embedded_urls.values()))
+                # Fallback: If AI selected no main images but we have embedded images,
+                # add the first one as a title candidate?
+                # For now, let's trust the AI. If it wants images in the gallery,
+                # the prompt instructs it to put them there.
 
                 # Process steps and resolve image references
                 processed_steps = []
@@ -2232,8 +2237,7 @@ async def create_project(
                 project_id=project.id,
             )
             db.add(step)
-            await db.flush()  # Get step ID
-            step_images = step_data.get("images")
+            step_images = step_data.get("image_urls") or step_data.get("images")
             if step_images:
                 # Handle both regular URLs and temporary pdf_image URLs
                 regular_urls = []
@@ -2697,7 +2701,7 @@ async def update_project(
                 db.add(step)
                 await db.flush()
 
-            step_images = step_data.get("images")
+            step_images = step_data.get("image_urls") or step_data.get("images")
             if step_images:
                 # Handle both regular URLs and temporary pdf_image URLs
                 regular_urls = []
@@ -2828,50 +2832,6 @@ async def update_project(
                     alt_text=original_filename,
                 )
                 permanently_saved_tokens.add(token)
-
-            # If it's an image, save it as an Image record so it appears in the gallery
-            if content_type and content_type.startswith("image/"):
-                # Mock UploadFile for the service
-                import io
-
-                from fastapi import UploadFile
-                from starlette.datastructures import Headers
-
-                from stricknani.services.projects.images import upload_title_image
-
-                mock_file = UploadFile(
-                    filename=original_filename,
-                    file=io.BytesIO(pending_bytes),
-                    headers=Headers({"content-type": content_type}),
-                )
-                await upload_title_image(
-                    db,
-                    project_id=project.id,
-                    file=mock_file,
-                    alt_text=original_filename,
-                )
-            else:
-                # Save as a regular attachment (PDF, text, etc.)
-                from stricknani.models import Attachment
-                from stricknani.services.projects.attachments import (
-                    store_project_attachment_bytes,
-                )
-
-                stored = await store_project_attachment_bytes(
-                    project.id,
-                    content=pending_bytes,
-                    original_filename=original_filename,
-                    content_type=content_type,
-                )
-                db.add(
-                    Attachment(
-                        filename=stored.filename,
-                        original_filename=stored.original_filename,
-                        content_type=stored.content_type,
-                        size_bytes=stored.size_bytes,
-                        project_id=project.id,
-                    )
-                )
 
     await db.commit()
 
