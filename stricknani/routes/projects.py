@@ -1049,12 +1049,11 @@ async def import_pattern(
                     # If we don't have permanent source_attachments yet (new project),
                     # create a temporary one for the UI to show the main PDF.
                     main_token = import_attachment_tokens[0]
-                    # PDF rendered pages might have tokens too, but the first one is the main PDF.
-                    # We can use get_file_url to create a preview URL for it.
+                    # PDF rendered pages might have tokens too, but the first one
+                    # is the main PDF.
                     try:
-                        # Find the main PDF token (the first one added by store_source_file_for_import)
-                        # Actually, store_source_file_for_import returns it in import_attachment_tokens.
-                        # For PDF import, it's the first token in the list.
+                        # Find the main PDF token
+                        # (first token added by store_source_file_for_import)
                         url = get_file_url(
                             uploaded_file_name or "pattern.pdf",
                             entity_id=current_user.id,
@@ -2251,6 +2250,13 @@ async def create_project(
                         if token in permanently_saved_tokens:
                             continue
 
+                        # Guard: Skip PDF assets in the gallery
+                        # they should be attachments only.
+                        if original_filename.startswith(
+                            "pdf_image_"
+                        ) or original_filename.startswith("pdf_page_"):
+                            continue
+
                         # Mock UploadFile for the service
                         import io
 
@@ -2522,6 +2528,13 @@ async def update_project(
 
                         # Skip if it was already saved to a step
                         if token in permanently_saved_tokens:
+                            continue
+
+                        # Guard: Skip PDF assets in the gallery
+                        # they should be attachments only.
+                        if original_filename.startswith(
+                            "pdf_image_"
+                        ) or original_filename.startswith("pdf_page_"):
                             continue
 
                         # Mock UploadFile for the service
