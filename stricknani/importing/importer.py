@@ -44,17 +44,6 @@ def is_garnstudio_url(url: str) -> bool:
     return _is_garnstudio_url(url)
 
 
-def _is_valid_import_url(url: str) -> bool:
-    """Ensure the import URL uses http(s) and has a host."""
-    parsed = urlparse(url)
-    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
-
-
-def is_valid_import_url(url: str) -> bool:
-    """Public wrapper for import URL validation."""
-    return _is_valid_import_url(url)
-
-
 def trim_import_strings(value: Any) -> Any:
     """Recursively trim leading/trailing whitespace from imported strings."""
     if isinstance(value, str):
@@ -66,23 +55,20 @@ def trim_import_strings(value: Any) -> Any:
     return value
 
 
-# Image import related constants
-IMPORT_IMAGE_MAX_BYTES = 5 * 1024 * 1024
-IMPORT_IMAGE_MAX_COUNT = 10
-IMPORT_IMAGE_TIMEOUT = 10
-IMPORT_IMAGE_MIN_DIMENSION = 64
-IMPORT_IMAGE_SSIM_THRESHOLD = 0.95
-IMPORT_IMAGE_HEADERS = {
-    "User-Agent": "Stricknani Importer/0.1",
-    "Accept": "image/*",
-}
-IMPORT_ALLOWED_IMAGE_TYPES = {
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-}
-IMPORT_ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+# Import image constants from centralized location
+from stricknani.importing.images.constants import (  # noqa: E402
+    IMPORT_ALLOWED_IMAGE_EXTENSIONS,
+    IMPORT_IMAGE_HEADERS,
+    IMPORT_IMAGE_MAX_BYTES,
+    IMPORT_IMAGE_MAX_COUNT,
+    IMPORT_IMAGE_MIN_DIMENSION,
+    IMPORT_IMAGE_SSIM_THRESHOLD,
+    IMPORT_IMAGE_TIMEOUT,
+)
+from stricknani.importing.images.validator import (  # noqa: E402
+    is_allowed_import_image,
+    is_valid_import_url,
+)
 
 
 @dataclass
@@ -166,6 +152,7 @@ async def filter_import_image_urls(
                     continue
 
             try:
+
                 def _inspect_image(
                     content: bytes,
                 ) -> tuple[int, int, SimilarityImage | None]:
@@ -242,21 +229,6 @@ async def filter_import_image_urls(
             )
 
     return [candidate.url for candidate in accepted]
-
-
-def _is_allowed_import_image(content_type: str | None, url: str) -> bool:
-    """Validate content type or file extension for image imports."""
-    if content_type:
-        normalized = content_type.split(";", 1)[0].strip().lower()
-        if normalized in IMPORT_ALLOWED_IMAGE_TYPES:
-            return True
-    extension = Path(urlparse(url).path).suffix.lower()
-    return extension in IMPORT_ALLOWED_IMAGE_EXTENSIONS
-
-
-def is_allowed_import_image(content_type: str | None, url: str) -> bool:
-    """Public wrapper for image content-type / extension validation."""
-    return _is_allowed_import_image(content_type, url)
 
 
 class PatternImporter:
