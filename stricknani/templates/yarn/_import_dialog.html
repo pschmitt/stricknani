@@ -1,109 +1,14 @@
-{% import "macros/dialogs.html" as dialogs %}
-{% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl') %}
-<form id="importYarnForm" action="/yarn/import" method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <div class="space-y-6 py-2">
-        <!-- Magic Header -->
-        <div class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl">
-                <span class="mdi mdi-auto-fix text-2xl"></span>
-            </div>
-            <div>
-                <h4 class="font-bold text-base">{{ _('Magic Import') }}</h4>
-                <p class="text-xs opacity-70 leading-relaxed">
-                    {{ _('Paste a URL from a yarn shop, manufacturer, or Ravelry. We\'ll try to extract all the details for you.') }}
-                </p>
-            </div>
-        </div>
-
-        <!-- URL Input -->
-        <div class="form-control w-full">
-            <label class="label pt-0">
-                <span class="label-text font-semibold">{{ _('Yarn URL') }}</span>
-            </label>
-            <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/40 group-focus-within:text-primary transition-colors">
-                    <span class="mdi mdi-link-variant text-xl"></span>
-                </div>
-                <input type="url" id="importUrl" name="url" required
-                    placeholder="{{ _('e.g. https://www.garnstudio.com/yarn.php?id=...') }}"
-                    value="{{ yarn.link if yarn and yarn.link else '' }}"
-                    class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 transition-all border-base-content/10 focus:border-primary" />
-            </div>
-        </div>
-
-        <input type="hidden" name="type" value="url">
-    </div>
-
-    <div class="modal-action mt-8">
-        {{ dialogs.dialog_cancel(_('Cancel'),
-        attrs='data-action="close-dialog" data-dialog-id="importDialog"') }}
-        {{ dialogs.dialog_primary(_('Import'), icon='mdi-auto-fix', type='submit', class='sm:btn-wide') }}
-    </div>
-</form>
-
-<!-- Loading State -->
-<div id="importLoading" class="hidden text-center py-12 space-y-4">
-    <div class="relative inline-block">
-        <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <div class="absolute inset-0 flex items-center justify-center">
-            <span class="mdi mdi-auto-fix text-primary text-xl animate-pulse"></span>
-        </div>
-    </div>
-    <div class="space-y-1">
-        <p class="text-lg font-bold">{{ _('Working some magic...') }}</p>
-        <p class="text-sm opacity-60 max-w-xs mx-auto">
-            {{ _('We are analyzing the source and extracting yarn details. This usually takes 10-20 seconds.') }}
-        </p>
-    </div>
-</div>
-
-<script>
-    document.getElementById('importYarnForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const form = e.target;
-        const formData = new FormData(form);
-        const loading = document.getElementById('importLoading');
-
-        // Hide form and show loading
-        form.classList.add('hidden');
-        loading.classList.remove('hidden');
-
-        try {
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-
-                // If we are on the form page, populate it directly
-                if (typeof window.populateYarnForm === 'function') {
-                    window.populateYarnForm(data);
-                    document.getElementById('importDialog').close();
-                    // Reset UI for next time
-                    form.classList.remove('hidden');
-                    loading.classList.add('hidden');
-                } else {
-                    // Store data for the new yarn form
-                    sessionStorage.setItem('importedYarnData', JSON.stringify(data));
-                    // Redirect to new yarn page
-                    window.location.href = '/yarn/new';
-                }
-            } else {
-                const error = await response.json();
-                alert('Import failed: ' + (error.detail || 'Unknown error'));
-                form.classList.remove('hidden');
-                loading.classList.add('hidden');
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Import failed: ' + err.message);
-            form.classList.remove('hidden');
-            loading.classList.add('hidden');
-        }
-    });
-</script>
-{% endcall %}
+{% set import_form_id = 'importYarnForm' %}
+{% set import_action = '/yarn/import' %}
+{% set import_url_label = _('Yarn URL') %}
+{% set import_url_placeholder = _('e.g. https://www.garnstudio.com/yarn.php?id=...') %}
+{% set import_url_value = yarn.link if yarn and yarn.link else '' %}
+{% set import_description = _("Paste a URL from a yarn shop, manufacturer, or Ravelry. We'll try to extract all the details for you.") %}
+{% set import_analyzing_description = _('We are analyzing the source and extracting yarn details. This usually takes 10-20 seconds.') %}
+{% set import_storage_key = 'importedYarnData' %}
+{% set import_redirect_url = '/yarn/new' %}
+{% set import_populate_fn = 'populateYarnForm' %}
+{% set import_project_id = none %}
+{% set import_use_ai = false %}
+{% set import_ai_notice = '' %}
+{% include "shared/_import_dialog.html" %}

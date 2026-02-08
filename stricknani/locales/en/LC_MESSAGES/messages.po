@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-08 11:23+0100\n"
+"POT-Creation-Date: 2026-02-08 11:25+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -32,13 +32,12 @@ msgstr ""
 #: stricknani/templates/admin/users.html:126
 #: stricknani/templates/admin/users.html:143 stricknani/templates/base.html:18
 #: stricknani/templates/base.html:129 stricknani/templates/base.html:195
-#: stricknani/templates/projects/_import_dialog.html:49
 #: stricknani/templates/projects/detail.html:764
 #: stricknani/templates/projects/detail.html:785
 #: stricknani/templates/projects/form.html:3257
 #: stricknani/templates/projects/form.html:3273
+#: stricknani/templates/shared/_import_dialog.html:50
 #: stricknani/templates/shared/form_base.html:19
-#: stricknani/templates/yarn/_import_dialog.html:39
 #: stricknani/templates/yarn/detail.html:452
 #: stricknani/templates/yarn/form.html:508
 msgid "Cancel"
@@ -849,53 +848,29 @@ msgstr "Start a project to track photos, gauge notes, and progress."
 msgid "Create Your First Project"
 msgstr ""
 
-#: stricknani/templates/projects/_import_dialog.html:2
-#: stricknani/templates/projects/_import_dialog.html:51
-#: stricknani/templates/projects/form.html:29
-#: stricknani/templates/projects/form.html:68
-#: stricknani/templates/projects/form.html:2903
-#: stricknani/templates/projects/list.html:25
-#: stricknani/templates/yarn/_import_dialog.html:2
-#: stricknani/templates/yarn/_import_dialog.html:41
-#: stricknani/templates/yarn/form.html:34
-#: stricknani/templates/yarn/form.html:998
-#: stricknani/templates/yarn/list.html:22
-msgid "Import"
+#: stricknani/templates/projects/_import_dialog.html:3
+msgid "Pattern URL"
 msgstr ""
 
-#: stricknani/templates/projects/_import_dialog.html:12
-#: stricknani/templates/yarn/_import_dialog.html:12
-msgid "Magic Import"
-msgstr ""
+#: stricknani/templates/projects/_import_dialog.html:4
+#, fuzzy
+msgid "e.g. https://www.garnstudio.com/pattern.php?id=..."
+msgstr "e.g. https://example.com/pattern"
 
-#: stricknani/templates/projects/_import_dialog.html:14
+#: stricknani/templates/projects/_import_dialog.html:6
 msgid ""
 "Paste a URL from Ravelry, a blog, or any knitting site. We'll try to "
 "extract all the details for you."
 msgstr ""
 
-#: stricknani/templates/projects/_import_dialog.html:22
-msgid "Pattern URL"
-msgstr ""
-
-#: stricknani/templates/projects/_import_dialog.html:29
-#, fuzzy
-msgid "e.g. https://www.garnstudio.com/pattern.php?id=..."
-msgstr "e.g. https://example.com/pattern"
-
-#: stricknani/templates/projects/_import_dialog.html:41
-msgid "AI-powered extraction enabled"
-msgstr ""
-
-#: stricknani/templates/projects/_import_dialog.html:64
-#: stricknani/templates/yarn/_import_dialog.html:54
-msgid "Working some magic..."
-msgstr ""
-
-#: stricknani/templates/projects/_import_dialog.html:66
+#: stricknani/templates/projects/_import_dialog.html:7
 msgid ""
 "We are analyzing the pattern and extracting details. This usually takes "
 "10-20 seconds."
+msgstr ""
+
+#: stricknani/templates/projects/_import_dialog.html:13
+msgid "AI-powered extraction enabled"
 msgstr ""
 
 #: stricknani/templates/projects/categories.html:4
@@ -1283,6 +1258,18 @@ msgstr ""
 msgid "More options"
 msgstr ""
 
+#: stricknani/templates/projects/form.html:29
+#: stricknani/templates/projects/form.html:68
+#: stricknani/templates/projects/form.html:2903
+#: stricknani/templates/projects/list.html:25
+#: stricknani/templates/shared/_import_dialog.html:2
+#: stricknani/templates/shared/_import_dialog.html:52
+#: stricknani/templates/yarn/form.html:34
+#: stricknani/templates/yarn/form.html:998
+#: stricknani/templates/yarn/list.html:22
+msgid "Import"
+msgstr ""
+
 #: stricknani/templates/projects/form.html:105
 msgid "Imported Data - Not Saved Yet"
 msgstr ""
@@ -1654,6 +1641,14 @@ msgstr ""
 msgid "No results found for \"%(query)s\""
 msgstr ""
 
+#: stricknani/templates/shared/_import_dialog.html:18
+msgid "Magic Import"
+msgstr ""
+
+#: stricknani/templates/shared/_import_dialog.html:65
+msgid "Working some magic..."
+msgstr ""
+
 #: stricknani/templates/shared/_search_bar.html:31
 msgid "Clear search"
 msgstr "Clear search"
@@ -1725,23 +1720,23 @@ msgstr ""
 msgid "Add your first yarn"
 msgstr ""
 
-#: stricknani/templates/yarn/_import_dialog.html:14
+#: stricknani/templates/yarn/_import_dialog.html:3
+#, fuzzy
+msgid "Yarn URL"
+msgstr "Yarn deleted"
+
+#: stricknani/templates/yarn/_import_dialog.html:4
+#, fuzzy
+msgid "e.g. https://www.garnstudio.com/yarn.php?id=..."
+msgstr "e.g. https://example.com/yarn-details"
+
+#: stricknani/templates/yarn/_import_dialog.html:6
 msgid ""
 "Paste a URL from a yarn shop, manufacturer, or Ravelry. We'll try to "
 "extract all the details for you."
 msgstr ""
 
-#: stricknani/templates/yarn/_import_dialog.html:22
-#, fuzzy
-msgid "Yarn URL"
-msgstr "Yarn deleted"
-
-#: stricknani/templates/yarn/_import_dialog.html:29
-#, fuzzy
-msgid "e.g. https://www.garnstudio.com/yarn.php?id=..."
-msgstr "e.g. https://example.com/yarn-details"
-
-#: stricknani/templates/yarn/_import_dialog.html:56
+#: stricknani/templates/yarn/_import_dialog.html:7
 msgid ""
 "We are analyzing the source and extracting yarn details. This usually "
 "takes 10-20 seconds."
