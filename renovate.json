@@ -11,31 +11,29 @@
       "groupName": "frontend dependencies"
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["vendir.yml"],
-      "postUpgradeTasks": {
-        "commands": ["./hack/vendir-sync.sh"],
-        "fileFilters": ["stricknani/static/vendor/**"]
-      }
+      "commitMessageTopic": "vendored dependencies"
     }
   ],
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Update CDN links in HTML files",
-      "fileMatch": ["\\.html$"],
+      "description": "Update vendir npm dependencies",
+      "fileMatch": ["^vendir\\.yml$"],
       "matchStrings": [
-        "<!-- renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?) -->\\s+<[^>]+(?:href|src)=\"[^\"]*npm/(?<packageName>@?[^@\\s\"]+)@(?<currentValue>[^/\\\"]+)"
-      ]
+        "# renovate: datasource=npm depName=(?<depName>[^\\s]+)\\n\\s*- path:[^\\n]+\\n\\s*http:\\n\\s*url: https://registry\\.npmjs\\.org/(?:@[^/]+/)?[^/]+/-/[^-\\n]+-(?<currentValue>[^/\\s]+)\\.tgz"
+      ],
+      "datasourceTemplate": "npm"
     },
     {
       "customType": "regex",
-      "description": "Update vendir URLs (npm tarballs, Sentry CDN)",
+      "description": "Update vendir Sentry browser SDK",
       "fileMatch": ["^vendir\\.yml$"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*url:\\s*https://registry\\.npmjs\\.org/(?<packageName>[^\\s]+?)/-/[^\\s-]+-(?<currentValue>[^\\s/]+)\\.tgz",
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*url:\\s*https://browser\\.sentry-cdn\\.com/(?<currentValue>[^/\\s]+)/bundle\\.tracing\\.min\\.js"
-      ]
+        "# renovate: datasource=github-releases depName=(?<depName>[^\\s]+)\\n\\s*- path:[^\\n]+\\n\\s*http:\\n\\s*url: https://browser\\.sentry-cdn\\.com/(?<currentValue>[^/]+)/bundle\\.tracing\\.min\\.js"
+      ],
+      "datasourceTemplate": "github-releases"
     }
   ],
   "pep621": {
