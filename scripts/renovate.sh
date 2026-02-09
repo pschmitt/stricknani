@@ -19,7 +19,7 @@ run_renovate() {
   github_token="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null)}"
 
   # Check if we have a token
-  if [[ -z "${github_token}" ]]
+  if [[ -z "$github_token" ]]
   then
     {
       echo "ERROR: GitHub token not available. Either:" >&2
@@ -36,8 +36,8 @@ run_renovate() {
   echo "Using GitHub token: ${github_token:0:10}..."
 
   # Run Renovate with --platform local
-  renovate -- \
-    --token "${github_token}" \
+  RENOVATE_GITHUB_COM_TOKEN="$github_token" renovate \
+    --token "$github_token" \
     --platform local \
     "$@"
 }
