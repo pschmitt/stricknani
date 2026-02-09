@@ -84,9 +84,6 @@
 
             shellHook = ''
               ${pre-commit-check.shellHook}
-              echo "Stricknani development environment"
-              echo "Run 'just setup' to initialize the project"
-              echo "Run 'just run' to start the development server"
             '';
           };
 
