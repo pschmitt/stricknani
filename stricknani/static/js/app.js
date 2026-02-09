@@ -859,7 +859,9 @@
 
     // Close daisyUI dropdowns on Escape and on outside click.
     const closeDropdowns = () => {
-      document.querySelectorAll(".dropdown").forEach((d) => d.blur());
+      document.querySelectorAll(".dropdown").forEach((d) => {
+        d.blur();
+      });
 
       if (document.activeElement instanceof HTMLElement) {
         const activeDropdown = document.activeElement.closest(".dropdown");

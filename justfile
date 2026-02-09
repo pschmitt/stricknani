@@ -25,6 +25,10 @@ ci-setup-prettier:
 ci-setup-vendir:
   go install carvel.dev/vendir/cmd/vendir@latest
 
+[group: 'ci']
+ci-setup-biome:
+  npm install -g @biomejs/biome
+
 # Run dev server with reload. Use -b to skip opening the browser.
 [group: 'dev']
 run *args:
@@ -74,7 +78,7 @@ run *args:
 
 # Run linters
 [group: 'lint']
-lint: lint-ruff lint-mypy
+lint: lint-ruff lint-mypy lint-js lint-css
 
 [group: 'lint']
 lint-ruff:
@@ -83,6 +87,14 @@ lint-ruff:
 [group: 'lint']
 lint-mypy:
   uv run mypy .
+
+[group: 'lint']
+lint-js:
+  biome lint stricknani/static/js
+
+[group: 'lint']
+lint-css:
+  biome lint stricknani/static/css
 
 # Check translations
 [group: 'i18n']

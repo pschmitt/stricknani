@@ -70,7 +70,9 @@
     );
 
     // Remove IDs from cloned items to avoid duplicate ID issues and OOB swap confusion
-    menu.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+    menu.querySelectorAll("[id]").forEach((el) => {
+      el.removeAttribute("id");
+    });
 
     // Position the menu
     document.body.appendChild(menu);
@@ -122,7 +124,7 @@
 
     // Re-bind events for the cloned menu
     menu.querySelectorAll("[data-call]").forEach((el) => {
-      el.addEventListener("click", (e) => {
+      el.addEventListener("click", (_e) => {
         const call = el.dataset.call;
         const args = JSON.parse(el.dataset.callArgs || "[]");
         if (typeof window[call] === "function") {
@@ -134,7 +136,7 @@
 
     // Special handling for delete dialogs since they need to update the dialog content
     menu.querySelectorAll('[data-action="open-dialog"]').forEach((el) => {
-      el.addEventListener("click", (e) => {
+      el.addEventListener("click", (_e) => {
         const dialogId = el.dataset.dialogId;
         const dialog = document.getElementById(dialogId);
         if (dialog) {

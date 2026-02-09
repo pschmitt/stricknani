@@ -78,6 +78,8 @@
               tesseract
               nodePackages.prettier
               vendir
+              biome
+              prettier
             ];
 
             shellHook = ''

@@ -84,7 +84,9 @@
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      list.forEach((el) => el.classList.remove("bg-primary/10"));
+      list.forEach((el) => {
+        el.classList.remove("bg-primary/10");
+      });
       activeIndex = (activeIndex + 1) % list.length;
       list[activeIndex].classList.add("bg-primary/10");
       list[activeIndex].scrollIntoView({ block: "nearest" });
@@ -93,7 +95,9 @@
 
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      list.forEach((el) => el.classList.remove("bg-primary/10"));
+      list.forEach((el) => {
+        el.classList.remove("bg-primary/10");
+      });
       activeIndex = (activeIndex - 1 + list.length) % list.length;
       list[activeIndex].classList.add("bg-primary/10");
       list[activeIndex].scrollIntoView({ block: "nearest" });
