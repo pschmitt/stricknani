@@ -15,9 +15,20 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+
+      - name: Install vendir
+        run: just ci-setup-vendir
+
       - name: Check vendored assets are up to date
         run: |
-          ./hack/vendir-check.sh
+          just vendor-check
 
   vendir_autofix_renovate:
     runs-on: ubuntu-latest
@@ -28,9 +39,20 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+
+      - name: Install vendir
+        run: just ci-setup-vendir
+
       - name: Sync vendored assets
         run: |
-          ./hack/vendir-sync.sh
+          just vendor-sync
 
       - name: Commit and push if needed
         run: |

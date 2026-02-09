@@ -12,6 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
@@ -21,11 +24,7 @@ jobs:
         run: nix flake check
 
       - name: Build with Nix
-        run: |
-          nix build
-          tree result
+        run: just build-nix
 
       - name: Build Nix container
-        run: |
-          nix build '.#stricknani-docker'
-          tree result
+        run: just build-container

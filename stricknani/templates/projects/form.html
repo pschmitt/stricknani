@@ -2068,7 +2068,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                     const token = idOrToken;
                     const el = document.querySelector(`[data-pending-token="${token}"]`);
                     el?.remove();
-                    
+
                     const input = document.getElementById('import_attachment_tokens');
                     if (input && input.value) {
                         try {
@@ -2909,11 +2909,11 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
         if (dedupedImageUrls.length > 0) {
             // Find the best title image: prefer regular URLs over /media/imports/
             const bestTitleUrl = dedupedImageUrls.find(u => !u.includes('/media/imports/')) || dedupedImageUrls[0];
-            
+
             dedupedImageUrls.forEach(url => {
                 if (typeof addPendingTitleImageToGallery === 'function') {
-                    addPendingTitleImageToGallery(url, { 
-                        skipAutoPromote: true 
+                    addPendingTitleImageToGallery(url, {
+                        skipAutoPromote: true
                     });
                 }
             });

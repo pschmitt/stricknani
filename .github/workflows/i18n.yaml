@@ -12,6 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -23,8 +26,7 @@ jobs:
           python-version: "3.x"
 
       - name: Install dependencies
-        run: |
-          uv sync --extra dev
+        run: just ci-setup-py
 
       - name: Check translations
-        run: uv run python -m stricknani.scripts.check_translations
+        run: just i18n-check

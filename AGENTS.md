@@ -310,7 +310,7 @@ Linting is mandatory in CI.
 
 | Env   | Description                                                  |
 | ----- | ------------------------------------------------------------ |
-| Dev   | SQLite, local media, `.envrc` file for secrets               |
+| Dev   | SQLite, local media, `.env` file for secrets               |
 | Prod  | Configurable DB URL, media volume mount, HTTPS reverse proxy |
 | Flags | `FEATURE_SIGNUP_ENABLED` (toggleable)                        |
 
@@ -430,7 +430,7 @@ This section summarizes the initial implementation of Stricknani v0.1.0.
 9. Developer Tools
    - justfile with common tasks (setup, run, lint, test, etc.)
    - Demo data seeder for development (`just demo-data`)
-   - Environment configuration via `.envrc` file
+   - Environment configuration via `.env` file
    - uv for fast dependency management
 
 ## Project Structure

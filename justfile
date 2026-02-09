@@ -12,27 +12,45 @@ setup:
   uv venv
   uv pip install -e ".[dev]"
 
+# CI helpers
+[group: 'ci']
+ci-setup-py:
+  uv sync --extra dev
+
+[group: 'ci']
+ci-setup-prettier:
+  npm install -g prettier
+
+[group: 'ci']
+ci-setup-vendir:
+  go install carvel.dev/vendir/cmd/vendir@latest
+
 # Run dev server with reload. Use -b to skip opening the browser.
 [group: 'dev']
 run *args:
   #!/usr/bin/env bash
+
+  OPEN_BROWSER=1
+
+  CMD=(
+    uv run uvicorn stricknani.main:app
+    --reload
+    --host 0.0.0.0
+    --port '{{ dev_port }}'
+    --log-level debug
+    --access-log
+    {{ args }}
+  )
+
   if [[ -z "${IN_NIX_SHELL:-}" ]]
   then
-    if command -v nix >/dev/null 2>&1
+    if ! command -v nix &>/dev/null
     then
-      exec nix develop -c just _run {{ args }}
-    else
       echo "WARNING: nix not found; running without nix develop" >&2
+    else
+      exec nix develop -c just run {{ args }}
     fi
   fi
-
-  just _run {{args }}
-
-[group: 'dev']
-[positional-arguments]
-_run *args:
-  #!/usr/bin/env bash
-  OPEN_BROWSER=1
 
   while [[ -n $* ]]
   do
@@ -52,19 +70,19 @@ _run *args:
     (sleep 2 && ${BROWSER:-xdg-open} "http://localhost:{{ dev_port }}") &
   fi
 
-  IMPORT_TRACE_ENABLED=1 uv run uvicorn stricknani.main:app \
-      --reload \
-      --host 0.0.0.0 \
-      --port {{ dev_port }} \
-      --log-level debug \
-      --access-log
+  IMPORT_TRACE_ENABLED=1 "${CMD[@]}"
 
 # Run linters
 [group: 'lint']
-lint:
+lint: lint-ruff lint-mypy
+
+[group: 'lint']
+lint-ruff:
   uv run ruff check .
+
+[group: 'lint']
+lint-mypy:
   uv run mypy .
-  prettier --check .
 
 # Check translations
 [group: 'i18n']
@@ -92,12 +110,25 @@ i18n-compile:
 
 # Format code
 [group: 'fmt']
-fmt:
+fmt: fmt-ruff fmt-nix fmt-prettier
+
+[group: 'fmt']
+fmt-ruff:
   uv run ruff format .
   uv run ruff check --fix .
+
+[group: 'fmt']
+fmt-nix:
   statix fix flake.nix
   statix fix nix/
+
+[group: 'fmt']
+fmt-prettier:
   prettier --write .
+
+[group: 'fmt']
+prettier-check:
+  prettier --check .
 
 # Trim trailing whitespace
 [group: 'fmt']
@@ -141,7 +172,8 @@ vendir-check: vendir-sync
 check: lint lint-nix test i18n-check
 
 # Lint Nix files
-[group: 'vendir']
+[group: 'lint']
+[group: 'nix']
 lint-nix:
   statix check flake.nix
   statix check nix/
