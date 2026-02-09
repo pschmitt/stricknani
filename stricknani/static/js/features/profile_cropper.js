@@ -1,4 +1,4 @@
-(function () {
+(() => {
   document.addEventListener("DOMContentLoaded", () => {
     let cropper;
 
@@ -29,7 +29,7 @@
       return;
     }
 
-    window.triggerProfileImageUpload = function (userId) {
+    window.triggerProfileImageUpload = (userId) => {
       const parsed = Number.parseInt(String(userId || ""), 10);
       targetUserId =
         Number.isFinite(parsed) && parsed > 0 ? parsed : currentUserId;

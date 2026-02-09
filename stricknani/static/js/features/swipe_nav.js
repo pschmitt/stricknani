@@ -1,4 +1,4 @@
-(function () {
+(() => {
   document.addEventListener("DOMContentLoaded", () => {
     // Swipe-to-navigate between the primary navbar destinations.
     // Disabled on primary form pages to avoid conflicts with horizontal gestures while editing.

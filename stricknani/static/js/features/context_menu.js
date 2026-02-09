@@ -2,7 +2,7 @@
  * Context menu handler for project and yarn cards.
  * Supports right-click and long-press (for mobile).
  */
-(function () {
+(() => {
   let longPressTimer;
   let currentMenu = null;
 

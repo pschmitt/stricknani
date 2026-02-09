@@ -5,9 +5,7 @@
  * strings via `window.STRICKNANI.i18n`.
  */
 
-(function () {
-  "use strict";
-
+(() => {
   const config = window.STRICKNANI || {};
   const i18n = config.i18n || {};
 

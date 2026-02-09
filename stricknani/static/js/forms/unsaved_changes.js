@@ -9,9 +9,7 @@
  * hook that can be set by page scripts.
  */
 
-(function () {
-  "use strict";
-
+(() => {
   const install = () => {
     if (window.__stricknaniUnsavedChangesInstalled) {
       return;

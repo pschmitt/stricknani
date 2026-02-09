@@ -1,4 +1,4 @@
-(function () {
+(() => {
   document.addEventListener("DOMContentLoaded", () => {
     const navDropdowns = document.querySelectorAll(".navbar-nav-dropdown");
     if (!navDropdowns.length) {

@@ -1,6 +1,6 @@
 /* global htmx */
 
-(function () {
+(() => {
   document.addEventListener("htmx:configRequest", (event) => {
     const csrfToken = document
       .querySelector('meta[name="csrf-token"]')

@@ -88,13 +88,15 @@ lint-ruff:
 lint-mypy:
   uv run mypy .
 
+biome_action := if env('CI', '') != '' { 'ci' } else { 'lint' }
+
 [group: 'lint']
 lint-js:
-  biome lint stricknani/static/js
+  biome "{{ biome_action }}" stricknani/static/js
 
 [group: 'lint']
 lint-css:
-  biome lint stricknani/static/css
+  biome "{{ biome_action }}" stricknani/static/css
 
 # Check translations
 [group: 'i18n']

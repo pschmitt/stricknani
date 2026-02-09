@@ -1,4 +1,4 @@
-(function () {
+(() => {
   function openModal(modal, input) {
     if (!modal || !input) {
       return;
@@ -22,7 +22,7 @@
   });
 
   // 2-finger swipe down to open search on mobile
-  (function () {
+  (() => {
     let touchStartY = 0;
     let isTwoFinger = false;
 

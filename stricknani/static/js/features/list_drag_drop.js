@@ -2,7 +2,7 @@
  * Drag and drop handler for list views (projects/yarns).
  * Automatically opens the import dialog when a file is dropped.
  */
-(function () {
+(() => {
   let dragCounter = 0;
   const overlayId = "list-drop-overlay";
 
