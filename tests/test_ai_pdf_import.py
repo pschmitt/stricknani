@@ -51,8 +51,8 @@ async def test_ai_extractor_pdf_rendering_primary() -> None:
         result = await extractor.extract(pdf_content)
 
     assert result.name == "Rendered PDF Project"
-    assert "pdf_images" in result.extras
-    assert result.extras["pdf_images"][0] == b"fake-local-image"
+    assert "pdf_rendered_pages" in result.extras
+    assert result.extras["pdf_rendered_pages"][0] == b"fake-rendered-page"
 
     # Verify multimodal chat completion was called with base64 images
     mock_client.chat.completions.create.assert_called_once()
@@ -70,8 +70,8 @@ async def test_ai_extractor_pdf_rendering_primary() -> None:
     found_image = False
     for item in user_content:
         if item["type"] == "text":
-            assert "Analyze the attached images" in item["text"]
-            assert "local text" in item["text"]
+            assert "Analyze this knitting pattern image" in item["text"]
+            assert "PDF desc" in item["text"]
             found_text_with_hint = True
         if item["type"] == "image_url":
             assert "data:image/jpeg;base64," in item["image_url"]["url"]
@@ -95,9 +95,14 @@ async def test_ai_extractor_pdf_rendering_fallback_to_text() -> None:
         metadata={"filename": "test.pdf"},
     )
 
+    mock_completion = MagicMock()
+    mock_completion.choices = [
+        MagicMock(message=MagicMock(content='{"name": "Text Fallback Success"}'))
+    ]
+
     with (
         patch("stricknani.importing.extractors.ai.OPENAI_AVAILABLE", True),
-        patch("stricknani.importing.extractors.ai.AsyncOpenAI"),
+        patch("stricknani.importing.extractors.ai.AsyncOpenAI") as mock_openai_class,
         patch(
             "stricknani.importing.extractors.pdf.PDFExtractor.extract_images_from_pdf",
             new=AsyncMock(return_value=[]),
@@ -119,12 +124,10 @@ async def test_ai_extractor_pdf_rendering_fallback_to_text() -> None:
                 )
             ),
         ),
-        patch.object(
-            AIExtractor,
-            "_extract_from_text",
-            new=AsyncMock(return_value=ExtractedData(name="Text Fallback Success")),
-        ),
     ):
+        mock_client = mock_openai_class.return_value
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
+
         result = await extractor.extract(pdf_content)
 
     assert result.name == "Text Fallback Success"

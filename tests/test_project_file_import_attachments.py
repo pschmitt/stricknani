@@ -52,8 +52,8 @@ async def test_project_file_import_stores_attachment_for_existing_project(
             b"0000000056 00000 n \n0000000111 00000 n \n0000000212 00000 n \n"
             b"trailer\n<<\n/Size 5\n/Root 1 0 R\n>>\nstartxref\n281\n%%EOF"
         )
-        files = {"file": ("attachment.pdf", pdf_content, "application/pdf")}
-        data = {"type": "file", "project_id": project_id}
+        files = {"files": ("attachment.pdf", pdf_content, "application/pdf")}
+        data = {"type": "file", "project_id": project_id, "use_ai": "true"}
 
         resp = await client.post("/projects/import", data=data, files=files)
         assert resp.status_code == 200
@@ -81,7 +81,7 @@ async def test_project_file_import_stores_pending_token_and_attaches_on_create(
         mock_instance = MockAIExtractor.return_value
         mock_instance.extract = AsyncMock(return_value=mock_extracted)
 
-        files = {"file": ("pattern.png", _tiny_png_bytes(), "image/png")}
+        files = {"files": ("pattern.png", _tiny_png_bytes(), "image/png")}
         data = {"type": "file", "use_ai": "true"}
         resp = await client.post("/projects/import", data=data, files=files)
         assert resp.status_code == 200
