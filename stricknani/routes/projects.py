@@ -8,9 +8,7 @@ import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
-from urllib.parse import urlparse
 
-import httpx
 from fastapi import (
     APIRouter,
     Depends,
@@ -37,7 +35,6 @@ from stricknani.models import (
     Project,
     Step,
     User,
-    project_yarns,
     user_favorites,
 )
 from stricknani.models import (
@@ -56,6 +53,11 @@ from stricknani.services.projects.categories import (
     get_user_categories,
     sync_project_categories,
 )
+from stricknani.services.projects.helpers import (
+    build_ai_hints,
+    dedupe_project_attachments,
+    localize_garnstudio_symbol_images,
+)
 from stricknani.services.projects.images import (
     upload_step_image as service_upload_step_image,
 )
@@ -68,7 +70,6 @@ from stricknani.services.projects.images import (
 from stricknani.services.projects.import_images import (
     import_project_images_from_urls,
     import_step_images_from_urls,
-    import_yarn_images_from_urls,
     load_existing_image_checksums,
     load_existing_image_similarities,
 )
@@ -84,14 +85,14 @@ from stricknani.services.projects.tags import (
     serialize_tags,
 )
 from stricknani.services.projects.yarns import (
+    ensure_yarns_by_text,
+    get_exclusive_yarns,
     get_user_yarns,
     load_owned_yarns,
     resolve_yarn_preview,
 )
 from stricknani.utils.ai_provider import has_ai_api_key
 from stricknani.utils.files import (
-    build_import_filename,
-    compute_checksum,
     delete_file,
     get_file_url,
     get_thumbnail_url,
@@ -102,9 +103,6 @@ from stricknani.utils.image_similarity import (
 )
 from stricknani.utils.import_trace import ImportTrace
 from stricknani.utils.importer import (
-    IMPORT_IMAGE_HEADERS,
-    IMPORT_IMAGE_MAX_BYTES,
-    IMPORT_IMAGE_TIMEOUT,
     filter_import_image_urls,
     is_garnstudio_url,
     trim_import_strings,
@@ -127,124 +125,12 @@ router = APIRouter(
 )
 
 
-_GARNSTUDIO_SYMBOL_URL_RE = re.compile(
-    r"(https?://[^\s)\"'>]+?/drops/symbols/[^\s)\"'>]+)",
-    re.IGNORECASE,
-)
-
-
-async def _localize_garnstudio_symbol_images(
-    project_id: int,
-    description: str | None,
-    *,
-    referer: str | None = None,
-) -> str | None:
-    if not description or "/drops/symbols/" not in description:
-        return description
-
-    urls = sorted(set(_GARNSTUDIO_SYMBOL_URL_RE.findall(description)))
-    if not urls:
-        return description
-
-    symbol_dir = (
-        config.MEDIA_ROOT
-        / "projects"
-        / str(project_id)
-        / "inline"
-        / "garnstudio-symbols"
-    )
-    symbol_dir.mkdir(parents=True, exist_ok=True)
-
-    headers = dict(IMPORT_IMAGE_HEADERS)
-    if referer:
-        headers["Referer"] = referer
-
-    replacements: dict[str, str] = {}
-    async with httpx.AsyncClient(
-        timeout=IMPORT_IMAGE_TIMEOUT,
-        follow_redirects=True,
-        headers=headers,
-    ) as client:
-        for url in urls:
-            try:
-                response = await client.get(url)
-                response.raise_for_status()
-            except httpx.HTTPError:
-                continue
-
-            if not response.content:
-                continue
-
-            # These are tiny symbol images; we still guard against abuse.
-            if len(response.content) > min(IMPORT_IMAGE_MAX_BYTES, 512 * 1024):
-                continue
-
-            content_type = response.headers.get("content-type")
-            if content_type and not content_type.lower().startswith("image/"):
-                continue
-
-            parsed = urlparse(url)
-            ext = Path(parsed.path).suffix.lower()
-            if not ext:
-                ext = Path(build_import_filename(url, content_type)).suffix.lower()
-            if not ext:
-                ext = ".gif"
-
-            checksum = compute_checksum(response.content)
-            filename = f"{checksum[:16]}{ext}"
-            target_path = symbol_dir / filename
-            if not target_path.exists():
-                target_path.write_bytes(response.content)
-
-            replacements[url] = (
-                f"/media/projects/{project_id}/inline/garnstudio-symbols/{filename}"
-            )
-
-    localized = description
-    for src, dst in replacements.items():
-        localized = localized.replace(src, dst)
-    return localized
-
-
 def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
     return parse_import_image_urls(raw)
 
 
 def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
     return extract_search_token(search, prefix)
-
-
-def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
-    """Prepare lightweight hints for the AI importer."""
-    hints: dict[str, Any] = {}
-    for key in [
-        "title",
-        "name",
-        "needles",
-        "yarn",
-        "brand",
-        "category",
-        "notes",
-        "link",
-    ]:
-        value = data.get(key)
-        if value:
-            hints[key] = value
-
-    steps = data.get("steps")
-    if isinstance(steps, list) and steps:
-        hints["steps"] = steps[:5]
-
-    image_urls = data.get("image_urls")
-    if isinstance(image_urls, list) and image_urls:
-        hints["image_urls"] = image_urls[:5]
-
-    return hints
-
-
-def _normalize_for_comparison(text: str) -> str:
-    """Normalize text for fuzzy comparison by removing non-alphanumeric chars."""
-    return re.sub(r"\W+", "", text).lower()
 
 
 def _render_favorite_toggle(
@@ -769,7 +655,7 @@ async def import_pattern(
 
                     ai_importer = AIPatternImporter(
                         url,
-                        hints=_build_ai_hints(basic_data),
+                        hints=build_ai_hints(basic_data),
                         trace=trace,
                     )
                     ai_data = await ai_importer.fetch_and_parse()
@@ -1347,249 +1233,6 @@ async def delete_category(
     )
 
 
-async def _ensure_yarns_by_text(
-    db: AsyncSession,
-    user_id: int,
-    yarn_text: str | None,
-    current_yarn_ids: list[int],
-    yarn_brand: str | None = None,
-    yarn_details: list[dict[str, Any]] | None = None,
-) -> list[int]:
-    """Link against a real yarn, or create a new one when there is no match."""
-    updated_ids = list(current_yarn_ids)
-
-    # 1. Handle structured yarn details first (highest quality)
-    if yarn_details:
-        for detail in yarn_details:
-            name = detail.get("name")
-            link = detail.get("link")
-            if not name and not link:
-                continue
-
-            # Try to find match in DB
-            db_yarn_obj = None
-            if link:
-                res_match = await db.execute(
-                    select(YarnModel).where(
-                        YarnModel.owner_id == user_id,
-                        YarnModel.link == link,
-                    )
-                )
-                db_yarn_obj = res_match.scalar_one_or_none()
-
-            if not db_yarn_obj and name:
-                res_match = await db.execute(
-                    select(YarnModel).where(
-                        YarnModel.owner_id == user_id,
-                        func.lower(YarnModel.name) == name.lower(),
-                    )
-                )
-                db_yarn_obj = res_match.scalar_one_or_none()
-
-            if not db_yarn_obj:
-                # Create new yarn with all available details
-                db_yarn_obj = YarnModel(
-                    name=name or "Unknown Yarn",
-                    owner_id=user_id,
-                    brand=detail.get("brand") or yarn_brand,
-                    colorway=detail.get("colorway"),
-                    link=link,
-                )
-                db.add(db_yarn_obj)
-                await db.flush()
-
-                # If we have a link, follow it to get more data
-                if db_yarn_obj.link:
-                    try:
-                        from stricknani.utils.importer import (
-                            GarnstudioPatternImporter,
-                            PatternImporter,
-                            is_garnstudio_url,
-                        )
-
-                        im_ptr: PatternImporter
-                        if is_garnstudio_url(db_yarn_obj.link):
-                            im_ptr = GarnstudioPatternImporter(db_yarn_obj.link)
-                        else:
-                            im_ptr = PatternImporter(db_yarn_obj.link)
-
-                        yarn_data = await im_ptr.fetch_and_parse()
-
-                        # Update name if importer found a better one
-                        imported_name = yarn_data.get("yarn") or yarn_data.get("title")
-                        if imported_name and len(imported_name) > len(db_yarn_obj.name):
-                            db_yarn_obj.name = imported_name
-
-                        # Populate more fields if they are missing
-                        if yarn_data.get("brand") and not db_yarn_obj.brand:
-                            db_yarn_obj.brand = yarn_data.get("brand")
-                        if yarn_data.get("colorway") and not db_yarn_obj.colorway:
-                            db_yarn_obj.colorway = yarn_data.get("colorway")
-                        if yarn_data.get("fiber_content"):
-                            db_yarn_obj.fiber_content = yarn_data.get("fiber_content")
-                        if yarn_data.get("weight_grams"):
-                            db_yarn_obj.weight_grams = yarn_data.get("weight_grams")
-                        if yarn_data.get("length_meters"):
-                            db_yarn_obj.length_meters = yarn_data.get("length_meters")
-                        if yarn_data.get("weight_category"):
-                            db_yarn_obj.weight_category = yarn_data.get(
-                                "weight_category"
-                            )
-                        if yarn_data.get("needles"):
-                            db_yarn_obj.recommended_needles = yarn_data.get("needles")
-                        if not db_yarn_obj.description:
-                            db_yarn_obj.description = yarn_data.get(
-                                "notes"
-                            ) or yarn_data.get("comment")
-
-                        # Import images
-                        img_urls = yarn_data.get("image_urls")
-                        if img_urls:
-                            await import_yarn_images_from_urls(
-                                db,
-                                db_yarn_obj,
-                                img_urls,
-                            )
-
-                        # Handle Wayback archival for the yarn link
-                        if config.FEATURE_WAYBACK_ENABLED and db_yarn_obj.link:
-                            db_yarn_obj.link_archive_requested_at = datetime.now(UTC)
-                            await db.flush()
-                            asyncio.create_task(
-                                store_wayback_snapshot(
-                                    YarnModel, db_yarn_obj.id, db_yarn_obj.link
-                                )
-                            )
-
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to auto-import yarn from {db_yarn_obj.link}: {e}"
-                        )
-
-            if db_yarn_obj.id not in updated_ids:
-                updated_ids.append(db_yarn_obj.id)
-
-        # If we had structured details, we consider them exhaustive for the text
-        return updated_ids
-
-    # 2. Fallback to raw text parsing
-    if not yarn_text:
-        return updated_ids
-
-    # Normalize yarn names from text.
-    # Garnstudio uses newlines for multiple yarns, and commas for color info.
-    # We should prefer newline splitting if multiple lines exist.
-    if "\n" in yarn_text.strip():
-        # Split by newlines and handle "Oder:" (alternative yarn)
-        raw_names = []
-        for line in yarn_text.splitlines():
-            line = line.strip()
-            if not line or line.lower() == "oder:":
-                continue
-            if line.lower().startswith("oder:"):
-                line = line[5:].strip()
-            if line:
-                raw_names.append(line)
-        yarn_names = raw_names
-    else:
-        # Fallback to comma splitting if it's a single line but avoid splitting
-        # on commas that are likely part of a color spec (Garnstudio style)
-        if re.search(r"(?:farbe|color|colour)\s*\d+\s*,\s*", yarn_text, re.I):
-            yarn_names = [yarn_text.strip()]
-        else:
-            yarn_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
-
-    if not yarn_names:
-        return updated_ids
-
-    # Pre-load already linked yarns names to avoid double linking
-    existing_linked_yarns = []
-    if updated_ids:
-        res = await db.execute(
-            select(YarnModel.name).where(YarnModel.id.in_(updated_ids))
-        )
-        existing_linked_yarns = [row[0].lower() for row in res]
-
-    for name in yarn_names:
-        if name.lower() in existing_linked_yarns:
-            continue
-
-        # Try to find match in DB
-        res_match = await db.execute(
-            select(YarnModel).where(
-                YarnModel.owner_id == user_id,
-                func.lower(YarnModel.name) == name.lower(),
-            )
-        )
-        db_yarn_obj = res_match.scalar_one_or_none()
-
-        if not db_yarn_obj:
-            # Create new yarn
-            db_yarn_obj = YarnModel(name=name, owner_id=user_id, brand=yarn_brand)
-            db.add(db_yarn_obj)
-            await db.flush()
-
-        if db_yarn_obj.id not in updated_ids:
-            updated_ids.append(db_yarn_obj.id)
-
-    return updated_ids
-
-
-async def _get_exclusive_yarns(db: AsyncSession, project: Project) -> list[YarnModel]:
-    """Return yarns linked ONLY to this project."""
-    exclusive = []
-    # Project needs to have yarns loaded
-    for y in project.yarns:
-        # We need to count how many projects this yarn belongs to
-        # Since project_yarns is a secondary table, we check it directly
-        res = await db.execute(
-            select(func.count()).where(project_yarns.c.yarn_id == y.id)
-        )
-        count = res.scalar() or 0
-        if count == 1:
-            exclusive.append(y)
-    return exclusive
-
-
-def _dedupe_project_attachments(
-    attachments: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Deduplicate attachment dicts for display.
-
-    We prefer `pdf_page_N.*` over `pdf_image_N.*` when both exist.
-    """
-    out: list[dict[str, Any]] = []
-    index_by_key: dict[tuple[object, ...], int] = {}
-    priority_by_key: dict[tuple[object, ...], int] = {}
-
-    for att in attachments:
-        original = str(att.get("original_filename") or "")
-        content_type = str(att.get("content_type") or "")
-        size_bytes = int(att.get("size_bytes") or 0)
-
-        m = re.match(r"^(pdf_page|pdf_image)_(\d+)\.[a-z0-9]+$", original, re.I)
-        if m:
-            kind = m.group(1).lower()
-            idx = int(m.group(2))
-            key: tuple[object, ...] = ("pdf_page_idx", idx)
-            prio = 2 if kind == "pdf_page" else 1
-        else:
-            key = ("exact", content_type, original, size_bytes)
-            prio = 0
-
-        if key not in index_by_key:
-            index_by_key[key] = len(out)
-            priority_by_key[key] = prio
-            out.append(att)
-            continue
-
-        if prio > priority_by_key.get(key, 0):
-            out[index_by_key[key]] = att
-            priority_by_key[key] = prio
-
-    return out
-
-
 @router.get("/{project_id}", response_class=HTMLResponse)
 async def get_project(
     request: Request,
@@ -1660,7 +1303,7 @@ async def get_project(
                 "created_at": att.created_at.isoformat(),
             }
         )
-    project_attachments = _dedupe_project_attachments(project_attachments)
+    project_attachments = dedupe_project_attachments(project_attachments)
 
     # Prepare project-level images (exclude step images)
     title_images = []
@@ -1771,7 +1414,7 @@ async def get_project(
         swipe_prev_href = f"/projects/{nav_ids[idx - 1]}"
     if idx != -1 and idx < len(nav_ids) - 1:
         swipe_next_href = f"/projects/{nav_ids[idx + 1]}"
-    exclusive_yarns = await _get_exclusive_yarns(db, project)
+    exclusive_yarns = await get_exclusive_yarns(db, project)
 
     # Check for stale archive request (self-healing)
     if (
@@ -1957,7 +1600,7 @@ async def edit_project_form(
                 "created_at": att.created_at.isoformat(),
             }
         )
-    project_attachments = _dedupe_project_attachments(project_attachments)
+    project_attachments = dedupe_project_attachments(project_attachments)
 
     title_images = []
     stitch_sample_images = []
@@ -2025,7 +1668,7 @@ async def edit_project_form(
             }
         )
 
-    exclusive_yarns = await _get_exclusive_yarns(db, project)
+    exclusive_yarns = await get_exclusive_yarns(db, project)
     project_data = {
         "id": project.id,
         "name": project.name,
@@ -2126,7 +1769,7 @@ async def create_project(
             pass
 
     # Ensure yarn matches or creates
-    parsed_yarn_ids = await _ensure_yarns_by_text(
+    parsed_yarn_ids = await ensure_yarns_by_text(
         db,
         current_user.id,
         yarn_text,
@@ -2176,7 +1819,7 @@ async def create_project(
         for step_data in steps_list:
             step_description = step_data.get("description")
             if isinstance(step_description, str):
-                step_data["description"] = await _localize_garnstudio_symbol_images(
+                step_data["description"] = await localize_garnstudio_symbol_images(
                     project.id,
                     step_description,
                     referer=project.link,
@@ -2475,7 +2118,7 @@ async def update_project(
             pass
 
     # Ensure yarn matches or creates
-    parsed_yarn_ids = await _ensure_yarns_by_text(
+    parsed_yarn_ids = await ensure_yarns_by_text(
         db,
         current_user.id,
         yarn_text,
@@ -2645,7 +2288,7 @@ async def update_project(
         for step_data in steps_list:
             step_description = step_data.get("description")
             if isinstance(step_description, str):
-                step_data["description"] = await _localize_garnstudio_symbol_images(
+                step_data["description"] = await localize_garnstudio_symbol_images(
                     project.id,
                     step_description,
                     referer=project.link,
@@ -2890,14 +2533,14 @@ async def delete_project(
     # Handle exclusive yarn deletion
     exclusive_yarns_to_delete: list[YarnModel] = []
     if delete_yarn_ids:
-        exclusive_yarns = await _get_exclusive_yarns(db, project)
+        exclusive_yarns = await get_exclusive_yarns(db, project)
         exclusive_by_id = {yarn.id: yarn for yarn in exclusive_yarns}
         for yarn_id in delete_yarn_ids:
             yarn = exclusive_by_id.get(yarn_id)
             if yarn:
                 exclusive_yarns_to_delete.append(yarn)
     elif delete_yarns:
-        exclusive_yarns_to_delete = await _get_exclusive_yarns(db, project)
+        exclusive_yarns_to_delete = await get_exclusive_yarns(db, project)
 
     yarn_dirs_to_cleanup: list[tuple[Path, Path]] = []
     if exclusive_yarns_to_delete:
