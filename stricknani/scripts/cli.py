@@ -32,6 +32,7 @@ from stricknani.utils.ai_ingest import (
     build_schema_for_target,
     ingest_with_openai,
 )
+from stricknani.utils.ai_provider import has_ai_api_key
 from stricknani.utils.auth import get_password_hash, get_user_by_email
 from stricknani.utils.importer import (
     GarnstudioPatternImporter,
@@ -467,7 +468,7 @@ async def import_project_url(
         basic_importer = PatternImporter(url)
     data = await basic_importer.fetch_and_parse()
 
-    if use_ai and config.OPENAI_API_KEY:
+    if use_ai and has_ai_api_key():
         try:
             ai_importer: ModuleType | None
             import stricknani.utils.ai_importer as ai_importer
@@ -553,7 +554,7 @@ async def import_yarn_url(
     basic_importer = PatternImporter(url)
     data = await basic_importer.fetch_and_parse()
 
-    if use_ai and config.OPENAI_API_KEY:
+    if use_ai and has_ai_api_key():
         try:
             ai_importer: ModuleType | None
             import stricknani.utils.ai_importer as ai_importer
@@ -792,7 +793,7 @@ async def ai_ingest(
     schema_file: str | None,
     instructions_file: str | None,
     instructions: str | None,
-    model: str,
+    model: str | None,
     temperature: float | None,
     max_output_tokens: int,
 ) -> None:
@@ -1027,8 +1028,8 @@ def main() -> None:
     )
     ai_ingest_parser.add_argument(
         "--model",
-        default="gpt-5-mini",
-        help="OpenAI model (default: gpt-5-mini)",
+        default=None,
+        help="Model override (default: provider-specific)",
     )
     ai_ingest_parser.add_argument(
         "--temperature",

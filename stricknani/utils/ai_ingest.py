@@ -12,7 +12,6 @@ import inspect
 import json
 import logging
 import mimetypes
-import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -28,6 +27,12 @@ from stricknani.utils.ai_importer import (
     AIPatternImporter,
     _extract_garnstudio_text,
     _is_garnstudio_url,
+)
+from stricknani.utils.ai_provider import (
+    get_ai_api_key,
+    get_ai_base_url,
+    get_default_ai_model,
+    resolve_ai_provider,
 )
 
 logger = logging.getLogger("stricknani.ai_ingest")
@@ -597,14 +602,15 @@ async def ingest_with_openai(
     source_text: str | None = None,
     file_paths: list[Path] | None = None,
     instructions: str,
-    model: str,
+    model: str | None,
     temperature: float | None,
     max_output_tokens: int,
 ) -> dict[str, Any]:
-    """Run an LLM extraction with OpenAI structured outputs."""
-    api_key = os.getenv("OPENAI_API_KEY")
+    """Run an LLM extraction with an OpenAI-compatible provider."""
+    provider = resolve_ai_provider()
+    api_key = get_ai_api_key(provider=provider)
     if not api_key:
-        raise ValueError("OPENAI_API_KEY is not set")
+        raise ValueError("AI API key is not set for the configured provider")
 
     from openai import AsyncOpenAI, BadRequestError
 
@@ -688,72 +694,124 @@ async def ingest_with_openai(
     else:
         raise ValueError("No source provided (url/text/file)")
 
-    client = AsyncOpenAI(api_key=api_key)
-    # The OpenAI SDK uses rich union types for `input`/`text`; keep call-sites
-    # ergonomic and cast to satisfy strict type checking.
-    openai_input = cast(Any, [{"role": "user", "content": content}])
-    openai_text = cast(
-        Any,
-        {
-            "format": {
-                "type": "json_schema",
-                "name": f"stricknani_{target}_ingest",
-                "schema": schema,
-                "strict": True,
-            }
-        },
+    model_name = model or get_default_ai_model(provider=provider, api_style="responses")
+    client = AsyncOpenAI(
+        api_key=api_key,
+        base_url=get_ai_base_url(provider=provider),
     )
 
-    create_kwargs: dict[str, Any] = {
-        "model": model,
-        "instructions": instructions,
-        "input": openai_input,
-        "text": openai_text,
-        "max_output_tokens": max_output_tokens,
-    }
-    if temperature is not None:
-        create_kwargs["temperature"] = temperature
+    use_responses_api = provider in {"openai", "openrouter"}
 
-    try:
-        response = await client.responses.create(**create_kwargs)
-    except BadRequestError as exc:
-        # Some models (e.g. GPT-5*) reject `temperature`. Retry without it.
-        message = str(getattr(exc, "message", "")) or str(exc)
-        if temperature is not None and "temperature" in message.lower():
-            create_kwargs.pop("temperature", None)
+    if use_responses_api:
+        # The OpenAI SDK uses rich union types for `input`/`text`; keep call-sites
+        # ergonomic and cast to satisfy strict type checking.
+        openai_input = cast(Any, [{"role": "user", "content": content}])
+        openai_text = cast(
+            Any,
+            {
+                "format": {
+                    "type": "json_schema",
+                    "name": f"stricknani_{target}_ingest",
+                    "schema": schema,
+                    "strict": True,
+                }
+            },
+        )
+
+        create_kwargs: dict[str, Any] = {
+            "model": model_name,
+            "instructions": instructions,
+            "input": openai_input,
+            "text": openai_text,
+            "max_output_tokens": max_output_tokens,
+        }
+        if temperature is not None:
+            create_kwargs["temperature"] = temperature
+
+        try:
             response = await client.responses.create(**create_kwargs)
-        else:
-            raise
+        except BadRequestError as exc:
+            # Some models reject `temperature`. Retry without it.
+            message = str(getattr(exc, "message", "")) or str(exc)
+            if temperature is not None and "temperature" in message.lower():
+                create_kwargs.pop("temperature", None)
+                response = await client.responses.create(**create_kwargs)
+            else:
+                raise
 
-    raw_text = response.output_text
-    if not raw_text:
-        raise ValueError("OpenAI returned an empty response")
-
-    try:
-        parsed = json.loads(raw_text)
-    except json.JSONDecodeError as exc:
-        # Most commonly: the model output got cut off due to max_output_tokens.
-        # Retry once with a higher limit.
-        bumped = max_output_tokens * 2
-        # Avoid unbounded growth; callers can still override explicitly.
-        if bumped > 16000:
-            bumped = 16000
-        if bumped == max_output_tokens:
-            raise
-
-        retry_kwargs = dict(create_kwargs)
-        retry_kwargs["max_output_tokens"] = bumped
-        response = await client.responses.create(**retry_kwargs)
         raw_text = response.output_text
         if not raw_text:
-            raise ValueError("OpenAI returned an empty response") from exc
+            raise ValueError("AI provider returned an empty response")
+
         try:
             parsed = json.loads(raw_text)
-        except json.JSONDecodeError as exc2:
+        except json.JSONDecodeError as exc:
+            bumped = max_output_tokens * 2
+            if bumped > 16000:
+                bumped = 16000
+            if bumped == max_output_tokens:
+                raise
+
+            retry_kwargs = dict(create_kwargs)
+            retry_kwargs["max_output_tokens"] = bumped
+            response = await client.responses.create(**retry_kwargs)
+            raw_text = response.output_text
+            if not raw_text:
+                raise ValueError("AI provider returned an empty response") from exc
+            try:
+                parsed = json.loads(raw_text)
+            except json.JSONDecodeError as exc2:
+                raise ValueError(
+                    "AI provider returned invalid JSON (possibly truncated). "
+                    "Try increasing --max-output-tokens."
+                ) from exc2
+    else:
+        # Groq and other OpenAI-compatible providers may not implement Responses.
+        chat_content: list[dict[str, Any]] = []
+        for item in content:
+            item_type = item.get("type")
+            if item_type == "input_text":
+                text_value = item.get("text")
+                if isinstance(text_value, str) and text_value:
+                    chat_content.append({"type": "text", "text": text_value})
+            elif item_type == "input_image":
+                image_url = item.get("image_url")
+                if isinstance(image_url, str) and image_url:
+                    chat_content.append(
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    )
+
+        if not chat_content:
             raise ValueError(
-                "OpenAI returned invalid JSON (possibly truncated). "
-                "Try increasing --max-output-tokens."
-            ) from exc2
+                "Configured AI provider does not support this source type "
+                "(only text/images are supported)."
+            )
+
+        schema_text = json.dumps(schema, ensure_ascii=False)
+        system_prompt = (
+            f"{instructions}\n\n"
+            "Return only valid JSON that matches this schema exactly:\n"
+            f"{schema_text}"
+        )
+        chat_messages = cast(
+            Any,
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": chat_content},
+            ],
+        )
+        chat_kwargs: dict[str, Any] = {
+            "model": model_name,
+            "messages": chat_messages,
+            "response_format": {"type": "json_object"},
+            "temperature": temperature if temperature is not None else 0.1,
+            "max_tokens": max_output_tokens,
+        }
+        response = await client.chat.completions.create(**chat_kwargs)
+        raw_text = response.choices[0].message.content or ""
+        if not raw_text:
+            raise ValueError("AI provider returned an empty response")
+        parsed = json.loads(raw_text)
 
     data = validate_minimally(parsed, schema)
     if source_url and "link" in (schema.get("properties") or {}):

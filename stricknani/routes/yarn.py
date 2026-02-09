@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import os
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -33,6 +32,7 @@ from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.models import Project, User, Yarn, YarnImage, user_favorite_yarns
 from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.utils.ai_provider import has_ai_api_key
 from stricknani.utils.files import (
     build_import_filename,
     compute_checksum,
@@ -444,7 +444,6 @@ async def import_yarn(
 ) -> JSONResponse:
     """Import yarn data from URL, file, or text."""
     import logging
-    import os
 
     from stricknani.utils.importer import (
         GarnstudioPatternImporter,
@@ -495,14 +494,12 @@ async def import_yarn(
             from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
             from stricknani.importing.models import ContentType, RawContent
 
-            use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
-                os.getenv("OPENAI_API_KEY")
-            )
+            use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
             if not use_ai_enabled or not OPENAI_AVAILABLE:
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="AI analysis requires OpenAI API key",
+                    detail="AI analysis requires a configured AI provider API key",
                 )
 
             content_type = ContentType.UNKNOWN
@@ -564,9 +561,7 @@ async def import_yarn(
             from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
             from stricknani.importing.models import ContentType, RawContent
 
-            use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
-                os.getenv("OPENAI_API_KEY")
-            )
+            use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
             if use_ai_enabled and OPENAI_AVAILABLE:
                 raw_content = RawContent(
@@ -750,9 +745,7 @@ async def list_yarns(
     if request.headers.get("accept") == "application/json":
         return JSONResponse(_serialize_yarn_cards(yarns, current_user))
 
-    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
-        os.getenv("OPENAI_API_KEY")
-    )
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
     return await render_template(
         "yarn/list.html",
@@ -774,9 +767,7 @@ async def new_yarn(
 ) -> HTMLResponse:
     """Show creation form."""
 
-    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
-        os.getenv("OPENAI_API_KEY")
-    )
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
     return await render_template(
         "yarn/form.html",
@@ -1042,9 +1033,7 @@ async def edit_yarn(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
-        os.getenv("OPENAI_API_KEY")
-    )
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
     return await render_template(
         "yarn/form.html",

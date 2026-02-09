@@ -87,6 +87,7 @@ from stricknani.services.projects.yarns import (
     load_owned_yarns,
     resolve_yarn_preview,
 )
+from stricknani.utils.ai_provider import has_ai_api_key
 from stricknani.utils.files import (
     build_import_filename,
     compute_checksum,
@@ -443,8 +444,7 @@ async def list_projects(
             "selected_category": category,
             "selected_tag": tag,
             "search": search,
-            "has_openai_key": config.FEATURE_AI_IMPORT_ENABLED
-            and bool(config.OPENAI_API_KEY),
+            "has_openai_key": config.FEATURE_AI_IMPORT_ENABLED and has_ai_api_key(),
         },
     )
 
@@ -456,8 +456,6 @@ async def new_project_form(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Show new project form."""
-    import os
-
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -465,10 +463,8 @@ async def new_project_form(
     yarn_options = await get_user_yarns(db, current_user.id)
     tag_suggestions = await get_user_tags(db, current_user.id)
 
-    # Check if OpenAI API key is available for AI import
-    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
-        os.getenv("OPENAI_API_KEY")
-    )
+    # Check if an AI provider API key is available for AI import
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
     return await render_template(
         "projects/form.html",
@@ -504,13 +500,11 @@ async def import_pattern(
         text: Plain text to parse (when type='text')
         files: Uploaded files (when type='file')
         attachment_ids: IDs of existing attachments to import
-        use_ai: If True, use AI-powered extraction (requires OPENAI_API_KEY)
+        use_ai: If True, use AI-powered extraction (requires AI provider key)
         project_id: Optional project ID to import into
         db: Database session
         current_user: Authenticated user
     """
-    import os
-
     files = files or []
     attachment_ids = attachment_ids or []
 
@@ -593,9 +587,7 @@ async def import_pattern(
                         }
                     )
 
-        use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
-            os.getenv("OPENAI_API_KEY")
-        )
+        use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
         async def store_source_files_for_import() -> dict[str, Any]:
             if not source_contents:
@@ -948,7 +940,7 @@ async def import_pattern(
 
             if use_ai_enabled and not OPENAI_AVAILABLE:
                 # If user requested AI but it's not installed/configured
-                # (Though earlier check might have handled OPENAI_API_KEY)
+                # (Though earlier check might have handled missing AI API key)
                 # If files are images/PDF, we generally need AI.
                 # If pure text, we might survive.
                 pass
@@ -2083,7 +2075,7 @@ async def edit_project_form(
             "yarns": yarn_options,
             "tag_suggestions": tag_suggestions,
             "is_ai_enhanced": project.is_ai_enhanced,
-            "has_openai_key": bool(config.OPENAI_API_KEY),
+            "has_openai_key": has_ai_api_key(),
         },
     )
 

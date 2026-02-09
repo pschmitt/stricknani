@@ -64,7 +64,13 @@ class Config:
     )
 
     # AI/OpenAI
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "openai")
+    AI_API_KEY: str | None = os.getenv("AI_API_KEY")
+    AI_BASE_URL: str | None = os.getenv("AI_BASE_URL")
+    AI_MODEL: str | None = os.getenv("AI_MODEL")
     OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
+    OPENROUTER_API_KEY: str | None = os.getenv("OPENROUTER_API_KEY")
+    GROQ_API_KEY: str | None = os.getenv("GROQ_API_KEY")
 
     # Sentry
     SENTRY_DSN_BACKEND: str | None = os.getenv("SENTRY_DSN_BACKEND")

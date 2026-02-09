@@ -67,7 +67,13 @@ All config is via environment variables or `.env` (see `.env.sample`).
 | `FEATURE_WAYBACK_ENABLED`            | Enable Wayback Machine snapshots    | `false`                               |
 | `FEATURE_AI_IMPORT_ENABLED`          | Enable AI-powered pattern import    | `true`                                |
 | `DEFAULT_LANGUAGE`                   | Default language                    | `de`                                  |
+| `AI_PROVIDER`                        | AI provider (`openai/openrouter/groq`) | `openai`                           |
+| `AI_API_KEY`                         | Generic AI API key                  | (optional)                            |
+| `AI_BASE_URL`                        | Override provider base URL          | (provider default)                    |
+| `AI_MODEL`                           | Default model override              | (provider default)                    |
 | `OPENAI_API_KEY`                     | OpenAI API key for AI import        | (optional)                            |
+| `OPENROUTER_API_KEY`                 | OpenRouter API key                  | (optional)                            |
+| `GROQ_API_KEY`                       | Groq API key                        | (optional)                            |
 | `SENTRY_DSN_BACKEND`                 | Sentry DSN for backend              | (optional)                            |
 | `SENTRY_DSN_FRONTEND`                | Sentry DSN for frontend             | (optional)                            |
 | `SENTRY_ENVIRONMENT`                 | Sentry environment name             | `production`                          |
@@ -87,7 +93,10 @@ Install AI extras:
 uv pip install -e ".[ai]"
 ```
 
-Then set `OPENAI_API_KEY` in `.env`.
+Then set one of these in `.env`:
+- `AI_PROVIDER=openai` and `OPENAI_API_KEY=...` (or `AI_API_KEY=...`)
+- `AI_PROVIDER=openrouter` and `OPENROUTER_API_KEY=...` (or `AI_API_KEY=...`)
+- `AI_PROVIDER=groq` and `GROQ_API_KEY=...` (or `AI_API_KEY=...`)
 
 ## Developer Workflow
 
@@ -105,6 +114,13 @@ just build-container # Build Nix container
 just demo-data      # Seed demo data
 just demo-reset     # Reset and re-seed demo data
 ```
+
+## Documentation
+
+- Operational rules for agents: `AGENTS.md`
+- Active work queue: `TODO.md`
+- Documentation index: `docs/README.md`
+- Full product spec + implementation snapshot: `docs/spec-and-implementation.md`
 
 When editing UI text, update translations in:
 

@@ -367,3 +367,47 @@ async def test_ingest_multiple_files_attaches_all(
     content = kwargs["input"][0]["content"]
     assert sum(1 for item in content if item["type"] == "input_image") == 1
     assert sum(1 for item in content if item["type"] == "input_file") == 1
+
+
+@pytest.mark.asyncio
+async def test_ingest_uses_chat_completions_for_groq_provider(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AI_PROVIDER", "groq")
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+
+    schema = build_schema_for_target("project")
+    fake_json: dict[str, object] = build_required_payload(
+        schema,
+        {
+            "name": "Groq Pattern",
+            "category": None,
+            "image_urls": [],
+            "steps": [],
+            "description": None,
+        },
+    )
+
+    with patch("openai.AsyncOpenAI") as MockOpenAI:
+        mock_client = MockOpenAI.return_value
+        mock_completion = MagicMock()
+        mock_completion.choices = [
+            MagicMock(message=MagicMock(content=json.dumps(fake_json)))
+        ]
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
+
+        result = await ingest_with_openai(
+            target="project",
+            schema=schema,
+            source_url=None,
+            source_text="text",
+            file_paths=None,
+            instructions="Extract",
+            model=None,
+            temperature=0.1,
+            max_output_tokens=500,
+        )
+
+    assert result["name"] == "Groq Pattern"
+    mock_client.chat.completions.create.assert_called_once()
+    assert mock_client.responses.create.called is False

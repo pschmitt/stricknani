@@ -9,7 +9,6 @@ from __future__ import annotations
 import base64
 import json
 import logging
-import os
 from io import BytesIO
 from typing import TYPE_CHECKING, Any
 
@@ -21,6 +20,12 @@ from stricknani.importing.models import (
     ExtractedData,
     ExtractedStep,
     RawContent,
+)
+from stricknani.utils.ai_provider import (
+    get_ai_api_key,
+    get_ai_base_url,
+    get_default_ai_model,
+    resolve_ai_provider,
 )
 
 if TYPE_CHECKING:
@@ -49,7 +54,7 @@ class AIExtractor(ContentExtractor):
         *,
         url: str | None = None,
         api_key: str | None = None,
-        model: str = "gpt-4o-mini",
+        model: str | None = None,
         max_tokens: int = 4000,
         temperature: float = 0.1,
     ) -> None:
@@ -57,14 +62,18 @@ class AIExtractor(ContentExtractor):
 
         Args:
             url: Optional source URL for context
-            api_key: OpenAI API key (defaults to OPENAI_API_KEY env var)
+            api_key: AI provider API key (defaults to provider-specific env var)
             model: Model to use for extraction
             max_tokens: Maximum tokens in response
             temperature: Temperature for generation
         """
         self.url = url
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        self.model = model
+        self.provider = resolve_ai_provider()
+        self.api_key = get_ai_api_key(provider=self.provider, api_key=api_key)
+        self.base_url = get_ai_base_url(provider=self.provider)
+        self.model = model or get_default_ai_model(
+            provider=self.provider, api_style="chat"
+        )
         self.max_tokens = max_tokens
         self.temperature = temperature
 
@@ -114,7 +123,7 @@ class AIExtractor(ContentExtractor):
 
         if not self.api_key:
             raise ExtractorError(
-                "OpenAI API key not configured",
+                "AI provider API key not configured",
                 extractor_name=self.name,
             )
 
@@ -235,7 +244,7 @@ class AIExtractor(ContentExtractor):
         extra_context: str = "",
     ) -> ExtractedData:
         """Extract data from images using vision API."""
-        client = AsyncOpenAI(api_key=self.api_key)
+        client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
 
         # Build prompt
         system_prompt = self._build_system_prompt()
@@ -297,7 +306,7 @@ class AIExtractor(ContentExtractor):
         extra_prompt: str | None = None,
     ) -> ExtractedData:
         """Extract data from text using GPT."""
-        client = AsyncOpenAI(api_key=self.api_key)
+        client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
 
         text = content.get_text()
 
