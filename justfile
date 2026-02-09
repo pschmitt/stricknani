@@ -23,57 +23,7 @@ ci-setup-py:
 [group: 'dev']
 [positional-arguments]
 run *args:
-  #!/usr/bin/env bash
-
-  PORT="{{ dev_port }}"
-  ARGS=({{ args }})
-
-  CMD=(
-    uv run uvicorn stricknani.main:app
-    --reload
-    --host 0.0.0.0
-    --port "$PORT"
-    --log-level debug
-    --access-log
-  )
-
-  ENV_VARS=(
-    IMPORT_TRACE_ENABLED=1
-  )
-
-  while [[ -n $* ]]
-  do
-    case "$1" in
-      -b|--background)
-        DONT_OPEN_BROWSER=1
-        shift
-        ;;
-      -d|--debug)
-        ENV_VARS+=("DEBUG=1")
-        shift
-        ;;
-      *)
-        break
-        ;;
-    esac
-  done
-
-  if [[ -z "${IN_NIX_SHELL:-}" ]]
-  then
-    if ! command -v nix &>/dev/null
-    then
-      echo "WARNING: nix not found; running without nix develop" >&2
-    else
-      exec nix develop -c just run "${ARGS[@]}"
-    fi
-  fi
-
-  if [[ -z $DONT_OPEN_BROWSER ]]
-  then
-    (sleep 2 && ${BROWSER:-xdg-open} "http://localhost:${PORT}") &
-  fi
-
-  env "${ENV_VARS[@]}" "${CMD[@]}"
+  ./scripts/run.sh --port "{{ dev_port }}" {{ args }}
 
 # Run linters
 [group: 'lint']
@@ -149,23 +99,7 @@ fmt-css:
 # Trim trailing whitespace
 [group: 'fmt']
 trim:
-  @echo "Trimming trailing whitespace..."
-
-  @find . \
-    -type f \
-    \( \
-      -iname "*.py" \
-      -o -iname "*.html" \
-      -o -iname "*.js" \
-      -o -iname "*.css" \
-      -o -iname "*.md" \
-      -o -iname "*.nix" \
-      -o -iname "*.toml" \
-      -o -name "justfile" \
-    \) \
-    -not -path "*/.*" \
-    -not -path "./stricknani/static/vendor/*" \
-    -exec sed -i 's/[[:space:]]\+$//' {} +
+  ./scripts/trim.sh
 
 # Run tests
 [group: 'test']
