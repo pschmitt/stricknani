@@ -1,5 +1,7 @@
 # Stricknani justfile
 
+set shell := ["bash", "-c"]
+
 # Default port for dev server
 dev_port := env("PORT", "7674")
 
