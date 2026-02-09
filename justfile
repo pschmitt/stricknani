@@ -43,7 +43,6 @@ run *args:
     --port '{{ dev_port }}'
     --log-level debug
     --access-log
-    {{ args }}
   )
 
   if [[ -z "${IN_NIX_SHELL:-}" ]]
