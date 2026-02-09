@@ -34,7 +34,7 @@ ci-setup-biome:
 [positional-arguments]
 run *args:
   #!/usr/bin/env bash
-  #
+
   PORT="{{ dev_port }}"
   ARGS=({{ args }})
 
