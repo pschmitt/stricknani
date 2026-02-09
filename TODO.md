@@ -31,9 +31,9 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T6 | P0 | wip | data-integrity | Make DB/file operations atomic-ish: avoid deleting files before successful DB commit |
-| T7 | P0 | todo | auth/security | Enforce `is_active` in auth resolution so disabled users lose access immediately |
-| T8 | P1 | todo | architecture | Split oversized route modules into route/controller + service layers |
+| T6 | P0 | done | data-integrity | Make DB/file operations atomic-ish: avoid deleting files before successful DB commit |
+| T7 | P0 | done | auth/security | Enforce `is_active` in auth resolution so disabled users lose access immediately |
+| T8 | P1 | wip | architecture | Split oversized route modules into route/controller + service layers |
 | T9 | P1 | todo | import | Consolidate duplicated import/image-dedupe logic into a single reusable pipeline |
 | T10 | P1 | todo | projects | Extract shared create/update project import workflows to common services |
 | T11 | P1 | todo | i18n/web | Remove per-request global Jinja i18n mutation to avoid cross-request language bleed |
@@ -49,6 +49,8 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
+| T7 | P0 | done | auth/security | Enforce `is_active` in auth resolution so disabled users lose access immediately |
+| T6 | P0 | done | data-integrity | Make DB/file operations atomic-ish: avoid deleting files before successful DB commit |
 | T4 | P2 | done | docs | Reorganize project documents for faster agent onboarding and maintenance |
 | T2 | P3 | done | ai/import | Add OpenRouter and Groq support for AI imports |
 
@@ -65,7 +67,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: data-integrity
 - **Priority**: P0
-- **Status**: wip
+- **Status**: done
 - **Notes**:
   - For delete endpoints, commit DB changes first, then perform best-effort filesystem cleanup.
   - For import/dedupe flows, avoid irreversible file deletion before transaction success.

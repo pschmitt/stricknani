@@ -2,11 +2,10 @@
 
 import asyncio
 import logging
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import BytesIO
-from pathlib import Path
 from typing import Annotated, Any
 
 import anyio
@@ -32,6 +31,13 @@ from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.models import Project, User, Yarn, YarnImage, user_favorite_yarns
 from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.services.yarn import (
+    get_yarn_photo_dimensions,
+    resolve_project_preview,
+    resolve_yarn_preview,
+    serialize_yarn_cards,
+    serialize_yarn_photos,
+)
 from stricknani.utils.ai_provider import has_ai_api_key
 from stricknani.utils.files import (
     build_import_filename,
@@ -298,141 +304,6 @@ def _parse_optional_int(field_name: str, value: str | None) -> int | None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid value for {field_name}",
         ) from exc
-
-
-def _resolve_preview(yarn: Yarn) -> str | None:
-    """Return the thumbnail URL for the first photo, if any."""
-
-    if not yarn.photos:
-        return None
-    first = yarn.photos[0]
-    return get_thumbnail_url(first.filename, yarn.id, subdir="yarns")
-
-
-def _resolve_project_preview(project: Project) -> dict[str, str | None]:
-    """Return preview image data for a project if any images exist."""
-
-    candidates = [img for img in project.images if img.is_title_image]
-    if not candidates and project.images:
-        candidates = [project.images[0]]
-    if not candidates:
-        return {"preview_url": None, "preview_alt": None}
-
-    image = candidates[0]
-    thumb_name = f"thumb_{Path(image.filename).stem}.jpg"
-    thumb_path = (
-        config.MEDIA_ROOT / "thumbnails" / "projects" / str(project.id) / thumb_name
-    )
-    url = None
-    if thumb_path.exists():
-        url = get_thumbnail_url(
-            image.filename,
-            project.id,
-            subdir="projects",
-        )
-    file_path = config.MEDIA_ROOT / "projects" / str(project.id) / image.filename
-    if file_path.exists():
-        url = get_file_url(
-            image.filename,
-            project.id,
-            subdir="projects",
-        )
-
-    return {"preview_url": url, "preview_alt": image.alt_text or project.name}
-
-
-def _get_photo_dimensions(yarn_id: int, filename: str) -> tuple[int | None, int | None]:
-    image_path = config.MEDIA_ROOT / "yarns" / str(yarn_id) / filename
-    if not image_path.exists():
-        return None, None
-    try:
-        with PilImage.open(image_path) as img:
-            width, height = img.size
-            return int(width), int(height)
-    except (OSError, ValueError):
-        return None, None
-
-
-def _serialize_photos(yarn: Yarn) -> list[dict[str, object]]:
-    """Prepare photo metadata for templates."""
-
-    payload: list[dict[str, object]] = []
-    has_seen_primary = False
-
-    # Sort photos: primary first, then by ID
-    sorted_photos = sorted(yarn.photos, key=lambda p: (not p.is_primary, p.id))
-
-    for photo in sorted_photos:
-        width, height = _get_photo_dimensions(yarn.id, photo.filename)
-
-        is_primary = photo.is_primary
-        if is_primary:
-            if has_seen_primary:
-                is_primary = False
-            else:
-                has_seen_primary = True
-
-        payload.append(
-            {
-                "id": photo.id,
-                "thumbnail_url": get_thumbnail_url(
-                    photo.filename,
-                    yarn.id,
-                    subdir="yarns",
-                ),
-                "full_url": get_file_url(
-                    photo.filename,
-                    yarn.id,
-                    subdir="yarns",
-                ),
-                "alt_text": photo.alt_text,
-                "is_primary": is_primary,
-                "width": width,
-                "height": height,
-            }
-        )
-
-    # If no primary photo seen but we have photos, mark the first as primary
-    if not has_seen_primary and payload:
-        payload[0]["is_primary"] = True
-
-    return payload
-
-
-def _serialize_yarn_cards(
-    yarns: Iterable[Yarn],
-    current_user: User | None = None,
-) -> list[dict[str, object]]:
-    """Prepare yarn entries for list rendering with preview URLs."""
-
-    favorites = set()
-    if current_user:
-        favorites = {y.id for y in current_user.favorite_yarns}
-
-    return [
-        {
-            "yarn": {
-                "id": yarn.id,
-                "name": yarn.name,
-                "brand": yarn.brand,
-                "colorway": yarn.colorway,
-                "dye_lot": yarn.dye_lot,
-                "fiber_content": yarn.fiber_content,
-                "weight_category": yarn.weight_category,
-                "weight_grams": yarn.weight_grams,
-                "length_meters": yarn.length_meters,
-                "description": yarn.description,
-                "notes": yarn.notes,
-                "created_at": yarn.created_at.isoformat() if yarn.created_at else None,
-                "updated_at": yarn.updated_at.isoformat() if yarn.updated_at else None,
-                "project_count": len(yarn.projects),
-                "is_favorite": yarn.id in favorites,
-                "is_ai_enhanced": yarn.is_ai_enhanced,
-            },
-            "preview_url": _resolve_preview(yarn),
-        }
-        for yarn in yarns
-    ]
 
 
 @router.post("/import")
@@ -738,14 +609,14 @@ async def list_yarns(
             request,
             {
                 "current_user": current_user,
-                "yarns": _serialize_yarn_cards(yarns, current_user),
+                "yarns": serialize_yarn_cards(yarns, current_user),
                 "search": search or "",
                 "selected_brand": brand,
             },
         )
 
     if request.headers.get("accept") == "application/json":
-        return JSONResponse(_serialize_yarn_cards(yarns, current_user))
+        return JSONResponse(serialize_yarn_cards(yarns, current_user))
 
     has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
@@ -754,7 +625,7 @@ async def list_yarns(
         request,
         {
             "current_user": current_user,
-            "yarns": _serialize_yarn_cards(yarns, current_user),
+            "yarns": serialize_yarn_cards(yarns, current_user),
             "search": search or "",
             "selected_brand": brand,
             "has_openai_key": has_openai_key,
@@ -994,14 +865,14 @@ async def yarn_detail(
             if yarn.description
             else None,
             "notes_html": render_markdown(yarn.notes) if yarn.notes else None,
-            "preview_url": _resolve_preview(yarn),
-            "photos": await anyio.to_thread.run_sync(_serialize_photos, yarn),
+            "preview_url": resolve_yarn_preview(yarn),
+            "photos": await anyio.to_thread.run_sync(serialize_yarn_photos, yarn),
             "linked_projects": [
                 {
                     "id": project.id,
                     "name": project.name,
                     "category": project.category,
-                    **_resolve_project_preview(project),
+                    **resolve_project_preview(project),
                 }
                 for project in yarn.projects
             ],
@@ -1053,7 +924,7 @@ async def edit_yarn(
         {
             "current_user": current_user,
             "yarn": yarn,
-            "photos": await anyio.to_thread.run_sync(_serialize_photos, yarn),
+            "photos": await anyio.to_thread.run_sync(serialize_yarn_photos, yarn),
             "is_ai_enhanced": yarn.is_ai_enhanced,
             "has_openai_key": has_openai_key,
         },
@@ -1213,7 +1084,7 @@ async def upload_yarn_photo(
     await db.commit()
     await db.refresh(photo)
 
-    width, height = _get_photo_dimensions(yarn_id, saved_name)
+    width, height = get_yarn_photo_dimensions(yarn_id, saved_name)
 
     return JSONResponse(
         {
