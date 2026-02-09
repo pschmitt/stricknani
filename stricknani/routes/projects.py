@@ -489,7 +489,7 @@ async def import_pattern(
     import_type: Annotated[str, Form(alias="type")] = "url",
     url: Annotated[str | None, Form()] = None,
     text: Annotated[str | None, Form()] = None,
-    files: list[UploadFile] | None = None,
+    files: Annotated[list[UploadFile] | None, File()] = None,
     attachment_ids: Annotated[list[int] | None, Form()] = None,
     use_ai: Annotated[bool, Form()] = False,
     project_id: Annotated[int | None, Form()] = None,
@@ -549,7 +549,7 @@ async def import_pattern(
             return ContentType.TEXT
 
         # Collect uploaded files
-        for f in files:
+        for f in files or []:
             content = await f.read()
             c_type = get_content_type(f.content_type, f.filename)
             source_contents.append(
@@ -706,6 +706,14 @@ async def import_pattern(
 
         # Extract content based on import type
         should_use_files = len(source_contents) > 0
+
+        # Validate file imports have files attached
+        if import_type == "file" and not should_use_files:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File is required",
+            )
+
         if import_type == "url" and not should_use_files:
             if not url or not url.strip():
                 raise HTTPException(
@@ -1065,13 +1073,32 @@ async def import_pattern(
                 return JSONResponse(content=data)
 
             else:
-                # AI Disabled - Basic processing
-                # For now, just raise error for images/PDF if AI disabled?
-                # Or treat as text if possible?
-                raise HTTPException(
-                    status_code=400,
-                    detail="AI processing is required for file imports (enable AI)",
+                # AI Disabled - Check content types
+                # Text files can be processed without AI
+                all_text = all(
+                    item["content_type"] == ContentType.TEXT for item in source_contents
                 )
+
+                if all_text and source_contents:
+                    # Process text files without AI
+                    combined_text = "\n\n".join(
+                        item["content"].decode("utf-8", errors="ignore")
+                        for item in source_contents
+                    )
+                    data = {
+                        "name": "Imported Text File",
+                        "description": combined_text,
+                        "steps": [{"step_number": 1, "description": combined_text}],
+                        "is_ai_enhanced": False,
+                    }
+                    data = trim_import_strings(data)
+                    return JSONResponse(content=data)
+                else:
+                    # PDF/Image files require AI
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                        detail="AI processing is required for PDF/image file imports",
+                    )
 
         elif import_type == "text":
             if not text or not text.strip():
