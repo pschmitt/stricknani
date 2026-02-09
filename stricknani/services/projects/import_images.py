@@ -118,6 +118,7 @@ async def import_project_images_from_urls(
     *,
     title_url: str | None = None,
     permanently_saved_tokens: set[str] | None = None,
+    deferred_deletions: list[str] | None = None,
 ) -> int:
     """Download and attach imported images to a project."""
     if not image_urls:
@@ -254,7 +255,8 @@ async def import_project_images_from_urls(
             removed_title = any(entry.is_title_image for entry in to_remove)
             for entry in to_remove:
                 await db.delete(entry.image)
-                delete_file(entry.filename, project.id)
+                if deferred_deletions is not None:
+                    deferred_deletions.append(entry.filename)
                 imported_similarities.remove(entry)
                 imported = max(0, imported - 1)
 
@@ -325,6 +327,7 @@ async def import_step_images_from_urls(
     image_urls: Sequence[str],
     *,
     permanently_saved_tokens: set[str] | None = None,
+    deferred_deletions: list[str] | None = None,
 ) -> int:
     """Download and attach imported images to a step."""
     if not image_urls:
@@ -438,7 +441,8 @@ async def import_step_images_from_urls(
 
             for entry in to_remove:
                 await db.delete(entry.image)
-                delete_file(entry.filename, step.project_id)
+                if deferred_deletions is not None:
+                    deferred_deletions.append(entry.filename)
                 imported_similarities.remove(entry)
                 imported = max(0, imported - 1)
 

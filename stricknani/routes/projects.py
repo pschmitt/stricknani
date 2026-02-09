@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import re
+import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
@@ -2160,6 +2161,7 @@ async def create_project(
     # Cache for consumed tokens to allow same image in multiple places
     token_cache: dict[str, tuple[bytes, str, str]] = {}
     permanently_saved_tokens: set[str] = set()
+    post_commit_file_deletes: list[str] = []
 
     async def get_token_data(t: str) -> tuple[bytes, str, str]:
         if t in token_cache:
@@ -2238,6 +2240,7 @@ async def create_project(
                         step,
                         regular_urls,
                         permanently_saved_tokens=permanently_saved_tokens,
+                        deferred_deletions=post_commit_file_deletes,
                     )
 
     image_urls = _parse_import_image_urls(import_image_urls)
@@ -2315,6 +2318,7 @@ async def create_project(
                 regular_project_urls,
                 title_url=import_title_image_url,
                 permanently_saved_tokens=permanently_saved_tokens,
+                deferred_deletions=post_commit_file_deletes,
             )
 
     # Attach imported source files that were uploaded before the project existed.
@@ -2392,6 +2396,15 @@ async def create_project(
                 permanently_saved_tokens.add(token)
 
     await db.commit()
+    for filename in post_commit_file_deletes:
+        try:
+            delete_file(filename, project.id)
+        except OSError as exc:
+            logger.warning(
+                "Failed to remove replaced project image file %s: %s",
+                filename,
+                exc,
+            )
     await db.refresh(project)
 
     if (
@@ -2507,6 +2520,7 @@ async def update_project(
     # Cache for consumed tokens to allow same image in multiple places
     token_cache: dict[str, tuple[bytes, str, str]] = {}
     permanently_saved_tokens: set[str] = set()
+    post_commit_file_deletes: list[str] = []
 
     async def get_token_data(t: str) -> tuple[bytes, str, str]:
         if t in token_cache:
@@ -2586,7 +2600,12 @@ async def update_project(
                 regular_project_urls.append(url)
 
         if regular_project_urls:
-            await import_project_images_from_urls(db, project, regular_project_urls)
+            await import_project_images_from_urls(
+                db,
+                project,
+                regular_project_urls,
+                deferred_deletions=post_commit_file_deletes,
+            )
 
     # Update steps
     if steps_data:
@@ -2615,7 +2634,7 @@ async def update_project(
                 select(Image).where(Image.step_id.in_(steps_to_delete))
             )
             for img in images_to_delete_result.scalars():
-                delete_file(img.filename, project_id)
+                post_commit_file_deletes.append(img.filename)
 
             # Explicitly delete image records from DB since bulk Step delete
             # doesn't trigger ORM cascades
@@ -2701,6 +2720,7 @@ async def update_project(
                         step,
                         regular_urls,
                         permanently_saved_tokens=permanently_saved_tokens,
+                        deferred_deletions=post_commit_file_deletes,
                     )
 
     # Attach imported source files that were uploaded before the project existed.
@@ -2783,6 +2803,11 @@ async def update_project(
                 permanently_saved_tokens.add(token)
 
     await db.commit()
+    for filename in post_commit_file_deletes:
+        try:
+            delete_file(filename, project_id)
+        except OSError as exc:
+            logger.warning("Failed to remove step image file %s: %s", filename, exc)
 
     if (
         config.FEATURE_WAYBACK_ENABLED
@@ -2874,32 +2899,36 @@ async def delete_project(
     elif delete_yarns:
         exclusive_yarns_to_delete = await _get_exclusive_yarns(db, project)
 
+    yarn_dirs_to_cleanup: list[tuple[Path, Path]] = []
     if exclusive_yarns_to_delete:
         for yarn in exclusive_yarns_to_delete:
-            # Delete yarn media if any
             yarn_media_dir = config.MEDIA_ROOT / "yarns" / str(yarn.id)
             yarn_thumb_dir = config.MEDIA_ROOT / "thumbnails" / "yarns" / str(yarn.id)
-            import shutil
-
-            if yarn_media_dir.exists():
-                shutil.rmtree(yarn_media_dir)
-            if yarn_thumb_dir.exists():
-                shutil.rmtree(yarn_thumb_dir)
+            yarn_dirs_to_cleanup.append((yarn_media_dir, yarn_thumb_dir))
             await db.delete(yarn)
-
-    # Delete all project assets before deleting the database record
-    import shutil
 
     project_media_dir = config.MEDIA_ROOT / "projects" / str(project_id)
     project_thumb_dir = config.MEDIA_ROOT / "thumbnails" / "projects" / str(project_id)
 
-    if project_media_dir.exists():
-        shutil.rmtree(project_media_dir)
-    if project_thumb_dir.exists():
-        shutil.rmtree(project_thumb_dir)
-
     await db.delete(project)
     await db.commit()
+
+    for media_dir, thumb_dir in yarn_dirs_to_cleanup:
+        try:
+            if media_dir.exists():
+                shutil.rmtree(media_dir)
+            if thumb_dir.exists():
+                shutil.rmtree(thumb_dir)
+        except OSError as exc:
+            logger.warning("Failed to remove yarn media directories: %s", exc)
+
+    try:
+        if project_media_dir.exists():
+            shutil.rmtree(project_media_dir)
+        if project_thumb_dir.exists():
+            shutil.rmtree(project_thumb_dir)
+    except OSError as exc:
+        logger.warning("Failed to remove project media directories: %s", exc)
 
     if request.headers.get("HX-Request"):
         # Check if any projects remain
@@ -3129,12 +3158,13 @@ async def delete_image(
     if not image or image.project.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    # Delete file from disk
-    delete_file(image.filename, project_id)
-
-    # Delete database record
+    filename = image.filename
     await db.delete(image)
     await db.commit()
+    try:
+        delete_file(filename, project_id)
+    except OSError as exc:
+        logger.warning("Failed to remove project image file %s: %s", filename, exc)
 
     return {"message": "Image deleted"}
 
@@ -3240,11 +3270,17 @@ async def delete_attachment(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    # Delete file from storage
-    delete_file(attachment.filename, project_id)
-
+    filename = attachment.filename
     await db.delete(attachment)
     await db.commit()
+    try:
+        delete_file(filename, project_id)
+    except OSError as exc:
+        logger.warning(
+            "Failed to remove project attachment file %s: %s",
+            filename,
+            exc,
+        )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

@@ -76,6 +76,7 @@ from stricknani.utils.wayback import (
 from stricknani.web.templating import render_template
 
 router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -107,6 +108,7 @@ async def _import_yarn_images_from_urls(
     image_urls: Sequence[str],
     *,
     primary_url: str | None = None,
+    deferred_deletions: list[str],
 ) -> int:
     """Download and attach imported images to a yarn."""
     if not image_urls:
@@ -213,7 +215,7 @@ async def _import_yarn_images_from_urls(
             removed_primary = any(entry.is_primary for entry in to_remove)
             for entry in to_remove:
                 await db.delete(entry.image)
-                delete_file(entry.filename, yarn.id, subdir="yarns")
+                deferred_deletions.append(entry.filename)
                 imported_similarities.remove(entry)
                 imported = max(0, imported - 1)
 
@@ -867,15 +869,25 @@ async def create_yarn(
 
     await _handle_photo_uploads(photos, yarn, db)
 
+    deferred_deletions: list[str] = []
     # Handle imported image URLs
     if import_image_urls:
         urls = _parse_import_image_urls(import_image_urls)
         if urls:
             await _import_yarn_images_from_urls(
-                db, yarn, urls, primary_url=import_primary_image_url
+                db,
+                yarn,
+                urls,
+                primary_url=import_primary_image_url,
+                deferred_deletions=deferred_deletions,
             )
 
     await db.commit()
+    for filename in deferred_deletions:
+        try:
+            delete_file(filename, yarn.id, subdir="yarns")
+        except OSError as exc:
+            logger.warning("Failed to remove replaced yarn image %s: %s", filename, exc)
     await db.refresh(yarn)
 
     if (
@@ -1112,15 +1124,25 @@ async def update_yarn(
 
     await _handle_photo_uploads(new_photos, yarn, db)
 
+    deferred_deletions: list[str] = []
     # Handle imported image URLs
     if import_image_urls:
         urls = _parse_import_image_urls(import_image_urls)
         if urls:
             await _import_yarn_images_from_urls(
-                db, yarn, urls, primary_url=import_primary_image_url
+                db,
+                yarn,
+                urls,
+                primary_url=import_primary_image_url,
+                deferred_deletions=deferred_deletions,
             )
 
     await db.commit()
+    for filename in deferred_deletions:
+        try:
+            delete_file(filename, yarn.id, subdir="yarns")
+        except OSError as exc:
+            logger.warning("Failed to remove replaced yarn image %s: %s", filename, exc)
     await db.refresh(yarn)
 
     if (
@@ -1360,10 +1382,14 @@ async def delete_yarn(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    for photo in list(yarn.photos):
-        delete_file(photo.filename, yarn.id, subdir="yarns")
+    filenames = [photo.filename for photo in yarn.photos]
     await db.delete(yarn)
     await db.commit()
+    for filename in filenames:
+        try:
+            delete_file(filename, yarn.id, subdir="yarns")
+        except OSError as exc:
+            logger.warning("Failed to remove yarn image file %s: %s", filename, exc)
 
     if request.headers.get("HX-Request"):
         # Check if any yarns remain
@@ -1417,9 +1443,13 @@ async def delete_yarn_photo(
     if target is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    delete_file(target.filename, yarn.id, subdir="yarns")
+    filename = target.filename
     await db.delete(target)
     await db.commit()
+    try:
+        delete_file(filename, yarn.id, subdir="yarns")
+    except OSError as exc:
+        logger.warning("Failed to remove yarn image file %s: %s", filename, exc)
 
     if (
         request.headers.get("accept") == "application/json"

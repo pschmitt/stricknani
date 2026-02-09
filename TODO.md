@@ -31,6 +31,16 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
+| T6 | P0 | wip | data-integrity | Make DB/file operations atomic-ish: avoid deleting files before successful DB commit |
+| T7 | P0 | todo | auth/security | Enforce `is_active` in auth resolution so disabled users lose access immediately |
+| T8 | P1 | todo | architecture | Split oversized route modules into route/controller + service layers |
+| T9 | P1 | todo | import | Consolidate duplicated import/image-dedupe logic into a single reusable pipeline |
+| T10 | P1 | todo | projects | Extract shared create/update project import workflows to common services |
+| T11 | P1 | todo | i18n/web | Remove per-request global Jinja i18n mutation to avoid cross-request language bleed |
+| T12 | P1 | todo | web/templating | Remove hidden DB/auth lookups from `render_template`; require explicit `current_user` context |
+| T13 | P2 | todo | reliability | Replace broad exception swallowing in import/parse paths with explicit error handling |
+| T14 | P2 | todo | security | Simplify and harden CSRF token flow (single source of truth for token location) |
+| T15 | P2 | todo | data-model | Add DB invariant for a single primary yarn image and simplify fallback logic |
 | T5 | P2 | todo | ux | cropping of pictures via photoswipe (only when on the edit pages!) |
 | T1 | P3 | todo | frontend/build | Replace runtime Tailwind with prebuilt static CSS bundle |
 
@@ -50,6 +60,15 @@ Execution-oriented backlog for Stricknani.
 - **Area**: ux
 - **Priority**: P2
 - **Status**: todo
+
+### T6: Make DB/file operations atomic-ish: avoid deleting files before successful DB commit
+
+- **Area**: data-integrity
+- **Priority**: P0
+- **Status**: wip
+- **Notes**:
+  - For delete endpoints, commit DB changes first, then perform best-effort filesystem cleanup.
+  - For import/dedupe flows, avoid irreversible file deletion before transaction success.
 
 ### T4: Reorganize project documents for faster agent onboarding and maintenance
 
