@@ -77,6 +77,7 @@
               poppler-utils
               tesseract
               nodePackages.prettier
+              vendir
             ];
 
             shellHook = ''
