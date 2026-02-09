@@ -33,7 +33,7 @@ directories:
       # renovate: datasource=npm depName=daisyui
       - path: daisyui
         http:
-          url: https://registry.npmjs.org/daisyui/-/daisyui-5.5.18.tgz
+          url: https://registry.npmjs.org/daisyui/-/daisyui-5.5.16.tgz
         newRootPath: package
         includePaths:
           - package/daisyui.css

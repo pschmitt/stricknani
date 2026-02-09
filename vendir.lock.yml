@@ -1,19 +1,19 @@
 apiVersion: vendir.k14s.io/v1alpha1
 directories:
-  - contents:
-      - http: {}
-        path: mdi
-      - http: {}
-        path: photoswipe
-      - http: {}
-        path: cropperjs
-      - http: {}
-        path: daisyui
-      - http: {}
-        path: tailwindcss-browser
-      - http: {}
-        path: htmx
-      - http: {}
-        path: sentry
-    path: stricknani/static/vendor
+- contents:
+  - http: {}
+    path: mdi
+  - http: {}
+    path: photoswipe
+  - http: {}
+    path: cropperjs
+  - http: {}
+    path: daisyui
+  - http: {}
+    path: tailwindcss-browser
+  - http: {}
+    path: htmx
+  - http: {}
+    path: sentry
+  path: stricknani/static/vendor
 kind: LockConfig
