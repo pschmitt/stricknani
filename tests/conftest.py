@@ -14,6 +14,12 @@ from stricknani.utils.auth import get_password_hash
 
 
 @pytest.fixture
+def anyio_backend() -> str:
+    """Run AnyIO tests on asyncio backend in this test environment."""
+    return "asyncio"
+
+
+@pytest.fixture
 async def test_client(
     tmp_path: Any,
 ) -> AsyncGenerator[

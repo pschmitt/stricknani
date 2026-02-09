@@ -133,6 +133,10 @@ def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
     return extract_search_token(search, prefix)
 
 
+_ensure_yarns_by_text = ensure_yarns_by_text
+_get_exclusive_yarns = get_exclusive_yarns
+
+
 def _render_favorite_toggle(
     request: Request,
     project_id: int,
