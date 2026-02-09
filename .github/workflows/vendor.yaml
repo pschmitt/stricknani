@@ -18,13 +18,10 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
+      - name: Set up vendir
+        uses: carvel-dev/setup-action@v2
         with:
-          go-version: "stable"
-
-      - name: Install vendir
-        run: just ci-setup-vendir
+          only: vendir
 
       - name: Check vendored assets are up to date
         run: |
@@ -42,13 +39,10 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
+      - name: Set up vendir
+        uses: carvel-dev/setup-action@v2
         with:
-          go-version: "stable"
-
-      - name: Install vendir
-        run: just ci-setup-vendir
+          only: vendir
 
       - name: Sync vendored assets
         run: |

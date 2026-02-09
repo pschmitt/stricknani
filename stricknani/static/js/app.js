@@ -143,7 +143,7 @@
       return;
     }
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
+      if (navigator.clipboard?.writeText) {
         try {
           await navigator.clipboard.writeText(text);
         } catch {
@@ -218,7 +218,7 @@
         }
       } else if (response.responseText) {
         const text = response.responseText;
-        if (text && text.trim()) {
+        if (text?.trim()) {
           return text.trim();
         }
       }

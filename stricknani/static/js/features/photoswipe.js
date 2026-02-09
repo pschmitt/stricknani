@@ -51,7 +51,7 @@
     lightbox.addFilter("domItemData", (itemData, element) => {
       if (itemData.width === 1200 && itemData.height === 1200) {
         const img = element.querySelector("img");
-        if (img && img.naturalWidth && img.naturalHeight) {
+        if (img?.naturalWidth && img.naturalHeight) {
           itemData.width = img.naturalWidth;
           itemData.height = img.naturalHeight;
         }

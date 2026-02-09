@@ -37,12 +37,6 @@
 
               # Nix
               statix.enable = true;
-
-              # JS/CSS
-              prettier = {
-                enable = true;
-                settings.binPath = "${pkgs.nodePackages.prettier}/bin/prettier";
-              };
             };
           };
         in
@@ -76,10 +70,8 @@
               statix
               poppler-utils
               tesseract
-              nodePackages.prettier
               vendir
               biome
-              prettier
             ];
 
             shellHook = ''

@@ -19,18 +19,6 @@ setup:
 ci-setup-py:
   uv sync --extra dev
 
-[group: 'ci']
-ci-setup-prettier:
-  npm install -g prettier
-
-[group: 'ci']
-ci-setup-vendir:
-  go install carvel.dev/vendir/cmd/vendir@latest
-
-[group: 'ci']
-ci-setup-biome:
-  npm install -g @biomejs/biome
-
 # Run dev server with reload. Use -b to skip opening the browser.
 [group: 'dev']
 [positional-arguments]
@@ -135,7 +123,7 @@ i18n-compile:
 
 # Format code
 [group: 'fmt']
-fmt: fmt-ruff fmt-nix fmt-prettier
+fmt: fmt-ruff fmt-nix fmt-biome
 
 [group: 'fmt']
 fmt-ruff:
@@ -148,12 +136,15 @@ fmt-nix:
   statix fix nix/
 
 [group: 'fmt']
-fmt-prettier:
-  prettier --write .
+fmt-biome: fmt-js fmt-css
 
 [group: 'fmt']
-prettier-check:
-  prettier --check .
+fmt-js:
+  biome format --write stricknani/static/js
+
+[group: 'fmt']
+fmt-css:
+  biome format --write stricknani/static/css
 
 # Trim trailing whitespace
 [group: 'fmt']

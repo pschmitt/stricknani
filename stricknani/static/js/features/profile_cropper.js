@@ -242,7 +242,7 @@
               modal.close();
 
               const editUserDialog = document.getElementById("editUserDialog");
-              if (editUserDialog && editUserDialog.open) {
+              if (editUserDialog?.open) {
                 editUserDialog.close();
               }
 
