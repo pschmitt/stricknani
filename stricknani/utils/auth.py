@@ -1,6 +1,6 @@
 """Authentication utilities."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 from jose import JWTError, jwt
@@ -31,9 +31,9 @@ def create_access_token(
     """Create JWT access token."""
     to_encode: dict[str, object] = {**data}
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(UTC) + timedelta(
             minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     to_encode["exp"] = expire
