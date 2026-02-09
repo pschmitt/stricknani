@@ -1,7 +1,7 @@
 # Stricknani justfile
 
 # Default port for dev server
-dev_port := env_var_or_default("PORT", "7674")
+dev_port := env("PORT", "7674")
 
 default:
   @just --choose
@@ -31,35 +31,35 @@ ci-setup-biome:
 
 # Run dev server with reload. Use -b to skip opening the browser.
 [group: 'dev']
+[positional-arguments]
 run *args:
   #!/usr/bin/env bash
-
-  OPEN_BROWSER=1
+  #
+  PORT="{{ dev_port }}"
+  ARGS=({{ args }})
 
   CMD=(
     uv run uvicorn stricknani.main:app
     --reload
     --host 0.0.0.0
-    --port '{{ dev_port }}'
+    --port "$PORT"
     --log-level debug
     --access-log
   )
 
-  if [[ -z "${IN_NIX_SHELL:-}" ]]
-  then
-    if ! command -v nix &>/dev/null
-    then
-      echo "WARNING: nix not found; running without nix develop" >&2
-    else
-      exec nix develop -c just run {{ args }}
-    fi
-  fi
+  ENV_VARS=(
+    IMPORT_TRACE_ENABLED=1
+  )
 
   while [[ -n $* ]]
   do
     case "$1" in
       -b|--background)
-        unset OPEN_BROWSER
+        DONT_OPEN_BROWSER=1
+        shift
+        ;;
+      -d|--debug)
+        ENV_VARS+=("DEBUG=1")
         shift
         ;;
       *)
@@ -68,12 +68,22 @@ run *args:
     esac
   done
 
-  if [[ -n $OPEN_BROWSER ]]
+  if [[ -z "${IN_NIX_SHELL:-}" ]]
   then
-    (sleep 2 && ${BROWSER:-xdg-open} "http://localhost:{{ dev_port }}") &
+    if ! command -v nix &>/dev/null
+    then
+      echo "WARNING: nix not found; running without nix develop" >&2
+    else
+      exec nix develop -c just run "${ARGS[@]}"
+    fi
   fi
 
-  IMPORT_TRACE_ENABLED=1 "${CMD[@]}"
+  if [[ -z $DONT_OPEN_BROWSER ]]
+  then
+    (sleep 2 && ${BROWSER:-xdg-open} "http://localhost:${PORT}") &
+  fi
+
+  env "${ENV_VARS[@]}" "${CMD[@]}"
 
 # Run linters
 [group: 'lint']
