@@ -14,6 +14,7 @@ from stricknani.models import Base
 from stricknani.routes import auth
 from stricknani.utils.auth import (
     authenticate_user,
+    create_access_token,
     create_user,
     get_password_hash,
     get_user_by_email,
@@ -101,6 +102,20 @@ async def test_authenticate_user_inactive(db_session: AsyncSession) -> None:
 
     authenticated = await authenticate_user(db_session, email, password)
     assert authenticated is None
+
+
+async def test_get_current_user_inactive_returns_none(db_session: AsyncSession) -> None:
+    """Inactive users with valid tokens should be treated as unauthenticated."""
+    email = "inactive-current@example.com"
+    password = "test_password"
+
+    user = await create_user(db_session, email, password)
+    user.is_active = False
+    await db_session.commit()
+
+    token = create_access_token({"sub": email})
+    resolved = await auth.get_current_user(token, db_session)
+    assert resolved is None
 
 
 @pytest.mark.asyncio

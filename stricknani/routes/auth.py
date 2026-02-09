@@ -44,6 +44,8 @@ async def get_current_user(
         return None
 
     user = await get_user_by_email(db, email)
+    if user and not user.is_active:
+        return None
     return user
 
 
