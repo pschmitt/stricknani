@@ -33,7 +33,7 @@ directories:
       # renovate: datasource=npm depName=daisyui
       - path: daisyui
         http:
-          url: https://registry.npmjs.org/daisyui/-/daisyui-5.5.16.tgz
+          url: https://registry.npmjs.org/daisyui/-/daisyui-5.5.18.tgz
         newRootPath: package
         includePaths:
           - package/daisyui.css
@@ -50,7 +50,7 @@ directories:
       # renovate: datasource=npm depName=htmx.org
       - path: htmx
         http:
-          url: https://registry.npmjs.org/htmx.org/-/htmx.org-2.0.7.tgz
+          url: https://registry.npmjs.org/htmx.org/-/htmx.org-2.0.8.tgz
         newRootPath: package/dist
         includePaths:
           - package/dist/htmx.min.js
