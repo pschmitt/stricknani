@@ -231,6 +231,7 @@ demo-data *args:
 [confirm("Delete database and media dir?")]
 demo-reset: (demo-data "--reset")
   rm -rf ./media
+  mkdir -p ./media
 
 # Run CLI with arguments
 [group: 'cli']
