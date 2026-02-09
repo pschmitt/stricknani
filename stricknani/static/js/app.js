@@ -881,6 +881,137 @@
       }
     });
 
+    const isTypingTarget = (target) => {
+      if (!(target instanceof Element)) {
+        return false;
+      }
+      if (target.closest('input, textarea, select, [contenteditable="true"]')) {
+        return true;
+      }
+      return target.closest("[data-shortcuts-ignore]") !== null;
+    };
+
+    const hasOpenBlockingUi = () => {
+      if (document.querySelector("dialog[open]")) {
+        return true;
+      }
+      return !!document.querySelector(".pswp.pswp--open");
+    };
+
+    const navigateTo = (href) => {
+      if (!href) {
+        return false;
+      }
+      window.location.href = href;
+      return true;
+    };
+
+    const getMainShortcutConfig = () => {
+      const main = document.querySelector("main");
+      if (!main) {
+        return null;
+      }
+      return {
+        scope: main.dataset.shortcutsScope || "",
+        createHref: main.dataset.shortcutCreateHref || "",
+        editHref: main.dataset.shortcutEditHref || "",
+        importDialogId: main.dataset.shortcutImportDialog || "",
+        deleteDialogId: main.dataset.shortcutDeleteDialog || "",
+        prevHref: main.dataset.swipePrevHref || "",
+        nextHref: main.dataset.swipeNextHref || "",
+      };
+    };
+
+    const openDeleteDialog = (dialogId) => {
+      const trigger = dialogId
+        ? document.querySelector(
+            `[data-action="open-dialog"][data-dialog-id="${dialogId}"]`,
+          )
+        : document.querySelector(
+            '[data-action="open-dialog"][data-dialog-id^="delete"]',
+          );
+
+      if (trigger && typeof trigger.click === "function") {
+        trigger.click();
+        return true;
+      }
+
+      if (dialogId) {
+        return window.openDialog?.(dialogId) || false;
+      }
+
+      return false;
+    };
+
+    document.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      if (isTypingTarget(event.target)) {
+        return;
+      }
+      if (hasOpenBlockingUi()) {
+        return;
+      }
+
+      const shortcutConfig = getMainShortcutConfig();
+      if (!shortcutConfig?.scope) {
+        return;
+      }
+
+      if (shortcutConfig.scope === "list") {
+        if (event.key === "c") {
+          if (navigateTo(shortcutConfig.createHref)) {
+            event.preventDefault();
+          }
+          return;
+        }
+        if (event.key === "i") {
+          if (
+            shortcutConfig.importDialogId &&
+            window.openDialog?.(shortcutConfig.importDialogId)
+          ) {
+            event.preventDefault();
+          }
+        }
+        return;
+      }
+
+      if (shortcutConfig.scope !== "detail") {
+        return;
+      }
+
+      if (event.key === "D") {
+        if (openDeleteDialog(shortcutConfig.deleteDialogId)) {
+          event.preventDefault();
+        }
+        return;
+      }
+
+      if (event.key === "e") {
+        if (navigateTo(shortcutConfig.editHref)) {
+          event.preventDefault();
+        }
+        return;
+      }
+
+      if (event.key === "n") {
+        if (navigateTo(shortcutConfig.nextHref)) {
+          event.preventDefault();
+        }
+        return;
+      }
+
+      if (event.key === "p") {
+        if (navigateTo(shortcutConfig.prevHref)) {
+          event.preventDefault();
+        }
+      }
+    });
+
     // HTMX toast integration (errors + declarative success toasts).
     document.body.addEventListener("htmx:responseError", async (event) => {
       const message = await extractErrorMessage(event.detail.xhr, null);

@@ -45,6 +45,7 @@ md:inline-flex') }}
 
 {% block list_title %}{{ _('Projects') }}{% endblock %}
 
+{% block main_attrs %}data-shortcuts-scope="list" data-shortcut-create-href="/projects/new" data-shortcut-import-dialog="importDialog"{% endblock %}
 
 {% block list_filters %}
 {% set search_id = "search" %}

@@ -35,6 +35,8 @@
 
 {% block list_title %}{{ _('Yarns') }}{% endblock %}
 
+{% block main_attrs %}data-shortcuts-scope="list" data-shortcut-create-href="/yarn/new" data-shortcut-import-dialog="importDialog"{% endblock %}
+
 {% block list_filters %}
 {% set search_id = "search" %}
 {% set search_name = "search" %}

@@ -55,6 +55,9 @@
 {% endset %}
 
 {% block main_attrs %}
+data-shortcuts-scope="detail"
+data-shortcut-edit-href="/projects/{{ project.id }}/edit"
+data-shortcut-delete-dialog="deleteProjectDialog"
 {% if swipe_prev_href %}data-swipe-prev-href="{{ swipe_prev_href }}"{% endif %}
 {% if swipe_next_href %}data-swipe-next-href="{{ swipe_next_href }}"{% endif %}
 {% endblock %}

@@ -49,6 +49,9 @@
 {% endset %}
 
 {% block main_attrs %}
+data-shortcuts-scope="detail"
+data-shortcut-edit-href="/yarn/{{ yarn.id }}/edit"
+data-shortcut-delete-dialog="deleteYarnDialog"
 {% if swipe_prev_href %}data-swipe-prev-href="{{ swipe_prev_href }}"{% endif %}
 {% if swipe_next_href %}data-swipe-next-href="{{ swipe_next_href }}"{% endif %}
 {% endblock %}

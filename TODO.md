@@ -23,19 +23,19 @@ Execution-oriented backlog for Stricknani.
 
 ## Now
 
-No active `wip` tasks tracked in this file.
+| ID | Priority | Status | Area | Summary |
+| -- | -------- | ------ | ---- | ------- |
+| T3 | P2 | wip | ux | Implement keyboard shortcuts for project/yarn list and view pages |
 
 ## Next
 
-
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T3 | P2 | todo | ux | Implement keyboard shortcuts for project/yarn list views |
+| T5 | P2 | todo | ux | cropping of pictures via photoswipe (only when on the edit pages!) |
 | T1 | P3 | todo | frontend/build | Replace runtime Tailwind with prebuilt static CSS bundle |
 
 
 ## Done
-
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
@@ -45,6 +45,12 @@ No active `wip` tasks tracked in this file.
 
 ## Task Details
 
+### T5: cropping of pictures via photoswipe (only when on the edit pages!)
+
+- **Area**: ux
+- **Priority**: P2
+- **Status**: todo
+
 ### T4: Reorganize project documents for faster agent onboarding and maintenance
 
 - **Goal**: Separate operational instructions from product spec/history and add a clear document index.
@@ -53,15 +59,15 @@ No active `wip` tasks tracked in this file.
   - Long-lived product/spec content is moved under `docs/`.
   - `README.md` points to the new doc structure.
 
-### T3: Implement keyboard shortcuts for project/yarn list views
+### T3: Implement keyboard shortcuts for project/yarn list and view pages
 
-- **Primary Files**: `stricknani/static/js/app.js`, `stricknani/templates/projects/list.html`, `stricknani/templates/yarn/list.html`
+- **Primary Files**: `stricknani/static/js/app.js`, `stricknani/templates/projects/list.html`, `stricknani/templates/yarn/list.html`, `stricknani/templates/projects/view.html`, `stricknani/templates/yarn/view.html`
 - **Description**:
-  - `d`: trigger delete for selected item
-  - `c`: create new project/yarn
-  - `e`: edit selected project/yarn
-  - `n`: navigate to next project/yarn
-  - `p`: navigate to previous project/yarn
+  - `D` on view pages: open delete project/yarn dialog
+  - `c` on list pages: create new project/yarn
+  - `n`/`p` on view pages: navigate to next/previous project/yarn (same behavior as swipe)
+  - `e` on view pages: edit current project/yarn
+  - `i` on list pages: open import dialog
 - **Implementation Notes**:
   - Keep project and yarn UX consistent
   - Avoid inline translation strings in templates; pass config as JSON
