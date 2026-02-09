@@ -224,14 +224,19 @@ push-image:
 # Seed demo data
 [group: 'demo']
 demo-data *args:
+  mkdir -p ./media
   uv run python -m stricknani.scripts.seed_demo {{ args }}
+
+[group: 'demo']
+[confirm("Delete media dir?")]
+purge-media:
+  rm -rf ./media
+  mkdir -p ./media
 
 # Reset demo data and re-seed
 [group: 'demo']
 [confirm("Delete database and media dir?")]
-demo-reset: (demo-data "--reset")
-  rm -rf ./media
-  mkdir -p ./media
+demo-reset: purge-media (demo-data "--reset")
 
 # Run CLI with arguments
 [group: 'cli']
