@@ -7,28 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  lint:
-    strategy:
-      matrix:
-        include:
-          - name: Ruff
-            target: lint-ruff
-            setup_python: 1
-            setup_node: 0
-          - name: MyPy
-            target: lint-mypy
-            setup_python: 1
-            setup_node: 0
-          - name: JavaScript
-            target: lint-js
-            setup_python: 0
-            setup_node: 1
-          - name: CSS
-            target: lint-css
-            setup_python: 0
-            setup_node: 1
+  ruff:
     runs-on: ubuntu-latest
-    name: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v6
 
@@ -36,30 +16,79 @@ jobs:
         uses: extractions/setup-just@v3
 
       - name: Install uv
-        if: matrix.setup_python == 1
         uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
 
       - name: Set up Python
-        if: matrix.setup_python == 1
         uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
       - name: Install dependencies
-        if: matrix.setup_python == 1
         run: just ci-setup-py
 
+      - name: Run Ruff
+        run: just lint-ruff
+
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: just ci-setup-py
+
+      - name: Run MyPy
+        run: just lint-mypy
+
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
       - name: Set up Node.js
-        if: matrix.setup_node == 1
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
 
       - name: Install biome
-        if: matrix.setup_node == 1
         run: just ci-setup-biome
 
-      - name: Run lint
-        run: just ${{ matrix.target }}
+      - name: Run JavaScript lint
+        run: just lint-js
+
+  css:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Install biome
+        run: just ci-setup-biome
+
+      - name: Run CSS lint
+        run: just lint-css
