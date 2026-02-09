@@ -1,6 +1,6 @@
 # TODO
 
-Prioritized refactor/tech-debt tasks for Stricknani.
+Execution-oriented backlog for Stricknani.
 
 ## Status Legend
 
@@ -11,36 +11,60 @@ Prioritized refactor/tech-debt tasks for Stricknani.
 
 ## Priority Rubric
 
-- `P0`: high impact, low to medium complexity (bugs are ASAP, highest priority)
-- `P1`: high impact, higher complexity or some risk
-- `P2`: medium impact or mostly cleanup
-- `P3`: nice-to-have
+- `P0`: bug or production risk, do first
+- `P1`: high product impact
+- `P2`: medium impact / tech debt
+- `P3`: quality-of-life or cleanup
 
-## Task List
+## Now
 
-| Priority | Status | Task                                                                                                                           | Impact | Complexity | Primary Files                                                                                                                                |
-| -------- | ------ | ------------------------------------------------------------------------------------------------------------------------------ | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| P1       | done   | ai import: use PDF-to-image conversion as fallback when direct PDF upload to OpenAI fails                                      | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/extractors/pdf.py`                                                            |
-| P0       | done   | bug: imported images from PDF are not saved when project is created (lost on save)                                             | High   | Medium     | `stricknani/routes/projects.py`, `stricknani/services/projects/`                                                                             |
-| P0       | done   | bug: imported images from PDF are not saved when project is created (lost on save)                                             | High   | Medium     | `stricknani/routes/projects.py`, `stricknani/services/projects/`                                                                             |
-| P0       | done   | bug: step photos from PDF import are not saved and preview is broken                                                           | High   | Medium     | `stricknani/routes/projects.py`, `stricknani/templates/projects/form.html`                                                                   |
-| P0       | done   | AI import: Direct PDF upload support instead of local text extraction                                                          | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/routes/projects.py`                                                                     |
-| P1       | done   | AI import: Support for step images (investigate schema/model tweaks)                                                           | Medium | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/models.py`                                                                    |
-| P3       | todo   | Replace runtime Tailwind-in-browser with a prebuilt static CSS bundle for performance and easier CSP                           | High   | High       | `stricknani/templates/base.html`, build tooling (`justfile`, `flake.nix`)                                                                    |
-| P3       | todo   | Add OpenRouter and Groq support for AI imports as an alternative to OpenAI                                                     | Medium | Medium     | `stricknani/importing/extractors/ai.py`                                                                                                      |
-| P1       | done   | feat: on the project/yarn list views I want to be able to drag and drop files -> automatically run the import from file        | High   | Medium     | `stricknani/templates/projects/list.html`, `stricknani/templates/yarn/list.html`, `stricknani/static/js/htmx/`                               |
-| P1       | done   | ai import: we should instruct that we should not drop text. If we don't know where to put it, just add it to the description.  | Medium | Low        | `stricknani/importing/extractors/ai.py`                                                                                                      |
-| P1       | done   | feat: when import dialog is shown, allow dragging files onto it to auto-switch to "file upload" mode with the dropped files    | High   | Medium     | `stricknani/templates/projects/_import_dialog.html`, `stricknani/templates/yarn/_import_dialog.html`, `stricknani/static/js/htmx/`           |
-| P2       | done   | feat: right-click/long-press on project/yarn cards to show favorite/print/re-import/delete context menu (same as "..." button) | Medium | Medium     | `stricknani/templates/projects/_cards.html`, `stricknani/templates/yarn/_cards.html`, `stricknani/static/js/htmx/`                           |
-| P0       | done   | bug: spinning circle in project deletion confirmation dialog is transparent (no color) and looks weird                         | High   | Low        | `stricknani/templates/projects/_cards.html`, `stricknani/static/css/app.css`                                                                 |
-| P0       | done   | AI import: never upload PDFs directly, always convert to images first for better reliability and consistency                   | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/extractors/pdf.py`                                                            |
-| P0       | done   | bug: AI importer sometimes incorrectly attaches PDF page images to random steps instead of as project attachments              | High   | Medium     | `stricknani/importing/extractors/ai.py`, `stricknani/importing/models.py`, `stricknani/prompts/ai_ingest_baseline.txt`                       |
-| P1       | done   | bug: context menu favorite/unfavorite actions don't update menu item text after successful operation                           | Medium | Low        | `stricknani/templates/projects/_cards.html`, `stricknani/templates/yarn/_list_partial.html`, `stricknani/static/js/features/context_menu.js` |
-| P0       | done   | bug: PDF file not showing in attachments list on new project form (though it saves correctly)                                  | High   | Medium     | `stricknani/templates/projects/form.html`, `stricknani/routes/projects.py`                                                                   |
-| P0       | done   | bug: PDF page images we created are not saved as attachments (but appear in gallery incorrectly)                               | High   | Medium     | `stricknani/routes/projects.py`, `stricknani/services/projects/attachments.py`                                                               |
+No active `wip` tasks tracked in this file.
 
-## Notes
+## Next
 
-- Keep the smallest possible theme-init snippet inline to avoid FOUC; everything else should prefer static JS/CSS.
-- When refactoring JS into static files, avoid inline translation strings in templates; pass a JSON config object instead.
-- Maintain UI consistency between Projects and Yarns when extracting shared components.
+| ID | Priority | Status | Area | Summary |
+| -- | -------- | ------ | ---- | ------- |
+| T3 | P2 | todo | ux | Implement keyboard shortcuts for project/yarn list views |
+| T1 | P3 | todo | frontend/build | Replace runtime Tailwind with prebuilt static CSS bundle |
+
+## Done
+
+| ID | Priority | Status | Area | Summary |
+| -- | -------- | ------ | ---- | ------- |
+| T4 | P2 | done | docs | Reorganize project documents for faster agent onboarding and maintenance |
+| T2 | P3 | done | ai/import | Add OpenRouter and Groq support for AI imports |
+
+## Task Details
+
+### T4: Reorganize project documents for faster agent onboarding and maintenance
+- **Goal**: Separate operational instructions from product spec/history and add a clear document index.
+- **Exit Criteria**:
+  - `AGENTS.md` is concise and action-oriented.
+  - Long-lived product/spec content is moved under `docs/`.
+  - `README.md` points to the new doc structure.
+
+### T3: Implement keyboard shortcuts for project/yarn list views
+- **Primary Files**: `stricknani/static/js/app.js`, `stricknani/templates/projects/list.html`, `stricknani/templates/yarn/list.html`
+- **Description**:
+  - `d`: trigger delete for selected item
+  - `c`: create new project/yarn
+  - `e`: edit selected project/yarn
+  - `n`: navigate to next project/yarn
+  - `p`: navigate to previous project/yarn
+- **Implementation Notes**:
+  - Keep project and yarn UX consistent
+  - Avoid inline translation strings in templates; pass config as JSON
+
+### T1: Replace runtime Tailwind with prebuilt static CSS bundle
+- **Primary Files**: `stricknani/templates/base.html`, `justfile`, `flake.nix`
+- **Description**: Replace runtime Tailwind-in-browser usage with a prebuilt static CSS bundle for performance and easier CSP hardening.
+
+### T2: Add OpenRouter and Groq support for AI imports
+- **Verification Notes**:
+  - Provider selection and defaults are implemented in `stricknani/utils/ai_provider.py`.
+  - Coverage exists in `tests/test_ai_provider.py` and `tests/test_ai_ingest.py`.
+
+## Rules
+
+- If a task is actively being worked on, mark it `wip` immediately.
+- Keep only actionable, implementation-ready tasks here.
