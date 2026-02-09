@@ -66,3 +66,4 @@ dmypy.json
 ingest/
 .direnv
 .pre-commit-config.yaml
+*.log
