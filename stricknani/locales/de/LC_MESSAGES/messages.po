@@ -2047,6 +2047,33 @@ msgstr "Foto gelöscht"
 msgid "Remove image"
 msgstr "Bild entfernen"
 
+msgid "Close dialog"
+msgstr "Dialog schließen"
+
+msgid "Drag & drop or click to browse"
+msgstr "Dateien hierher ziehen oder zum Auswählen klicken"
+
+msgid "Drop to Import"
+msgstr "Zum Importieren loslassen"
+
+msgid "Failed to delete yarn"
+msgstr "Löschen des Garns fehlgeschlagen"
+
+msgid "File Import"
+msgstr "Dateiimport"
+
+msgid "Release to start AI analysis"
+msgstr "Loslassen, um KI-Analyse zu starten"
+
+msgid "Select File"
+msgstr "Datei auswählen"
+
+msgid "Select an existing file or upload a new one to analyze."
+msgstr "Wähle eine vorhandene Datei aus oder lade eine neue zum Analysieren hoch."
+
+msgid "Upload New File"
+msgstr "Neue Datei hochladen"
+
 # Navigation and General
 #~ msgid "Stricknani"
 #~ msgstr "Stricknani"
