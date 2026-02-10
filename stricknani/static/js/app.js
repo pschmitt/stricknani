@@ -69,9 +69,8 @@
 
 		container.replaceChildren();
 		const toast = document.createElement("div");
-		toast.className = `relative overflow-hidden rounded-2xl px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 translate-x-4 hover:translate-y-1 cursor-pointer ${
-			toastVariants[variant] || toastVariants.info
-		}`;
+		toast.className = `relative overflow-hidden rounded-2xl px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 translate-x-4 hover:translate-y-1 cursor-pointer ${toastVariants[variant] || toastVariants.info
+			}`;
 		toast.setAttribute("role", "status");
 		const accentClass = toastAccents[variant] || toastAccents.info;
 
@@ -298,8 +297,10 @@
 		options = {},
 	) => {
 		const dialog = document.getElementById("confirmationDialog");
+		const headerEl = document.getElementById("confirmationHeader");
 		const titleEl = document.getElementById("confirmationTitle");
 		const messageEl = document.getElementById("confirmationMessage");
+		const contentEl = document.getElementById("confirmationContent");
 		const confirmBtn = document.getElementById("confirmationConfirm");
 		const cancelBtn = document.getElementById("confirmationCancel");
 
@@ -308,13 +309,61 @@
 		}
 
 		titleEl.textContent = title;
-		messageEl.textContent = message;
+
+		if (options.content) {
+			messageEl.classList.add("hidden");
+			contentEl.innerHTML = options.content;
+			contentEl.classList.remove("hidden");
+		} else {
+			messageEl.textContent = message;
+			messageEl.classList.remove("hidden");
+			contentEl.innerHTML = "";
+			contentEl.classList.add("hidden");
+		}
+
+		// Configure dialog style based on variant
+		const variant = options.variant || "warning"; // warning, error, info
+
+		// Reset header classes
+		headerEl.className = "p-6 flex items-center gap-4 transition-colors duration-200";
+
+		// Reset button classes
+		confirmBtn.className = "btn gap-2 transition-colors duration-200";
+
+		let iconClass = "mdi-alert-circle-outline";
+
+		if (variant === "error") {
+			headerEl.classList.add("bg-error/10", "text-error");
+			confirmBtn.classList.add("btn-error", "text-white");
+			iconClass = "mdi-alert-circle";
+		} else if (variant === "warning") {
+			headerEl.classList.add("bg-warning/10", "text-warning");
+			confirmBtn.classList.add("btn-warning");
+			iconClass = "mdi-alert-outline";
+		} else {
+			headerEl.classList.add("bg-info/10", "text-info");
+			confirmBtn.classList.add("btn-info", "text-white");
+			iconClass = "mdi-information-outline";
+		}
+
+		// Update header icon
+		const iconEl = headerEl.querySelector(".mdi");
+		if (iconEl) {
+			iconEl.className = `mdi ${iconClass} text-3xl`;
+		}
 
 		const confirmText = options.confirmText || getI18n("confirm", "Confirm");
 		const cancelText = options.cancelText || getI18n("cancel", "Cancel");
 
 		setButtonTextPreservingIcon(confirmBtn, confirmText);
 		setButtonTextPreservingIcon(cancelBtn, cancelText);
+
+		// Set icon for confirm button
+		const btnIconClass = variant === "error" ? "mdi-delete-outline" : "mdi-check";
+		const btnIcon = confirmBtn.querySelector(".mdi");
+		if (btnIcon) {
+			btnIcon.className = `mdi ${btnIconClass}`;
+		}
 
 		// Remove old listeners to avoid stacking.
 		const newConfirmBtn = confirmBtn.cloneNode(true);
@@ -621,15 +670,22 @@
 			if (kind === "pdf") {
 				window.openPdfViewer(url, name);
 			} else if (kind === "image") {
-				if (
-					row.hasAttribute("data-pswp-open-index") &&
-					window.openPhotoSwipeIndex
-				) {
+				if (row.hasAttribute("data-pswp-open-index") && window.openPhotoSwipeIndex) {
+					// Prevent opening if clicking an interactive element inside the row
+					if (event.target.closest("button, .btn, a, input, select, textarea")) {
+						return;
+					}
 					window.openPhotoSwipeIndex(row);
 				} else {
+					if (event.target.closest("button, .btn, a, input, select, textarea")) {
+						return;
+					}
 					window.openImageViewer(url, name);
 				}
 			} else if (url) {
+				if (event.target.closest("button, .btn, a, input, select, textarea")) {
+					return;
+				}
 				window.open(url, "_blank", "noopener,noreferrer");
 			}
 		});
@@ -925,11 +981,11 @@
 		const openDeleteDialog = (dialogId) => {
 			const trigger = dialogId
 				? document.querySelector(
-						`[data-action="open-dialog"][data-dialog-id="${dialogId}"]`,
-					)
+					`[data-action="open-dialog"][data-dialog-id="${dialogId}"]`,
+				)
 				: document.querySelector(
-						'[data-action="open-dialog"][data-dialog-id^="delete"]',
-					);
+					'[data-action="open-dialog"][data-dialog-id^="delete"]',
+				);
 
 			if (trigger && typeof trigger.click === "function") {
 				trigger.click();
@@ -1204,7 +1260,7 @@
 					event.preventDefault();
 					setSelectedIndex(
 						(currentAutocomplete.selectedIndex - 1 + items.length) %
-							items.length,
+						items.length,
 					);
 					break;
 				case "Enter":

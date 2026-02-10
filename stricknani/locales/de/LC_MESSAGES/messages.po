@@ -3305,3 +3305,15 @@ msgstr "Bild erfolgreich zugeschnitten"
 #: stricknani/templates/base.html
 msgid "Crop Image"
 msgstr "Bild zuschneiden"
+
+#: stricknani/templates/projects/form.html
+msgid "Image"
+msgstr "Bild"
+
+#: stricknani/templates/projects/form.html
+msgid "Attachment"
+msgstr "Anhang"
+
+#: stricknani/templates/projects/form.html
+msgid "File"
+msgstr "Datei"

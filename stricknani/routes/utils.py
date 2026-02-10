@@ -225,7 +225,7 @@ async def crop_image(
                 created_at=datetime.now(UTC),
             )
             db.add(cropped_image)
-            await db.flush()
+            await db.commit()
             await db.refresh(cropped_image)
             new_image_id = cropped_image.id
         elif kind == "yarns" and original_yarn_image:
@@ -240,7 +240,7 @@ async def crop_image(
                 created_at=datetime.now(UTC),
             )
             db.add(cropped_yarn_image)
-            await db.flush()
+            await db.commit()
             await db.refresh(cropped_yarn_image)
             new_image_id = cropped_yarn_image.id
 
@@ -267,24 +267,12 @@ async def crop_image(
             }
         )
 
-        # Return URLs
-        return JSONResponse(
-            content={
-                "url": get_file_url(filename, entity_id, subdir=url_subdir),
-                "thumbnail_url": get_thumbnail_url(
-                    filename, entity_id, subdir=url_subdir
-                ),
-                "filename": filename,
-                "id": new_image_id,
-                "kind": kind,
-                "width": width,
-                "height": height,
-            }
-        )
-
     except HTTPException as exc:
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-    except Exception:
+    except Exception as e:
+        import logging
+
+        logging.getLogger("stricknani").error(f"Crop failed: {e}", exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "crop_failed"},

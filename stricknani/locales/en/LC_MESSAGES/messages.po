@@ -2887,3 +2887,15 @@ msgstr "Image cropped successfully"
 #: stricknani/templates/base.html
 msgid "Crop Image"
 msgstr "Crop Image"
+
+#: stricknani/templates/projects/form.html
+msgid "Image"
+msgstr "Image"
+
+#: stricknani/templates/projects/form.html
+msgid "Attachment"
+msgstr "Attachment"
+
+#: stricknani/templates/projects/form.html
+msgid "File"
+msgstr "File"
