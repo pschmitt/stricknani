@@ -204,7 +204,8 @@ async def crop_image(
         crop_path.write_bytes(content)
 
         # Create thumbnail for the cropped image
-        await create_thumbnail(crop_path, entity_id)
+        subdir = "yarns" if kind == "yarns" else "projects"
+        await create_thumbnail(crop_path, entity_id, subdir=subdir)
 
         # Create database record
         new_image_id = None
@@ -244,10 +245,13 @@ async def crop_image(
 
         # Return URLs
         filename = crop_path.name
+        url_subdir = "yarns" if kind == "yarns" else "projects"
         return JSONResponse(
             content={
-                "url": get_file_url(filename, entity_id),
-                "thumbnail_url": get_thumbnail_url(filename, entity_id),
+                "url": get_file_url(filename, entity_id, subdir=url_subdir),
+                "thumbnail_url": get_thumbnail_url(
+                    filename, entity_id, subdir=url_subdir
+                ),
                 "filename": filename,
                 "id": new_image_id,
                 "kind": kind,
