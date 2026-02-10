@@ -34,7 +34,6 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T12 | P1 | todo | web/templating | Remove hidden DB/auth lookups from `render_template`; require explicit `current_user` context |
 | T13 | P2 | todo | reliability | Replace broad exception swallowing in import/parse paths with explicit error handling |
 | T14 | P2 | todo | security | Simplify and harden CSRF token flow (single source of truth for token location) |
 | T15 | P2 | todo | data-model | Add DB invariant for a single primary yarn image and simplify fallback logic |
@@ -50,6 +49,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
+| T12 | P1 | done | web/templating | Remove hidden DB/auth lookups from `render_template`; require explicit `current_user` context |
 | T11 | P1 | done | i18n/web | Remove per-request global Jinja i18n mutation to avoid cross-request language bleed |
 | T10 | P1 | done | projects | Extract shared create/update project import workflows to common services |
 | T21 | P1 | done | import | Merge import dialog states: show URL entry and file upload in a single unified view |

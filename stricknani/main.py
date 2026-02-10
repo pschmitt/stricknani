@@ -115,6 +115,7 @@ async def csrf_protect_exception_handler(
         "errors/403.html",
         request,
         context={
+            "current_user": None,
             "error_title": "CSRF Error",
             "error_message": exc.message,
         },
@@ -127,7 +128,12 @@ async def not_found_exception_handler(
     request: Request, exc: HTTPException
 ) -> HTMLResponse:
     """Handle 404 errors by rendering a custom template."""
-    return await render_template("errors/404.html", request, status_code=404)
+    return await render_template(
+        "errors/404.html",
+        request,
+        context={"current_user": None},
+        status_code=404,
+    )
 
 
 @app.exception_handler(401)
@@ -135,7 +141,12 @@ async def unauthorized_exception_handler(
     request: Request, exc: HTTPException
 ) -> HTMLResponse:
     """Handle 401 errors by rendering a custom template."""
-    return await render_template("errors/401.html", request, status_code=401)
+    return await render_template(
+        "errors/401.html",
+        request,
+        context={"current_user": None},
+        status_code=401,
+    )
 
 
 @app.exception_handler(403)
@@ -143,7 +154,12 @@ async def forbidden_exception_handler(
     request: Request, exc: HTTPException
 ) -> HTMLResponse:
     """Handle 403 errors by rendering a custom template."""
-    return await render_template("errors/403.html", request, status_code=403)
+    return await render_template(
+        "errors/403.html",
+        request,
+        context={"current_user": None},
+        status_code=403,
+    )
 
 
 @app.exception_handler(Exception)
@@ -159,7 +175,12 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
 
     # Log the exception for debugging
     access_logger.exception("Unhandled exception: %s", str(exc))
-    return await render_template("errors/500.html", request, status_code=500)
+    return await render_template(
+        "errors/500.html",
+        request,
+        context={"current_user": None},
+        status_code=500,
+    )
 
 
 static_path = Path(__file__).parent / "static"

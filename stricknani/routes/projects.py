@@ -509,7 +509,9 @@ async def import_pattern(
                         }
                     )
 
-        use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
+        use_ai_enabled = (
+            bool(use_ai) and config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
+        )
 
         async def store_source_files_for_import() -> dict[str, Any]:
             if not source_contents:

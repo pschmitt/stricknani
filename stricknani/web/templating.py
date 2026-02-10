@@ -140,13 +140,7 @@ async def render_template(
     context["csrf_token"] = csrf_token
 
     if "current_user" not in context:
-        from stricknani.database import get_db
-        from stricknani.routes.auth import get_current_user
-
-        session_token = request.cookies.get("session_token")
-        async for db in get_db():
-            context["current_user"] = await get_current_user(session_token, db)
-            break
+        raise ValueError("render_template requires explicit `current_user` in context")
 
     current_user = context.get("current_user")
     avatar_url = None
