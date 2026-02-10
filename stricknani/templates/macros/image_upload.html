@@ -64,11 +64,11 @@ disabled_text=None
 {%- endmacro %}
 
 {# Image card with promote/delete actions #}
-{% macro image_preview(image, project_id=None, show_promote=false, show_delete=true, draggable=true, class=None) -%}
+{% macro image_preview(image, project_id=None, show_promote=false, show_delete=true, draggable=true, class=None, show_crop=false) -%}
 <div class="relative group {{ class or '' }}" data-image-id="{{ image.id }}">
     <a href="{{ image.url }}" data-pswp-width="{{ image.width or 1200 }}" data-pswp-height="{{ image.height or 1200 }}"
         data-pswp-caption="{{ image.alt_text or '' }}" {% if show_promote %}data-pswp-promote="true" {% endif %} {% if
-        show_delete %}data-pswp-delete="true" {% endif %}
+        show_delete %}data-pswp-delete="true" {% endif %} {% if show_crop %}data-pswp-crop="true" {% endif %}
         data-pswp-is-primary="{{ 'true' if image.is_title_image else 'false' }}" class="block" {% if draggable
         %}draggable="true" ondragstart="handleImageDragStart(event)" {% endif %}>
         <img src="{{ image.thumbnail_url or image.url }}" alt="{{ image.alt_text or '' }}"

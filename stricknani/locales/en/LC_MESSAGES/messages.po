@@ -2875,3 +2875,15 @@ msgstr "Image"
 #: stricknani/static/js/app.js
 msgid "pendingImage"
 msgstr "Pending image"
+
+#: stricknani/static/js/features/photoswipe.js
+msgid "pswpCropImage"
+msgstr "Crop image"
+
+#: stricknani/static/js/features/photoswipe.js
+msgid "imageCroppedSuccessfully"
+msgstr "Image cropped successfully"
+
+#: stricknani/templates/base.html
+msgid "Crop Image"
+msgstr "Crop Image"

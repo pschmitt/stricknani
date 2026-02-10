@@ -182,7 +182,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                             data-pswp-gallery>
                             {% if project %}
                             {% for image in project.title_images %}
-                            {{ image_upload.image_preview(image, project_id=project.id, show_promote=true) }}
+                            {{ image_upload.image_preview(image, project_id=project.id, show_promote=true, show_crop=true) }}
                             {% endfor %}
                             {% endif %}
                         </div>
@@ -501,7 +501,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                         class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery" data-pswp-gallery>
                                         {% if project and project.stitch_sample_images %}
                                         {% for image in project.stitch_sample_images %}
-                                        {{ image_upload.image_preview(image) }}
+                                        {{ image_upload.image_preview(image, show_crop=true) }}
                                         {% endfor %}
                                         {% endif %}
                                     </div>
@@ -570,7 +570,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                             </h4>
                             <div class="step-images grid grid-cols-3 gap-2 mb-2 pswp-gallery" data-pswp-gallery>
                                 {% for image in step.images %}
-                                {{ image_upload.image_preview(image, class='aspect-video overflow-hidden') }}
+                                {{ image_upload.image_preview(image, class='aspect-video overflow-hidden', show_crop=true) }}
                                 {% endfor %}
                             </div>
                             {{ image_upload.step_upload_dropzone(

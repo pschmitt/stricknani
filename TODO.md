@@ -41,7 +41,6 @@ Execution-oriented backlog for Stricknani.
 | T13 | P2 | todo | reliability | Replace broad exception swallowing in import/parse paths with explicit error handling |
 | T14 | P2 | todo | security | Simplify and harden CSRF token flow (single source of truth for token location) |
 | T15 | P2 | todo | data-model | Add DB invariant for a single primary yarn image and simplify fallback logic |
-| T5 | P2 | todo | ux | cropping of pictures via photoswipe (only when on the edit pages!) |
 | T1 | P3 | todo | frontend/build | Replace runtime Tailwind with prebuilt static CSS bundle |
 
 
@@ -55,6 +54,7 @@ Execution-oriented backlog for Stricknani.
 | T4 | P2 | done | docs | Reorganize project documents for faster agent onboarding and maintenance |
 | T2 | P3 | done | ai/import | Add OpenRouter and Groq support for AI imports |
 | T16 | P2 | done | ux | Add markdown image autocomplete for `!` trigger in text fields |
+| T5 | P2 | done | ux | cropping of pictures via photoswipe (only when on the edit pages!) |
 
 
 ## Task Details
@@ -63,10 +63,13 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P2
-- **Status**: todo
-- **Notes**:
-  - Only on the edit pages, we should not allow cropping from the view page.
-  - Cropped images should be stored alongside the originals
+- **Status**: done
+- **Implementation**:
+  - Added crop button to PhotoSwipe UI (visible only on edit pages via `data-pswp-crop` attribute)
+  - Created crop dialog with cropperjs integration
+  - Added `/utils/crop-image` backend endpoint to save cropped images alongside originals
+  - Cropped images are stored with `_crop` suffix in filename
+  - Updated project and yarn form templates to mark images as croppable
 
 ### T6: Make DB/file operations atomic-ish: avoid deleting files before successful DB commit
 

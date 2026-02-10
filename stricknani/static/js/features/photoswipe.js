@@ -449,6 +449,44 @@
 					await runOcr(false);
 				},
 			});
+
+			// Register Crop button (only for editable images on edit pages).
+			pswp.ui.registerElement({
+				name: "crop-button",
+				ariaLabel: t("pswpCropImage", "Crop image"),
+				order: 5,
+				isButton: true,
+				html: '<span class="pswp__icn mdi mdi-crop"></span>',
+				appendTo: "bar",
+				onClick: () => {
+					const item = pswp.currItem;
+					const element =
+						item?.element ||
+						item?.data?.element ||
+						pswp.currSlide?.data?.element;
+					if (!element) {
+						return;
+					}
+					const customEvent = new CustomEvent("pswp:crop", {
+						detail: { element, pswp },
+						bubbles: true,
+					});
+					element.dispatchEvent(customEvent);
+				},
+				onInit: (el, pswpInstance) => {
+					const update = () => {
+						const item = pswpInstance.currItem;
+						const element =
+							item?.element ||
+							item?.data?.element ||
+							pswpInstance.currSlide?.data?.element;
+						const isCroppable = element?.hasAttribute("data-pswp-crop");
+						el.style.display = isCroppable ? "inline-flex" : "none";
+					};
+					pswpInstance.on("change", update);
+					pswpInstance.on("afterInit", update);
+				},
+			});
 		});
 
 		lightbox.init();
@@ -584,6 +622,182 @@
 		event.stopPropagation();
 		openAtIndex(trigger);
 	});
+
+	// Crop handling
+	(() => {
+		let cropper = null;
+		let currentPswp = null;
+		let currentImageElement = null;
+
+		const dialog = document.getElementById("pswpCropDialog");
+		const image = document.getElementById("pswpCropImage");
+		const filenameEl = document.getElementById("pswpCropFilename");
+		const saveBtn = document.getElementById("pswpCropSave");
+		const resetBtn = document.getElementById("pswpCropReset");
+
+		if (!dialog || !image || !saveBtn) {
+			return;
+		}
+
+		function getCropperCtor() {
+			const cropperNamespace = window.Cropper;
+			const ctor = cropperNamespace?.default || cropperNamespace;
+			if (typeof ctor !== "function") {
+				return null;
+			}
+			return ctor;
+		}
+
+		function destroyCropper() {
+			if (cropper) {
+				cropper.destroy();
+				cropper = null;
+			}
+		}
+
+		function initCropper(src) {
+			destroyCropper();
+			image.src = src;
+
+			const ctor = getCropperCtor();
+			if (!ctor) {
+				window.showToast?.(
+					t("imageCropperFailedToLoad", "Image cropper failed to load"),
+					"error",
+				);
+				dialog.close();
+				return;
+			}
+
+			cropper = new ctor(image, {
+				viewMode: 1,
+				autoCropArea: 0.8,
+			});
+		}
+
+		document.addEventListener("pswp:crop", (e) => {
+			const element = e.detail?.element;
+			currentPswp = e.detail?.pswp;
+			currentImageElement = element;
+
+			if (!element) {
+				return;
+			}
+
+			const anchor = element.closest("a[data-pswp-width]") || element;
+			const src = anchor.getAttribute("href") || anchor.src || "";
+			const alt = anchor.getAttribute("data-pswp-caption") || "";
+
+			filenameEl.textContent = alt || src.split("/").pop() || "";
+			initCropper(src);
+			dialog.showModal();
+
+			if (currentPswp) {
+				currentPswp.close();
+			}
+		});
+
+		resetBtn?.addEventListener("click", () => {
+			if (cropper) {
+				cropper.reset();
+			}
+		});
+
+		dialog?.addEventListener("close", () => {
+			destroyCropper();
+			image.src = "";
+		});
+
+		saveBtn?.addEventListener("click", async () => {
+			if (!cropper || !currentImageElement) {
+				return;
+			}
+
+			const csrfToken = document
+				.querySelector('meta[name="csrf-token"]')
+				?.getAttribute("content");
+
+			let canvas;
+			if (typeof cropper.getCroppedCanvas === "function") {
+				canvas = cropper.getCroppedCanvas({
+					maxWidth: 4096,
+					maxHeight: 4096,
+				});
+			} else if (typeof cropper.getCropperSelection === "function") {
+				const selection = cropper.getCropperSelection();
+				if (selection && typeof selection.$toCanvas === "function") {
+					canvas = await selection.$toCanvas({
+						maxWidth: 4096,
+						maxHeight: 4096,
+					});
+				}
+			}
+
+			if (!canvas) {
+				window.showToast?.(
+					t("failedToUploadImage", "Failed to process image"),
+					"error",
+				);
+				return;
+			}
+
+			const originalText = saveBtn.textContent;
+			saveBtn.textContent = t("uploading", "Uploading...");
+			saveBtn.disabled = true;
+
+			canvas.toBlob(async (blob) => {
+				if (!blob) {
+					window.showToast?.(
+						t("failedToUploadImage", "Failed to process image"),
+						"error",
+					);
+					saveBtn.textContent = originalText;
+					saveBtn.disabled = false;
+					return;
+				}
+
+				const anchor =
+					currentImageElement.closest("a[data-pswp-width]") ||
+					currentImageElement;
+				const originalSrc = anchor.getAttribute("href") || "";
+
+				const formData = new FormData();
+				formData.append("file", blob, "cropped.png");
+				formData.append("original_src", originalSrc);
+
+				try {
+					const response = await fetch("/utils/crop-image", {
+						method: "POST",
+						body: formData,
+						headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {},
+					});
+
+					if (!response.ok) {
+						throw new Error("Upload failed");
+					}
+
+					const data = await response.json();
+					window.showToast?.(
+						t("imageCroppedSuccessfully", "Image cropped successfully"),
+						"success",
+					);
+					dialog.close();
+
+					// Refresh the page to show the new cropped image
+					window.location.reload();
+				} catch (err) {
+					console.error(err);
+					window.showToast?.(
+						t("failedToUploadImage", "Failed to upload image"),
+						"error",
+					);
+				} finally {
+					saveBtn.textContent = originalText;
+					saveBtn.disabled = false;
+				}
+			}, "image/png");
+		});
+	})();
 
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", () => {

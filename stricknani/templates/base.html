@@ -329,6 +329,48 @@
         {{ dialogs.modal_backdrop() }}
     </dialog>
 
+    <dialog id="pswpCropDialog" class="modal modal-bottom sm:modal-middle">
+        <div
+            class="modal-box w-screen h-screen max-w-none p-0 overflow-hidden rounded-none flex flex-col sm:w-[min(1100px,calc(100vw-4rem))] sm:h-[min(85vh,900px)] sm:rounded-box">
+            <div class="flex items-center justify-between gap-4 p-4 border-b border-base-200 bg-base-100">
+                <div class="min-w-0">
+                    <h3 class="font-bold text-lg">{{ _('Crop Image') }}</h3>
+                    <p class="text-xs text-base-content/60 truncate" id="pswpCropFilename"></p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button
+                        id="pswpCropReset"
+                        type="button"
+                        class="btn btn-ghost btn-sm btn-circle"
+                        title="{{ _('Reset') }}"
+                        aria-label="{{ _('Reset') }}"
+                    >
+                        <span class="mdi mdi-refresh text-xl"></span>
+                    </button>
+                    <form method="dialog">
+                        <button class="btn btn-ghost btn-sm btn-circle" aria-label="{{ _('close') }}">
+                            <span class="mdi mdi-close text-xl"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="flex-1 min-h-0 bg-base-100 overflow-hidden">
+                <div class="relative w-full h-full" id="pswpCropContainer">
+                    <img id="pswpCropImage" class="block max-w-full" src="" alt="">
+                </div>
+            </div>
+            <div class="p-4 border-t border-base-200 bg-base-100">
+                <div class="flex justify-end gap-2">
+                    <form method="dialog">
+                        {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
+                    </form>
+                    {{ dialogs.dialog_primary(_('Save'), icon='mdi-crop', type='button', id='pswpCropSave') }}
+                </div>
+            </div>
+        </div>
+        {{ dialogs.modal_backdrop() }}
+    </dialog>
+
     <div id="swipe-indicator-left" class="fixed left-4 top-1/2 -translate-y-1/2 z-[100] transition-all duration-200 opacity-0 pointer-events-none scale-75">
         <div class="bg-base-100/90 backdrop-blur-sm rounded-full p-4 shadow-xl border border-base-content/10 text-primary">
             <span class="mdi mdi-arrow-left text-4xl"></span>
