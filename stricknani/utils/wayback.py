@@ -4,7 +4,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 import waybackpy
 
@@ -14,6 +14,15 @@ from stricknani.utils.importer import is_valid_import_url
 WAYBACK_SAVE_TIMEOUT = 15
 
 logger = logging.getLogger("stricknani.wayback")
+
+_SKIP_ARCHIVE_HOSTS = {
+    "example.com",
+    "example.org",
+    "example.net",
+    "test",
+    "invalid",
+    "localhost",
+}
 
 
 def _should_request_archive(raw: str | None) -> bool:
@@ -28,7 +37,32 @@ def build_wayback_fallback_url(url: str) -> str:
     return f"https://web.archive.org/web/*/{quote(url, safe=':/?&=#')}"
 
 
+def should_skip_wayback_url(url: str) -> bool:
+    """Return True when URL should not be sent to archive.org."""
+    parsed = urlparse(url)
+    hostname = (parsed.hostname or "").strip().lower().rstrip(".")
+    if not hostname:
+        return True
+
+    if hostname in _SKIP_ARCHIVE_HOSTS:
+        return True
+
+    # RFC 2606 style example subdomains.
+    if hostname.endswith(".example.com"):
+        return True
+    if hostname.endswith(".example.org"):
+        return True
+    if hostname.endswith(".example.net"):
+        return True
+
+    return False
+
+
 async def _request_wayback_snapshot(url: str) -> str | None:
+    if should_skip_wayback_url(url):
+        logger.info("Skipping Wayback for reserved/test URL: %s", url)
+        return None
+
     if not is_valid_import_url(url):
         return None
 
