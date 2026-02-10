@@ -16,8 +16,16 @@ EOF_USAGE
 }
 
 main() {
-  local mode="todo"
   local status_filter="todo"
+  local mq_query='select(., test(to_text(.), "^\\|T[0-9]+\\|")) | select(., contains(to_text(.), join(array("|", get_variable("status"), "|"), "")))'
+  local row
+  local row_data
+  local id
+  local priority
+  local status
+  local area
+  local summary
+  declare -A seen_ids=()
 
   while [[ -n "$*" ]]
   do
@@ -27,15 +35,15 @@ main() {
         return 0
         ;;
       --done)
-        mode="done"
+        status_filter="done"
         shift
         ;;
       --wip)
-        mode="wip"
+        status_filter="wip"
         shift
         ;;
       --todo)
-        mode="todo"
+        status_filter="todo"
         shift
         ;;
       *)
@@ -45,18 +53,6 @@ main() {
         ;;
     esac
   done
-
-  case "$mode" in
-    done)
-      status_filter="done"
-      ;;
-    wip)
-      status_filter="wip"
-      ;;
-    todo)
-      status_filter="todo"
-      ;;
-  esac
 
   cd "$(dirname "$0")/.."
 
@@ -68,27 +64,26 @@ main() {
 
   printf 'ID\tPriority\tStatus\tArea\tSummary\n'
 
-  mq '.' TODO.md | awk -F'|' -v want="$status_filter" '
-    function trim(s) {
-      gsub(/^[ \t]+|[ \t]+$/, "", s)
-      return s
-    }
+  while IFS= read -r row
+  do
+    [[ -z "${row// /}" ]] && continue
+    row_data="${row#|}"
+    row_data="${row_data%|}"
 
-    /^\|T[0-9]+\|/ {
-      id = trim($2)
-      priority = trim($3)
-      status = trim($4)
-      area = trim($5)
-      summary = trim($6)
+    IFS='|' read -r id priority status area summary <<< "$row_data"
+    [[ -z "${id:-}" ]] && continue
 
-      if (status == want) {
-        if (seen[id]++) {
-          next
-        }
-        print id "\t" priority "\t" status "\t" area "\t" summary
-      }
-    }
-  '
+    if [[ -n "${seen_ids[$id]:-}" ]]
+    then
+      continue
+    fi
+
+    seen_ids["$id"]=1
+    printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$priority" "$status" "$area" "$summary"
+  done < <(
+    mq 'select(., is_table_cell(.))' TODO.md \
+      | mq -I text -F text --args status "$status_filter" "$mq_query"
+  )
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]
