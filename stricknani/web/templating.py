@@ -16,11 +16,12 @@ from fastapi_csrf_protect.flexible import CsrfProtect as FlexibleCsrfProtect
 from itsdangerous import BadData, SignatureExpired, URLSafeTimedSerializer
 
 from stricknani.config import config
-from stricknani.utils.i18n import install_i18n
+from stricknani.utils.i18n import install_i18n, language_context
 
 templates_path = Path(__file__).resolve().parents[1] / "templates"
 templates = Jinja2Templates(directory=str(templates_path))
 templates.env.add_extension("jinja2.ext.do")
+install_i18n(templates.env)
 
 templates.env.globals["sentry_frontend_dsn"] = config.SENTRY_DSN_FRONTEND
 templates.env.globals["sentry_frontend_env"] = config.SENTRY_ENVIRONMENT
@@ -108,7 +109,6 @@ async def render_template(
         context = {}
 
     language = get_language(request)
-    install_i18n(templates.env, language)
 
     context["request"] = request
     context["current_language"] = language
@@ -158,12 +158,13 @@ async def render_template(
     context.setdefault("current_user_avatar_url", avatar_url)
     context.setdefault("current_user_avatar_thumbnail", avatar_thumb)
 
-    response = templates.TemplateResponse(
-        request=request,
-        name=template_name,
-        context=context,
-        status_code=status_code,
-    )
+    with language_context(language):
+        response = templates.TemplateResponse(
+            request=request,
+            name=template_name,
+            context=context,
+            status_code=status_code,
+        )
 
     if should_set_cookie:
         csrf.set_csrf_cookie(signed_token, response)

@@ -108,7 +108,7 @@ from stricknani.utils.files import (
     get_file_url,
     get_thumbnail_url,
 )
-from stricknani.utils.i18n import install_i18n
+from stricknani.utils.i18n import language_context
 from stricknani.utils.image_similarity import (
     SimilarityImage,
 )
@@ -175,17 +175,17 @@ def _render_favorite_toggle(
     variant: str,
 ) -> HTMLResponse:
     language = get_language(request)
-    install_i18n(templates.env, language)
-    return templates.TemplateResponse(
-        "projects/_favorite_toggle.html",
-        {
-            "request": request,
-            "project_id": project_id,
-            "is_favorite": is_favorite,
-            "variant": variant,
-            "current_language": language,
-        },
-    )
+    with language_context(language):
+        return templates.TemplateResponse(
+            "projects/_favorite_toggle.html",
+            {
+                "request": request,
+                "project_id": project_id,
+                "is_favorite": is_favorite,
+                "variant": variant,
+                "current_language": language,
+            },
+        )
 
 
 @router.get("/search-suggestions")
@@ -336,18 +336,18 @@ async def list_projects(
     if request.headers.get("HX-Request"):
         projects_data = [_serialize_project(p) for p in projects]
         language = get_language(request)
-        install_i18n(templates.env, language)
-        return templates.TemplateResponse(
-            "projects/_list_partial.html",
-            {
-                "request": request,
-                "projects": projects_data,
-                "current_language": language,
-                "search": search or "",
-                "selected_category": category,
-                "selected_tag": tag,
-            },
-        )
+        with language_context(language):
+            return templates.TemplateResponse(
+                "projects/_list_partial.html",
+                {
+                    "request": request,
+                    "projects": projects_data,
+                    "current_language": language,
+                    "search": search or "",
+                    "selected_category": category,
+                    "selected_tag": tag,
+                },
+            )
 
     projects_data = [_serialize_project(p) for p in projects]
 

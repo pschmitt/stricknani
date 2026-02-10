@@ -28,13 +28,12 @@ Execution-oriented backlog for Stricknani.
 | T25 | P0 | todo | dev | refactor | Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable |
 | T26 | P0 | todo | dev | feat | Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags |
 | T28 | P0 | todo | dev | feat | Add `todo.sh TICKET_ID_OR_PARTIAL_NAME` to show task details |
-| T27 | P2 | todo | frontend | feat | Figure out how to lint/format Jinja-embedded JS/CSS files (form.js, etc.) |
+| T29 | P2 | todo | ux | feat | Make the "instructions" block collapsible on project pages |
 
 ## Next
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T11 | P1 | todo | i18n/web | Remove per-request global Jinja i18n mutation to avoid cross-request language bleed |
 | T12 | P1 | todo | web/templating | Remove hidden DB/auth lookups from `render_template`; require explicit `current_user` context |
 | T13 | P2 | todo | reliability | Replace broad exception swallowing in import/parse paths with explicit error handling |
 | T14 | P2 | todo | security | Simplify and harden CSRF token flow (single source of truth for token location) |
@@ -51,6 +50,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
+| T11 | P1 | done | i18n/web | Remove per-request global Jinja i18n mutation to avoid cross-request language bleed |
 | T10 | P1 | done | projects | Extract shared create/update project import workflows to common services |
 | T21 | P1 | done | import | Merge import dialog states: show URL entry and file upload in a single unified view |
 | T9 | P1 | done | import | Consolidate duplicated import/image-dedupe logic into a single reusable pipeline |
@@ -213,3 +213,13 @@ Execution-oriented backlog for Stricknani.
 - **Description**:
   - Allow querying a specific task by ID (e.g., `just todo T25`) or partial name
   - Print full task details from Task Details section including description, implementation notes, etc.
+
+### T29: Make the "instructions" block collapsible on project pages
+
+- **Area**: ux
+- **Priority**: P2
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Add a toggle/collapse button to the instructions section on project view pages
+  - Remember collapsed state in localStorage for consistent UX across sessions

@@ -23,7 +23,7 @@ from stricknani.utils.files import (
     save_uploaded_file,
 )
 from stricknani.utils.gravatar import gravatar_url
-from stricknani.utils.i18n import gettext, install_i18n
+from stricknani.utils.i18n import gettext, language_context
 from stricknani.web.templating import get_language, render_template, templates
 
 router: APIRouter = APIRouter(prefix="/admin", tags=["admin"])
@@ -53,7 +53,6 @@ def _render_user_card_response(
     user_count: int,
 ) -> HTMLResponse:
     language = get_language(request)
-    install_i18n(templates.env, language)
     context = {
         "request": request,
         "current_user": current_user,
@@ -61,8 +60,9 @@ def _render_user_card_response(
         "gravatar_url": gravatar_url,
         "user_count": user_count,
     }
-    card_html = templates.get_template("admin/_user_card.html").render(**context)
-    count_html = templates.get_template("admin/_user_count.html").render(**context)
+    with language_context(language):
+        card_html = templates.get_template("admin/_user_card.html").render(**context)
+        count_html = templates.get_template("admin/_user_count.html").render(**context)
     return HTMLResponse(card_html + count_html)
 
 
@@ -72,11 +72,11 @@ def _render_user_deleted_response(
     user_count: int,
 ) -> HTMLResponse:
     language = get_language(request)
-    install_i18n(templates.env, language)
-    count_html = templates.get_template("admin/_user_count.html").render(
-        request=request,
-        user_count=user_count,
-    )
+    with language_context(language):
+        count_html = templates.get_template("admin/_user_count.html").render(
+            request=request,
+            user_count=user_count,
+        )
     placeholder = f'<div id="user-card-{user_id}" data-user-card class="hidden"></div>'
     return HTMLResponse(placeholder + count_html)
 

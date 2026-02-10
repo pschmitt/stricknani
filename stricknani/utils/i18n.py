@@ -1,6 +1,8 @@
 """Internationalization utilities."""
 
 from collections.abc import Callable
+from contextlib import contextmanager
+from contextvars import ContextVar, Token
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +15,10 @@ from stricknani.config import config
 
 # Directory containing translation files
 LOCALES_DIR = Path(__file__).parent.parent / "locales"
+_CURRENT_LANGUAGE: ContextVar[str] = ContextVar(
+    "stricknani_current_language",
+    default=config.DEFAULT_LANGUAGE,
+)
 
 
 def get_translations(language: str) -> Translations | NullTranslations:
@@ -108,54 +114,113 @@ def ngettext(singular: str, plural: str, n: int, language: str | None = None) ->
     return translations.ngettext(singular, plural, n)
 
 
-def install_i18n(env: Environment, language: str | None = None) -> None:
-    """Install i18n functions into Jinja2 environment.
+def _wrap_gettext(func: Callable[..., str]) -> Callable[..., str]:
+    def _translator(message: str, *args: Any, **kwargs: Any) -> str:
+        text = func(message)
+        if kwargs:
+            try:
+                return text % kwargs
+            except (TypeError, ValueError):
+                pass
+        if args:
+            try:
+                return text % args
+            except (TypeError, ValueError):
+                pass
+        return text
 
-    Args:
-        env: Jinja2 environment
-        language: Language code, defaults to DEFAULT_LANGUAGE
-    """
+    return _translator
+
+
+def _wrap_ngettext(func: Callable[..., str]) -> Callable[..., str]:
+    def _translator(
+        singular: str,
+        plural: str,
+        n: int,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str:
+        text = func(singular, plural, n)
+        if kwargs:
+            try:
+                return text % kwargs
+            except (TypeError, ValueError):
+                pass
+        if args:
+            try:
+                return text % args
+            except (TypeError, ValueError):
+                pass
+        return text
+
+    return _translator
+
+
+def build_i18n_functions(
+    language: str | None = None,
+) -> dict[str, Callable[..., str]]:
+    """Build request-scoped i18n callables for template contexts."""
     if language is None:
         language = config.DEFAULT_LANGUAGE
 
     translations = get_translations(language)
+    gettext_fn = _wrap_gettext(translations.gettext)
+    return {
+        "_": gettext_fn,
+        "gettext": gettext_fn,
+        "ngettext": _wrap_ngettext(translations.ngettext),
+    }
 
-    def _wrap_gettext(func: Callable[..., str]) -> Callable[..., str]:
-        def _translator(message: str, *args: Any, **kwargs: Any) -> str:
-            text = func(message)
-            if kwargs:
-                try:
-                    return text % kwargs
-                except (TypeError, ValueError):
-                    pass
-            if args:
-                try:
-                    return text % args
-                except (TypeError, ValueError):
-                    pass
-            return text
 
-        return _translator
+def _build_context_i18n_functions() -> dict[str, Callable[..., str]]:
+    """Build i18n callables that resolve translations from a ContextVar."""
 
-    def _wrap_ngettext(func: Callable[..., str]) -> Callable[..., str]:
-        def _translator(
-            singular: str, plural: str, n: int, *args: Any, **kwargs: Any
-        ) -> str:
-            text = func(singular, plural, n)
-            if kwargs:
-                try:
-                    return text % kwargs
-                except (TypeError, ValueError):
-                    pass
-            if args:
-                try:
-                    return text % args
-                except (TypeError, ValueError):
-                    pass
-            return text
+    def _context_gettext(message: str) -> str:
+        language = _CURRENT_LANGUAGE.get()
+        return get_translations(language).gettext(message)
 
-        return _translator
+    def _context_ngettext(singular: str, plural: str, n: int) -> str:
+        language = _CURRENT_LANGUAGE.get()
+        return get_translations(language).ngettext(singular, plural, n)
 
-    env.globals["_"] = _wrap_gettext(translations.gettext)
-    env.globals["gettext"] = env.globals["_"]
-    env.globals["ngettext"] = _wrap_ngettext(translations.ngettext)
+    gettext_fn = _wrap_gettext(_context_gettext)
+    return {
+        "_": gettext_fn,
+        "gettext": gettext_fn,
+        "ngettext": _wrap_ngettext(_context_ngettext),
+    }
+
+
+def set_current_language(language: str) -> Token[str]:
+    """Set current language in the request-local context."""
+    normalized = (
+        language if language in config.SUPPORTED_LANGUAGES else config.DEFAULT_LANGUAGE
+    )
+    return _CURRENT_LANGUAGE.set(normalized)
+
+
+def reset_current_language(token: Token[str]) -> None:
+    """Reset language context to previous token."""
+    _CURRENT_LANGUAGE.reset(token)
+
+
+@contextmanager
+def language_context(language: str) -> Any:
+    """Context manager that scopes the active language for template rendering."""
+    token = set_current_language(language)
+    try:
+        yield
+    finally:
+        reset_current_language(token)
+
+
+def install_i18n(env: Environment, language: str | None = None) -> None:
+    """Install i18n functions into Jinja2 environment.
+
+    If language is provided, install fixed-language callables.
+    If omitted, install context-local callables suitable for concurrent requests.
+    """
+    if language is None:
+        env.globals.update(_build_context_i18n_functions())
+        return
+    env.globals.update(build_i18n_functions(language))
