@@ -32,7 +32,7 @@ Execution-oriented backlog for Stricknani.
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T18 | P1 | done | demo | feat | Improve demo assets with knitting-related images and content |
 | T30 | P1 | done | cli | feat | Add `stricknani-cli project|yarn ID_OR_NAME` with pretty print and --json support |
-| T31 | P0 | wip | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
+| T31 | P0 | done | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
 | T1 | P3 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 
 
@@ -241,7 +241,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: nix
 - **Priority**: P0
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Add `backup.enable` option to Nix module (enabled by default)
