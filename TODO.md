@@ -25,7 +25,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T24 | P3 | wip | dev | Implement `just todo` command to list tasks from TODO.md in TSV format |
+| T24 | P3 | done | dev | Implement `just todo` command to list tasks from TODO.md in TSV format |
 | T3 | P2 | wip | ux | Implement keyboard shortcuts for project/yarn list and view pages |
 
 ## Next
@@ -259,9 +259,7 @@ Execution-oriented backlog for Stricknani.
 - **Output Format**:
   - Brief TSV output
   - Include header row (ID, Priority, Status, Area, Summary)
-  - Use tsvtool for pretty formatting
 - **Implementation**:
-  - Parse TODO.md markdown tables using grep/sed/awk or similar
+  - Parse TODO.md markdown tables using mq
   - Filter by status (todo/wip for default, done for --done)
-  - Pipe through tsvtool for formatting
   - Add to justfile as `just todo` and `just todo --done`

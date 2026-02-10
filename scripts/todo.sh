@@ -62,28 +62,30 @@ main() {
     return 2
   fi
 
-  printf 'ID\tPriority\tStatus\tArea\tSummary\n'
+  {
+    printf 'ID\tPriority\tStatus\tArea\tSummary\n'
 
-  while IFS= read -r row
-  do
-    [[ -z "${row// /}" ]] && continue
-    row_data="${row#|}"
-    row_data="${row_data%|}"
+    while IFS= read -r row
+    do
+      [[ -z "${row// /}" ]] && continue
+      row_data="${row#|}"
+      row_data="${row_data%|}"
 
-    IFS='|' read -r id priority status area summary <<< "$row_data"
-    [[ -z "${id:-}" ]] && continue
+      IFS='|' read -r id priority status area summary <<< "$row_data"
+      [[ -z "${id:-}" ]] && continue
 
-    if [[ -n "${seen_ids[$id]:-}" ]]
-    then
-      continue
-    fi
+      if [[ -n "${seen_ids[$id]:-}" ]]
+      then
+        continue
+      fi
 
-    seen_ids["$id"]=1
-    printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$priority" "$status" "$area" "$summary"
-  done < <(
-    mq 'select(., is_table_cell(.))' TODO.md \
-      | mq -I text -F text --args status "$status_filter" "$mq_query"
-  )
+      seen_ids["$id"]=1
+      printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$priority" "$status" "$area" "$summary"
+    done < <(
+      mq 'select(., is_table_cell(.))' TODO.md \
+        | mq -I text -F text --args status "$status_filter" "$mq_query"
+    )
+  } | tsvtool
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]

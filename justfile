@@ -101,6 +101,26 @@ fmt-css:
 trim:
   ./scripts/trim.sh
 
+# List pending tasks from TODO.md
+[group: 'dev']
+todo *args:
+  ./scripts/todo.sh {{ args }}
+
+# List done tasks from TODO.md
+[group: 'dev']
+todo-done:
+  ./scripts/todo.sh --done
+
+# List WIP tasks from TODO.md
+[group: 'dev']
+todo-wip:
+  ./scripts/todo.sh --wip
+
+# List todo tasks from TODO.md
+[group: 'dev']
+todo-todo:
+  ./scripts/todo.sh --todo
+
 # Run tests
 [group: 'test']
 test:
