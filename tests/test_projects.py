@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from stricknani.config import config
-from stricknani.models import Attachment, AuditLog, Image, ProjectCategory, Step
+from stricknani.models import Attachment, AuditLog, Image, ProjectCategory, Step, Yarn
 
 
 async def _fetch_steps(
@@ -208,6 +208,42 @@ async def test_project_create_and_update_write_audit_logs(
     details = json.loads(updated_entry.details)
     changes = details.get("changes", {})
     assert "name" in changes
+
+
+@pytest.mark.asyncio
+async def test_project_create_with_new_yarn_text_writes_yarn_creation_audit_log(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, user_id, _project_id, _step_id = test_client
+
+    create_response = await client.post(
+        "/projects/",
+        data={
+            "name": "Project With New Yarn",
+            "category": ProjectCategory.SCHAL.value,
+            "yarn_text": "Audit Created Yarn",
+            "yarn_brand": "Audit Brand",
+        },
+        follow_redirects=False,
+    )
+    assert create_response.status_code == 303
+
+    async with session_factory() as session:
+        yarn_result = await session.execute(
+            select(Yarn).where(
+                Yarn.owner_id == user_id,
+                Yarn.name == "Audit Created Yarn",
+            )
+        )
+        yarn = yarn_result.scalar_one()
+
+    audit_entries = await _fetch_audit_logs(session_factory, "yarn", yarn.id)
+    created_entry = next(entry for entry in audit_entries if entry.action == "created")
+    assert created_entry.actor_user_id == user_id
+    assert created_entry.details is not None
+    details = json.loads(created_entry.details)
+    assert details.get("name") == "Audit Created Yarn"
+    assert details.get("source") == "project_yarn_resolution"
 
 
 @pytest.mark.asyncio

@@ -17,6 +17,7 @@ from stricknani.config import config
 from stricknani.models import Project
 from stricknani.models import Yarn as YarnModel
 from stricknani.models.associations import project_yarns
+from stricknani.services.audit import create_audit_log
 from stricknani.utils.files import get_thumbnail_url
 from stricknani.utils.wayback import store_wayback_snapshot
 
@@ -124,6 +125,19 @@ async def ensure_yarns_by_text(
                 )
                 db.add(db_yarn_obj)
                 await db.flush()
+                await create_audit_log(
+                    db,
+                    actor_user_id=user_id,
+                    entity_type="yarn",
+                    entity_id=db_yarn_obj.id,
+                    action="created",
+                    details={
+                        "name": db_yarn_obj.name,
+                        "brand": db_yarn_obj.brand,
+                        "colorway": db_yarn_obj.colorway,
+                        "source": "project_yarn_resolution",
+                    },
+                )
 
                 if db_yarn_obj.link:
                     try:
@@ -245,6 +259,18 @@ async def ensure_yarns_by_text(
             db_yarn_obj = YarnModel(name=name, owner_id=user_id, brand=yarn_brand)
             db.add(db_yarn_obj)
             await db.flush()
+            await create_audit_log(
+                db,
+                actor_user_id=user_id,
+                entity_type="yarn",
+                entity_id=db_yarn_obj.id,
+                action="created",
+                details={
+                    "name": db_yarn_obj.name,
+                    "brand": db_yarn_obj.brand,
+                    "source": "project_yarn_resolution",
+                },
+            )
 
         if db_yarn_obj.id not in updated_ids:
             updated_ids.append(db_yarn_obj.id)
