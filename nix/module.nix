@@ -8,6 +8,66 @@ let
   cfg = config.services.stricknani;
   user = "stricknani";
   group = user;
+  backupScript = pkgs.writeShellScript "stricknani-backup" ''
+    set -euo pipefail
+    umask 0077
+
+    backup_dir="${cfg.dataDir}/backups"
+    media_dir="${cfg.dataDir}/media"
+    db_url='${cfg.databaseUrl}'
+    retention='${toString cfg.backup.retention}'
+    timestamp="$(date -u +%Y%m%d-%H%M%S)"
+    archive_tmp="$backup_dir/stricknani-$timestamp.tar.gz.tmp"
+    archive_file="$backup_dir/stricknani-$timestamp.tar.gz"
+
+    mkdir -p "$backup_dir"
+    tmp_dir="$(mktemp -d "$backup_dir/.stricknani-backup-$timestamp.XXXXXX")"
+    cleanup() {
+      rm -rf -- "$tmp_dir"
+      rm -f -- "$archive_tmp"
+    }
+    trap cleanup EXIT
+
+    if [[ "$db_url" == sqlite:///* ]]
+    then
+      db_path="''${db_url#sqlite:///}"
+      if [[ ! -f "$db_path" ]]
+      then
+        echo "stricknani-backup: sqlite database not found at '$db_path'" >&2
+        exit 2
+      fi
+
+      db_snapshot="database.sqlite3"
+      sqlite3 "$db_path" ".backup $tmp_dir/$db_snapshot"
+    elif [[ "$db_url" == postgresql://* || "$db_url" == postgres://* ]]
+    then
+      db_snapshot="database.sql"
+      pg_dump "$db_url" > "$tmp_dir/$db_snapshot"
+    else
+      echo "stricknani-backup: unsupported DATABASE_URL scheme in '$db_url'" >&2
+      exit 2
+    fi
+
+    if [[ -d "$media_dir" ]]
+    then
+      tar -czf "$archive_tmp" -C "$tmp_dir" "$db_snapshot" -C "${cfg.dataDir}" media
+    else
+      echo "stricknani-backup: media directory missing at '$media_dir'" >&2
+      tar -czf "$archive_tmp" -C "$tmp_dir" "$db_snapshot"
+    fi
+    mv "$archive_tmp" "$archive_file"
+    trap - EXIT
+    rm -rf -- "$tmp_dir"
+
+    mapfile -t backups < <(ls -1dt "$backup_dir"/stricknani-* 2>/dev/null || true)
+    if (( ''${#backups[@]} > retention ))
+    then
+      for old_backup in "''${backups[@]:retention}"
+      do
+        rm -f -- "$old_backup"
+      done
+    fi
+  '';
 
   stricknaniCliWrapper = pkgs.writeShellScriptBin "stricknani-cli" ''
     exec sudo -u "${user}" -- env \
@@ -70,6 +130,26 @@ in
       description = "The database connection string.";
     };
 
+    backup = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Enable scheduled Stricknani database backups.";
+      };
+
+      schedule = lib.mkOption {
+        type = lib.types.str;
+        default = "daily";
+        description = "Backup schedule (systemd OnCalendar expression).";
+      };
+
+      retention = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 7;
+        description = "How many recent backups to keep.";
+      };
+    };
+
     nginx = {
       enable = lib.mkEnableOption "Nginx virtual host for Stricknani";
       forceSSL = lib.mkOption {
@@ -92,49 +172,89 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    systemd.services.stricknani = {
-      description = "Stricknani knitting project manager";
-      after = [ "network-online.target" ];
-      wants = [ "network-online.target" ];
-      wantedBy = [ "multi-user.target" ];
+    systemd = {
+      services.stricknani = {
+        description = "Stricknani knitting project manager";
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
 
-      environment = {
-        PORT = toString cfg.port;
-        BIND_HOST = cfg.bindHost;
-        DATABASE_URL = cfg.databaseUrl;
-        MEDIA_ROOT = "${cfg.dataDir}/media";
-        ALLOWED_HOSTS = lib.concatStringsSep "," (
-          lib.optional (cfg.hostName != null) cfg.hostName
-          ++ cfg.serverAliases
-          ++ [
-            "127.0.0.1"
-            "localhost"
-          ]
-        );
-      } // cfg.extraConfig;
+        environment = {
+          PORT = toString cfg.port;
+          BIND_HOST = cfg.bindHost;
+          DATABASE_URL = cfg.databaseUrl;
+          MEDIA_ROOT = "${cfg.dataDir}/media";
+          ALLOWED_HOSTS = lib.concatStringsSep "," (
+            lib.optional (cfg.hostName != null) cfg.hostName
+            ++ cfg.serverAliases
+            ++ [
+              "127.0.0.1"
+              "localhost"
+            ]
+          );
+        } // cfg.extraConfig;
 
-      serviceConfig = {
-        ExecStart = lib.getExe cfg.package;
-        WorkingDirectory = cfg.dataDir;
-        StateDirectory = "stricknani";
-        StateDirectoryMode = "0750";
-        User = user;
-        Group = group;
-        Restart = "on-failure";
-        RestartSec = 10;
-        UMask = "0077";
+        serviceConfig = {
+          ExecStart = lib.getExe cfg.package;
+          WorkingDirectory = cfg.dataDir;
+          StateDirectory = "stricknani";
+          StateDirectoryMode = "0750";
+          User = user;
+          Group = group;
+          Restart = "on-failure";
+          RestartSec = 10;
+          UMask = "0077";
 
-        # Security hardening
-        CapabilityBoundingSet = "";
-        NoNewPrivileges = true;
-        PrivateDevices = true;
-        PrivateTmp = true;
-        ProtectHome = true;
-        ProtectSystem = "strict";
-        ReadOnlyPaths = [ "/" ];
-        ReadWritePaths = [ cfg.dataDir ];
-        EnvironmentFile = lib.optional (cfg.secretKeyFile != null) cfg.secretKeyFile;
+          # Security hardening
+          CapabilityBoundingSet = "";
+          NoNewPrivileges = true;
+          PrivateDevices = true;
+          PrivateTmp = true;
+          ProtectHome = true;
+          ProtectSystem = "strict";
+          ReadOnlyPaths = [ "/" ];
+          ReadWritePaths = [ cfg.dataDir ];
+          EnvironmentFile = lib.optional (cfg.secretKeyFile != null) cfg.secretKeyFile;
+        };
       };
+
+      services.stricknani-backup = lib.mkIf cfg.backup.enable {
+        description = "Stricknani database backup";
+        after = [ "stricknani.service" ];
+        wants = [ "stricknani.service" ];
+
+        path = with pkgs; [
+          coreutils
+          gzip
+          gnutar
+          postgresql
+          sqlite
+        ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = backupScript;
+          User = user;
+          Group = group;
+          UMask = "0077";
+          ReadOnlyPaths = [ "/" ];
+          ReadWritePaths = [ cfg.dataDir ];
+        };
+      };
+
+      timers.stricknani-backup = lib.mkIf cfg.backup.enable {
+        description = "Run Stricknani database backups";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = cfg.backup.schedule;
+          Persistent = true;
+          RandomizedDelaySec = "15m";
+        };
+      };
+
+      tmpfiles.rules = lib.mkIf cfg.backup.enable [
+        "d ${cfg.dataDir}/backups 0750 ${user} ${group} -"
+      ];
     };
 
     services.nginx.virtualHosts = lib.mkIf (cfg.nginx.enable && cfg.hostName != null) {

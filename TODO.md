@@ -247,4 +247,4 @@ Execution-oriented backlog for Stricknani.
   - Add `backup.enable` option to Nix module (enabled by default)
   - Add configurable `backup.schedule` (cron expression, default: daily)
   - Add `backup.retention` settings (keep last N backups, default: 7)
-  - Implement automatic database backup with retention policy
+  - Implement automatic backup archive containing database + media with retention policy
