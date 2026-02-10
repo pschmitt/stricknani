@@ -33,6 +33,9 @@ DEMO_IMAGE_CAPTIONS = {
     "demo_image_4.jpg": "Bright neon rainbow hand-dyed sock yarn skeins",
     "demo_image_5.jpg": "Winding a ball of colorful variegated yarn",
     "demo_image_6.jpg": "Ribbed scarf showing vibrant rainbow color transitions",
+    "demo_image_19.jpg": (
+        "Commuter rib scarf in deep red laid out on a neutral backdrop"
+    ),
     # Yarn 3 (Ruby Red/Burgundy) & Project 3 (Beanie)
     "demo_image_7.jpg": "Chunky ruby red wool yarn balls",
     "demo_image_8.jpg": "Detail of thick red single-ply yarn twist",
@@ -385,7 +388,7 @@ async def seed_demo_data(reset: bool = False) -> None:
                 "link": "https://example.com/patterns/commuter-rib-scarf",
                 "linked_yarns": ["Laneway Sock 4ply"],
                 "title_images": [
-                    "demo_image_6.jpg",  # Finished Scarf
+                    "demo_image_19.jpg",  # Finished Scarf (updated main image)
                     "demo_image_4.jpg",  # Yarn
                     "demo_image_5.jpg",  # Process
                 ],
@@ -404,7 +407,7 @@ async def seed_demo_data(reset: bool = False) -> None:
                             "Continue rib to 180 cm, then bind off in pattern and "
                             "soak block."
                         ),
-                        "images": ["demo_image_6.jpg"],
+                        "images": ["demo_image_19.jpg"],
                     },
                 ],
             },
