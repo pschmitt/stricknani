@@ -388,3 +388,96 @@ def test_cli_api_projects_dispatches(monkeypatch: pytest.MonkeyPatch) -> None:
     assert captured["endpoint"] == "/projects/"
     assert captured["email"] == "tester@example.com"
     assert captured["password"] == "secret"
+
+
+def test_cli_project_lookup_dispatches_to_show(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_show_project(query: str, owner_email: str | None) -> None:
+        captured["query"] = query
+        captured["owner_email"] = owner_email
+
+    monkeypatch.setattr(cli, "show_project", fake_show_project)
+    monkeypatch.setattr(sys, "argv", ["stricknani-cli", "project", "Sample"])
+    cli.main()
+
+    assert captured["query"] == "Sample"
+    assert captured["owner_email"] is None
+
+
+def test_cli_yarn_lookup_dispatches_to_show(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_show_yarn(query: str, owner_email: str | None) -> None:
+        captured["query"] = query
+        captured["owner_email"] = owner_email
+
+    monkeypatch.setattr(cli, "show_yarn", fake_show_yarn)
+    monkeypatch.setattr(sys, "argv", ["stricknani-cli", "yarn", "Wool"])
+    cli.main()
+
+    assert captured["query"] == "Wool"
+    assert captured["owner_email"] is None
+
+
+@pytest.mark.asyncio
+async def test_show_project_json_output(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _client, session_factory, _user_id, project_id, _step_id = test_client
+
+    async def fake_init_db() -> None:
+        return None
+
+    monkeypatch.setattr(cli, "AsyncSessionLocal", session_factory)
+    monkeypatch.setattr(cli, "init_db", fake_init_db)
+
+    old_json_output = cli.JSON_OUTPUT
+    cli.JSON_OUTPUT = True
+    try:
+        await cli.show_project(str(project_id), None)
+    finally:
+        cli.JSON_OUTPUT = old_json_output
+
+    output = capsys.readouterr().out
+    assert '"project"' in output
+    assert '"id"' in output
+
+
+@pytest.mark.asyncio
+async def test_show_yarn_json_output(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _client, session_factory, user_id, _project_id, _step_id = test_client
+
+    async with session_factory() as session:
+        yarn = Yarn(name="Lookup Yarn", owner_id=user_id)
+        session.add(yarn)
+        await session.commit()
+        await session.refresh(yarn)
+        yarn_id = yarn.id
+
+    async def fake_init_db() -> None:
+        return None
+
+    monkeypatch.setattr(cli, "AsyncSessionLocal", session_factory)
+    monkeypatch.setattr(cli, "init_db", fake_init_db)
+
+    old_json_output = cli.JSON_OUTPUT
+    cli.JSON_OUTPUT = True
+    try:
+        await cli.show_yarn(str(yarn_id), None)
+    finally:
+        cli.JSON_OUTPUT = old_json_output
+
+    output = capsys.readouterr().out
+    assert '"yarn"' in output
+    assert '"id"' in output

@@ -18,8 +18,8 @@ from rich import print_json
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
+from sqlalchemy import func, select
 from sqlalchemy import inspect as sa_inspect
-from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from stricknani.config import config
@@ -61,6 +61,9 @@ logger = logging.getLogger("stricknani.cli")
 
 JSON_OUTPUT = False
 VERBOSE = False
+
+PROJECT_SUBCOMMANDS = {"list", "add", "import", "delete", "export", "show"}
+YARN_SUBCOMMANDS = {"list", "add", "import", "delete", "show"}
 
 
 def suppress_alembic_logging() -> None:
@@ -104,6 +107,25 @@ def output_table(
     for row in rows:
         table.add_row(*row)
     console.print(table)
+
+
+def _normalize_entity_lookup_args(raw_args: list[str]) -> list[str]:
+    """Rewrite `project|yarn ID_OR_NAME` invocations to `... show --query ...`."""
+    if len(raw_args) < 2:
+        return raw_args
+
+    command = raw_args[0]
+    token = raw_args[1]
+    if token.startswith("-"):
+        return raw_args
+
+    if command == "project" and token not in PROJECT_SUBCOMMANDS:
+        return [command, "show", "--query", token, *raw_args[2:]]
+
+    if command == "yarn" and token not in YARN_SUBCOMMANDS:
+        return [command, "show", "--query", token, *raw_args[2:]]
+
+    return raw_args
 
 
 def _serialize_value(value: object) -> object:
@@ -254,6 +276,108 @@ async def list_projects(owner_email: str | None) -> None:
         )
 
 
+async def show_project(query: str, owner_email: str | None) -> None:
+    """Show one project by ID or (partial) name."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        owner_id = None
+        if owner_email:
+            owner = await get_user_by_email(session, owner_email)
+            if not owner:
+                error_console.print(
+                    f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+                )
+                return
+            owner_id = owner.id
+
+        base_query = select(Project).options(
+            selectinload(Project.owner),
+            selectinload(Project.images),
+            selectinload(Project.steps).selectinload(Step.images),
+            selectinload(Project.yarns),
+        )
+        if owner_id is not None:
+            base_query = base_query.where(Project.owner_id == owner_id)
+
+        project: Project | None = None
+        query_clean = query.strip()
+        if query_clean.isdigit():
+            by_id = base_query.where(Project.id == int(query_clean))
+            by_id_result = await session.execute(by_id)
+            project = by_id_result.scalars().first()
+
+        if project is None:
+            by_exact_name = base_query.where(
+                func.lower(Project.name) == query_clean.lower()
+            )
+            exact_result = await session.execute(by_exact_name)
+            project = exact_result.scalars().first()
+
+        if project is None:
+            by_partial_name = base_query.where(
+                Project.name.ilike(f"%{query_clean}%")
+            ).order_by(Project.id.asc())
+            partial_result = await session.execute(by_partial_name)
+            matches = partial_result.scalars().all()
+            if len(matches) == 1:
+                project = matches[0]
+            elif len(matches) > 1:
+                if JSON_OUTPUT:
+                    output_json(
+                        {"matches": [serialize_project(item) for item in matches]}
+                    )
+                else:
+                    rows = [
+                        [
+                            str(item.id),
+                            item.name,
+                            item.category or "-",
+                            item.owner.email if item.owner else "-",
+                        ]
+                        for item in matches
+                    ]
+                    output_table(
+                        ["ID", "NAME", "CATEGORY", "OWNER"],
+                        rows,
+                        styles=["cyan", "yellow", "magenta", "cyan"],
+                    )
+                    console.print(
+                        f"[yellow]Multiple projects match[/yellow] "
+                        f"[cyan]{query}[/cyan]. Use an ID."
+                    )
+                return
+
+        if project is None:
+            error_console.print(
+                f"[red]No project matched query [cyan]{query}[/cyan].[/red]"
+            )
+            return
+
+        data = serialize_project(project)
+        if JSON_OUTPUT:
+            output_json({"project": data})
+            return
+
+        rows = [
+            ["ID", str(project.id)],
+            ["Name", project.name],
+            ["Owner", project.owner.email if project.owner else "-"],
+            ["Category", project.category or "-"],
+            ["Needles", project.needles or "-"],
+            ["Yarn", project.yarn or "-"],
+            ["Tags", ", ".join(project.tag_list()) or "-"],
+            ["Images", str(len(project.images))],
+            ["Steps", str(len(project.steps))],
+            ["Linked Yarns", str(len(project.yarns))],
+            ["Link", project.link or "-"],
+        ]
+        output_table(["FIELD", "VALUE"], rows, styles=["cyan", "white"])
+        if project.description:
+            console.print(f"[bold]Description:[/bold] {project.description}")
+        if project.notes:
+            console.print(f"[bold]Notes:[/bold] {project.notes}")
+
+
 async def delete_project(project_id: int, owner_email: str | None) -> None:
     """Delete a project."""
     await init_db()
@@ -342,6 +466,114 @@ async def list_yarns(owner_email: str | None) -> None:
             rows,
             styles=["cyan", "yellow", "magenta", "blue", "cyan"],
         )
+
+
+async def show_yarn(query: str, owner_email: str | None) -> None:
+    """Show one yarn by ID or (partial) name."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        owner_id = None
+        if owner_email:
+            owner = await get_user_by_email(session, owner_email)
+            if not owner:
+                error_console.print(
+                    f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+                )
+                return
+            owner_id = owner.id
+
+        base_query = select(Yarn).options(
+            selectinload(Yarn.owner),
+            selectinload(Yarn.photos),
+            selectinload(Yarn.projects),
+        )
+        if owner_id is not None:
+            base_query = base_query.where(Yarn.owner_id == owner_id)
+
+        yarn: Yarn | None = None
+        query_clean = query.strip()
+        if query_clean.isdigit():
+            by_id = base_query.where(Yarn.id == int(query_clean))
+            by_id_result = await session.execute(by_id)
+            yarn = by_id_result.scalars().first()
+
+        if yarn is None:
+            by_exact_name = base_query.where(
+                func.lower(Yarn.name) == query_clean.lower()
+            )
+            exact_result = await session.execute(by_exact_name)
+            yarn = exact_result.scalars().first()
+
+        if yarn is None:
+            by_partial_name = base_query.where(
+                Yarn.name.ilike(f"%{query_clean}%")
+            ).order_by(Yarn.id.asc())
+            partial_result = await session.execute(by_partial_name)
+            matches = partial_result.scalars().all()
+            if len(matches) == 1:
+                yarn = matches[0]
+            elif len(matches) > 1:
+                if JSON_OUTPUT:
+                    output_json({"matches": [serialize_yarn(item) for item in matches]})
+                else:
+                    rows = [
+                        [
+                            str(item.id),
+                            item.name,
+                            item.brand or "-",
+                            item.colorway or "-",
+                            item.owner.email if item.owner else "-",
+                        ]
+                        for item in matches
+                    ]
+                    output_table(
+                        ["ID", "NAME", "BRAND", "COLORWAY", "OWNER"],
+                        rows,
+                        styles=["cyan", "yellow", "magenta", "blue", "cyan"],
+                    )
+                    console.print(
+                        f"[yellow]Multiple yarns match[/yellow] "
+                        f"[cyan]{query}[/cyan]. Use an ID."
+                    )
+                return
+
+        if yarn is None:
+            error_console.print(
+                f"[red]No yarn matched query [cyan]{query}[/cyan].[/red]"
+            )
+            return
+
+        data = serialize_yarn(yarn)
+        if JSON_OUTPUT:
+            output_json({"yarn": data})
+            return
+
+        rows = [
+            ["ID", str(yarn.id)],
+            ["Name", yarn.name],
+            ["Owner", yarn.owner.email if yarn.owner else "-"],
+            ["Brand", yarn.brand or "-"],
+            ["Colorway", yarn.colorway or "-"],
+            ["Dye Lot", yarn.dye_lot or "-"],
+            ["Weight Category", yarn.weight_category or "-"],
+            ["Recommended Needles", yarn.recommended_needles or "-"],
+            [
+                "Weight (g)",
+                str(yarn.weight_grams) if yarn.weight_grams is not None else "-",
+            ],
+            [
+                "Length (m)",
+                str(yarn.length_meters) if yarn.length_meters is not None else "-",
+            ],
+            ["Photos", str(len(yarn.photos))],
+            ["Linked Projects", str(len(yarn.projects))],
+            ["Link", yarn.link or "-"],
+        ]
+        output_table(["FIELD", "VALUE"], rows, styles=["cyan", "white"])
+        if yarn.description:
+            console.print(f"[bold]Description:[/bold] {yarn.description}")
+        if yarn.notes:
+            console.print(f"[bold]Notes:[/bold] {yarn.notes}")
 
 
 async def list_audit_entries(
@@ -946,6 +1178,7 @@ async def ai_ingest(
 
 def main() -> None:
     raw_args = [arg for arg in sys.argv[1:] if arg not in ("--json", "--verbose")]
+    raw_args = _normalize_entity_lookup_args(raw_args)
     global JSON_OUTPUT, VERBOSE
     JSON_OUTPUT = "--json" in sys.argv[1:]
     VERBOSE = "--verbose" in sys.argv[1:]
@@ -1008,6 +1241,13 @@ def main() -> None:
     )
     project_list_parser = project_subparsers.add_parser("list", help="List projects")
     project_list_parser.add_argument("--owner-email", help="Filter by owner email")
+    project_show_parser = project_subparsers.add_parser(
+        "show", help="Show one project by ID or name"
+    )
+    project_show_parser.add_argument(
+        "--query", required=True, help="ID or partial name"
+    )
+    project_show_parser.add_argument("--owner-email", help="Filter by owner email")
     project_add_parser = project_subparsers.add_parser("add", help="Add a project")
     project_add_parser.add_argument("--owner-email", required=True, help="Owner email")
     project_add_parser.add_argument("--name", required=True, help="Project name")
@@ -1063,6 +1303,11 @@ def main() -> None:
     yarn_subparsers = yarn_parser.add_subparsers(dest="yarn_command", required=False)
     yarn_list_parser = yarn_subparsers.add_parser("list", help="List yarns")
     yarn_list_parser.add_argument("--owner-email", help="Filter by owner email")
+    yarn_show_parser = yarn_subparsers.add_parser(
+        "show", help="Show one yarn by ID or name"
+    )
+    yarn_show_parser.add_argument("--query", required=True, help="ID or partial name")
+    yarn_show_parser.add_argument("--owner-email", help="Filter by owner email")
     yarn_add_parser = yarn_subparsers.add_parser("add", help="Add a yarn")
     yarn_add_parser.add_argument("--owner-email", required=True, help="Owner email")
     yarn_add_parser.add_argument("--name", required=True, help="Yarn name")
@@ -1256,6 +1501,8 @@ def main() -> None:
         if project_command == "list":
             owner_email = getattr(args, "owner_email", None)
             asyncio.run(list_projects(owner_email))
+        elif project_command == "show":
+            asyncio.run(show_project(args.query, args.owner_email))
         elif project_command == "add":
             asyncio.run(
                 add_project(
@@ -1297,6 +1544,8 @@ def main() -> None:
         if yarn_command == "list":
             owner_email = getattr(args, "owner_email", None)
             asyncio.run(list_yarns(owner_email))
+        elif yarn_command == "show":
+            asyncio.run(show_yarn(args.query, args.owner_email))
         elif yarn_command == "add":
             asyncio.run(
                 add_yarn(
