@@ -25,7 +25,6 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T29 | P2 | todo | ux | feat | Make the "instructions" block collapsible on project pages |
 
 ## Next
 
@@ -44,6 +43,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T29 | P2 | done | ux | feat | Make the "instructions" block collapsible on project pages |
 | T25 | P0 | done | dev | refactor | Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable |
 | T26 | P0 | done | dev | feat | Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags |
 | T28 | P0 | done | dev | feat | Add `todo.sh TICKET_ID_OR_PARTIAL_NAME` to show task details |
@@ -216,7 +216,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Add a toggle/collapse button to the instructions section on project view pages

@@ -510,77 +510,82 @@ data-shortcut-delete-dialog="deleteProjectDialog"
 
             <!-- Steps Section -->
             {% if project.steps %}
-            <div class="space-y-4">
-                <h2 class="font-bold text-2xl flex items-center gap-2 px-2">
-                    <span class="mdi mdi-format-list-checks text-primary"></span>
-                    {{ _('Instructions') }}
-                </h2>
-
-                <div
-                    class="space-y-6 relative md:before:absolute md:before:inset-0 md:before:mx-auto md:before:translate-x-0 md:before:h-full md:before:w-0.5 md:before:bg-gradient-to-b md:before:from-transparent md:before:via-base-300 md:before:to-transparent">
-                    {% for step in project.steps %}
-                    <div class="relative flex items-start group">
-                        <!-- Timeline Node (Desktop) -->
-                        <div class="hidden md:flex relative md:mr-8 flex-col items-center">
-                            <div
-                                class="flex h-12 w-12 items-center justify-center rounded-full bg-base-100 border-4 border-base-200 shadow-sm z-10 group-hover:border-primary/50 transition-colors">
-                                <span class="font-bold text-base-content/70">{{ step.step_number }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Content Card -->
-                        <div
-                            class="collapse collapse-arrow step-card flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm transition hover:shadow-md hover:border-primary/20">
-                            <input type="checkbox" checked />
-                            <div class="collapse-title flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <!-- Mobile Step Number -->
-                                    <div
-                                        class="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20">
-                                        <span class="font-bold text-sm">{{ step.step_number }}</span>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-base-content">{{ step.title }}</h3>
-                                </div>
-                            </div>
-                            <div class="collapse-content relative pt-2">
-                                <button class="btn btn-ghost btn-xs absolute top-2 right-2"
-                                    onclick='copyToClipboard({{ (step.description or '')|tojson }}, this)'
-                                    title="{{ _('Copy Instructions') }}">
-                                    <span class="mdi mdi-content-copy"></span>
-                                </button>
-
-                                {% if step.description_html %}
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+                <input type="checkbox" id="instructions-toggle" checked />
+                <div class="collapse-title p-4 flex items-center justify-between">
+                    <h2 class="font-bold text-2xl flex items-center gap-2">
+                        <span class="mdi mdi-format-list-checks text-primary"></span>
+                        {{ _('Instructions') }}
+                    </h2>
+                    <span class="text-xs font-medium text-base-content/50 mr-8">{{ project.steps|length }}</span>
+                </div>
+                <div class="collapse-content pt-2">
+                    <div
+                        class="space-y-6 relative md:before:absolute md:before:inset-0 md:before:mx-auto md:before:translate-x-0 md:before:h-full md:before:w-0.5 md:before:bg-gradient-to-b md:before:from-transparent md:before:via-base-300 md:before:to-transparent">
+                        {% for step in project.steps %}
+                        <div class="relative flex items-start group">
+                            <!-- Timeline Node (Desktop) -->
+                            <div class="hidden md:flex relative md:mr-8 flex-col items-center">
                                 <div
-                                    class="step-description prose prose-sm prose-compact max-w-none text-base-content/80 mb-4 pr-8">
-                                    {{ step.description_html | safe }}
+                                    class="flex h-12 w-12 items-center justify-center rounded-full bg-base-100 border-4 border-base-200 shadow-sm z-10 group-hover:border-primary/50 transition-colors">
+                                    <span class="font-bold text-base-content/70">{{ step.step_number }}</span>
                                 </div>
-                                {% endif %}
+                            </div>
 
-                                {% if step.images %}
-                                <div class="step-photos-section mt-4 pt-4 border-t border-base-100">
-                                    <h4
-                                        class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
-                                        <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
-                                    </h4>
-                                    <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
-                                        {% for image in step.images %}
-                                        <a href="{{ image.url }}"
-                                            class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
-                                            data-pswp-width="{{ image.width or 1200 }}"
-                                            data-pswp-height="{{ image.height or 1200 }}"
-                                            data-pswp-caption="{{ image.alt_text }} ({{ step.title }})">
-                                            <img src="{{ image.url }}" alt="{{ image.alt_text }}"
-                                                class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
-                                                loading="lazy">
-                                        </a>
-                                        {% endfor %}
+                            <!-- Content Card -->
+                            <div
+                                class="collapse collapse-arrow step-card flex-1 bg-base-100 rounded-2xl border border-base-200 shadow-sm transition hover:shadow-md hover:border-primary/20">
+                                <input type="checkbox" checked />
+                                <div class="collapse-title flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <!-- Mobile Step Number -->
+                                        <div
+                                            class="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20">
+                                            <span class="font-bold text-sm">{{ step.step_number }}</span>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-base-content">{{ step.title }}</h3>
                                     </div>
                                 </div>
-                                {% endif %}
+                                <div class="collapse-content relative pt-2">
+                                    <button class="btn btn-ghost btn-xs absolute top-2 right-2"
+                                        onclick='copyToClipboard({{ (step.description or '')|tojson }}, this)'
+                                        title="{{ _('Copy Instructions') }}">
+                                        <span class="mdi mdi-content-copy"></span>
+                                    </button>
+
+                                    {% if step.description_html %}
+                                    <div
+                                        class="step-description prose prose-sm prose-compact max-w-none text-base-content/80 mb-4 pr-8">
+                                        {{ step.description_html | safe }}
+                                    </div>
+                                    {% endif %}
+
+                                    {% if step.images %}
+                                    <div class="step-photos-section mt-4 pt-4 border-t border-base-100">
+                                        <h4
+                                            class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
+                                        </h4>
+                                        <div class="grid grid-cols-3 gap-2 pswp-gallery" data-pswp-gallery>
+                                            {% for image in step.images %}
+                                            <a href="{{ image.url }}"
+                                                class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
+                                                data-pswp-width="{{ image.width or 1200 }}"
+                                                data-pswp-height="{{ image.height or 1200 }}"
+                                                data-pswp-caption="{{ image.alt_text }} ({{ step.title }})">
+                                                <img src="{{ image.url }}" alt="{{ image.alt_text }}"
+                                                    class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
+                                                    loading="lazy">
+                                            </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
             {% endif %}

@@ -54,7 +54,32 @@
             }
         }
 
+        function setupInstructionsCollapsePersistence() {
+            const instructionsToggle = document.getElementById('instructions-toggle');
+            const storageKey = 'stricknani.project.instructions.collapsed';
+
+            if (!instructionsToggle) {
+                return;
+            }
+
+            try {
+                const isCollapsed = window.localStorage.getItem(storageKey) === '1';
+                instructionsToggle.checked = !isCollapsed;
+            } catch (e) {
+                // Ignore storage access errors and keep the default expanded state.
+            }
+
+            instructionsToggle.addEventListener('change', () => {
+                try {
+                    window.localStorage.setItem(storageKey, instructionsToggle.checked ? '0' : '1');
+                } catch (e) {
+                    // Ignore storage write errors.
+                }
+            });
+        }
+
         updateDetailImageVisibility();
+        setupInstructionsCollapsePersistence();
 
         if (window.location.hash === '#print') {
             setTimeout(() => {
