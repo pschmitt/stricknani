@@ -1,6 +1,7 @@
 """Main FastAPI application."""
 
 import logging
+import time
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -169,6 +170,7 @@ app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 app.mount("/media", StaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
 
 access_logger = logging.getLogger("stricknani.access")
+dev_reload_token = str(time.time_ns())
 
 
 @app.middleware("http")
@@ -208,6 +210,12 @@ async def preview_markdown(
 async def healthz() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+@app.get("/__dev__/reload-token")
+async def get_dev_reload_token() -> dict[str, str]:
+    """Return an instance token so dev clients can detect server restarts."""
+    return {"token": dev_reload_token}
 
 
 # Import routes

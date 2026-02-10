@@ -41,8 +41,6 @@ Execution-oriented backlog for Stricknani.
 | T18 | P3 | todo | demo | Improve demo assets with knitting-related images and content |
 | T19 | P3 | todo | cli | Make CLI commands default to list when no subcommand is provided |
 | T20 | P3 | todo | cli | Add comprehensive tests for CLI commands |
-| T22 | P3 | todo | dev | Add JS auto-reload in dev mode: reload page when server restarts |
-| T23 | P3 | todo | dev | Improve run.sh: wait 2s static, then poll health endpoint with 20s timeout |
 | T1 | P3 | todo | frontend/build | Replace runtime Tailwind with prebuilt static CSS bundle |
 
 
@@ -50,6 +48,8 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
+| T22 | P3 | done | dev | Add JS auto-reload in dev mode: reload page when server restarts |
+| T23 | P3 | done | dev | Improve run.sh: wait 2s static, then poll health endpoint with 20s timeout |
 | T16 | P2 | done | ux | Add markdown image autocomplete for `!` trigger in text fields |
 
 
@@ -138,7 +138,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: dev
 - **Priority**: P3
-- **Status**: todo
+- **Status**: done
 - **Description**:
   - Automatically reload the browser page when the development server restarts due to file changes
   - Improves developer workflow by avoiding manual page refreshes after code changes
@@ -151,13 +151,13 @@ Execution-oriented backlog for Stricknani.
   - Add client-side code to listen for server restart events
   - Automatically call `window.location.reload()` when server restart is detected
 
-### T23: Improve run.sh: poll health endpoint with 20s timeout, no static wait
+### T23: Improve run.sh: wait 2s static, then poll health endpoint with 20s timeout
 
 - **Area**: dev
 - **Priority**: P3
-- **Status**: todo
+- **Status**: done
 - **Description**:
-  - Modify `run.sh` to poll the health endpoint using curl immediately (no initial 2s wait)
+  - Modify `run.sh` to wait 2 seconds, then poll the health endpoint using curl
   - Keep trying until the health endpoint responds successfully
   - Give up and exit with error after 20 seconds total timeout
 - **Implementation**:

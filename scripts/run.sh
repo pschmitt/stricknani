@@ -14,8 +14,31 @@ Usage: $(basename "$0") [OPTIONS]
 Options:
   -p, --port PORT   Port to bind (default: 7674 or \$PORT env)
   -b, --background  Do not open browser
-  -d, --debug       Set DEBUG=1
+  -d, --debug       Set DEBUG=true
 EOF
+}
+
+wait_for_health() {
+  local health_url="http://localhost:${PORT}/healthz"
+  local timeout_seconds=20
+  local elapsed=0
+
+  # Give uvicorn a brief head start before polling.
+  sleep 2
+
+  while (( elapsed < timeout_seconds ))
+  do
+    if curl --silent --show-error --fail --output /dev/null "${health_url}"
+    then
+      return 0
+    fi
+
+    sleep 1
+    (( elapsed += 1 ))
+  done
+
+  echo "ERROR: Timed out waiting for ${health_url} after ${timeout_seconds}s" >&2
+  return 1
 }
 
 run_dev_server() {
@@ -24,7 +47,10 @@ run_dev_server() {
   cd "$REPO_ROOT" || return 1
 
   local cmd=(
-    uv run uvicorn stricknani.main:app
+    uv
+    run
+    uvicorn
+    stricknani.main:app
     --reload
     --host 0.0.0.0
     --port "${PORT}"
@@ -38,7 +64,7 @@ run_dev_server() {
 
   if [[ -n "$DEBUG" ]]
   then
-    env_vars+=("DEBUG=1")
+    env_vars+=("DEBUG=true")
   fi
 
   if [[ -z "${IN_NIX_SHELL:-}" ]]
@@ -62,7 +88,12 @@ run_dev_server() {
 
   if [[ -z "$DONT_OPEN_BROWSER" ]]
   then
-    (sleep 2 && ${BROWSER:-xdg-open} "http://localhost:${PORT}") &
+    (
+      if wait_for_health
+      then
+        "${BROWSER:-xdg-open}" "http://localhost:${PORT}"
+      fi
+    ) &
   fi
 
   env "${env_vars[@]}" "${cmd[@]}"
@@ -94,7 +125,7 @@ main() {
         shift
         ;;
       -d|--debug)
-        DEBUG=1
+        DEBUG=true
         shift
         ;;
       --)
@@ -116,3 +147,5 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]
 then
   main "$@"
 fi
+
+# vim: set ft=bash ts=2 sw=2 et:
