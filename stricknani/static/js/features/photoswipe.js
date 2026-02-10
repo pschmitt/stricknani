@@ -669,9 +669,7 @@
 			}
 
 			// Wait for image to load before initializing cropper
-			const img = new Image();
-			img.onload = () => {
-				image.src = src;
+			image.onload = () => {
 				// Force the image to take up available space
 				image.style.width = "100%";
 				image.style.height = "auto";
@@ -693,7 +691,7 @@
 					minContainerHeight: 600,
 				});
 			};
-			img.src = src;
+			image.src = src;
 		}
 
 		document.addEventListener("pswp:crop", (e) => {
@@ -740,17 +738,26 @@
 
 			let canvas;
 			if (typeof cropper.getCroppedCanvas === "function") {
+				// Get crop data to calculate natural output size
+				const cropData = cropper.getData();
+				const imageData = cropper.getImageData();
+
+				// Calculate scale ratio between natural and displayed size
+				const scaleX = imageData.naturalWidth / imageData.width;
+				const scaleY = imageData.naturalHeight / imageData.height;
+
+				// Calculate output dimensions at natural resolution
+				const outputWidth = Math.round(cropData.width * scaleX);
+				const outputHeight = Math.round(cropData.height * scaleY);
+
 				canvas = cropper.getCroppedCanvas({
-					maxWidth: 4096,
-					maxHeight: 4096,
+					width: outputWidth,
+					height: outputHeight,
 				});
 			} else if (typeof cropper.getCropperSelection === "function") {
 				const selection = cropper.getCropperSelection();
 				if (selection && typeof selection.$toCanvas === "function") {
-					canvas = await selection.$toCanvas({
-						maxWidth: 4096,
-						maxHeight: 4096,
-					});
+					canvas = await selection.$toCanvas();
 				}
 			}
 

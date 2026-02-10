@@ -17,6 +17,7 @@ from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.models import Image, ImageType, Project, User, Yarn, YarnImage
 from stricknani.routes.auth import require_auth
+from stricknani.services.images import get_image_dimensions
 from stricknani.utils.files import create_thumbnail, get_file_url, get_thumbnail_url
 from stricknani.utils.ocr import DEFAULT_OCR_LANG, extract_text_from_media_file
 
@@ -246,6 +247,12 @@ async def crop_image(
         # Return URLs
         filename = crop_path.name
         url_subdir = "yarns" if kind == "yarns" else "projects"
+
+        # Get dimensions of the cropped image
+        width, height = await get_image_dimensions(
+            filename, entity_id, subdir=url_subdir
+        )
+
         return JSONResponse(
             content={
                 "url": get_file_url(filename, entity_id, subdir=url_subdir),
@@ -255,6 +262,23 @@ async def crop_image(
                 "filename": filename,
                 "id": new_image_id,
                 "kind": kind,
+                "width": width,
+                "height": height,
+            }
+        )
+
+        # Return URLs
+        return JSONResponse(
+            content={
+                "url": get_file_url(filename, entity_id, subdir=url_subdir),
+                "thumbnail_url": get_thumbnail_url(
+                    filename, entity_id, subdir=url_subdir
+                ),
+                "filename": filename,
+                "id": new_image_id,
+                "kind": kind,
+                "width": width,
+                "height": height,
             }
         )
 
