@@ -669,10 +669,20 @@
 				return;
 			}
 
-			cropper = new ctor(image, {
-				viewMode: 1,
-				autoCropArea: 0.8,
-			});
+			// Wait for image to load before initializing cropper
+			image.onload = () => {
+				cropper = new ctor(image, {
+					viewMode: 1,
+					autoCropArea: 1.0,
+					restore: false,
+					guides: true,
+					center: true,
+					highlight: false,
+					cropBoxMovable: true,
+					cropBoxResizable: true,
+					toggleDragModeOnDblclick: false,
+				});
+			};
 		}
 
 		document.addEventListener("pswp:crop", (e) => {

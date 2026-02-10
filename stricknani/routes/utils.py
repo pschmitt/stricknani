@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 import shutil
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.config import config
 from stricknani.database import get_db
-from stricknani.models import Project, User, Yarn
+from stricknani.models import Image, ImageType, Project, User, Yarn, YarnImage
 from stricknani.routes.auth import require_auth
 from stricknani.utils.files import create_thumbnail, get_file_url, get_thumbnail_url
 from stricknani.utils.ocr import DEFAULT_OCR_LANG, extract_text_from_media_file
@@ -149,19 +151,40 @@ async def crop_image(
                 status_code=status.HTTP_404_NOT_FOUND, detail="not_found"
             )
 
-        # Access control
+        # Access control and get original image metadata
         if kind == "projects":
             project = await db.get(Project, entity_id)
             if not project or project.owner_id != current_user.id:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="not_found"
                 )
+
+            # Find original image in database to get metadata
+            original_filename = original_path.name
+            result = await db.execute(
+                select(Image).where(
+                    Image.project_id == entity_id, Image.filename == original_filename
+                )
+            )
+            original_image = result.scalar_one_or_none()
+            original_yarn_image = None
         else:
             yarn = await db.get(Yarn, entity_id)
             if not yarn or yarn.owner_id != current_user.id:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="not_found"
                 )
+            original_image = None
+
+            # Find original yarn image in database
+            original_filename = original_path.name
+            result = await db.execute(
+                select(YarnImage).where(
+                    YarnImage.yarn_id == entity_id,
+                    YarnImage.filename == original_filename,
+                )
+            )
+            original_yarn_image = result.scalar_one_or_none()
 
         # Generate filename for cropped image
         original_name = original_path.stem
@@ -183,6 +206,42 @@ async def crop_image(
         # Create thumbnail for the cropped image
         await create_thumbnail(crop_path, entity_id)
 
+        # Create database record
+        new_image_id = None
+        if kind == "projects" and original_image:
+            cropped_image = Image(
+                filename=crop_path.name,
+                original_filename=f"cropped_{original_image.original_filename}",
+                image_type=ImageType.PHOTO.value,
+                alt_text=f"Cropped: {original_image.alt_text}"
+                if original_image.alt_text
+                else "Cropped image",
+                is_title_image=False,
+                is_stitch_sample=original_image.is_stitch_sample,
+                project_id=entity_id,
+                step_id=original_image.step_id,
+                created_at=datetime.now(UTC),
+            )
+            db.add(cropped_image)
+            await db.flush()
+            await db.refresh(cropped_image)
+            new_image_id = cropped_image.id
+        elif kind == "yarns" and original_yarn_image:
+            cropped_yarn_image = YarnImage(
+                filename=crop_path.name,
+                original_filename=f"cropped_{original_yarn_image.original_filename}",
+                alt_text=f"Cropped: {original_yarn_image.alt_text}"
+                if original_yarn_image.alt_text
+                else "Cropped image",
+                is_primary=False,
+                yarn_id=entity_id,
+                created_at=datetime.now(UTC),
+            )
+            db.add(cropped_yarn_image)
+            await db.flush()
+            await db.refresh(cropped_yarn_image)
+            new_image_id = cropped_yarn_image.id
+
         # Return URLs
         filename = crop_path.name
         return JSONResponse(
@@ -190,6 +249,8 @@ async def crop_image(
                 "url": get_file_url(filename, entity_id),
                 "thumbnail_url": get_thumbnail_url(filename, entity_id),
                 "filename": filename,
+                "id": new_image_id,
+                "kind": kind,
             }
         )
 
