@@ -25,16 +25,11 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T24 | P3 | done | dev | Implement `just todo` command to list tasks from TODO.md in TSV format |
-| T3 | P2 | wip | ux | Implement keyboard shortcuts for project/yarn list and view pages |
 
 ## Next
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T6 | P0 | done | data-integrity | Make DB/file operations atomic-ish: avoid deleting files before successful DB commit |
-| T7 | P0 | done | auth/security | Enforce `is_active` in auth resolution so disabled users lose access immediately |
-| T8 | P1 | done | architecture | Split oversized route modules into route/controller + service layers |
 | T9 | P1 | todo | import | Consolidate duplicated import/image-dedupe logic into a single reusable pipeline |
 | T21 | P1 | todo | import | Merge import dialog states: show URL entry and file upload in a single unified view |
 | T10 | P1 | todo | projects | Extract shared create/update project import workflows to common services |
@@ -43,7 +38,6 @@ Execution-oriented backlog for Stricknani.
 | T13 | P2 | todo | reliability | Replace broad exception swallowing in import/parse paths with explicit error handling |
 | T14 | P2 | todo | security | Simplify and harden CSRF token flow (single source of truth for token location) |
 | T15 | P2 | todo | data-model | Add DB invariant for a single primary yarn image and simplify fallback logic |
-| T17 | P2 | done | audit | Add audit log for projects/yarns (creation, edits, uploads, etc.) |
 | T18 | P3 | todo | demo | Improve demo assets with knitting-related images and content |
 | T19 | P3 | todo | cli | Make CLI commands default to list when no subcommand is provided |
 | T20 | P3 | todo | cli | Add comprehensive tests for CLI commands |
@@ -56,97 +50,21 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T8 | P1 | done | architecture | Split oversized route modules into route/controller + service layers |
-| T7 | P0 | done | auth/security | Enforce `is_active` in auth resolution so disabled users lose access immediately |
-| T6 | P0 | done | data-integrity | Make DB/file operations atomic-ish: avoid deleting files before successful DB commit |
-| T4 | P2 | done | docs | Reorganize project documents for faster agent onboarding and maintenance |
-| T2 | P3 | done | ai/import | Add OpenRouter and Groq support for AI imports |
 | T16 | P2 | done | ux | Add markdown image autocomplete for `!` trigger in text fields |
-| T5 | P2 | done | ux | cropping of pictures via photoswipe (only when on the edit pages!) |
 
 
 ## Task Details
-
-### T5: cropping of pictures via photoswipe (only when on the edit pages!)
-
-- **Area**: ux
-- **Priority**: P2
-- **Status**: done
-- **Implementation**:
-  - Added crop button to PhotoSwipe UI (visible only on edit pages via `data-pswp-crop` attribute)
-  - Created crop dialog with cropperjs integration
-  - Added `/utils/crop-image` backend endpoint to save cropped images alongside originals
-  - Cropped images are stored with `_crop` suffix in filename
-  - Updated project and yarn form templates to mark images as croppable
-
-### T6: Make DB/file operations atomic-ish: avoid deleting files before successful DB commit
-
-- **Area**: data-integrity
-- **Priority**: P0
-- **Status**: done
-- **Notes**:
-  - For delete endpoints, commit DB changes first, then perform best-effort filesystem cleanup.
-  - For import/dedupe flows, avoid irreversible file deletion before transaction success.
-
-### T4: Reorganize project documents for faster agent onboarding and maintenance
-
-- **Goal**: Separate operational instructions from product spec/history and add a clear document index.
-- **Exit Criteria**:
-  - `AGENTS.md` is concise and action-oriented.
-  - Long-lived product/spec content is moved under `docs/`.
-  - `README.md` points to the new doc structure.
-
-### T3: Implement keyboard shortcuts for project/yarn list and view pages
-
-- **Primary Files**: `stricknani/static/js/app.js`, `stricknani/templates/projects/list.html`, `stricknani/templates/yarn/list.html`, `stricknani/templates/projects/view.html`, `stricknani/templates/yarn/view.html`
-- **Description**:
-  - `D` on view pages: open delete project/yarn dialog
-  - `c` on list pages: create new project/yarn
-  - `n`/`p` on view pages: navigate to next/previous project/yarn (same behavior as swipe)
-  - `e` on view pages: edit current project/yarn
-  - `i` on list pages: open import dialog
-- **Implementation Notes**:
-  - Keep project and yarn UX consistent
-  - Avoid inline translation strings in templates; pass config as JSON
 
 ### T1: Replace runtime Tailwind with prebuilt static CSS bundle
 
 - **Primary Files**: `stricknani/templates/base.html`, `justfile`, `flake.nix`
 - **Description**: Replace runtime Tailwind-in-browser usage with a prebuilt static CSS bundle for performance and easier CSP hardening.
 
-### T2: Add OpenRouter and Groq support for AI imports
-
-- **Verification Notes**:
-  - Provider selection and defaults are implemented in `stricknani/utils/ai_provider.py`.
-  - Coverage exists in `tests/test_ai_provider.py` and `tests/test_ai_ingest.py`.
-
-### T17: Add audit log for projects/yarns (creation, edits, uploads, etc.)
-
-- **Area**: audit
-- **Priority**: P2
-- **Status**: done
-- **Description**:
-  - Track meaningful actions on projects and yarns: creation, edits (with before/after values), image uploads, deletions, etc.
-  - Log format examples: "User x created project", "user y uploaded a gallery image: img.png", "user z edited the description from xxx to yyy"
-  - Display audit log on project/yarn view pages (e.g., expandable section or tab)
-- **Investigation**:
-  - Research existing Python/SQLAlchemy audit libraries (e.g., sqlalchemy-audit, flask-audit, or custom event-based approach)
-  - Evaluate complexity vs. custom implementation
-- **Implementation Notes**:
-  - Consider using SQLAlchemy event listeners for declarative logging
-  - Keep log entries immutable and tied to user + timestamp
-  - Avoid performance impact on hot paths
-
 ### T16: Add markdown image autocomplete for `!` trigger in text fields
 
 - **Area**: ux
 - **Priority**: P2
-- **Status**: todo
-- **Description**:
-  - When editing markdown-enabled fields (notes, descriptions), typing `!` should trigger an autocomplete dropdown
-  - Offer available project/yarn images for insertion as markdown image syntax (`![alt](path)`)
-  - Implementation likely via vanilla JS with a completion provider
-- **Primary Files**: `stricknani/static/js/app.js`, relevant form templates
+- **Status**: done
 
 ### T18: Improve demo assets with knitting-related images and content
 
@@ -246,20 +164,3 @@ Execution-oriented backlog for Stricknani.
   - Implement a loop with timeout that curls the health endpoint (e.g., `/health`)
   - Exit with error message if health check fails after 20 seconds
   - Exit successfully when health endpoint returns 200 OK
-
-### T24: Implement `just todo` command to list tasks from TODO.md in TSV format
-
-- **Area**: dev
-- **Priority**: P3
-- **Status**: wip
-- **Description**:
-  - Create `./scripts/todo.sh` that parses TODO.md and lists tasks
-  - `just todo` -> lists current wip/todo tasks (default)
-  - `just todo --done` -> lists done tasks
-- **Output Format**:
-  - Brief TSV output
-  - Include header row (ID, Priority, Status, Area, Summary)
-- **Implementation**:
-  - Parse TODO.md markdown tables using mq
-  - Filter by status (todo/wip for default, done for --done)
-  - Add to justfile as `just todo` and `just todo --done`
