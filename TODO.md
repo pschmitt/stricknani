@@ -23,14 +23,15 @@ Execution-oriented backlog for Stricknani.
 
 ## Now
 
-| ID | Priority | Status | Area | Summary |
-| -- | -------- | ------ | ---- | ------- |
+| ID | Priority | Status | Area | Category | Summary |
+| -- | -------- | ------ | ---- | -------- | ------- |
+| T25 | P3 | todo | dev | refactor | Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable |
+| T26 | P3 | todo | dev | feat | Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags |
 
 ## Next
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T9 | P1 | todo | import | Consolidate duplicated import/image-dedupe logic into a single reusable pipeline |
 | T21 | P1 | todo | import | Merge import dialog states: show URL entry and file upload in a single unified view |
 | T10 | P1 | todo | projects | Extract shared create/update project import workflows to common services |
 | T11 | P1 | todo | i18n/web | Remove per-request global Jinja i18n mutation to avoid cross-request language bleed |
@@ -42,12 +43,15 @@ Execution-oriented backlog for Stricknani.
 | T19 | P3 | todo | cli | Make CLI commands default to list when no subcommand is provided |
 | T20 | P3 | todo | cli | Add comprehensive tests for CLI commands |
 | T1 | P3 | todo | frontend/build | Replace runtime Tailwind with prebuilt static CSS bundle |
+| T25 | P3 | todo | dev | refactor | Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable |
+| T26 | P3 | todo | dev | feat | Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags |
 
 
 ## Done
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
+| T9 | P1 | done | import | Consolidate duplicated import/image-dedupe logic into a single reusable pipeline |
 | T22 | P3 | done | dev | Add JS auto-reload in dev mode: reload page when server restarts |
 | T23 | P3 | done | dev | Improve run.sh: wait 2s static, then poll health endpoint with 20s timeout |
 | T16 | P2 | done | ux | Add markdown image autocomplete for `!` trigger in text fields |
@@ -164,3 +168,25 @@ Execution-oriented backlog for Stricknani.
   - Implement a loop with timeout that curls the health endpoint (e.g., `/health`)
   - Exit with error message if health check fails after 20 seconds
   - Exit successfully when health endpoint returns 200 OK
+
+### T25: Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable
+
+- **Area**: dev
+- **Priority**: P3
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Currently hot-reload JS is injected when `DEBUG=True`
+  - Introduce explicit `AUTO_RELOAD` environment variable to control this behavior
+  - Decouple reload logic from debug mode
+
+### T26: Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags
+
+- **Area**: dev
+- **Priority**: P3
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Add category column to TODO.md tables: bug, feat, refactor, or docs
+  - Update todo.sh to accept cumulative filters: `--bug`, `--feat`, `--ref`, `--docs`
+  - Example: `just todo --open --bug` lists open bugs, `just todo --done --feat` lists done features

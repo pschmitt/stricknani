@@ -127,7 +127,7 @@ async def ensure_yarns_by_text(
 
                 if db_yarn_obj.link:
                     try:
-                        from stricknani.services.projects.import_images import (
+                        from stricknani.services.yarn.images import (
                             import_yarn_images_from_urls,
                         )
                         from stricknani.utils.importer import (

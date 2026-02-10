@@ -49,6 +49,13 @@ def _png_bytes(color: tuple[int, int, int]) -> bytes:
     return buf.getvalue()
 
 
+def _png_bytes_size(color: tuple[int, int, int], size: tuple[int, int]) -> bytes:
+    img = PilImage.new("RGB", size, color)
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
 def _jpeg_bytes(color: tuple[int, int, int], *, quality: int = 70) -> bytes:
     img = PilImage.new("RGB", (64, 64), color)
     buf = BytesIO()
@@ -116,3 +123,28 @@ async def test_filter_import_image_urls_skips_similar_existing_images(
     )
 
     assert res == [url2]
+
+
+@pytest.mark.asyncio
+async def test_filter_import_image_urls_prefers_larger_duplicate_variant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    small = "https://example.com/small.png"
+    large = "https://example.com/large.png"
+
+    small_png = _png_bytes_size((255, 0, 0), (64, 64))
+    large_png = _png_bytes_size((255, 0, 0), (128, 128))
+
+    url_to_payload = {
+        small: (small_png, "image/png"),
+        large: (large_png, "image/png"),
+    }
+    monkeypatch.setattr(
+        httpx,
+        "AsyncClient",
+        lambda **kwargs: _FakeAsyncClient(url_to_payload),
+    )
+
+    res = await filter_import_image_urls([small, large])
+
+    assert res == [large]

@@ -23,6 +23,7 @@ from stricknani.importing.images.deduplicator import (
     ImageInspectionResult,
     async_inspect_image_content,
     is_duplicate_by_checksum,
+    is_duplicate_by_similarity,
     should_skip_as_thumbnail,
 )
 from stricknani.importing.images.validator import (
@@ -128,7 +129,7 @@ class ImageDownloader:
         """
         result = ImageDownloadResult()
         seen_checksums: set[str] = set()
-        accepted_similarities: list[SimilarityImage] = []
+        accepted_images: list[DownloadedImage] = []
         max_images = limit or self.max_count
 
         checksums = existing_checksums or set()
@@ -148,19 +149,25 @@ class ImageDownloader:
                     continue
 
                 try:
-                    downloaded = await self._download_single(
+                    downloaded, removed = await self._download_single(
                         client,
                         url,
                         checksums,
                         seen_checksums,
                         similarities,
-                        accepted_similarities,
+                        accepted_images,
                     )
 
                     if downloaded:
+                        for removed_image in removed:
+                            if removed_image in accepted_images:
+                                accepted_images.remove(removed_image)
+                            if removed_image in result.images:
+                                result.images.remove(removed_image)
+
+                        accepted_images.append(downloaded)
                         result.images.append(downloaded)
                         seen_checksums.add(downloaded.inspection.checksum)
-                        accepted_similarities.append(downloaded.similarity)
 
                 except Exception as exc:
                     error_msg = str(exc)
@@ -176,8 +183,8 @@ class ImageDownloader:
         existing_checksums: set[str],
         seen_checksums: set[str],
         existing_similarities: Sequence[SimilarityImage],
-        accepted_similarities: list[SimilarityImage],
-    ) -> DownloadedImage | None:
+        accepted_images: list[DownloadedImage],
+    ) -> tuple[DownloadedImage | None, list[DownloadedImage]]:
         """Download and validate a single image.
 
         Returns:
@@ -189,13 +196,13 @@ class ImageDownloader:
             response.raise_for_status()
         except httpx.HTTPError as exc:
             logger.debug("HTTP error for %s: %s", url, exc)
-            return None
+            return None, []
 
         # Check content type
         content_type = response.headers.get("content-type")
         if not is_allowed_import_image(content_type, url):
             logger.debug("Skipping non-image URL: %s", url)
-            return None
+            return None, []
 
         # Check content length header
         content_length = response.headers.get("content-length")
@@ -203,53 +210,74 @@ class ImageDownloader:
             try:
                 if int(content_length) > self.max_bytes:
                     logger.debug("Skipping large image %s (header)", url)
-                    return None
+                    return None, []
             except ValueError:
                 pass
 
         # Check content
         if not response.content:
             logger.debug("Skipping empty image response: %s", url)
-            return None
+            return None, []
 
         if len(response.content) > self.max_bytes:
             logger.debug("Skipping large image %s (content)", url)
-            return None
+            return None, []
 
         # Inspect image
         inspection = await async_inspect_image_content(response.content)
         if inspection is None:
             logger.debug("Skipping unreadable or too small image: %s", url)
-            return None
+            return None, []
 
         # Check checksum duplicates
         if is_duplicate_by_checksum(inspection.checksum, existing_checksums):
             logger.debug("Skipping already imported image %s", url)
-            return None
+            return None, []
 
         if is_duplicate_by_checksum(inspection.checksum, seen_checksums):
             logger.debug("Skipping duplicate image in batch %s", url)
-            return None
+            return None, []
+
+        # Check similarity duplicates against existing stored images.
+        is_duplicate, score = is_duplicate_by_similarity(
+            inspection.similarity,
+            existing_similarities,
+        )
+        if is_duplicate:
+            if score is None:
+                logger.debug("Skipping similar existing image %s", url)
+            else:
+                logger.debug(
+                    "Skipping similar existing image %s (ssim %.3f)",
+                    url,
+                    score,
+                )
+            return None, []
 
         # Check similarity duplicates
+        accepted_similarities = [img.similarity for img in accepted_images]
         skip, to_remove = should_skip_as_thumbnail(
             inspection.similarity,
             accepted_similarities,
         )
         if skip:
             logger.debug("Skipping thumbnail image %s", url)
-            return None
+            return None, []
 
         # Remove thumbnails that this image supersedes
-        for sim in to_remove:
-            accepted_similarities.remove(sim)
+        removed_images = [
+            accepted for accepted in accepted_images if accepted.similarity in to_remove
+        ]
 
-        return DownloadedImage(
-            url=url,
-            content=response.content,
-            content_type=content_type,
-            inspection=inspection,
-            similarity=inspection.similarity,
+        return (
+            DownloadedImage(
+                url=url,
+                content=response.content,
+                content_type=content_type,
+                inspection=inspection,
+                similarity=inspection.similarity,
+            ),
+            removed_images,
         )
 
     async def download_single(
