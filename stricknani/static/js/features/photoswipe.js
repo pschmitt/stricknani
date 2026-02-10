@@ -454,7 +454,7 @@
 			pswp.ui.registerElement({
 				name: "crop-button",
 				ariaLabel: t("pswpCropImage", "Crop image"),
-				order: 5,
+				order: 9,
 				isButton: true,
 				html: '<span class="pswp__icn mdi mdi-crop"></span>',
 				appendTo: "bar",
@@ -657,7 +657,6 @@
 
 		function initCropper(src) {
 			destroyCropper();
-			image.src = src;
 
 			const ctor = getCropperCtor();
 			if (!ctor) {
@@ -670,7 +669,16 @@
 			}
 
 			// Wait for image to load before initializing cropper
-			image.onload = () => {
+			const img = new Image();
+			img.onload = () => {
+				image.src = src;
+				// Force the image to take up available space
+				image.style.width = "100%";
+				image.style.height = "auto";
+				image.style.maxWidth = "100%";
+				image.style.maxHeight = "100%";
+				image.style.objectFit = "contain";
+
 				cropper = new ctor(image, {
 					viewMode: 1,
 					autoCropArea: 1.0,
@@ -681,8 +689,11 @@
 					cropBoxMovable: true,
 					cropBoxResizable: true,
 					toggleDragModeOnDblclick: false,
+					minContainerWidth: 800,
+					minContainerHeight: 600,
 				});
 			};
+			img.src = src;
 		}
 
 		document.addEventListener("pswp:crop", (e) => {
