@@ -618,6 +618,11 @@
 		if (!trigger) {
 			return;
 		}
+		if (
+			event.target.closest("a,button,input,select,textarea,label,[data-call]")
+		) {
+			return;
+		}
 		event.preventDefault();
 		event.stopPropagation();
 		openAtIndex(trigger);
@@ -670,16 +675,30 @@
 
 			// Wait for image to load before initializing cropper
 			image.onload = () => {
-				// Force the image to take up available space
-				image.style.width = "100%";
-				image.style.height = "auto";
+				// Reset styles to ensure clean state
+				image.removeAttribute("style");
+				image.classList.remove("opacity-0");
+				image.style.display = "block";
 				image.style.maxWidth = "100%";
-				image.style.maxHeight = "100%";
+				image.style.width = "100%";
+				image.style.height = "100%";
 				image.style.objectFit = "contain";
 
+				// Ensure we initialize after the crop container has a real layout size.
+				const container = document.getElementById("pswpCropContainer");
+				if (
+					container &&
+					(container.clientWidth === 0 || container.clientHeight === 0)
+				) {
+					requestAnimationFrame(() => initCropper(src));
+					return;
+				}
 				cropper = new ctor(image, {
 					viewMode: 1,
+					dragMode: "move",
 					autoCropArea: 1.0,
+					minContainerWidth: 0,
+					minContainerHeight: 0,
 					restore: false,
 					guides: true,
 					center: true,
@@ -687,8 +706,7 @@
 					cropBoxMovable: true,
 					cropBoxResizable: true,
 					toggleDragModeOnDblclick: false,
-					minContainerWidth: 800,
-					minContainerHeight: 600,
+					background: false, // We provide our own background pattern
 				});
 			};
 			image.src = src;
@@ -699,17 +717,44 @@
 			currentPswp = e.detail?.pswp;
 			currentImageElement = element;
 
-			if (!element) {
+			// Try to find the best source for the full resolution image
+			let src = "";
+			let alt = "";
+
+			if (currentPswp?.currItem) {
+				// PhotoSwipe item source is the most reliable for full resolution
+				src = currentPswp.currItem.src || currentPswp.currItem.data?.src;
+				alt = currentPswp.currItem.alt || currentPswp.currItem.data?.alt;
+			}
+
+			if (!src && element) {
+				const anchor = element.closest("a[data-pswp-width]") || element;
+				src = anchor.getAttribute("href") || anchor.src || "";
+				alt = anchor.getAttribute("data-pswp-caption") || "";
+			}
+
+			if (!src) {
+				console.error("Could not find image source for cropping");
 				return;
 			}
 
-			const anchor = element.closest("a[data-pswp-width]") || element;
-			const src = anchor.getAttribute("href") || anchor.src || "";
-			const alt = anchor.getAttribute("data-pswp-caption") || "";
+			// Hack: if the source is a thumbnail (contains 'thumb_'), try to guess original
+			// This is a safety fallback if we somehow got the wrong URL
+			if (src.includes("/thumbnails/") && src.includes("thumb_")) {
+				src = src.replace("/thumbnails/", "/").replace("thumb_", "");
+				// Handle extension fix if needed, but usually thumb matches.
+				// We'll trust the primary resolution logic first.
+			}
 
 			filenameEl.textContent = alt || src.split("/").pop() || "";
-			initCropper(src);
+
+			// Show modal BEFORE initializing cropper to ensure correct dimensions
 			dialog.showModal();
+
+			// Use requestAnimationFrame to ensure layout is updated
+			requestAnimationFrame(() => {
+				initCropper(src);
+			});
 
 			if (currentPswp) {
 				currentPswp.close();
@@ -717,7 +762,7 @@
 		});
 
 		resetBtn?.addEventListener("click", () => {
-			if (cropper) {
+			if (cropper && typeof cropper.reset === "function") {
 				cropper.reset();
 			}
 		});
@@ -725,6 +770,7 @@
 		dialog?.addEventListener("close", () => {
 			destroyCropper();
 			image.src = "";
+			image.classList.add("opacity-0");
 		});
 
 		saveBtn?.addEventListener("click", async () => {
@@ -737,28 +783,20 @@
 				?.getAttribute("content");
 
 			let canvas;
-			if (typeof cropper.getCroppedCanvas === "function") {
-				// Get crop data to calculate natural output size
-				const cropData = cropper.getData();
-				const imageData = cropper.getImageData();
-
-				// Calculate scale ratio between natural and displayed size
-				const scaleX = imageData.naturalWidth / imageData.width;
-				const scaleY = imageData.naturalHeight / imageData.height;
-
-				// Calculate output dimensions at natural resolution
-				const outputWidth = Math.round(cropData.width * scaleX);
-				const outputHeight = Math.round(cropData.height * scaleY);
-
-				canvas = cropper.getCroppedCanvas({
-					width: outputWidth,
-					height: outputHeight,
-				});
-			} else if (typeof cropper.getCropperSelection === "function") {
-				const selection = cropper.getCropperSelection();
-				if (selection && typeof selection.$toCanvas === "function") {
-					canvas = await selection.$toCanvas();
+			try {
+				if (typeof cropper.getCroppedCanvas === "function") {
+					// getCroppedCanvas() without arguments returns a canvas with the
+					// natural 1:1 resolution of the cropped area.
+					// We do NOT need to scale it manually.
+					canvas = cropper.getCroppedCanvas();
+				} else if (typeof cropper.getCropperSelection === "function") {
+					const selection = cropper.getCropperSelection();
+					if (selection && typeof selection.$toCanvas === "function") {
+						canvas = await selection.$toCanvas();
+					}
 				}
+			} catch (e) {
+				console.error("Failed to generate canvas", e);
 			}
 
 			if (!canvas) {
@@ -769,9 +807,17 @@
 				return;
 			}
 
-			const originalText = saveBtn.textContent;
-			saveBtn.textContent = t("uploading", "Uploading...");
+			const originalText = saveBtn.innerHTML;
+			saveBtn.innerHTML =
+				'<span class="loading loading-spinner loading-sm"></span> ' +
+				t("uploading", "Uploading...");
 			saveBtn.disabled = true;
+
+			// Show loading overlay
+			const loadingOverlay = document.getElementById("pswpCropLoading");
+			if (loadingOverlay) {
+				loadingOverlay.classList.remove("opacity-0", "pointer-events-none");
+			}
 
 			canvas.toBlob(async (blob) => {
 				if (!blob) {
@@ -779,8 +825,10 @@
 						t("failedToUploadImage", "Failed to process image"),
 						"error",
 					);
-					saveBtn.textContent = originalText;
+					saveBtn.innerHTML = originalText;
 					saveBtn.disabled = false;
+					if (loadingOverlay)
+						loadingOverlay.classList.add("opacity-0", "pointer-events-none");
 					return;
 				}
 
@@ -811,7 +859,8 @@
 					);
 					dialog.close();
 
-					// Refresh the page to show the new cropped image
+					// Refresh the page to show the new cropped image.
+					// Adding a timestamp to ensure fresh load if needed, though reload() usually works.
 					window.location.reload();
 				} catch (err) {
 					console.error(err);
@@ -819,9 +868,10 @@
 						t("failedToUploadImage", "Failed to upload image"),
 						"error",
 					);
-				} finally {
-					saveBtn.textContent = originalText;
+					saveBtn.innerHTML = originalText;
 					saveBtn.disabled = false;
+					if (loadingOverlay)
+						loadingOverlay.classList.add("opacity-0", "pointer-events-none");
 				}
 			}, "image/png");
 		});
