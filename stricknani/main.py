@@ -52,7 +52,6 @@ def get_csrf_config() -> list[tuple[str, Any]]:
     return [
         ("secret_key", config.CSRF_SECRET_KEY),
         ("cookie_samesite", config.COOKIE_SAMESITE),
-        ("token_location", "header"),
         ("token_key", "csrf_token"),
     ]
 
@@ -64,37 +63,16 @@ async def csrf_validation_dependency(
     if config.TESTING:
         return
     if request.method in {"POST", "PUT", "DELETE", "PATCH"}:
-        # Try to get token from form first if it's a form submission
-        token = None
-        content_type = request.headers.get("content-type", "")
-        if (
-            "application/x-www-form-urlencoded" in content_type
-            or "multipart/form-data" in content_type
-        ):
-            try:
-                form_data = await request.form()
-                token = form_data.get("csrf_token")
-            except Exception:
-                pass
-
-        # Fallback to header if not in form
-        if not token:
-            token = request.headers.get("X-CSRF-Token")
-
-        # Log for debugging if needed (only in debug mode)
-        if config.DEBUG:
-            access_logger.debug(
-                "CSRF validation for %s %s. Token found: %s",
-                request.method,
-                request.url.path,
-                "yes" if token else "no",
-            )
-
         try:
             await csrf_protect.validate_csrf(request)
-        except Exception as e:
-            access_logger.error("CSRF Validation failed: %s", str(e))
-            raise e
+        except CsrfProtectError as exc:
+            access_logger.warning(
+                "CSRF validation failed for %s %s: %s",
+                request.method,
+                request.url.path,
+                exc.message,
+            )
+            raise
 
 
 app = FastAPI(

@@ -31,7 +31,6 @@ Execution-oriented backlog for Stricknani.
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T13 | P2 | wip | reliability | refactor | Replace broad exception swallowing in import/parse paths with explicit error handling |
-| T14 | P2 | todo | security | bug | Simplify and harden CSRF token flow (single source of truth for token location) |
 | T15 | P2 | todo | data-model | refactor | Add DB invariant for a single primary yarn image and simplify fallback logic |
 | T18 | P3 | todo | demo | feat | Improve demo assets with knitting-related images and content |
 | T19 | P3 | todo | cli | feat | Make CLI commands default to list when no subcommand is provided |
@@ -43,6 +42,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T14 | P2 | done | security | bug | Simplify and harden CSRF token flow (single source of truth for token location) |
 | T29 | P2 | done | ux | feat | Make the "instructions" block collapsible on project pages |
 | T25 | P0 | done | dev | refactor | Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable |
 | T26 | P0 | done | dev | feat | Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags |
