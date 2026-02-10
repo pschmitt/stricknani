@@ -19,7 +19,10 @@ Execution-oriented backlog for Stricknani.
 ## Rules
 
 - If a task is actively being worked on, mark it `wip` immediately.
+- When marking `wip`, add agent identifier: `(PID: <pid>, AGENT: <name>)`
+  - Example: `T3 | P2 | wip (PID: 12345, AGENT: explorer) | ux | ...`
 - Keep only actionable, implementation-ready tasks here.
+- Unknown changes may indicate another agent is running; check PID before proceeding.
 
 ## Now
 
