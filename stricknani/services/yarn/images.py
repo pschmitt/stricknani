@@ -6,7 +6,7 @@ import logging
 from collections.abc import Sequence
 
 import anyio
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.config import config
@@ -62,6 +62,8 @@ async def import_yarn_images_from_urls(
 
     imported = 0
     has_existing_primary = any(photo.is_primary for photo in yarn.photos)
+    imported_photos: list[YarnImage] = []
+    matched_primary_photo: YarnImage | None = None
 
     for downloaded in download_result.images:
         image_url = downloaded.url
@@ -84,10 +86,9 @@ async def import_yarn_images_from_urls(
             logger.warning("Failed to store image %s: %s", image_url, exc)
             continue
 
+        is_primary = imported == 0 and not yarn.photos and not has_existing_primary
         if primary_url:
-            is_primary = image_url == primary_url
-        else:
-            is_primary = imported == 0 and not yarn.photos and not has_existing_primary
+            is_primary = False
 
         photo = YarnImage(
             filename=filename,
@@ -96,7 +97,20 @@ async def import_yarn_images_from_urls(
             yarn_id=yarn.id,
             is_primary=is_primary,
         )
+        if primary_url and image_url == primary_url and matched_primary_photo is None:
+            matched_primary_photo = photo
         db.add(photo)
+        imported_photos.append(photo)
         imported += 1
+
+    if matched_primary_photo is not None:
+        await db.execute(
+            update(YarnImage)
+            .where(YarnImage.yarn_id == yarn.id)
+            .values(is_primary=False)
+        )
+        matched_primary_photo.is_primary = True
+    elif not has_existing_primary and imported_photos:
+        imported_photos[0].is_primary = True
 
     return imported

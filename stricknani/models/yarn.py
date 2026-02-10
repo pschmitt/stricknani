@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from stricknani.models.associations import project_yarns, user_favorite_yarns
@@ -87,6 +87,15 @@ class YarnImage(Base):
     """Images attached to yarn stash entries."""
 
     __tablename__ = "yarn_images"
+    __table_args__ = (
+        Index(
+            "uq_yarn_images_primary_per_yarn",
+            "yarn_id",
+            unique=True,
+            sqlite_where=text("is_primary = 1"),
+            postgresql_where=text("is_primary = true"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     filename: Mapped[str] = mapped_column(String(255), nullable=False)

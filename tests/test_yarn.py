@@ -1,11 +1,20 @@
 import json
+from io import BytesIO
 
 import pytest
 from httpx import AsyncClient
+from PIL import Image as PilImage
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from stricknani.models import AuditLog, Yarn
+from stricknani.models import AuditLog, Yarn, YarnImage
+
+
+def _make_png_bytes(color: tuple[int, int, int, int]) -> bytes:
+    buffer = BytesIO()
+    image = PilImage.new("RGBA", (2, 2), color)
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 @pytest.mark.asyncio
@@ -81,3 +90,95 @@ async def test_create_and_update_yarn_write_audit_logs(
     assert updated_entry.details is not None
     changes = json.loads(updated_entry.details).get("changes", {})
     assert "brand" in changes
+
+
+@pytest.mark.asyncio
+async def test_uploading_yarn_photos_keeps_single_primary(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, _user_id, _project_id, _step_id = test_client
+
+    create_response = await client.post(
+        "/yarn/",
+        data={"name": "Primary Yarn"},
+        follow_redirects=False,
+    )
+    assert create_response.status_code == 303
+    yarn_id = int(
+        create_response.headers["location"].split("?")[0].strip("/").split("/")[1]
+    )
+
+    png1 = _make_png_bytes((255, 0, 0, 255))
+    png2 = _make_png_bytes((0, 255, 0, 255))
+
+    upload1 = await client.post(
+        f"/yarn/{yarn_id}/photos",
+        files={"file": ("first.png", png1, "image/png")},
+    )
+    assert upload1.status_code == 200
+    upload2 = await client.post(
+        f"/yarn/{yarn_id}/photos",
+        files={"file": ("second.png", png2, "image/png")},
+    )
+    assert upload2.status_code == 200
+
+    async with session_factory() as session:
+        result = await session.execute(
+            select(YarnImage).where(YarnImage.yarn_id == yarn_id).order_by(YarnImage.id)
+        )
+        photos = result.scalars().all()
+
+    assert len(photos) == 2
+    assert sum(1 for photo in photos if photo.is_primary) == 1
+    assert photos[0].is_primary is True
+
+
+@pytest.mark.asyncio
+async def test_deleting_primary_yarn_photo_promotes_fallback(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, _user_id, _project_id, _step_id = test_client
+
+    create_response = await client.post(
+        "/yarn/",
+        data={"name": "Delete Primary Yarn"},
+        follow_redirects=False,
+    )
+    assert create_response.status_code == 303
+    yarn_id = int(
+        create_response.headers["location"].split("?")[0].strip("/").split("/")[1]
+    )
+
+    png1 = _make_png_bytes((255, 0, 0, 255))
+    png2 = _make_png_bytes((0, 255, 0, 255))
+
+    await client.post(
+        f"/yarn/{yarn_id}/photos",
+        files={"file": ("first.png", png1, "image/png")},
+    )
+    await client.post(
+        f"/yarn/{yarn_id}/photos",
+        files={"file": ("second.png", png2, "image/png")},
+    )
+
+    async with session_factory() as session:
+        result = await session.execute(
+            select(YarnImage).where(YarnImage.yarn_id == yarn_id).order_by(YarnImage.id)
+        )
+        photos = result.scalars().all()
+    primary = next(photo for photo in photos if photo.is_primary)
+
+    delete_response = await client.post(
+        f"/yarn/{yarn_id}/photos/{primary.id}/delete",
+        headers={"accept": "application/json"},
+    )
+    assert delete_response.status_code == 200
+
+    async with session_factory() as session:
+        result = await session.execute(
+            select(YarnImage).where(YarnImage.yarn_id == yarn_id).order_by(YarnImage.id)
+        )
+        remaining = result.scalars().all()
+
+    assert len(remaining) == 1
+    assert remaining[0].is_primary is True

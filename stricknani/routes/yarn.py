@@ -1087,6 +1087,16 @@ async def promote_yarn_photo(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
+    target_result = await db.execute(
+        select(YarnImage).where(
+            YarnImage.id == photo_id,
+            YarnImage.yarn_id == yarn_id,
+        )
+    )
+    target = target_result.scalar_one_or_none()
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
     # Set all photos for this yarn to non-primary
     await db.execute(
         update(YarnImage).where(YarnImage.yarn_id == yarn_id).values(is_primary=False)
@@ -1214,6 +1224,17 @@ async def delete_yarn_photo(
         "is_primary": target.is_primary,
     }
     await db.delete(target)
+    await db.flush()
+    if target.is_primary:
+        replacement_result = await db.execute(
+            select(YarnImage)
+            .where(YarnImage.yarn_id == yarn_id)
+            .order_by(YarnImage.id.asc())
+            .limit(1)
+        )
+        replacement = replacement_result.scalar_one_or_none()
+        if replacement is not None:
+            replacement.is_primary = True
     await create_audit_log(
         db,
         actor_user_id=current_user.id,
