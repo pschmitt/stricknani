@@ -97,7 +97,7 @@
     <script src="{{ url_for('static', path='vendor/tailwindcss-browser/index.global.js') }}"></script>
     <script src="{{ url_for('static', path='vendor/htmx/htmx.min.js') }}"></script>
     <script src="{{ url_for('static', path='js/htmx/csrf.js') }}"></script>
-    {% if is_dev_instance %}
+    {% if auto_reload_enabled %}
     <script src="{{ url_for('static', path='js/features/dev_auto_reload.js') }}"></script>
     {% endif %}
 </head>

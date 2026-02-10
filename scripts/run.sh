@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PORT="${PORT:-7674}"
 DONT_OPEN_BROWSER="${DONT_OPEN_BROWSER:-}"
 DEBUG="${DEBUG:-}"
+AUTO_RELOAD="${AUTO_RELOAD:-true}"
 
 usage() {
   cat <<EOF
@@ -15,6 +16,7 @@ Options:
   -p, --port PORT   Port to bind (default: 7674 or \$PORT env)
   -b, --background  Do not open browser
   -d, --debug       Set DEBUG=true
+  --no-auto-reload  Set AUTO_RELOAD=false
 EOF
 }
 
@@ -60,6 +62,7 @@ run_dev_server() {
 
   local env_vars=(
     IMPORT_TRACE_ENABLED=1
+    "AUTO_RELOAD=${AUTO_RELOAD}"
   )
 
   if [[ -n "$DEBUG" ]]
@@ -126,6 +129,10 @@ main() {
         ;;
       -d|--debug)
         DEBUG=true
+        shift
+        ;;
+      --no-auto-reload)
+        AUTO_RELOAD=false
         shift
         ;;
       --)

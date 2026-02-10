@@ -25,38 +25,36 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T25 | P0 | todo | dev | refactor | Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable |
-| T26 | P0 | todo | dev | feat | Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags |
-| T28 | P0 | todo | dev | feat | Add `todo.sh TICKET_ID_OR_PARTIAL_NAME` to show task details |
 | T29 | P2 | todo | ux | feat | Make the "instructions" block collapsible on project pages |
 
 ## Next
 
-| ID | Priority | Status | Area | Summary |
-| -- | -------- | ------ | ---- | ------- |
-| T13 | P2 | todo | reliability | Replace broad exception swallowing in import/parse paths with explicit error handling |
-| T14 | P2 | todo | security | Simplify and harden CSRF token flow (single source of truth for token location) |
-| T15 | P2 | todo | data-model | Add DB invariant for a single primary yarn image and simplify fallback logic |
-| T18 | P3 | todo | demo | Improve demo assets with knitting-related images and content |
-| T19 | P3 | todo | cli | Make CLI commands default to list when no subcommand is provided |
-| T20 | P3 | todo | cli | Add comprehensive tests for CLI commands |
-| T1 | P3 | todo | frontend/build | Replace runtime Tailwind with prebuilt static CSS bundle |
-| T25 | P3 | todo | dev | refactor | Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable |
-| T26 | P3 | todo | dev | feat | Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags |
+| ID | Priority | Status | Area | Category | Summary |
+| -- | -------- | ------ | ---- | -------- | ------- |
+| T13 | P2 | wip | reliability | refactor | Replace broad exception swallowing in import/parse paths with explicit error handling |
+| T14 | P2 | todo | security | bug | Simplify and harden CSRF token flow (single source of truth for token location) |
+| T15 | P2 | todo | data-model | refactor | Add DB invariant for a single primary yarn image and simplify fallback logic |
+| T18 | P3 | todo | demo | feat | Improve demo assets with knitting-related images and content |
+| T19 | P3 | todo | cli | feat | Make CLI commands default to list when no subcommand is provided |
+| T20 | P3 | todo | cli | feat | Add comprehensive tests for CLI commands |
+| T1 | P3 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 
 
 ## Done
 
-| ID | Priority | Status | Area | Summary |
-| -- | -------- | ------ | ---- | ------- |
-| T12 | P1 | done | web/templating | Remove hidden DB/auth lookups from `render_template`; require explicit `current_user` context |
-| T11 | P1 | done | i18n/web | Remove per-request global Jinja i18n mutation to avoid cross-request language bleed |
-| T10 | P1 | done | projects | Extract shared create/update project import workflows to common services |
-| T21 | P1 | done | import | Merge import dialog states: show URL entry and file upload in a single unified view |
-| T9 | P1 | done | import | Consolidate duplicated import/image-dedupe logic into a single reusable pipeline |
-| T22 | P3 | done | dev | Add JS auto-reload in dev mode: reload page when server restarts |
-| T23 | P3 | done | dev | Improve run.sh: wait 2s static, then poll health endpoint with 20s timeout |
-| T16 | P2 | done | ux | Add markdown image autocomplete for `!` trigger in text fields |
+| ID | Priority | Status | Area | Category | Summary |
+| -- | -------- | ------ | ---- | -------- | ------- |
+| T25 | P0 | done | dev | refactor | Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable |
+| T26 | P0 | done | dev | feat | Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags |
+| T28 | P0 | done | dev | feat | Add `todo.sh TICKET_ID_OR_PARTIAL_NAME` to show task details |
+| T12 | P1 | done | web/templating | refactor | Remove hidden DB/auth lookups from `render_template`; require explicit `current_user` context |
+| T11 | P1 | done | i18n/web | refactor | Remove per-request global Jinja i18n mutation to avoid cross-request language bleed |
+| T10 | P1 | done | projects | refactor | Extract shared create/update project import workflows to common services |
+| T21 | P1 | done | import | feat | Merge import dialog states: show URL entry and file upload in a single unified view |
+| T9 | P1 | done | import | refactor | Consolidate duplicated import/image-dedupe logic into a single reusable pipeline |
+| T22 | P3 | done | dev | feat | Add JS auto-reload in dev mode: reload page when server restarts |
+| T23 | P3 | done | dev | refactor | Improve run.sh: wait 2s static, then poll health endpoint with 20s timeout |
+| T16 | P2 | done | ux | feat | Add markdown image autocomplete for `!` trigger in text fields |
 
 
 ## Task Details
@@ -174,8 +172,8 @@ Execution-oriented backlog for Stricknani.
 ### T25: Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable
 
 - **Area**: dev
-- **Priority**: P3
-- **Status**: todo
+- **Priority**: P0
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Currently hot-reload JS is injected when `DEBUG=True`
@@ -185,8 +183,8 @@ Execution-oriented backlog for Stricknani.
 ### T26: Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags
 
 - **Area**: dev
-- **Priority**: P3
-- **Status**: todo
+- **Priority**: P0
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Add category column to TODO.md tables: bug, feat, refactor, or docs
@@ -208,7 +206,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: dev
 - **Priority**: P0
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Allow querying a specific task by ID (e.g., `just todo T25`) or partial name

@@ -22,6 +22,12 @@ class Config:
     CSRF_SECRET_KEY: str = os.getenv("CSRF_SECRET_KEY") or secrets.token_urlsafe(32)
     PORT: int = int(os.getenv("PORT", "7674"))
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    AUTO_RELOAD: bool = os.getenv("AUTO_RELOAD", "false").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
     TESTING: bool = (
         os.getenv("TESTING", "false").lower() == "true"
         or "PYTEST_CURRENT_TEST" in os.environ

@@ -51,6 +51,7 @@ All config is via environment variables or `.env` (see `.env.sample`).
 | `CSRF_SECRET_KEY`                    | CSRF secret key                     | Auto-generated on startup             |
 | `PORT`                               | Port to listen on                   | `7674`                                |
 | `DEBUG`                              | Enable debug mode                   | `false`                               |
+| `AUTO_RELOAD`                        | Inject dev auto-reload script       | `false`                               |
 | `TESTING`                            | Force testing mode                  | `false`                               |
 | `BIND_HOST`                          | Host to bind the dev server         | `127.0.0.1`                           |
 | `BIND_PORT`                          | Port to bind the dev server         | `7674`                                |
