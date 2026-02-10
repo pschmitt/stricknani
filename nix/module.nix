@@ -12,59 +12,67 @@ let
     set -euo pipefail
     umask 0077
 
-    backup_dir="${cfg.dataDir}/backups"
-    media_dir="${cfg.dataDir}/media"
-    db_url='${cfg.databaseUrl}'
-    retention='${toString cfg.backup.retention}'
-    timestamp="$(date -u +%Y%m%d-%H%M%S)"
-    archive_tmp="$backup_dir/stricknani-$timestamp.tar.gz.tmp"
-    archive_file="$backup_dir/stricknani-$timestamp.tar.gz"
+    BACKUP_DIR="${cfg.dataDir}/backups"
+    MEDIA_DIR="${cfg.dataDir}/media"
+    DB_URL='${cfg.databaseUrl}'
+    RETENTION='${toString cfg.backup.retention}'
+    TIMESTAMP="$(date -u +%Y%m%d-%H%M%S)"
+    ARCHIVE_TMP="$BACKUP_DIR/stricknani-$TIMESTAMP.tar.gz.tmp"
+    ARCHIVE_FILE="$BACKUP_DIR/stricknani-$TIMESTAMP.tar.gz"
 
-    mkdir -p "$backup_dir"
-    tmp_dir="$(mktemp -d "$backup_dir/.stricknani-backup-$timestamp.XXXXXX")"
+    mkdir -p "$BACKUP_DIR"
+
+    TMP_DIR="$(mktemp -d "$BACKUP_DIR/.stricknani-backup-$TIMESTAMP.XXXXXX")"
+
     cleanup() {
-      rm -rf -- "$tmp_dir"
-      rm -f -- "$archive_tmp"
+      rm -rf -- "$TMP_DIR"
+      rm -f -- "$ARCHIVE_TMP"
     }
+
     trap cleanup EXIT
 
-    if [[ "$db_url" == sqlite:///* ]]
+    if [[ "$DB_URL" == sqlite:///* ]]
     then
-      db_path="''${db_url#sqlite:///}"
-      if [[ ! -f "$db_path" ]]
+      DB_PATH="''${DB_URL#sqlite:///}"
+
+      if [[ ! -f "$DB_PATH" ]]
       then
-        echo "stricknani-backup: sqlite database not found at '$db_path'" >&2
+        echo "stricknani-backup: sqlite database not found at '$DB_PATH'" >&2
         exit 2
       fi
 
-      db_snapshot="database.sqlite3"
-      sqlite3 "$db_path" ".backup $tmp_dir/$db_snapshot"
-    elif [[ "$db_url" == postgresql://* || "$db_url" == postgres://* ]]
+      DB_SNAPSHOT="database.sqlite3"
+      sqlite3 "$DB_PATH" ".backup $TMP_DIR/$DB_SNAPSHOT"
+    elif [[ "$DB_URL" == postgresql://* || "$DB_URL" == postgres://* ]]
     then
-      db_snapshot="database.sql"
-      pg_dump "$db_url" > "$tmp_dir/$db_snapshot"
+      DB_SNAPSHOT="database.sql"
+      pg_dump "$DB_URL" > "$TMP_DIR/$DB_SNAPSHOT"
     else
-      echo "stricknani-backup: unsupported DATABASE_URL scheme in '$db_url'" >&2
+      echo "stricknani-backup: unsupported DATABASE_URL scheme in '$DB_URL'" >&2
       exit 2
     fi
 
-    if [[ -d "$media_dir" ]]
+    if [[ -d "$MEDIA_DIR" ]]
     then
-      tar -czf "$archive_tmp" -C "$tmp_dir" "$db_snapshot" -C "${cfg.dataDir}" media
+      tar -czf "$ARCHIVE_TMP" -C "$TMP_DIR" "$DB_SNAPSHOT" -C "${cfg.dataDir}" media
     else
-      echo "stricknani-backup: media directory missing at '$media_dir'" >&2
-      tar -czf "$archive_tmp" -C "$tmp_dir" "$db_snapshot"
+      echo "stricknani-backup: media directory missing at '$MEDIA_DIR'" >&2
+      tar -czf "$ARCHIVE_TMP" -C "$TMP_DIR" "$DB_SNAPSHOT"
     fi
-    mv "$archive_tmp" "$archive_file"
-    trap - EXIT
-    rm -rf -- "$tmp_dir"
 
-    mapfile -t backups < <(ls -1dt "$backup_dir"/stricknani-* 2>/dev/null || true)
-    if (( ''${#backups[@]} > retention ))
+    mv "$ARCHIVE_TMP" "$ARCHIVE_FILE"
+
+    trap - EXIT
+
+    rm -rf -- "$TMP_DIR"
+
+    mapfile -t BACKUPS < <(ls -1dt "$BACKUP_DIR"/stricknani-* 2>/dev/null || true)
+
+    if (( ''${#BACKUPS[@]} > RETENTION ))
     then
-      for old_backup in "''${backups[@]:retention}"
+      for OLD_BACKUP in "''${BACKUPS[@]:RETENTION}"
       do
-        rm -f -- "$old_backup"
+        rm -f -- "$OLD_BACKUP"
       done
     fi
   '';
