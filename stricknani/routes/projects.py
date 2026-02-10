@@ -3,7 +3,6 @@
 import asyncio
 import json
 import logging
-import re
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
@@ -49,7 +48,6 @@ from stricknani.services.audit import (
 )
 from stricknani.services.images import get_image_dimensions
 from stricknani.services.projects.attachments import (
-    consume_pending_project_import_attachment,
     store_pending_project_import_attachment_bytes,
     store_project_attachment,
     store_project_attachment_bytes,
@@ -74,10 +72,17 @@ from stricknani.services.projects.images import (
     upload_title_image as service_upload_title_image,
 )
 from stricknani.services.projects.import_images import (
-    import_project_images_from_urls,
-    import_step_images_from_urls,
     load_existing_image_checksums,
     load_existing_image_similarities,
+)
+from stricknani.services.projects.import_workflows import (
+    PendingImportTokenResolver,
+    import_project_images_from_mixed_sources,
+    import_step_images_from_mixed_sources,
+    parse_token_count,
+    parse_yarn_details,
+    parse_yarn_ids,
+    persist_remaining_import_tokens,
 )
 from stricknani.services.projects.steps import (
     create_step as service_create_step,
@@ -1790,23 +1795,8 @@ async def create_project(
     current_user: User = Depends(require_auth),
 ) -> Response:
     """Create a new project."""
-    # Parse comma-separated yarn IDs
-    parsed_yarn_ids = []
-    if yarn_ids:
-        try:
-            parsed_yarn_ids = [
-                int(id.strip()) for id in yarn_ids.split(",") if id.strip()
-            ]
-        except ValueError:
-            pass
-
-    # Parse structured yarn details if available
-    parsed_yarn_details = None
-    if yarn_details:
-        try:
-            parsed_yarn_details = json.loads(yarn_details)
-        except json.JSONDecodeError:
-            pass
+    parsed_yarn_ids = parse_yarn_ids(yarn_ids)
+    parsed_yarn_details = parse_yarn_details(yarn_details)
 
     # Ensure yarn matches or creates
     parsed_yarn_ids = await ensure_yarns_by_text(
@@ -1841,17 +1831,9 @@ async def create_project(
     db.add(project)
     await db.flush()  # Get project ID
 
-    # Cache for consumed tokens to allow same image in multiple places
-    token_cache: dict[str, tuple[bytes, str, str]] = {}
+    resolver = PendingImportTokenResolver(current_user)
     permanently_saved_tokens: set[str] = set()
     post_commit_file_deletes: list[str] = []
-
-    async def get_token_data(t: str) -> tuple[bytes, str, str]:
-        if t in token_cache:
-            return token_cache[t]
-        data = await consume_pending_project_import_attachment(current_user.id, token=t)
-        token_cache[t] = data
-        return data
 
     # Create steps if provided
     if steps_data:
@@ -1873,210 +1855,38 @@ async def create_project(
             db.add(step)
             step_images = step_data.get("image_urls") or step_data.get("images")
             if step_images:
-                # Handle both regular URLs and temporary pdf_image URLs
-                regular_urls = []
-                for url in step_images:
-                    if "/media/imports/projects/" in url:
-                        # Extract token from URL
-                        # Format: /media/imports/projects/{user_id}/{token}{ext}
-                        match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
-                        if match:
-                            token = match.group(1)
-                            try:
-                                (
-                                    pending_bytes,
-                                    original_filename,
-                                    content_type,
-                                ) = await get_token_data(token)
-                                # Mock UploadFile for the service
-                                import io
-
-                                from fastapi import UploadFile
-                                from starlette.datastructures import Headers
-
-                                from stricknani.services.projects.images import (
-                                    upload_step_image,
-                                )
-
-                                mock_file = UploadFile(
-                                    filename=original_filename,
-                                    file=io.BytesIO(pending_bytes),
-                                    headers=Headers({"content-type": content_type}),
-                                )
-                                await upload_step_image(
-                                    db,
-                                    step_id=step.id,
-                                    project_id=project.id,
-                                    file=mock_file,
-                                )
-                                permanently_saved_tokens.add(token)
-                            except FileNotFoundError:
-                                logger.warning(
-                                    "Could not find pending image for token %s", token
-                                )
-                    else:
-                        regular_urls.append(url)
-
-                if regular_urls:
-                    await import_step_images_from_urls(
-                        db,
-                        step,
-                        regular_urls,
-                        permanently_saved_tokens=permanently_saved_tokens,
-                        deferred_deletions=post_commit_file_deletes,
-                    )
+                await import_step_images_from_mixed_sources(
+                    db,
+                    project=project,
+                    step=step,
+                    step_images=step_images,
+                    resolver=resolver,
+                    permanently_saved_tokens=permanently_saved_tokens,
+                    deferred_deletions=post_commit_file_deletes,
+                )
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
-        # Handle both regular URLs and temporary import URLs
-        regular_project_urls = []
-        for url in image_urls:
-            if "/media/imports/projects/" in url:
-                # Extract token from URL
-                match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
-                if match:
-                    token = match.group(1)
-                    try:
-                        (
-                            pending_bytes,
-                            original_filename,
-                            content_type,
-                        ) = await get_token_data(token)
-
-                        # Skip if it was already saved to a step
-                        if token in permanently_saved_tokens:
-                            continue
-
-                        # Guard: Skip rendered PDF pages in the gallery
-                        # (embedded images are allowed in the gallery).
-                        if original_filename.startswith("pdf_page_"):
-                            continue
-
-                        # Mock UploadFile for the service
-                        import io
-
-                        from fastapi import UploadFile
-                        from starlette.datastructures import Headers
-
-                        from stricknani.services.projects.images import (
-                            upload_title_image,
-                        )
-
-                        mock_file = UploadFile(
-                            filename=original_filename,
-                            file=io.BytesIO(pending_bytes),
-                            headers=Headers({"content-type": content_type}),
-                        )
-                        # Check if this should be the title image
-                        is_title = url == import_title_image_url
-                        upload_result = await upload_title_image(
-                            db,
-                            project_id=project.id,
-                            file=mock_file,
-                            alt_text=original_filename,
-                        )
-                        permanently_saved_tokens.add(token)
-                        if is_title and "id" in upload_result:
-                            # Force this one as title image
-                            await db.execute(
-                                update(Image)
-                                .where(Image.project_id == project.id)
-                                .values(is_title_image=False)
-                            )
-                            await db.execute(
-                                update(Image)
-                                .where(Image.id == int(str(upload_result["id"])))
-                                .values(is_title_image=True)
-                            )
-                    except FileNotFoundError:
-                        # Might have been consumed by a step
-                        pass
-            else:
-                regular_project_urls.append(url)
-
-        if regular_project_urls:
-            await import_project_images_from_urls(
-                db,
-                project,
-                regular_project_urls,
-                title_url=import_title_image_url,
-                permanently_saved_tokens=permanently_saved_tokens,
-                deferred_deletions=post_commit_file_deletes,
-            )
+        await import_project_images_from_mixed_sources(
+            db,
+            project=project,
+            image_urls=image_urls,
+            title_url=import_title_image_url,
+            resolver=resolver,
+            permanently_saved_tokens=permanently_saved_tokens,
+            deferred_deletions=post_commit_file_deletes,
+        )
 
     # Attach imported source files that were uploaded before the project existed.
     # This also handles any remaining PDF images not already consumed by steps
     # or gallery.
-    if import_attachment_tokens:
-        try:
-            raw_tokens = json.loads(import_attachment_tokens)
-        except json.JSONDecodeError:
-            raw_tokens = []
-
-        tokens: list[str] = [
-            t for t in raw_tokens if isinstance(t, str) and len(t) == 32
-        ]
-        for token in tokens:
-            if token in permanently_saved_tokens:
-                continue
-
-            try:
-                (
-                    pending_bytes,
-                    original_filename,
-                    content_type,
-                ) = await get_token_data(token)
-            except FileNotFoundError:
-                # Might have been consumed by a step or gallery loop above
-                continue
-
-            # Save as a regular attachment if it's NOT a gallery image
-            # or it's a rendered PDF page.
-            is_pdf_asset = original_filename.startswith("pdf_page_")
-            if (
-                is_pdf_asset
-                or not content_type
-                or not content_type.startswith("image/")
-            ):
-                stored = await store_project_attachment_bytes(
-                    project.id,
-                    content=pending_bytes,
-                    original_filename=original_filename,
-                    content_type=content_type,
-                )
-                db.add(
-                    Attachment(
-                        filename=stored.filename,
-                        original_filename=stored.original_filename,
-                        content_type=stored.content_type,
-                        size_bytes=stored.size_bytes,
-                        project_id=project.id,
-                    )
-                )
-                permanently_saved_tokens.add(token)
-            else:
-                # It's a general image (not from PDF pages) - save to gallery
-                # but ONLY if we haven't saved it yet (dedupe)
-                import io
-
-                from fastapi import UploadFile
-                from starlette.datastructures import Headers
-
-                from stricknani.services.projects.images import upload_title_image
-
-                mock_file = UploadFile(
-                    filename=original_filename,
-                    file=io.BytesIO(pending_bytes),
-                    headers=Headers({"content-type": content_type}),
-                )
-                # upload_title_image now has internal checksum deduplication
-                await upload_title_image(
-                    db,
-                    project_id=project.id,
-                    file=mock_file,
-                    alt_text=original_filename,
-                )
-                permanently_saved_tokens.add(token)
+    await persist_remaining_import_tokens(
+        db,
+        project=project,
+        raw_tokens=import_attachment_tokens,
+        resolver=resolver,
+        permanently_saved_tokens=permanently_saved_tokens,
+    )
 
     step_count = 0
     if steps_data:
@@ -2087,16 +1897,7 @@ async def create_project(
         if isinstance(parsed_steps, list):
             step_count = len(parsed_steps)
 
-    attachment_count = 0
-    if import_attachment_tokens:
-        try:
-            parsed_tokens = json.loads(import_attachment_tokens)
-        except json.JSONDecodeError:
-            parsed_tokens = []
-        if isinstance(parsed_tokens, list):
-            attachment_count = len(
-                [token for token in parsed_tokens if isinstance(token, str)]
-            )
+    attachment_count = parse_token_count(import_attachment_tokens)
 
     await create_audit_log(
         db,
@@ -2174,23 +1975,8 @@ async def update_project(
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
     """Update a project."""
-    # Parse comma-separated yarn IDs
-    parsed_yarn_ids = []
-    if yarn_ids:
-        try:
-            parsed_yarn_ids = [
-                int(id.strip()) for id in yarn_ids.split(",") if id.strip()
-            ]
-        except ValueError:
-            pass
-
-    # Parse structured yarn details if available
-    parsed_yarn_details = None
-    if yarn_details:
-        try:
-            parsed_yarn_details = json.loads(yarn_details)
-        except json.JSONDecodeError:
-            pass
+    parsed_yarn_ids = parse_yarn_ids(yarn_ids)
+    parsed_yarn_details = parse_yarn_details(yarn_details)
 
     # Ensure yarn matches or creates
     parsed_yarn_ids = await ensure_yarns_by_text(
@@ -2242,95 +2028,21 @@ async def update_project(
     if project.link and _should_request_archive(archive_on_save):
         project.link_archive_requested_at = datetime.now(UTC)
 
-    # Cache for consumed tokens to allow same image in multiple places
-    token_cache: dict[str, tuple[bytes, str, str]] = {}
+    resolver = PendingImportTokenResolver(current_user)
     permanently_saved_tokens: set[str] = set()
     post_commit_file_deletes: list[str] = []
 
-    async def get_token_data(t: str) -> tuple[bytes, str, str]:
-        if t in token_cache:
-            return token_cache[t]
-        data = await consume_pending_project_import_attachment(current_user.id, token=t)
-        token_cache[t] = data
-        return data
-
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
-        # Handle both regular URLs and temporary import URLs
-        regular_project_urls = []
-        for url in image_urls:
-            if "/media/imports/projects/" in url:
-                # Extract token from URL
-                match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
-                if match:
-                    token = match.group(1)
-                    try:
-                        (
-                            pending_bytes,
-                            original_filename,
-                            content_type,
-                        ) = await get_token_data(token)
-
-                        # Skip if it was already saved to a step
-                        if token in permanently_saved_tokens:
-                            continue
-
-                        # Guard: Skip PDF assets in the gallery
-                        # they should be attachments only.
-                        if original_filename.startswith(
-                            "pdf_image_"
-                        ) or original_filename.startswith("pdf_page_"):
-                            continue
-
-                        # Mock UploadFile for the service
-                        import io
-
-                        from fastapi import UploadFile
-                        from starlette.datastructures import Headers
-
-                        from stricknani.services.projects.images import (
-                            upload_title_image,
-                        )
-
-                        mock_file = UploadFile(
-                            filename=original_filename,
-                            file=io.BytesIO(pending_bytes),
-                            headers=Headers({"content-type": content_type}),
-                        )
-                        # Check if this should be the title image
-                        is_title = url == import_title_image_url
-                        upload_result = await upload_title_image(
-                            db,
-                            project_id=project.id,
-                            file=mock_file,
-                            alt_text=original_filename,
-                        )
-                        permanently_saved_tokens.add(token)
-                        if is_title and "id" in upload_result:
-                            # Force this one as title image
-                            await db.execute(
-                                update(Image)
-                                .where(Image.project_id == project.id)
-                                .values(is_title_image=False)
-                            )
-                            await db.execute(
-                                update(Image)
-                                .where(Image.id == int(str(upload_result["id"])))
-                                .values(is_title_image=True)
-                            )
-                    except FileNotFoundError:
-                        # Might have been consumed by a step
-                        pass
-            else:
-                regular_project_urls.append(url)
-
-        if regular_project_urls:
-            await import_project_images_from_urls(
-                db,
-                project,
-                regular_project_urls,
-                deferred_deletions=post_commit_file_deletes,
-            )
+        await import_project_images_from_mixed_sources(
+            db,
+            project=project,
+            image_urls=image_urls,
+            title_url=import_title_image_url,
+            resolver=resolver,
+            permanently_saved_tokens=permanently_saved_tokens,
+            deferred_deletions=post_commit_file_deletes,
+        )
 
     # Update steps
     if steps_data:
@@ -2396,136 +2108,26 @@ async def update_project(
 
             step_images = step_data.get("image_urls") or step_data.get("images")
             if step_images:
-                # Handle both regular URLs and temporary pdf_image URLs
-                regular_urls = []
-                for url in step_images:
-                    if "/media/imports/projects/" in url:
-                        # Extract token from URL
-                        match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
-                        if match:
-                            token = match.group(1)
-                            try:
-                                (
-                                    pending_bytes,
-                                    original_filename,
-                                    content_type,
-                                ) = await get_token_data(token)
-                                # Mock UploadFile for the service
-                                import io
-
-                                from fastapi import UploadFile
-                                from starlette.datastructures import Headers
-
-                                from stricknani.services.projects.images import (
-                                    upload_step_image,
-                                )
-
-                                mock_file = UploadFile(
-                                    filename=original_filename,
-                                    file=io.BytesIO(pending_bytes),
-                                    headers=Headers({"content-type": content_type}),
-                                )
-                                await upload_step_image(
-                                    db,
-                                    step_id=step.id,
-                                    project_id=project.id,
-                                    file=mock_file,
-                                )
-                                permanently_saved_tokens.add(token)
-                            except FileNotFoundError:
-                                logger.warning(
-                                    "Could not find pending image for token %s", token
-                                )
-                    else:
-                        regular_urls.append(url)
-
-                if regular_urls:
-                    await import_step_images_from_urls(
-                        db,
-                        step,
-                        regular_urls,
-                        permanently_saved_tokens=permanently_saved_tokens,
-                        deferred_deletions=post_commit_file_deletes,
-                    )
+                await import_step_images_from_mixed_sources(
+                    db,
+                    project=project,
+                    step=step,
+                    step_images=step_images,
+                    resolver=resolver,
+                    permanently_saved_tokens=permanently_saved_tokens,
+                    deferred_deletions=post_commit_file_deletes,
+                )
 
     # Attach imported source files that were uploaded before the project existed.
     # This also handles any remaining PDF images not already consumed by steps
     # or gallery.
-    if import_attachment_tokens:
-        try:
-            raw_tokens = json.loads(import_attachment_tokens)
-        except json.JSONDecodeError:
-            raw_tokens = []
-
-        tokens: list[str] = [
-            t for t in raw_tokens if isinstance(t, str) and len(t) == 32
-        ]
-        for token in tokens:
-            if token in permanently_saved_tokens:
-                continue
-
-            try:
-                (
-                    pending_bytes,
-                    original_filename,
-                    content_type,
-                ) = await get_token_data(token)
-            except FileNotFoundError:
-                # Might have been consumed by a step or gallery loop above
-                continue
-
-            # Save as a regular attachment if it's NOT a gallery image
-            # or it's a rendered PDF page.
-            is_pdf_asset = original_filename.startswith("pdf_page_")
-            if (
-                is_pdf_asset
-                or not content_type
-                or not content_type.startswith("image/")
-            ):
-                from stricknani.models import Attachment
-                from stricknani.services.projects.attachments import (
-                    store_project_attachment_bytes,
-                )
-
-                stored = await store_project_attachment_bytes(
-                    project.id,
-                    content=pending_bytes,
-                    original_filename=original_filename,
-                    content_type=content_type,
-                )
-                db.add(
-                    Attachment(
-                        filename=stored.filename,
-                        original_filename=stored.original_filename,
-                        content_type=stored.content_type,
-                        size_bytes=stored.size_bytes,
-                        project_id=project.id,
-                    )
-                )
-                permanently_saved_tokens.add(token)
-            else:
-                # It's a general image (not from PDF pages) - save to gallery
-                # but ONLY if we haven't saved it yet (dedupe)
-                import io
-
-                from fastapi import UploadFile
-                from starlette.datastructures import Headers
-
-                from stricknani.services.projects.images import upload_title_image
-
-                mock_file = UploadFile(
-                    filename=original_filename,
-                    file=io.BytesIO(pending_bytes),
-                    headers=Headers({"content-type": content_type}),
-                )
-                # upload_title_image now has internal checksum deduplication
-                await upload_title_image(
-                    db,
-                    project_id=project.id,
-                    file=mock_file,
-                    alt_text=original_filename,
-                )
-                permanently_saved_tokens.add(token)
+    await persist_remaining_import_tokens(
+        db,
+        project=project,
+        raw_tokens=import_attachment_tokens,
+        resolver=resolver,
+        permanently_saved_tokens=permanently_saved_tokens,
+    )
 
     changes = build_field_changes(before_snapshot, _project_audit_snapshot(project))
     if changes:

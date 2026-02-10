@@ -34,7 +34,6 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T10 | P1 | todo | projects | Extract shared create/update project import workflows to common services |
 | T11 | P1 | todo | i18n/web | Remove per-request global Jinja i18n mutation to avoid cross-request language bleed |
 | T12 | P1 | todo | web/templating | Remove hidden DB/auth lookups from `render_template`; require explicit `current_user` context |
 | T13 | P2 | todo | reliability | Replace broad exception swallowing in import/parse paths with explicit error handling |
@@ -52,6 +51,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
+| T10 | P1 | done | projects | Extract shared create/update project import workflows to common services |
 | T21 | P1 | done | import | Merge import dialog states: show URL entry and file upload in a single unified view |
 | T9 | P1 | done | import | Consolidate duplicated import/image-dedupe logic into a single reusable pipeline |
 | T22 | P3 | done | dev | Add JS auto-reload in dev mode: reload page when server restarts |
