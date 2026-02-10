@@ -183,7 +183,7 @@ main() {
     local output
     local -A list_seen_ids=()
     output="$(
-      printf 'ID\tPriority\tStatus\tArea\tCategory\tSummary\n'
+      printf 'ID\tPRIO\tSTATUS\tAREA\tCATEGORY\tSUMMARY\n'
 
       while IFS= read -r line
       do
