@@ -124,6 +124,16 @@
 	max-height: 100%;
 }
 
+/* CropperJS v2 custom elements need explicit height constraints in this dialog. */
+#pswpCropContainer cropper-canvas {
+	height: 100% !important;
+	min-height: 100% !important;
+}
+
+#pswpCropContainer cropper-image {
+	max-height: none !important;
+}
+
 /* Garnstudio diagram legend symbols: keep them icon-sized (remote or localized). */
 .markdown-inline-image[src*="/drops/symbols/"],
 .markdown-inline-image[data-lightbox-src*="/drops/symbols/"],

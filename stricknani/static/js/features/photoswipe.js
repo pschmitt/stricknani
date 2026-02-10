@@ -680,9 +680,9 @@
 				image.classList.remove("opacity-0");
 				image.style.display = "block";
 				image.style.maxWidth = "100%";
-				image.style.width = "100%";
-				image.style.height = "100%";
-				image.style.objectFit = "contain";
+				image.style.maxHeight = "100%";
+				image.style.width = "auto";
+				image.style.height = "auto";
 
 				// Ensure we initialize after the crop container has a real layout size.
 				const container = document.getElementById("pswpCropContainer");
@@ -784,15 +784,56 @@
 
 			let canvas;
 			try {
-				if (typeof cropper.getCroppedCanvas === "function") {
-					// getCroppedCanvas() without arguments returns a canvas with the
-					// natural 1:1 resolution of the cropped area.
-					// We do NOT need to scale it manually.
+				if (
+					typeof cropper.getCroppedCanvas === "function" &&
+					typeof cropper.getData === "function" &&
+					typeof cropper.getImageData === "function"
+				) {
+					// Export at natural pixel density. Without this, some cropper
+					// setups return CSS-pixel-sized crops (very small output files).
+					const cropData = cropper.getData();
+					const imageData = cropper.getImageData();
+					const scaleX = imageData?.width
+						? imageData.naturalWidth / imageData.width
+						: 1;
+					const scaleY = imageData?.height
+						? imageData.naturalHeight / imageData.height
+						: 1;
+					const outputWidth = Math.max(
+						1,
+						Math.round((cropData?.width || 1) * scaleX),
+					);
+					const outputHeight = Math.max(
+						1,
+						Math.round((cropData?.height || 1) * scaleY),
+					);
+					canvas = cropper.getCroppedCanvas({
+						width: outputWidth,
+						height: outputHeight,
+					});
+				} else if (typeof cropper.getCroppedCanvas === "function") {
 					canvas = cropper.getCroppedCanvas();
 				} else if (typeof cropper.getCropperSelection === "function") {
 					const selection = cropper.getCropperSelection();
 					if (selection && typeof selection.$toCanvas === "function") {
-						canvas = await selection.$toCanvas();
+						let outWidth;
+						let outHeight;
+						const rect =
+							typeof selection.getBoundingClientRect === "function"
+								? selection.getBoundingClientRect()
+								: null;
+						const displayW = image.clientWidth || rect?.width || 0;
+						const displayH = image.clientHeight || rect?.height || 0;
+						if (rect && displayW > 0 && displayH > 0) {
+							const ratioX = image.naturalWidth / displayW;
+							const ratioY = image.naturalHeight / displayH;
+							outWidth = Math.max(1, Math.round(rect.width * ratioX));
+							outHeight = Math.max(1, Math.round(rect.height * ratioY));
+						}
+						canvas = await selection.$toCanvas({
+							...(outWidth ? { width: outWidth } : {}),
+							...(outHeight ? { height: outHeight } : {}),
+						});
 					}
 				}
 			} catch (e) {
@@ -852,7 +893,7 @@
 						throw new Error("Upload failed");
 					}
 
-					const data = await response.json();
+					await response.json();
 					window.showToast?.(
 						t("imageCroppedSuccessfully", "Image cropped successfully"),
 						"success",

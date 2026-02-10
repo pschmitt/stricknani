@@ -984,15 +984,16 @@
     document.addEventListener('DOMContentLoaded', () => {
         if (window.unsavedChanges) {
             window.unsavedChanges.onBeforeDiscard = async () => {
-                if (wasSilentlyCreated && projectId) {
-                    console.log('Discarding silent project:', projectId);
-                    try {
-                        const response = await fetch(`/projects/${projectId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'HX-Request': 'true' // Trigger HTMX-like response if needed, although we are navigating away
-                            }
-                        });
+	                if (wasSilentlyCreated && projectId) {
+	                    console.log('Discarding silent project:', projectId);
+	                    try {
+	                        const response = await fetch(`/projects/${projectId}`, {
+	                            method: 'DELETE',
+	                            headers: {
+	                                'HX-Request': 'true', // Trigger HTMX-like response if needed, although we are navigating away
+	                                'X-CSRF-Token': '{{ csrf_token }}'
+	                            }
+	                        });
                         if (!response.ok) {
                             console.error('Failed to delete silent project');
                         }
@@ -1582,11 +1583,14 @@
             '{{ _("Are you sure you want to delete this image? This action cannot be undone.") }}',
             async () => {
                 let response;
-                try {
-                    response = await fetch(`/projects/${projectId}/images/${imageId}`, {
-                        method: 'DELETE',
-                    });
-                } catch (error) {
+	                try {
+	                    response = await fetch(`/projects/${projectId}/images/${imageId}`, {
+	                        method: 'DELETE',
+	                        headers: {
+	                            'X-CSRF-Token': '{{ csrf_token }}'
+	                        }
+	                    });
+	                } catch (error) {
                     console.error('Image deletion failed', error);
                     window.showToast?.(deleteNetworkErrorMessage, 'error');
                     return;
@@ -1610,13 +1614,14 @@
     }
 
     async function promoteImage(pId, imageId) {
-        try {
-            const response = await fetch(`/projects/${pId}/images/${imageId}/promote`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
+	        try {
+	            const response = await fetch(`/projects/${pId}/images/${imageId}/promote`, {
+	                method: 'POST',
+	                headers: {
+	                    'X-Requested-With': 'XMLHttpRequest',
+	                    'X-CSRF-Token': '{{ csrf_token }}'
+	                }
+	            });
 
             if (response.ok) {
                 // If PhotoSwipe is open, close it before reloading
@@ -2647,14 +2652,13 @@
         ).map(el => el.value);
         yarnIds.forEach(id => url.searchParams.append('delete_yarn_ids', id));
 
-        try {
-            const response = await fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': '{{ csrf_token }}'
-                }
-            });
+	        try {
+	            const response = await fetch(url, {
+	                method: 'DELETE',
+	                headers: {
+	                    'X-CSRF-Token': '{{ csrf_token }}'
+	                }
+	            });
 
             if (response.ok) {
                 window.location.href = '/projects';
