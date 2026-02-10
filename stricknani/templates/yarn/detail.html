@@ -178,6 +178,48 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                 </div>
             </div>
             {% endif %}
+
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+                <input type="checkbox" />
+                <div class="collapse-title p-4 flex items-center justify-between">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <span class="mdi mdi-history text-primary"></span>
+                        {{ _('Audit Log') }}
+                    </h2>
+                    <span class="text-xs font-medium text-base-content/50 mr-8">{{ audit_entries|length }}</span>
+                </div>
+                <div class="collapse-content p-0">
+                    {% if audit_entries %}
+                    <div class="divide-y divide-base-200">
+                        {% for entry in audit_entries %}
+                        <div class="p-4 space-y-2">
+                            <div class="flex flex-wrap items-center gap-2 text-sm">
+                                <span class="font-semibold text-base-content">{{ entry.action.replace('_', ' ')|title }}</span>
+                                <span class="text-base-content/50">·</span>
+                                <span class="text-base-content/70">{{ entry.actor_email or ('User #' ~ entry.actor_user_id) }}</span>
+                                <span class="text-base-content/50">·</span>
+                                <time class="text-base-content/50">{{ entry.created_at[:19].replace('T', ' ') }}</time>
+                            </div>
+                            {% if entry.details and entry.details.get('changes') %}
+                            <div class="space-y-1 text-xs">
+                                {% for field, diff in entry.details['changes'].items() %}
+                                <div class="rounded-lg bg-base-200/50 px-2 py-1">
+                                    <span class="font-semibold">{{ field }}</span>
+                                    <span class="text-base-content/60">: {{ diff.old }} → {{ diff.new }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% elif entry.details %}
+                            <pre class="text-xs bg-base-200/50 rounded-lg p-2 overflow-x-auto">{{ entry.details | tojson(indent=2) }}</pre>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-sm text-base-content/60">{{ _('No audit entries yet') }}</div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         <!-- Sidebar Column -->

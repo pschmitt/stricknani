@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from stricknani.config import config
-from stricknani.models import Attachment, Image, ProjectCategory, Step
+from stricknani.models import Attachment, AuditLog, Image, ProjectCategory, Step
 
 
 async def _fetch_steps(
@@ -41,6 +41,23 @@ async def _fetch_attachments(
     async with session_factory() as session:
         result = await session.execute(
             select(Attachment).where(Attachment.project_id == project_id)
+        )
+    return list(result.scalars())
+
+
+async def _fetch_audit_logs(
+    session_factory: async_sessionmaker[AsyncSession],
+    entity_type: str,
+    entity_id: int,
+) -> list[AuditLog]:
+    async with session_factory() as session:
+        result = await session.execute(
+            select(AuditLog)
+            .where(
+                AuditLog.entity_type == entity_type,
+                AuditLog.entity_id == entity_id,
+            )
+            .order_by(AuditLog.id.asc())
         )
         return list(result.scalars())
 
@@ -150,6 +167,47 @@ async def test_upload_title_image_creates_image_record(
     assert media_path.exists()
     assert thumb_path.exists()
     assert any(thumb_path.iterdir())
+
+    audit_entries = await _fetch_audit_logs(session_factory, "project", project_id)
+    assert any(entry.action == "title_image_uploaded" for entry in audit_entries)
+
+
+@pytest.mark.asyncio
+async def test_project_create_and_update_write_audit_logs(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, _user_id, _project_id, _step_id = test_client
+
+    create_response = await client.post(
+        "/projects/",
+        data={"name": "Audit Project", "category": ProjectCategory.SCHAL.value},
+        follow_redirects=False,
+    )
+    assert create_response.status_code == 303
+    location = create_response.headers["location"]
+    project_id = int(location.split("?")[0].strip("/").split("/")[1])
+
+    update_response = await client.post(
+        f"/projects/{project_id}",
+        data={
+            "name": "Audit Project Updated",
+            "category": ProjectCategory.SCHAL.value,
+            "notes": "Now with notes",
+        },
+        follow_redirects=False,
+    )
+    assert update_response.status_code == 303
+
+    audit_entries = await _fetch_audit_logs(session_factory, "project", project_id)
+    actions = [entry.action for entry in audit_entries]
+    assert "created" in actions
+    assert "updated" in actions
+
+    updated_entry = next(entry for entry in audit_entries if entry.action == "updated")
+    assert updated_entry.details is not None
+    details = json.loads(updated_entry.details)
+    changes = details.get("changes", {})
+    assert "name" in changes
 
 
 @pytest.mark.asyncio

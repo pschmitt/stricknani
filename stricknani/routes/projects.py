@@ -41,6 +41,12 @@ from stricknani.models import (
     Yarn as YarnModel,
 )
 from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.services.audit import (
+    build_field_changes,
+    create_audit_log,
+    list_audit_logs,
+    serialize_audit_log,
+)
 from stricknani.services.images import get_image_dimensions
 from stricknani.services.projects.attachments import (
     consume_pending_project_import_attachment,
@@ -135,6 +141,26 @@ def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
 
 _ensure_yarns_by_text = ensure_yarns_by_text
 _get_exclusive_yarns = get_exclusive_yarns
+
+
+def _project_audit_snapshot(project: Project) -> dict[str, object]:
+    return {
+        "name": project.name,
+        "category": project.category,
+        "yarn": project.yarn,
+        "needles": project.needles,
+        "stitch_sample": project.stitch_sample,
+        "description": project.description,
+        "notes": project.notes,
+        "other_materials": project.other_materials,
+        "link": project.link,
+        "tags": sorted(project.tag_list(), key=str.casefold),
+        "yarn_ids": sorted([yarn.id for yarn in project.yarns]),
+        "step_count": len(project.steps),
+        "image_count": len(project.images),
+        "attachment_count": len(project.attachments),
+        "is_ai_enhanced": project.is_ai_enhanced,
+    }
 
 
 def _render_favorite_toggle(
@@ -1520,6 +1546,15 @@ async def get_project(
             for yarn in exclusive_yarns
         ],
     }
+    audit_entries = [
+        serialize_audit_log(entry)
+        for entry in await list_audit_logs(
+            db,
+            entity_type="project",
+            entity_id=project.id,
+            limit=200,
+        )
+    ]
 
     return await render_template(
         "projects/detail.html",
@@ -1530,6 +1565,7 @@ async def get_project(
             "is_ai_enhanced": project.is_ai_enhanced,
             "swipe_prev_href": swipe_prev_href,
             "swipe_next_href": swipe_next_href,
+            "audit_entries": audit_entries,
         },
     )
 
@@ -2042,6 +2078,41 @@ async def create_project(
                 )
                 permanently_saved_tokens.add(token)
 
+    step_count = 0
+    if steps_data:
+        try:
+            parsed_steps = json.loads(steps_data)
+        except json.JSONDecodeError:
+            parsed_steps = []
+        if isinstance(parsed_steps, list):
+            step_count = len(parsed_steps)
+
+    attachment_count = 0
+    if import_attachment_tokens:
+        try:
+            parsed_tokens = json.loads(import_attachment_tokens)
+        except json.JSONDecodeError:
+            parsed_tokens = []
+        if isinstance(parsed_tokens, list):
+            attachment_count = len(
+                [token for token in parsed_tokens if isinstance(token, str)]
+            )
+
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project.id,
+        action="created",
+        details={
+            "name": project.name,
+            "category": project.category,
+            "yarn_count": len(project.yarns),
+            "step_count": step_count,
+            "image_count": len(image_urls),
+            "attachment_count": attachment_count,
+        },
+    )
     await db.commit()
     for filename in post_commit_file_deletes:
         try:
@@ -2134,7 +2205,12 @@ async def update_project(
     result = await db.execute(
         select(Project)
         .where(Project.id == project_id)
-        .options(selectinload(Project.steps), selectinload(Project.yarns))
+        .options(
+            selectinload(Project.steps),
+            selectinload(Project.yarns),
+            selectinload(Project.images),
+            selectinload(Project.attachments),
+        )
     )
     project = result.scalar_one_or_none()
 
@@ -2147,6 +2223,8 @@ async def update_project(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
+
+    before_snapshot = _project_audit_snapshot(project)
 
     project.name = name.strip()
     project.category = await ensure_category(db, current_user.id, category)
@@ -2449,6 +2527,17 @@ async def update_project(
                 )
                 permanently_saved_tokens.add(token)
 
+    changes = build_field_changes(before_snapshot, _project_audit_snapshot(project))
+    if changes:
+        await create_audit_log(
+            db,
+            actor_user_id=current_user.id,
+            entity_type="project",
+            entity_id=project.id,
+            action="updated",
+            details={"changes": changes},
+        )
+
     await db.commit()
     for filename in post_commit_file_deletes:
         try:
@@ -2557,6 +2646,20 @@ async def delete_project(
     project_media_dir = config.MEDIA_ROOT / "projects" / str(project_id)
     project_thumb_dir = config.MEDIA_ROOT / "thumbnails" / "projects" / str(project_id)
 
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project.id,
+        action="deleted",
+        details={
+            "name": project.name,
+            "image_count": len(project.images),
+            "step_count": len(project.steps),
+            "yarn_count": len(project.yarns),
+            "deleted_yarn_ids": [yarn.id for yarn in exclusive_yarns_to_delete],
+        },
+    )
     await db.delete(project)
     await db.commit()
 
@@ -2721,6 +2824,18 @@ async def upload_title_image(
         file=file,
         alt_text=alt_text,
     )
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="title_image_uploaded",
+        details={
+            "image_id": payload.get("id"),
+            "filename": payload.get("filename"),
+            "alt_text": payload.get("alt_text"),
+        },
+    )
     await db.commit()
     return JSONResponse(payload)
 
@@ -2746,6 +2861,18 @@ async def upload_stitch_sample_image(
         project_id=project_id,
         file=file,
         alt_text=alt_text,
+    )
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="stitch_sample_image_uploaded",
+        details={
+            "image_id": payload.get("id"),
+            "filename": payload.get("filename"),
+            "alt_text": payload.get("alt_text"),
+        },
     )
     await db.commit()
     return JSONResponse(payload)
@@ -2782,6 +2909,19 @@ async def upload_step_image(
         file=file,
         alt_text=alt_text,
     )
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="step_image_uploaded",
+        details={
+            "step_id": step_id,
+            "image_id": payload.get("id"),
+            "filename": payload.get("filename"),
+            "alt_text": payload.get("alt_text"),
+        },
+    )
     await db.commit()
     return JSONResponse(payload)
 
@@ -2806,7 +2946,22 @@ async def delete_image(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     filename = image.filename
+    image_details = {
+        "image_id": image.id,
+        "filename": image.filename,
+        "alt_text": image.alt_text,
+        "step_id": image.step_id,
+        "is_title_image": image.is_title_image,
+    }
     await db.delete(image)
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="image_deleted",
+        details=image_details,
+    )
     await db.commit()
     try:
         delete_file(filename, project_id)
@@ -2847,6 +3002,14 @@ async def promote_project_image(
         .values(is_title_image=True)
     )
 
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="title_image_promoted",
+        details={"image_id": image_id},
+    )
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -2879,6 +3042,21 @@ async def upload_attachment(
         project_id=project_id,
     )
     db.add(attachment)
+    await db.flush()
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="attachment_uploaded",
+        details={
+            "attachment_id": attachment.id,
+            "filename": attachment.filename,
+            "original_filename": attachment.original_filename,
+            "content_type": attachment.content_type,
+            "size_bytes": attachment.size_bytes,
+        },
+    )
     await db.commit()
     await db.refresh(attachment)
 
@@ -2918,7 +3096,22 @@ async def delete_attachment(
         )
 
     filename = attachment.filename
+    attachment_details = {
+        "attachment_id": attachment.id,
+        "filename": attachment.filename,
+        "original_filename": attachment.original_filename,
+        "content_type": attachment.content_type,
+        "size_bytes": attachment.size_bytes,
+    }
     await db.delete(attachment)
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="attachment_deleted",
+        details=attachment_details,
+    )
     await db.commit()
     try:
         delete_file(filename, project_id)
@@ -2977,6 +3170,19 @@ async def create_step(
         description=description if isinstance(description, str) else None,
         step_number=_coerce_step_number(step_number, 1),
     )
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="step_created",
+        details={
+            "step_id": step.id,
+            "title": step.title,
+            "step_number": step.step_number,
+        },
+    )
+    await db.commit()
 
     return {
         "id": step.id,
@@ -3030,6 +3236,11 @@ async def update_step(
             pass
         return default
 
+    before_details: dict[str, object] = {
+        "title": step.title,
+        "description": step.description,
+        "step_number": step.step_number,
+    }
     await service_update_step(
         db,
         step=step,
@@ -3039,6 +3250,24 @@ async def update_step(
         if step_number is not None
         else None,
     )
+    changes = build_field_changes(
+        before_details,
+        {
+            "title": step.title,
+            "description": step.description,
+            "step_number": step.step_number,
+        },
+    )
+    if changes:
+        await create_audit_log(
+            db,
+            actor_user_id=current_user.id,
+            entity_type="project",
+            entity_id=project_id,
+            action="step_updated",
+            details={"step_id": step.id, "changes": changes},
+        )
+        await db.commit()
 
     return {
         "id": step.id,

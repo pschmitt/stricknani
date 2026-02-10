@@ -5,6 +5,7 @@ from stricknani.models.associations import (
     user_favorite_yarns,
     user_favorites,
 )
+from stricknani.models.audit import AuditLog
 from stricknani.models.base import Base
 from stricknani.models.category import Category
 from stricknani.models.enums import ImageType, ProjectCategory
@@ -14,6 +15,7 @@ from stricknani.models.yarn import Yarn, YarnImage
 
 __all__ = [
     "Attachment",
+    "AuditLog",
     "Base",
     "Category",
     "Image",

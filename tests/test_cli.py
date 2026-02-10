@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 import stricknani.utils.importer as importer
-from stricknani.models import Project, ProjectCategory, Step, Yarn
+from stricknani.models import AuditLog, Project, ProjectCategory, Step, Yarn
 from stricknani.scripts import cli
 
 
@@ -192,3 +192,33 @@ async def test_cli_imports_project_url(
     assert project.needles == "3.5mm"
     assert project.link == "https://example.com/pattern"
     assert [step.title for step in steps] == ["Cast on", "Knit"]
+
+
+@pytest.mark.asyncio
+async def test_cli_lists_audit_entries(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _client, session_factory, user_id, project_id, _step_id = test_client
+
+    async with session_factory() as session:
+        session.add(
+            AuditLog(
+                actor_user_id=user_id,
+                entity_type="project",
+                entity_id=project_id,
+                action="created",
+            )
+        )
+        await session.commit()
+
+    async def fake_init_db() -> None:
+        return None
+
+    monkeypatch.setattr(cli, "AsyncSessionLocal", session_factory)
+    monkeypatch.setattr(cli, "init_db", fake_init_db)
+
+    await cli.list_audit_entries(entity_type="project", entity_id=project_id, limit=10)
+    output = capsys.readouterr().out
+    assert "created" in output

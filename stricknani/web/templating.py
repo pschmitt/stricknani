@@ -13,6 +13,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi_csrf_protect.flexible import CsrfProtect as FlexibleCsrfProtect
+from itsdangerous import BadData, SignatureExpired, URLSafeTimedSerializer
 
 from stricknani.config import config
 from stricknani.utils.i18n import install_i18n
@@ -118,7 +119,24 @@ async def render_template(
     context.setdefault("feature_wayback_enabled", config.FEATURE_WAYBACK_ENABLED)
 
     csrf = FlexibleCsrfProtect()
-    csrf_token, signed_token = csrf.generate_csrf_tokens()
+    csrf_token: str | None = None
+    signed_token = request.cookies.get(csrf._cookie_key)
+    should_set_cookie = False
+    if signed_token:
+        serializer = URLSafeTimedSerializer(
+            config.CSRF_SECRET_KEY,
+            salt="fastapi-csrf-token",
+        )
+        try:
+            csrf_token = serializer.loads(signed_token, max_age=csrf._max_age)
+        except (BadData, SignatureExpired):
+            csrf_token = None
+            signed_token = None
+
+    if csrf_token is None or signed_token is None:
+        csrf_token, signed_token = csrf.generate_csrf_tokens()
+        should_set_cookie = True
+
     context["csrf_token"] = csrf_token
 
     if "current_user" not in context:
@@ -147,5 +165,6 @@ async def render_template(
         status_code=status_code,
     )
 
-    csrf.set_csrf_cookie(signed_token, response)
+    if should_set_cookie:
+        csrf.set_csrf_cookie(signed_token, response)
     return response

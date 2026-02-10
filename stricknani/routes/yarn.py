@@ -26,6 +26,12 @@ from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.models import Project, User, Yarn, YarnImage, user_favorite_yarns
 from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.services.audit import (
+    build_field_changes,
+    create_audit_log,
+    list_audit_logs,
+    serialize_audit_log,
+)
 from stricknani.services.yarn import (
     get_yarn_photo_dimensions,
     import_yarn_images_from_urls,
@@ -93,6 +99,25 @@ def _parse_optional_int(field_name: str, value: str | None) -> int | None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid value for {field_name}",
         ) from exc
+
+
+def _yarn_audit_snapshot(yarn: Yarn) -> dict[str, object]:
+    return {
+        "name": yarn.name,
+        "description": yarn.description,
+        "brand": yarn.brand,
+        "colorway": yarn.colorway,
+        "dye_lot": yarn.dye_lot,
+        "fiber_content": yarn.fiber_content,
+        "weight_category": yarn.weight_category,
+        "recommended_needles": yarn.recommended_needles,
+        "weight_grams": yarn.weight_grams,
+        "length_meters": yarn.length_meters,
+        "notes": yarn.notes,
+        "link": yarn.link,
+        "is_ai_enhanced": yarn.is_ai_enhanced,
+        "photo_count": len(yarn.photos),
+    }
 
 
 @router.post("/import")
@@ -542,6 +567,19 @@ async def create_yarn(
                 deferred_deletions=deferred_deletions,
             )
 
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="yarn",
+        entity_id=yarn.id,
+        action="created",
+        details={
+            "name": yarn.name,
+            "brand": yarn.brand,
+            "colorway": yarn.colorway,
+            "photo_count": len(yarn.photos),
+        },
+    )
     await db.commit()
     for filename in deferred_deletions:
         try:
@@ -640,6 +678,16 @@ async def yarn_detail(
             # Retry the snapshot request
             asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
 
+    audit_entries = [
+        serialize_audit_log(entry)
+        for entry in await list_audit_logs(
+            db,
+            entity_type="yarn",
+            entity_id=yarn.id,
+            limit=200,
+        )
+    ]
+
     return await render_template(
         "yarn/detail.html",
         request,
@@ -674,6 +722,7 @@ async def yarn_detail(
             "link_archive_fallback": (
                 build_wayback_fallback_url(yarn.link) if yarn.link else None
             ),
+            "audit_entries": audit_entries,
         },
     )
 
@@ -766,6 +815,8 @@ async def update_yarn(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
+    before_snapshot = _yarn_audit_snapshot(yarn)
+
     yarn.name = name.strip()
     yarn.description = description.strip() if description else None
     yarn.brand = brand.strip() if brand else None
@@ -797,6 +848,16 @@ async def update_yarn(
                 deferred_deletions=deferred_deletions,
             )
 
+    changes = build_field_changes(before_snapshot, _yarn_audit_snapshot(yarn))
+    if changes:
+        await create_audit_log(
+            db,
+            actor_user_id=current_user.id,
+            entity_type="yarn",
+            entity_id=yarn.id,
+            action="updated",
+            details={"changes": changes},
+        )
     await db.commit()
     for filename in deferred_deletions:
         try:
@@ -870,6 +931,20 @@ async def upload_yarn_photo(
         is_primary=not has_primary,
     )
     db.add(photo)
+    await db.flush()
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="yarn",
+        entity_id=yarn_id,
+        action="photo_uploaded",
+        details={
+            "photo_id": photo.id,
+            "filename": photo.filename,
+            "original_filename": photo.original_filename,
+            "is_primary": photo.is_primary,
+        },
+    )
     await db.commit()
     await db.refresh(photo)
 
@@ -1016,6 +1091,14 @@ async def promote_yarn_photo(
         .values(is_primary=True)
     )
 
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="yarn",
+        entity_id=yarn_id,
+        action="photo_promoted",
+        details={"photo_id": photo_id},
+    )
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -1043,6 +1126,18 @@ async def delete_yarn(
         )
 
     filenames = [photo.filename for photo in yarn.photos]
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="yarn",
+        entity_id=yarn.id,
+        action="deleted",
+        details={
+            "name": yarn.name,
+            "brand": yarn.brand,
+            "photo_count": len(yarn.photos),
+        },
+    )
     await db.delete(yarn)
     await db.commit()
     for filename in filenames:
@@ -1104,7 +1199,21 @@ async def delete_yarn_photo(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     filename = target.filename
+    details = {
+        "photo_id": target.id,
+        "filename": target.filename,
+        "original_filename": target.original_filename,
+        "is_primary": target.is_primary,
+    }
     await db.delete(target)
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="yarn",
+        entity_id=yarn_id,
+        action="photo_deleted",
+        details=details,
+    )
     await db.commit()
     try:
         delete_file(filename, yarn.id, subdir="yarns")

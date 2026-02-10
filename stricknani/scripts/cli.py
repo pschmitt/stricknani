@@ -24,7 +24,8 @@ from sqlalchemy.orm import selectinload
 
 from stricknani.config import config
 from stricknani.database import AsyncSessionLocal, init_db
-from stricknani.models import Project, Step, User, Yarn
+from stricknani.models import AuditLog, Project, Step, User, Yarn
+from stricknani.services.audit import create_audit_log, serialize_audit_log
 from stricknani.utils.ai_ingest import (
     DEFAULT_INSTRUCTIONS as AI_DEFAULT_INSTRUCTIONS,
 )
@@ -278,6 +279,14 @@ async def delete_project(project_id: int, owner_email: str | None) -> None:
                 )
                 return
 
+        await create_audit_log(
+            session,
+            actor_user_id=project.owner_id,
+            entity_type="project",
+            entity_id=project.id,
+            action="deleted",
+            details={"name": project.name, "source": "cli"},
+        )
         await session.delete(project)
         await session.commit()
         output_ok(
@@ -335,6 +344,68 @@ async def list_yarns(owner_email: str | None) -> None:
         )
 
 
+async def list_audit_entries(
+    *,
+    entity_type: str,
+    entity_id: int,
+    limit: int,
+) -> None:
+    """List audit entries for one project or yarn."""
+    if entity_type not in {"project", "yarn"}:
+        error_console.print(
+            f"[red]Invalid entity type: [cyan]{entity_type}[/cyan].[/red]"
+        )
+        return
+
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        entity_exists = False
+        if entity_type == "project":
+            entity_exists = await session.get(Project, entity_id) is not None
+        else:
+            entity_exists = await session.get(Yarn, entity_id) is not None
+        if not entity_exists:
+            error_console.print(
+                f"[red]{entity_type.title()} [cyan]{entity_id}[/cyan] not found.[/red]"
+            )
+            return
+
+        result = await session.execute(
+            select(AuditLog)
+            .where(
+                AuditLog.entity_type == entity_type,
+                AuditLog.entity_id == entity_id,
+            )
+            .options(selectinload(AuditLog.actor))
+            .order_by(AuditLog.created_at.desc(), AuditLog.id.desc())
+            .limit(max(1, min(limit, 500)))
+        )
+        entries = list(result.scalars())
+        payload = [serialize_audit_log(entry) for entry in entries]
+        if JSON_OUTPUT:
+            output_json({"audit_logs": payload})
+            return
+
+        rows = []
+        for item in payload:
+            details = item["details"]
+            summary = json.dumps(details, ensure_ascii=True) if details else "-"
+            rows.append(
+                [
+                    str(item["id"]),
+                    str(item["created_at"]),
+                    str(item["actor_email"] or item["actor_user_id"]),
+                    str(item["action"]),
+                    summary,
+                ]
+            )
+        output_table(
+            ["ID", "CREATED_AT", "ACTOR", "ACTION", "DETAILS"],
+            rows,
+            styles=["cyan", "green", "yellow", "magenta", "white"],
+        )
+
+
 async def delete_yarn(yarn_id: int, owner_email: str | None) -> None:
     """Delete a yarn."""
     await init_db()
@@ -358,6 +429,14 @@ async def delete_yarn(yarn_id: int, owner_email: str | None) -> None:
                 )
                 return
 
+        await create_audit_log(
+            session,
+            actor_user_id=yarn.owner_id,
+            entity_type="yarn",
+            entity_id=yarn.id,
+            action="deleted",
+            details={"name": yarn.name, "source": "cli"},
+        )
         await session.delete(yarn)
         await session.commit()
         output_ok(
@@ -398,6 +477,15 @@ async def add_project(
             owner_id=owner.id,
         )
         session.add(project)
+        await session.flush()
+        await create_audit_log(
+            session,
+            actor_user_id=owner.id,
+            entity_type="project",
+            entity_id=project.id,
+            action="created",
+            details={"name": project.name, "source": "cli"},
+        )
         await session.commit()
         await session.refresh(project)
 
@@ -449,6 +537,15 @@ async def add_yarn(
             owner_id=owner.id,
         )
         session.add(yarn_entry)
+        await session.flush()
+        await create_audit_log(
+            session,
+            actor_user_id=owner.id,
+            entity_type="yarn",
+            entity_id=yarn_entry.id,
+            action="created",
+            details={"name": yarn_entry.name, "source": "cli"},
+        )
         await session.commit()
         await session.refresh(yarn_entry)
         output_ok(
@@ -511,6 +608,14 @@ async def import_project_url(
         )
         session.add(project)
         await session.flush()
+        await create_audit_log(
+            session,
+            actor_user_id=owner.id,
+            entity_type="project",
+            entity_id=project.id,
+            action="created",
+            details={"name": project.name, "source": "cli_import"},
+        )
 
         steps = data.get("steps")
         if isinstance(steps, list):
@@ -604,6 +709,15 @@ async def import_yarn_url(
             owner_id=owner.id,
         )
         session.add(yarn_entry)
+        await session.flush()
+        await create_audit_log(
+            session,
+            actor_user_id=owner.id,
+            entity_type="yarn",
+            entity_id=yarn_entry.id,
+            action="created",
+            details={"name": yarn_entry.name, "source": "cli_import"},
+        )
         await session.commit()
         await session.refresh(yarn_entry)
 
@@ -978,6 +1092,26 @@ def main() -> None:
         "--owner-email", help="Ensure the yarn belongs to this user"
     )
 
+    # Audit management
+    audit_parser = subparsers.add_parser("audit", help="Inspect audit logs")
+    audit_subparsers = audit_parser.add_subparsers(dest="audit_command", required=True)
+    audit_list_parser = audit_subparsers.add_parser(
+        "list", help="List audit entries for an entity"
+    )
+    audit_list_parser.add_argument(
+        "--entity-type",
+        choices=["project", "yarn"],
+        required=True,
+        help="Entity type",
+    )
+    audit_list_parser.add_argument("--entity-id", type=int, required=True, help="ID")
+    audit_list_parser.add_argument(
+        "--limit",
+        type=int,
+        default=100,
+        help="Maximum number of entries (default: 100)",
+    )
+
     # AI ingestion (CLI-first)
     ai_parser = subparsers.add_parser("ai", help="AI ingestion helpers (CLI-only)")
     ai_subparsers = ai_parser.add_subparsers(dest="ai_command", required=True)
@@ -1186,6 +1320,15 @@ def main() -> None:
             )
         elif args.yarn_command == "delete":
             asyncio.run(delete_yarn(args.id, args.owner_email))
+    elif args.command == "audit":
+        if args.audit_command == "list":
+            asyncio.run(
+                list_audit_entries(
+                    entity_type=args.entity_type,
+                    entity_id=args.entity_id,
+                    limit=args.limit,
+                )
+            )
 
     elif args.command == "alembic":
         from pathlib import Path
