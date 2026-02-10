@@ -24,6 +24,24 @@ from stricknani.models import (
 from stricknani.utils.auth import create_user, get_user_by_email
 
 _THUMBNAILS_AVAILABLE: bool | None = None
+DEMO_IMAGE_CAPTIONS = {
+    "demo_image_1.jpg": "Hands knitting a textured swatch with bamboo needles",
+    "demo_image_2.jpg": "Folded hand-knit scarf in muted winter tones",
+    "demo_image_3.jpg": "Bulky hat in progress with circular knitting needles",
+    "demo_image_4.jpg": "Flat lay of linen yarn, stitch markers, and tape measure",
+    "demo_image_5.jpg": "Delicate lace knitting pinned out during blocking",
+    "demo_image_6.jpg": "Tweed cardigan pieces arranged before seaming",
+    "demo_image_7.jpg": "Knitting project bag with yarn cake and notions tin",
+    "demo_image_8.jpg": "Close-up of ribbing and cable texture on wool fabric",
+    "demo_image_9.jpg": "Summer top knit in plant-fiber yarn on metal needles",
+    "demo_image_10.jpg": "Hand-knit sleeve shaping with removable stitch markers",
+    "demo_image_11.jpg": "Soft halo yarn held double for an airy fabric",
+    "demo_image_12.jpg": "Finished beanie with folded brim on a wooden bench",
+}
+
+
+def _demo_caption(filename: str, fallback: str) -> str:
+    return DEMO_IMAGE_CAPTIONS.get(filename, fallback)
 
 
 async def _reset_demo_data(db: AsyncSession, demo_user: User) -> None:
@@ -142,63 +160,77 @@ async def seed_demo_data(reset: bool = False) -> None:
         # Create some demo yarns
         demo_yarns = [
             {
-                "name": "Merino Soft",
-                "brand": "CozyKnits",
-                "colorway": "Ocean Blue",
+                "name": "Riverbend Merino DK",
+                "brand": "North Ridge Wool",
+                "colorway": "Deep Fjord",
                 "fiber_content": "100% Merino Wool",
                 "weight_category": "DK",
                 "weight_grams": 100,
                 "length_meters": 220,
                 "recommended_needles": "3.75mm - 4.5mm",
-                "description": "Soft, bouncy merino with a smooth twist.",
-                "notes": "Super soft, perfect for baby clothes.",
-                "link": "https://example.com/yarns/cozyknits-merino-soft",
+                "description": (
+                    "Springy 4-ply merino with crisp stitch definition for everyday "
+                    "garments."
+                ),
+                "notes": (
+                    "Swatches to gauge quickly and relaxes slightly after wet blocking."
+                ),
+                "link": "https://example.com/yarns/northridge-riverbend-merino-dk",
                 "photos": ["demo_image_1.jpg", "demo_image_7.jpg"],
             },
             {
-                "name": "Sock Delight",
-                "brand": "HappyFeet",
-                "colorway": "Rainbow",
+                "name": "Laneway Sock 4ply",
+                "brand": "Harbor Mill",
+                "colorway": "Painterly Neon",
                 "fiber_content": "75% Wool, 25% Nylon",
                 "weight_category": "Fingering",
                 "weight_grams": 100,
                 "length_meters": 400,
                 "recommended_needles": "2.0mm - 2.75mm",
-                "description": "Tightly spun sock yarn with gentle striping.",
-                "notes": "Self-striping yarn.",
-                "link": "https://example.com/yarns/happyfeet-sock-delight",
+                "description": (
+                    "Durable sock blend with smooth hand-dyed transitions and great "
+                    "memory."
+                ),
+                "notes": "Best for socks at 2.25mm and marled accessories at 3mm.",
+                "link": "https://example.com/yarns/harbor-mill-laneway-sock-4ply",
                 "photos": ["demo_image_2.jpg", "demo_image_8.jpg"],
             },
             {
-                "name": "Chunky Monkey",
-                "brand": "BigYarns",
-                "colorway": "Charcoal",
+                "name": "Summit Bulky",
+                "brand": "Timberline Fibers",
+                "colorway": "Charcoal Heather",
                 "fiber_content": "50% Wool, 50% Acrylic",
                 "weight_category": "Bulky",
                 "weight_grams": 200,
                 "length_meters": 150,
                 "recommended_needles": "6.0mm - 8.0mm",
-                "description": "A quick-knit bulky blend with a soft halo.",
-                "notes": "Great for quick hats and scarves.",
-                "link": "https://example.com/yarns/bigyarns-chunky-monkey",
+                "description": (
+                    "Lofty bulky blend that knits up quickly for hats, cowls, and "
+                    "cold-weather layers."
+                ),
+                "notes": "Responds well to steam; avoid over-handling to keep loft.",
+                "link": "https://example.com/yarns/timberline-summit-bulky",
                 "photos": ["demo_image_3.jpg", "demo_image_12.jpg"],
             },
             {
-                "name": "Linen Breeze",
-                "brand": "Coastline Fibers",
-                "colorway": "Natural Flax",
+                "name": "Coastal Linen Sport",
+                "brand": "Drift Thread Co.",
+                "colorway": "Sandbar",
                 "fiber_content": "60% Linen, 40% Cotton",
                 "weight_category": "Sport",
                 "weight_grams": 100,
                 "length_meters": 300,
                 "recommended_needles": "3.0mm - 3.75mm",
-                "description": "Crisp plant-fiber blend that softens after washing.",
-                "notes": "Lovely stitch definition for summer tops.",
-                "link": "https://example.com/yarns/coastline-linen-breeze",
+                "description": (
+                    "Crisp summer blend that blooms and drapes beautifully after "
+                    "the first wash."
+                ),
+                "notes": "Works well for warm-weather pullovers and lightweight tees.",
+                "link": "https://example.com/yarns/drift-thread-coastal-linen-sport",
                 "photos": ["demo_image_4.jpg", "demo_image_9.jpg"],
             },
             {
-                "name": "Alpaca Cloud",
+                "name": "Halo Alpaca Silk",
                 "brand": "Andes Loft",
                 "colorway": "Mushroom",
                 "fiber_content": "70% Alpaca, 30% Silk",
@@ -206,13 +238,16 @@ async def seed_demo_data(reset: bool = False) -> None:
                 "weight_grams": 50,
                 "length_meters": 400,
                 "recommended_needles": "2.5mm - 3.5mm",
-                "description": "Featherlight with a soft sheen.",
-                "notes": "Pairs well with a fingering base for texture.",
-                "link": "https://example.com/yarns/andes-alpaca-cloud",
+                "description": (
+                    "Airy brushed lace yarn with gentle halo, ideal for holding "
+                    "double with a base yarn."
+                ),
+                "notes": "Great for softening cables and adding warmth without bulk.",
+                "link": "https://example.com/yarns/andes-loft-halo-alpaca-silk",
                 "photos": ["demo_image_5.jpg", "demo_image_11.jpg"],
             },
             {
-                "name": "Highland Tweed",
+                "name": "Highland Tweed Worsted",
                 "brand": "North Ridge",
                 "colorway": "Forest",
                 "fiber_content": "100% Wool",
@@ -220,9 +255,12 @@ async def seed_demo_data(reset: bool = False) -> None:
                 "weight_grams": 100,
                 "length_meters": 200,
                 "recommended_needles": "4.5mm - 5.0mm",
-                "description": "Hearty tweed with subtle color flecks.",
-                "notes": "Perfect for cozy sweaters and cardigans.",
-                "link": "https://example.com/yarns/northridge-highland-tweed",
+                "description": (
+                    "Classic wool tweed with subtle flecks and enough grip for "
+                    "structured outerwear."
+                ),
+                "notes": "Hard-wearing choice for cardigans, mittens, and hats.",
+                "link": "https://example.com/yarns/northridge-highland-tweed-worsted",
                 "photos": ["demo_image_6.jpg", "demo_image_10.jpg"],
             },
         ]
@@ -262,7 +300,9 @@ async def seed_demo_data(reset: bool = False) -> None:
                         yarn_image = YarnImage(
                             filename=img_filename,
                             original_filename=img_filename,
-                            alt_text=f"{yarn.name} photo",
+                            alt_text=_demo_caption(
+                                img_filename, f"{yarn.name} yarn photo"
+                            ),
                             yarn_id=yarn.id,
                             is_primary=(i == 0),
                         )
@@ -285,14 +325,20 @@ async def seed_demo_data(reset: bool = False) -> None:
         # Create some demo projects
         demo_projects = [
             {
-                "name": "Baby Blanket",
+                "name": "Heirloom Baby Blanket",
                 "category": ProjectCategory.SCHAL.value,
-                "yarn": "Soft Baby Yarn 100g",
+                "yarn": "Riverbend Merino DK 300g",
                 "needles": "4.0mm",
-                "notes": "Started this for my nephew. Keeping it simple and squishy.",
-                "tags": json.dumps(["gift", "garter", "baby"]),
-                "link": "https://example.com/patterns/baby-blanket",
-                "linked_yarns": ["Merino Soft"],
+                "description": (
+                    "A squishy garter-and-eyelet blanket sized for stroller naps."
+                ),
+                "notes": (
+                    "Knitting this as a family gift; adding a sewn label after "
+                    "blocking."
+                ),
+                "tags": json.dumps(["gift", "garter", "baby", "beginner-friendly"]),
+                "link": "https://example.com/patterns/heirloom-baby-blanket",
+                "linked_yarns": ["Riverbend Merino DK"],
                 "title_images": [
                     "demo_image_1.jpg",
                     "demo_image_4.jpg",
@@ -300,38 +346,42 @@ async def seed_demo_data(reset: bool = False) -> None:
                 ],
                 "steps": [
                     {
-                        "title": "Cast On",
+                        "title": "Cast On Border",
                         "description": (
-                            "Cast on 120 stitches using the long-tail cast-on method."
+                            "Cast on 126 stitches using long-tail and work 8 "
+                            "garter rows for a stable edge."
                         ),
                         "images": ["demo_image_4.jpg", "demo_image_9.jpg"],
                     },
                     {
-                        "title": "Knit Garter Stitch",
+                        "title": "Body Repeat",
                         "description": (
-                            "Knit every row for 100 rows. "
-                            "This creates the garter stitch pattern."
+                            "Repeat 10 rows garter + 2 rows eyelets until length "
+                            "reaches 82 cm."
                         ),
                         "images": ["demo_image_5.jpg", "demo_image_7.jpg"],
                     },
                     {
-                        "title": "Bind Off",
+                        "title": "Bind Off and Block",
                         "description": (
-                            "Bind off loosely and steam-block to square the edges."
+                            "Bind off loosely with a larger needle and wet block flat."
                         ),
                         "images": ["demo_image_6.jpg", "demo_image_10.jpg"],
                     },
                 ],
             },
             {
-                "name": "Winter Scarf",
+                "name": "Commuter Rib Scarf",
                 "category": ProjectCategory.SCHAL.value,
-                "yarn": "Highland Tweed 200g",
+                "yarn": "Highland Tweed Worsted 240g",
                 "needles": "5.0mm",
-                "notes": "Deep ribbing for a warm, structured drape.",
-                "tags": json.dumps(["ribbing", "winter", "tweed"]),
-                "link": "https://example.com/patterns/winter-scarf",
-                "linked_yarns": ["Highland Tweed"],
+                "description": (
+                    "Dense 2x2 rib scarf that stays warm and springy through winter."
+                ),
+                "notes": "Keeping edges neat with slipped first stitch on every row.",
+                "tags": json.dumps(["ribbing", "winter", "tweed", "unisex"]),
+                "link": "https://example.com/patterns/commuter-rib-scarf",
+                "linked_yarns": ["Highland Tweed Worsted"],
                 "title_images": [
                     "demo_image_2.jpg",
                     "demo_image_6.jpg",
@@ -339,30 +389,35 @@ async def seed_demo_data(reset: bool = False) -> None:
                 ],
                 "steps": [
                     {
-                        "title": "Start Ribbing",
+                        "title": "Set Up Rib",
                         "description": (
-                            "Work in 2x2 rib pattern: K2, P2 repeat across row."
+                            "Work 2x2 ribbing, slipping first stitch for clean "
+                            "selvedges."
                         ),
                         "images": ["demo_image_6.jpg", "demo_image_10.jpg"],
                     },
                     {
-                        "title": "Switch to Seed Stitch",
+                        "title": "Length and Finish",
                         "description": (
-                            "After 20 cm, switch to seed stitch for texture."
+                            "Continue rib to 180 cm, then bind off in pattern and "
+                            "soak block."
                         ),
                         "images": ["demo_image_3.jpg", "demo_image_12.jpg"],
                     },
                 ],
             },
             {
-                "name": "Spring Pullover",
+                "name": "Seabreeze Raglan Tee",
                 "category": ProjectCategory.PULLOVER.value,
-                "yarn": "Linen Breeze 400g",
+                "yarn": "Coastal Linen Sport 420g",
                 "needles": "3.5mm",
-                "notes": "Following a pattern from my favorite knitting book.",
-                "tags": json.dumps(["summer", "raglan", "lightweight"]),
-                "link": "https://example.com/patterns/spring-pullover",
-                "linked_yarns": ["Linen Breeze"],
+                "description": (
+                    "Top-down summer raglan with relaxed fit and subtle split hem."
+                ),
+                "notes": "Trying short-row shaping at the back neck for better fit.",
+                "tags": json.dumps(["summer", "raglan", "lightweight", "top-down"]),
+                "link": "https://example.com/patterns/seabreeze-raglan-tee",
+                "linked_yarns": ["Coastal Linen Sport"],
                 "title_images": [
                     "demo_image_3.jpg",
                     "demo_image_4.jpg",
@@ -371,52 +426,68 @@ async def seed_demo_data(reset: bool = False) -> None:
                 "steps": [
                     {
                         "title": "Ribbed Hem",
-                        "description": "Work 6 cm of 1x1 ribbing in the round.",
+                        "description": (
+                            "Work 5 cm of 1x1 twisted rib for the hem and body edge."
+                        ),
                         "images": ["demo_image_4.jpg", "demo_image_9.jpg"],
                     },
                     {
                         "title": "Raglan Increases",
                         "description": (
-                            "Increase every other round until yoke fits comfortably."
+                            "Increase every other round at four raglan markers to "
+                            "chest fit."
                         ),
                         "images": ["demo_image_1.jpg", "demo_image_7.jpg"],
                     },
                 ],
             },
             {
-                "name": "City Beanie",
+                "name": "City Lights Beanie",
                 "category": ProjectCategory.MUTZE.value,
-                "yarn": "Chunky Monkey 100g",
+                "yarn": "Summit Bulky 110g",
                 "needles": "7.0mm",
-                "notes": "Quick knit for chilly commutes.",
-                "tags": json.dumps(["quick", "gift", "bulky"]),
-                "link": "https://example.com/patterns/city-beanie",
-                "linked_yarns": ["Chunky Monkey"],
+                "description": (
+                    "A one-skein bulky beanie with folded brim and fast crown shaping."
+                ),
+                "notes": "Made this as a same-day gift before a weekend trip.",
+                "tags": json.dumps(["quick", "gift", "bulky", "one-skein"]),
+                "link": "https://example.com/patterns/city-lights-beanie",
+                "linked_yarns": ["Summit Bulky"],
                 "title_images": ["demo_image_3.jpg", "demo_image_12.jpg"],
                 "steps": [
                     {
                         "title": "Twisted Rib Brim",
-                        "description": "Ktbl, P1 ribbing for 7 cm.",
+                        "description": (
+                            "Work Ktbl/P1 rib for 8 cm, then fold brim to desired "
+                            "depth."
+                        ),
                         "images": ["demo_image_3.jpg", "demo_image_12.jpg"],
                     },
                     {
                         "title": "Crown Shaping",
                         "description": (
-                            "Decrease every 3rd round until 8 stitches remain."
+                            "Decrease in 8 sections every other round to 8 "
+                            "stitches, then close."
                         ),
                         "images": ["demo_image_2.jpg", "demo_image_8.jpg"],
                     },
                 ],
             },
             {
-                "name": "Lace Headband",
+                "name": "Twisted Halo Headband",
                 "category": ProjectCategory.STIRNBAND.value,
-                "yarn": "Alpaca Cloud held with Sock Delight",
+                "yarn": "Halo Alpaca Silk + Laneway Sock 4ply",
                 "needles": "3.25mm",
-                "notes": "Lightweight lace for shoulder-season walks.",
-                "tags": json.dumps(["lace", "lightweight"]),
-                "link": "https://example.com/patterns/lace-headband",
-                "linked_yarns": ["Alpaca Cloud", "Sock Delight"],
+                "description": (
+                    "Lightweight mohair-style headband with a front twist and "
+                    "soft halo."
+                ),
+                "notes": (
+                    "Holding two strands gave better stitch visibility than lace alone."
+                ),
+                "tags": json.dumps(["lace", "lightweight", "halo", "accessory"]),
+                "link": "https://example.com/patterns/twisted-halo-headband",
+                "linked_yarns": ["Halo Alpaca Silk", "Laneway Sock 4ply"],
                 "title_images": ["demo_image_5.jpg", "demo_image_11.jpg"],
                 "steps": [
                     {
@@ -434,14 +505,18 @@ async def seed_demo_data(reset: bool = False) -> None:
                 ],
             },
             {
-                "name": "Weekend Cardigan",
+                "name": "Cabin Weekend Cardigan",
                 "category": ProjectCategory.JACKE.value,
-                "yarn": "Highland Tweed 700g",
+                "yarn": "Highland Tweed Worsted 760g",
                 "needles": "5.0mm",
-                "notes": "Cozy layers with roomy pockets.",
-                "tags": json.dumps(["cardigan", "pockets", "tweed"]),
-                "link": "https://example.com/patterns/weekend-cardigan",
-                "linked_yarns": ["Highland Tweed"],
+                "description": (
+                    "Relaxed drop-shoulder cardigan with patch pockets and shawl "
+                    "collar."
+                ),
+                "notes": "Adding reinforced elbow patches after first wear test.",
+                "tags": json.dumps(["cardigan", "pockets", "tweed", "outerwear"]),
+                "link": "https://example.com/patterns/cabin-weekend-cardigan",
+                "linked_yarns": ["Highland Tweed Worsted"],
                 "title_images": [
                     "demo_image_6.jpg",
                     "demo_image_2.jpg",
@@ -512,7 +587,10 @@ async def seed_demo_data(reset: bool = False) -> None:
                             filename=img_filename,
                             original_filename=img_filename,
                             image_type=ImageType.PHOTO.value,
-                            alt_text=f"{project.name} title image",
+                            alt_text=_demo_caption(
+                                img_filename,
+                                f"{project.name} title image",
+                            ),
                             is_title_image=(i == 0),
                             project_id=project.id,
                         )
@@ -558,7 +636,10 @@ async def seed_demo_data(reset: bool = False) -> None:
                                 filename=img_filename,
                                 original_filename=img_filename,
                                 image_type=ImageType.PHOTO.value,
-                                alt_text=f"{project.name} {step.title}",
+                                alt_text=_demo_caption(
+                                    img_filename,
+                                    f"{project.name} {step.title}",
+                                ),
                                 is_title_image=False,
                                 project_id=project.id,
                                 step_id=step.id,
@@ -594,9 +675,9 @@ async def seed_demo_data(reset: bool = False) -> None:
         await db.refresh(demo_user, ["favorite_projects", "favorite_yarns"])
 
         favorite_project_names = [
-            "Winter Scarf",
-            "Weekend Cardigan",
-            "Lace Headband",
+            "Commuter Rib Scarf",
+            "Cabin Weekend Cardigan",
+            "Twisted Halo Headband",
         ]
         for project_name in favorite_project_names:
             favorite_project = project_by_name.get(project_name)
@@ -604,9 +685,9 @@ async def seed_demo_data(reset: bool = False) -> None:
                 demo_user.favorite_projects.append(favorite_project)
 
         favorite_yarn_names = [
-            "Highland Tweed",
-            "Alpaca Cloud",
-            "Sock Delight",
+            "Highland Tweed Worsted",
+            "Halo Alpaca Silk",
+            "Laneway Sock 4ply",
         ]
         for yarn_name in favorite_yarn_names:
             favorite_yarn = yarn_by_name.get(yarn_name)

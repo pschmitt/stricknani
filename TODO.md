@@ -30,9 +30,9 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T18 | P1 | todo | demo | feat | Improve demo assets with knitting-related images and content |
+| T18 | P1 | done | demo | feat | Improve demo assets with knitting-related images and content |
 | T30 | P1 | done | cli | feat | Add `stricknani-cli project|yarn ID_OR_NAME` with pretty print and --json support |
-| T31 | P1 | todo | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
+| T31 | P0 | wip | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
 | T1 | P3 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 
 
@@ -75,8 +75,8 @@ Execution-oriented backlog for Stricknani.
 ### T18: Improve demo assets with knitting-related images and content
 
 - **Area**: demo
-- **Priority**: P3
-- **Status**: todo
+- **Priority**: P1
+- **Status**: done
 - **Description**:
   - Update demo project images with knitting/crochet-related stock photos or AI-generated images
   - Improve demo project content (names, descriptions, notes) to be more authentic and varied
@@ -240,7 +240,7 @@ Execution-oriented backlog for Stricknani.
 ### T31: Add database backup settings to Nix module
 
 - **Area**: nix
-- **Priority**: P1
+- **Priority**: P0
 - **Status**: todo
 - **Category**: feat
 - **Description**:
