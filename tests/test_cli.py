@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -222,3 +224,31 @@ async def test_cli_lists_audit_entries(
     await cli.list_audit_entries(entity_type="project", entity_id=project_id, limit=10)
     output = capsys.readouterr().out
     assert "created" in output
+
+
+def test_cli_project_defaults_to_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_list_projects(owner_email: str | None) -> None:
+        captured["owner_email"] = owner_email
+
+    monkeypatch.setattr(cli, "list_projects", fake_list_projects)
+    monkeypatch.setattr(sys, "argv", ["stricknani-cli", "project"])
+
+    cli.main()
+
+    assert captured["owner_email"] is None
+
+
+def test_cli_yarn_defaults_to_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_list_yarns(owner_email: str | None) -> None:
+        captured["owner_email"] = owner_email
+
+    monkeypatch.setattr(cli, "list_yarns", fake_list_yarns)
+    monkeypatch.setattr(sys, "argv", ["stricknani-cli", "yarn"])
+
+    cli.main()
+
+    assert captured["owner_email"] is None

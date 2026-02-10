@@ -1004,7 +1004,7 @@ def main() -> None:
     # Project management
     project_parser = subparsers.add_parser("project", help="Manage projects")
     project_subparsers = project_parser.add_subparsers(
-        dest="project_command", required=True
+        dest="project_command", required=False
     )
     project_list_parser = project_subparsers.add_parser("list", help="List projects")
     project_list_parser.add_argument("--owner-email", help="Filter by owner email")
@@ -1060,7 +1060,7 @@ def main() -> None:
 
     # Yarn management
     yarn_parser = subparsers.add_parser("yarn", help="Manage yarns")
-    yarn_subparsers = yarn_parser.add_subparsers(dest="yarn_command", required=True)
+    yarn_subparsers = yarn_parser.add_subparsers(dest="yarn_command", required=False)
     yarn_list_parser = yarn_subparsers.add_parser("list", help="List yarns")
     yarn_list_parser.add_argument("--owner-email", help="Filter by owner email")
     yarn_add_parser = yarn_subparsers.add_parser("add", help="Add a yarn")
@@ -1252,9 +1252,11 @@ def main() -> None:
                 )
             )
     elif args.command == "project":
-        if args.project_command == "list":
-            asyncio.run(list_projects(args.owner_email))
-        elif args.project_command == "add":
+        project_command = args.project_command or "list"
+        if project_command == "list":
+            owner_email = getattr(args, "owner_email", None)
+            asyncio.run(list_projects(owner_email))
+        elif project_command == "add":
             asyncio.run(
                 add_project(
                     args.owner_email,
@@ -1267,7 +1269,7 @@ def main() -> None:
                     args.link,
                 )
             )
-        elif args.project_command == "import":
+        elif project_command == "import":
             asyncio.run(
                 import_project_url(
                     args.url,
@@ -1276,9 +1278,9 @@ def main() -> None:
                     args.owner_email,
                 )
             )
-        elif args.project_command == "delete":
+        elif project_command == "delete":
             asyncio.run(delete_project(args.id, args.owner_email))
-        elif args.project_command == "export":
+        elif project_command == "export":
             password = args.password or prompt_password(confirm=False)
             output = args.output or f"project_{args.id}.pdf"
             asyncio.run(
@@ -1291,9 +1293,11 @@ def main() -> None:
                 )
             )
     elif args.command == "yarn":
-        if args.yarn_command == "list":
-            asyncio.run(list_yarns(args.owner_email))
-        elif args.yarn_command == "add":
+        yarn_command = args.yarn_command or "list"
+        if yarn_command == "list":
+            owner_email = getattr(args, "owner_email", None)
+            asyncio.run(list_yarns(owner_email))
+        elif yarn_command == "add":
             asyncio.run(
                 add_yarn(
                     args.owner_email,
@@ -1310,7 +1314,7 @@ def main() -> None:
                     args.link,
                 )
             )
-        elif args.yarn_command == "import":
+        elif yarn_command == "import":
             asyncio.run(
                 import_yarn_url(
                     args.url,
@@ -1318,7 +1322,7 @@ def main() -> None:
                     args.owner_email,
                 )
             )
-        elif args.yarn_command == "delete":
+        elif yarn_command == "delete":
             asyncio.run(delete_yarn(args.id, args.owner_email))
     elif args.command == "audit":
         if args.audit_command == "list":

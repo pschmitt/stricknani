@@ -32,8 +32,8 @@ Execution-oriented backlog for Stricknani.
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T13 | P2 | wip | reliability | refactor | Replace broad exception swallowing in import/parse paths with explicit error handling |
 | T18 | P1 | todo | demo | feat | Improve demo assets with knitting-related images and content |
-| T19 | P1 | todo | cli | feat | Make CLI commands default to list when no subcommand is provided |
 | T20 | P1 | todo | cli | feat | Add comprehensive tests for CLI commands |
+| T30 | P1 | todo | cli | feat | Add `stricknani-cli project ID_OR_NAME` with pretty print and --json support |
 | T1 | P3 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 
 
@@ -41,6 +41,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T19 | P1 | done | cli | feat | Make CLI commands default to list when no subcommand is provided |
 | T15 | P2 | done | data-model | refactor | Add DB invariant for a single primary yarn image and simplify fallback logic |
 | T14 | P2 | done | security | bug | Simplify and harden CSRF token flow (single source of truth for token location) |
 | T29 | P2 | done | ux | feat | Make the "instructions" block collapsible on project pages |
@@ -91,7 +92,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: cli
 - **Priority**: P3
-- **Status**: todo
+- **Status**: done
 - **Description**:
   - Commands like `stricknani-cli project` should implicitly run `stricknani-cli project list`
   - Same behavior for `stricknani-cli yarn` -> `stricknani-cli yarn list`
