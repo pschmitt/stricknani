@@ -1,23 +1,9 @@
 {% import "macros/dialogs.html" as dialogs %}
 {% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl', attrs='data-import-dialog') %}
-<!-- Tab Navigation -->
-<div class="tabs tabs-boxed bg-base-200/50 p-1 rounded-xl mb-6">
-    <button type="button" class="tab flex-1 rounded-lg transition-all tab-active bg-base-100 shadow-sm"
-        data-import-tab="url">
-        <span class="mdi mdi-link-variant mr-2"></span>
-        {{ _('From URL') }}
-    </button>
-    <button type="button" class="tab flex-1 rounded-lg transition-all" data-import-tab="file">
-        <span class="mdi mdi-file-document-multiple mr-2"></span>
-        {{ _('From File') }}
-    </button>
-</div>
-
-<!-- URL Import Form -->
-<form id="{{ import_form_id }}" action="{{ import_action }}" method="POST" enctype="multipart/form-data"
-    data-import-panel="url">
+<form id="{{ import_form_id }}" action="{{ import_action }}" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <input type="hidden" name="type" value="url">
+    <input type="hidden" name="type" value="url" data-import-type>
+
     {% if import_project_id is not none %}
     <input type="hidden" name="project_id" value="{{ import_project_id }}">
     {% endif %}
@@ -25,8 +11,7 @@
     <input type="hidden" name="use_ai" value="true">
     {% endif %}
 
-    <div class="space-y-6 py-2">
-        <!-- Magic Header -->
+    <div class="space-y-6 py-2" data-import-content>
         <div class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
             <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl">
                 <span class="mdi mdi-auto-fix text-2xl"></span>
@@ -37,7 +22,6 @@
             </div>
         </div>
 
-        <!-- URL Input -->
         <div class="form-control w-full">
             <label class="label pt-0">
                 <span class="label-text font-semibold">{{ import_url_label }}</span>
@@ -53,52 +37,9 @@
             </div>
         </div>
 
-        {% if import_ai_notice %}
-        <div class="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/10">
-            <span class="mdi mdi-information-outline text-primary text-sm"></span>
-            <span class="text-[10px] uppercase font-bold tracking-wider text-primary/70">{{ import_ai_notice }}</span>
-        </div>
-        {% endif %}
-    </div>
-
-    <div class="modal-action mt-8">
-        {{ dialogs.dialog_cancel(_('Cancel'),
-        attrs='data-action="close-dialog" data-dialog-id="importDialog"') }}
-        {{ dialogs.dialog_primary(_('Import'), icon='mdi-auto-fix', type='submit', class='sm:btn-wide') }}
-    </div>
-</form>
-
-<!-- Unified File Import Form -->
-<form id="{{ import_form_id }}File" action="{{ import_action }}" method="POST" enctype="multipart/form-data"
-    data-import-panel="file" hidden>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <!-- 'type' will be updated by JS to 'file' or 'attachment' -->
-    <input type="hidden" name="type" value="file" id="importFileType">
-    <input type="hidden" name="attachment_id" id="importAttachmentId" disabled>
-
-    {% if import_project_id is not none %}
-    <input type="hidden" name="project_id" value="{{ import_project_id }}">
-    {% endif %}
-    {% if import_use_ai %}
-    <input type="hidden" name="use_ai" value="true">
-    {% endif %}
-
-    <div class="space-y-6 py-2">
-        <!-- Header -->
-        <div class="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary rounded-xl">
-                <span class="mdi mdi-file-document-multiple text-2xl"></span>
-            </div>
-            <div>
-                <h4 class="font-bold text-base">{{ _('File Import') }}</h4>
-                <p class="text-xs opacity-70 leading-relaxed">
-                    {{ _('Select an existing file or upload a new one to analyze.') }}
-                </p>
-            </div>
-        </div>
+        <div class="divider text-xs opacity-50 m-0">{{ _('OR') }}</div>
 
         <div class="form-control w-full space-y-4">
-            <!-- File List (Attachments + New Uploads) -->
             <div id="importFileList"
                 class="space-y-2 max-h-60 overflow-y-auto pr-2 {% if not import_attachments %}hidden{% endif %}">
                 <label class="label pt-0 pb-1">
@@ -129,12 +70,6 @@
                     {% endif %}
                 </label>
                 {% endfor %}
-
-                <!-- New uploads will be appended here by JS -->
-            </div>
-
-            <!-- Drag & Drop Zone -->
-            <div class="divider text-xs opacity-50 m-0 {% if not import_attachments %}hidden{% endif %}">{{ _('OR') }}
             </div>
 
             <div id="fileDropZone"
@@ -160,38 +95,34 @@
 
         {% if import_ai_notice %}
         <div class="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/10">
-            <span class="mdi mdi-brain text-primary text-sm"></span>
-            <span class="text-[10px] uppercase font-bold tracking-wider text-primary/70">
-                {{ _('AI-Powered Analysis Enabled') }}
-            </span>
+            <span class="mdi mdi-information-outline text-primary text-sm"></span>
+            <span class="text-[10px] uppercase font-bold tracking-wider text-primary/70">{{ import_ai_notice }}</span>
         </div>
         {% endif %}
+    </div>
+
+    <div id="importLoading" class="text-center py-12 space-y-4" hidden>
+        <div class="relative inline-block">
+            <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <span class="mdi mdi-auto-fix text-primary text-xl animate-pulse"></span>
+            </div>
+        </div>
+        <div class="space-y-1">
+            <p class="text-lg font-bold">{{ _('Working some magic...') }}</p>
+            <p class="text-sm opacity-60 max-w-xs mx-auto">{{ import_analyzing_description }}</p>
+        </div>
     </div>
 
     <div class="modal-action mt-8">
         {{ dialogs.dialog_cancel(_('Cancel'),
         attrs='data-action="close-dialog" data-dialog-id="importDialog"') }}
-        <button type="submit" class="btn btn-primary sm:btn-wide btn-disabled opacity-50" data-import-file-submit
-            disabled>
+        <button type="submit" class="btn btn-primary sm:btn-wide" data-import-submit>
             <span class="mdi mdi-auto-fix mr-2"></span>
             {{ _('Analyze & Import') }}
         </button>
     </div>
 </form>
-
-<!-- Loading State -->
-<div id="importLoading" class="text-center py-12 space-y-4" hidden>
-    <div class="relative inline-block">
-        <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <div class="absolute inset-0 flex items-center justify-center">
-            <span class="mdi mdi-auto-fix text-primary text-xl animate-pulse"></span>
-        </div>
-    </div>
-    <div class="space-y-1">
-        <p class="text-lg font-bold">{{ _('Working some magic...') }}</p>
-        <p class="text-sm opacity-60 max-w-xs mx-auto">{{ import_analyzing_description }}</p>
-    </div>
-</div>
 
 <script>
 {% include "shared/_import_dialog.js" %}

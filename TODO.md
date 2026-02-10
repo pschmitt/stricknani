@@ -25,14 +25,15 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T25 | P3 | todo | dev | refactor | Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable |
-| T26 | P3 | todo | dev | feat | Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags |
+| T25 | P0 | todo | dev | refactor | Replace DEBUG-based hot-reload injection with explicit AUTO_RELOAD variable |
+| T26 | P0 | todo | dev | feat | Add bug/feat/refactor/docs category to tasks and update todo.sh with filtering flags |
+| T28 | P0 | todo | dev | feat | Add `todo.sh TICKET_ID_OR_PARTIAL_NAME` to show task details |
+| T27 | P2 | todo | frontend | feat | Figure out how to lint/format Jinja-embedded JS/CSS files (form.js, etc.) |
 
 ## Next
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
-| T21 | P1 | todo | import | Merge import dialog states: show URL entry and file upload in a single unified view |
 | T10 | P1 | todo | projects | Extract shared create/update project import workflows to common services |
 | T11 | P1 | todo | i18n/web | Remove per-request global Jinja i18n mutation to avoid cross-request language bleed |
 | T12 | P1 | todo | web/templating | Remove hidden DB/auth lookups from `render_template`; require explicit `current_user` context |
@@ -51,6 +52,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Summary |
 | -- | -------- | ------ | ---- | ------- |
+| T21 | P1 | done | import | Merge import dialog states: show URL entry and file upload in a single unified view |
 | T9 | P1 | done | import | Consolidate duplicated import/image-dedupe logic into a single reusable pipeline |
 | T22 | P3 | done | dev | Add JS auto-reload in dev mode: reload page when server restarts |
 | T23 | P3 | done | dev | Improve run.sh: wait 2s static, then poll health endpoint with 20s timeout |
@@ -107,7 +109,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: import
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Description**:
   - Combine the current tabbed/separate states for URL import and file upload into one unified dialog
   - Show both the URL text entry field and file upload widget simultaneously
@@ -190,3 +192,24 @@ Execution-oriented backlog for Stricknani.
   - Add category column to TODO.md tables: bug, feat, refactor, or docs
   - Update todo.sh to accept cumulative filters: `--bug`, `--feat`, `--ref`, `--docs`
   - Example: `just todo --open --bug` lists open bugs, `just todo --done --feat` lists done features
+
+### T27: Figure out how to lint/format Jinja-embedded JS/CSS files (form.js, etc.)
+
+- **Area**: frontend
+- **Priority**: P2
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Currently cannot run biome/ruff/eslint on files like `form.js` that contain Jinja2 template syntax
+  - Need a strategy to extract, lint/format, and validate embedded JS/CSS before committing
+  - Options: extract-to-temp, use Jinja-aware linting, or migrate inline scripts to external files
+
+### T28: Add `todo.sh TICKET_ID_OR_PARTIAL_NAME` to show task details
+
+- **Area**: dev
+- **Priority**: P0
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Allow querying a specific task by ID (e.g., `just todo T25`) or partial name
+  - Print full task details from Task Details section including description, implementation notes, etc.

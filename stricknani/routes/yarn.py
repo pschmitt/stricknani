@@ -125,7 +125,8 @@ async def import_yarn(
     import_type: Annotated[str, Form(alias="type")] = "url",
     url: Annotated[str | None, Form()] = None,
     text: Annotated[str | None, Form()] = None,
-    file: UploadFile | None = None,
+    file: UploadFile | None = File(default=None),
+    files: Annotated[list[UploadFile] | None, File()] = None,
     use_ai: Annotated[bool, Form()] = False,
     current_user: User = Depends(require_auth),
 ) -> JSONResponse:
@@ -143,6 +144,13 @@ async def import_yarn(
     try:
         data: dict[str, Any] = {}
         source_url = None
+
+        selected_file = file
+        if files:
+            selected_file = files[0]
+
+        if import_type == "url" and selected_file is not None:
+            import_type = "file"
 
         if import_type == "url":
             if not url or not url.strip():
@@ -168,15 +176,15 @@ async def import_yarn(
             data = await importer.fetch_and_parse()
 
         elif import_type == "file":
-            if not file:
+            if not selected_file:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="File is required",
                 )
 
             # Read file content
-            content_bytes = await file.read()
-            filename = file.filename or "unknown"
+            content_bytes = await selected_file.read()
+            filename = selected_file.filename or "unknown"
 
             from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
             from stricknani.importing.models import ContentType, RawContent
@@ -190,12 +198,12 @@ async def import_yarn(
                 )
 
             content_type = ContentType.UNKNOWN
-            if file.content_type:
-                if file.content_type.startswith("image/"):
+            if selected_file.content_type:
+                if selected_file.content_type.startswith("image/"):
                     content_type = ContentType.IMAGE
-                elif file.content_type == "application/pdf":
+                elif selected_file.content_type == "application/pdf":
                     content_type = ContentType.PDF
-                elif file.content_type.startswith("text/"):
+                elif selected_file.content_type.startswith("text/"):
                     content_type = ContentType.TEXT
 
             if content_type == ContentType.UNKNOWN:

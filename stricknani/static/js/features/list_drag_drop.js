@@ -118,21 +118,17 @@
 		}
 
 		const fileInput = dialog.querySelector("[data-import-file-input]");
-		const fileForm = dialog.querySelector('[data-import-panel="file"]');
-		const tabBtn = dialog.querySelector('[data-import-tab="file"]');
-
-		if (!fileInput || !tabBtn || !fileForm) {
-			console.warn("File input or tab button not found in dialog");
+		if (!fileInput) {
+			console.warn("File input not found in dialog");
 			return;
 		}
 
-		// Open dialog and switch to file tab
+		// Open dialog (unified import form includes URL and file import together)
 		if (typeof dialog.showModal === "function") {
 			dialog.showModal();
 		} else {
 			dialog.setAttribute("open", "true");
 		}
-		tabBtn.click();
 
 		// Assign ALL files to the input (not just the first one)
 		try {
