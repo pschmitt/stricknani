@@ -12,7 +12,7 @@ let
     set -euo pipefail
     umask 0077
 
-    BACKUP_DIR="${cfg.dataDir}/backups"
+    BACKUP_DIR='${cfg.backup.dir}'
     MEDIA_DIR="${cfg.dataDir}/media"
     DB_URL='${cfg.databaseUrl}'
     RETENTION='${toString cfg.backup.retention}'
@@ -145,6 +145,12 @@ in
         description = "Enable scheduled Stricknani database backups.";
       };
 
+      dir = lib.mkOption {
+        type = lib.types.str;
+        default = "${cfg.dataDir}/backups";
+        description = "Directory where backup archives are stored.";
+      };
+
       schedule = lib.mkOption {
         type = lib.types.str;
         default = "daily";
@@ -246,7 +252,10 @@ in
           Group = group;
           UMask = "0077";
           ReadOnlyPaths = [ "/" ];
-          ReadWritePaths = [ cfg.dataDir ];
+          ReadWritePaths = [
+            cfg.dataDir
+            cfg.backup.dir
+          ];
         };
       };
 
@@ -261,7 +270,7 @@ in
       };
 
       tmpfiles.rules = lib.mkIf cfg.backup.enable [
-        "d ${cfg.dataDir}/backups 0750 ${user} ${group} -"
+        "d ${cfg.backup.dir} 0750 ${user} ${group} -"
       ];
     };
 
