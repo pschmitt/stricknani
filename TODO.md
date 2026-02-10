@@ -32,7 +32,6 @@ Execution-oriented backlog for Stricknani.
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T13 | P2 | wip | reliability | refactor | Replace broad exception swallowing in import/parse paths with explicit error handling |
 | T18 | P1 | todo | demo | feat | Improve demo assets with knitting-related images and content |
-| T20 | P1 | todo | cli | feat | Add comprehensive tests for CLI commands |
 | T30 | P1 | todo | cli | feat | Add `stricknani-cli project ID_OR_NAME` with pretty print and --json support |
 | T1 | P3 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 
@@ -41,6 +40,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T20 | P1 | done | cli | feat | Add comprehensive tests for CLI commands |
 | T19 | P1 | done | cli | feat | Make CLI commands default to list when no subcommand is provided |
 | T15 | P2 | done | data-model | refactor | Add DB invariant for a single primary yarn image and simplify fallback logic |
 | T14 | P2 | done | security | bug | Simplify and harden CSRF token flow (single source of truth for token location) |
@@ -125,7 +125,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: cli
 - **Priority**: P3
-- **Status**: todo
+- **Status**: done
 - **Description**:
   - Write unit and integration tests for all CLI commands
   - Test both success and error paths (invalid arguments, missing resources, etc.)
@@ -222,3 +222,16 @@ Execution-oriented backlog for Stricknani.
 - **Description**:
   - Add a toggle/collapse button to the instructions section on project view pages
   - Remember collapsed state in localStorage for consistent UX across sessions
+
+### T30: Add `stricknani-cli project|yarn ID_OR_NAME` with pretty print and --json support
+
+- **Area**: cli
+- **Priority**: P1
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Implement `stricknani-cli project PROJECT_ID_OR_PARTIAL_NAME` command
+  - Implement `stricknani-cli yarn YARN_ID_OR_PARTIAL_NAME` command
+  - Output pretty-printed details (name, description, stats, etc.)
+  - Add `--json` flag for machine-readable JSON output
+  - Match by ID or partial name (fuzzy matching similar to todo.sh)

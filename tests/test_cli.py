@@ -252,3 +252,139 @@ def test_cli_yarn_defaults_to_list(monkeypatch: pytest.MonkeyPatch) -> None:
     cli.main()
 
     assert captured["owner_email"] is None
+
+
+def test_cli_user_list_dispatches(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured = {"called": False}
+
+    async def fake_list_users() -> None:
+        captured["called"] = True
+
+    monkeypatch.setattr(cli, "list_users", fake_list_users)
+    monkeypatch.setattr(sys, "argv", ["stricknani-cli", "user", "list"])
+    cli.main()
+
+    assert captured["called"] is True
+
+
+def test_cli_project_list_with_owner_email_dispatches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_list_projects(owner_email: str | None) -> None:
+        captured["owner_email"] = owner_email
+
+    monkeypatch.setattr(cli, "list_projects", fake_list_projects)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "stricknani-cli",
+            "project",
+            "list",
+            "--owner-email",
+            "tester@example.com",
+        ],
+    )
+    cli.main()
+
+    assert captured["owner_email"] == "tester@example.com"
+
+
+def test_cli_yarn_list_with_owner_email_dispatches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_list_yarns(owner_email: str | None) -> None:
+        captured["owner_email"] = owner_email
+
+    monkeypatch.setattr(cli, "list_yarns", fake_list_yarns)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "stricknani-cli",
+            "yarn",
+            "list",
+            "--owner-email",
+            "tester@example.com",
+        ],
+    )
+    cli.main()
+
+    assert captured["owner_email"] == "tester@example.com"
+
+
+def test_cli_audit_list_dispatches(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_list_audit_entries(
+        *,
+        entity_type: str,
+        entity_id: int,
+        limit: int,
+    ) -> None:
+        captured["entity_type"] = entity_type
+        captured["entity_id"] = entity_id
+        captured["limit"] = limit
+
+    monkeypatch.setattr(cli, "list_audit_entries", fake_list_audit_entries)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "stricknani-cli",
+            "audit",
+            "list",
+            "--entity-type",
+            "project",
+            "--entity-id",
+            "7",
+            "--limit",
+            "12",
+        ],
+    )
+    cli.main()
+
+    assert captured["entity_type"] == "project"
+    assert captured["entity_id"] == 7
+    assert captured["limit"] == 12
+
+
+def test_cli_api_projects_dispatches(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_api_request(
+        url: str,
+        endpoint: str,
+        email: str,
+        password: str,
+    ) -> None:
+        captured["url"] = url
+        captured["endpoint"] = endpoint
+        captured["email"] = email
+        captured["password"] = password
+
+    monkeypatch.setattr(cli, "api_request", fake_api_request)
+    monkeypatch.setattr(cli, "prompt_password", lambda confirm=False: "secret")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "stricknani-cli",
+            "api",
+            "--url",
+            "http://localhost:7674",
+            "--email",
+            "tester@example.com",
+            "projects",
+        ],
+    )
+    cli.main()
+
+    assert captured["url"] == "http://localhost:7674"
+    assert captured["endpoint"] == "/projects/"
+    assert captured["email"] == "tester@example.com"
+    assert captured["password"] == "secret"
