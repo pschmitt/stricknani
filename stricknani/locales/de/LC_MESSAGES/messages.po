@@ -3273,3 +3273,23 @@ msgstr "Neue Datei hochladen"
 #~ msgid "Copy failed"
 #~ msgstr "Kopieren fehlgeschlagen"
 
+
+#: stricknani/static/js/app.js
+msgid "selectImage"
+msgstr "Bild auswählen"
+
+#: stricknani/static/js/app.js
+msgid "noImagesAvailable"
+msgstr "Keine Bilder verfügbar"
+
+#: stricknani/static/js/app.js
+msgid "untitledImage"
+msgstr "Unbenanntes Bild"
+
+#: stricknani/static/js/app.js
+msgid "image"
+msgstr "Bild"
+
+#: stricknani/static/js/app.js
+msgid "pendingImage"
+msgstr "Ausstehendes Bild"

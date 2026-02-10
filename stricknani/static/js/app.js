@@ -1047,5 +1047,327 @@
 				window.closeDialog?.(dialogId);
 			}
 		});
+
+		// Markdown image autocomplete for textareas
+		setupMarkdownImageAutocomplete();
 	});
+
+	// Markdown Image Autocomplete
+	// Shows image suggestions when typing "!" in markdown-enabled textareas
+	const setupMarkdownImageAutocomplete = () => {
+		const AUTOCOMPLETE_TRIGGER = "!";
+		let currentAutocomplete = null;
+
+		const createAutocompleteDropdown = (textarea, images) => {
+			const dropdown = document.createElement("div");
+			dropdown.className =
+				"markdown-image-autocomplete absolute z-50 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-64 overflow-y-auto w-72";
+			dropdown.setAttribute("role", "listbox");
+			dropdown.setAttribute(
+				"aria-label",
+				getI18n("selectImage", "Select image"),
+			);
+
+			if (images.length === 0) {
+				const emptyItem = document.createElement("div");
+				emptyItem.className = "p-3 text-sm text-base-content/60 italic";
+				emptyItem.textContent = getI18n(
+					"noImagesAvailable",
+					"No images available",
+				);
+				dropdown.appendChild(emptyItem);
+			} else {
+				images.forEach((image, index) => {
+					const item = document.createElement("div");
+					item.className =
+						"markdown-image-item flex items-center gap-3 p-2 hover:bg-base-200 cursor-pointer transition-colors";
+					item.setAttribute("role", "option");
+					item.setAttribute("data-index", index);
+					item.setAttribute("data-url", image.url);
+					item.setAttribute("data-alt", image.alt_text || "");
+
+					const img = document.createElement("img");
+					img.src = image.thumbnail_url || image.url;
+					img.alt = "";
+					img.className = "w-12 h-12 object-cover rounded flex-shrink-0";
+
+					const info = document.createElement("div");
+					info.className = "flex-1 min-w-0";
+
+					const altText = document.createElement("div");
+					altText.className = "text-sm font-medium truncate";
+					altText.textContent =
+						image.alt_text || getI18n("untitledImage", "Untitled image");
+
+					const urlText = document.createElement("div");
+					urlText.className = "text-xs text-base-content/50 truncate";
+					urlText.textContent = image.url.split("/").pop() || image.url;
+
+					info.appendChild(altText);
+					info.appendChild(urlText);
+					item.appendChild(img);
+					item.appendChild(info);
+
+					item.addEventListener("click", () => {
+						insertMarkdownImage(textarea, image);
+						closeAutocomplete();
+					});
+
+					item.addEventListener("mouseenter", () => {
+						setSelectedIndex(index);
+					});
+
+					dropdown.appendChild(item);
+				});
+			}
+
+			return dropdown;
+		};
+
+		const positionDropdown = (textarea, dropdown) => {
+			const rect = textarea.getBoundingClientRect();
+			const scrollTop =
+				window.pageYOffset || document.documentElement.scrollTop;
+			const scrollLeft =
+				window.pageXOffset || document.documentElement.scrollLeft;
+
+			dropdown.style.left = `${rect.left + scrollLeft}px`;
+			dropdown.style.top = `${rect.bottom + scrollTop + 4}px`;
+		};
+
+		const insertMarkdownImage = (textarea, image) => {
+			const start = textarea.selectionStart;
+			const end = textarea.selectionEnd;
+			const value = textarea.value;
+
+			// Find the position of the trigger character
+			let triggerPos = start - 1;
+			while (triggerPos >= 0 && value[triggerPos] !== AUTOCOMPLETE_TRIGGER) {
+				triggerPos--;
+			}
+
+			if (triggerPos < 0) return;
+
+			const beforeTrigger = value.substring(0, triggerPos);
+			const afterCursor = value.substring(end);
+			const altText = image.alt_text || getI18n("image", "Image");
+			const markdown = `![${altText}](${image.url})`;
+
+			textarea.value = beforeTrigger + markdown + afterCursor;
+			textarea.selectionStart = textarea.selectionEnd =
+				triggerPos + markdown.length;
+			textarea.focus();
+			textarea.dispatchEvent(new Event("input", { bubbles: true }));
+		};
+
+		const closeAutocomplete = () => {
+			if (currentAutocomplete) {
+				currentAutocomplete.dropdown.remove();
+				currentAutocomplete = null;
+			}
+		};
+
+		const setSelectedIndex = (index) => {
+			if (!currentAutocomplete) return;
+
+			const items = currentAutocomplete.dropdown.querySelectorAll(
+				".markdown-image-item",
+			);
+			items.forEach((item, i) => {
+				if (i === index) {
+					item.classList.add("bg-base-200");
+					item.setAttribute("aria-selected", "true");
+				} else {
+					item.classList.remove("bg-base-200");
+					item.setAttribute("aria-selected", "false");
+				}
+			});
+
+			currentAutocomplete.selectedIndex = index;
+		};
+
+		const handleKeydown = (event) => {
+			if (!currentAutocomplete) return;
+
+			const items = currentAutocomplete.dropdown.querySelectorAll(
+				".markdown-image-item",
+			);
+
+			switch (event.key) {
+				case "ArrowDown":
+					event.preventDefault();
+					setSelectedIndex(
+						(currentAutocomplete.selectedIndex + 1) % items.length,
+					);
+					break;
+				case "ArrowUp":
+					event.preventDefault();
+					setSelectedIndex(
+						(currentAutocomplete.selectedIndex - 1 + items.length) %
+							items.length,
+					);
+					break;
+				case "Enter":
+					event.preventDefault();
+					if (items[currentAutocomplete.selectedIndex]) {
+						const item = items[currentAutocomplete.selectedIndex];
+						const image = {
+							url: item.getAttribute("data-url"),
+							alt_text: item.getAttribute("data-alt"),
+						};
+						insertMarkdownImage(currentAutocomplete.textarea, image);
+						closeAutocomplete();
+					}
+					break;
+				case "Escape":
+					event.preventDefault();
+					closeAutocomplete();
+					break;
+			}
+		};
+
+		const collectAvailableImages = (textarea) => {
+			const images = [];
+
+			// Collect title images from project gallery
+			document
+				.querySelectorAll("#titleImagesContainer [data-image-id]")
+				.forEach((el) => {
+					const anchor = el.querySelector("a[data-pswp-width]");
+					const img = el.querySelector("img");
+					if (anchor && img) {
+						images.push({
+							url: anchor.getAttribute("href"),
+							thumbnail_url: img.src,
+							alt_text:
+								img.alt || anchor.getAttribute("data-pswp-caption") || "",
+						});
+					}
+				});
+
+			// Collect stitch sample images
+			document
+				.querySelectorAll("#stitchSampleImagesContainer [data-image-id]")
+				.forEach((el) => {
+					const anchor = el.querySelector("a[data-pswp-width]");
+					const img = el.querySelector("img");
+					if (anchor && img) {
+						images.push({
+							url: anchor.getAttribute("href"),
+							thumbnail_url: img.src,
+							alt_text:
+								img.alt || anchor.getAttribute("data-pswp-caption") || "",
+						});
+					}
+				});
+
+			// Collect step images
+			document
+				.querySelectorAll(".step-images [data-image-id]")
+				.forEach((el) => {
+					const anchor = el.querySelector("a[data-pswp-width]");
+					const img = el.querySelector("img");
+					if (anchor && img) {
+						images.push({
+							url: anchor.getAttribute("href"),
+							thumbnail_url: img.src,
+							alt_text:
+								img.alt || anchor.getAttribute("data-pswp-caption") || "",
+						});
+					}
+				});
+
+			// Collect yarn photos
+			document
+				.querySelectorAll("#existing-photos-grid [id^='photo-card-']")
+				.forEach((el) => {
+					const anchor = el.querySelector("a[data-pswp-width]");
+					const img = el.querySelector("img");
+					if (anchor && img) {
+						images.push({
+							url: anchor.getAttribute("href"),
+							thumbnail_url: img.src,
+							alt_text:
+								img.alt || anchor.getAttribute("data-pswp-caption") || "",
+						});
+					}
+				});
+
+			// Collect pending/import images
+			document.querySelectorAll("[data-pending-url]").forEach((el) => {
+				const url = el.getAttribute("data-pending-url");
+				const img = el.querySelector("img");
+				if (url) {
+					images.push({
+						url: url,
+						thumbnail_url: img?.src || url,
+						alt_text: img?.alt || getI18n("pendingImage", "Pending image"),
+					});
+				}
+			});
+
+			// Deduplicate by URL
+			const seen = new Set();
+			return images.filter((img) => {
+				if (seen.has(img.url)) return false;
+				seen.add(img.url);
+				return true;
+			});
+		};
+
+		const handleInput = (event) => {
+			const textarea = event.target;
+			if (!textarea.matches("[data-markdown-images='true']")) return;
+
+			const value = textarea.value;
+			const cursorPos = textarea.selectionStart;
+
+			// Check if the character before cursor is the trigger
+			if (value[cursorPos - 1] !== AUTOCOMPLETE_TRIGGER) {
+				closeAutocomplete();
+				return;
+			}
+
+			// Check if trigger is at start or preceded by whitespace/newline
+			const charBeforeTrigger = value[cursorPos - 2];
+			if (charBeforeTrigger && !/\s/.test(charBeforeTrigger)) {
+				closeAutocomplete();
+				return;
+			}
+
+			closeAutocomplete();
+
+			const images = collectAvailableImages(textarea);
+			const dropdown = createAutocompleteDropdown(textarea, images);
+			document.body.appendChild(dropdown);
+			positionDropdown(textarea, dropdown);
+
+			currentAutocomplete = {
+				textarea,
+				dropdown,
+				selectedIndex: 0,
+			};
+
+			if (images.length > 0) {
+				setSelectedIndex(0);
+			}
+		};
+
+		// Event listeners
+		document.addEventListener("input", handleInput);
+		document.addEventListener("keydown", handleKeydown);
+
+		// Close autocomplete when clicking outside
+		document.addEventListener("click", (event) => {
+			if (
+				currentAutocomplete &&
+				!currentAutocomplete.dropdown.contains(event.target)
+			) {
+				closeAutocomplete();
+			}
+		});
+
+		// Close autocomplete on scroll
+		document.addEventListener("scroll", closeAutocomplete, true);
+	};
 })();

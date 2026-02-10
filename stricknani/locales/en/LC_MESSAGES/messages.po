@@ -2855,3 +2855,23 @@ msgstr "Open image"
 #~ msgid "Copy failed"
 #~ msgstr "Copy failed"
 
+
+#: stricknani/static/js/app.js
+msgid "selectImage"
+msgstr "Select image"
+
+#: stricknani/static/js/app.js
+msgid "noImagesAvailable"
+msgstr "No images available"
+
+#: stricknani/static/js/app.js
+msgid "untitledImage"
+msgstr "Untitled image"
+
+#: stricknani/static/js/app.js
+msgid "image"
+msgstr "Image"
+
+#: stricknani/static/js/app.js
+msgid "pendingImage"
+msgstr "Pending image"

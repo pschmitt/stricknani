@@ -224,7 +224,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                             </label>
                         </div>
                         <textarea id="description" name="description" rows="4"
-                            class="textarea  w-full">{{ yarn.description if yarn and yarn.description else '' }}</textarea>
+                            class="textarea  w-full" data-markdown-images="true">{{ yarn.description if yarn and yarn.description else '' }}</textarea>
                     </div>
 
                     <div>
@@ -237,7 +237,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                             </label>
                         </div>
                         <textarea id="notes" name="notes" rows="4"
-                            class="textarea  w-full">{{ yarn.notes if yarn and yarn.notes else '' }}</textarea>
+                            class="textarea  w-full" data-markdown-images="true">{{ yarn.notes if yarn and yarn.notes else '' }}</textarea>
                     </div>
 
                     <div class="divider my-2"></div>

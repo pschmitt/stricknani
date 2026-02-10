@@ -54,6 +54,7 @@ Execution-oriented backlog for Stricknani.
 | T6 | P0 | done | data-integrity | Make DB/file operations atomic-ish: avoid deleting files before successful DB commit |
 | T4 | P2 | done | docs | Reorganize project documents for faster agent onboarding and maintenance |
 | T2 | P3 | done | ai/import | Add OpenRouter and Groq support for AI imports |
+| T16 | P2 | done | ux | Add markdown image autocomplete for `!` trigger in text fields |
 
 
 ## Task Details
@@ -63,6 +64,9 @@ Execution-oriented backlog for Stricknani.
 - **Area**: ux
 - **Priority**: P2
 - **Status**: todo
+- **Notes**:
+  - Only on the edit pages, we should not allow cropping from the view page.
+  - Cropped images should be stored alongside the originals
 
 ### T6: Make DB/file operations atomic-ish: avoid deleting files before successful DB commit
 
@@ -104,3 +108,14 @@ Execution-oriented backlog for Stricknani.
 - **Verification Notes**:
   - Provider selection and defaults are implemented in `stricknani/utils/ai_provider.py`.
   - Coverage exists in `tests/test_ai_provider.py` and `tests/test_ai_ingest.py`.
+
+### T16: Add markdown image autocomplete for `!` trigger in text fields
+
+- **Area**: ux
+- **Priority**: P2
+- **Status**: todo
+- **Description**:
+  - When editing markdown-enabled fields (notes, descriptions), typing `!` should trigger an autocomplete dropdown
+  - Offer available project/yarn images for insertion as markdown image syntax (`![alt](path)`)
+  - Implementation likely via vanilla JS with a completion provider
+- **Primary Files**: `stricknani/static/js/app.js`, relevant form templates
