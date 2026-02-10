@@ -785,8 +785,8 @@ class PatternImporter:
             if match:
                 try:
                     return int(match.group(1))
-                except ValueError:
-                    pass
+                except ValueError as exc:
+                    logger.debug("Failed to parse weight grams from %r: %s", val, exc)
         return None
 
     def _extract_length_meters(self, soup: BeautifulSoup) -> int | None:
@@ -835,8 +835,8 @@ class PatternImporter:
             if match:
                 try:
                     return int(match.group(1))
-                except ValueError:
-                    pass
+                except ValueError as exc:
+                    logger.debug("Failed to parse length meters from %r: %s", val, exc)
         return None
 
     def _is_ui_text(self, text: str | None) -> bool:
@@ -1569,7 +1569,7 @@ class PatternImporter:
                     return  # Don't process children (text is already title)
 
                 if node.name == "br":
-                    pass
+                    return
 
                 if node.name == "img":
                     src = node.get("src") or node.get("data-src")
@@ -2435,7 +2435,12 @@ class PatternImporter:
                         name_from_show = "-".join(
                             part.capitalize() for part in slug.split("-") if part
                         )
-            except Exception:
+            except (AttributeError, TypeError, ValueError) as exc:
+                logger.debug(
+                    "Failed to parse yarn slug from URL %s: %s",
+                    full_url,
+                    exc,
+                )
                 name_from_show = None
 
             # Try to get the yarn name and image

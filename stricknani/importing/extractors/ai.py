@@ -182,8 +182,12 @@ class AIExtractor(ContentExtractor):
                                     f"Context from PDF {filename}:\n"
                                     f"{text_data.description}"
                                 )
-                        except Exception:
-                            pass
+                        except ExtractorError as exc:
+                            logger.debug(
+                                "PDF text extraction failed for %s: %s",
+                                c.metadata.get("filename"),
+                                exc,
+                            )
                     elif c.content_type in (ContentType.TEXT, ContentType.HTML):
                         filename = c.metadata.get("filename")
                         extra_text.append(f"Context from {filename}:\n{c.get_text()}")

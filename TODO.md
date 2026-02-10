@@ -30,9 +30,9 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T13 | P2 | wip | reliability | refactor | Replace broad exception swallowing in import/parse paths with explicit error handling |
 | T18 | P1 | todo | demo | feat | Improve demo assets with knitting-related images and content |
-| T30 | P1 | todo | cli | feat | Add `stricknani-cli project ID_OR_NAME` with pretty print and --json support |
+| T30 | P1 | todo | cli | feat | Add `stricknani-cli project|yarn ID_OR_NAME` with pretty print and --json support |
+| T31 | P1 | todo | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
 | T1 | P3 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 
 
@@ -40,6 +40,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T13 | P2 | done | reliability | refactor | Replace broad exception swallowing in import/parse paths with explicit error handling |
 | T20 | P1 | done | cli | feat | Add comprehensive tests for CLI commands |
 | T19 | P1 | done | cli | feat | Make CLI commands default to list when no subcommand is provided |
 | T15 | P2 | done | data-model | refactor | Add DB invariant for a single primary yarn image and simplify fallback logic |
@@ -235,3 +236,15 @@ Execution-oriented backlog for Stricknani.
   - Output pretty-printed details (name, description, stats, etc.)
   - Add `--json` flag for machine-readable JSON output
   - Match by ID or partial name (fuzzy matching similar to todo.sh)
+
+### T31: Add database backup settings to Nix module
+
+- **Area**: nix
+- **Priority**: P1
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Add `backup.enable` option to Nix module (enabled by default)
+  - Add configurable `backup.schedule` (cron expression, default: daily)
+  - Add `backup.retention` settings (keep last N backups, default: 7)
+  - Implement automatic database backup with retention policy
