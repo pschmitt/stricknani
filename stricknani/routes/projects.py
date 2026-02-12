@@ -2049,7 +2049,8 @@ async def update_project(
     # Update steps
     if steps_data:
         steps_list = json.loads(steps_data)
-        existing_step_ids = {step.id for step in project.steps}
+        existing_steps_by_id = {step.id: step for step in project.steps}
+        existing_step_ids = set(existing_steps_by_id.keys())
 
         def _coerce_step_id(raw: object) -> int | None:
             try:
@@ -2068,6 +2069,23 @@ async def update_project(
         # Delete removed steps
         steps_to_delete = existing_step_ids - new_step_ids
         if steps_to_delete:
+            for step_id in sorted(steps_to_delete):
+                step = existing_steps_by_id.get(step_id)
+                if not step:
+                    continue
+                await create_audit_log(
+                    db,
+                    actor_user_id=current_user.id,
+                    entity_type="project",
+                    entity_id=project.id,
+                    action="step_deleted",
+                    details={
+                        "step_id": step.id,
+                        "title": step.title,
+                        "step_number": step.step_number,
+                    },
+                )
+
             # Fetch images for these steps to delete files from disk
             images_to_delete_result = await db.execute(
                 select(Image).where(Image.step_id.in_(steps_to_delete))
@@ -2089,14 +2107,48 @@ async def update_project(
                     step_description,
                     referer=project.link,
                 )
+
             step_id = _coerce_step_id(step_data.get("id"))
             if step_id and step_id in existing_step_ids:
                 # Update existing step
-                step_result = await db.execute(select(Step).where(Step.id == step_id))
-                step = step_result.scalar_one()
+                step = existing_steps_by_id.get(step_id)
+                if not step:
+                    # Should not happen but keep behavior safe if DB state changed.
+                    step_result = await db.execute(
+                        select(Step).where(Step.id == step_id)
+                    )
+                    step = step_result.scalar_one()
+
+                before_details: dict[str, object] = {
+                    "title": step.title,
+                    "description": step.description,
+                    "step_number": step.step_number,
+                }
                 step.title = step_data.get("title", "")
                 step.description = step_data.get("description")
                 step.step_number = step_data.get("step_number", 0)
+
+                changes = build_field_changes(
+                    before_details,
+                    {
+                        "title": step.title,
+                        "description": step.description,
+                        "step_number": step.step_number,
+                    },
+                )
+                if changes:
+                    await create_audit_log(
+                        db,
+                        actor_user_id=current_user.id,
+                        entity_type="project",
+                        entity_id=project.id,
+                        action="step_updated",
+                        details={
+                            "step_id": step.id,
+                            "step_number": step.step_number,
+                            "changes": changes,
+                        },
+                    )
             else:
                 # Create new step
                 step = Step(
@@ -2107,6 +2159,18 @@ async def update_project(
                 )
                 db.add(step)
                 await db.flush()
+                await create_audit_log(
+                    db,
+                    actor_user_id=current_user.id,
+                    entity_type="project",
+                    entity_id=project.id,
+                    action="step_created",
+                    details={
+                        "step_id": step.id,
+                        "title": step.title,
+                        "step_number": step.step_number,
+                    },
+                )
 
             step_images = step_data.get("image_urls") or step_data.get("images")
             if step_images:
@@ -2869,7 +2933,11 @@ async def update_step(
             entity_type="project",
             entity_id=project_id,
             action="step_updated",
-            details={"step_id": step.id, "changes": changes},
+            details={
+                "step_id": step.id,
+                "step_number": step.step_number,
+                "changes": changes,
+            },
         )
         await db.commit()
 
