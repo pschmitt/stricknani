@@ -1874,12 +1874,39 @@
         if (textarea) updateImageVisibility(textarea);
     }
 
-    function addStep(title = '', description = '', stepImages = []) {
-        const container = document.getElementById('stepsContainer');
-        const stepNumber = container.children.length + 1;
-        const div = document.createElement('div');
-        div.className = 'step-item border rounded-lg p-2 md:p-4 bg-base-200 border-base-300 dark:bg-base-300/50 dark:border-base-700';
-        div.setAttribute('data-step-number', stepNumber);
+	    function addStep(elOrTitle = '', description = '', stepImages = []) {
+	        // `data-call="addStep"` invokes this with the clicked element as the first arg.
+	        // Programmatic calls pass (title, description, stepImages).
+	        let title = '';
+	        if (elOrTitle && (elOrTitle instanceof Element || elOrTitle?.nodeType === 1)) {
+	            title = '';
+	            description = '';
+	            stepImages = [];
+	        } else {
+	            title = elOrTitle;
+	        }
+
+	        title = title == null ? '' : (typeof title === 'string' ? title : String(title));
+	        description = description == null ? '' : (typeof description === 'string' ? description : String(description));
+	        if (!Array.isArray(stepImages)) stepImages = [];
+
+	        const escapeAttr = (s) =>
+	            String(s)
+	                .replace(/&/g, '&amp;')
+	                .replace(/"/g, '&quot;')
+	                .replace(/</g, '&lt;')
+	                .replace(/>/g, '&gt;');
+	        const escapeHtml = (s) =>
+	            String(s)
+	                .replace(/&/g, '&amp;')
+	                .replace(/</g, '&lt;')
+	                .replace(/>/g, '&gt;');
+
+	        const container = document.getElementById('stepsContainer');
+	        const stepNumber = container.children.length + 1;
+	        const div = document.createElement('div');
+	        div.className = 'step-item border rounded-lg p-2 md:p-4 bg-base-200 border-base-300 dark:bg-base-300/50 dark:border-base-700';
+	        div.setAttribute('data-step-number', stepNumber);
         const inputId = `newStepImageInput${Date.now()}`;
         div.innerHTML = `
         <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -1898,15 +1925,15 @@
 	                    <span class="mdi mdi-delete"></span><span class="hidden sm:inline">{{ _('Remove') }}</span>
 	                </button>
             </div>
-        </div>
-        <div class="mb-2">
-            <input type="text" class="step-title input  w-full" placeholder="{{ _('Step Title') }}" value="${title.replace(/"/g, '&quot;')}">
-        </div>
-        <textarea class="textarea  w-full mb-2 step-description" rows="3" placeholder="{{ _('Step Description') }}" data-markdown-images="true">${description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
-        <p class="mb-2 text-xs text-slate-500 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>
-        <h4 class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100 ${stepImages.length > 0 ? '' : 'hidden'}">
-            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
-        </h4>
+	        </div>
+	        <div class="mb-2">
+	            <input type="text" class="step-title input  w-full" placeholder="{{ _('Step Title') }}" value="${escapeAttr(title)}">
+	        </div>
+	        <textarea class="textarea  w-full mb-2 step-description" rows="3" placeholder="{{ _('Step Description') }}" data-markdown-images="true">${escapeHtml(description)}</textarea>
+	        <p class="mb-2 text-xs text-slate-500 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>
+	        <h4 class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100 ${stepImages.length > 0 ? '' : 'hidden'}">
+	            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
+	        </h4>
         <div class="step-images mb-2 grid grid-cols-3 gap-2 pswp-gallery ${stepImages.length > 0 ? '' : 'hidden'}" data-pswp-gallery>
             ${stepImages.map(img => {
             const url = typeof img === 'string' ? img : img.url;
