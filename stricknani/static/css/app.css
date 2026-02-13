@@ -91,6 +91,18 @@
 	margin-bottom: 0.5rem;
 }
 
+.markdown-inline-image[data-sn-size="md"] {
+	max-width: 420px;
+}
+
+.markdown-inline-image[data-sn-size="lg"] {
+	max-width: 640px;
+}
+
+.markdown-inline-image[data-sn-size="xl"] {
+	max-width: 900px;
+}
+
 /* PhotoSwipe crop dialog styles */
 #pswpCropDialog .modal-box {
 	max-width: 95vw;

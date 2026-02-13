@@ -1,5 +1,6 @@
 """Markdown rendering utilities."""
 
+import re
 import xml.etree.ElementTree as etree
 
 import markdown as md
@@ -26,6 +27,19 @@ class ImgLightboxTreeprocessor(Treeprocessor):
             img.set("class", "markdown-inline-image")
             img.set("data-lightbox-group", self.group_name)
             img.set("data-lightbox-src", img.get("src", ""))
+
+            # Support our WYSIWYG image size marker stored in the markdown image title:
+            # ![alt](url "sn:size=md")
+            title = img.get("title", "") or ""
+            m = re.search(r"\bsn:size=(sm|md|lg|xl)\b", title)
+            if m:
+                img.set("data-sn-size", m.group(1))
+                cleaned = re.sub(r"\bsn:size=(sm|md|lg|xl)\b", "", title)
+                cleaned = re.sub(r"\s+", " ", cleaned).strip()
+                if cleaned:
+                    img.set("title", cleaned)
+                else:
+                    img.attrib.pop("title", None)
 
             alt = img.get("alt", "")
             if self.step_info:
@@ -107,6 +121,7 @@ def render_markdown(
             "alt",
             "title",
             "class",
+            "data-sn-size",
             "data-lightbox-group",
             "data-lightbox-src",
             "data-lightbox-alt",
