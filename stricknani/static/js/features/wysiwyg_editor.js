@@ -19,6 +19,38 @@ let currentInternalImageDrag = null;
 const EDITOR_IMAGE_SIZE_HINTS = new WeakMap();
 let PENDING_IMAGE_SIZE_HINTS = null;
 
+function getHintKeysFromSrc(src) {
+	const keys = new Set();
+	const s = String(src || "");
+	if (!s) return [];
+	keys.add(s);
+
+	// Try to normalize absolute URLs to path-only.
+	try {
+		const u = new URL(s, window.location.href);
+		if (u.pathname) keys.add(u.pathname);
+	} catch (_err) {
+		// Ignore.
+	}
+
+	const noQuery = s.split("?")[0].split("#")[0];
+	if (noQuery) keys.add(noQuery);
+
+	const base = noQuery.split("/").filter(Boolean).pop();
+	if (base) keys.add(base);
+
+	return Array.from(keys);
+}
+
+function lookupSnSizeHint(hints, src) {
+	if (!hints) return null;
+	for (const key of getHintKeysFromSrc(src)) {
+		const val = hints.get(key);
+		if (val) return val;
+	}
+	return null;
+}
+
 const SizedImage = Image.extend({
 	addNodeView() {
 		return ({ node, editor, getPos }) => {
@@ -98,7 +130,7 @@ const SizedImage = Image.extend({
 						hints = PENDING_IMAGE_SIZE_HINTS;
 						EDITOR_IMAGE_SIZE_HINTS.set(editor, hints);
 					}
-					const hinted = hints?.get?.(node.attrs.src);
+					const hinted = lookupSnSizeHint(hints, node.attrs.src);
 					snSize = hinted || "sm";
 				}
 				const cleanedTitle = rawTitle
@@ -606,39 +638,52 @@ function extractPandocSizedImages(markdown) {
 function getPandocImageSizeHints(markdown) {
 	const map = new Map();
 	for (const item of extractPandocSizedImages(markdown)) {
-		if (!map.has(item.src)) {
-			map.set(item.src, item.snSize);
+		for (const key of getHintKeysFromSrc(item.src)) {
+			if (!map.has(key)) {
+				map.set(key, item.snSize);
+			}
 		}
 	}
 	return map;
 }
 
-function ensureEditorImagesHaveSizeFromMarkdown(editor, markdown) {
-	const sized = extractPandocSizedImages(markdown);
-	if (!sized.length) return;
+function getSnSizeHintsFromPreparedMarkdown(preparedMarkdown) {
+	// Build a src -> size map by looking for our internal `sn:size=...` marker
+	// in image titles. This is robust because it runs after preprocessing.
+	const map = new Map();
+	const re = /!\[[^\]]*\]\(\s*([^\s)]+)(?:\s+"([^"]*)")?\s*\)/g;
+	for (const m of String(preparedMarkdown || "").matchAll(re)) {
+		const src = m[1] || "";
+		const title = m[2] || "";
+		const snSize = extractSnSizeMarkerFromTitle(title);
+		if (src && snSize) {
+			for (const key of getHintKeysFromSrc(src)) {
+				if (!map.has(key)) {
+					map.set(key, snSize);
+				}
+			}
+		}
+	}
+	return map;
+}
 
-	let idx = 0;
+function ensureEditorImagesHaveSizeFromHints(editor, sizeHints) {
+	if (!sizeHints || sizeHints.size === 0) return;
+
 	let tr = editor.state.tr;
 	editor.state.doc.descendants((node, pos) => {
 		if (node.type.name !== "image") return true;
 		const title = String(node.attrs.title || "");
 		if (extractSnSizeMarkerFromTitle(title)) return true;
 
-		// Find next matching src in the markdown list (keeping order).
-		while (idx < sized.length && sized[idx].src !== node.attrs.src) {
-			idx += 1;
-		}
-		if (idx >= sized.length) return true;
-
-		const nextTitle = ensureSnSizeMarkerInTitle(title, sized[idx].snSize);
+		const hinted = lookupSnSizeHint(sizeHints, node.attrs.src);
+		if (!hinted) return true;
+		const nextTitle = ensureSnSizeMarkerInTitle(title, hinted);
 		tr = tr.setNodeMarkup(pos, undefined, { ...node.attrs, title: nextTitle });
-		idx += 1;
 		return true;
 	});
 
-	if (tr.docChanged) {
-		editor.view.dispatch(tr);
-	}
+	if (tr.docChanged) editor.view.dispatch(tr);
 }
 
 function isLikelyImageUrl(url) {
@@ -1336,7 +1381,10 @@ function createEditor(container, hiddenInput, options = {}) {
 
 	const rawInitial = hiddenInput.value || "";
 	const initialContent = preprocessMarkdownForEditor(rawInitial);
-	const sizeHints = getPandocImageSizeHints(rawInitial);
+	const sizeHints = new Map([
+		...getPandocImageSizeHints(rawInitial),
+		...getSnSizeHintsFromPreparedMarkdown(initialContent),
+	]);
 
 	function setToolbarRawMode(toolbarEl, enabled) {
 		if (!toolbarEl) return;
@@ -1664,7 +1712,7 @@ function createEditor(container, hiddenInput, options = {}) {
 	// TipTap's markdown parsing doesn't understand Pandoc `{...}` attributes.
 	// We preprocess them, and also apply a post-pass to ensure the image nodes
 	// carry the size marker even if parsing dropped the title.
-	ensureEditorImagesHaveSizeFromMarkdown(editor, rawInitial);
+	ensureEditorImagesHaveSizeFromHints(editor, sizeHints);
 
 	if (toolbar) {
 		setupToolbar(container, toolbar, editor, hiddenInput, options, setRawMode);
