@@ -270,6 +270,12 @@ const SizedImage = Image.extend({
 			return {
 				dom: wrapper,
 				contentDOM: null,
+				selectNode() {
+					wrapper.classList.add("is-selected");
+				},
+				deselectNode() {
+					wrapper.classList.remove("is-selected");
+				},
 				update(updatedNode) {
 					if (updatedNode.type.name !== node.type.name) return false;
 					node = updatedNode;

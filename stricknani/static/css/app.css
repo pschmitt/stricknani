@@ -636,6 +636,16 @@ textarea::placeholder {
 	max-width: 100%;
 }
 
+.wysiwyg-image-node.is-selected {
+	outline: 2px solid #2563eb;
+	outline-offset: 4px;
+	border-radius: 0.75rem;
+}
+
+.wysiwyg-image-node.is-selected .wysiwyg-image-delete {
+	transform: scale(1.05);
+}
+
 .wysiwyg-image-node img {
 	display: block;
 }
