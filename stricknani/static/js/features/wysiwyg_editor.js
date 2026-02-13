@@ -27,12 +27,28 @@ const SizedImage = Image.extend({
 			img.className = this.options.HTMLAttributes?.class || "";
 			img.draggable = true;
 
-			const sizeBtn = document.createElement("button");
-			sizeBtn.type = "button";
-			sizeBtn.className = "wysiwyg-image-size";
-			sizeBtn.setAttribute("aria-label", getI18n("imageSize", "Image size"));
-			sizeBtn.innerHTML =
-				'<span class="mdi mdi-image-size-select-large"></span><span class="wysiwyg-image-size-pill">S</span>';
+			const sizeCtl = document.createElement("div");
+			sizeCtl.className = "wysiwyg-image-size";
+
+			const sizeDec = document.createElement("button");
+			sizeDec.type = "button";
+			sizeDec.className = "wysiwyg-image-size-btn";
+			sizeDec.setAttribute("aria-label", "-");
+			sizeDec.textContent = "-";
+
+			const sizePill = document.createElement("span");
+			sizePill.className = "wysiwyg-image-size-pill";
+			sizePill.textContent = "S";
+
+			const sizeInc = document.createElement("button");
+			sizeInc.type = "button";
+			sizeInc.className = "wysiwyg-image-size-btn";
+			sizeInc.setAttribute("aria-label", "+");
+			sizeInc.textContent = "+";
+
+			sizeCtl.appendChild(sizeDec);
+			sizeCtl.appendChild(sizePill);
+			sizeCtl.appendChild(sizeInc);
 
 			const broken = document.createElement("span");
 			broken.className = "wysiwyg-image-broken";
@@ -84,10 +100,7 @@ const SizedImage = Image.extend({
 				}
 				img.setAttribute("data-sn-size", snSize);
 
-				const pill = sizeBtn.querySelector(".wysiwyg-image-size-pill");
-				if (pill) {
-					pill.textContent = snSize === "xl" ? "XL" : snSize.toUpperCase();
-				}
+				sizePill.textContent = snSize === "xl" ? "XL" : snSize.toUpperCase();
 			}
 
 			applyAttrs();
@@ -135,15 +148,7 @@ const SizedImage = Image.extend({
 				editor.commands.focus();
 			});
 
-			sizeBtn.addEventListener("mousedown", (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-			});
-
-			sizeBtn.addEventListener("click", (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-
+			function updateImageSize(delta) {
 				const pos = typeof getPos === "function" ? getPos() : null;
 				if (typeof pos !== "number") return;
 
@@ -151,7 +156,9 @@ const SizedImage = Image.extend({
 				const match = prevTitle.match(/\bsn:size=(sm|md|lg|xl)\b/);
 				const prevSize = match ? match[1] : "sm";
 				const sizes = ["sm", "md", "lg", "xl"];
-				const nextSize = sizes[(sizes.indexOf(prevSize) + 1) % sizes.length];
+				const idx = sizes.indexOf(prevSize);
+				const nextIdx = Math.max(0, Math.min(sizes.length - 1, idx + delta));
+				const nextSize = sizes[nextIdx];
 				const nextTitle = ensureSnSizeMarkerInTitle(prevTitle, nextSize);
 
 				try {
@@ -164,6 +171,25 @@ const SizedImage = Image.extend({
 				} catch (err) {
 					console.error("WYSIWYG: Failed to update image size", err);
 				}
+			}
+
+			[sizeDec, sizeInc].forEach((btn) => {
+				btn.addEventListener("mousedown", (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+				});
+			});
+
+			sizeDec.addEventListener("click", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				updateImageSize(-1);
+			});
+
+			sizeInc.addEventListener("click", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				updateImageSize(1);
 			});
 
 			// Touch move: long-press then drag to reposition inside the editor.
@@ -307,7 +333,7 @@ const SizedImage = Image.extend({
 			}
 
 			wrapper.appendChild(img);
-			wrapper.appendChild(sizeBtn);
+			wrapper.appendChild(sizeCtl);
 			wrapper.appendChild(broken);
 			wrapper.appendChild(del);
 
