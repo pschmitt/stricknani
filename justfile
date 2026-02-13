@@ -27,7 +27,7 @@ run *args:
 
 # Run linters
 [group: 'lint']
-lint: lint-ruff lint-mypy lint-js lint-css
+lint: lint-ruff lint-mypy lint-js lint-css lint-template-js lint-template-js-format
 
 [group: 'lint']
 lint-ruff:
@@ -42,6 +42,15 @@ biome_action := if env('CI', '') != '' { 'ci' } else { 'lint' }
 [group: 'lint']
 lint-js:
   biome "{{ biome_action }}" stricknani/static/js
+
+# Best-effort JS syntax check for Jinja2 template JS.
+[group: 'lint']
+lint-template-js:
+  uv run python scripts/lint_template_js_syntax.py
+
+[group: 'lint']
+lint-template-js-format:
+  uv run python scripts/lint_template_js_format.py
 
 [group: 'lint']
 lint-css:
@@ -91,6 +100,10 @@ fmt-biome: fmt-js fmt-css
 [group: 'fmt']
 fmt-js:
   biome format --write stricknani/static/js
+
+[group: 'fmt']
+fmt-template-js:
+  uv run python scripts/fmt_template_js.py --write
 
 [group: 'fmt']
 fmt-css:

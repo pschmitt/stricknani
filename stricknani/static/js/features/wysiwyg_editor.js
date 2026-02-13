@@ -2,6 +2,13 @@ import { Editor } from "https://esm.sh/@tiptap/core@3.19.0";
 import Link from "https://esm.sh/@tiptap/extension-link@3.19.0";
 import Underline from "https://esm.sh/@tiptap/extension-underline@3.19.0";
 import { Markdown } from "https://esm.sh/@tiptap/markdown@3.19.0";
+import {
+	chainCommands,
+	createParagraphNear,
+	liftEmptyBlock,
+	newlineInCode,
+	splitBlock,
+} from "https://esm.sh/@tiptap/pm@3.19.0/commands?target=es2022";
 import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.19.0";
 
 const WYSIWYG_INSTANCES = new Map();
@@ -400,6 +407,13 @@ function createEditor(container, hiddenInput, options = {}) {
 				heading: {
 					levels: [1, 2, 3, 4, 5, 6],
 				},
+				// We implement our own drop handling; the dropcursor overlay has been
+				// causing runtime errors in some browsers.
+				dropcursor: false,
+				gapcursor: false,
+				// Trailing node enforcement can crash when the doc is momentarily
+				// invalid during markdown parsing/transactions.
+				trailingNode: false,
 				// We include Link and Underline separately to configure them; disable the ones from StarterKit.
 				link: false,
 				underline: false,
@@ -427,9 +441,20 @@ function createEditor(container, hiddenInput, options = {}) {
 				if (handleAutocompleteKeydown(event)) {
 					return true;
 				}
+				// Some pages can interfere with ProseMirror's default Enter handling.
+				// Implement the ProseMirror base-keymap Enter chain directly to avoid
+				// calling TipTap's `enter()` command (which can recurse via keyboardShortcut).
+				if (event.key === "Enter" && !event.shiftKey) {
+					return chainCommands(
+						newlineInCode,
+						createParagraphNear,
+						liftEmptyBlock,
+						splitBlock,
+					)(view.state, view.dispatch);
+				}
 				return false;
 			},
-			handleTextInput: (view, from, to, text) => {
+			handleTextInput: (_view, _from, _to, text) => {
 				if (text === "!") {
 					// Let ProseMirror insert the text first, then open the picker based on the actual doc state.
 					setTimeout(() => {
@@ -589,7 +614,10 @@ function setupToolbar(toolbar, editor, options) {
 				editor.chain().focus().setHorizontalRule().run();
 				break;
 			case "link": {
-				const url = prompt(options.i18n?.linkUrl || "Enter URL:");
+				const url = prompt(
+					options.i18n?.wysiwygLinkUrl ||
+						getI18n("wysiwygLinkUrl", "Enter URL:"),
+				);
 				if (url) {
 					editor.chain().focus().setLink({ href: url }).run();
 				}
@@ -742,12 +770,13 @@ if (typeof htmx !== "undefined") {
 }
 
 document.addEventListener("click", (event) => {
-	if (
-		currentImageAutocomplete &&
-		!currentImageAutocomplete.dropdown.contains(event.target)
-	) {
-		closeImageAutocomplete();
-	}
+	if (!currentImageAutocomplete) return;
+	if (currentImageAutocomplete.dropdown.contains(event.target)) return;
+
+	// Don't immediately close the picker when it was opened via toolbar click.
+	if (event.target.closest?.(".wysiwyg-toolbar")) return;
+
+	closeImageAutocomplete();
 });
 
 document.addEventListener("scroll", closeImageAutocomplete, true);

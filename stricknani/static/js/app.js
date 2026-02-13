@@ -824,8 +824,12 @@
 				return;
 			}
 
-			// Avoid hijacking typing in form controls.
-			if (event.target.closest("input,textarea,select")) {
+			// Avoid hijacking typing in form controls and contenteditable editors.
+			if (
+				event.target.closest(
+					'input,textarea,select,[contenteditable="true"],.ProseMirror',
+				)
+			) {
 				return;
 			}
 
@@ -1292,7 +1296,7 @@
 			}
 		};
 
-		const collectAvailableImages = (textarea) => {
+		const collectAvailableImages = (_textarea) => {
 			const images = [];
 
 			// Collect title images from project gallery
@@ -1383,6 +1387,9 @@
 
 		const handleInput = (event) => {
 			const textarea = event.target;
+			// WYSIWYG uses hidden textareas as backing stores; ignore those to avoid
+			// double autocomplete menus (TipTap shows its own picker).
+			if (textarea?.classList?.contains("hidden")) return;
 			if (!textarea.matches("[data-markdown-images='true']")) return;
 
 			const value = textarea.value;

@@ -23,14 +23,14 @@ async function deleteProject(id) {
 			return;
 		}
 
-		window.showToast?.('{{ _("Failed to delete project") }}', "error");
+		window.showToast?.("{{ _("Failed to delete project") }}", "error");
 		if (btn) {
 			btn.disabled = false;
 			btn.innerHTML = btn.dataset.originalHtml;
 		}
 	} catch (error) {
 		console.error("Delete project failed", error);
-		window.showToast?.('{{ _("Failed to delete project") }}', "error");
+		window.showToast?.("{{ _("Failed to delete project") }}", "error");
 		if (btn) {
 			btn.disabled = false;
 			btn.innerHTML = btn.dataset.originalHtml;
