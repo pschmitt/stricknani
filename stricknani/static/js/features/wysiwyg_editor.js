@@ -570,7 +570,7 @@ function parseMarkdownImage(text) {
 }
 
 function extractSnSizeFromAttrsBlob(blob) {
-	const m = String(blob || "").match(/\b\.sn-size-(sm|md|lg|xl)\b/);
+	const m = String(blob || "").match(/(?:^|\s)\.sn-size-(sm|md|lg|xl)\b/);
 	return m ? m[1] : null;
 }
 
@@ -605,13 +605,13 @@ function preprocessMarkdownForEditor(markdown) {
 
 		const innerMatch = String(inner || "")
 			.trim()
-			.match(/^([^\s]+)(?:\s+"([^"]*)")?$/);
+			.match(/^([^\s]+)(?:\s+(?:("|')(.+)\2))?$/);
 		if (!innerMatch) {
 			return `![${alt}](${inner.trim()} "sn:size=${snSize}")`;
 		}
 
 		const url = innerMatch[1];
-		const title = innerMatch[2] || "";
+		const title = innerMatch[3] || "";
 		const nextTitle = ensureSnSizeMarkerInTitle(title, snSize);
 		return `![${alt}](${url} "${nextTitle}")`;
 	});
@@ -634,10 +634,12 @@ function serializeMarkdownFromEditor(markdown) {
 function extractPandocSizedImages(markdown) {
 	// Returns images with `{.sn-size-...}` in appearance order.
 	const items = [];
-	const re = /!\[[^\]]*\]\(\s*([^\s)]+)[^)]*\)\s*\{([^}]*)\}/g;
+	// Use the same robust regex as extractMarkdownImagesInOrder but focus on the ones with attrs blob
+	const re =
+		/!\[([^\]]*)\]\(\s*([^\s)]+)(?:\s+(?:(?:"([^"]*)")|(?:'([^']*)')))?\s*\)(?:\s*\{([^}]*)\})?/g;
 	for (const m of String(markdown || "").matchAll(re)) {
-		const src = m[1] || "";
-		const attrsBlob = m[2] || "";
+		const src = m[2] || "";
+		const attrsBlob = m[5] || "";
 		const snSize = extractSnSizeFromAttrsBlob(attrsBlob);
 		if (src && snSize) {
 			items.push({ src, snSize });
@@ -657,12 +659,12 @@ function extractMarkdownImagesInOrder(markdown) {
 	// - ![alt](url "title"){.sn-size-lg}
 	const items = [];
 	const re =
-		/!\[([^\]]*)\]\(\s*([^\s)]+)(?:\s+"([^"]*)")?\s*\)(?:\s*\{([^}]*)\})?/g;
+		/!\[([^\]]*)\]\(\s*([^\s)]+)(?:\s+(?:(?:"([^"]*)")|(?:'([^']*)')))?\s*\)(?:\s*\{([^}]*)\})?/g;
 	for (const m of String(markdown || "").matchAll(re)) {
 		const alt = m[1] || "";
 		const src = m[2] || "";
-		const title = m[3] || "";
-		const attrsBlob = m[4] || "";
+		const title = m[3] || m[4] || "";
+		const attrsBlob = m[5] || "";
 		const snSize =
 			extractSnSizeFromAttrsBlob(attrsBlob) ||
 			extractSnSizeMarkerFromTitle(title);
