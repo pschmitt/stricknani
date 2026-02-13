@@ -16,6 +16,204 @@ const WYSIWYG_INSTANCES = new Map();
 let currentImageAutocomplete = null;
 
 const SizedImage = Image.extend({
+	addNodeView() {
+		return ({ node, editor, getPos }) => {
+			const wrapper = document.createElement("span");
+			wrapper.className = "wysiwyg-image-node";
+
+			const img = document.createElement("img");
+			img.className = this.options.HTMLAttributes?.class || "";
+			img.draggable = true;
+
+			const del = document.createElement("button");
+			del.type = "button";
+			del.className = "wysiwyg-image-delete";
+			del.setAttribute("aria-label", getI18n("delete", "Delete"));
+			del.innerHTML = '<span class="mdi mdi-close"></span>';
+
+			function applyAttrs() {
+				img.setAttribute("src", node.attrs.src || "");
+				if (node.attrs.alt) {
+					img.setAttribute("alt", node.attrs.alt);
+				} else {
+					img.setAttribute("alt", "");
+				}
+
+				const rawTitle =
+					typeof node.attrs.title === "string" ? node.attrs.title : "";
+				const match = rawTitle.match(/\bsn:size=(sm|md|lg|xl)\b/);
+				const snSize = match ? match[1] : "sm";
+				const cleanedTitle = rawTitle
+					.replace(/\bsn:size=(sm|md|lg|xl)\b/g, "")
+					.replace(/\s+/g, " ")
+					.trim();
+
+				if (cleanedTitle) {
+					img.setAttribute("title", cleanedTitle);
+				} else {
+					img.removeAttribute("title");
+				}
+				img.setAttribute("data-sn-size", snSize);
+			}
+
+			applyAttrs();
+
+			del.addEventListener("mousedown", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+			});
+			del.addEventListener("click", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				const pos = typeof getPos === "function" ? getPos() : null;
+				if (typeof pos !== "number") return;
+				const tr = editor.state.tr.delete(pos, pos + node.nodeSize);
+				editor.view.dispatch(tr);
+				editor.commands.focus();
+			});
+
+			// Touch move: long-press then drag to reposition inside the editor.
+			// (Native HTML5 drag-and-drop is unreliable on mobile.)
+			const isCoarsePointer =
+				window.matchMedia?.("(pointer: coarse)")?.matches ||
+				"ontouchstart" in window;
+			if (isCoarsePointer) {
+				let pressTimer = null;
+				let started = false;
+				let startX = 0;
+				let startY = 0;
+				let ghost = null;
+
+				function clearTimer() {
+					if (pressTimer) {
+						clearTimeout(pressTimer);
+						pressTimer = null;
+					}
+				}
+
+				function cleanup() {
+					clearTimer();
+					started = false;
+					if (ghost) {
+						ghost.remove();
+						ghost = null;
+					}
+				}
+
+				function setGhostPosition(x, y) {
+					if (!ghost) return;
+					ghost.style.left = `${x + 12}px`;
+					ghost.style.top = `${y + 12}px`;
+				}
+
+				function beginDrag(touch) {
+					started = true;
+					ghost = document.createElement("img");
+					ghost.src = node.attrs.src || "";
+					ghost.alt = "";
+					ghost.style.position = "fixed";
+					ghost.style.zIndex = "9999";
+					ghost.style.width = "64px";
+					ghost.style.height = "64px";
+					ghost.style.objectFit = "cover";
+					ghost.style.borderRadius = "10px";
+					ghost.style.boxShadow = "0 10px 30px rgba(0,0,0,0.25)";
+					ghost.style.opacity = "0.9";
+					ghost.style.pointerEvents = "none";
+					(document.body || document.documentElement).appendChild(ghost);
+					setGhostPosition(touch.clientX, touch.clientY);
+				}
+
+				wrapper.addEventListener(
+					"touchstart",
+					(e) => {
+						if (e.touches.length !== 1) return;
+						started = false;
+						const t = e.touches[0];
+						startX = t.clientX;
+						startY = t.clientY;
+						clearTimer();
+						pressTimer = setTimeout(() => beginDrag(t), 350);
+					},
+					{ passive: true },
+				);
+
+				wrapper.addEventListener(
+					"touchmove",
+					(e) => {
+						if (e.touches.length !== 1) return;
+						const t = e.touches[0];
+						const dx = Math.abs(t.clientX - startX);
+						const dy = Math.abs(t.clientY - startY);
+						if (!started && (dx > 10 || dy > 10)) {
+							// User is scrolling; cancel.
+							clearTimer();
+							return;
+						}
+						if (!started) return;
+						e.preventDefault();
+						setGhostPosition(t.clientX, t.clientY);
+					},
+					{ passive: false },
+				);
+
+				wrapper.addEventListener(
+					"touchend",
+					(e) => {
+						clearTimer();
+						if (!started) return;
+						e.preventDefault();
+						e.stopPropagation();
+
+						const touch = e.changedTouches?.[0];
+						const from = typeof getPos === "function" ? getPos() : null;
+						if (!touch || typeof from !== "number") {
+							cleanup();
+							return;
+						}
+
+						const coords = { left: touch.clientX, top: touch.clientY };
+						const found = editor.view.posAtCoords(coords);
+						const to = typeof found?.pos === "number" ? found.pos : from;
+
+						const moved = node.type.create(node.attrs);
+						const size = node.nodeSize;
+						let insertPos = to;
+						if (from < insertPos) {
+							insertPos = Math.max(0, insertPos - size);
+						}
+
+						try {
+							let tr = editor.state.tr.delete(from, from + size);
+							tr = tr.insert(insertPos, moved);
+							editor.view.dispatch(tr.scrollIntoView());
+						} catch (err) {
+							console.error("WYSIWYG: Failed to move image", err);
+						}
+
+						cleanup();
+					},
+					{ passive: false },
+				);
+
+				wrapper.addEventListener("touchcancel", cleanup, { passive: true });
+			}
+
+			wrapper.appendChild(img);
+			wrapper.appendChild(del);
+
+			return {
+				dom: wrapper,
+				contentDOM: null,
+				update(updatedNode) {
+					if (updatedNode.type.name !== node.type.name) return false;
+					node = updatedNode;
+					applyAttrs();
+					return true;
+				},
+			};
+		};
+	},
 	renderHTML({ HTMLAttributes }) {
 		const attrs = { ...HTMLAttributes };
 		const rawTitle = typeof attrs.title === "string" ? attrs.title : "";
@@ -445,23 +643,122 @@ function collectAvailableImages() {
 	});
 }
 
+function isCoarsePointer() {
+	return (
+		window.matchMedia?.("(pointer: coarse)")?.matches ||
+		"ontouchstart" in window
+	);
+}
+
 function createImageAutocompleteDropdown(editor, images, position) {
+	if (isCoarsePointer()) {
+		const overlay = document.createElement("div");
+		overlay.className = "markdown-image-overlay";
+
+		const sheet = document.createElement("div");
+		sheet.className = "markdown-image-sheet";
+		sheet.setAttribute("role", "dialog");
+		sheet.setAttribute("aria-label", getI18n("selectImage", "Select image"));
+
+		const header = document.createElement("div");
+		header.className = "markdown-image-sheet-header";
+		header.innerHTML = `<div class="markdown-image-sheet-title">${getI18n(
+			"selectImage",
+			"Select image",
+		)}</div>`;
+
+		const closeBtn = document.createElement("button");
+		closeBtn.type = "button";
+		closeBtn.className = "markdown-image-sheet-close";
+		closeBtn.innerHTML = '<span class="mdi mdi-close"></span>';
+		closeBtn.addEventListener("click", (e) => {
+			e.preventDefault();
+			closeImageAutocomplete();
+		});
+		header.appendChild(closeBtn);
+
+		const list = document.createElement("div");
+		list.className = "markdown-image-sheet-list";
+		list.setAttribute("role", "listbox");
+
+		if (images.length === 0) {
+			const emptyItem = document.createElement("div");
+			emptyItem.className = "markdown-image-empty";
+			emptyItem.textContent = getI18n(
+				"noImagesAvailable",
+				"No images available",
+			);
+			list.appendChild(emptyItem);
+		} else {
+			images.forEach((image, index) => {
+				const item = document.createElement("button");
+				item.type = "button";
+				item.className = "markdown-image-sheet-item";
+				item.setAttribute("role", "option");
+				item.setAttribute("data-index", index);
+				item.setAttribute("data-url", image.url);
+				item.setAttribute("data-alt", image.alt_text || "");
+
+				const thumb = document.createElement("img");
+				thumb.className = "markdown-image-thumb";
+				thumb.alt = "";
+				thumb.src = image.thumbnail_url || image.url;
+
+				const meta = document.createElement("div");
+				meta.className = "markdown-image-meta";
+
+				const alt = document.createElement("div");
+				alt.className = "markdown-image-alt";
+				alt.textContent =
+					image.alt_text || getI18n("untitledImage", "Untitled image");
+
+				const url = document.createElement("div");
+				url.className = "markdown-image-url";
+				url.textContent = image.url.split("/").pop() || image.url;
+
+				meta.appendChild(alt);
+				meta.appendChild(url);
+
+				item.appendChild(thumb);
+				item.appendChild(meta);
+
+				item.addEventListener("click", (e) => {
+					e.preventDefault();
+					insertImageFromAutocomplete(editor, image);
+					closeImageAutocomplete();
+				});
+
+				list.appendChild(item);
+			});
+		}
+
+		overlay.addEventListener("click", (e) => {
+			if (e.target === overlay) {
+				closeImageAutocomplete();
+			}
+		});
+
+		sheet.appendChild(header);
+		sheet.appendChild(list);
+		overlay.appendChild(sheet);
+
+		return overlay;
+	}
+
 	const dropdown = document.createElement("div");
-	dropdown.className =
-		"markdown-image-autocomplete fixed z-[9999] bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-64 overflow-y-auto w-72";
+	dropdown.className = "markdown-image-autocomplete";
 	dropdown.setAttribute("role", "listbox");
 	dropdown.setAttribute("aria-label", getI18n("selectImage", "Select image"));
 
 	if (images.length === 0) {
 		const emptyItem = document.createElement("div");
-		emptyItem.className = "p-3 text-sm text-base-content/60 italic";
+		emptyItem.className = "markdown-image-empty";
 		emptyItem.textContent = getI18n("noImagesAvailable", "No images available");
 		dropdown.appendChild(emptyItem);
 	} else {
 		images.forEach((image, index) => {
 			const item = document.createElement("div");
-			item.className =
-				"markdown-image-item flex items-center gap-3 p-2 hover:bg-base-200 cursor-pointer transition-colors";
+			item.className = "markdown-image-item";
 			item.setAttribute("role", "option");
 			item.setAttribute("data-index", index);
 			item.setAttribute("data-url", image.url);
@@ -470,18 +767,18 @@ function createImageAutocompleteDropdown(editor, images, position) {
 			const img = document.createElement("img");
 			img.src = image.thumbnail_url || image.url;
 			img.alt = "";
-			img.className = "w-12 h-12 object-cover rounded flex-shrink-0";
+			img.className = "markdown-image-thumb";
 
 			const info = document.createElement("div");
-			info.className = "flex-1 min-w-0";
+			info.className = "markdown-image-meta";
 
 			const altText = document.createElement("div");
-			altText.className = "text-sm font-medium truncate";
+			altText.className = "markdown-image-alt";
 			altText.textContent =
 				image.alt_text || getI18n("untitledImage", "Untitled image");
 
 			const urlText = document.createElement("div");
-			urlText.className = "text-xs text-base-content/50 truncate";
+			urlText.className = "markdown-image-url";
 			urlText.textContent = image.url.split("/").pop() || image.url;
 
 			info.appendChild(altText);
