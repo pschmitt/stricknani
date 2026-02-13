@@ -51,6 +51,14 @@ function lookupSnSizeHint(hints, src) {
 	return null;
 }
 
+function srcMatchesHintKeys(src, keys) {
+	if (!keys || keys.size === 0) return false;
+	for (const key of getHintKeysFromSrc(src)) {
+		if (keys.has(key)) return true;
+	}
+	return false;
+}
+
 const SizedImage = Image.extend({
 	addNodeView() {
 		return ({ node, editor, getPos }) => {
@@ -667,19 +675,33 @@ function getSnSizeHintsFromPreparedMarkdown(preparedMarkdown) {
 	return map;
 }
 
-function ensureEditorImagesHaveSizeFromHints(editor, sizeHints) {
-	if (!sizeHints || sizeHints.size === 0) return;
+function ensureEditorImagesHaveSizeFromMarkdownOrder(editor, markdown) {
+	const sized = extractPandocSizedImages(markdown).map((item) => ({
+		keys: new Set(getHintKeysFromSrc(item.src)),
+		snSize: item.snSize,
+	}));
+	if (!sized.length) return;
 
+	let idx = 0;
 	let tr = editor.state.tr;
 	editor.state.doc.descendants((node, pos) => {
 		if (node.type.name !== "image") return true;
 		const title = String(node.attrs.title || "");
 		if (extractSnSizeMarkerFromTitle(title)) return true;
 
-		const hinted = lookupSnSizeHint(sizeHints, node.attrs.src);
-		if (!hinted) return true;
-		const nextTitle = ensureSnSizeMarkerInTitle(title, hinted);
+		// Find next matching src in the markdown list (keeping order). This supports
+		// duplicates of the same image with different sizes.
+		while (
+			idx < sized.length &&
+			!srcMatchesHintKeys(node.attrs.src, sized[idx].keys)
+		) {
+			idx += 1;
+		}
+		if (idx >= sized.length) return true;
+
+		const nextTitle = ensureSnSizeMarkerInTitle(title, sized[idx].snSize);
 		tr = tr.setNodeMarkup(pos, undefined, { ...node.attrs, title: nextTitle });
+		idx += 1;
 		return true;
 	});
 
@@ -1703,16 +1725,18 @@ function createEditor(container, hiddenInput, options = {}) {
 			container.classList.remove("ring-2", "ring-primary", "ring-offset-1");
 		},
 		onCreate: ({ editor }) => {
+			// TipTap markdown parsing doesn't understand Pandoc `{...}` attributes.
+			// We preprocess them, and also apply a post-pass once the editor has
+			// created its initial document. This is necessary because parsing can
+			// drop the title attribute on images during init.
+			EDITOR_IMAGE_SIZE_HINTS.set(editor, sizeHints);
+			ensureEditorImagesHaveSizeFromMarkdownOrder(editor, rawInitial);
+			PENDING_IMAGE_SIZE_HINTS = null;
 			updateToolbarState(toolbar, editor);
 		},
 	});
-	PENDING_IMAGE_SIZE_HINTS = null;
-	EDITOR_IMAGE_SIZE_HINTS.set(editor, sizeHints);
-
-	// TipTap's markdown parsing doesn't understand Pandoc `{...}` attributes.
-	// We preprocess them, and also apply a post-pass to ensure the image nodes
-	// carry the size marker even if parsing dropped the title.
-	ensureEditorImagesHaveSizeFromHints(editor, sizeHints);
+	// `PENDING_IMAGE_SIZE_HINTS` is cleared in `onCreate` after we applied the
+	// initial post-pass.
 
 	if (toolbar) {
 		setupToolbar(container, toolbar, editor, hiddenInput, options, setRawMode);
