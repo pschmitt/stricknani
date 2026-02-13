@@ -753,167 +753,6 @@ function setupToolbar(
 	options,
 	setRawMode,
 ) {
-	function runToolbarAction(action, value) {
-		switch (action) {
-			case "bold":
-				editor.chain().focus().toggleBold().run();
-				return;
-			case "italic":
-				editor.chain().focus().toggleItalic().run();
-				return;
-			case "underline":
-				editor.chain().focus().toggleUnderline().run();
-				return;
-			case "strike":
-				editor.chain().focus().toggleStrike().run();
-				return;
-			case "code":
-				editor.chain().focus().toggleCode().run();
-				return;
-			case "codeBlock":
-				editor.chain().focus().toggleCodeBlock().run();
-				return;
-			case "heading": {
-				const level = Number.parseInt(value, 10) || 1;
-				editor.chain().focus().toggleHeading({ level }).run();
-				return;
-			}
-			case "paragraph":
-				editor.chain().focus().setParagraph().run();
-				return;
-			case "bulletList":
-				editor.chain().focus().toggleBulletList().run();
-				return;
-			case "orderedList":
-				editor.chain().focus().toggleOrderedList().run();
-				return;
-			case "blockquote":
-				editor.chain().focus().toggleBlockquote().run();
-				return;
-			case "horizontalRule":
-				editor.chain().focus().setHorizontalRule().run();
-				return;
-			case "link": {
-				const url = prompt(
-					options.i18n?.wysiwygLinkUrl ||
-						getI18n("wysiwygLinkUrl", "Enter URL:"),
-				);
-				if (url) {
-					editor.chain().focus().setLink({ href: url }).run();
-				}
-				return;
-			}
-			case "unlink":
-				editor.chain().focus().unsetLink().run();
-				return;
-			case "undo":
-				editor.chain().focus().undo().run();
-				return;
-			case "redo":
-				editor.chain().focus().redo().run();
-				return;
-			default:
-				return;
-		}
-	}
-
-	function createBubbleMenu() {
-		const bubble = document.createElement("div");
-		bubble.className = "wysiwyg-bubble hidden";
-		bubble.setAttribute("role", "toolbar");
-		const actions = ["bold", "italic", "underline", "link", "unlink"];
-		actions.forEach((action, idx) => {
-			if (idx === 3) {
-				const sep = document.createElement("span");
-				sep.className = "wysiwyg-bubble-sep";
-				sep.setAttribute("aria-hidden", "true");
-				bubble.appendChild(sep);
-			}
-
-			const srcBtn = toolbar.querySelector(`button[data-action="${action}"]`);
-			if (srcBtn) {
-				const cloned = srcBtn.cloneNode(true);
-				cloned.removeAttribute("disabled");
-				bubble.appendChild(cloned);
-			}
-		});
-
-		// Keep it near the editor in the DOM, but position with `fixed`.
-		container.appendChild(bubble);
-
-		bubble.addEventListener("mousedown", (e) => {
-			// Prevent editor blur when clicking the bubble buttons.
-			e.preventDefault();
-		});
-
-		bubble.addEventListener("click", (e) => {
-			const btn = e.target.closest("button[data-action]");
-			if (!btn) return;
-			e.preventDefault();
-			runToolbarAction(btn.dataset.action, btn.dataset.value);
-			updateToolbarState(toolbar, editor);
-			updateImageSizeLabel();
-			updateBubbleMenu();
-		});
-
-		function hide() {
-			bubble.classList.add("hidden");
-		}
-
-		function showAt({ x, y }) {
-			bubble.style.left = `${x}px`;
-			bubble.style.top = `${y}px`;
-			bubble.classList.remove("hidden");
-		}
-
-		function updateBubbleMenu() {
-			// Only for non-empty text selections in rich mode.
-			if (container.dataset.wysiwygRaw === "true") {
-				hide();
-				return;
-			}
-			if (!editor.isFocused) {
-				hide();
-				return;
-			}
-			const { from, to, empty } = editor.state.selection;
-			if (empty || from === to) {
-				hide();
-				return;
-			}
-
-			// Only show for selections that include inline content.
-			const $from = editor.state.doc.resolve(from);
-			if (!$from.parent.isTextblock) {
-				hide();
-				return;
-			}
-
-			const start = editor.view.coordsAtPos(from);
-			const end = editor.view.coordsAtPos(to);
-			const centerX = (start.left + end.right) / 2;
-			const top = Math.min(start.top, end.top);
-
-			// Measure after it's visible to center properly.
-			bubble.classList.remove("hidden");
-			const rect = bubble.getBoundingClientRect();
-			const x = Math.max(
-				8,
-				Math.min(window.innerWidth - rect.width - 8, centerX - rect.width / 2),
-			);
-			const y = Math.max(8, top - rect.height - 8);
-			showAt({ x, y });
-		}
-
-		editor.on("selectionUpdate", updateBubbleMenu);
-		editor.on("focus", updateBubbleMenu);
-		editor.on("blur", hide);
-		window.addEventListener("scroll", hide, true);
-		window.addEventListener("resize", hide, true);
-
-		return { update: updateBubbleMenu, hide };
-	}
-
 	function updateImageSizeLabel() {
 		const btn = toolbar.querySelector('button[data-action="imageSize"]');
 		const label = btn?.querySelector("[data-image-size-label]");
@@ -972,11 +811,61 @@ function setupToolbar(
 			e.preventDefault();
 			const enabled = container.dataset.wysiwygRaw !== "true";
 			setRawMode(enabled);
-			bubbleMenu.hide();
 			return;
 		}
 
 		switch (action) {
+			case "bold":
+				editor.chain().focus().toggleBold().run();
+				break;
+			case "italic":
+				editor.chain().focus().toggleItalic().run();
+				break;
+			case "underline":
+				editor.chain().focus().toggleUnderline().run();
+				break;
+			case "strike":
+				editor.chain().focus().toggleStrike().run();
+				break;
+			case "code":
+				editor.chain().focus().toggleCode().run();
+				break;
+			case "codeBlock":
+				editor.chain().focus().toggleCodeBlock().run();
+				break;
+			case "heading": {
+				const level = parseInt(value, 10) || 1;
+				editor.chain().focus().toggleHeading({ level }).run();
+				break;
+			}
+			case "paragraph":
+				editor.chain().focus().setParagraph().run();
+				break;
+			case "bulletList":
+				editor.chain().focus().toggleBulletList().run();
+				break;
+			case "orderedList":
+				editor.chain().focus().toggleOrderedList().run();
+				break;
+			case "blockquote":
+				editor.chain().focus().toggleBlockquote().run();
+				break;
+			case "horizontalRule":
+				editor.chain().focus().setHorizontalRule().run();
+				break;
+			case "link": {
+				const url = prompt(
+					options.i18n?.wysiwygLinkUrl ||
+						getI18n("wysiwygLinkUrl", "Enter URL:"),
+				);
+				if (url) {
+					editor.chain().focus().setLink({ href: url }).run();
+				}
+				break;
+			}
+			case "unlink":
+				editor.chain().focus().unsetLink().run();
+				break;
 			case "image": {
 				const images = collectAvailableImages();
 				let coords = editor.view.coordsAtPos(editor.state.selection.to);
@@ -1010,17 +899,17 @@ function setupToolbar(
 			case "imageSize":
 				cycleSelectedImageSize();
 				break;
-			default:
-				runToolbarAction(action, value);
+			case "undo":
+				editor.chain().focus().undo().run();
+				break;
+			case "redo":
+				editor.chain().focus().redo().run();
 				break;
 		}
 
 		updateToolbarState(toolbar, editor);
 		updateImageSizeLabel();
-		bubbleMenu.update();
 	});
-
-	const bubbleMenu = createBubbleMenu();
 
 	// Keep label in sync with selection changes that don't go through toolbar clicks.
 	editor.on("selectionUpdate", updateImageSizeLabel);
