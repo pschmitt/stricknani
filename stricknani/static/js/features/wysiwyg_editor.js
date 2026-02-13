@@ -14,6 +14,7 @@ import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.19.0";
 
 const WYSIWYG_INSTANCES = new Map();
 let currentImageAutocomplete = null;
+let currentInsertMarker = null;
 
 const SizedImage = Image.extend({
 	addNodeView() {
@@ -94,6 +95,7 @@ const SizedImage = Image.extend({
 				function cleanup() {
 					clearTimer();
 					started = false;
+					hideInsertMarker();
 					if (ghost) {
 						ghost.remove();
 						ghost = null;
@@ -153,6 +155,16 @@ const SizedImage = Image.extend({
 						if (!started) return;
 						e.preventDefault();
 						setGhostPosition(t.clientX, t.clientY);
+
+						const pos = editor.view.posAtCoords({
+							left: t.clientX,
+							top: t.clientY,
+						})?.pos;
+						if (typeof pos === "number") {
+							showInsertMarkerAtPos(editor, pos);
+						} else {
+							hideInsertMarker();
+						}
 					},
 					{ passive: false },
 				);
@@ -191,6 +203,7 @@ const SizedImage = Image.extend({
 							console.error("WYSIWYG: Failed to move image", err);
 						}
 
+						hideInsertMarker();
 						cleanup();
 					},
 					{ passive: false },
@@ -238,6 +251,36 @@ const SizedImage = Image.extend({
 
 function getI18n(key, fallback) {
 	return window.STRICKNANI?.i18n?.[key] || fallback;
+}
+
+function showInsertMarkerAtPos(editor, pos) {
+	if (!editor || typeof pos !== "number") return;
+	let coords;
+	try {
+		coords = editor.view.coordsAtPos(pos);
+	} catch (_err) {
+		return;
+	}
+
+	if (!coords) return;
+	if (!currentInsertMarker) {
+		const el = document.createElement("div");
+		el.className = "wysiwyg-insert-marker hidden";
+		(document.body || document.documentElement).appendChild(el);
+		currentInsertMarker = el;
+	}
+
+	const height = Math.max(12, (coords.bottom || coords.top + 16) - coords.top);
+	currentInsertMarker.style.left = `${coords.left}px`;
+	currentInsertMarker.style.top = `${coords.top}px`;
+	currentInsertMarker.style.height = `${height}px`;
+	currentInsertMarker.classList.remove("hidden");
+}
+
+function hideInsertMarker() {
+	if (currentInsertMarker) {
+		currentInsertMarker.classList.add("hidden");
+	}
 }
 
 function isImageFile(file) {
@@ -484,6 +527,20 @@ function installThumbnailLongPressDrag() {
 					target.container.classList.add("ring-2", "ring-primary");
 				}
 				lastTarget = target;
+
+				if (target?.editor) {
+					const pos = target.editor.view.posAtCoords({
+						left: t.clientX,
+						top: t.clientY,
+					})?.pos;
+					if (typeof pos === "number") {
+						showInsertMarkerAtPos(target.editor, pos);
+					} else {
+						hideInsertMarker();
+					}
+				} else {
+					hideInsertMarker();
+				}
 			},
 			{ passive: false },
 		);
@@ -1524,4 +1581,14 @@ document.addEventListener("click", (event) => {
 	closeImageAutocomplete();
 });
 
-document.addEventListener("scroll", closeImageAutocomplete, true);
+document.addEventListener(
+	"scroll",
+	(event) => {
+		// Allow scrolling inside the mobile picker sheet without closing it.
+		if (currentImageAutocomplete?.dropdown?.contains(event.target)) {
+			return;
+		}
+		closeImageAutocomplete();
+	},
+	true,
+);

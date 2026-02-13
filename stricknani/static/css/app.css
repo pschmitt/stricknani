@@ -650,9 +650,26 @@ textarea::placeholder {
 	align-items: center;
 	justify-content: center;
 	border-radius: 9999px;
-	background: rgba(0, 0, 0, 0.6);
+	background: rgba(220, 38, 38, 0.9);
 	color: #fff;
 	opacity: 0.9;
+}
+
+.wysiwyg-image-delete:hover {
+	background: rgba(220, 38, 38, 1);
+}
+
+.wysiwyg-insert-marker {
+	position: fixed;
+	z-index: 10000;
+	width: 3px;
+	border-radius: 9999px;
+	background: color-mix(in srgb, currentColor 50%, transparent);
+	pointer-events: none;
+}
+
+.wysiwyg-insert-marker.hidden {
+	display: none !important;
 }
 
 .wysiwyg-image-delete:focus-visible {
@@ -663,8 +680,8 @@ textarea::placeholder {
 .markdown-image-autocomplete {
 	position: fixed;
 	z-index: 9999;
-	background: var(--fallback-b1, oklch(var(--b1) / 1));
-	border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+	background: var(--fallback-b1, #fff);
+	border: 1px solid rgba(0, 0, 0, 0.12);
 	border-radius: 0.75rem;
 	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
 	width: 18rem;
@@ -737,13 +754,19 @@ textarea::placeholder {
 	width: 100%;
 	max-width: 28rem;
 	max-height: 70vh;
-	background: var(--fallback-b1, oklch(var(--b1) / 1));
-	border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+	background: var(--fallback-b1, #fff);
+	border: 1px solid rgba(0, 0, 0, 0.12);
 	border-radius: 1rem;
 	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+}
+
+[data-theme="dark"] .markdown-image-autocomplete,
+[data-theme="dark"] .markdown-image-sheet {
+	background: #0b0f14;
+	border-color: rgba(255, 255, 255, 0.12);
 }
 
 .markdown-image-sheet-header {
