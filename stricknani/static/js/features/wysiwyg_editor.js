@@ -17,7 +17,16 @@ let currentImageAutocomplete = null;
 let currentInsertMarker = null;
 let currentInternalImageDrag = null;
 const EDITOR_IMAGE_SIZE_HINTS = new WeakMap();
-let PENDING_IMAGE_SIZE_HINTS = null;
+
+function getSizeHintsForEditor(editor) {
+	// Editor init can create nodeviews before we can populate the WeakMap, and we
+	// can have multiple editors on one page. Use an element-attached hint map
+	// instead of a shared global.
+	const fromWeakMap = EDITOR_IMAGE_SIZE_HINTS.get(editor);
+	if (fromWeakMap) return fromWeakMap;
+	const el = editor?.options?.element;
+	return el?.__snSizeHints ? el.__snSizeHints : null;
+}
 
 function getHintKeysFromSrc(src) {
 	const keys = new Set();
@@ -131,13 +140,7 @@ const SizedImage = Image.extend({
 				const match = rawTitle.match(/\bsn:size=(sm|md|lg|xl)\b/);
 				let snSize = match ? match[1] : null;
 				if (!snSize) {
-					let hints = EDITOR_IMAGE_SIZE_HINTS.get(editor);
-					if (!hints && PENDING_IMAGE_SIZE_HINTS) {
-						// During initial editor creation, nodeviews may run before we can
-						// populate the WeakMap. Use the pending hints for this instance.
-						hints = PENDING_IMAGE_SIZE_HINTS;
-						EDITOR_IMAGE_SIZE_HINTS.set(editor, hints);
-					}
+					const hints = getSizeHintsForEditor(editor);
 					const hinted = lookupSnSizeHint(hints, node.attrs.src);
 					snSize = hinted || "sm";
 				}
@@ -1474,8 +1477,9 @@ function createEditor(container, hiddenInput, options = {}) {
 		}
 	});
 
-	// Make size hints available during initial nodeview construction.
-	PENDING_IMAGE_SIZE_HINTS = sizeHints;
+	// Make size hints available during initial nodeview construction, even if
+	// multiple editors are initialized on the same page.
+	editorEl.__snSizeHints = sizeHints;
 	const editor = new Editor({
 		element: editorEl,
 		extensions: [
@@ -1731,12 +1735,13 @@ function createEditor(container, hiddenInput, options = {}) {
 			// drop the title attribute on images during init.
 			EDITOR_IMAGE_SIZE_HINTS.set(editor, sizeHints);
 			ensureEditorImagesHaveSizeFromMarkdownOrder(editor, rawInitial);
-			PENDING_IMAGE_SIZE_HINTS = null;
 			updateToolbarState(toolbar, editor);
 		},
 	});
-	// `PENDING_IMAGE_SIZE_HINTS` is cleared in `onCreate` after we applied the
-	// initial post-pass.
+	// Keep the element-attached hints for nodeviews that run very early, but
+	// also set the canonical WeakMap. (We leave the expando in place as a safe
+	// fallback; it's per-element, not global.)
+	EDITOR_IMAGE_SIZE_HINTS.set(editor, sizeHints);
 
 	if (toolbar) {
 		setupToolbar(container, toolbar, editor, hiddenInput, options, setRawMode);
