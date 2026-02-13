@@ -14,6 +14,7 @@ import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.19.0";
 
 const WYSIWYG_INSTANCES = new Map();
 let currentImageAutocomplete = null;
+let LAST_FOCUSED_EDITOR = null;
 
 const SizedImage = Image.extend({
 	renderHTML({ HTMLAttributes }) {
@@ -135,6 +136,84 @@ function insertImageAt(editor, pos, { src, alt }) {
 			return false;
 		}
 	}
+}
+
+function getInsertImageLabel() {
+	// Reuse already-translated template text from the toolbar if available.
+	return (
+		document
+			.querySelector('.wysiwyg-toolbar button[data-action="image"]')
+			?.getAttribute("title") || "Insert image"
+	);
+}
+
+function installThumbnailInsertButtons() {
+	// Mobile/touch browsers typically don't support HTML5 drag and drop well.
+	// Provide an explicit "insert" affordance on thumbnails.
+	const isCoarsePointer =
+		window.matchMedia?.("(pointer: coarse)")?.matches ||
+		"ontouchstart" in window;
+
+	if (!isCoarsePointer) return;
+
+	const label = getInsertImageLabel();
+
+	function addButtonToTile(tile, { url, altText }) {
+		if (!tile || !url) return;
+		if (tile.querySelector(".wysiwyg-insert-btn")) return;
+
+		const btn = document.createElement("button");
+		btn.type = "button";
+		btn.className =
+			"wysiwyg-insert-btn absolute bottom-1 left-1 z-10 rounded-full bg-primary text-white px-2 py-1 text-xs shadow-sm";
+		btn.textContent = "+";
+		btn.setAttribute("title", label);
+		btn.setAttribute("aria-label", label);
+
+		btn.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+
+			const editor = LAST_FOCUSED_EDITOR;
+			if (!editor) {
+				return;
+			}
+			editor.commands.focus();
+			insertImageAt(editor, editor.state.selection.from, {
+				src: url,
+				alt: altText || "",
+			});
+		});
+
+		// Tile is already `relative`; buttons in the preview macro rely on this.
+		tile.appendChild(btn);
+	}
+
+	// Images from the existing upload grids.
+	document
+		.querySelectorAll(
+			"#titleImagesContainer [data-image-id], #stitchSampleImagesContainer [data-image-id], .step-images [data-image-id], #existing-photos-grid [id^='photo-card-'], [data-pending-url]",
+		)
+		.forEach((tile) => {
+			const pendingUrl = tile.getAttribute("data-pending-url");
+			if (pendingUrl) {
+				const img = tile.querySelector("img");
+				addButtonToTile(tile, {
+					url: pendingUrl,
+					altText: img?.alt || "",
+				});
+				return;
+			}
+
+			const anchor = tile.querySelector("a[data-pswp-width]");
+			const img = tile.querySelector("img");
+			const url = anchor?.getAttribute("href") || "";
+			if (!url) return;
+			addButtonToTile(tile, {
+				url,
+				altText: img?.alt || anchor?.getAttribute("data-pswp-caption") || "",
+			});
+		});
 }
 
 async function uploadDroppedImage(container, hiddenInput, file) {
@@ -728,6 +807,7 @@ function createEditor(container, hiddenInput, options = {}) {
 		},
 		onFocus: () => {
 			container.classList.add("ring-2", "ring-primary", "ring-offset-1");
+			LAST_FOCUSED_EDITOR = editor;
 		},
 		onBlur: () => {
 			container.classList.remove("ring-2", "ring-primary", "ring-offset-1");
@@ -742,6 +822,7 @@ function createEditor(container, hiddenInput, options = {}) {
 	}
 
 	WYSIWYG_INSTANCES.set(container, editor);
+	installThumbnailInsertButtons();
 	return editor;
 }
 
@@ -996,6 +1077,8 @@ function initWysiwygEditors(options = {}) {
 			createEditor(container, hiddenInput, options);
 		}
 	});
+
+	installThumbnailInsertButtons();
 }
 
 window.STRICKNANI = window.STRICKNANI || {};
