@@ -575,6 +575,49 @@ function serializeMarkdownFromEditor(markdown) {
 	});
 }
 
+function extractPandocSizedImages(markdown) {
+	// Returns images with `{.sn-size-...}` in appearance order.
+	const items = [];
+	const re = /!\[[^\]]*\]\(\s*([^\s)]+)[^)]*\)\s*\{([^}]*)\}/g;
+	for (const m of String(markdown || "").matchAll(re)) {
+		const src = m[1] || "";
+		const attrsBlob = m[2] || "";
+		const snSize = extractSnSizeFromAttrsBlob(attrsBlob);
+		if (src && snSize) {
+			items.push({ src, snSize });
+		}
+	}
+	return items;
+}
+
+function ensureEditorImagesHaveSizeFromMarkdown(editor, markdown) {
+	const sized = extractPandocSizedImages(markdown);
+	if (!sized.length) return;
+
+	let idx = 0;
+	let tr = editor.state.tr;
+	editor.state.doc.descendants((node, pos) => {
+		if (node.type.name !== "image") return true;
+		const title = String(node.attrs.title || "");
+		if (extractSnSizeMarkerFromTitle(title)) return true;
+
+		// Find next matching src in the markdown list (keeping order).
+		while (idx < sized.length && sized[idx].src !== node.attrs.src) {
+			idx += 1;
+		}
+		if (idx >= sized.length) return true;
+
+		const nextTitle = ensureSnSizeMarkerInTitle(title, sized[idx].snSize);
+		tr = tr.setNodeMarkup(pos, undefined, { ...node.attrs, title: nextTitle });
+		idx += 1;
+		return true;
+	});
+
+	if (tr.docChanged) {
+		editor.view.dispatch(tr);
+	}
+}
+
 function isLikelyImageUrl(url) {
 	const u = String(url || "").trim();
 	if (!u) return false;
@@ -1268,7 +1311,8 @@ function createEditor(container, hiddenInput, options = {}) {
 		return null;
 	}
 
-	const initialContent = preprocessMarkdownForEditor(hiddenInput.value || "");
+	const rawInitial = hiddenInput.value || "";
+	const initialContent = preprocessMarkdownForEditor(rawInitial);
 
 	function setToolbarRawMode(toolbarEl, enabled) {
 		if (!toolbarEl) return;
@@ -1588,6 +1632,11 @@ function createEditor(container, hiddenInput, options = {}) {
 			updateToolbarState(toolbar, editor);
 		},
 	});
+
+	// TipTap's markdown parsing doesn't understand Pandoc `{...}` attributes.
+	// We preprocess them, and also apply a post-pass to ensure the image nodes
+	// carry the size marker even if parsing dropped the title.
+	ensureEditorImagesHaveSizeFromMarkdown(editor, rawInitial);
 
 	if (toolbar) {
 		setupToolbar(container, toolbar, editor, hiddenInput, options, setRawMode);
