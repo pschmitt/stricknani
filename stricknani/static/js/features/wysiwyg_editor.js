@@ -14,7 +14,6 @@ import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.19.0";
 
 const WYSIWYG_INSTANCES = new Map();
 let currentImageAutocomplete = null;
-let LAST_FOCUSED_EDITOR = null;
 
 const SizedImage = Image.extend({
 	renderHTML({ HTMLAttributes }) {
@@ -138,82 +137,198 @@ function insertImageAt(editor, pos, { src, alt }) {
 	}
 }
 
-function getInsertImageLabel() {
-	// Reuse already-translated template text from the toolbar if available.
-	return (
-		document
-			.querySelector('.wysiwyg-toolbar button[data-action="image"]')
-			?.getAttribute("title") || "Insert image"
-	);
+function extractThumbnailPayload(tile) {
+	if (!tile) return null;
+
+	const pendingUrl = tile.getAttribute("data-pending-url");
+	if (pendingUrl) {
+		const img = tile.querySelector("img");
+		return { url: pendingUrl, altText: img?.alt || "" };
+	}
+
+	const anchor = tile.querySelector("a[data-pswp-width]");
+	const img = tile.querySelector("img");
+	const url = anchor?.getAttribute("href") || "";
+	if (!url) return null;
+	return {
+		url,
+		altText: img?.alt || anchor?.getAttribute("data-pswp-caption") || "",
+	};
 }
 
-function installThumbnailInsertButtons() {
-	// Mobile/touch browsers typically don't support HTML5 drag and drop well.
-	// Provide an explicit "insert" affordance on thumbnails.
+function findWysiwygAtPoint(x, y) {
+	const els = document.elementsFromPoint?.(x, y) || [];
+	for (const el of els) {
+		const container = el.closest?.("[data-wysiwyg]");
+		if (container && WYSIWYG_INSTANCES.has(container)) {
+			return { container, editor: WYSIWYG_INSTANCES.get(container) };
+		}
+	}
+	return null;
+}
+
+function installThumbnailLongPressDrag() {
+	// Mobile/touch: emulate "drag thumbnail into editor" with long-press + move.
 	const isCoarsePointer =
 		window.matchMedia?.("(pointer: coarse)")?.matches ||
 		"ontouchstart" in window;
-
 	if (!isCoarsePointer) return;
 
-	const label = getInsertImageLabel();
-
-	function addButtonToTile(tile, { url, altText }) {
-		if (!tile || !url) return;
-		if (tile.querySelector(".wysiwyg-insert-btn")) return;
-
-		const btn = document.createElement("button");
-		btn.type = "button";
-		btn.className =
-			"wysiwyg-insert-btn absolute bottom-1 left-1 z-10 rounded-full bg-primary text-white px-2 py-1 text-xs shadow-sm";
-		btn.textContent = "+";
-		btn.setAttribute("title", label);
-		btn.setAttribute("aria-label", label);
-
-		btn.addEventListener("click", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-
-			const editor = LAST_FOCUSED_EDITOR;
-			if (!editor) {
-				return;
-			}
-			editor.commands.focus();
-			insertImageAt(editor, editor.state.selection.from, {
-				src: url,
-				alt: altText || "",
-			});
-		});
-
-		// Tile is already `relative`; buttons in the preview macro rely on this.
-		tile.appendChild(btn);
-	}
-
-	// Images from the existing upload grids.
-	document
-		.querySelectorAll(
+	const tiles = Array.from(
+		document.querySelectorAll(
 			"#titleImagesContainer [data-image-id], #stitchSampleImagesContainer [data-image-id], .step-images [data-image-id], #existing-photos-grid [id^='photo-card-'], [data-pending-url]",
-		)
-		.forEach((tile) => {
-			const pendingUrl = tile.getAttribute("data-pending-url");
-			if (pendingUrl) {
-				const img = tile.querySelector("img");
-				addButtonToTile(tile, {
-					url: pendingUrl,
-					altText: img?.alt || "",
-				});
-				return;
-			}
+		),
+	);
 
-			const anchor = tile.querySelector("a[data-pswp-width]");
-			const img = tile.querySelector("img");
-			const url = anchor?.getAttribute("href") || "";
-			if (!url) return;
-			addButtonToTile(tile, {
-				url,
-				altText: img?.alt || anchor?.getAttribute("data-pswp-caption") || "",
-			});
-		});
+	tiles.forEach((tile) => {
+		if (tile.dataset.wysiwygTouchDragInstalled === "true") return;
+		tile.dataset.wysiwygTouchDragInstalled = "true";
+
+		const payload = extractThumbnailPayload(tile);
+		if (!payload?.url) return;
+
+		let pressTimer = null;
+		let started = false;
+		let startX = 0;
+		let startY = 0;
+		let ghost = null;
+		let lastTarget = null;
+
+		function clearTimer() {
+			if (pressTimer) {
+				clearTimeout(pressTimer);
+				pressTimer = null;
+			}
+		}
+
+		function cleanup() {
+			clearTimer();
+			started = false;
+			if (ghost) {
+				ghost.remove();
+				ghost = null;
+			}
+			if (lastTarget?.container) {
+				lastTarget.container.classList.remove("ring-2", "ring-primary");
+			}
+			lastTarget = null;
+		}
+
+		function setGhostPosition(x, y) {
+			if (!ghost) return;
+			ghost.style.left = `${x + 12}px`;
+			ghost.style.top = `${y + 12}px`;
+		}
+
+		function beginDrag(touch) {
+			started = true;
+
+			ghost = document.createElement("img");
+			ghost.src = payload.url;
+			ghost.alt = "";
+			ghost.style.position = "fixed";
+			ghost.style.zIndex = "9999";
+			ghost.style.width = "64px";
+			ghost.style.height = "64px";
+			ghost.style.objectFit = "cover";
+			ghost.style.borderRadius = "10px";
+			ghost.style.boxShadow = "0 10px 30px rgba(0,0,0,0.25)";
+			ghost.style.opacity = "0.9";
+			ghost.style.pointerEvents = "none";
+			(document.body || document.documentElement).appendChild(ghost);
+			setGhostPosition(touch.clientX, touch.clientY);
+		}
+
+		tile.addEventListener(
+			"touchstart",
+			(e) => {
+				if (e.touches.length !== 1) return;
+				started = false;
+
+				const t = e.touches[0];
+				startX = t.clientX;
+				startY = t.clientY;
+
+				clearTimer();
+				pressTimer = setTimeout(() => beginDrag(t), 350);
+			},
+			{ passive: true },
+		);
+
+		tile.addEventListener(
+			"touchmove",
+			(e) => {
+				if (e.touches.length !== 1) return;
+				const t = e.touches[0];
+				const dx = Math.abs(t.clientX - startX);
+				const dy = Math.abs(t.clientY - startY);
+
+				// If user is scrolling before long-press activates, cancel.
+				if (!started && (dx > 10 || dy > 10)) {
+					clearTimer();
+					return;
+				}
+
+				if (!started) return;
+
+				// We're dragging; prevent page scroll.
+				e.preventDefault();
+				setGhostPosition(t.clientX, t.clientY);
+
+				const target = findWysiwygAtPoint(t.clientX, t.clientY);
+				if (
+					lastTarget?.container &&
+					lastTarget.container !== target?.container
+				) {
+					lastTarget.container.classList.remove("ring-2", "ring-primary");
+				}
+				if (target?.container) {
+					target.container.classList.add("ring-2", "ring-primary");
+				}
+				lastTarget = target;
+			},
+			{ passive: false },
+		);
+
+		tile.addEventListener(
+			"touchend",
+			(e) => {
+				clearTimer();
+				if (!started) {
+					// Let normal click behavior happen (Photoswipe open).
+					return;
+				}
+				e.preventDefault();
+				e.stopPropagation();
+
+				const touch = e.changedTouches?.[0];
+				if (touch) {
+					const target = findWysiwygAtPoint(touch.clientX, touch.clientY);
+					if (target?.editor) {
+						target.editor.commands.focus();
+						const fallbackPos = target.editor.state.selection.from;
+						const pos = target.editor.view.posAtCoords({
+							left: touch.clientX,
+							top: touch.clientY,
+						})?.pos;
+						insertImageAt(
+							target.editor,
+							typeof pos === "number" ? pos : fallbackPos,
+							{
+								src: payload.url,
+								alt: payload.altText || "",
+							},
+						);
+					}
+				}
+
+				cleanup();
+			},
+			{ passive: false },
+		);
+
+		tile.addEventListener("touchcancel", cleanup, { passive: true });
+	});
 }
 
 async function uploadDroppedImage(container, hiddenInput, file) {
@@ -807,7 +922,6 @@ function createEditor(container, hiddenInput, options = {}) {
 		},
 		onFocus: () => {
 			container.classList.add("ring-2", "ring-primary", "ring-offset-1");
-			LAST_FOCUSED_EDITOR = editor;
 		},
 		onBlur: () => {
 			container.classList.remove("ring-2", "ring-primary", "ring-offset-1");
@@ -822,7 +936,7 @@ function createEditor(container, hiddenInput, options = {}) {
 	}
 
 	WYSIWYG_INSTANCES.set(container, editor);
-	installThumbnailInsertButtons();
+	installThumbnailLongPressDrag();
 	return editor;
 }
 
@@ -1078,7 +1192,7 @@ function initWysiwygEditors(options = {}) {
 		}
 	});
 
-	installThumbnailInsertButtons();
+	installThumbnailLongPressDrag();
 }
 
 window.STRICKNANI = window.STRICKNANI || {};
