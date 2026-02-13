@@ -24,6 +24,7 @@ class ImgLightboxTreeprocessor(Treeprocessor):
 
     def run(self, root: etree.Element) -> None:
         for img in root.iter("img"):
+            # Always enforce base styling class.
             img.set("class", "markdown-inline-image")
             img.set("data-lightbox-group", self.group_name)
             img.set("data-lightbox-src", img.get("src", ""))
@@ -40,6 +41,46 @@ class ImgLightboxTreeprocessor(Treeprocessor):
                     img.set("title", cleaned)
                 else:
                     img.attrib.pop("title", None)
+
+            # Support a small subset of Pandoc's link_attributes syntax for images:
+            # ![alt](url){.sn-size-md}
+            # We implement it post-render by looking at the tail text after <img>.
+            tail = img.tail or ""
+            tail_match = re.match(r"^\s*\{([^}]*)\}\s*$", tail)
+            if tail_match:
+                attrs_blob = tail_match.group(1)
+                classes: list[str] = []
+                token_re = (
+                    r"(?:\.[A-Za-z0-9_-]+)"
+                    r"|(?:#[A-Za-z0-9_-]+)"
+                    r"|(?:[A-Za-z0-9_-]+=\"[^\"]*\")"
+                    r"|(?:[A-Za-z0-9_-]+=[^\s]+)"
+                )
+                for token in re.findall(token_re, attrs_blob):
+                    token = token.strip()
+                    if not token:
+                        continue
+                    if token.startswith("."):
+                        classes.append(token[1:])
+
+                # Map `.sn-size-{sm,md,lg,xl}` to `data-sn-size`.
+                for cls in classes:
+                    m_cls = re.fullmatch(r"sn-size-(sm|md|lg|xl)", cls)
+                    if m_cls:
+                        img.set("data-sn-size", m_cls.group(1))
+                        break
+
+                # Preserve other classes (sanitizer already allows `class` on img).
+                if classes:
+                    existing = img.get("class", "") or ""
+                    extra = " ".join(
+                        [c for c in classes if not c.startswith("sn-size-")]
+                    )
+                    if extra:
+                        img.set("class", f"{existing} {extra}".strip())
+
+                # Remove attribute blob from rendered output.
+                img.tail = ""
 
             alt = img.get("alt", "")
             if self.step_info:
