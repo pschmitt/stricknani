@@ -16,6 +16,8 @@ const WYSIWYG_INSTANCES = new Map();
 let currentImageAutocomplete = null;
 let currentInsertMarker = null;
 let currentInternalImageDrag = null;
+const EDITOR_IMAGE_SIZE_HINTS = new WeakMap();
+let PENDING_IMAGE_SIZE_HINTS = null;
 
 const SizedImage = Image.extend({
 	addNodeView() {
@@ -87,7 +89,18 @@ const SizedImage = Image.extend({
 				const rawTitle =
 					typeof node.attrs.title === "string" ? node.attrs.title : "";
 				const match = rawTitle.match(/\bsn:size=(sm|md|lg|xl)\b/);
-				const snSize = match ? match[1] : "sm";
+				let snSize = match ? match[1] : null;
+				if (!snSize) {
+					let hints = EDITOR_IMAGE_SIZE_HINTS.get(editor);
+					if (!hints && PENDING_IMAGE_SIZE_HINTS) {
+						// During initial editor creation, nodeviews may run before we can
+						// populate the WeakMap. Use the pending hints for this instance.
+						hints = PENDING_IMAGE_SIZE_HINTS;
+						EDITOR_IMAGE_SIZE_HINTS.set(editor, hints);
+					}
+					const hinted = hints?.get?.(node.attrs.src);
+					snSize = hinted || "sm";
+				}
 				const cleanedTitle = rawTitle
 					.replace(/\bsn:size=(sm|md|lg|xl)\b/g, "")
 					.replace(/\s+/g, " ")
@@ -588,6 +601,16 @@ function extractPandocSizedImages(markdown) {
 		}
 	}
 	return items;
+}
+
+function getPandocImageSizeHints(markdown) {
+	const map = new Map();
+	for (const item of extractPandocSizedImages(markdown)) {
+		if (!map.has(item.src)) {
+			map.set(item.src, item.snSize);
+		}
+	}
+	return map;
 }
 
 function ensureEditorImagesHaveSizeFromMarkdown(editor, markdown) {
@@ -1313,6 +1336,7 @@ function createEditor(container, hiddenInput, options = {}) {
 
 	const rawInitial = hiddenInput.value || "";
 	const initialContent = preprocessMarkdownForEditor(rawInitial);
+	const sizeHints = getPandocImageSizeHints(rawInitial);
 
 	function setToolbarRawMode(toolbarEl, enabled) {
 		if (!toolbarEl) return;
@@ -1380,6 +1404,8 @@ function createEditor(container, hiddenInput, options = {}) {
 		}
 	});
 
+	// Make size hints available during initial nodeview construction.
+	PENDING_IMAGE_SIZE_HINTS = sizeHints;
 	const editor = new Editor({
 		element: editorEl,
 		extensions: [
@@ -1632,6 +1658,8 @@ function createEditor(container, hiddenInput, options = {}) {
 			updateToolbarState(toolbar, editor);
 		},
 	});
+	PENDING_IMAGE_SIZE_HINTS = null;
+	EDITOR_IMAGE_SIZE_HINTS.set(editor, sizeHints);
 
 	// TipTap's markdown parsing doesn't understand Pandoc `{...}` attributes.
 	// We preprocess them, and also apply a post-pass to ensure the image nodes
