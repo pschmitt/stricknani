@@ -872,7 +872,11 @@ function setupToolbar(
 				hide();
 				return;
 			}
-			if (!editor.isFocused) {
+			const focused =
+				typeof editor.isFocused === "function"
+					? editor.isFocused()
+					: editor.isFocused;
+			if (!focused) {
 				hide();
 				return;
 			}
@@ -906,8 +910,19 @@ function setupToolbar(
 		}
 
 		editor.on("selectionUpdate", updateBubbleMenu);
+		// Some selection changes (especially mouse-driven) can be missed depending on
+		// how transactions are dispatched; keep it in sync on any transaction too.
+		editor.on("transaction", updateBubbleMenu);
 		editor.on("focus", updateBubbleMenu);
 		editor.on("blur", hide);
+		editor.view.dom.addEventListener("mouseup", () => {
+			// Ensure the bubble closes when selection collapses on mouseup.
+			setTimeout(updateBubbleMenu, 0);
+		});
+		editor.view.dom.addEventListener("keyup", () => {
+			// Ensure the bubble closes when selection collapses via keyboard.
+			setTimeout(updateBubbleMenu, 0);
+		});
 		window.addEventListener("scroll", hide, true);
 		window.addEventListener("resize", hide, true);
 
