@@ -271,7 +271,8 @@ function showInsertMarkerAtPos(editor, pos) {
 	}
 
 	const height = Math.max(12, (coords.bottom || coords.top + 16) - coords.top);
-	currentInsertMarker.style.left = `${coords.left}px`;
+	// Shift slightly left so it's easier to see under a finger.
+	currentInsertMarker.style.left = `${Math.max(0, coords.left - 2)}px`;
 	currentInsertMarker.style.top = `${coords.top}px`;
 	currentInsertMarker.style.height = `${height}px`;
 	currentInsertMarker.classList.remove("hidden");

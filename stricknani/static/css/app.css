@@ -661,11 +661,12 @@ textarea::placeholder {
 
 .wysiwyg-insert-marker {
 	position: fixed;
-	z-index: 10000;
-	width: 3px;
+	z-index: 2147483647;
+	width: 4px;
 	border-radius: 9999px;
-	background: color-mix(in srgb, currentColor 50%, transparent);
+	background: #2563eb;
 	pointer-events: none;
+	box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
 .wysiwyg-insert-marker.hidden {
