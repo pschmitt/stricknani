@@ -108,6 +108,35 @@ function isLikelyImageUrl(url) {
 	return /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(u);
 }
 
+function insertImageAt(editor, pos, { src, alt }) {
+	const content = [
+		{
+			type: "image",
+			attrs: {
+				src,
+				alt: alt || "",
+			},
+		},
+		{ type: "paragraph" },
+	];
+
+	try {
+		editor.commands.insertContentAt(pos, content, {
+			updateSelection: true,
+		});
+		return true;
+	} catch (err) {
+		// If drop coords resolve to a non-text position, fallback to current selection.
+		try {
+			editor.chain().focus().insertContent(content).run();
+			return true;
+		} catch (_err2) {
+			console.error("WYSIWYG: Failed to insert dropped image", err);
+			return false;
+		}
+	}
+}
+
 async function uploadDroppedImage(container, hiddenInput, file) {
 	const projectApi = window.STRICKNANI?.projectUploads;
 	const yarnApi = window.STRICKNANI?.yarnUploads;
@@ -618,40 +647,36 @@ function createEditor(container, hiddenInput, options = {}) {
 				event.preventDefault();
 				event.stopPropagation();
 
+				editor.commands.focus();
 				const fallbackPos = editor.state.selection.from;
 				const insertPos = getDropInsertPos(view, event, fallbackPos);
-
-				editor.commands.focus();
-				editor.commands.setTextSelection(insertPos);
 
 				// If we're dropping markdown/url text, insert it directly.
 				if (files.length === 0 && droppedText) {
 					const mdImg = parseMarkdownImage(droppedText);
 					if (mdImg?.src) {
-						editor
-							.chain()
-							.setImage({
-								src: mdImg.src,
-								alt: mdImg.alt || "",
-							})
-							.insertContent({ type: "paragraph" })
-							.run();
+						insertImageAt(editor, insertPos, {
+							src: mdImg.src,
+							alt: mdImg.alt || "",
+						});
 						return true;
 					}
 
 					if (isLikelyImageUrl(droppedText)) {
-						editor
-							.chain()
-							.setImage({
-								src: droppedText.trim(),
-								alt: "",
-							})
-							.insertContent({ type: "paragraph" })
-							.run();
+						insertImageAt(editor, insertPos, {
+							src: droppedText.trim(),
+							alt: "",
+						});
 						return true;
 					}
 
-					editor.chain().insertContent(droppedText).run();
+					try {
+						editor.commands.insertContentAt(insertPos, droppedText, {
+							updateSelection: true,
+						});
+					} catch (_err) {
+						editor.chain().insertContent(droppedText).run();
+					}
 					return true;
 				}
 
@@ -683,14 +708,7 @@ function createEditor(container, hiddenInput, options = {}) {
 							continue;
 						}
 
-						editor
-							.chain()
-							.setImage({
-								src: url,
-								alt: altText,
-							})
-							.insertContent({ type: "paragraph" })
-							.run();
+						insertImageAt(editor, insertPos, { src: url, alt: altText });
 					}
 				})().catch((err) => {
 					console.error("WYSIWYG drop upload failed", err);

@@ -596,8 +596,9 @@ textarea::placeholder {
 
 .wysiwyg-content {
 	min-height: 6rem;
-	max-height: 24rem;
-	overflow-y: auto;
+	/* Always expand to fit content (no internal scrolling). */
+	max-height: none;
+	overflow: visible;
 	outline: none;
 }
 
