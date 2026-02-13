@@ -591,6 +591,8 @@ async function deleteYarnPhoto(photoId) {
 			window.unsavedChanges?.setDirty(true);
 			window.showToast?.("{{ _("Photo deleted") }}", "success");
 		},
+		null,
+		{ variant: "error", confirmText: "{{ _("Delete") }}" },
 	);
 }
 

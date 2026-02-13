@@ -1803,7 +1803,11 @@ async function deleteImage(imageId) {
 			window.unsavedChanges?.setDirty(true);
 		},
 		null,
-		{ content: contentHtml },
+		{
+			content: contentHtml,
+			variant: "error",
+			confirmText: "{{ _("Delete") }}",
+		},
 	);
 }
 
