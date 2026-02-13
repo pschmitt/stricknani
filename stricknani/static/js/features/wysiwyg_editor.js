@@ -27,6 +27,13 @@ const SizedImage = Image.extend({
 			img.className = this.options.HTMLAttributes?.class || "";
 			img.draggable = true;
 
+			const sizeBtn = document.createElement("button");
+			sizeBtn.type = "button";
+			sizeBtn.className = "wysiwyg-image-size";
+			sizeBtn.setAttribute("aria-label", getI18n("imageSize", "Image size"));
+			sizeBtn.innerHTML =
+				'<span class="mdi mdi-image-size-select-large"></span><span class="wysiwyg-image-size-pill">S</span>';
+
 			const broken = document.createElement("span");
 			broken.className = "wysiwyg-image-broken";
 
@@ -76,6 +83,11 @@ const SizedImage = Image.extend({
 					img.removeAttribute("title");
 				}
 				img.setAttribute("data-sn-size", snSize);
+
+				const pill = sizeBtn.querySelector(".wysiwyg-image-size-pill");
+				if (pill) {
+					pill.textContent = snSize === "xl" ? "XL" : snSize.toUpperCase();
+				}
 			}
 
 			applyAttrs();
@@ -121,6 +133,37 @@ const SizedImage = Image.extend({
 				const tr = editor.state.tr.delete(pos, pos + node.nodeSize);
 				editor.view.dispatch(tr);
 				editor.commands.focus();
+			});
+
+			sizeBtn.addEventListener("mousedown", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+			});
+
+			sizeBtn.addEventListener("click", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+
+				const pos = typeof getPos === "function" ? getPos() : null;
+				if (typeof pos !== "number") return;
+
+				const prevTitle = String(node.attrs.title || "");
+				const match = prevTitle.match(/\bsn:size=(sm|md|lg|xl)\b/);
+				const prevSize = match ? match[1] : "sm";
+				const sizes = ["sm", "md", "lg", "xl"];
+				const nextSize = sizes[(sizes.indexOf(prevSize) + 1) % sizes.length];
+				const nextTitle = ensureSnSizeMarkerInTitle(prevTitle, nextSize);
+
+				try {
+					const tr = editor.state.tr.setNodeMarkup(pos, undefined, {
+						...node.attrs,
+						title: nextTitle,
+					});
+					editor.view.dispatch(tr);
+					editor.commands.focus();
+				} catch (err) {
+					console.error("WYSIWYG: Failed to update image size", err);
+				}
 			});
 
 			// Touch move: long-press then drag to reposition inside the editor.
@@ -264,6 +307,7 @@ const SizedImage = Image.extend({
 			}
 
 			wrapper.appendChild(img);
+			wrapper.appendChild(sizeBtn);
 			wrapper.appendChild(broken);
 			wrapper.appendChild(del);
 
@@ -1198,7 +1242,7 @@ function createEditor(container, hiddenInput, options = {}) {
 		return null;
 	}
 
-	const initialContent = hiddenInput.value || "";
+	const initialContent = preprocessMarkdownForEditor(hiddenInput.value || "");
 
 	function setToolbarRawMode(toolbarEl, enabled) {
 		if (!toolbarEl) return;
@@ -1582,53 +1626,6 @@ function setupToolbar(
 		});
 	});
 
-	function updateImageSizeLabel() {
-		const btn = toolbar.querySelector('button[data-action="imageSize"]');
-		const label = btn?.querySelector("[data-image-size-label]");
-		if (!label) return;
-
-		if (!editor.isActive("image")) {
-			label.textContent = "S";
-			return;
-		}
-
-		const attrs = editor.getAttributes("image") || {};
-		const title = String(attrs.title || "");
-		const match = title.match(/\bsn:size=(sm|md|lg|xl)\b/);
-		const size = match ? match[1] : "sm";
-		label.textContent = size === "xl" ? "XL" : size.toUpperCase();
-	}
-
-	function cycleSelectedImageSize() {
-		if (!editor.isActive("image")) {
-			return;
-		}
-
-		const attrs = editor.getAttributes("image") || {};
-		const prevTitle = String(attrs.title || "");
-		const match = prevTitle.match(/\bsn:size=(sm|md|lg|xl)\b/);
-		const prevSize = match ? match[1] : "sm";
-		const sizes = ["sm", "md", "lg", "xl"];
-		const nextSize = sizes[(sizes.indexOf(prevSize) + 1) % sizes.length];
-
-		// Preserve any user-provided title and just update our marker.
-		const cleanedTitle = prevTitle
-			.replace(/\bsn:size=(sm|md|lg|xl)\b/g, "")
-			.replace(/\s+/g, " ")
-			.trim();
-		const nextTitle = cleanedTitle
-			? `${cleanedTitle} sn:size=${nextSize}`
-			: `sn:size=${nextSize}`;
-
-		editor
-			.chain()
-			.focus()
-			.updateAttributes("image", { title: nextTitle })
-			.run();
-
-		updateImageSizeLabel();
-	}
-
 	toolbar.addEventListener("click", (e) => {
 		const btn = e.target.closest("button[data-action]");
 		if (!btn) return;
@@ -1701,9 +1698,6 @@ function setupToolbar(
 				imagePickerInput.click();
 				break;
 			}
-			case "imageSize":
-				cycleSelectedImageSize();
-				break;
 			case "undo":
 				editor.chain().focus().undo().run();
 				break;
@@ -1713,12 +1707,7 @@ function setupToolbar(
 		}
 
 		updateToolbarState(toolbar, editor);
-		updateImageSizeLabel();
 	});
-
-	// Keep label in sync with selection changes that don't go through toolbar clicks.
-	editor.on("selectionUpdate", updateImageSizeLabel);
-	updateImageSizeLabel();
 }
 
 function updateToolbarState(toolbar, editor) {
@@ -1764,9 +1753,6 @@ function updateToolbarState(toolbar, editor) {
 				break;
 			case "link":
 				isActive = editor.isActive("link");
-				break;
-			case "imageSize":
-				isActive = editor.isActive("image");
 				break;
 		}
 

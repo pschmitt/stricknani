@@ -658,6 +658,35 @@ textarea::placeholder {
 	transform: scale(1.05);
 }
 
+.wysiwyg-image-size {
+	position: absolute;
+	left: 0.25rem;
+	top: 0.25rem;
+	height: 1.5rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0 0.5rem;
+	border-radius: 9999px;
+	background: rgba(37, 99, 235, 0.9);
+	color: #fff;
+	font-size: 0.75rem;
+	font-weight: 700;
+	opacity: 0.85;
+}
+
+.wysiwyg-image-size:hover {
+	opacity: 1;
+}
+
+.wysiwyg-image-size .mdi {
+	font-size: 1rem;
+}
+
+.wysiwyg-image-size-pill {
+	line-height: 1;
+}
+
 .wysiwyg-image-node img {
 	display: block;
 }
