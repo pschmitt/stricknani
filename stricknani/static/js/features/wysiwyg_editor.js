@@ -330,6 +330,29 @@ function isImageFile(file) {
 	);
 }
 
+function dataTransferHasFileDrag(dt) {
+	if (!dt) return false;
+	if (Array.isArray(dt.types) && dt.types.includes("Files")) return true;
+	try {
+		return Array.from(dt.items || []).some((item) => item.kind === "file");
+	} catch (_err) {
+		return false;
+	}
+}
+
+function dataTransferHasImageFileDrag(dt) {
+	if (!dt) return false;
+	try {
+		// In some browsers `dt.files` is empty during dragover; `dt.items` is reliable.
+		if (Array.from(dt.files || []).some(isImageFile)) return true;
+		return Array.from(dt.items || []).some(
+			(item) => item.kind === "file" && item.type?.startsWith?.("image/"),
+		);
+	} catch (_err) {
+		return false;
+	}
+}
+
 function autoResizeTextarea(textarea) {
 	if (!textarea) return;
 	textarea.style.height = "auto";
@@ -1216,12 +1239,17 @@ function createEditor(container, hiddenInput, options = {}) {
 					const files = Array.from(dt.files || []).filter(isImageFile);
 					const droppedText = extractDroppedText(event);
 					const mdImg = droppedText ? parseMarkdownImage(droppedText) : null;
+					const hasFiles = dataTransferHasFileDrag(dt);
+					const hasImageFiles =
+						files.length > 0 || dataTransferHasImageFileDrag(dt);
 					const isImageDrop =
-						files.length > 0 ||
+						hasImageFiles ||
 						Boolean(mdImg?.src) ||
 						(droppedText && isLikelyImageUrl(droppedText));
 
-					if (!isImageDrop) {
+					// If we're dragging files but can't detect mime type yet, still show a marker
+					// to indicate where a drop would insert (upload may still be rejected later).
+					if (!isImageDrop && !hasFiles) {
 						hideInsertMarker();
 						return false;
 					}
