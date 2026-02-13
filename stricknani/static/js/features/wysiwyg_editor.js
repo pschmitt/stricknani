@@ -289,7 +289,8 @@ function showInsertMarkerAtClientPoint(clientX, clientY) {
 		currentInsertMarker = el;
 	}
 
-	const x = Math.max(0, clientX - 2);
+	// Offset away from the finger/cursor so it's actually visible.
+	const x = Math.max(0, clientX - 18);
 	const y = Math.max(0, clientY - 12);
 	currentInsertMarker.style.left = `${x}px`;
 	currentInsertMarker.style.top = `${y}px`;
@@ -1165,6 +1166,54 @@ function createEditor(container, hiddenInput, options = {}) {
 				class:
 					"prose prose-sm max-w-none dark:prose-invert focus:outline-none min-h-[120px] p-3",
 			},
+			handleDOMEvents: {
+				dragover: (_view, event) => {
+					const dt = event.dataTransfer;
+					if (!dt) return false;
+
+					const markdownImagesEnabled =
+						hiddenInput?.dataset?.markdownImages === "true" ||
+						container?.dataset?.wysiwygStep === "true";
+					if (!markdownImagesEnabled) {
+						hideInsertMarker();
+						return false;
+					}
+
+					const files = Array.from(dt.files || []).filter(isImageFile);
+					const droppedText = extractDroppedText(event);
+					const mdImg = droppedText ? parseMarkdownImage(droppedText) : null;
+					const isImageDrop =
+						files.length > 0 ||
+						Boolean(mdImg?.src) ||
+						(droppedText && isLikelyImageUrl(droppedText));
+
+					if (!isImageDrop) {
+						hideInsertMarker();
+						return false;
+					}
+
+					// Ensure drop is allowed (especially for files) and show insertion hint.
+					event.preventDefault();
+
+					const pos = editor.view.posAtCoords({
+						left: event.clientX,
+						top: event.clientY,
+					})?.pos;
+					if (typeof pos === "number" && showInsertMarkerAtPos(editor, pos)) {
+						return false;
+					}
+					showInsertMarkerAtClientPoint(event.clientX, event.clientY);
+					return false;
+				},
+				dragleave: () => {
+					hideInsertMarker();
+					return false;
+				},
+				drop: () => {
+					hideInsertMarker();
+					return false;
+				},
+			},
 			handleKeyDown: (view, event) => {
 				if (handleAutocompleteKeydown(event)) {
 					return true;
@@ -1192,6 +1241,7 @@ function createEditor(container, hiddenInput, options = {}) {
 				return false;
 			},
 			handleDrop: (view, event) => {
+				hideInsertMarker();
 				// Handle drops of:
 				// - external files: upload to the relevant section and insert markdown
 				// - internal gallery thumbnails: insert markdown from text/plain
