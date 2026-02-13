@@ -897,6 +897,8 @@ function setupToolbar(
 			const end = editor.view.coordsAtPos(to);
 			const centerX = (start.left + end.right) / 2;
 			const top = Math.min(start.top, end.top);
+			const bottom = Math.max(start.bottom, end.bottom);
+			const toolbarRect = toolbar?.getBoundingClientRect?.();
 
 			// Measure after it's visible to center properly.
 			bubble.classList.remove("hidden");
@@ -905,7 +907,23 @@ function setupToolbar(
 				8,
 				Math.min(window.innerWidth - rect.width - 8, centerX - rect.width / 2),
 			);
-			const y = Math.max(8, top - rect.height - 8);
+
+			const yAbove = Math.max(8, top - rect.height - 8);
+			const yBelow = Math.min(window.innerHeight - rect.height - 8, bottom + 8);
+
+			let y = yAbove;
+			// Don't cover the toolbar; if we'd overlap it, flip below the selection.
+			if (toolbarRect && y < toolbarRect.bottom + 8) {
+				y = yBelow;
+			}
+			// If flipping below would push it off-screen, clamp it below the toolbar.
+			if (y + rect.height > window.innerHeight - 8 && toolbarRect) {
+				y = Math.min(
+					window.innerHeight - rect.height - 8,
+					Math.max(toolbarRect.bottom + 8, yAbove),
+				);
+			}
+
 			showAt({ x, y });
 		}
 
