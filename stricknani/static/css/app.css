@@ -575,6 +575,14 @@ textarea::placeholder {
 	font-size: 1.125rem;
 }
 
+.wysiwyg-toolbar .wysiwyg-image-size-label {
+	font-size: 0.625rem;
+	font-weight: 700;
+	line-height: 1;
+	margin-left: 0.25rem;
+	letter-spacing: 0.02em;
+}
+
 .wysiwyg-toolbar select {
 	height: 2rem;
 	padding: 0 0.5rem;

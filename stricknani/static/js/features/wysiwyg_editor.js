@@ -48,6 +48,13 @@ function isImageFile(file) {
 	);
 }
 
+function autoResizeTextarea(textarea) {
+	if (!textarea) return;
+	textarea.style.height = "auto";
+	textarea.style.overflowY = "hidden";
+	textarea.style.height = `${textarea.scrollHeight}px`;
+}
+
 function getDropInsertPos(view, event, fallbackPos) {
 	try {
 		const coords = { left: event.clientX, top: event.clientY };
@@ -80,6 +87,25 @@ function extractDroppedText(event) {
 	}
 
 	return "";
+}
+
+function parseMarkdownImage(text) {
+	// Conservative match for our own drag payload: ![alt](url)
+	const re = /!\[([^\]]*)\]\(\s*([^\s)]+)(?:\s+"([^"]*)")?\s*\)/;
+	const m = String(text || "").match(re);
+	if (!m) return null;
+	return {
+		alt: m[1] || "",
+		src: m[2] || "",
+		title: m[3] || "",
+	};
+}
+
+function isLikelyImageUrl(url) {
+	const u = String(url || "").trim();
+	if (!u) return false;
+	if (u.startsWith("/media/")) return true;
+	return /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(u);
 }
 
 async function uploadDroppedImage(container, hiddenInput, file) {
@@ -461,6 +487,7 @@ function createEditor(container, hiddenInput, options = {}) {
 			editorEl.classList.add("hidden");
 			hiddenInput.classList.remove("hidden");
 			setToolbarRawMode(toolbar, true);
+			autoResizeTextarea(hiddenInput);
 			hiddenInput.focus();
 			return;
 		}
@@ -484,10 +511,18 @@ function createEditor(container, hiddenInput, options = {}) {
 		}
 
 		hiddenInput.classList.add("hidden");
+		hiddenInput.style.height = "";
+		hiddenInput.style.overflowY = "";
 		editorEl.classList.remove("hidden");
 		setToolbarRawMode(toolbar, false);
 		editor.commands.focus();
 	}
+
+	hiddenInput.addEventListener("input", () => {
+		if (container.dataset.wysiwygRaw === "true") {
+			autoResizeTextarea(hiddenInput);
+		}
+	});
 
 	const editor = new Editor({
 		element: editorEl,
@@ -591,6 +626,31 @@ function createEditor(container, hiddenInput, options = {}) {
 
 				// If we're dropping markdown/url text, insert it directly.
 				if (files.length === 0 && droppedText) {
+					const mdImg = parseMarkdownImage(droppedText);
+					if (mdImg?.src) {
+						editor
+							.chain()
+							.setImage({
+								src: mdImg.src,
+								alt: mdImg.alt || "",
+							})
+							.insertContent({ type: "paragraph" })
+							.run();
+						return true;
+					}
+
+					if (isLikelyImageUrl(droppedText)) {
+						editor
+							.chain()
+							.setImage({
+								src: droppedText.trim(),
+								alt: "",
+							})
+							.insertContent({ type: "paragraph" })
+							.run();
+						return true;
+					}
+
 					editor.chain().insertContent(droppedText).run();
 					return true;
 				}
@@ -675,6 +735,23 @@ function setupToolbar(
 	options,
 	setRawMode,
 ) {
+	function updateImageSizeLabel() {
+		const btn = toolbar.querySelector('button[data-action="imageSize"]');
+		const label = btn?.querySelector("[data-image-size-label]");
+		if (!label) return;
+
+		if (!editor.isActive("image")) {
+			label.textContent = "S";
+			return;
+		}
+
+		const attrs = editor.getAttributes("image") || {};
+		const title = String(attrs.title || "");
+		const match = title.match(/\bsn:size=(sm|md|lg|xl)\b/);
+		const size = match ? match[1] : "sm";
+		label.textContent = size === "xl" ? "XL" : size.toUpperCase();
+	}
+
 	function cycleSelectedImageSize() {
 		if (!editor.isActive("image")) {
 			return;
@@ -701,6 +778,8 @@ function setupToolbar(
 			.focus()
 			.updateAttributes("image", { title: nextTitle })
 			.run();
+
+		updateImageSizeLabel();
 	}
 
 	toolbar.addEventListener("click", (e) => {
@@ -811,7 +890,12 @@ function setupToolbar(
 		}
 
 		updateToolbarState(toolbar, editor);
+		updateImageSizeLabel();
 	});
+
+	// Keep label in sync with selection changes that don't go through toolbar clicks.
+	editor.on("selectionUpdate", updateImageSizeLabel);
+	updateImageSizeLabel();
 }
 
 function updateToolbarState(toolbar, editor) {

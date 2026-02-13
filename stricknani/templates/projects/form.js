@@ -2170,7 +2170,7 @@ function addStep(elOrTitle = "", description = "", stepImages = []) {
 		                    <div class="wysiwyg-toolbar-group">
 		                        <button type="button" data-action="link" title="{{ _('Add link') }}"><span class="mdi mdi-link"></span></button>
 		                        <button type="button" data-action="image" title="{{ _('Insert image') }}"><span class="mdi mdi-image"></span></button>
-		                        <button type="button" data-action="imageSize" title="{{ _('Image size') }}"><span class="mdi mdi-image-size-select-large"></span></button>
+		                        <button type="button" data-action="imageSize" title="{{ _('Image size') }}"><span class="mdi mdi-image-size-select-large"></span><span class="wysiwyg-image-size-label" data-image-size-label>S</span></button>
 		                        <button type="button" data-action="toggleRaw" title="{{ _('Edit Markdown') }}"><span class="mdi mdi-language-markdown"></span></button>
 		                    </div>
 		                </div>
