@@ -160,10 +160,11 @@ const SizedImage = Image.extend({
 							left: t.clientX,
 							top: t.clientY,
 						})?.pos;
-						if (typeof pos === "number") {
-							showInsertMarkerAtPos(editor, pos);
-						} else {
-							hideInsertMarker();
+						if (
+							typeof pos !== "number" ||
+							!showInsertMarkerAtPos(editor, pos)
+						) {
+							showInsertMarkerAtClientPoint(t.clientX, t.clientY);
 						}
 					},
 					{ passive: false },
@@ -254,15 +255,15 @@ function getI18n(key, fallback) {
 }
 
 function showInsertMarkerAtPos(editor, pos) {
-	if (!editor || typeof pos !== "number") return;
+	if (!editor || typeof pos !== "number") return false;
 	let coords;
 	try {
 		coords = editor.view.coordsAtPos(pos);
 	} catch (_err) {
-		return;
+		return false;
 	}
 
-	if (!coords) return;
+	if (!coords) return false;
 	if (!currentInsertMarker) {
 		const el = document.createElement("div");
 		el.className = "wysiwyg-insert-marker hidden";
@@ -275,6 +276,24 @@ function showInsertMarkerAtPos(editor, pos) {
 	currentInsertMarker.style.left = `${Math.max(0, coords.left - 2)}px`;
 	currentInsertMarker.style.top = `${coords.top}px`;
 	currentInsertMarker.style.height = `${height}px`;
+	currentInsertMarker.classList.remove("hidden");
+	return true;
+}
+
+function showInsertMarkerAtClientPoint(clientX, clientY) {
+	if (typeof clientX !== "number" || typeof clientY !== "number") return;
+	if (!currentInsertMarker) {
+		const el = document.createElement("div");
+		el.className = "wysiwyg-insert-marker hidden";
+		(document.body || document.documentElement).appendChild(el);
+		currentInsertMarker = el;
+	}
+
+	const x = Math.max(0, clientX - 2);
+	const y = Math.max(0, clientY - 12);
+	currentInsertMarker.style.left = `${x}px`;
+	currentInsertMarker.style.top = `${y}px`;
+	currentInsertMarker.style.height = "24px";
 	currentInsertMarker.classList.remove("hidden");
 }
 
@@ -534,10 +553,11 @@ function installThumbnailLongPressDrag() {
 						left: t.clientX,
 						top: t.clientY,
 					})?.pos;
-					if (typeof pos === "number") {
-						showInsertMarkerAtPos(target.editor, pos);
-					} else {
-						hideInsertMarker();
+					if (
+						typeof pos !== "number" ||
+						!showInsertMarkerAtPos(target.editor, pos)
+					) {
+						showInsertMarkerAtClientPoint(t.clientX, t.clientY);
 					}
 				} else {
 					hideInsertMarker();

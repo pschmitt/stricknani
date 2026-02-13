@@ -681,7 +681,7 @@ textarea::placeholder {
 .markdown-image-autocomplete {
 	position: fixed;
 	z-index: 9999;
-	background: var(--fallback-b1, #fff);
+	background-color: #fff;
 	border: 1px solid rgba(0, 0, 0, 0.12);
 	border-radius: 0.75rem;
 	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
@@ -755,7 +755,7 @@ textarea::placeholder {
 	width: 100%;
 	max-width: 28rem;
 	max-height: 70vh;
-	background: var(--fallback-b1, #fff);
+	background-color: #fff;
 	border: 1px solid rgba(0, 0, 0, 0.12);
 	border-radius: 1rem;
 	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
@@ -766,8 +766,16 @@ textarea::placeholder {
 
 [data-theme="dark"] .markdown-image-autocomplete,
 [data-theme="dark"] .markdown-image-sheet {
-	background: #0b0f14;
+	background-color: #0b0f14;
 	border-color: rgba(255, 255, 255, 0.12);
+}
+
+@supports (color: oklch(1 0 0)) {
+	.markdown-image-autocomplete,
+	.markdown-image-sheet {
+		background-color: var(--fallback-b1, #fff);
+		border-color: color-mix(in srgb, currentColor 15%, transparent);
+	}
 }
 
 .markdown-image-sheet-header {
