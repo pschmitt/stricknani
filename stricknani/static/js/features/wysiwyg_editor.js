@@ -60,7 +60,7 @@ function lookupSnSizeHint(hints, src) {
 	return null;
 }
 
-function srcMatchesHintKeys(src, keys) {
+function _srcMatchesHintKeys(src, keys) {
 	if (!keys || keys.size === 0) return false;
 	for (const key of getHintKeysFromSrc(src)) {
 		if (keys.has(key)) return true;
@@ -646,6 +646,31 @@ function extractPandocSizedImages(markdown) {
 	return items;
 }
 
+function extractMarkdownImagesInOrder(markdown) {
+	// Extract markdown images in appearance order. Includes unsized images.
+	// Supports optional title and optional Pandoc-style attrs blob.
+	//
+	// Examples:
+	// - ![alt](url)
+	// - ![alt](url "title")
+	// - ![alt](url){.sn-size-lg}
+	// - ![alt](url "title"){.sn-size-lg}
+	const items = [];
+	const re =
+		/!\[([^\]]*)\]\(\s*([^\s)]+)(?:\s+"([^"]*)")?\s*\)(?:\s*\{([^}]*)\})?/g;
+	for (const m of String(markdown || "").matchAll(re)) {
+		const alt = m[1] || "";
+		const src = m[2] || "";
+		const title = m[3] || "";
+		const attrsBlob = m[4] || "";
+		const snSize =
+			extractSnSizeFromAttrsBlob(attrsBlob) ||
+			extractSnSizeMarkerFromTitle(title);
+		items.push({ alt, src, title, snSize });
+	}
+	return items;
+}
+
 function getPandocImageSizeHints(markdown) {
 	const map = new Map();
 	for (const item of extractPandocSizedImages(markdown)) {
@@ -679,32 +704,23 @@ function getSnSizeHintsFromPreparedMarkdown(preparedMarkdown) {
 }
 
 function ensureEditorImagesHaveSizeFromMarkdownOrder(editor, markdown) {
-	const sized = extractPandocSizedImages(markdown).map((item) => ({
-		keys: new Set(getHintKeysFromSrc(item.src)),
-		snSize: item.snSize,
-	}));
-	if (!sized.length) return;
+	const images = extractMarkdownImagesInOrder(markdown);
+	if (!images.length) return;
 
 	let idx = 0;
 	let tr = editor.state.tr;
 	editor.state.doc.descendants((node, pos) => {
 		if (node.type.name !== "image") return true;
 		const title = String(node.attrs.title || "");
-		if (extractSnSizeMarkerFromTitle(title)) return true;
+		const hasMarker = Boolean(extractSnSizeMarkerFromTitle(title));
 
-		// Find next matching src in the markdown list (keeping order). This supports
-		// duplicates of the same image with different sizes.
-		while (
-			idx < sized.length &&
-			!srcMatchesHintKeys(node.attrs.src, sized[idx].keys)
-		) {
-			idx += 1;
-		}
-		if (idx >= sized.length) return true;
-
-		const nextTitle = ensureSnSizeMarkerInTitle(title, sized[idx].snSize);
-		tr = tr.setNodeMarkup(pos, undefined, { ...node.attrs, title: nextTitle });
+		const next = images[idx];
 		idx += 1;
+		if (hasMarker) return true;
+		if (!next?.snSize) return true;
+
+		const nextTitle = ensureSnSizeMarkerInTitle(title, next.snSize);
+		tr = tr.setNodeMarkup(pos, undefined, { ...node.attrs, title: nextTitle });
 		return true;
 	});
 
