@@ -359,6 +359,20 @@
         }
     });
 
+    // Expose a minimal API for feature modules (e.g. WYSIWYG editor) so they can upload
+    // dropped images into the correct project section and insert Markdown.
+    window.STRICKNANI = window.STRICKNANI || {};
+    window.STRICKNANI.projectUploads = {
+        ensureProjectId,
+        ensureStepId,
+        uploadTitleImageData,
+        uploadStepImage,
+        uploadStitchSampleImageData,
+        addTitleImageToGallery,
+        addStepImagePreview,
+        addStitchSampleImagePreview
+    };
+
     function initTagEditor() {
         const hiddenInput = document.getElementById('tags');
         if (!hiddenInput) return;
@@ -521,7 +535,7 @@
             if (!normalized || pendingYarns.has(normalized)) return;
 
             // Check if it already exists in selectedYarns by name
-            for (let y of selectedYarns.values()) {
+            for (const y of selectedYarns.values()) {
                 if (y.name.toLowerCase() === normalized.toLowerCase()) return;
             }
 
@@ -547,7 +561,7 @@
         window.yarnSelector = {
             select: selectYarn,
             remove: removeYarn,
-            selectByName: function (name, details = []) {
+            selectByName: (name, details = []) => {
                 if (!name && details.length === 0) return { anySelected: false, remaining: '' };
 
                 let anySelected = false;
@@ -635,25 +649,22 @@
 
                 return { anySelected, remaining: '' };
             }
-        };
-
-        {% if project and project.yarn_ids %}
-        const preSelectedIds = {{ project.yarn_ids | tojson
-    }};
-    yarnOptions.forEach(option => {
-        const yarnId = parseInt(option.dataset.yarnId);
-        if (preSelectedIds.includes(yarnId)) {
-            selectYarn(
-                yarnId,
-                option.dataset.yarnName,
-                option.dataset.yarnBrand,
-                option.dataset.yarnColorway,
-                option.dataset.yarnDyeLot,
-                option.dataset.yarnImage,
-            );
-        }
-    });
-    {% endif %}
+        };{% if project and project.yarn_ids %}
+        const preSelectedIds = {{ project.yarn_ids | tojson }};
+        yarnOptions.forEach(option => {
+            const yarnId = parseInt(option.dataset.yarnId);
+            if (preSelectedIds.includes(yarnId)) {
+                selectYarn(
+                    yarnId,
+                    option.dataset.yarnName,
+                    option.dataset.yarnBrand,
+                    option.dataset.yarnColorway,
+                    option.dataset.yarnDyeLot,
+                    option.dataset.yarnImage,
+                );
+            }
+        });
+{% endif %}
 
     function updateSelectedDisplay() {
         if (selectedYarns.size === 0 && pendingYarns.size === 0) {
@@ -1155,39 +1166,43 @@
 
 
 
-    async function uploadTitleImage(file) {
-        if (!(await ensureProjectId())) return false;
+	    async function uploadTitleImageData(file) {
+	        if (!(await ensureProjectId())) return null;
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('alt_text', file.name);
+	        const formData = new FormData();
+	        formData.append('file', file);
+	        formData.append('alt_text', file.name);
 
-        let response;
-        try {
-            response = await fetch(`/projects/${projectId}/images/title`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-Token': '{{ csrf_token }}'
-                },
-                body: formData,
-            });
-        } catch (error) {
-            console.error('Title image upload failed', error);
-            window.showToast?.(uploadNetworkErrorMessage, 'error');
-            return false;
-        }
+	        let response;
+	        try {
+	            response = await fetch(`/projects/${projectId}/images/title`, {
+	                method: 'POST',
+	                headers: {
+	                    'X-CSRF-Token': '{{ csrf_token }}'
+	                },
+	                body: formData,
+	            });
+	        } catch (error) {
+	            console.error('Title image upload failed', error);
+	            window.showToast?.(uploadNetworkErrorMessage, 'error');
+	            return null;
+	        }
 
-        if (!response.ok) {
-            const message = await parseErrorMessage(response, uploadErrorMessage);
-            window.showToast?.(message, 'error');
-            return false;
-        }
+	        if (!response.ok) {
+	            const message = await parseErrorMessage(response, uploadErrorMessage);
+	            window.showToast?.(message, 'error');
+	            return null;
+	        }
 
-        const data = await response.json();
-        addTitleImageToGallery(data);
-        window.unsavedChanges?.setDirty(true);
-        return true;
-    }
+	        const data = await response.json();
+	        addTitleImageToGallery(data);
+	        window.unsavedChanges?.setDirty(true);
+	        return data;
+	    }
+
+	    async function uploadTitleImage(file) {
+	        return Boolean(await uploadTitleImageData(file));
+	    }
 
     function addTitleImageToGallery(imageData) {
         const container = document.getElementById('titleImagesContainer');
@@ -1773,7 +1788,7 @@
 
     async function ensureStepId(stepItem) {
         if (!(await ensureProjectId())) return null;
-        let stepId = stepItem.getAttribute('data-step-id');
+        const stepId = stepItem.getAttribute('data-step-id');
         if (stepId) return stepId;
 
         return await saveStepInternal(stepItem);
@@ -1822,7 +1837,7 @@
         if (textarea) updateImageVisibility(textarea);
     }
 
-    function initStitchSampleImageUploader() {
+	    function initStitchSampleImageUploader() {
         const dropzone = document.getElementById('stitchSampleDropzone');
         const input = document.getElementById('stitchSampleImageInput');
 
@@ -1830,37 +1845,43 @@
             return;
         }
 
-        window.setupImageUploadWidget(input, dropzone, async (file) => {
-            if (!(await ensureProjectId())) return;
+	        window.setupImageUploadWidget(input, dropzone, async (file) => {
+	            await uploadStitchSampleImageData(file);
+	        });
+	    }
 
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('alt_text', file.name);
+	    async function uploadStitchSampleImageData(file) {
+	        if (!(await ensureProjectId())) return null;
 
-            try {
-                const response = await fetch(`/projects/${projectId}/images/stitch-sample`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-Token': '{{ csrf_token }}'
-                    },
-                    body: formData,
-                });
+	        const formData = new FormData();
+	        formData.append('file', file);
+	        formData.append('alt_text', file.name);
 
-                if (!response.ok) {
-                    const message = await parseErrorMessage(response, uploadErrorMessage);
-                    window.showToast?.(message, 'error');
-                    return;
-                }
+	        try {
+	            const response = await fetch(`/projects/${projectId}/images/stitch-sample`, {
+	                method: 'POST',
+	                headers: {
+	                    'X-CSRF-Token': '{{ csrf_token }}'
+	                },
+	                body: formData,
+	            });
 
-                const data = await response.json();
-                addStitchSampleImagePreview(data);
-                window.unsavedChanges?.setDirty(true);
-            } catch (error) {
-                console.error('Stitch sample image upload failed', error);
-                window.showToast?.(uploadNetworkErrorMessage, 'error');
-            }
-        });
-    }
+	            if (!response.ok) {
+	                const message = await parseErrorMessage(response, uploadErrorMessage);
+	                window.showToast?.(message, 'error');
+	                return null;
+	            }
+
+	            const data = await response.json();
+	            addStitchSampleImagePreview(data);
+	            window.unsavedChanges?.setDirty(true);
+	            return data;
+	        } catch (error) {
+	            console.error('Stitch sample image upload failed', error);
+	            window.showToast?.(uploadNetworkErrorMessage, 'error');
+	            return null;
+	        }
+	    }
 
     function addStitchSampleImagePreview(imageData) {
         const container = document.getElementById('stitchSampleImagesContainer');
@@ -1908,6 +1929,7 @@
 	        div.className = 'step-item border rounded-lg p-2 md:p-4 bg-base-200 border-base-300 dark:bg-base-300/50 dark:border-base-700';
 	        div.setAttribute('data-step-number', stepNumber);
         const inputId = `newStepImageInput${Date.now()}`;
+        const textareaId = `step-description-new-${Date.now()}`;
         div.innerHTML = `
         <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span class="step-number">${stepNumber}</span></h4>
@@ -1929,8 +1951,30 @@
 	        <div class="mb-2">
 	            <input type="text" class="step-title input  w-full" placeholder="{{ _('Step Title') }}" value="${escapeAttr(title)}">
 	        </div>
-	        <textarea class="textarea  w-full mb-2 step-description" rows="3" placeholder="{{ _('Step Description') }}" data-markdown-images="true">${escapeHtml(description)}</textarea>
-	        <p class="mb-2 text-xs text-slate-500 dark:text-slate-300">{{ _('Supports Markdown formatting') }}</p>
+            <div data-wysiwyg data-wysiwyg-input="${textareaId}" data-wysiwyg-step="true" class="wysiwyg-container mb-2">
+                <div class="wysiwyg-toolbar">
+                    <div class="wysiwyg-toolbar-group">
+                        <button type="button" data-action="bold" title="{{ _('Bold') }}"><span class="mdi mdi-format-bold"></span></button>
+                        <button type="button" data-action="italic" title="{{ _('Italic') }}"><span class="mdi mdi-format-italic"></span></button>
+                        <button type="button" data-action="underline" title="{{ _('Underline') }}"><span class="mdi mdi-format-underline"></span></button>
+                    </div>
+                    <div class="wysiwyg-toolbar-group">
+                        <button type="button" data-action="heading" data-value="2" title="{{ _('Heading 2') }}"><span class="mdi mdi-format-header-2"></span></button>
+                        <button type="button" data-action="heading" data-value="3" title="{{ _('Heading 3') }}"><span class="mdi mdi-format-header-3"></span></button>
+                        <button type="button" data-action="paragraph" title="{{ _('Paragraph') }}"><span class="mdi mdi-format-paragraph"></span></button>
+                    </div>
+                    <div class="wysiwyg-toolbar-group">
+                        <button type="button" data-action="bulletList" title="{{ _('Bullet list') }}"><span class="mdi mdi-format-list-bulleted"></span></button>
+                        <button type="button" data-action="orderedList" title="{{ _('Numbered list') }}"><span class="mdi mdi-format-list-numbered"></span></button>
+                    </div>
+                    <div class="wysiwyg-toolbar-group">
+                        <button type="button" data-action="link" title="{{ _('Add link') }}"><span class="mdi mdi-link"></span></button>
+                        <button type="button" data-action="image" title="{{ _('Insert image') }}"><span class="mdi mdi-image"></span></button>
+                    </div>
+                </div>
+                <div class="wysiwyg-content"></div>
+            </div>
+            <textarea id="${textareaId}" class="step-description hidden" data-markdown-images="true">${escapeHtml(description)}</textarea>
 	        <h4 class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100 ${stepImages.length > 0 ? '' : 'hidden'}">
 	            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
 	        </h4>
@@ -1965,6 +2009,12 @@
         if (newStepGallery) {
             window.refreshPhotoSwipeGallery?.(newStepGallery);
         }
+
+        if (window.STRICKNANI?.wysiwyg?.init) {
+            window.STRICKNANI.wysiwyg.init({ i18n: window.STRICKNANI.i18n || {} });
+        }
+        window.unsavedChanges?.setDirty(true);
+    }
 
         const newTextarea = div.querySelector('textarea');
         if (newTextarea) {
@@ -2394,7 +2444,7 @@
         document.getElementById('stepsData').value = JSON.stringify(steps);
     });
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', () => {
         const importDialog = document.getElementById('importDialog');
         const importForm = document.getElementById('importForm');
         const importLoading = document.getElementById('importLoading');

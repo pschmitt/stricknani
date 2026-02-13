@@ -328,7 +328,12 @@
         }
     }
 
-    async function uploadYarnImage(file) {
+    async function uploadYarnImageData(file) {
+        if (!isEditing || !yarnId) {
+            window.showToast?.('{{ _("Save the yarn before adding photos") }}', 'info');
+            return null;
+        }
+
         const formData = new FormData();
         formData.append('file', file);
 
@@ -345,14 +350,21 @@
                 addYarnPhotoToGallery(data);
                 window.showToast?.('{{ _("Image uploaded!") }}', 'success');
                 window.unsavedChanges?.setDirty(true);
+                return data;
             } else {
                 const message = await parseErrorMessage(response, '{{ _("Upload failed") }}');
                 window.showToast?.(message, 'error');
+                return null;
             }
         } catch (error) {
             console.error('Upload failed', error);
             window.showToast?.('{{ _("Network error while uploading image") }}', 'error');
+            return null;
         }
+    }
+
+    async function uploadYarnImage(file) {
+        await uploadYarnImageData(file);
     }
 
     function addYarnPhotoToGallery(photoData) {
@@ -448,6 +460,12 @@
             }
         }
     });
+
+    window.STRICKNANI = window.STRICKNANI || {};
+    window.STRICKNANI.yarnUploads = {
+        uploadYarnImageData,
+        addYarnPhotoToGallery
+    };
 
     document.getElementById('yarnForm').addEventListener('submit', function (e) {
         const currentLink = document.getElementById('link')?.value.trim() || '';

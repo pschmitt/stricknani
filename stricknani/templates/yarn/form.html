@@ -2,6 +2,7 @@
 {% import "macros/buttons.html" as buttons %}
 {% import "macros/dialogs.html" as dialogs %}
 {% import "macros/image_upload.html" as image_upload %}
+{% import "macros/wysiwyg.html" as wysiwyg %}
 
 {% block title %}{{ yarn.name if yarn else _('Add Yarn') }} - {{ _('Yarn') }}{% endblock %}
 
@@ -223,8 +224,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                                     }}</span>
                             </label>
                         </div>
-                        <textarea id="description" name="description" rows="4"
-                            class="textarea  w-full" data-markdown-images="true">{{ yarn.description if yarn and yarn.description else '' }}</textarea>
+                        {{ wysiwyg.wysiwyg('description', value=(yarn.description if yarn and yarn.description else ''), markdown_images=true) }}
                     </div>
 
                     <div>
@@ -236,8 +236,7 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                                     }}</span>
                             </label>
                         </div>
-                        <textarea id="notes" name="notes" rows="4"
-                            class="textarea  w-full" data-markdown-images="true">{{ yarn.notes if yarn and yarn.notes else '' }}</textarea>
+                        {{ wysiwyg.wysiwyg('notes', value=(yarn.notes if yarn and yarn.notes else ''), markdown_images=true) }}
                     </div>
 
                     <div class="divider my-2"></div>
@@ -524,4 +523,5 @@ attrs='data-action="open-dialog" data-dialog-id="deleteYarnDialog"', class="w-fu
 <script>
 {% include "yarn/form.js" %}
 </script>
+{{ wysiwyg.wysiwyg_scripts() }}
 {% endblock %}

@@ -69,8 +69,9 @@
 
 		container.replaceChildren();
 		const toast = document.createElement("div");
-		toast.className = `relative overflow-hidden rounded-2xl px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 translate-x-4 hover:translate-y-1 cursor-pointer ${toastVariants[variant] || toastVariants.info
-			}`;
+		toast.className = `relative overflow-hidden rounded-2xl px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 translate-x-4 hover:translate-y-1 cursor-pointer ${
+			toastVariants[variant] || toastVariants.info
+		}`;
 		toast.setAttribute("role", "status");
 		const accentClass = toastAccents[variant] || toastAccents.info;
 
@@ -325,7 +326,8 @@
 		const variant = options.variant || "warning"; // warning, error, info
 
 		// Reset header classes
-		headerEl.className = "p-6 flex items-center gap-4 transition-colors duration-200";
+		headerEl.className =
+			"p-6 flex items-center gap-4 transition-colors duration-200";
 
 		// Reset button classes
 		confirmBtn.className = "btn gap-2 transition-colors duration-200";
@@ -359,7 +361,8 @@
 		setButtonTextPreservingIcon(cancelBtn, cancelText);
 
 		// Set icon for confirm button
-		const btnIconClass = variant === "error" ? "mdi-delete-outline" : "mdi-check";
+		const btnIconClass =
+			variant === "error" ? "mdi-delete-outline" : "mdi-check";
 		const btnIcon = confirmBtn.querySelector(".mdi");
 		if (btnIcon) {
 			btnIcon.className = `mdi ${btnIconClass}`;
@@ -670,14 +673,21 @@
 			if (kind === "pdf") {
 				window.openPdfViewer(url, name);
 			} else if (kind === "image") {
-				if (row.hasAttribute("data-pswp-open-index") && window.openPhotoSwipeIndex) {
+				if (
+					row.hasAttribute("data-pswp-open-index") &&
+					window.openPhotoSwipeIndex
+				) {
 					// Prevent opening if clicking an interactive element inside the row
-					if (event.target.closest("button, .btn, a, input, select, textarea")) {
+					if (
+						event.target.closest("button, .btn, a, input, select, textarea")
+					) {
 						return;
 					}
 					window.openPhotoSwipeIndex(row);
 				} else {
-					if (event.target.closest("button, .btn, a, input, select, textarea")) {
+					if (
+						event.target.closest("button, .btn, a, input, select, textarea")
+					) {
 						return;
 					}
 					window.openImageViewer(url, name);
@@ -981,11 +991,11 @@
 		const openDeleteDialog = (dialogId) => {
 			const trigger = dialogId
 				? document.querySelector(
-					`[data-action="open-dialog"][data-dialog-id="${dialogId}"]`,
-				)
+						`[data-action="open-dialog"][data-dialog-id="${dialogId}"]`,
+					)
 				: document.querySelector(
-					'[data-action="open-dialog"][data-dialog-id^="delete"]',
-				);
+						'[data-action="open-dialog"][data-dialog-id^="delete"]',
+					);
 
 			if (trigger && typeof trigger.click === "function") {
 				trigger.click();
@@ -1260,7 +1270,7 @@
 					event.preventDefault();
 					setSelectedIndex(
 						(currentAutocomplete.selectedIndex - 1 + items.length) %
-						items.length,
+							items.length,
 					);
 					break;
 				case "Enter":
