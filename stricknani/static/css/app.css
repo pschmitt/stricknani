@@ -597,6 +597,10 @@ textarea::placeholder {
 	backdrop-filter: blur(8px);
 }
 
+.wysiwyg-bubble.hidden {
+	display: none !important;
+}
+
 .wysiwyg-bubble button {
 	display: inline-flex;
 	align-items: center;
