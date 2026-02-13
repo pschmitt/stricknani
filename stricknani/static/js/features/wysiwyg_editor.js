@@ -1463,10 +1463,56 @@ function setupToolbar(
 	container,
 	toolbar,
 	editor,
-	_hiddenInput,
+	hiddenInput,
 	options,
 	setRawMode,
 ) {
+	const imagePickerInput = document.createElement("input");
+	imagePickerInput.type = "file";
+	imagePickerInput.accept = "image/*";
+	imagePickerInput.multiple = true;
+	imagePickerInput.className = "hidden";
+	toolbar.appendChild(imagePickerInput);
+
+	imagePickerInput.addEventListener("change", () => {
+		const files = Array.from(imagePickerInput.files || []).filter(isImageFile);
+		// Reset so selecting the same file again re-triggers change.
+		imagePickerInput.value = "";
+		if (!files.length) return;
+
+		(async () => {
+			editor.commands.focus();
+			let insertPos = editor.state.selection.from;
+
+			for (const file of files) {
+				const uploaded = await uploadDroppedImage(container, hiddenInput, file);
+				if (!uploaded) {
+					window.showToast?.(
+						getI18n("failedToUploadImage", "Failed to upload image"),
+						"error",
+					);
+					continue;
+				}
+
+				const url =
+					uploaded.full_url ||
+					uploaded.url ||
+					uploaded.href ||
+					uploaded.src ||
+					"";
+				const altText =
+					uploaded.alt_text || uploaded.alt || getI18n("image", "Image");
+				if (!url) continue;
+
+				insertImageAt(editor, insertPos, { src: url, alt: altText });
+				// After insert we just keep going at current selection.
+				insertPos = editor.state.selection.from;
+			}
+		})().catch((err) => {
+			console.error("WYSIWYG: image picker upload failed", err);
+		});
+	});
+
 	function updateImageSizeLabel() {
 		const btn = toolbar.querySelector('button[data-action="imageSize"]');
 		const label = btn?.querySelector("[data-image-size-label]");
@@ -1581,33 +1627,9 @@ function setupToolbar(
 				editor.chain().focus().unsetLink().run();
 				break;
 			case "image": {
-				const images = collectAvailableImages();
-				let coords = editor.view.coordsAtPos(editor.state.selection.to);
-				if (!coords || coords.left === 0) {
-					const selection = window.getSelection();
-					if (selection && selection.rangeCount > 0) {
-						const range = selection.getRangeAt(0);
-						const rect = range.getBoundingClientRect();
-						coords = { left: rect.left, bottom: rect.bottom };
-					} else {
-						coords = { left: 100, bottom: 100 };
-					}
-				}
-				const dropdown = createImageAutocompleteDropdown(editor, images, {
-					x: coords.left,
-					y: coords.bottom + 4,
-				});
-				closeImageAutocomplete();
-				document.body.appendChild(dropdown);
-				currentImageAutocomplete = {
-					editor,
-					dropdown,
-					selectedIndex: 0,
-					range: null,
-				};
-				if (images.length > 0) {
-					setAutocompleteSelectedIndex(dropdown, 0);
-				}
+				// Prefer upload/insert for toolbar button; existing-image insertion is
+				// still available via the `!` picker.
+				imagePickerInput.click();
 				break;
 			}
 			case "imageSize":
