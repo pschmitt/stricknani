@@ -443,6 +443,68 @@ function parseMarkdownImage(text) {
 	};
 }
 
+function extractSnSizeFromAttrsBlob(blob) {
+	const m = String(blob || "").match(/\b\.sn-size-(sm|md|lg|xl)\b/);
+	return m ? m[1] : null;
+}
+
+function stripSnSizeMarkerFromTitle(title) {
+	return String(title || "")
+		.replace(/\bsn:size=(sm|md|lg|xl)\b/g, "")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
+function extractSnSizeMarkerFromTitle(title) {
+	const m = String(title || "").match(/\bsn:size=(sm|md|lg|xl)\b/);
+	return m ? m[1] : null;
+}
+
+function ensureSnSizeMarkerInTitle(title, snSize) {
+	const cleaned = stripSnSizeMarkerFromTitle(title);
+	return cleaned ? `${cleaned} sn:size=${snSize}` : `sn:size=${snSize}`;
+}
+
+function preprocessMarkdownForEditor(markdown) {
+	// Support a subset of Pandoc's image attribute syntax by translating it into
+	// a temporary `sn:size=...` marker in the image title that TipTap can parse.
+	// Example: ![alt](url){.sn-size-md} -> ![alt](url "sn:size=md")
+	const re = /!\[([^\]]*)\]\(\s*([^)]+?)\s*\)\s*\{([^}]*)\}/g;
+	return String(markdown || "").replace(re, (_m, alt, inner, attrsBlob) => {
+		const snSize = extractSnSizeFromAttrsBlob(attrsBlob);
+		if (!snSize) {
+			// We don't support arbitrary attrs yet; strip to avoid showing `{...}` as text.
+			return `![${alt}](${inner.trim()})`;
+		}
+
+		const innerMatch = String(inner || "")
+			.trim()
+			.match(/^([^\s]+)(?:\s+"([^"]*)")?$/);
+		if (!innerMatch) {
+			return `![${alt}](${inner.trim()} "sn:size=${snSize}")`;
+		}
+
+		const url = innerMatch[1];
+		const title = innerMatch[2] || "";
+		const nextTitle = ensureSnSizeMarkerInTitle(title, snSize);
+		return `![${alt}](${url} "${nextTitle}")`;
+	});
+}
+
+function serializeMarkdownFromEditor(markdown) {
+	// Convert our internal title marker into Pandoc-style image attrs for storage:
+	// ![alt](url "title sn:size=md") -> ![alt](url "title"){.sn-size-md}
+	const re = /!\[([^\]]*)\]\(\s*([^\s)]+)(?:\s+"([^"]*)")?\s*\)/g;
+	return String(markdown || "").replace(re, (m, alt, url, title) => {
+		const snSize = extractSnSizeMarkerFromTitle(title || "");
+		if (!snSize) return m;
+
+		const cleanedTitle = stripSnSizeMarkerFromTitle(title || "");
+		const titlePart = cleanedTitle ? ` "${cleanedTitle}"` : "";
+		return `![${alt}](${url}${titlePart}){.sn-size-${snSize}}`;
+	});
+}
+
 function isLikelyImageUrl(url) {
 	const u = String(url || "").trim();
 	if (!u) return false;
@@ -1162,7 +1224,7 @@ function createEditor(container, hiddenInput, options = {}) {
 		if (!editorEl) return;
 		if (enabled) {
 			container.dataset.wysiwygRaw = "true";
-			hiddenInput.value = editor.getMarkdown();
+			hiddenInput.value = serializeMarkdownFromEditor(editor.getMarkdown());
 			editorEl.classList.add("hidden");
 			hiddenInput.classList.remove("hidden");
 			setToolbarRawMode(toolbar, true);
@@ -1174,9 +1236,10 @@ function createEditor(container, hiddenInput, options = {}) {
 		container.dataset.wysiwygRaw = "false";
 		const markdown = hiddenInput.value || "";
 		try {
+			const prepared = preprocessMarkdownForEditor(markdown);
 			const json = editor.markdown?.parse
-				? editor.markdown.parse(markdown)
-				: markdown;
+				? editor.markdown.parse(prepared)
+				: prepared;
 			editor.commands.setContent(json);
 		} catch (err) {
 			console.error(
@@ -1440,7 +1503,7 @@ function createEditor(container, hiddenInput, options = {}) {
 			if (container.dataset.wysiwygRaw === "true") {
 				return;
 			}
-			const markdown = editor.getMarkdown();
+			const markdown = serializeMarkdownFromEditor(editor.getMarkdown());
 			hiddenInput.value = markdown;
 			hiddenInput.dispatchEvent(new Event("input", { bubbles: true }));
 			updateToolbarState(toolbar, editor);
