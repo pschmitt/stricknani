@@ -640,6 +640,44 @@ textarea::placeholder {
 	display: block;
 }
 
+.wysiwyg-image-broken {
+	display: none;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.75rem;
+	border: 1px dashed rgba(0, 0, 0, 0.25);
+	border-radius: 0.75rem;
+	background: repeating-linear-gradient(
+		45deg,
+		rgba(0, 0, 0, 0.03),
+		rgba(0, 0, 0, 0.03) 10px,
+		rgba(0, 0, 0, 0.06) 10px,
+		rgba(0, 0, 0, 0.06) 20px
+	);
+	color: rgba(0, 0, 0, 0.75);
+	font-size: 0.875rem;
+	max-width: min(24rem, 100%);
+	min-height: 3.5rem;
+}
+
+.wysiwyg-image-broken .mdi {
+	font-size: 1.25rem;
+}
+
+.wysiwyg-image-broken-text {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wysiwyg-image-node.is-broken img {
+	display: none !important;
+}
+
+.wysiwyg-image-node.is-broken .wysiwyg-image-broken {
+	display: inline-flex;
+}
+
 .wysiwyg-image-delete {
 	position: absolute;
 	top: 0.25rem;

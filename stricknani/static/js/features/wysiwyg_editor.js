@@ -27,6 +27,18 @@ const SizedImage = Image.extend({
 			img.className = this.options.HTMLAttributes?.class || "";
 			img.draggable = true;
 
+			const broken = document.createElement("span");
+			broken.className = "wysiwyg-image-broken";
+
+			const brokenIcon = document.createElement("span");
+			brokenIcon.className = "mdi mdi-image-broken-variant";
+
+			const brokenText = document.createElement("span");
+			brokenText.className = "wysiwyg-image-broken-text";
+
+			broken.appendChild(brokenIcon);
+			broken.appendChild(brokenText);
+
 			const del = document.createElement("button");
 			del.type = "button";
 			del.className = "wysiwyg-image-delete";
@@ -34,12 +46,20 @@ const SizedImage = Image.extend({
 			del.innerHTML = '<span class="mdi mdi-close"></span>';
 
 			function applyAttrs() {
+				// Reset broken state when content updates.
+				wrapper.classList.remove("is-broken");
+
 				img.setAttribute("src", node.attrs.src || "");
 				if (node.attrs.alt) {
 					img.setAttribute("alt", node.attrs.alt);
 				} else {
 					img.setAttribute("alt", "");
 				}
+
+				const src = String(node.attrs.src || "");
+				const filename = src.split("/").filter(Boolean).pop() || "";
+				brokenText.textContent =
+					node.attrs.alt || filename || getI18n("image", "Image");
 
 				const rawTitle =
 					typeof node.attrs.title === "string" ? node.attrs.title : "";
@@ -59,6 +79,16 @@ const SizedImage = Image.extend({
 			}
 
 			applyAttrs();
+
+			img.addEventListener("error", () => {
+				// When an image URL no longer exists (deleted) the browser shows the alt
+				// text; hide the img and show an explicit broken-image placeholder.
+				wrapper.classList.add("is-broken");
+			});
+
+			img.addEventListener("load", () => {
+				wrapper.classList.remove("is-broken");
+			});
 
 			wrapper.addEventListener("dragstart", (e) => {
 				// Enable insertion marker for internal image moves (ProseMirror drag).
@@ -234,6 +264,7 @@ const SizedImage = Image.extend({
 			}
 
 			wrapper.appendChild(img);
+			wrapper.appendChild(broken);
 			wrapper.appendChild(del);
 
 			return {
