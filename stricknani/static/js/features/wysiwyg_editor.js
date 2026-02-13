@@ -15,6 +15,7 @@ import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.19.0";
 const WYSIWYG_INSTANCES = new Map();
 let currentImageAutocomplete = null;
 let currentInsertMarker = null;
+let currentInternalImageDrag = null;
 
 const SizedImage = Image.extend({
 	addNodeView() {
@@ -58,6 +59,25 @@ const SizedImage = Image.extend({
 			}
 
 			applyAttrs();
+
+			wrapper.addEventListener("dragstart", (e) => {
+				// Enable insertion marker for internal image moves (ProseMirror drag).
+				currentInternalImageDrag = { editor };
+				try {
+					e.dataTransfer?.setData(
+						"text/plain",
+						`![${node.attrs.alt || ""}](${node.attrs.src || ""})`,
+					);
+					e.dataTransfer.effectAllowed = "move";
+				} catch (_err) {
+					// Ignore.
+				}
+			});
+
+			wrapper.addEventListener("dragend", () => {
+				currentInternalImageDrag = null;
+				hideInsertMarker();
+			});
 
 			del.addEventListener("mousedown", (e) => {
 				e.preventDefault();
@@ -1179,6 +1199,20 @@ function createEditor(container, hiddenInput, options = {}) {
 						return false;
 					}
 
+					// Internal image move inside the editor: show marker regardless of dataTransfer payload.
+					if (currentInternalImageDrag?.editor === editor) {
+						event.preventDefault();
+						const pos = editor.view.posAtCoords({
+							left: event.clientX,
+							top: event.clientY,
+						})?.pos;
+						if (typeof pos === "number" && showInsertMarkerAtPos(editor, pos)) {
+							return false;
+						}
+						showInsertMarkerAtClientPoint(event.clientX, event.clientY);
+						return false;
+					}
+
 					const files = Array.from(dt.files || []).filter(isImageFile);
 					const droppedText = extractDroppedText(event);
 					const mdImg = droppedText ? parseMarkdownImage(droppedText) : null;
@@ -1210,6 +1244,7 @@ function createEditor(container, hiddenInput, options = {}) {
 					return false;
 				},
 				drop: () => {
+					currentInternalImageDrag = null;
 					hideInsertMarker();
 					return false;
 				},
