@@ -1,4 +1,5 @@
-import { Editor } from "https://esm.sh/@tiptap/core@3.19.0";
+import { Editor, mergeAttributes } from "https://esm.sh/@tiptap/core@3.19.0";
+import Image from "https://esm.sh/@tiptap/extension-image@3.19.0";
 import Link from "https://esm.sh/@tiptap/extension-link@3.19.0";
 import Underline from "https://esm.sh/@tiptap/extension-underline@3.19.0";
 import { Markdown } from "https://esm.sh/@tiptap/markdown@3.19.0";
@@ -13,6 +14,29 @@ import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.19.0";
 
 const WYSIWYG_INSTANCES = new Map();
 let currentImageAutocomplete = null;
+
+const SizedImage = Image.extend({
+	renderHTML({ HTMLAttributes }) {
+		const attrs = { ...HTMLAttributes };
+		const rawTitle = typeof attrs.title === "string" ? attrs.title : "";
+		const match = rawTitle.match(/\bsn:size=(sm|md|lg|xl)\b/);
+		const snSize = match ? match[1] : "sm";
+		const cleanedTitle = rawTitle
+			.replace(/\bsn:size=(sm|md|lg|xl)\b/g, "")
+			.replace(/\s+/g, " ")
+			.trim();
+
+		// Don't leak our internal marker into the browser tooltip.
+		if (cleanedTitle) {
+			attrs.title = cleanedTitle;
+		} else {
+			delete attrs.title;
+		}
+		attrs["data-sn-size"] = snSize;
+
+		return ["img", mergeAttributes(this.options.HTMLAttributes, attrs)];
+	},
+});
 
 function getI18n(key, fallback) {
 	return window.STRICKNANI?.i18n?.[key] || fallback;
@@ -267,11 +291,20 @@ function insertImageFromAutocomplete(editor, image) {
 			editor
 				.chain()
 				.deleteRange({ from: range.from, to: range.to })
-				.insertContent(`![${altText}](${image.url})`)
+				.setImage({
+					src: image.url,
+					alt: altText,
+				})
 				.run();
 		} else {
 			// Toolbar-based insertion should not delete content around the cursor.
-			editor.chain().insertContent(`![${altText}](${image.url})`).run();
+			editor
+				.chain()
+				.setImage({
+					src: image.url,
+					alt: altText,
+				})
+				.run();
 		}
 	}, 10);
 }
@@ -400,6 +433,62 @@ function createEditor(container, hiddenInput, options = {}) {
 
 	const initialContent = hiddenInput.value || "";
 
+	function setToolbarRawMode(toolbarEl, enabled) {
+		if (!toolbarEl) return;
+		toolbarEl.querySelectorAll("button[data-action]").forEach((btn) => {
+			if (btn.dataset.action === "toggleRaw") {
+				btn.classList.toggle("is-active", enabled);
+				return;
+			}
+			if (enabled) {
+				if (btn.disabled) return;
+				btn.dataset.wysiwygDisabledByRaw = "true";
+				btn.disabled = true;
+				return;
+			}
+			if (btn.dataset.wysiwygDisabledByRaw === "true") {
+				delete btn.dataset.wysiwygDisabledByRaw;
+				btn.disabled = false;
+			}
+		});
+	}
+
+	function setRawMode(enabled) {
+		if (!editorEl) return;
+		if (enabled) {
+			container.dataset.wysiwygRaw = "true";
+			hiddenInput.value = editor.getMarkdown();
+			editorEl.classList.add("hidden");
+			hiddenInput.classList.remove("hidden");
+			setToolbarRawMode(toolbar, true);
+			hiddenInput.focus();
+			return;
+		}
+
+		container.dataset.wysiwygRaw = "false";
+		const markdown = hiddenInput.value || "";
+		try {
+			const json = editor.markdown?.parse
+				? editor.markdown.parse(markdown)
+				: markdown;
+			editor.commands.setContent(json);
+		} catch (err) {
+			console.error(
+				"WYSIWYG: Failed to parse markdown, keeping raw content",
+				err,
+			);
+			// Keep raw textarea visible if parsing fails.
+			container.dataset.wysiwygRaw = "true";
+			setToolbarRawMode(toolbar, true);
+			return;
+		}
+
+		hiddenInput.classList.add("hidden");
+		editorEl.classList.remove("hidden");
+		setToolbarRawMode(toolbar, false);
+		editor.commands.focus();
+	}
+
 	const editor = new Editor({
 		element: editorEl,
 		extensions: [
@@ -417,6 +506,12 @@ function createEditor(container, hiddenInput, options = {}) {
 				// We include Link and Underline separately to configure them; disable the ones from StarterKit.
 				link: false,
 				underline: false,
+			}),
+			SizedImage.configure({
+				allowBase64: false,
+				HTMLAttributes: {
+					class: "max-w-full h-auto rounded",
+				},
 			}),
 			Underline,
 			Link.configure({
@@ -528,10 +623,13 @@ function createEditor(container, hiddenInput, options = {}) {
 							continue;
 						}
 
-						const prefix = i === 0 ? "" : "\n\n";
 						editor
 							.chain()
-							.insertContent(`${prefix}![${altText}](${url})`)
+							.setImage({
+								src: url,
+								alt: altText,
+							})
+							.insertContent({ type: "paragraph" })
 							.run();
 					}
 				})().catch((err) => {
@@ -542,6 +640,9 @@ function createEditor(container, hiddenInput, options = {}) {
 			},
 		},
 		onUpdate: ({ editor }) => {
+			if (container.dataset.wysiwygRaw === "true") {
+				return;
+			}
 			const markdown = editor.getMarkdown();
 			hiddenInput.value = markdown;
 			hiddenInput.dispatchEvent(new Event("input", { bubbles: true }));
@@ -559,20 +660,62 @@ function createEditor(container, hiddenInput, options = {}) {
 	});
 
 	if (toolbar) {
-		setupToolbar(toolbar, editor, options);
+		setupToolbar(container, toolbar, editor, hiddenInput, options, setRawMode);
 	}
 
 	WYSIWYG_INSTANCES.set(container, editor);
 	return editor;
 }
 
-function setupToolbar(toolbar, editor, options) {
+function setupToolbar(
+	container,
+	toolbar,
+	editor,
+	_hiddenInput,
+	options,
+	setRawMode,
+) {
+	function cycleSelectedImageSize() {
+		if (!editor.isActive("image")) {
+			return;
+		}
+
+		const attrs = editor.getAttributes("image") || {};
+		const prevTitle = String(attrs.title || "");
+		const match = prevTitle.match(/\bsn:size=(sm|md|lg|xl)\b/);
+		const prevSize = match ? match[1] : "sm";
+		const sizes = ["sm", "md", "lg", "xl"];
+		const nextSize = sizes[(sizes.indexOf(prevSize) + 1) % sizes.length];
+
+		// Preserve any user-provided title and just update our marker.
+		const cleanedTitle = prevTitle
+			.replace(/\bsn:size=(sm|md|lg|xl)\b/g, "")
+			.replace(/\s+/g, " ")
+			.trim();
+		const nextTitle = cleanedTitle
+			? `${cleanedTitle} sn:size=${nextSize}`
+			: `sn:size=${nextSize}`;
+
+		editor
+			.chain()
+			.focus()
+			.updateAttributes("image", { title: nextTitle })
+			.run();
+	}
+
 	toolbar.addEventListener("click", (e) => {
 		const btn = e.target.closest("button[data-action]");
 		if (!btn) return;
 
 		const action = btn.dataset.action;
 		const value = btn.dataset.value;
+
+		if (action === "toggleRaw") {
+			e.preventDefault();
+			const enabled = container.dataset.wysiwygRaw !== "true";
+			setRawMode(enabled);
+			return;
+		}
 
 		switch (action) {
 			case "bold":
@@ -656,6 +799,9 @@ function setupToolbar(toolbar, editor, options) {
 				}
 				break;
 			}
+			case "imageSize":
+				cycleSelectedImageSize();
+				break;
 			case "undo":
 				editor.chain().focus().undo().run();
 				break;
@@ -711,6 +857,9 @@ function updateToolbarState(toolbar, editor) {
 				break;
 			case "link":
 				isActive = editor.isActive("link");
+				break;
+			case "imageSize":
+				isActive = editor.isActive("image");
 				break;
 		}
 

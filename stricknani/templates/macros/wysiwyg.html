@@ -61,19 +61,25 @@
             <button type="button" data-action="image" title="{{ _('Insert image') }}" aria-label="{{ _('Insert image') }}" {% if not markdown_images %}disabled{% endif %}>
                 <span class="mdi mdi-image"></span>
             </button>
-        </div>
-        <div class="wysiwyg-toolbar-group">
-            <button type="button" data-action="undo" title="{{ _('Undo') }}" aria-label="{{ _('Undo') }}">
-                <span class="mdi mdi-undo"></span>
-            </button>
-            <button type="button" data-action="redo" title="{{ _('Redo') }}" aria-label="{{ _('Redo') }}">
-                <span class="mdi mdi-redo"></span>
+            <button type="button" data-action="imageSize" title="{{ _('Image size') }}" aria-label="{{ _('Image size') }}" {% if not markdown_images %}disabled{% endif %}>
+                <span class="mdi mdi-image-size-select-large"></span>
             </button>
         </div>
-    </div>
-    <div class="wysiwyg-content"></div>
-</div>
-<textarea id="{{ input_id }}" name="{{ input_id }}" rows="{{ rows }}" class="hidden" placeholder="{{ placeholder }}" {% if disabled %}disabled{% endif %} {% if markdown_images %}data-markdown-images="true"{% endif %}>{{ value }}</textarea>
+	        <div class="wysiwyg-toolbar-group">
+	            <button type="button" data-action="undo" title="{{ _('Undo') }}" aria-label="{{ _('Undo') }}">
+	                <span class="mdi mdi-undo"></span>
+	            </button>
+	            <button type="button" data-action="redo" title="{{ _('Redo') }}" aria-label="{{ _('Redo') }}">
+	                <span class="mdi mdi-redo"></span>
+	            </button>
+	            <button type="button" data-action="toggleRaw" title="{{ _('Edit Markdown') }}" aria-label="{{ _('Edit Markdown') }}">
+	                <span class="mdi mdi-language-markdown"></span>
+	            </button>
+	        </div>
+	    </div>
+	    <div class="wysiwyg-content"></div>
+	</div>
+	<textarea id="{{ input_id }}" name="{{ input_id }}" rows="{{ rows }}" class="wysiwyg-raw textarea textarea-bordered w-full text-sm font-mono hidden" placeholder="{{ placeholder }}" {% if disabled %}disabled{% endif %} {% if markdown_images %}data-markdown-images="true"{% endif %}>{{ value }}</textarea>
 {% endmacro %}
 
 {% macro wysiwyg_scripts() %}

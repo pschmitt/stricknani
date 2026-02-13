@@ -581,18 +581,20 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                         <button type="button" data-action="bulletList" title="{{ _('Bullet list') }}"><span class="mdi mdi-format-list-bulleted"></span></button>
                                         <button type="button" data-action="orderedList" title="{{ _('Numbered list') }}"><span class="mdi mdi-format-list-numbered"></span></button>
                                     </div>
-                                    <div class="wysiwyg-toolbar-group">
-                                        <button type="button" data-action="link" title="{{ _('Add link') }}"><span class="mdi mdi-link"></span></button>
-                                        <button type="button" data-action="image" title="{{ _('Insert image') }}"><span class="mdi mdi-image"></span></button>
-                                    </div>
-                                </div>
-                                <div class="wysiwyg-content"></div>
-                            </div>
-                            <textarea id="step-description-{{ step.id }}" name="step-description-{{ step.id }}" class="step-description hidden" data-markdown-images="true">{{ step.description or '' }}</textarea>
-                            <h4
-                                class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not step.images %} hidden{% endif %}">
-                                <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
-                            </h4>
+		                                    <div class="wysiwyg-toolbar-group">
+		                                        <button type="button" data-action="link" title="{{ _('Add link') }}"><span class="mdi mdi-link"></span></button>
+		                                        <button type="button" data-action="image" title="{{ _('Insert image') }}"><span class="mdi mdi-image"></span></button>
+		                                        <button type="button" data-action="imageSize" title="{{ _('Image size') }}"><span class="mdi mdi-image-size-select-large"></span></button>
+		                                        <button type="button" data-action="toggleRaw" title="{{ _('Edit Markdown') }}"><span class="mdi mdi-language-markdown"></span></button>
+		                                    </div>
+		                                </div>
+		                                <div class="wysiwyg-content"></div>
+		                            </div>
+	                            <textarea id="step-description-{{ step.id }}" name="step-description-{{ step.id }}" class="step-description wysiwyg-raw textarea textarea-bordered w-full text-sm font-mono hidden" data-markdown-images="true">{{ step.description or '' }}</textarea>
+	                            <h4
+	                                class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not step.images %} hidden{% endif %}">
+	                                <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
+	                            </h4>
                             <div class="step-images grid grid-cols-3 gap-2 mb-2 pswp-gallery" data-pswp-gallery>
                                 {% for image in step.images %}
                                 {{ image_upload.image_preview(image, class='aspect-video overflow-hidden',

@@ -2167,17 +2167,19 @@ function addStep(elOrTitle = "", description = "", stepImages = []) {
                         <button type="button" data-action="bulletList" title="{{ _('Bullet list') }}"><span class="mdi mdi-format-list-bulleted"></span></button>
                         <button type="button" data-action="orderedList" title="{{ _('Numbered list') }}"><span class="mdi mdi-format-list-numbered"></span></button>
                     </div>
-                    <div class="wysiwyg-toolbar-group">
-                        <button type="button" data-action="link" title="{{ _('Add link') }}"><span class="mdi mdi-link"></span></button>
-                        <button type="button" data-action="image" title="{{ _('Insert image') }}"><span class="mdi mdi-image"></span></button>
-                    </div>
-                </div>
-                <div class="wysiwyg-content"></div>
-	            </div>
-	            <textarea id="${textareaId}" class="step-description hidden" data-markdown-images="true">${escapeHtml(description)}</textarea>
-		        <h4 class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100 ${stepImages.length > 0 ? "" : "hidden"}">
-		            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
-		        </h4>
+		                    <div class="wysiwyg-toolbar-group">
+		                        <button type="button" data-action="link" title="{{ _('Add link') }}"><span class="mdi mdi-link"></span></button>
+		                        <button type="button" data-action="image" title="{{ _('Insert image') }}"><span class="mdi mdi-image"></span></button>
+		                        <button type="button" data-action="imageSize" title="{{ _('Image size') }}"><span class="mdi mdi-image-size-select-large"></span></button>
+		                        <button type="button" data-action="toggleRaw" title="{{ _('Edit Markdown') }}"><span class="mdi mdi-language-markdown"></span></button>
+		                    </div>
+		                </div>
+	                <div class="wysiwyg-content"></div>
+		            </div>
+		            <textarea id="${textareaId}" class="step-description wysiwyg-raw textarea textarea-bordered w-full text-sm font-mono hidden" data-markdown-images="true">${escapeHtml(description)}</textarea>
+			        <h4 class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100 ${stepImages.length > 0 ? "" : "hidden"}">
+			            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
+			        </h4>
 		        <div class="step-images mb-2 grid grid-cols-3 gap-2 pswp-gallery ${stepImages.length > 0 ? "" : "hidden"}" data-pswp-gallery>
 		            ${stepImages
 									.map((img) => {

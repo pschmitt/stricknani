@@ -598,6 +598,28 @@ textarea::placeholder {
 	padding: 0.75rem;
 }
 
+.wysiwyg-content .ProseMirror img {
+	max-width: 100% !important;
+	width: auto !important;
+	height: auto !important;
+	max-height: 6rem !important;
+	object-fit: contain;
+	display: inline-block;
+	margin: 0.5rem 0 !important;
+}
+
+.wysiwyg-content .ProseMirror img[data-sn-size="md"] {
+	max-height: 10rem !important;
+}
+
+.wysiwyg-content .ProseMirror img[data-sn-size="lg"] {
+	max-height: 16rem !important;
+}
+
+.wysiwyg-content .ProseMirror img[data-sn-size="xl"] {
+	max-height: 24rem !important;
+}
+
 .wysiwyg-content .ProseMirror p.is-editor-empty:first-child::before {
 	content: attr(data-placeholder);
 	color: color-mix(in srgb, currentColor 40%, transparent);
