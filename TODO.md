@@ -37,6 +37,8 @@ Execution-oriented backlog for Stricknani.
 | T30 | P1 | done | cli | feat | Add `stricknani-cli project|yarn ID_OR_NAME` with pretty print and --json support |
 | T31 | P0 | done | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
 | T1 | P3 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
+| T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
+| T33 | P3 | todo | frontend | feat | Add PWA installation capability |
 
 
 ## Done
@@ -68,6 +70,48 @@ Execution-oriented backlog for Stricknani.
 
 - **Primary Files**: `stricknani/templates/base.html`, `justfile`, `flake.nix`
 - **Description**: Replace runtime Tailwind-in-browser usage with a prebuilt static CSS bundle for performance and easier CSP hardening.
+
+### T32: Implement offline mode (PWA)
+
+- **Area**: frontend
+- **Priority**: P3
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Add service worker for offline caching of static assets
+  - Implement cache-first strategy for app shell and critical resources
+  - Add offline detection and graceful degradation UI
+  - Cache API responses for recently viewed projects/yarns
+- **Implementation**:
+  - Create service worker file with caching strategies
+  - Register service worker in main JavaScript
+  - Add manifest.json for PWA capabilities
+  - Implement offline fallback pages
+- **Exit Criteria**:
+  - App loads and functions without network connection
+  - Recently viewed content available offline
+  - Clear offline/online status indicators
+
+### T33: Add PWA installation capability
+
+- **Area**: frontend
+- **Priority**: P3
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Add web app manifest with PWA configuration
+  - Implement install prompt for supported browsers
+  - Add install button in UI for manual installation
+  - Configure splash screens and icons for various devices
+- **Implementation**:
+  - Create web app manifest (manifest.json)
+  - Add beforeinstallprompt event handling
+  - Implement install button component
+  - Generate appropriate icons for different screen sizes
+- **Exit Criteria**:
+  - App can be installed to home screen on mobile devices
+  - App launches in standalone mode when installed
+  - Proper icons and splash screens displayed
 
 ### T16: Add markdown image autocomplete for `!` trigger in text fields
 
