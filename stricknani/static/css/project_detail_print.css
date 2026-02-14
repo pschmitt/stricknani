@@ -84,6 +84,20 @@
 		padding: 0.25rem 0 0.75rem 0 !important;
 	}
 
+	/*
+	Force collapsed DaisyUI sections to print expanded.
+	DaisyUI typically hides content via sibling selectors on the checkbox.
+	*/
+	.collapse > input:not(:checked) ~ .collapse-content,
+	.collapse > input:checked ~ .collapse-content {
+		display: block !important;
+		visibility: visible !important;
+		opacity: 1 !important;
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
+	}
+
 	.collapse-arrow > .collapse-title::after {
 		display: none !important;
 	}
@@ -91,6 +105,33 @@
 	/* Make project details much more compact in print. */
 	.project-details-card .collapse-content {
 		padding: 0 !important;
+	}
+
+	.project-details-print-table {
+		border-collapse: collapse !important;
+		width: 100% !important;
+		font-size: 9pt !important;
+		line-height: 1.2 !important;
+	}
+
+	.project-details-print-table th,
+	.project-details-print-table td {
+		padding: 0.1rem 0 !important;
+		vertical-align: top !important;
+	}
+
+	.project-details-print-table th {
+		width: 9rem !important;
+		text-align: left !important;
+		font-weight: 700 !important;
+		color: #444 !important;
+		text-transform: uppercase !important;
+		letter-spacing: 0.04em !important;
+		font-size: 8pt !important;
+	}
+
+	.project-details-print-table td {
+		word-break: break-word !important;
 	}
 
 	.project-details-card .divider {

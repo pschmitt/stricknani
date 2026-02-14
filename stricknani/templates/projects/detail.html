@@ -207,13 +207,53 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                     <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-sm">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Project Details') }}
-                    </div>
-                    <div class="collapse-content space-y-4 text-base">
-                        <div class="pt-2">
-                            <!-- Badges Info -->
-                            {% if project.category and project.category != 'None' %}
-                            <div class="mb-4">
-                                <span class="text-xs font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
+	                    </div>
+	                    <div class="collapse-content space-y-4 text-base">
+	                        <div class="pt-2">
+	                            <div class="hidden print:block">
+	                                <table class="project-details-print-table">
+	                                    <tbody>
+	                                        {% if project.category and project.category != 'None' %}
+	                                        <tr>
+	                                            <th scope="row">{{ _('Category') }}</th>
+	                                            <td>{{ _(project.category) }}</td>
+	                                        </tr>
+	                                        {% endif %}
+	                                        {% if project.tags %}
+	                                        <tr>
+	                                            <th scope="row">{{ _('Tags') }}</th>
+	                                            <td>{{ project.tags|join(', ') }}</td>
+	                                        </tr>
+	                                        {% endif %}
+	                                        <tr>
+	                                            <th scope="row">{{ _('Created') }}</th>
+	                                            <td>{{ project.created_at[:10] }}</td>
+	                                        </tr>
+	                                        {% if project.is_ai_enhanced %}
+	                                        <tr>
+	                                            <th scope="row">{{ _('Data Source') }}</th>
+	                                            <td>AI</td>
+	                                        </tr>
+	                                        {% endif %}
+	                                        <tr>
+	                                            <th scope="row">{{ _('Pattern Source') }}</th>
+	                                            <td>
+	                                                {% if project.link %}
+	                                                {{ project.link }}
+	                                                {% else %}
+	                                                {{ _('No link provided') }}
+	                                                {% endif %}
+	                                            </td>
+	                                        </tr>
+	                                    </tbody>
+	                                </table>
+	                            </div>
+
+	                            <div class="print:hidden">
+	                            <!-- Badges Info -->
+	                            {% if project.category and project.category != 'None' %}
+	                            <div class="mb-4">
+	                                <span class="text-xs font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
                                     }}</span>
                                 <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
                                     class="badge badge-md border {{ project.category|category_color }} font-bold py-3.5 px-4 shadow-sm hover:brightness-95 transition-all">
@@ -318,13 +358,14 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                                     </form>
                                 </div>
                                 {% endif %}
-                                {% else %}
-                                <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+	                                {% else %}
+	                                <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
+	                                {% endif %}
+	                            </div>
+	                            </div>
+	                        </div>
+	                    </div>
+	                </div>
 
                 <!-- Notes Card -->
                 {% if project.notes_html %}
@@ -769,12 +810,52 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                     </span>
                 </div>
 
-                <div class="collapse-content space-y-4 text-base">
-                    <div class="pt-2">
-                        <!-- Badges Info -->
-                        {% if project.category and project.category != 'None' %}
-                        <div class="mb-4 sm:mb-6">
-                            <span class="text-xs font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
+	                <div class="collapse-content space-y-4 text-base">
+	                    <div class="pt-2">
+	                        <div class="hidden print:block">
+	                            <table class="project-details-print-table">
+	                                <tbody>
+	                                    {% if project.category and project.category != 'None' %}
+	                                    <tr>
+	                                        <th scope="row">{{ _('Category') }}</th>
+	                                        <td>{{ _(project.category) }}</td>
+	                                    </tr>
+	                                    {% endif %}
+	                                    {% if project.tags %}
+	                                    <tr>
+	                                        <th scope="row">{{ _('Tags') }}</th>
+	                                        <td>{{ project.tags|join(', ') }}</td>
+	                                    </tr>
+	                                    {% endif %}
+	                                    <tr>
+	                                        <th scope="row">{{ _('Created') }}</th>
+	                                        <td>{{ project.created_at[:10] }}</td>
+	                                    </tr>
+	                                    {% if project.is_ai_enhanced %}
+	                                    <tr>
+	                                        <th scope="row">{{ _('Data Source') }}</th>
+	                                        <td>AI</td>
+	                                    </tr>
+	                                    {% endif %}
+	                                    <tr>
+	                                        <th scope="row">{{ _('Pattern Source') }}</th>
+	                                        <td>
+	                                            {% if project.link %}
+	                                            {{ project.link }}
+	                                            {% else %}
+	                                            {{ _('No link provided') }}
+	                                            {% endif %}
+	                                        </td>
+	                                    </tr>
+	                                </tbody>
+	                            </table>
+	                        </div>
+
+	                        <div class="print:hidden">
+	                        <!-- Badges Info -->
+	                        {% if project.category and project.category != 'None' %}
+	                        <div class="mb-4 sm:mb-6">
+	                            <span class="text-xs font-bold uppercase tracking-widest text-base-content/40 block mb-2">{{ _('Category')
                                 }}</span>
                             <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
                                 class="badge badge-md border {{ project.category|category_color }} font-bold py-3.5 px-4 shadow-sm hover:brightness-95 transition-all">
@@ -879,14 +960,16 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                                 </form>
                             </div>
                             {% endif %}
-                            {% else %}
-                            <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
-                            {% endif %}
-                        </div>
+	                            {% else %}
+	                            <span class="text-sm text-base-content/40 italic">{{ _('No link provided') }}</span>
+	                            {% endif %}
+	                        </div>
 
-                        {% if project.notes_html %}
-                        <div class="divider my-3"></div>
-                        <div class="rounded-xl border border-yellow-100 dark:border-yellow-900/30 bg-yellow-50/70 dark:bg-yellow-900/10 p-4">
+	                        </div>
+	
+	                        {% if project.notes_html %}
+	                        <div class="divider my-3"></div>
+	                        <div class="rounded-xl border border-yellow-100 dark:border-yellow-900/30 bg-yellow-50/70 dark:bg-yellow-900/10 p-4">
                             <div class="flex items-center justify-between mb-2">
                                 <div class="flex items-center gap-2 text-yellow-800 dark:text-yellow-500 font-bold text-xs uppercase tracking-widest">
                                     <span class="mdi mdi-notebook-outline"></span>
