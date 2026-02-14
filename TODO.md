@@ -46,6 +46,7 @@ Execution-oriented backlog for Stricknani.
 | T45 | P1 | done | ux | bug | Fix printing bug: collapsed instructions not included in print output
 | T44 | P2 | done | test | feat | Add comprehensive tests for printing features
 | T43 | P2 | done | ux | refactor | Hide "yarns used" widget when no yarns are linked to project |
+| T47 | P2 | todo | ux | refactor | Reformatting the "technical specs" section for better print layout
 | T46 | P2 | done | cli | refactor | Improve stricknani-cli project export command arguments
 | T1 | P4 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 | T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
@@ -175,6 +176,45 @@ Execution-oriented backlog for Stricknani.
   - Consistent with other conditional rendering patterns in the app
   - Better user experience by only showing relevant information
   - Reduces visual clutter on project pages
+
+### T47: Reformatting the "technical specs" section for better print layout
+
+- **Area**: ux
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Redesign the technical specifications section to be more space-efficient when printing
+  - Current layout wastes significant room in print output
+  - Optimize for readability while maximizing space utilization
+- **Current Issues**:
+  - Excessive white space and padding in print view
+  - Inefficient use of horizontal and vertical space
+  - Layout doesn't adapt well to print medium
+  - Important information may be spread out unnecessarily
+- **Implementation**:
+  - Create compact, print-optimized layout for technical specs
+  - Use multi-column or tabular layout for better space utilization
+  - Reduce excessive padding and margins in print view
+  - Ensure all technical information remains readable and accessible
+  - Consider using smaller font sizes specifically for print
+  - Group related specifications together logically
+- **Specific Improvements**:
+  - Replace verbose labels with abbreviations where appropriate (e.g., "Gauge" instead of "Recommended Gauge")
+  - Use compact table layout instead of spaced-out div structure
+  - Remove decorative elements that don't add value in print
+  - Optimize line height and font size for print readability
+  - Consider landscape orientation for wide technical spec tables
+- **Files to Modify**:
+  - `stricknani/static/css/project_detail_print.css` - print-specific styling
+  - `stricknani/templates/projects/detail.html` - template structure
+  - Possibly create print-specific partial template for technical specs
+- **Design Goals**:
+  - Maximize information density without sacrificing readability
+  - Ensure all technical specifications fit on minimal pages
+  - Maintain visual hierarchy and scanning ease
+  - Keep print output professional and well-organized
+  - Ensure consistency with other print-optimized sections
 
 ### T46: Improve stricknani-cli project export command arguments
 

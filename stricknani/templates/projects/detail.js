@@ -82,8 +82,47 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 
+	function setupPrintExpansion() {
+		const instructionsToggle = document.getElementById("instructions-toggle");
+		if (!instructionsToggle) {
+			return;
+		}
+
+		let previousChecked = instructionsToggle.checked;
+
+		function expandForPrint() {
+			previousChecked = instructionsToggle.checked;
+			instructionsToggle.checked = true;
+		}
+
+		function restoreAfterPrint() {
+			instructionsToggle.checked = previousChecked;
+		}
+
+		// Some browsers use the beforeprint/afterprint events.
+		window.addEventListener("beforeprint", expandForPrint);
+		window.addEventListener("afterprint", restoreAfterPrint);
+
+		// Others (notably Safari) are more reliable with matchMedia("print").
+		const media = window.matchMedia("print");
+		const handleMediaChange = (event) => {
+			if (event.matches) {
+				expandForPrint();
+			} else {
+				restoreAfterPrint();
+			}
+		};
+
+		if (typeof media.addEventListener === "function") {
+			media.addEventListener("change", handleMediaChange);
+		} else if (typeof media.addListener === "function") {
+			media.addListener(handleMediaChange);
+		}
+	}
+
 	updateDetailImageVisibility();
 	setupInstructionsCollapsePersistence();
+	setupPrintExpansion();
 
 	if (window.location.hash === "#print") {
 		setTimeout(() => {

@@ -16,3 +16,12 @@ def test_project_details_has_print_table_markup() -> None:
 
     # Print-only details table for compact output.
     assert "project-details-print-table" in content
+
+
+def test_project_detail_js_expands_instructions_before_print() -> None:
+    js = "stricknani/templates/projects/detail.js"
+    content = open(js, encoding="utf-8").read()
+
+    # Ensure the browser print flow forces instructions open.
+    assert "instructions-toggle" in content
+    assert "beforeprint" in content or 'matchMedia("print")' in content
