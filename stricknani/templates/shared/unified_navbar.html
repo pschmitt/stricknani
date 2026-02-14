@@ -167,6 +167,16 @@
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
+                <button
+                    type="button"
+                    class="btn btn-ghost btn-sm gap-2 normal-case hidden"
+                    data-pwa-install="1"
+                    aria-label="{{ _('Install App') }}"
+                    title="{{ _('Install App') }}"
+                >
+                    <span class="mdi mdi-download-box-outline text-lg"></span>
+                    <span class="hidden sm:inline">{{ _('Install App') }}</span>
+                </button>
                 {% if page_actions %}
                 {% if back_url %}
                 {# If back_url is handled explicitly, just show all page_actions #}

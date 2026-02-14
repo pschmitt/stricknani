@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 from fastapi_csrf_protect.flexible import CsrfProtect as FlexibleCsrfProtect
@@ -167,6 +167,23 @@ app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
 # Mount media files
 app.mount("/media", StaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
+
+
+@app.get("/manifest.webmanifest")
+async def pwa_manifest() -> FileResponse:
+    return FileResponse(
+        static_path / "manifest.webmanifest",
+        media_type="application/manifest+json",
+    )
+
+
+@app.get("/sw.js")
+async def service_worker() -> FileResponse:
+    return FileResponse(
+        static_path / "sw.js",
+        media_type="application/javascript",
+    )
+
 
 access_logger = logging.getLogger("stricknani.access")
 dev_reload_token = str(time.time_ns())

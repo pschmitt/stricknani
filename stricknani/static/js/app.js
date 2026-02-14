@@ -229,6 +229,76 @@
 		return defaultMessage;
 	};
 
+	const setupPwaInstall = () => {
+		if (!("serviceWorker" in navigator)) {
+			return;
+		}
+
+		const installButtons = () =>
+			Array.from(document.querySelectorAll('[data-pwa-install="1"]'));
+
+		const showButtons = () => {
+			installButtons().forEach((btn) => btn.classList.remove("hidden"));
+		};
+
+		const hideButtons = () => {
+			installButtons().forEach((btn) => btn.classList.add("hidden"));
+		};
+
+		let deferredPrompt = null;
+
+		// Register the root-scoped service worker (required for installability).
+		navigator.serviceWorker.register("/sw.js").catch((err) => {
+			console.debug("Service worker registration failed:", err);
+		});
+
+		window.addEventListener("beforeinstallprompt", (event) => {
+			// Stash the prompt so we can trigger it from our own button.
+			event.preventDefault();
+			deferredPrompt = event;
+			showButtons();
+		});
+
+		window.addEventListener("appinstalled", () => {
+			deferredPrompt = null;
+			hideButtons();
+			window.showToast?.(getI18n("appInstalled", "App installed."), "success");
+		});
+
+		document.addEventListener("click", async (event) => {
+			const button = event.target.closest?.('[data-pwa-install="1"]');
+			if (!button) {
+				return;
+			}
+
+			if (!deferredPrompt) {
+				window.showToast?.(
+					getI18n(
+						"installAppUnavailable",
+						"App installation is not available.",
+					),
+					"info",
+				);
+				return;
+			}
+
+			try {
+				deferredPrompt.prompt();
+				const { outcome } = await deferredPrompt.userChoice;
+				deferredPrompt = null;
+				hideButtons();
+				if (outcome === "accepted") {
+					window.showToast?.(
+						getI18n("appInstalled", "App installed."),
+						"success",
+					);
+				}
+			} catch (err) {
+				console.debug("Install prompt failed:", err);
+			}
+		});
+	};
+
 	const resolveDialog = (dialogOrId) => {
 		if (typeof dialogOrId === "string") {
 			return document.getElementById(dialogOrId);
@@ -1443,4 +1513,6 @@
 		// Close autocomplete on scroll
 		document.addEventListener("scroll", closeAutocomplete, true);
 	};
+
+	setupPwaInstall();
 })();
