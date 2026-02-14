@@ -33,7 +33,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T39 | P0 | todo | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
+| T39 | P0 | done | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
 | T38 | P2 | done | ux | refactor | Improve print layout to save space and show only relevant content |
 | T37 | P3 | done | ux | refactor | Standardize "instructions" header size to match other section headers |
 | T36 | P2 | done | frontend | refactor | Minimize templated JS/CSS in favor of static loading |
