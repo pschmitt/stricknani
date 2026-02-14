@@ -1,5 +1,6 @@
 {% import "macros/dialogs.html" as dialogs %}
-{% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl', attrs='data-import-dialog') %}
+{% set import_dialog_attrs = 'data-import-dialog data-import-storage-key=' ~ (import_storage_key | tojson) ~ ' data-import-redirect-url=' ~ (import_redirect_url | tojson) ~ ' data-import-populate-fn=' ~ (import_populate_fn | tojson) %}
+{% call dialogs.modal('importDialog', title=_('Import'), box_class='max-w-xl', attrs=import_dialog_attrs) %}
 <form id="{{ import_form_id }}" action="{{ import_action }}" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="type" value="url" data-import-type>
@@ -124,7 +125,5 @@
     </div>
 </form>
 
-<script>
-{% include "shared/_import_dialog.js" %}
-</script>
+<script src="{{ url_for('static', path='js/features/import_dialog.js') }}"></script>
 {% endcall %}

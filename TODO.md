@@ -33,8 +33,9 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T38 | P2 | todo | ux | refactor | Improve print layout to save space and show only relevant content |
 | T37 | P3 | todo | ux | refactor | Standardize "instructions" header size to match other section headers |
-| T36 | P2 | wip (PID: 1282753, AGENT: codex) | frontend | refactor | Minimize templated JS/CSS in favor of static loading |
+| T36 | P2 | done | frontend | refactor | Minimize templated JS/CSS in favor of static loading |
 | T34 | P2 | done | cli | refactor | Make --query flag positional in `stricknani-cli project show` |
 | T35 | P2 | done | ux | refactor | Hide empty "other materials" widget on project view page |
 | T18 | P1 | done | demo | feat | Improve demo assets with knitting-related images and content |
@@ -329,6 +330,34 @@ Execution-oriented backlog for Stricknani.
   - Update the project detail template to check if other_materials has content before rendering
   - Add appropriate Jinja2 conditional logic in the template
   - Ensure the change doesn't affect the edit/form views where the field should always be visible
+
+### T38: Improve print layout to save space and show only relevant content
+
+- **Area**: ux
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Optimize the print layout to eliminate wasted space and focus on essential content
+  - Remove non-essential elements like audit logs and footers from print view
+  - Reformat project details section to show only print-relevant information
+  - Improve readability and space utilization for physical printing
+- **Implementation**:
+  - Create a dedicated print CSS file or media query section
+  - Hide elements that don't make sense in print (Wayback buttons, interactive controls, etc.)
+  - Reorganize content layout for better space utilization
+  - Add print-specific styling to optimize text flow and image sizing
+  - Ensure important metadata is prominently displayed
+- **Specific Changes**:
+  - Remove audit log section from print view
+  - Remove footer content from print view
+  - Hide interactive buttons and controls
+  - Optimize project details section for print readability
+  - Consider multi-column layout for better space usage
+- **Files to Modify**:
+  - `stricknani/static/css/project_detail_print.css` (create/update)
+  - `stricknani/templates/projects/detail.html` (print media queries)
+  - Possibly create a dedicated print template if significant restructuring needed
 
 ### T37: Standardize "instructions" header size to match other section headers
 

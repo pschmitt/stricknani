@@ -1,4 +1,4 @@
-<div class="w-full" id="{{ wrapper_id }}">
+<div class="w-full" id="{{ wrapper_id }}" data-search-bar>
     <div class="relative">
         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50 z-30">
             <span class="mdi mdi-magnify text-lg"></span>
@@ -21,7 +21,7 @@
         )
         %}
         {% set inline_filters = filters|length == 1 %}
-        <input type="text" id="{{ search_id }}" name="{{ search_name }}" value="{{ search_value }}"
+        <input type="text" id="{{ search_id }}" name="{{ search_name }}" value="{{ search_value }}" data-search-input
             placeholder="{{ search_placeholder }}"
             class="input w-full pl-10 pr-10{% if inline_filters %} sm:pr-32{% endif %} relative z-20 border border-primary/70 dark:border-primary/80 focus:border-primary"
             hx-get="{{ search_url }}" hx-target="{{ search_target }}" hx-trigger="keyup changed delay:500ms"
@@ -52,9 +52,9 @@
         </div>
         {% endif %}
         {% endif %}
-        <div id="{{ search_id }}-suggestions"
+        <div id="{{ search_id }}-suggestions" data-search-suggestions
             class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-box shadow-xl hidden overflow-hidden">
-            <ul class="menu p-1" id="{{ search_id }}-suggestion-list"></ul>
+            <ul class="menu p-1" id="{{ search_id }}-suggestion-list" data-search-suggestion-list></ul>
         </div>
     </div>
     {% if filters %}
@@ -73,7 +73,5 @@
         {% endfor %}
     </div>
     {% endif %}
-    <script>
-        {% include "shared/_search_bar.js" %}
-    </script>
+    <script src="{{ url_for('static', path='js/features/search_bar.js') }}"></script>
 </div>
