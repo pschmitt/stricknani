@@ -76,6 +76,11 @@
 
 	.collapse-content {
 		display: block !important;
+		visibility: visible !important;
+		opacity: 1 !important;
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
 		padding: 0.25rem 0 0.75rem 0 !important;
 	}
 
