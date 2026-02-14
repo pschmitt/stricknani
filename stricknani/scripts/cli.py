@@ -1037,6 +1037,89 @@ async def export_project_pdf(
             sys.exit(1)
 
 
+async def resolve_project_export_target(
+    query: str,
+    owner_email: str | None,
+) -> tuple[int, str]:
+    """Resolve a project export query to (project_id, login_email).
+
+    We default the login email to the project's owner email to avoid requiring
+    an explicit `--email` flag for the common case.
+    """
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        owner_id = None
+        if owner_email:
+            owner = await get_user_by_email(session, owner_email)
+            if not owner:
+                error_console.print(
+                    f"[red]User [cyan]{owner_email}[/cyan] not found.[/red]"
+                )
+                raise SystemExit(2)
+            owner_id = owner.id
+
+        base_query = select(Project).options(selectinload(Project.owner))
+        if owner_id is not None:
+            base_query = base_query.where(Project.owner_id == owner_id)
+
+        query_clean = query.strip()
+        project: Project | None = None
+
+        if query_clean.isdigit():
+            by_id = base_query.where(Project.id == int(query_clean))
+            by_id_result = await session.execute(by_id)
+            project = by_id_result.scalars().first()
+
+        if project is None:
+            by_exact_name = base_query.where(
+                func.lower(Project.name) == query_clean.lower()
+            )
+            exact_result = await session.execute(by_exact_name)
+            project = exact_result.scalars().first()
+
+        if project is None:
+            by_partial_name = base_query.where(
+                Project.name.ilike(f"%{query_clean}%")
+            ).order_by(Project.id.asc())
+            partial_result = await session.execute(by_partial_name)
+            matches = partial_result.scalars().all()
+            if len(matches) == 1:
+                project = matches[0]
+            elif len(matches) > 1:
+                rows = [
+                    [
+                        str(item.id),
+                        item.name,
+                        item.category or "-",
+                        item.owner.email if item.owner else "-",
+                    ]
+                    for item in matches
+                ]
+                output_table(
+                    ["ID", "NAME", "CATEGORY", "OWNER"],
+                    rows,
+                    styles=["cyan", "yellow", "magenta", "cyan"],
+                )
+                error_console.print(
+                    "[red]Multiple projects match. Please use the ID.[/red]"
+                )
+                raise SystemExit(2)
+
+        if not project:
+            error_console.print(
+                f"[red]Project [cyan]{query_clean}[/cyan] not found.[/red]"
+            )
+            raise SystemExit(2)
+
+        if not project.owner or not project.owner.email:
+            error_console.print(
+                f"[red]Project [cyan]{project.id}[/cyan] has no owner email.[/red]"
+            )
+            raise SystemExit(2)
+
+        return project.id, project.owner.email
+
+
 async def delete_user(email: str) -> None:
     """Delete a user."""
     await init_db()
@@ -1301,7 +1384,15 @@ def main() -> None:
         "export", help="Export a project to PDF"
     )
     project_export_parser.add_argument(
-        "--id", type=int, required=True, help="Project ID"
+        "query",
+        nargs="?",
+        help="ID or partial name (default: value passed via --id)",
+    )
+    # Backwards compatibility.
+    project_export_parser.add_argument(
+        "--id",
+        type=int,
+        help="(deprecated) Project ID (use positional query instead)",
     )
     project_export_parser.add_argument(
         "-o", "--output", help="Output PDF path (default: project_ID.pdf)"
@@ -1309,7 +1400,22 @@ def main() -> None:
     project_export_parser.add_argument(
         "--url", default="http://localhost:7674", help="API URL"
     )
-    project_export_parser.add_argument("--email", required=True, help="User email")
+    project_export_parser.add_argument(
+        "--owner-email",
+        help="Filter project lookup to this owner (optional)",
+    )
+    project_export_parser.add_argument(
+        "--login-email",
+        help=(
+            "Login email to use for fetching the project page (default: project owner)"
+        ),
+    )
+    # Backwards compatibility.
+    project_export_parser.add_argument(
+        "--email",
+        dest="login_email",
+        help="(deprecated) Alias for --login-email",
+    )
     project_export_parser.add_argument(
         "--password", help="User password (omit to prompt)"
     )
@@ -1544,14 +1650,29 @@ def main() -> None:
         elif project_command == "delete":
             asyncio.run(delete_project(args.id, args.owner_email))
         elif project_command == "export":
+            export_query = args.query or (str(args.id) if args.id is not None else "")
+            if not export_query:
+                error_console.print(
+                    "[red]Missing project ID or name.[/red]\n"
+                    "Usage: stricknani-cli project export PROJECT_ID_OR_NAME"
+                )
+                sys.exit(2)
+
+            project_id, default_login_email = asyncio.run(
+                resolve_project_export_target(
+                    export_query,
+                    args.owner_email,
+                )
+            )
+            login_email = args.login_email or default_login_email
             password = args.password or prompt_password(confirm=False)
-            output = args.output or f"project_{args.id}.pdf"
+            output = args.output or f"project_{project_id}.pdf"
             asyncio.run(
                 export_project_pdf(
-                    args.id,
+                    project_id,
                     output,
                     args.url,
-                    args.email,
+                    login_email,
                     password,
                 )
             )

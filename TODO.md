@@ -46,6 +46,7 @@ Execution-oriented backlog for Stricknani.
 | T45 | P1 | done | ux | bug | Fix printing bug: collapsed instructions not included in print output
 | T44 | P2 | done | test | feat | Add comprehensive tests for printing features
 | T43 | P2 | done | ux | refactor | Hide "yarns used" widget when no yarns are linked to project |
+| T46 | P2 | done | cli | refactor | Improve stricknani-cli project export command arguments
 | T1 | P4 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 | T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
 | T33 | P3 | todo | frontend | feat | Add PWA installation capability |
@@ -174,6 +175,42 @@ Execution-oriented backlog for Stricknani.
   - Consistent with other conditional rendering patterns in the app
   - Better user experience by only showing relevant information
   - Reduces visual clutter on project pages
+
+### T46: Improve stricknani-cli project export command arguments
+
+- **Area**: cli
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Refactor the `stricknani-cli project export` command to improve usability
+  - Remove unnecessary `--email` flag (project ID is sufficient)
+  - Make project ID a positional argument instead of a flag
+  - Support partial project name matching like `stricknani-cli project show`
+- **Current Issues**:
+  - Command requires `--email` flag which is redundant
+  - Project identification is overly complex
+  - Inconsistent with other CLI commands that use positional args and partial matching
+- **Implementation**:
+  - Remove `--email` parameter from the export command
+  - Change project identifier from `--project-id` flag to positional argument
+  - Add support for partial project name matching (fuzzy matching)
+  - Update command signature: `stricknani-cli project export PROJECT_ID_OR_NAME`
+  - Ensure backward compatibility or provide clear migration path
+  - Update help text and documentation
+- **Files to Modify**:
+  - `stricknani/scripts/cli.py` - main CLI command definitions
+  - Export command implementation (likely in same file or related module)
+  - Help text and usage examples
+  - Possibly update tests to reflect new command signature
+- **Benefits**:
+  - More intuitive command interface
+  - Consistent with other CLI commands in the application
+  - Simpler usage for common export scenarios
+  - Better user experience with partial name matching
+- **Example Changes**:
+  - Before: `stricknani-cli project export --project-id 123 --email user@example.com`
+  - After: `stricknani-cli project export 123` or `stricknani-cli project export "my project"`
 
 ### T1: Replace runtime Tailwind with prebuilt static CSS bundle
 

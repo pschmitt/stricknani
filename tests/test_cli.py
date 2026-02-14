@@ -462,6 +462,115 @@ def test_cli_yarn_lookup_dispatches_to_show(
     assert captured["owner_email"] is None
 
 
+def test_cli_project_export_accepts_positional_query(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_resolve_project_export_target(
+        query: str, owner_email: str | None
+    ) -> tuple[int, str]:
+        captured["query"] = query
+        captured["owner_email"] = owner_email
+        return 123, "owner@example.com"
+
+    async def fake_export_project_pdf(
+        project_id: int,
+        output_path: str,
+        api_url: str,
+        email: str,
+        password: str,
+    ) -> None:
+        captured["project_id"] = project_id
+        captured["output_path"] = output_path
+        captured["api_url"] = api_url
+        captured["email"] = email
+        captured["password"] = password
+
+    monkeypatch.setattr(
+        cli, "resolve_project_export_target", fake_resolve_project_export_target
+    )
+    monkeypatch.setattr(cli, "export_project_pdf", fake_export_project_pdf)
+    monkeypatch.setattr(cli, "prompt_password", lambda confirm=False: "secret")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "stricknani-cli",
+            "project",
+            "export",
+            "Sample",
+            "--url",
+            "http://localhost:7674",
+        ],
+    )
+    cli.main()
+
+    assert captured["query"] == "Sample"
+    assert captured["owner_email"] is None
+    assert captured["project_id"] == 123
+    assert captured["output_path"] == "project_123.pdf"
+    assert captured["api_url"] == "http://localhost:7674"
+    assert captured["email"] == "owner@example.com"
+    assert captured["password"] == "secret"
+
+
+def test_cli_project_export_accepts_legacy_id_flag(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_resolve_project_export_target(
+        query: str, owner_email: str | None
+    ) -> tuple[int, str]:
+        captured["query"] = query
+        captured["owner_email"] = owner_email
+        return 777, "owner@example.com"
+
+    async def fake_export_project_pdf(
+        project_id: int,
+        output_path: str,
+        api_url: str,
+        email: str,
+        password: str,
+    ) -> None:
+        captured["project_id"] = project_id
+        captured["output_path"] = output_path
+        captured["api_url"] = api_url
+        captured["email"] = email
+        captured["password"] = password
+
+    monkeypatch.setattr(
+        cli, "resolve_project_export_target", fake_resolve_project_export_target
+    )
+    monkeypatch.setattr(cli, "export_project_pdf", fake_export_project_pdf)
+    monkeypatch.setattr(cli, "prompt_password", lambda confirm=False: "secret")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "stricknani-cli",
+            "project",
+            "export",
+            "--id",
+            "777",
+            "--url",
+            "http://localhost:7674",
+            "--login-email",
+            "login@example.com",
+        ],
+    )
+    cli.main()
+
+    assert captured["query"] == "777"
+    assert captured["owner_email"] is None
+    assert captured["project_id"] == 777
+    assert captured["output_path"] == "project_777.pdf"
+    assert captured["api_url"] == "http://localhost:7674"
+    assert captured["email"] == "login@example.com"
+    assert captured["password"] == "secret"
+
+
 @pytest.mark.asyncio
 async def test_show_project_json_output(
     test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
