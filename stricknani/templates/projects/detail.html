@@ -518,14 +518,14 @@ data-shortcut-delete-dialog="deleteProjectDialog"
             <!-- Steps Section -->
             {% if project.steps %}
             <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
-                <input type="checkbox" id="instructions-toggle" checked />
-                <div class="collapse-title p-4 flex items-center justify-between">
-                    <h2 class="font-bold text-2xl flex items-center gap-2">
-                        <span class="mdi mdi-format-list-checks text-primary"></span>
-                        {{ _('Instructions') }}
-                    </h2>
-                    <span class="text-xs font-medium text-base-content/50 mr-8">{{ project.steps|length }}</span>
-                </div>
+	                <input type="checkbox" id="instructions-toggle" checked />
+	                <div class="collapse-title p-4 flex items-center justify-between">
+	                    <h2 class="font-bold text-lg flex items-center gap-2">
+	                        <span class="mdi mdi-format-list-checks text-primary"></span>
+	                        {{ _('Instructions') }}
+	                    </h2>
+	                    <span class="text-xs font-medium text-base-content/50 mr-8">{{ project.steps|length }}</span>
+	                </div>
                 <div class="collapse-content pt-2">
                     <div
                         class="space-y-6 relative md:before:absolute md:before:inset-0 md:before:mx-auto md:before:translate-x-0 md:before:h-full md:before:w-0.5 md:before:bg-gradient-to-b md:before:from-transparent md:before:via-base-300 md:before:to-transparent">

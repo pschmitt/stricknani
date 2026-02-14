@@ -34,7 +34,7 @@ Execution-oriented backlog for Stricknani.
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T38 | P2 | todo | ux | refactor | Improve print layout to save space and show only relevant content |
-| T37 | P3 | todo | ux | refactor | Standardize "instructions" header size to match other section headers |
+| T37 | P3 | done | ux | refactor | Standardize "instructions" header size to match other section headers |
 | T36 | P2 | done | frontend | refactor | Minimize templated JS/CSS in favor of static loading |
 | T34 | P2 | done | cli | refactor | Make --query flag positional in `stricknani-cli project show` |
 | T35 | P2 | done | ux | refactor | Hide empty "other materials" widget on project view page |
