@@ -151,18 +151,20 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                         </div>
 
                         <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label for="notes" class=" text-sm font-medium inline-flex items-center gap-2">
-                                    <span class="mdi mdi-notebook-outline text-base-content/70"></span>
-                                    {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
-                                        }}</span>
-                                </label>
-                            </div>
-                            {{ wysiwyg.wysiwyg('notes', value=(project.notes if project and project.notes else ''), placeholder=_('Personal notes about this project...'), markdown_images=true) }}
-                        </div>
-                    </div>
-                </div>
-            </div>
+	                            <div class="flex items-center justify-between mb-1">
+	                                <label for="notes" class=" text-sm font-medium inline-flex items-center gap-2">
+	                                    <span class="mdi mdi-notebook-outline text-base-content/70"></span>
+	                                    {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
+	                                        }}</span>
+	                                </label>
+	                            </div>
+	                            <div class="sn-notes-editor">
+	                                {{ wysiwyg.wysiwyg('notes', value=(project.notes if project and project.notes else ''), placeholder=_('Personal notes about this project...'), markdown_images=true) }}
+	                            </div>
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
 
             <!-- Gallery Card -->
             <div
@@ -187,12 +189,14 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                             {% endif %}
                         </div>
 
+                        {% if not project %}
                         <div id="titleImageUploadContainer">
                             {{ image_upload.upload_dropzone(
-                            input_id='titleImageInput',
-                            container_id='titleImageDropZone'
+                              input_id='titleImageInput',
+                              container_id='titleImageDropZone'
                             ) }}
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -508,9 +512,11 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                         {% endfor %}
                                         {% endif %}
                                     </div>
+                                    {% if not project %}
                                     {{ image_upload.upload_dropzone('stitchSampleImageInput',
-                                    container_id='stitchSampleDropzone')
+                                      container_id='stitchSampleDropzone')
                                     }}
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -561,61 +567,49 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                     </button>
                                 </div>
                             </div>
-                            <div class="mb-2">
-                                <input type="text" class="step-title input input-bordered w-full"
-                                    placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
-                            </div>
-                            <div data-wysiwyg data-wysiwyg-input="step-description-{{ step.id }}" data-wysiwyg-step="true" class="wysiwyg-container mb-2">
-                                <div class="wysiwyg-toolbar">
-                                    <div class="wysiwyg-toolbar-group">
-                                        <button type="button" data-action="bold" title="{{ _('Bold') }}"><span class="mdi mdi-format-bold"></span></button>
-                                        <button type="button" data-action="italic" title="{{ _('Italic') }}"><span class="mdi mdi-format-italic"></span></button>
-                                        <button type="button" data-action="underline" title="{{ _('Underline') }}"><span class="mdi mdi-format-underline"></span></button>
-                                    </div>
-                                    <div class="wysiwyg-toolbar-group">
-                                        <button type="button" data-action="heading" data-value="2" title="{{ _('Heading 2') }}"><span class="mdi mdi-format-header-2"></span></button>
-                                        <button type="button" data-action="heading" data-value="3" title="{{ _('Heading 3') }}"><span class="mdi mdi-format-header-3"></span></button>
-                                        <button type="button" data-action="paragraph" title="{{ _('Paragraph') }}"><span class="mdi mdi-format-paragraph"></span></button>
-                                    </div>
-                                    <div class="wysiwyg-toolbar-group">
-                                        <button type="button" data-action="bulletList" title="{{ _('Bullet list') }}"><span class="mdi mdi-format-list-bulleted"></span></button>
-                                        <button type="button" data-action="orderedList" title="{{ _('Numbered list') }}"><span class="mdi mdi-format-list-numbered"></span></button>
-                                    </div>
-		                                    <div class="wysiwyg-toolbar-group">
-		                                        <button type="button" data-action="link" title="{{ _('Add link') }}"><span class="mdi mdi-link"></span></button>
-		                                        <button type="button" data-action="image" title="{{ _('Insert image') }}"><span class="mdi mdi-image"></span></button>
-		                                        <button type="button" data-action="toggleRaw" title="{{ _('Edit Markdown') }}"><span class="mdi mdi-language-markdown"></span></button>
-		                                    </div>
-		                                </div>
-		                                <div class="wysiwyg-content"></div>
-		                            </div>
-	                            <textarea id="step-description-{{ step.id }}" name="step-description-{{ step.id }}" class="step-description wysiwyg-raw textarea textarea-bordered w-full text-sm font-mono hidden" data-markdown-images="true">{{ step.description or '' }}</textarea>
-	                            <h4
-	                                class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not step.images %} hidden{% endif %}">
-	                                <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
-	                            </h4>
+	                            <div class="mb-2">
+	                                <input type="text" class="step-title input input-bordered w-full"
+	                                    placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
+	                            </div>
+	                            {{ wysiwyg.wysiwyg(
+	                              'step-description-' ~ step.id,
+	                              value=(step.description or ''),
+	                              markdown_images=true,
+	                              heading_levels=[2, 3],
+	                              container_class='mb-2'
+	                            ) }}
+		                            <h4
+		                                class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not step.images %} hidden{% endif %}">
+		                                <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
+		                            </h4>
                             <div class="step-images grid grid-cols-3 gap-2 mb-2 pswp-gallery" data-pswp-gallery>
                                 {% for image in step.images %}
                                 {{ image_upload.image_preview(image, class='aspect-video overflow-hidden',
-                                show_crop=true) }}
-                                {% endfor %}
-                            </div>
-                            {{ image_upload.step_upload_dropzone(
-                            input_id='stepImageInput' + step.id|string,
-                            step_id=step.id
-                            ) }}
+                                    show_crop=true) }}
+                                    {% endfor %}
+                                </div>
                         </div>
                         {% endfor %}
                     </div>
-                    <button type="button" data-call="addStep" class="btn btn-success text-white mt-4 gap-2">
-                        <span class="mdi mdi-playlist-plus text-xl"></span>
-                        {{ _('Add Step') }}
-                    </button>
-                </div>
-            </div>
-        </div>
+	                    <button type="button" data-call="addStep" class="btn btn-success text-white mt-4 gap-2">
+	                        <span class="mdi mdi-playlist-plus text-xl"></span>
+	                        {{ _('Add Step') }}
+	                    </button>
+	                </div>
+	            </div>
+	        </div>
 
-        <div class="hidden lg:block lg:absolute lg:right-0 lg:top-0 z-30">
+	        <template id="step-wysiwyg-template">
+	            {{ wysiwyg.wysiwyg(
+	              'step-description-template',
+	              value='',
+	              markdown_images=true,
+	              heading_levels=[2, 3],
+	              container_class='mb-2'
+	            ) }}
+	        </template>
+
+	        <div class="hidden lg:block lg:absolute lg:right-0 lg:top-0 z-30">
             <button type="button" id="project-details-restore-button"
                 class="flex h-16 w-8 -mr-4 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
                 data-call="restoreEditSidebarDetails" title="{{ _('Project Details') }}"

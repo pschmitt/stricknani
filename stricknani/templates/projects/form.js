@@ -2128,12 +2128,25 @@ function addStep(elOrTitle = "", description = "", stepImages = []) {
 
 	const container = document.getElementById("stepsContainer");
 	const stepNumber = container.children.length + 1;
-	const div = document.createElement("div");
-	div.className =
-		"step-item border rounded-lg p-2 md:p-4 bg-base-200 border-base-300 dark:bg-base-300/50 dark:border-base-700";
-	div.setAttribute("data-step-number", stepNumber);
-	const inputId = `newStepImageInput${Date.now()}`;
-	const textareaId = `step-description-new-${Date.now()}`;
+		const div = document.createElement("div");
+		div.className =
+			"step-item border rounded-lg p-2 md:p-4 bg-base-200 border-base-300 dark:bg-base-300/50 dark:border-base-700";
+		div.setAttribute("data-step-number", stepNumber);
+		const inputId = `newStepImageInput${Date.now()}`;
+		const textareaId = `step-description-new-${Date.now()}`;
+	const stepImageUploadDropzoneHtml = projectId
+		? ""
+		: `
+			        <div class="step-image-dropzone border-2 border-dashed border-slate-300 dark:border-slate-600 p-4 sm:p-8 text-center transition-colors dark:border-slate-600 dark:hover:border-blue-400" data-step-id="">
+			            <input type="file" class="step-image-input hidden" accept="image/*" multiple data-step-id="" id="${inputId}">
+			            <label for="${inputId}" class="block cursor-pointer">
+			                <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+			                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+			                </svg>
+			                <p class="upload-instructions mt-2 text-sm text-gray-600 dark:text-slate-300" data-enabled-text="${uploadInstructionsText}" data-disabled-text="${stepUploadDisabledMessage}">${stepUploadDisabledMessage}</p>
+			            </label>
+			        </div>
+			    `;
 	div.innerHTML = `
 		        <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
 		            <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span class="step-number">${stepNumber}</span></h4>
@@ -2147,43 +2160,19 @@ function addStep(elOrTitle = "", description = "", stepImages = []) {
 	                <button type="button" data-call="saveStep" class="btn btn-xs btn-primary gap-1" title="{{ _('Save') }}">
 	                    <span class="mdi mdi-content-save"></span><span class="hidden sm:inline">{{ _('Save') }}</span>
 	                </button>
-	                <button type="button" data-call="removeStep" class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
-	                    <span class="mdi mdi-delete"></span><span class="hidden sm:inline">{{ _('Remove') }}</span>
-	                </button>
-            </div>
-	        </div>
-	        <div class="mb-2">
-		            <input type="text" class="step-title input  w-full" placeholder="{{ _('Step Title') }}" value="${escapeAttr(title)}">
+		                <button type="button" data-call="removeStep" class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
+		                    <span class="mdi mdi-delete"></span><span class="hidden sm:inline">{{ _('Remove') }}</span>
+		                </button>
+	            </div>
 		        </div>
-	            <div data-wysiwyg data-wysiwyg-input="${textareaId}" data-wysiwyg-step="true" class="wysiwyg-container mb-2">
-	                <div class="wysiwyg-toolbar">
-                    <div class="wysiwyg-toolbar-group">
-                        <button type="button" data-action="bold" title="{{ _('Bold') }}"><span class="mdi mdi-format-bold"></span></button>
-                        <button type="button" data-action="italic" title="{{ _('Italic') }}"><span class="mdi mdi-format-italic"></span></button>
-                        <button type="button" data-action="underline" title="{{ _('Underline') }}"><span class="mdi mdi-format-underline"></span></button>
-                    </div>
-                    <div class="wysiwyg-toolbar-group">
-                        <button type="button" data-action="heading" data-value="2" title="{{ _('Heading 2') }}"><span class="mdi mdi-format-header-2"></span></button>
-                        <button type="button" data-action="heading" data-value="3" title="{{ _('Heading 3') }}"><span class="mdi mdi-format-header-3"></span></button>
-                        <button type="button" data-action="paragraph" title="{{ _('Paragraph') }}"><span class="mdi mdi-format-paragraph"></span></button>
-                    </div>
-                    <div class="wysiwyg-toolbar-group">
-                        <button type="button" data-action="bulletList" title="{{ _('Bullet list') }}"><span class="mdi mdi-format-list-bulleted"></span></button>
-                        <button type="button" data-action="orderedList" title="{{ _('Numbered list') }}"><span class="mdi mdi-format-list-numbered"></span></button>
-                    </div>
-		                    <div class="wysiwyg-toolbar-group">
-		                        <button type="button" data-action="link" title="{{ _('Add link') }}"><span class="mdi mdi-link"></span></button>
-		                        <button type="button" data-action="image" title="{{ _('Insert image') }}"><span class="mdi mdi-image"></span></button>
-		                        <button type="button" data-action="toggleRaw" title="{{ _('Edit Markdown') }}"><span class="mdi mdi-language-markdown"></span></button>
-		                    </div>
-		                </div>
-	                <div class="wysiwyg-content"></div>
-		            </div>
-		            <textarea id="${textareaId}" class="step-description wysiwyg-raw textarea textarea-bordered w-full text-sm font-mono hidden" data-markdown-images="true">${escapeHtml(description)}</textarea>
-			        <h4 class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100 ${stepImages.length > 0 ? "" : "hidden"}">
-			            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
-			        </h4>
-		        <div class="step-images mb-2 grid grid-cols-3 gap-2 pswp-gallery ${stepImages.length > 0 ? "" : "hidden"}" data-pswp-gallery>
+		        <div class="mb-2">
+			            <input type="text" class="step-title input  w-full" placeholder="{{ _('Step Title') }}" value="${escapeAttr(title)}">
+			        </div>
+		            <div class="step-wysiwyg-host"></div>
+				        <h4 class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100 ${stepImages.length > 0 ? "" : "hidden"}">
+				            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
+				        </h4>
+			        <div class="step-images mb-2 grid grid-cols-3 gap-2 pswp-gallery ${stepImages.length > 0 ? "" : "hidden"}" data-pswp-gallery>
 		            ${stepImages
 									.map((img) => {
 										const url = typeof img === "string" ? img : img.url;
@@ -2197,25 +2186,33 @@ function addStep(elOrTitle = "", description = "", stepImages = []) {
 		                    </button>
 		                </div>
 		                `;
-									})
-									.join("")}
-		        </div>
-		        <div class="step-image-dropzone border-2 border-dashed border-slate-300 dark:border-slate-600 p-4 sm:p-8 text-center transition-colors dark:border-slate-600 dark:hover:border-blue-400" data-step-id="">
-		            <input type="file" class="step-image-input hidden" accept="image/*" multiple data-step-id="" id="${inputId}">
-		            <label for="${inputId}" class="block cursor-pointer">
-		                <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-		                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-		                </svg>
-		                <p class="upload-instructions mt-2 text-sm text-gray-600 dark:text-slate-300" data-enabled-text="${uploadInstructionsText}" data-disabled-text="${stepUploadDisabledMessage}">${stepUploadDisabledMessage}</p>
-		            </label>
-		        </div>
-		    `;
-	container.appendChild(div);
-	initStepImageUploaders();
-	const newStepGallery = div.querySelector(".step-images");
-	if (newStepGallery) {
-		window.refreshPhotoSwipeGallery?.(newStepGallery);
-	}
+										})
+										.join("")}
+			        </div>
+			        ${stepImageUploadDropzoneHtml}
+			    `;
+		container.appendChild(div);
+
+		const host = div.querySelector(".step-wysiwyg-host");
+		const tpl = document.getElementById("step-wysiwyg-template");
+		if (host && tpl && "content" in tpl) {
+			const frag = tpl.content.cloneNode(true);
+			const wysiwygContainer = frag.querySelector("[data-wysiwyg]");
+			const textarea = frag.querySelector("textarea");
+			if (wysiwygContainer && textarea) {
+				wysiwygContainer.dataset.wysiwygInput = textareaId;
+				textarea.id = textareaId;
+				textarea.name = textareaId;
+				textarea.value = description;
+				host.replaceWith(frag);
+			}
+		}
+
+		initStepImageUploaders();
+		const newStepGallery = div.querySelector(".step-images");
+		if (newStepGallery) {
+			window.refreshPhotoSwipeGallery?.(newStepGallery);
+		}
 
 	if (window.STRICKNANI?.wysiwyg?.init) {
 		window.STRICKNANI.wysiwyg.init({ i18n: window.STRICKNANI.i18n || {} });

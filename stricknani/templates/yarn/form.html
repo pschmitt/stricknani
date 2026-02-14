@@ -227,17 +227,19 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                         {{ wysiwyg.wysiwyg('description', value=(yarn.description if yarn and yarn.description else ''), markdown_images=true) }}
                     </div>
 
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label for="notes"
-                                class=" text-sm font-medium inline-flex items-center gap-2">
-                                <span class="mdi mdi-notebook-outline text-base-content/70"></span>
-                                {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
-                                    }}</span>
-                            </label>
-                        </div>
-                        {{ wysiwyg.wysiwyg('notes', value=(yarn.notes if yarn and yarn.notes else ''), markdown_images=true) }}
-                    </div>
+	                    <div>
+	                        <div class="flex items-center justify-between mb-1">
+	                            <label for="notes"
+	                                class=" text-sm font-medium inline-flex items-center gap-2">
+	                                <span class="mdi mdi-notebook-outline text-base-content/70"></span>
+	                                {{ _('Notes') }} <span class="text-base-content/60 text-xs">{{ _('Optional')
+	                                    }}</span>
+	                            </label>
+	                        </div>
+	                        <div class="sn-notes-editor">
+	                            {{ wysiwyg.wysiwyg('notes', value=(yarn.notes if yarn and yarn.notes else ''), markdown_images=true) }}
+	                        </div>
+	                    </div>
 
                     <div class="divider my-2"></div>
 
@@ -301,11 +303,13 @@ md:sticky md:top-0 md:z-30 md:bg-base-100/90 md:backdrop-blur md:py-3 md:shadow-
                 </div>
 
 
+                {% if not yarn %}
                 {{ image_upload.upload_dropzone(
-                input_id='photos',
-                input_name='new_photos' if yarn else 'photos',
-                onchange='previewImages(this)'
+                  input_id='photos',
+                  input_name='photos',
+                  onchange='previewImages(this)'
                 ) }}
+                {% endif %}
                 <input type="hidden" id="import_primary_image_url" name="import_primary_image_url" value="">
                 <div id="importWarning"></div>
                 <div id="image-preview-container" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 hidden pswp-gallery"

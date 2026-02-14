@@ -1,5 +1,6 @@
-{% macro wysiwyg(input_id, value='', placeholder='', rows=4, disabled=false, markdown_images=false) %}
-<div data-wysiwyg data-wysiwyg-input="{{ input_id }}" class="wysiwyg-container">
+{% macro wysiwyg(input_id, value='', placeholder='', rows=4, disabled=false, markdown_images=false, heading_levels=None, container_class=None) %}
+{% set heading_levels = heading_levels if heading_levels is not none else [1, 2, 3] %}
+<div data-wysiwyg data-wysiwyg-input="{{ input_id }}" class="wysiwyg-container {{ container_class or '' }}">
     <div class="wysiwyg-toolbar">
         <div class="wysiwyg-toolbar-group">
             <button type="button" data-action="bold" title="{{ _('Bold') }}" aria-label="{{ _('Bold') }}">
@@ -11,45 +12,23 @@
             <button type="button" data-action="underline" title="{{ _('Underline') }}" aria-label="{{ _('Underline') }}">
                 <span class="mdi mdi-format-underline"></span>
             </button>
-            <button type="button" data-action="strike" title="{{ _('Strikethrough') }}" aria-label="{{ _('Strikethrough') }}">
-                <span class="mdi mdi-format-strikethrough"></span>
-            </button>
         </div>
         <div class="wysiwyg-toolbar-group">
+            {% if 1 in heading_levels %}
             <button type="button" data-action="heading" data-value="1" title="{{ _('Heading 1') }}" aria-label="{{ _('Heading 1') }}">
                 <span class="mdi mdi-format-header-1"></span>
             </button>
+            {% endif %}
+            {% if 2 in heading_levels %}
             <button type="button" data-action="heading" data-value="2" title="{{ _('Heading 2') }}" aria-label="{{ _('Heading 2') }}">
                 <span class="mdi mdi-format-header-2"></span>
             </button>
+            {% endif %}
+            {% if 3 in heading_levels %}
             <button type="button" data-action="heading" data-value="3" title="{{ _('Heading 3') }}" aria-label="{{ _('Heading 3') }}">
                 <span class="mdi mdi-format-header-3"></span>
             </button>
-            <button type="button" data-action="paragraph" title="{{ _('Paragraph') }}" aria-label="{{ _('Paragraph') }}">
-                <span class="mdi mdi-format-paragraph"></span>
-            </button>
-        </div>
-        <div class="wysiwyg-toolbar-group">
-            <button type="button" data-action="bulletList" title="{{ _('Bullet list') }}" aria-label="{{ _('Bullet list') }}">
-                <span class="mdi mdi-format-list-bulleted"></span>
-            </button>
-            <button type="button" data-action="orderedList" title="{{ _('Numbered list') }}" aria-label="{{ _('Numbered list') }}">
-                <span class="mdi mdi-format-list-numbered"></span>
-            </button>
-            <button type="button" data-action="blockquote" title="{{ _('Quote') }}" aria-label="{{ _('Quote') }}">
-                <span class="mdi mdi-format-quote-close"></span>
-            </button>
-        </div>
-        <div class="wysiwyg-toolbar-group">
-            <button type="button" data-action="code" title="{{ _('Code') }}" aria-label="{{ _('Code') }}">
-                <span class="mdi mdi-code-tags"></span>
-            </button>
-            <button type="button" data-action="codeBlock" title="{{ _('Code block') }}" aria-label="{{ _('Code block') }}">
-                <span class="mdi mdi-code-braces"></span>
-            </button>
-            <button type="button" data-action="horizontalRule" title="{{ _('Horizontal rule') }}" aria-label="{{ _('Horizontal rule') }}">
-                <span class="mdi mdi-minus"></span>
-            </button>
+            {% endif %}
         </div>
         <div class="wysiwyg-toolbar-group">
             <button type="button" data-action="link" title="{{ _('Add link') }}" aria-label="{{ _('Add link') }}">
@@ -62,17 +41,17 @@
                 <span class="mdi mdi-image"></span>
             </button>
         </div>
-	        <div class="wysiwyg-toolbar-group">
-	            <button type="button" data-action="undo" title="{{ _('Undo') }}" aria-label="{{ _('Undo') }}">
-	                <span class="mdi mdi-undo"></span>
-	            </button>
-	            <button type="button" data-action="redo" title="{{ _('Redo') }}" aria-label="{{ _('Redo') }}">
-	                <span class="mdi mdi-redo"></span>
-	            </button>
-	            <button type="button" data-action="toggleRaw" title="{{ _('Edit Markdown') }}" aria-label="{{ _('Edit Markdown') }}">
-	                <span class="mdi mdi-language-markdown"></span>
-	            </button>
-	        </div>
+        <div class="wysiwyg-toolbar-group wysiwyg-toolbar-group--right">
+            <button type="button" data-action="undo" title="{{ _('Undo') }}" aria-label="{{ _('Undo') }}">
+                <span class="mdi mdi-undo"></span>
+            </button>
+            <button type="button" data-action="redo" title="{{ _('Redo') }}" aria-label="{{ _('Redo') }}">
+                <span class="mdi mdi-redo"></span>
+            </button>
+            <button type="button" data-action="toggleRaw" title="{{ _('Edit Markdown') }}" aria-label="{{ _('Edit Markdown') }}">
+                <span class="mdi mdi-language-markdown"></span>
+            </button>
+        </div>
 	    </div>
 	    <div class="wysiwyg-content"></div>
 	</div>

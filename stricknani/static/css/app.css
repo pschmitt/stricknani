@@ -528,6 +528,25 @@ textarea::placeholder {
 	transition: box-shadow 150ms ease;
 }
 
+.sn-notes-editor .wysiwyg-container {
+	background: color-mix(
+		in srgb,
+		#fefce8 70%,
+		var(--fallback-b1, oklch(var(--b1) / 1))
+	);
+	border-color: color-mix(in srgb, #f59e0b 25%, transparent);
+}
+
+.sn-notes-editor .wysiwyg-container:focus-within {
+	border-color: color-mix(in srgb, #f59e0b 45%, transparent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, #f59e0b 20%, transparent);
+}
+
+.sn-notes-editor .wysiwyg-toolbar {
+	background: color-mix(in srgb, #fef9c3 45%, transparent);
+	border-bottom-color: color-mix(in srgb, #f59e0b 15%, transparent);
+}
+
 .wysiwyg-container:focus-within {
 	border-color: color-mix(in srgb, currentColor 25%, transparent);
 }
@@ -546,11 +565,19 @@ textarea::placeholder {
 	gap: 0.125rem;
 }
 
+.wysiwyg-toolbar-group--right {
+	margin-left: auto;
+}
+
 .wysiwyg-toolbar-group + .wysiwyg-toolbar-group::before {
 	content: "";
 	width: 1px;
 	background: color-mix(in srgb, currentColor 15%, transparent);
 	margin: 0.25rem 0.375rem;
+}
+
+.wysiwyg-toolbar-group + .wysiwyg-toolbar-group--right::before {
+	content: none;
 }
 
 .wysiwyg-toolbar button {
@@ -937,6 +964,20 @@ textarea::placeholder {
 /* Dark mode adjustments */
 [data-theme="dark"] .wysiwyg-container {
 	background: var(--fallback-b1, oklch(var(--b1) / 1));
+}
+
+[data-theme="dark"] .sn-notes-editor .wysiwyg-container {
+	background: color-mix(
+		in srgb,
+		#713f12 12%,
+		var(--fallback-b1, oklch(var(--b1) / 1))
+	);
+	border-color: color-mix(in srgb, #fbbf24 25%, transparent);
+}
+
+[data-theme="dark"] .sn-notes-editor .wysiwyg-toolbar {
+	background: color-mix(in srgb, #713f12 22%, transparent);
+	border-bottom-color: color-mix(in srgb, #fbbf24 20%, transparent);
 }
 
 [data-theme="dark"] .wysiwyg-toolbar {
