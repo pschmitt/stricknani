@@ -1304,94 +1304,113 @@
 			textarea.dispatchEvent(new Event("input", { bubbles: true }));
 		};
 
-		const closeAutocomplete = () => {
-			if (currentAutocomplete) {
-				currentAutocomplete.dropdown.remove();
-				currentAutocomplete = null;
-			}
-		};
-
-		const setSelectedIndex = (index, { scroll = false } = {}) => {
-			if (!currentAutocomplete) return;
-
-			const items = currentAutocomplete.dropdown.querySelectorAll(
-				".markdown-image-item",
-			);
-			if (items.length === 0) {
-				currentAutocomplete.selectedIndex = 0;
-				return;
-			}
-
-			// Normalize to a valid index so callers don't have to.
-			const normalizedIndex =
-				((index % items.length) + items.length) % items.length;
-			items.forEach((item, i) => {
-				if (i === normalizedIndex) {
-					item.classList.add("bg-base-200");
-					item.setAttribute("aria-selected", "true");
-				} else {
-					item.classList.remove("bg-base-200");
-					item.setAttribute("aria-selected", "false");
+			const closeAutocomplete = () => {
+				if (currentAutocomplete) {
+					currentAutocomplete.dropdown.remove();
+					currentAutocomplete = null;
 				}
-			});
+			};
+
+			const setSelectedIndex = (index, { scroll = false } = {}) => {
+				if (!currentAutocomplete) return;
+
+				const items = currentAutocomplete.dropdown.querySelectorAll(
+					".markdown-image-item",
+				);
+				if (items.length === 0) {
+					currentAutocomplete.selectedIndex = 0;
+					return;
+				}
+
+				// Normalize to a valid index so callers don't have to.
+				const normalizedIndex =
+					((index % items.length) + items.length) % items.length;
+				items.forEach((item, i) => {
+					if (i === normalizedIndex) {
+						item.classList.add("bg-base-200");
+						item.setAttribute("aria-selected", "true");
+					} else {
+						item.classList.remove("bg-base-200");
+						item.setAttribute("aria-selected", "false");
+					}
+				});
 
 				currentAutocomplete.selectedIndex = normalizedIndex;
 
 				if (scroll) {
 					const selectedItem = items[normalizedIndex];
-					if (selectedItem) {
-						const dropdown = currentAutocomplete.dropdown;
-						const viewTop = dropdown.scrollTop;
-						const viewBottom = viewTop + dropdown.clientHeight;
-						const itemTop = selectedItem.offsetTop;
-						const itemBottom = itemTop + selectedItem.offsetHeight;
+					if (!selectedItem) return;
 
-						// Ensure the selected item is visible inside the dropdown without
-						// scrolling the main page.
-						if (itemTop < viewTop) {
-							dropdown.scrollTop = itemTop;
-						} else if (itemBottom > viewBottom) {
-							dropdown.scrollTop = itemBottom - dropdown.clientHeight;
+					const dropdown = currentAutocomplete.dropdown;
+					const viewTop = dropdown.scrollTop;
+					const viewBottom = viewTop + dropdown.clientHeight;
+
+					const getOffsetTopWithin = (container, el) => {
+						let top = 0;
+						let node = el;
+						while (node && node !== container) {
+							top += node.offsetTop || 0;
+							node = node.offsetParent;
 						}
+						return top;
+					};
+
+					const itemTop = getOffsetTopWithin(dropdown, selectedItem);
+					const itemBottom = itemTop + selectedItem.offsetHeight;
+					const padding = 4;
+
+					// Ensure the selected item is visible inside the dropdown without
+					// scrolling the main page.
+					if (itemTop < viewTop + padding) {
+						dropdown.scrollTop = Math.max(0, itemTop - padding);
+					} else if (itemBottom > viewBottom - padding) {
+						dropdown.scrollTop = Math.max(
+							0,
+							itemBottom - dropdown.clientHeight + padding,
+						);
 					}
 				}
 			};
 
-		const handleKeydown = (event) => {
-			if (!currentAutocomplete) return;
+			const handleKeydown = (event) => {
+				if (!currentAutocomplete) return;
 
-			const items = currentAutocomplete.dropdown.querySelectorAll(
-				".markdown-image-item",
-			);
-			if (items.length === 0) return;
+				const items = currentAutocomplete.dropdown.querySelectorAll(
+					".markdown-image-item",
+				);
+				if (items.length === 0) return;
 
-			switch (event.key) {
-				case "ArrowDown":
-					event.preventDefault();
-					setSelectedIndex(currentAutocomplete.selectedIndex + 1, { scroll: true });
-					break;
-				case "ArrowUp":
-					event.preventDefault();
-					setSelectedIndex(currentAutocomplete.selectedIndex - 1, { scroll: true });
-					break;
-				case "Enter":
-					event.preventDefault();
-					if (items[currentAutocomplete.selectedIndex]) {
-						const item = items[currentAutocomplete.selectedIndex];
-						const image = {
-							url: item.getAttribute("data-url"),
-							alt_text: item.getAttribute("data-alt"),
-						};
-						insertMarkdownImage(currentAutocomplete.textarea, image);
+				switch (event.key) {
+					case "ArrowDown":
+						event.preventDefault();
+						setSelectedIndex(currentAutocomplete.selectedIndex + 1, {
+							scroll: true,
+						});
+						break;
+					case "ArrowUp":
+						event.preventDefault();
+						setSelectedIndex(currentAutocomplete.selectedIndex - 1, {
+							scroll: true,
+						});
+						break;
+					case "Enter":
+						event.preventDefault();
+						if (items[currentAutocomplete.selectedIndex]) {
+							const item = items[currentAutocomplete.selectedIndex];
+							const image = {
+								url: item.getAttribute("data-url"),
+								alt_text: item.getAttribute("data-alt"),
+							};
+							insertMarkdownImage(currentAutocomplete.textarea, image);
+							closeAutocomplete();
+						}
+						break;
+					case "Escape":
+						event.preventDefault();
 						closeAutocomplete();
-					}
-					break;
-				case "Escape":
-					event.preventDefault();
-					closeAutocomplete();
-					break;
-			}
-		};
+						break;
+				}
+			};
 
 		const collectAvailableImages = (_textarea) => {
 			const images = [];
