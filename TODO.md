@@ -34,6 +34,7 @@ Execution-oriented backlog for Stricknani.
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T39 | P0 | done | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
+| T41 | P1 | done | ux | bug | Fix remaining print layout issues (Wayback buttons, footer, spacing) |
 | T38 | P2 | done | ux | refactor | Improve print layout to save space and show only relevant content |
 | T37 | P3 | done | ux | refactor | Standardize "instructions" header size to match other section headers |
 | T36 | P2 | done | frontend | refactor | Minimize templated JS/CSS in favor of static loading |
@@ -42,6 +43,9 @@ Execution-oriented backlog for Stricknani.
 | T18 | P1 | done | demo | feat | Improve demo assets with knitting-related images and content |
 | T30 | P1 | done | cli | feat | Add `stricknani-cli project|yarn ID_OR_NAME` with pretty print and --json support |
 | T31 | P0 | done | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
+| T45 | P1 | todo | ux | bug | Fix printing bug: collapsed instructions not included in print output
+| T44 | P2 | todo | test | feat | Add comprehensive tests for printing features
+| T43 | P2 | todo | ux | refactor | Hide "yarns used" widget when no yarns are linked to project |
 | T1 | P4 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 | T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
 | T33 | P3 | todo | frontend | feat | Add PWA installation capability |
@@ -71,6 +75,105 @@ Execution-oriented backlog for Stricknani.
 
 
 ## Task Details
+
+### T45: Fix printing bug: collapsed instructions not included in print output
+
+- **Area**: ux
+- **Priority**: P1
+- **Status**: todo
+- **Category**: bug
+- **Description**:
+  - When instructions are collapsed in the UI, they are not included in the print output
+  - Print layout should always include instructions regardless of their collapsed state in the browser
+  - This is a critical bug that affects the primary use case for printing
+- **Root Cause**:
+  - Likely caused by CSS `display: none` or similar properties being applied to collapsed content
+  - Print media queries may not be overriding the collapsed state properly
+  - JavaScript collapse state is being respected in print view when it shouldn't be
+- **Implementation**:
+  - Ensure print CSS forces instructions to be visible regardless of collapse state
+  - Add specific print media query rules to override any collapse-related styling
+  - Test both collapsed and expanded states to ensure instructions always print
+  - Consider using `!important` in print CSS to override inline styles
+- **Specific Fixes Needed**:
+  - Update `stricknani/static/css/project_detail_print.css` to force instructions visibility
+  - Add rules like: `.instructions-section { display: block !important; }`
+  - Ensure any collapse-related classes are overridden in print view
+  - Test with localStorage collapse state to ensure it doesn't affect printing
+- **Files to Modify**:
+  - `stricknani/static/css/project_detail_print.css` - main print CSS file
+  - Possibly `stricknani/templates/projects/detail.html` if template logic affects printing
+- **Testing**:
+  - Test printing with instructions in both collapsed and expanded states
+  - Verify instructions always appear in print output
+  - Test with different collapse scenarios (localStorage states)
+  - Ensure no regression in other print functionality
+
+### T44: Add comprehensive tests for printing features
+
+- **Area**: test
+- **Priority**: P2
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Add thorough test coverage for all printing-related features
+  - Ensure print functionality works correctly and doesn't regress
+  - Test both the general print layout and specific print features
+- **Test Coverage Needed**:
+  - General project detail page printing
+  - Instructions-only printing feature
+  - Print layout CSS and media queries
+  - Conditional rendering of elements in print view
+  - Print-specific template partials
+  - Different project types (with/without yarns, images, etc.)
+  - Mobile vs desktop print output
+- **Types of Tests to Add**:
+  - Unit tests for print-related template logic
+  - Integration tests for print routes/endpoints
+  - Functional tests for print button functionality
+  - Visual regression tests for print layout (if possible)
+  - Browser compatibility tests for print media queries
+- **Implementation**:
+  - Add pytest tests in `tests/` directory
+  - Create test fixtures for different project scenarios
+  - Test print-specific template rendering
+  - Verify CSS media query behavior
+  - Add tests for print-only features (instructions print, etc.)
+  - Ensure tests cover edge cases (empty projects, projects with minimal content)
+- **Files to Create/Modify**:
+  - `tests/test_printing.py` - main printing tests
+  - `tests/conftest.py` - add print-related fixtures
+  - Possibly update existing project/yarn tests to include print scenarios
+- **Testing Tools to Consider**:
+  - pytest with appropriate plugins
+  - Selenium/WebDriver for browser-based print testing
+  - CSS coverage tools to ensure print styles are tested
+  - Screenshot comparison for visual regression testing
+
+### T43: Hide "yarns used" widget when no yarns are linked to project
+
+- **Area**: ux
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Conditionally render the "yarns used" widget only when there are actually yarns linked to the project
+  - Hide the widget when no yarns are associated with the project
+  - Improve UI consistency by not showing empty sections
+  - Similar to the existing pattern for hiding empty "other materials" widget
+- **Implementation**:
+  - Update the project detail template to check if yarns list is empty before rendering the widget
+  - Add appropriate Jinja2 conditional logic: `{% if project.yarns %}` or similar
+  - Ensure the change doesn't affect the edit/form views where the field should always be visible
+  - Test with projects that have yarns, no yarns, and various edge cases
+- **Files to Modify**:
+  - `stricknani/templates/projects/detail.html` - main project detail template
+  - Possibly `stricknani/templates/projects/_yarns_used.html` if it exists as a partial
+- **Benefits**:
+  - Cleaner UI with no empty sections
+  - Consistent with other conditional rendering patterns in the app
+  - Better user experience by only showing relevant information
+  - Reduces visual clutter on project pages
 
 ### T1: Replace runtime Tailwind with prebuilt static CSS bundle
 
