@@ -1335,15 +1335,27 @@
 				}
 			});
 
-			currentAutocomplete.selectedIndex = normalizedIndex;
+				currentAutocomplete.selectedIndex = normalizedIndex;
 
-			if (scroll) {
-				items[normalizedIndex]?.scrollIntoView({
-					block: "nearest",
-					inline: "nearest",
-				});
-			}
-		};
+				if (scroll) {
+					const selectedItem = items[normalizedIndex];
+					if (selectedItem) {
+						const dropdown = currentAutocomplete.dropdown;
+						const viewTop = dropdown.scrollTop;
+						const viewBottom = viewTop + dropdown.clientHeight;
+						const itemTop = selectedItem.offsetTop;
+						const itemBottom = itemTop + selectedItem.offsetHeight;
+
+						// Ensure the selected item is visible inside the dropdown without
+						// scrolling the main page.
+						if (itemTop < viewTop) {
+							dropdown.scrollTop = itemTop;
+						} else if (itemBottom > viewBottom) {
+							dropdown.scrollTop = itemBottom - dropdown.clientHeight;
+						}
+					}
+				}
+			};
 
 		const handleKeydown = (event) => {
 			if (!currentAutocomplete) return;
@@ -1526,7 +1538,7 @@
 		});
 
 			// Close autocomplete on scroll, but do not close when the dropdown itself
-			// scrolls (keyboard navigation uses scrollIntoView()).
+			// scrolls (keyboard navigation adjusts dropdown.scrollTop).
 			document.addEventListener(
 				"scroll",
 				(event) => {
