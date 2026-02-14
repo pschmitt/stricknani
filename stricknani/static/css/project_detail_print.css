@@ -215,6 +215,12 @@
 		page-break-inside: avoid;
 	}
 
+	/* Start instructions on a fresh page for readability. */
+	.instructions-section {
+		break-before: page !important;
+		page-break-before: always !important;
+	}
+
 	/* Make headings a bit smaller in print */
 	h1 {
 		font-size: 18pt !important;

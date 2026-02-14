@@ -22,6 +22,15 @@ def test_project_details_has_print_table_markup() -> None:
     # Print-only details table for compact output.
     assert "project-details-print-table" in content
     assert "technical-specs-print-table" in content
+    assert "instructions-section" in content
+
+
+def test_print_css_starts_instructions_on_new_page() -> None:
+    css = "stricknani/static/css/project_detail_print.css"
+    content = open(css, encoding="utf-8").read()
+
+    assert ".instructions-section" in content
+    assert "break-before: page" in content or "page-break-before: always" in content
 
 
 def test_project_detail_js_expands_instructions_before_print() -> None:
