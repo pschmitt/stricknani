@@ -2128,12 +2128,12 @@ function addStep(elOrTitle = "", description = "", stepImages = []) {
 
 	const container = document.getElementById("stepsContainer");
 	const stepNumber = container.children.length + 1;
-		const div = document.createElement("div");
-		div.className =
-			"step-item border rounded-lg p-2 md:p-4 bg-base-200 border-base-300 dark:bg-base-300/50 dark:border-base-700";
-		div.setAttribute("data-step-number", stepNumber);
-		const inputId = `newStepImageInput${Date.now()}`;
-		const textareaId = `step-description-new-${Date.now()}`;
+	const div = document.createElement("div");
+	div.className =
+		"step-item border rounded-lg p-2 md:p-4 bg-base-200 border-base-300 dark:bg-base-300/50 dark:border-base-700";
+	div.setAttribute("data-step-number", stepNumber);
+	const inputId = `newStepImageInput${Date.now()}`;
+	const textareaId = `step-description-new-${Date.now()}`;
 	const stepImageUploadDropzoneHtml = projectId
 		? ""
 		: `
@@ -2186,34 +2186,34 @@ function addStep(elOrTitle = "", description = "", stepImages = []) {
 		                    </button>
 		                </div>
 		                `;
-										})
-										.join("")}
+									})
+									.join("")}
 			        </div>
 			        ${stepImageUploadDropzoneHtml}
 			    `;
-		container.appendChild(div);
+	container.appendChild(div);
 
-		const host = div.querySelector(".step-wysiwyg-host");
-		const tpl = document.getElementById("step-wysiwyg-template");
-		if (host && tpl && "content" in tpl) {
-			const frag = tpl.content.cloneNode(true);
-			const wysiwygContainer = frag.querySelector("[data-wysiwyg]");
-			const textarea = frag.querySelector("textarea");
-			if (wysiwygContainer && textarea) {
-				wysiwygContainer.dataset.wysiwygInput = textareaId;
-				textarea.id = textareaId;
-				textarea.name = textareaId;
-				textarea.classList.add("step-description");
-				textarea.value = description;
-				host.replaceWith(frag);
-			}
+	const host = div.querySelector(".step-wysiwyg-host");
+	const tpl = document.getElementById("step-wysiwyg-template");
+	if (host && tpl && "content" in tpl) {
+		const frag = tpl.content.cloneNode(true);
+		const wysiwygContainer = frag.querySelector("[data-wysiwyg]");
+		const textarea = frag.querySelector("textarea");
+		if (wysiwygContainer && textarea) {
+			wysiwygContainer.dataset.wysiwygInput = textareaId;
+			textarea.id = textareaId;
+			textarea.name = textareaId;
+			textarea.classList.add("step-description");
+			textarea.value = description;
+			host.replaceWith(frag);
 		}
+	}
 
-		initStepImageUploaders();
-		const newStepGallery = div.querySelector(".step-images");
-		if (newStepGallery) {
-			window.refreshPhotoSwipeGallery?.(newStepGallery);
-		}
+	initStepImageUploaders();
+	const newStepGallery = div.querySelector(".step-images");
+	if (newStepGallery) {
+		window.refreshPhotoSwipeGallery?.(newStepGallery);
+	}
 
 	if (window.STRICKNANI?.wysiwyg?.init) {
 		window.STRICKNANI.wysiwyg.init({ i18n: window.STRICKNANI.i18n || {} });
