@@ -33,6 +33,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T36 | P2 | todo | frontend | refactor | Minimize templated JS/CSS in favor of static loading |
 | T34 | P2 | todo | cli | refactor | Make --query flag positional in `stricknani-cli project show` |
 | T35 | P2 | todo | ux | refactor | Hide empty "other materials" widget on project view page |
 | T18 | P1 | done | demo | feat | Improve demo assets with knitting-related images and content |
@@ -327,3 +328,25 @@ Execution-oriented backlog for Stricknani.
   - Update the project detail template to check if other_materials has content before rendering
   - Add appropriate Jinja2 conditional logic in the template
   - Ensure the change doesn't affect the edit/form views where the field should always be visible
+
+### T36: Minimize templated JS/CSS in favor of static loading
+
+- **Area**: frontend
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Reduce the amount of Jinja2 templating in JavaScript and CSS files
+  - Extract templated content to minimal wrapper files that load static JS/CSS
+  - Enable proper linting and formatting of frontend assets
+  - Apply to both JavaScript (templates/*.js) and CSS files
+- **Implementation**:
+  - Identify essential templated variables that must be passed from backend to frontend
+  - Create minimal template wrappers that inject only necessary dynamic content
+  - Move bulk of JS/CSS logic to static files that can be properly linted/formatted
+  - Update build process to handle the separation between templated and static assets
+- **Benefits**:
+  - Enable biome/ruff/eslint linting on frontend code
+  - Improve code maintainability and developer experience
+  - Better separation of concerns between backend templating and frontend logic
+  - Easier to apply consistent formatting across the codebase
