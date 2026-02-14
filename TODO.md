@@ -33,9 +33,10 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T37 | P3 | todo | ux | refactor | Standardize "instructions" header size to match other section headers |
 | T36 | P2 | todo | frontend | refactor | Minimize templated JS/CSS in favor of static loading |
-| T34 | P2 | todo | cli | refactor | Make --query flag positional in `stricknani-cli project show` |
-| T35 | P2 | todo | ux | refactor | Hide empty "other materials" widget on project view page |
+| T34 | P2 | done | cli | refactor | Make --query flag positional in `stricknani-cli project show` |
+| T35 | P2 | wip (PID: 1282753, AGENT: codex) | ux | refactor | Hide empty "other materials" widget on project view page |
 | T18 | P1 | done | demo | feat | Improve demo assets with knitting-related images and content |
 | T30 | P1 | done | cli | feat | Add `stricknani-cli project|yarn ID_OR_NAME` with pretty print and --json support |
 | T31 | P0 | done | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
@@ -328,6 +329,22 @@ Execution-oriented backlog for Stricknani.
   - Update the project detail template to check if other_materials has content before rendering
   - Add appropriate Jinja2 conditional logic in the template
   - Ensure the change doesn't affect the edit/form views where the field should always be visible
+
+### T37: Standardize "instructions" header size to match other section headers
+
+- **Area**: ux
+- **Priority**: P3
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Reduce the size of the "instructions" header to match the styling of other section headers
+  - Ensure visual consistency across all project detail section headers
+  - Target headers like "Technical specifications", "Description", etc. as reference
+- **Implementation**:
+  - Identify the current CSS classes/styles applied to the "instructions" header
+  - Update the template to use the same header classes as other sections
+  - Ensure the change maintains proper hierarchy and readability
+  - Test across different screen sizes and devices
 
 ### T36: Minimize templated JS/CSS in favor of static loading
 

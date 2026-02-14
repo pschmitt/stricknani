@@ -407,6 +407,44 @@ def test_cli_project_lookup_dispatches_to_show(
     assert captured["owner_email"] is None
 
 
+def test_cli_project_show_accepts_positional_query(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_show_project(query: str, owner_email: str | None) -> None:
+        captured["query"] = query
+        captured["owner_email"] = owner_email
+
+    monkeypatch.setattr(cli, "show_project", fake_show_project)
+    monkeypatch.setattr(sys, "argv", ["stricknani-cli", "project", "show", "Sample"])
+    cli.main()
+
+    assert captured["query"] == "Sample"
+    assert captured["owner_email"] is None
+
+
+def test_cli_project_show_accepts_legacy_query_flag(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    async def fake_show_project(query: str, owner_email: str | None) -> None:
+        captured["query"] = query
+        captured["owner_email"] = owner_email
+
+    monkeypatch.setattr(cli, "show_project", fake_show_project)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["stricknani-cli", "project", "show", "--query", "Sample"],
+    )
+    cli.main()
+
+    assert captured["query"] == "Sample"
+    assert captured["owner_email"] is None
+
+
 def test_cli_yarn_lookup_dispatches_to_show(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

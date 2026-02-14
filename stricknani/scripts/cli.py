@@ -110,9 +110,27 @@ def output_table(
 
 
 def _normalize_entity_lookup_args(raw_args: list[str]) -> list[str]:
-    """Rewrite `project|yarn ID_OR_NAME` invocations to `... show --query ...`."""
+    """Rewrite `project|yarn ID_OR_NAME` invocations to `... show QUERY ...`."""
     if len(raw_args) < 2:
         return raw_args
+
+    # Backwards compatibility: `project show --query X` -> `project show X`
+    if raw_args[0] == "project" and raw_args[1] == "show":
+        normalized: list[str] = []
+        skip_next = False
+        for idx, token in enumerate(raw_args):
+            if skip_next:
+                skip_next = False
+                continue
+            if token == "--query":
+                next_token = raw_args[idx + 1] if idx + 1 < len(raw_args) else ""
+                if not next_token:
+                    return raw_args
+                normalized.append(next_token)
+                skip_next = True
+                continue
+            normalized.append(token)
+        raw_args = normalized
 
     command = raw_args[0]
     token = raw_args[1]
@@ -120,7 +138,7 @@ def _normalize_entity_lookup_args(raw_args: list[str]) -> list[str]:
         return raw_args
 
     if command == "project" and token not in PROJECT_SUBCOMMANDS:
-        return [command, "show", "--query", token, *raw_args[2:]]
+        return [command, "show", token, *raw_args[2:]]
 
     if command == "yarn" and token not in YARN_SUBCOMMANDS:
         return [command, "show", "--query", token, *raw_args[2:]]
@@ -1244,9 +1262,7 @@ def main() -> None:
     project_show_parser = project_subparsers.add_parser(
         "show", help="Show one project by ID or name"
     )
-    project_show_parser.add_argument(
-        "--query", required=True, help="ID or partial name"
-    )
+    project_show_parser.add_argument("query", help="ID or partial name")
     project_show_parser.add_argument("--owner-email", help="Filter by owner email")
     project_add_parser = project_subparsers.add_parser("add", help="Add a project")
     project_add_parser.add_argument("--owner-email", required=True, help="Owner email")
