@@ -1,4 +1,4 @@
-{% macro wysiwyg(input_id, value='', placeholder='', rows=4, disabled=false, markdown_images=false, heading_levels=None, container_class=None) %}
+{% macro wysiwyg(input_id, value='', placeholder='', rows=4, disabled=false, markdown_images=false, heading_levels=None, container_class=None, textarea_class=None) %}
 {% set heading_levels = heading_levels if heading_levels is not none else [1, 2, 3] %}
 <div data-wysiwyg data-wysiwyg-input="{{ input_id }}" class="wysiwyg-container {{ container_class or '' }}">
     <div class="wysiwyg-toolbar">
@@ -55,7 +55,7 @@
 	    </div>
 	    <div class="wysiwyg-content"></div>
 	</div>
-	<textarea id="{{ input_id }}" name="{{ input_id }}" rows="{{ rows }}" class="wysiwyg-raw textarea textarea-bordered w-full text-sm font-mono hidden" placeholder="{{ placeholder }}" {% if disabled %}disabled{% endif %} {% if markdown_images %}data-markdown-images="true"{% endif %}>{{ value }}</textarea>
+	<textarea id="{{ input_id }}" name="{{ input_id }}" rows="{{ rows }}" class="wysiwyg-raw textarea textarea-bordered w-full text-sm font-mono hidden {{ textarea_class or '' }}" placeholder="{{ placeholder }}" {% if disabled %}disabled{% endif %} {% if markdown_images %}data-markdown-images="true"{% endif %}>{{ value }}</textarea>
 {% endmacro %}
 
 {% macro wysiwyg_scripts() %}

@@ -576,7 +576,8 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 	                              value=(step.description or ''),
 	                              markdown_images=true,
 	                              heading_levels=[2, 3],
-	                              container_class='mb-2'
+	                              container_class='mb-2',
+	                              textarea_class='step-description'
 	                            ) }}
 		                            <h4
 		                                class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100{% if not step.images %} hidden{% endif %}">
@@ -605,7 +606,8 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 	              value='',
 	              markdown_images=true,
 	              heading_levels=[2, 3],
-	              container_class='mb-2'
+	              container_class='mb-2',
+	              textarea_class='step-description'
 	            ) }}
 	        </template>
 

@@ -2203,6 +2203,7 @@ function addStep(elOrTitle = "", description = "", stepImages = []) {
 				wysiwygContainer.dataset.wysiwygInput = textareaId;
 				textarea.id = textareaId;
 				textarea.name = textareaId;
+				textarea.classList.add("step-description");
 				textarea.value = description;
 				host.replaceWith(frag);
 			}
