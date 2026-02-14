@@ -1525,9 +1525,24 @@
 			}
 		});
 
-		// Close autocomplete on scroll
-		document.addEventListener("scroll", closeAutocomplete, true);
-	};
+			// Close autocomplete on scroll, but do not close when the dropdown itself
+			// scrolls (keyboard navigation uses scrollIntoView()).
+			document.addEventListener(
+				"scroll",
+				(event) => {
+					if (!currentAutocomplete) return;
+
+					// `scroll` doesn't bubble, but it can be captured. When the dropdown is
+					// the scroll container, the event target is inside the dropdown.
+					if (currentAutocomplete.dropdown.contains(event.target)) {
+						return;
+					}
+
+					closeAutocomplete();
+				},
+				true,
+			);
+		};
 
 	setupPwaInstall();
 })();
