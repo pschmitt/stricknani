@@ -238,11 +238,15 @@
 			Array.from(document.querySelectorAll('[data-pwa-install="1"]'));
 
 		const showButtons = () => {
-			installButtons().forEach((btn) => btn.classList.remove("hidden"));
+			installButtons().forEach((btn) => {
+				btn.classList.remove("hidden");
+			});
 		};
 
 		const hideButtons = () => {
-			installButtons().forEach((btn) => btn.classList.add("hidden"));
+			installButtons().forEach((btn) => {
+				btn.classList.add("hidden");
+			});
 		};
 
 		let deferredPrompt = null;
