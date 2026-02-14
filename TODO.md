@@ -45,7 +45,7 @@ Execution-oriented backlog for Stricknani.
 | T31 | P0 | done | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
 | T45 | P1 | todo | ux | bug | Fix printing bug: collapsed instructions not included in print output
 | T44 | P2 | todo | test | feat | Add comprehensive tests for printing features
-| T43 | P2 | todo | ux | refactor | Hide "yarns used" widget when no yarns are linked to project |
+| T43 | P2 | done | ux | refactor | Hide "yarns used" widget when no yarns are linked to project |
 | T1 | P4 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 | T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
 | T33 | P3 | todo | frontend | feat | Add PWA installation capability |

@@ -412,41 +412,36 @@ data-shortcut-delete-dialog="deleteProjectDialog"
 
                 <div class="collapse-content space-y-6">
                     <!-- Yarns Used -->
+                    {% if project.linked_yarns %}
                     <div class="bg-base-200/30 rounded-xl border border-base-200 p-5">
                         <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                             <span class="mdi mdi-sheep"></span>
                             {{ _('Yarns Used') }}
                         </h3>
-	                        {% if project.linked_yarns %}
-	                        <div class="space-y-2">
-	                            {% for yarn in project.linked_yarns %}
-	                            <a href="/yarn/{{ yarn.id }}"
-	                                class="flex items-center gap-3 rounded-xl border border-base-200 bg-base-100 px-3 py-3 text-base transition hover:border-base-300 hover:bg-base-200/40">
-	                                <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-base-200">
-	                                    {% if yarn.preview_url %}
-	                                    <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}" class="h-full w-full object-cover">
-	                                    {% else %}
-	                                    <span class="mdi mdi-sheep text-base-content/40 text-lg"></span>
-	                                    {% endif %}
-	                                </div>
-	                                <div class="min-w-0 flex-1">
-	                                    <div class="truncate font-medium">{{ yarn.name }}</div>
-	                                    <div class="text-sm text-base-content/60 truncate">
-	                                        {{ yarn.brand or _('Unknown Brand') }}
-	                                        {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
-	                                    </div>
-	                                </div>
-	                                <span class="mdi mdi-chevron-right text-base-content/30"></span>
+                        <div class="space-y-2">
+                            {% for yarn in project.linked_yarns %}
+                            <a href="/yarn/{{ yarn.id }}"
+                                class="flex items-center gap-3 rounded-xl border border-base-200 bg-base-100 px-3 py-3 text-base transition hover:border-base-300 hover:bg-base-200/40">
+                                <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-base-200">
+                                    {% if yarn.preview_url %}
+                                    <img src="{{ yarn.preview_url }}" alt="{{ yarn.name }}" class="h-full w-full object-cover">
+                                    {% else %}
+                                    <span class="mdi mdi-sheep text-base-content/40 text-lg"></span>
+                                    {% endif %}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="truncate font-medium">{{ yarn.name }}</div>
+                                    <div class="text-sm text-base-content/60 truncate">
+                                        {{ yarn.brand or _('Unknown Brand') }}
+                                        {% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}
+                                    </div>
+                                </div>
+                                <span class="mdi mdi-chevron-right text-base-content/30"></span>
                             </a>
                             {% endfor %}
                         </div>
-                        {% else %}
-                        <div class="flex items-center justify-between rounded-lg border border-dashed border-base-300 bg-base-200/30 px-3 py-2 text-sm text-base-content/60">
-                            <span>{{ _('No yarns linked') }}</span>
-                            <a href="/projects/{{ project.id }}/edit" class="text-primary hover:underline">{{ _('Link yarn') }}</a>
-                        </div>
-                        {% endif %}
                     </div>
+                    {% endif %}
 
                     <!-- Other Materials -->
                     {% if other_materials_plain %}
