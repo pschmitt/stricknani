@@ -670,8 +670,8 @@ textarea::placeholder {
 
 .wysiwyg-image-node {
 	position: relative;
-	display: inline-block;
-	vertical-align: middle;
+	display: block;
+	width: fit-content;
 	max-width: 100%;
 }
 

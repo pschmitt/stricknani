@@ -46,7 +46,7 @@ Execution-oriented backlog for Stricknani.
 | T45 | P1 | done | ux | bug | Fix printing bug: collapsed instructions not included in print output
 | T44 | P2 | done | test | feat | Add comprehensive tests for printing features
 | T43 | P2 | done | ux | refactor | Hide "yarns used" widget when no yarns are linked to project |
-| T50 | P2 | todo | ux | refactor | Unify PhotoSwipe UI for step images and gallery images
+| T50 | P2 | done | ux | refactor | Unify PhotoSwipe UI for step images and gallery images
 | T49 | P2 | done | ux | bug | Fix image completion menu arrow key scrolling
 | T48 | P1 | done | demo | bug | Fix missing demo user profile picture (404 error)
 | T47 | P2 | done | ux | refactor | Reformatting the "technical specs" section for better print layout
@@ -54,6 +54,7 @@ Execution-oriented backlog for Stricknani.
 | T1 | P4 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 | T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
 | T33 | P3 | done | frontend | feat | Add PWA installation capability |
+| T51 | P2 | done | ux | refactor | Add line breaks between consecutive images in wysiwyg editor preview |
 
 
 ## Done
@@ -418,6 +419,39 @@ Execution-oriented backlog for Stricknani.
   - App can be installed to home screen on mobile devices
   - App launches in standalone mode when installed
   - Proper icons and splash screens displayed
+
+### T51: Add line breaks between consecutive images in wysiwyg editor preview
+
+- **Area**: ux
+- **Priority**: P2
+- **Status**: done
+- **Category**: refactor
+- **Description**:
+  - In the wysiwyg editor preview, consecutive images are displayed side by side
+  - This doesn't match the final rendered view where each image appears on its own line
+  - Need to modify the wysiwyg editor CSS to make consecutive images display on separate lines
+  - This will make the preview more accurately reflect the final output
+- **Current Behavior**:
+  - Multiple consecutive images in wysiwyg editor appear horizontally aligned
+  - Final view shows each image on its own line with proper spacing
+  - Creates inconsistency between preview and final result
+- **Expected Behavior**:
+  - Wysiwyg editor preview should match final view layout
+  - Each consecutive image should appear on its own line
+  - Consistent spacing and layout between preview and final output
+- **Implementation**:
+  - Modify `.wysiwyg-image-node` CSS to use `display: block` instead of `display: inline-block`
+  - Add appropriate margins to match final view spacing
+  - Ensure the change doesn't break image editing functionality
+  - Test with various image sizes and combinations
+- **Files to Modify**:
+  - `stricknani/static/css/app.css` - wysiwyg image node styling
+  - Possibly adjust related wysiwyg CSS rules for consistency
+- **Testing**:
+  - Verify wysiwyg preview matches final view for consecutive images
+  - Test image editing functionality (resize, delete, drag-and-drop)
+  - Ensure no regression in other wysiwyg features
+  - Test with different image sizes (sm, md, lg, xl)
 
 ### T16: Add markdown image autocomplete for `!` trigger in text fields
 

@@ -31,6 +31,426 @@
 	const pswpThumbsLabel = t("pswpGalleryThumbnails", "Gallery thumbnails");
 	const pswpThumbActionLabel = t("pswpOpenImage", "Open image");
 
+	const registerPswpUi = (pswp) => {
+		if (!pswp?.ui) {
+			return;
+		}
+
+		// Register Thumbs.
+		pswp.ui.registerElement({
+			name: "thumbs",
+			order: 9,
+			isButton: false,
+			appendTo: "root",
+			onInit: (el, pswpInstance) => {
+				el.classList.add("pswp__thumbs");
+				el.setAttribute("aria-label", pswpThumbsLabel);
+				el.setAttribute("role", "toolbar");
+
+				const buildItems = () => {
+					const count =
+						typeof pswpInstance.getNumItems === "function"
+							? pswpInstance.getNumItems()
+							: pswpInstance.options?.dataSource?.length ||
+								pswpInstance.options?.dataSource?.items?.length ||
+								0;
+					el.innerHTML = "";
+					if (!count || count <= 1) {
+						return;
+					}
+					const fragment = document.createDocumentFragment();
+					for (let index = 0; index < count; index += 1) {
+						const item =
+							typeof pswpInstance.getItemData === "function"
+								? pswpInstance.getItemData(index)
+								: pswpInstance.options?.dataSource?.[index] ||
+									pswpInstance.options?.dataSource?.items?.[index] ||
+									{};
+						const thumbSrc = item?.msrc || item?.src;
+						if (!thumbSrc) {
+							continue;
+						}
+						const button = document.createElement("button");
+						button.type = "button";
+						button.className = "pswp__thumb";
+						button.setAttribute(
+							"aria-label",
+							`${pswpThumbActionLabel} ${index + 1}`,
+						);
+						button.setAttribute("data-pswp-thumb-index", `${index}`);
+						const img = document.createElement("img");
+						img.src = thumbSrc;
+						img.alt = item?.alt || item?.title || "";
+						button.appendChild(img);
+						button.addEventListener("click", () => {
+							pswpInstance.goTo(index);
+						});
+						fragment.appendChild(button);
+					}
+					el.appendChild(fragment);
+				};
+
+				const updateActive = () => {
+					const activeIndex = pswpInstance.currIndex || 0;
+					el.querySelectorAll("[data-pswp-thumb-index]").forEach((button) => {
+						const buttonIndex = Number.parseInt(
+							button.getAttribute("data-pswp-thumb-index") || "0",
+							10,
+						);
+						button.classList.toggle("is-active", buttonIndex === activeIndex);
+					});
+				};
+
+				buildItems();
+				updateActive();
+				pswpInstance.on("change", updateActive);
+			},
+		});
+
+		// Register "Set as primary" button.
+		pswp.ui.registerElement({
+			name: "promote-button",
+			ariaLabel: t("pswpSetAsPrimary", "Set as primary"),
+			order: 9,
+			isButton: true,
+			html: '<span class="pswp__icn mdi mdi-star"></span>',
+			appendTo: "bar",
+			onClick: () => {
+				const item = pswp.currItem;
+				const element =
+					item?.element || item?.data?.element || pswp.currSlide?.data?.element;
+				if (!element) {
+					return;
+				}
+				const customEvent = new CustomEvent("pswp:promote", {
+					detail: { element },
+					bubbles: true,
+				});
+				element.dispatchEvent(customEvent);
+			},
+			onInit: (el, pswpInstance) => {
+				const update = () => {
+					const item = pswpInstance.currItem;
+					const element =
+						item?.element ||
+						item?.data?.element ||
+						pswpInstance.currSlide?.data?.element;
+					const isPromotable = element?.hasAttribute("data-pswp-promote");
+					const isAlreadyPrimary =
+						element?.getAttribute("data-pswp-is-primary") === "true";
+
+					el.style.display = isPromotable ? "inline-flex" : "none";
+					el.classList.toggle("is-primary", isAlreadyPrimary);
+				};
+				pswpInstance.on("change", update);
+				pswpInstance.on("afterInit", update);
+			},
+		});
+
+		// Register Delete button.
+		pswp.ui.registerElement({
+			name: "delete-button",
+			ariaLabel: t("pswpDeleteImage", "Delete image"),
+			order: 8,
+			isButton: true,
+			html: '<span class="pswp__icn mdi mdi-delete"></span>',
+			appendTo: "bar",
+			onClick: () => {
+				const item = pswp.currItem;
+				const element =
+					item?.element || item?.data?.element || pswp.currSlide?.data?.element;
+				if (!element) {
+					return;
+				}
+				const customEvent = new CustomEvent("pswp:delete", {
+					detail: { element },
+					bubbles: true,
+				});
+				element.dispatchEvent(customEvent);
+			},
+			onInit: (el, pswpInstance) => {
+				const update = () => {
+					const item = pswpInstance.currItem;
+					const element =
+						item?.element ||
+						item?.data?.element ||
+						pswpInstance.currSlide?.data?.element;
+					const isDeletable = element?.hasAttribute("data-pswp-delete");
+					el.style.display = isDeletable ? "inline-flex" : "none";
+				};
+				pswpInstance.on("change", update);
+				pswpInstance.on("afterInit", update);
+			},
+		});
+
+		// Register Download button.
+		pswp.ui.registerElement({
+			name: "download-button",
+			ariaLabel: t("pswpDownloadImage", "Download image"),
+			order: 7,
+			isButton: true,
+			tagName: "a",
+			html: '<span class="pswp__icn mdi mdi-download"></span>',
+			appendTo: "bar",
+			onInit: (el, pswpInstance) => {
+				el.setAttribute("download", "");
+				el.setAttribute("target", "_blank");
+				el.setAttribute("rel", "noopener");
+
+				const update = () => {
+					const href = pswpInstance.currSlide?.data?.src || "";
+					el.href = href;
+					el.setAttribute("href", href);
+				};
+				pswpInstance.on("change", update);
+				pswpInstance.on("afterInit", update);
+			},
+		});
+
+		// Register OCR button (opens a dialog outside PhotoSwipe).
+		pswp.ui.registerElement({
+			name: "ocr-button",
+			ariaLabel: t("pswpExtractText", "Extract text"),
+			order: 6,
+			isButton: true,
+			html: '<span class="pswp__icn mdi mdi-text-recognition"></span>',
+			appendTo: "wrapper",
+			onClick: async (event) => {
+				event.preventDefault();
+				event.stopPropagation();
+
+				const dialog = document.getElementById("pswpOcrDialog");
+				const statusEl = document.getElementById("pswpOcrStatus");
+				const loadingStatusEl = document.getElementById("pswpOcrLoadingStatus");
+				const textEl = document.getElementById("pswpOcrText");
+				const filenameEl = document.getElementById("pswpOcrFilename");
+				const copyBtn = document.getElementById("pswpOcrCopy");
+				const retryBtn = document.getElementById("pswpOcrRetry");
+				const overlayEl = document.getElementById("pswpOcrLoadingOverlay");
+
+				if (
+					!dialog ||
+					!statusEl ||
+					!loadingStatusEl ||
+					!textEl ||
+					!filenameEl ||
+					!copyBtn ||
+					!retryBtn ||
+					!overlayEl
+				) {
+					return;
+				}
+
+				const data =
+					pswp.currSlide?.data || pswp.currItem?.data || pswp.currItem || {};
+				const src = data?.src || data?.msrc || "";
+				const alt = data?.alt || data?.title || "";
+
+				const setLoading = (isLoading, message = "") => {
+					dialog.setAttribute("aria-busy", isLoading ? "true" : "false");
+					overlayEl.classList.toggle("hidden", !isLoading);
+					loadingStatusEl.textContent = message;
+					if (isLoading) {
+						copyBtn.disabled = true;
+						retryBtn.disabled = true;
+					} else {
+						retryBtn.disabled = false;
+					}
+				};
+
+				const renderResult = (text, status) => {
+					statusEl.textContent = status || "";
+					textEl.textContent = text || "";
+					copyBtn.disabled = !text;
+				};
+
+				const runOcr = async (force = false) => {
+					if (!src) {
+						renderResult(
+							"",
+							t(
+								"pswpImageCannotBeProcessed",
+								"This image cannot be processed.",
+							),
+						);
+						return;
+					}
+
+					setLoading(true, t("pswpExtractingText", "Extracting text..."));
+					renderResult("", "");
+
+					const csrfToken = document
+						.querySelector('meta[name="csrf-token"]')
+						?.getAttribute("content");
+					const headers = {
+						"Content-Type": "application/json",
+						...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+					};
+
+					try {
+						const response = await fetch(ocrEndpoint, {
+							method: "POST",
+							headers,
+							body: JSON.stringify({ src, force }),
+						});
+
+						if (!response.ok) {
+							const payload = await response.json().catch(() => ({}));
+							const detail = payload?.detail || "";
+							if (detail === "ocr_not_available") {
+								statusEl.textContent = t(
+									"pswpOcrNotAvailable",
+									"OCR is not available on this server.",
+								);
+							} else if (detail === "invalid_src") {
+								statusEl.textContent = t(
+									"pswpImageCannotBeProcessed",
+									"This image cannot be processed.",
+								);
+							} else {
+								statusEl.textContent = t("pswpOcrFailed", "OCR failed.");
+							}
+							return;
+						}
+
+						const payload = await response.json();
+						const text = (payload?.text || "").trim();
+						if (!text) {
+							renderResult("", t("pswpNoTextDetected", "No text detected."));
+							return;
+						}
+
+						renderResult(text, t("pswpTextExtracted", "Text extracted."));
+					} catch (error) {
+						console.error("OCR failed", error);
+						renderResult("", t("pswpOcrFailed", "OCR failed."));
+					} finally {
+						setLoading(false);
+					}
+				};
+
+				filenameEl.textContent = alt;
+				dialog.showModal();
+
+				copyBtn.onclick = async () => {
+					const fullText = textEl.textContent || "";
+					const selection = window.getSelection?.();
+					const selectedText = selection ? selection.toString() : "";
+					const isSelectionInsideTextEl = (() => {
+						if (!selection || selection.rangeCount === 0) {
+							return false;
+						}
+						const range = selection.getRangeAt(0);
+						const container = range.commonAncestorContainer;
+						const node =
+							container.nodeType === Node.ELEMENT_NODE
+								? container
+								: container.parentElement;
+						return !!(node && textEl.contains(node));
+					})();
+
+					const copyUsingSelection = (range) => {
+						if (!selection) {
+							return false;
+						}
+						const previousRanges = [];
+						for (let i = 0; i < selection.rangeCount; i += 1) {
+							previousRanges.push(selection.getRangeAt(i).cloneRange());
+						}
+						selection.removeAllRanges();
+						selection.addRange(range);
+						const ok = document.execCommand("copy");
+						selection.removeAllRanges();
+						for (const previousRange of previousRanges) {
+							selection.addRange(previousRange);
+						}
+						return ok;
+					};
+
+					// In some browsers, Clipboard API writes can fail inside <dialog>, but copying the
+					// current selection via execCommand still works. Prefer selection-based copying.
+					if (isSelectionInsideTextEl && selectedText) {
+						const ok = document.execCommand("copy");
+						if (ok) {
+							window.showToast?.(
+								t("copiedToClipboard", "Copied to clipboard"),
+								"success",
+							);
+							return;
+						}
+						if (typeof window.copyToClipboard === "function") {
+							await window.copyToClipboard(selectedText, copyBtn);
+							return;
+						}
+						window.showToast?.(t("failedToCopy", "Failed to copy"), "error");
+						return;
+					}
+
+					if (fullText) {
+						const range = document.createRange();
+						range.selectNodeContents(textEl);
+						const ok = copyUsingSelection(range);
+						if (ok) {
+							window.showToast?.(
+								t("copiedToClipboard", "Copied to clipboard"),
+								"success",
+							);
+							return;
+						}
+					}
+
+					if (typeof window.copyToClipboard === "function") {
+						await window.copyToClipboard(fullText, copyBtn);
+					} else {
+						window.showToast?.(t("failedToCopy", "Failed to copy"), "error");
+					}
+				};
+
+				retryBtn.onclick = async () => {
+					await runOcr(true);
+				};
+
+				await runOcr(false);
+			},
+		});
+
+		// Register Crop button (only for editable images on edit pages).
+		pswp.ui.registerElement({
+			name: "crop-button",
+			ariaLabel: t("pswpCropImage", "Crop image"),
+			order: 9,
+			isButton: true,
+			html: '<span class="pswp__icn mdi mdi-crop"></span>',
+			appendTo: "bar",
+			onClick: () => {
+				const item = pswp.currItem;
+				const element =
+					item?.element || item?.data?.element || pswp.currSlide?.data?.element;
+				if (!element) {
+					return;
+				}
+				const customEvent = new CustomEvent("pswp:crop", {
+					detail: { element, pswp },
+					bubbles: true,
+				});
+				element.dispatchEvent(customEvent);
+			},
+			onInit: (el, pswpInstance) => {
+				const update = () => {
+					const item = pswpInstance.currItem;
+					const element =
+						item?.element ||
+						item?.data?.element ||
+						pswpInstance.currSlide?.data?.element;
+					const isCroppable = element?.hasAttribute("data-pswp-crop");
+					el.style.display = isCroppable ? "inline-flex" : "none";
+				};
+				pswpInstance.on("change", update);
+				pswpInstance.on("afterInit", update);
+			},
+		});
+	};
+
 	const initGallery = (gallery) => {
 		if (!gallery) {
 			return null;
@@ -60,433 +480,7 @@
 		});
 
 		lightbox.on("uiRegister", () => {
-			if (!lightbox.pswp?.ui) {
-				return;
-			}
-
-			const pswp = lightbox.pswp;
-
-			// Register Thumbs.
-			pswp.ui.registerElement({
-				name: "thumbs",
-				order: 9,
-				isButton: false,
-				appendTo: "root",
-				onInit: (el, pswpInstance) => {
-					el.classList.add("pswp__thumbs");
-					el.setAttribute("aria-label", pswpThumbsLabel);
-					el.setAttribute("role", "toolbar");
-
-					const buildItems = () => {
-						const count =
-							typeof pswpInstance.getNumItems === "function"
-								? pswpInstance.getNumItems()
-								: pswpInstance.options?.dataSource?.length ||
-									pswpInstance.options?.dataSource?.items?.length ||
-									0;
-						el.innerHTML = "";
-						if (!count || count <= 1) {
-							return;
-						}
-						const fragment = document.createDocumentFragment();
-						for (let index = 0; index < count; index += 1) {
-							const item =
-								typeof pswpInstance.getItemData === "function"
-									? pswpInstance.getItemData(index)
-									: pswpInstance.options?.dataSource?.[index] ||
-										pswpInstance.options?.dataSource?.items?.[index] ||
-										{};
-							const thumbSrc = item?.msrc || item?.src;
-							if (!thumbSrc) {
-								continue;
-							}
-							const button = document.createElement("button");
-							button.type = "button";
-							button.className = "pswp__thumb";
-							button.setAttribute(
-								"aria-label",
-								`${pswpThumbActionLabel} ${index + 1}`,
-							);
-							button.setAttribute("data-pswp-thumb-index", `${index}`);
-							const img = document.createElement("img");
-							img.src = thumbSrc;
-							img.alt = item?.alt || item?.title || "";
-							button.appendChild(img);
-							button.addEventListener("click", () => {
-								pswpInstance.goTo(index);
-							});
-							fragment.appendChild(button);
-						}
-						el.appendChild(fragment);
-					};
-
-					const updateActive = () => {
-						const activeIndex = pswpInstance.currIndex || 0;
-						el.querySelectorAll("[data-pswp-thumb-index]").forEach((button) => {
-							const buttonIndex = Number.parseInt(
-								button.getAttribute("data-pswp-thumb-index") || "0",
-								10,
-							);
-							button.classList.toggle("is-active", buttonIndex === activeIndex);
-						});
-					};
-
-					buildItems();
-					updateActive();
-					pswpInstance.on("change", updateActive);
-				},
-			});
-
-			// Register "Set as primary" button.
-			pswp.ui.registerElement({
-				name: "promote-button",
-				ariaLabel: t("pswpSetAsPrimary", "Set as primary"),
-				order: 9,
-				isButton: true,
-				html: '<span class="pswp__icn mdi mdi-star"></span>',
-				appendTo: "bar",
-				onClick: () => {
-					const item = pswp.currItem;
-					const element =
-						item?.element ||
-						item?.data?.element ||
-						pswp.currSlide?.data?.element;
-					if (!element) {
-						return;
-					}
-					const customEvent = new CustomEvent("pswp:promote", {
-						detail: { element },
-						bubbles: true,
-					});
-					element.dispatchEvent(customEvent);
-				},
-				onInit: (el, pswpInstance) => {
-					const update = () => {
-						const item = pswpInstance.currItem;
-						const element =
-							item?.element ||
-							item?.data?.element ||
-							pswpInstance.currSlide?.data?.element;
-						const isPromotable = element?.hasAttribute("data-pswp-promote");
-						const isAlreadyPrimary =
-							element?.getAttribute("data-pswp-is-primary") === "true";
-
-						el.style.display = isPromotable ? "inline-flex" : "none";
-						el.classList.toggle("is-primary", isAlreadyPrimary);
-					};
-					pswpInstance.on("change", update);
-					pswpInstance.on("afterInit", update);
-				},
-			});
-
-			// Register Delete button.
-			pswp.ui.registerElement({
-				name: "delete-button",
-				ariaLabel: t("pswpDeleteImage", "Delete image"),
-				order: 8,
-				isButton: true,
-				html: '<span class="pswp__icn mdi mdi-delete"></span>',
-				appendTo: "bar",
-				onClick: () => {
-					const item = pswp.currItem;
-					const element =
-						item?.element ||
-						item?.data?.element ||
-						pswp.currSlide?.data?.element;
-					if (!element) {
-						return;
-					}
-					const customEvent = new CustomEvent("pswp:delete", {
-						detail: { element },
-						bubbles: true,
-					});
-					element.dispatchEvent(customEvent);
-				},
-				onInit: (el, pswpInstance) => {
-					const update = () => {
-						const item = pswpInstance.currItem;
-						const element =
-							item?.element ||
-							item?.data?.element ||
-							pswpInstance.currSlide?.data?.element;
-						const isDeletable = element?.hasAttribute("data-pswp-delete");
-						el.style.display = isDeletable ? "inline-flex" : "none";
-					};
-					pswpInstance.on("change", update);
-					pswpInstance.on("afterInit", update);
-				},
-			});
-
-			// Register Download button.
-			pswp.ui.registerElement({
-				name: "download-button",
-				ariaLabel: t("pswpDownloadImage", "Download image"),
-				order: 7,
-				isButton: true,
-				tagName: "a",
-				html: '<span class="pswp__icn mdi mdi-download"></span>',
-				appendTo: "bar",
-				onInit: (el, pswpInstance) => {
-					el.setAttribute("download", "");
-					el.setAttribute("target", "_blank");
-					el.setAttribute("rel", "noopener");
-
-					const update = () => {
-						const href = pswpInstance.currSlide?.data?.src || "";
-						el.href = href;
-						el.setAttribute("href", href);
-					};
-					pswpInstance.on("change", update);
-					pswpInstance.on("afterInit", update);
-				},
-			});
-
-			// Register OCR button (opens a dialog outside PhotoSwipe).
-			pswp.ui.registerElement({
-				name: "ocr-button",
-				ariaLabel: t("pswpExtractText", "Extract text"),
-				order: 6,
-				isButton: true,
-				html: '<span class="pswp__icn mdi mdi-text-recognition"></span>',
-				appendTo: "wrapper",
-				onClick: async (event) => {
-					event.preventDefault();
-					event.stopPropagation();
-
-					const dialog = document.getElementById("pswpOcrDialog");
-					const statusEl = document.getElementById("pswpOcrStatus");
-					const loadingStatusEl = document.getElementById(
-						"pswpOcrLoadingStatus",
-					);
-					const textEl = document.getElementById("pswpOcrText");
-					const filenameEl = document.getElementById("pswpOcrFilename");
-					const copyBtn = document.getElementById("pswpOcrCopy");
-					const retryBtn = document.getElementById("pswpOcrRetry");
-					const overlayEl = document.getElementById("pswpOcrLoadingOverlay");
-
-					if (
-						!dialog ||
-						!statusEl ||
-						!loadingStatusEl ||
-						!textEl ||
-						!filenameEl ||
-						!copyBtn ||
-						!retryBtn ||
-						!overlayEl
-					) {
-						return;
-					}
-
-					const data =
-						pswp.currSlide?.data || pswp.currItem?.data || pswp.currItem || {};
-					const src = data?.src || data?.msrc || "";
-					const alt = data?.alt || data?.title || "";
-
-					const setLoading = (isLoading, message = "") => {
-						dialog.setAttribute("aria-busy", isLoading ? "true" : "false");
-						overlayEl.classList.toggle("hidden", !isLoading);
-						loadingStatusEl.textContent = message;
-						if (isLoading) {
-							copyBtn.disabled = true;
-							retryBtn.disabled = true;
-						} else {
-							retryBtn.disabled = false;
-						}
-					};
-
-					const renderResult = (text, status) => {
-						statusEl.textContent = status || "";
-						textEl.textContent = text || "";
-						copyBtn.disabled = !text;
-					};
-
-					const runOcr = async (force = false) => {
-						if (!src) {
-							renderResult(
-								"",
-								t(
-									"pswpImageCannotBeProcessed",
-									"This image cannot be processed.",
-								),
-							);
-							return;
-						}
-
-						setLoading(true, t("pswpExtractingText", "Extracting text..."));
-						renderResult("", "");
-
-						const csrfToken = document
-							.querySelector('meta[name="csrf-token"]')
-							?.getAttribute("content");
-						const headers = {
-							"Content-Type": "application/json",
-							...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
-						};
-
-						try {
-							const response = await fetch(ocrEndpoint, {
-								method: "POST",
-								headers,
-								body: JSON.stringify({ src, force }),
-							});
-
-							if (!response.ok) {
-								const payload = await response.json().catch(() => ({}));
-								const detail = payload?.detail || "";
-								if (detail === "ocr_not_available") {
-									statusEl.textContent = t(
-										"pswpOcrNotAvailable",
-										"OCR is not available on this server.",
-									);
-								} else if (detail === "invalid_src") {
-									statusEl.textContent = t(
-										"pswpImageCannotBeProcessed",
-										"This image cannot be processed.",
-									);
-								} else {
-									statusEl.textContent = t("pswpOcrFailed", "OCR failed.");
-								}
-								return;
-							}
-
-							const payload = await response.json();
-							const text = (payload?.text || "").trim();
-							if (!text) {
-								renderResult("", t("pswpNoTextDetected", "No text detected."));
-								return;
-							}
-
-							renderResult(text, t("pswpTextExtracted", "Text extracted."));
-						} catch (error) {
-							console.error("OCR failed", error);
-							renderResult("", t("pswpOcrFailed", "OCR failed."));
-						} finally {
-							setLoading(false);
-						}
-					};
-
-					filenameEl.textContent = alt;
-					dialog.showModal();
-
-					copyBtn.onclick = async () => {
-						const fullText = textEl.textContent || "";
-						const selection = window.getSelection?.();
-						const selectedText = selection ? selection.toString() : "";
-						const isSelectionInsideTextEl = (() => {
-							if (!selection || selection.rangeCount === 0) {
-								return false;
-							}
-							const range = selection.getRangeAt(0);
-							const container = range.commonAncestorContainer;
-							const node =
-								container.nodeType === Node.ELEMENT_NODE
-									? container
-									: container.parentElement;
-							return !!(node && textEl.contains(node));
-						})();
-
-						const copyUsingSelection = (range) => {
-							if (!selection) {
-								return false;
-							}
-							const previousRanges = [];
-							for (let i = 0; i < selection.rangeCount; i += 1) {
-								previousRanges.push(selection.getRangeAt(i).cloneRange());
-							}
-							selection.removeAllRanges();
-							selection.addRange(range);
-							const ok = document.execCommand("copy");
-							selection.removeAllRanges();
-							for (const previousRange of previousRanges) {
-								selection.addRange(previousRange);
-							}
-							return ok;
-						};
-
-						// In some browsers, Clipboard API writes can fail inside <dialog>, but copying the
-						// current selection via execCommand still works. Prefer selection-based copying.
-						if (isSelectionInsideTextEl && selectedText) {
-							const ok = document.execCommand("copy");
-							if (ok) {
-								window.showToast?.(
-									t("copiedToClipboard", "Copied to clipboard"),
-									"success",
-								);
-								return;
-							}
-							if (typeof window.copyToClipboard === "function") {
-								await window.copyToClipboard(selectedText, copyBtn);
-								return;
-							}
-							window.showToast?.(t("failedToCopy", "Failed to copy"), "error");
-							return;
-						}
-
-						if (fullText) {
-							const range = document.createRange();
-							range.selectNodeContents(textEl);
-							const ok = copyUsingSelection(range);
-							if (ok) {
-								window.showToast?.(
-									t("copiedToClipboard", "Copied to clipboard"),
-									"success",
-								);
-								return;
-							}
-						}
-
-						if (typeof window.copyToClipboard === "function") {
-							await window.copyToClipboard(fullText, copyBtn);
-						} else {
-							window.showToast?.(t("failedToCopy", "Failed to copy"), "error");
-						}
-					};
-
-					retryBtn.onclick = async () => {
-						await runOcr(true);
-					};
-
-					await runOcr(false);
-				},
-			});
-
-			// Register Crop button (only for editable images on edit pages).
-			pswp.ui.registerElement({
-				name: "crop-button",
-				ariaLabel: t("pswpCropImage", "Crop image"),
-				order: 9,
-				isButton: true,
-				html: '<span class="pswp__icn mdi mdi-crop"></span>',
-				appendTo: "bar",
-				onClick: () => {
-					const item = pswp.currItem;
-					const element =
-						item?.element ||
-						item?.data?.element ||
-						pswp.currSlide?.data?.element;
-					if (!element) {
-						return;
-					}
-					const customEvent = new CustomEvent("pswp:crop", {
-						detail: { element, pswp },
-						bubbles: true,
-					});
-					element.dispatchEvent(customEvent);
-				},
-				onInit: (el, pswpInstance) => {
-					const update = () => {
-						const item = pswpInstance.currItem;
-						const element =
-							item?.element ||
-							item?.data?.element ||
-							pswpInstance.currSlide?.data?.element;
-						const isCroppable = element?.hasAttribute("data-pswp-crop");
-						el.style.display = isCroppable ? "inline-flex" : "none";
-					};
-					pswpInstance.on("change", update);
-					pswpInstance.on("afterInit", update);
-				},
-			});
+			registerPswpUi(lightbox.pswp);
 		});
 
 		lightbox.init();
@@ -556,6 +550,9 @@
 		const lightbox = new PhotoSwipeLightbox({
 			dataSource: items,
 			pswpModule: () => import(pswpModuleUrl),
+		});
+		lightbox.on("uiRegister", () => {
+			registerPswpUi(lightbox.pswp);
 		});
 		lightbox.on("close", () => {
 			lightbox.destroy();
