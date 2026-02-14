@@ -34,9 +34,9 @@ Execution-oriented backlog for Stricknani.
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T37 | P3 | todo | ux | refactor | Standardize "instructions" header size to match other section headers |
-| T36 | P2 | todo | frontend | refactor | Minimize templated JS/CSS in favor of static loading |
+| T36 | P2 | wip (PID: 1282753, AGENT: codex) | frontend | refactor | Minimize templated JS/CSS in favor of static loading |
 | T34 | P2 | done | cli | refactor | Make --query flag positional in `stricknani-cli project show` |
-| T35 | P2 | wip (PID: 1282753, AGENT: codex) | ux | refactor | Hide empty "other materials" widget on project view page |
+| T35 | P2 | done | ux | refactor | Hide empty "other materials" widget on project view page |
 | T18 | P1 | done | demo | feat | Improve demo assets with knitting-related images and content |
 | T30 | P1 | done | cli | feat | Add `stricknani-cli project|yarn ID_OR_NAME` with pretty print and --json support |
 | T31 | P0 | done | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |

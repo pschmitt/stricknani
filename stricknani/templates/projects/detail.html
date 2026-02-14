@@ -54,6 +54,13 @@
 
 {% endset %}
 
+{% set other_materials_plain = "" %}
+{% if project.other_materials_html %}
+  {% set other_materials_plain = (project.other_materials_html | striptags) | trim %}
+{% else %}
+  {% set other_materials_plain = (project.other_materials or "") | trim %}
+{% endif %}
+
 {% block main_attrs %}
 data-shortcuts-scope="detail"
 data-shortcut-edit-href="/projects/{{ project.id }}/edit"
@@ -343,7 +350,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                 </div>
                 {% endif %}
 
-                {% if project.other_materials %}
+                {% if other_materials_plain %}
                 <div
                     class="collapse collapse-arrow bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30">
                     <input type="checkbox" checked />
@@ -358,7 +365,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                             {% if project.other_materials_html %}
                             {{ project.other_materials_html | safe }}
                             {% else %}
-                            {{ project.other_materials }}
+                            {{- project.other_materials | trim -}}
                             {% endif %}
                         </div>
                     </div>
@@ -442,7 +449,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                     </div>
 
                     <!-- Other Materials -->
-                    {% if project.other_materials %}
+                    {% if other_materials_plain %}
                     <div class="bg-base-200/30 rounded-xl border border-base-200 p-5">
                         <h3 class="font-bold text-base text-base-content/40 uppercase tracking-widest mb-4 flex items-center gap-2 text-xs">
                             <span class="mdi mdi-package-variant-closed"></span>
@@ -452,7 +459,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                             {% if project.other_materials_html %}
                             {{ project.other_materials_html | safe }}
                             {% else %}
-                            {{ project.other_materials }}
+                            {{- project.other_materials | trim -}}
                             {% endif %}
                         </div>
                     </div>
