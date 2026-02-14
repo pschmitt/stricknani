@@ -14,11 +14,7 @@
 	button,
 	input,
 	.no-print,
-	#project-gallery-section,
-	#project-audit-log-section,
-	#stitch-sample-photos,
-	.step-photos-section,
-	.pswp-gallery {
+	#project-audit-log-section {
 		display: none !important;
 	}
 
@@ -42,7 +38,7 @@
 	}
 
 	/* Main layout linearization */
-	.grid {
+	#project-grid {
 		display: block !important;
 	}
 
@@ -256,6 +252,23 @@
 	/* Expand text */
 	.prose {
 		max-width: none !important;
+	}
+
+	/* Print-friendly image layout. */
+	img {
+		max-width: 100% !important;
+		height: auto !important;
+	}
+
+	.pswp-gallery {
+		display: grid !important;
+		grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+		gap: 0.35rem !important;
+	}
+
+	.pswp-gallery > * {
+		break-inside: avoid;
+		page-break-inside: avoid;
 	}
 
 	/* Hide the "more images" overlay */

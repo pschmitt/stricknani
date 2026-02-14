@@ -8,6 +8,11 @@ def test_project_print_css_overrides_daisyui_collapse() -> None:
     # Ensure collapsed sections print expanded, regardless of the checkbox state.
     assert ".collapse > input:not(:checked) ~ .collapse-content" in content
     assert ".collapse > input:checked ~ .collapse-content" in content
+    # Ensure images are not hidden in print.
+    assert "#project-gallery-section," not in content
+    assert "#stitch-sample-photos," not in content
+    assert ".step-photos-section," not in content
+    assert ".pswp-gallery {" in content
 
 
 def test_project_details_has_print_table_markup() -> None:
