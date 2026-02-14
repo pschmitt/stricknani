@@ -1252,7 +1252,11 @@ function createImageAutocompleteDropdown(editor, images, position) {
 	return dropdown;
 }
 
-function setAutocompleteSelectedIndex(dropdown, index) {
+function setAutocompleteSelectedIndex(
+	dropdown,
+	index,
+	{ scroll = false } = {},
+) {
 	const items = dropdown.querySelectorAll(".markdown-image-item");
 	items.forEach((item, i) => {
 		if (i === index) {
@@ -1265,6 +1269,42 @@ function setAutocompleteSelectedIndex(dropdown, index) {
 	});
 	if (currentImageAutocomplete) {
 		currentImageAutocomplete.selectedIndex = index;
+
+		if (scroll) {
+			const selectedItem = items[index];
+			if (!selectedItem) return;
+
+			const viewTop = dropdown.scrollTop;
+			const viewBottom = viewTop + dropdown.clientHeight;
+
+			const getOffsetTopWithin = (container, el) => {
+				let top = 0;
+				let node = el;
+				while (node && node !== container) {
+					top += node.offsetTop || 0;
+					node = node.offsetParent;
+				}
+				return top;
+			};
+
+			const itemTop = getOffsetTopWithin(dropdown, selectedItem);
+			const itemBottom = itemTop + selectedItem.offsetHeight;
+			const padding = 4;
+
+			currentImageAutocomplete.isScrolling = true;
+			if (itemTop < viewTop + padding) {
+				dropdown.scrollTop = Math.max(0, itemTop - padding);
+			} else if (itemBottom > viewBottom - padding) {
+				dropdown.scrollTop = Math.max(
+					0,
+					itemBottom - dropdown.clientHeight + padding,
+				);
+			}
+			setTimeout(() => {
+				if (currentImageAutocomplete)
+					currentImageAutocomplete.isScrolling = false;
+			}, 100);
+		}
 	}
 }
 
@@ -1382,6 +1422,7 @@ function handleAutocompleteKeydown(event) {
 			setAutocompleteSelectedIndex(
 				currentImageAutocomplete.dropdown,
 				(currentImageAutocomplete.selectedIndex + 1) % items.length,
+				{ scroll: true },
 			);
 			return true;
 		case "ArrowUp":
@@ -1390,6 +1431,7 @@ function handleAutocompleteKeydown(event) {
 				currentImageAutocomplete.dropdown,
 				(currentImageAutocomplete.selectedIndex - 1 + items.length) %
 					items.length,
+				{ scroll: true },
 			);
 			return true;
 		case "Enter":
@@ -2026,6 +2068,9 @@ document.addEventListener(
 	(event) => {
 		// Allow scrolling inside the mobile picker sheet without closing it.
 		if (currentImageAutocomplete?.dropdown?.contains(event.target)) {
+			return;
+		}
+		if (currentImageAutocomplete?.isScrolling) {
 			return;
 		}
 		closeImageAutocomplete();

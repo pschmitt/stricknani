@@ -48,21 +48,21 @@
 				});
 		};
 
-			const updateActiveItem = (nextIndex) => {
-				const items = suggestionList.querySelectorAll("[data-suggestion-index]");
-				if (!items.length) {
-					clearActiveState();
-					return;
-				}
-				const clampedIndex = Math.max(0, Math.min(nextIndex, items.length - 1));
-				items.forEach((item) => {
-					item.classList.remove(activeClass);
-				});
-				activeIndex = clampedIndex;
-				const activeItem = items[activeIndex];
-				activeItem.classList.add(activeClass);
-				activeItem.scrollIntoView({ block: "nearest" });
-			};
+		const updateActiveItem = (nextIndex) => {
+			const items = suggestionList.querySelectorAll("[data-suggestion-index]");
+			if (!items.length) {
+				clearActiveState();
+				return;
+			}
+			const clampedIndex = Math.max(0, Math.min(nextIndex, items.length - 1));
+			items.forEach((item) => {
+				item.classList.remove(activeClass);
+			});
+			activeIndex = clampedIndex;
+			const activeItem = items[activeIndex];
+			activeItem.classList.add(activeClass);
+			activeItem.scrollIntoView({ block: "nearest" });
+		};
 
 		const closeSuggestions = () => {
 			suggestionContainer.classList.add("hidden");
@@ -101,10 +101,9 @@
 			if (match) {
 				const q = val.substring(match.prefix.length).trim();
 				const type = match.type;
-				const baseUrl = String(searchInput.getAttribute("hx-get") || "").replace(
-					/\/+$/,
-					"",
-				);
+				const baseUrl = String(
+					searchInput.getAttribute("hx-get") || "",
+				).replace(/\/+$/, "");
 				if (!baseUrl) {
 					closeSuggestions();
 					return;
