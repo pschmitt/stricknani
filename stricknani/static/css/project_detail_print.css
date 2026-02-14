@@ -13,7 +13,11 @@
 	button,
 	input,
 	.no-print,
-	#stitch-sample-photos {
+	#project-gallery-section,
+	#project-audit-log-section,
+	#stitch-sample-photos,
+	.step-photos-section,
+	.pswp-gallery {
 		display: none !important;
 	}
 
@@ -21,6 +25,13 @@
 	body {
 		background: white !important;
 		color: black !important;
+	}
+
+	/* Make the layout compact and linear */
+	.max-w-7xl {
+		max-width: none !important;
+		padding: 0 !important;
+		margin: 0 !important;
 	}
 
 	/* Main layout linearization */
@@ -43,27 +54,43 @@
 		display: none !important;
 	}
 
-	/* Gallery tweaks */
-	.pswp-gallery {
-		display: grid !important;
-		grid-template-columns: repeat(2, 1fr) !important;
-		gap: 1rem !important;
-	}
-
-	.pswp-gallery > div,
-	.pswp-gallery > a {
+	/* Expand collapses and remove decorative chrome */
+	.collapse {
 		display: block !important;
-		aspect-ratio: auto !important;
-		height: auto !important;
-		break-inside: avoid;
+		border: none !important;
+		box-shadow: none !important;
+		background: transparent !important;
 	}
 
-	.pswp-gallery img {
-		object-fit: contain !important;
-		height: auto !important;
-		max-height: 400px !important;
-		width: 100% !important;
-		border-radius: 4px !important;
+	.collapse-title {
+		padding: 0.5rem 0 !important;
+		min-height: 0 !important;
+	}
+
+	.collapse-content {
+		padding: 0.25rem 0 0.75rem 0 !important;
+	}
+
+	.collapse-arrow > .collapse-title::after {
+		display: none !important;
+	}
+
+	.step-card {
+		break-inside: avoid;
+		page-break-inside: avoid;
+	}
+
+	/* Make headings a bit smaller in print */
+	h1 {
+		font-size: 18pt !important;
+	}
+
+	h2 {
+		font-size: 14pt !important;
+	}
+
+	h3 {
+		font-size: 12pt !important;
 	}
 
 	/* Expand text */

@@ -89,7 +89,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
         <div id="main-column" class="lg:col-span-2 space-y-8 transition-all duration-300">
             <!-- Gallery Section -->
             {% if project.title_images %}
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
+            <div id="project-gallery-section" class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
                 <input type="checkbox" checked />
                 <div class="collapse-title p-4 flex items-center justify-between">
                     <h2 class="font-bold text-lg flex items-center gap-2">
@@ -597,7 +597,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
             </div>
             {% endif %}
 
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+            <div id="project-audit-log-section" class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
                 <input type="checkbox" />
                 <div class="collapse-title p-4 flex items-center justify-between">
                     <h2 class="font-bold text-lg flex items-center gap-2">

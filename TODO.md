@@ -33,7 +33,8 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T38 | P2 | todo | ux | refactor | Improve print layout to save space and show only relevant content |
+| T39 | P0 | todo | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
+| T38 | P2 | done | ux | refactor | Improve print layout to save space and show only relevant content |
 | T37 | P3 | done | ux | refactor | Standardize "instructions" header size to match other section headers |
 | T36 | P2 | done | frontend | refactor | Minimize templated JS/CSS in favor of static loading |
 | T34 | P2 | done | cli | refactor | Make --query flag positional in `stricknani-cli project show` |
@@ -41,7 +42,7 @@ Execution-oriented backlog for Stricknani.
 | T18 | P1 | done | demo | feat | Improve demo assets with knitting-related images and content |
 | T30 | P1 | done | cli | feat | Add `stricknani-cli project|yarn ID_OR_NAME` with pretty print and --json support |
 | T31 | P0 | done | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
-| T1 | P3 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
+| T1 | P4 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 | T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
 | T33 | P3 | todo | frontend | feat | Add PWA installation capability |
 
@@ -330,6 +331,35 @@ Execution-oriented backlog for Stricknani.
   - Update the project detail template to check if other_materials has content before rendering
   - Add appropriate Jinja2 conditional logic in the template
   - Ensure the change doesn't affect the edit/form views where the field should always be visible
+
+### T39: Fix universal search (Ctrl-K) CSRF 500 error
+
+- **Area**: search
+- **Priority**: P0
+- **Status**: todo
+- **Category**: bug
+- **Description**:
+  - Universal search (bound to Ctrl-K) is failing with HTTP 500 error due to CSRF protection
+  - Console shows: "Response Status Error Code 500 from /search/global"
+  - Likely missing CSRF token in the HTMX request
+- **Root Cause**:
+  - HTMX POST request to `/search/global` is not including proper CSRF token
+  - Server-side CSRF protection is rejecting the request
+- **Implementation**:
+  - Add CSRF token to the universal search HTMX request
+  - Ensure the search endpoint properly handles CSRF tokens
+  - Test both authenticated and unauthenticated search scenarios
+  - Verify the fix works with the Ctrl-K keyboard shortcut
+- **Files to Check**:
+  - `stricknani/templates/shared/_search_bar.html` - search form template
+  - `stricknani/routes/search.py` - search route handlers
+  - CSRF token generation and validation logic
+  - HTMX request configuration
+- **Testing**:
+  - Test Ctrl-K shortcut triggers search without errors
+  - Verify search results are returned properly
+  - Test both global search and specific entity searches
+  - Ensure no regression in existing search functionality
 
 ### T38: Improve print layout to save space and show only relevant content
 
