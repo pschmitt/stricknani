@@ -46,6 +46,8 @@ Execution-oriented backlog for Stricknani.
 | T45 | P1 | done | ux | bug | Fix printing bug: collapsed instructions not included in print output
 | T44 | P2 | done | test | feat | Add comprehensive tests for printing features
 | T43 | P2 | done | ux | refactor | Hide "yarns used" widget when no yarns are linked to project |
+| T50 | P2 | todo | ux | refactor | Unify PhotoSwipe UI for step images and gallery images
+| T49 | P2 | done | ux | bug | Fix image completion menu arrow key scrolling
 | T48 | P1 | done | demo | bug | Fix missing demo user profile picture (404 error)
 | T47 | P2 | done | ux | refactor | Reformatting the "technical specs" section for better print layout
 | T46 | P2 | done | cli | refactor | Improve stricknani-cli project export command arguments
@@ -177,6 +179,87 @@ Execution-oriented backlog for Stricknani.
   - Consistent with other conditional rendering patterns in the app
   - Better user experience by only showing relevant information
   - Reduces visual clutter on project pages
+
+### T50: Unify PhotoSwipe UI for step images and gallery images
+
+- **Area**: ux
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Step images in PhotoSwipe UI are missing preview thumbnails and OCR button
+  - Gallery images have full PhotoSwipe UI with previews and OCR functionality
+  - Need to consolidate to a single shared PhotoSwipe implementation
+- **Current Issues**:
+  - Inconsistent UI between step images and gallery images
+  - Step images lack preview thumbnails at bottom
+  - OCR button is missing from step image PhotoSwipe
+  - Code duplication between different PhotoSwipe implementations
+  - Poor user experience due to inconsistent features
+- **Implementation**:
+  - Create a shared PhotoSwipe component/implementation
+  - Ensure all image types (steps, gallery) use the same UI
+  - Add missing preview thumbnails to step image PhotoSwipe
+  - Add OCR button functionality to step image PhotoSwipe
+  - Refactor to eliminate code duplication
+- **Specific Changes Needed**:
+  - Identify existing PhotoSwipe implementations
+  - Create unified PhotoSwipe template/partial
+  - Update step image handling to use shared implementation
+  - Ensure OCR functionality works for step images
+  - Add preview thumbnail generation for step images
+  - Standardize PhotoSwipe configuration across all uses
+- **Files to Modify**:
+  - PhotoSwipe initialization JavaScript
+  - Template files that render step images and gallery images
+  - Possibly create shared PhotoSwipe partial template
+  - CSS files for consistent styling
+  - OCR functionality integration
+- **Benefits**:
+  - Consistent user experience across all image views
+  - Reduced code duplication and maintenance burden
+  - All image types get full PhotoSwipe features
+  - Easier to add new features to all image types
+  - Better maintainability and consistency
+
+### T49: Fix image completion menu arrow key scrolling
+
+- **Area**: ux
+- **Priority**: P2
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - Image completion menu (triggered by "!") doesn't scroll with arrow keys
+  - Mouse wheel scrolling works, but keyboard navigation is broken
+  - Arrow keys should scroll the completion menu to reveal items below the visible area
+- **Current Behavior**:
+  - Arrow keys navigate through completion items but don't scroll the menu
+  - Users can't see or select items that are below the visible portion
+  - Mouse wheel scrolling works correctly
+  - This creates a poor user experience for accessing many images
+- **Expected Behavior**:
+  - Arrow key navigation should automatically scroll the menu to keep selected item visible
+  - Similar to how native select dropdowns or autocomplete menus work
+  - Smooth scrolling experience when navigating through many options
+- **Root Cause**:
+  - Likely missing JavaScript event handlers for keyboard navigation
+  - No scroll behavior tied to arrow key events
+  - CSS overflow properties may not be properly configured
+- **Implementation**:
+  - Add JavaScript event listeners for arrow key navigation
+  - Implement auto-scrolling logic to keep selected item in view
+  - Ensure scroll container has proper CSS overflow properties
+  - Test with various numbers of completion items
+- **Files to Modify**:
+  - JavaScript completion menu code (likely in `stricknani/static/js/`)
+  - Possibly template files that render the completion menu
+  - CSS files for completion menu styling
+- **Technical Approach**:
+  - Listen for `keydown` events on arrow keys
+  - Calculate position of selected item relative to scroll container
+  - Use `scrollTop` to adjust scroll position as needed
+  - Ensure smooth animation for better UX
+  - Handle edge cases (first/last items)
 
 ### T48: Fix missing demo user profile picture (404 error)
 

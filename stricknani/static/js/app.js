@@ -1311,14 +1311,22 @@
 			}
 		};
 
-		const setSelectedIndex = (index) => {
+		const setSelectedIndex = (index, { scroll = false } = {}) => {
 			if (!currentAutocomplete) return;
 
 			const items = currentAutocomplete.dropdown.querySelectorAll(
 				".markdown-image-item",
 			);
+			if (items.length === 0) {
+				currentAutocomplete.selectedIndex = 0;
+				return;
+			}
+
+			// Normalize to a valid index so callers don't have to.
+			const normalizedIndex =
+				((index % items.length) + items.length) % items.length;
 			items.forEach((item, i) => {
-				if (i === index) {
+				if (i === normalizedIndex) {
 					item.classList.add("bg-base-200");
 					item.setAttribute("aria-selected", "true");
 				} else {
@@ -1327,7 +1335,14 @@
 				}
 			});
 
-			currentAutocomplete.selectedIndex = index;
+			currentAutocomplete.selectedIndex = normalizedIndex;
+
+			if (scroll) {
+				items[normalizedIndex]?.scrollIntoView({
+					block: "nearest",
+					inline: "nearest",
+				});
+			}
 		};
 
 		const handleKeydown = (event) => {
@@ -1336,20 +1351,16 @@
 			const items = currentAutocomplete.dropdown.querySelectorAll(
 				".markdown-image-item",
 			);
+			if (items.length === 0) return;
 
 			switch (event.key) {
 				case "ArrowDown":
 					event.preventDefault();
-					setSelectedIndex(
-						(currentAutocomplete.selectedIndex + 1) % items.length,
-					);
+					setSelectedIndex(currentAutocomplete.selectedIndex + 1, { scroll: true });
 					break;
 				case "ArrowUp":
 					event.preventDefault();
-					setSelectedIndex(
-						(currentAutocomplete.selectedIndex - 1 + items.length) %
-							items.length,
-					);
+					setSelectedIndex(currentAutocomplete.selectedIndex - 1, { scroll: true });
 					break;
 				case "Enter":
 					event.preventDefault();
