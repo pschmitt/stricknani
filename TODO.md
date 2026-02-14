@@ -46,7 +46,7 @@ Execution-oriented backlog for Stricknani.
 | T45 | P1 | done | ux | bug | Fix printing bug: collapsed instructions not included in print output
 | T44 | P2 | done | test | feat | Add comprehensive tests for printing features
 | T43 | P2 | done | ux | refactor | Hide "yarns used" widget when no yarns are linked to project |
-| T47 | P2 | todo | ux | refactor | Reformatting the "technical specs" section for better print layout
+| T47 | P2 | done | ux | refactor | Reformatting the "technical specs" section for better print layout
 | T46 | P2 | done | cli | refactor | Improve stricknani-cli project export command arguments
 | T1 | P4 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 | T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |

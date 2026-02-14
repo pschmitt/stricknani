@@ -134,6 +134,33 @@
 		word-break: break-word !important;
 	}
 
+	.technical-specs-print-table {
+		border-collapse: collapse !important;
+		width: 100% !important;
+		font-size: 9pt !important;
+		line-height: 1.2 !important;
+	}
+
+	.technical-specs-print-table th,
+	.technical-specs-print-table td {
+		padding: 0.1rem 0 !important;
+		vertical-align: top !important;
+	}
+
+	.technical-specs-print-table th {
+		width: 9rem !important;
+		text-align: left !important;
+		font-weight: 700 !important;
+		color: #444 !important;
+		text-transform: uppercase !important;
+		letter-spacing: 0.04em !important;
+		font-size: 8pt !important;
+	}
+
+	.technical-specs-print-table td {
+		word-break: break-word !important;
+	}
+
 	.project-details-card .divider {
 		display: none !important;
 	}

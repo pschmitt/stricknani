@@ -442,7 +442,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
 
 
             <!-- Technical Specifications Group -->
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 technical-specs-card">
                 <input type="checkbox" checked />
                 <div class="collapse-title p-4 flex items-center justify-between">
                     <h2 class="font-bold text-lg flex items-center gap-2">
@@ -452,6 +452,49 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                 </div>
 
                 <div class="collapse-content space-y-6">
+                    <div class="hidden print:block">
+                        <table class="technical-specs-print-table">
+                            <tbody>
+                                {% if project.linked_yarns %}
+                                <tr>
+                                    <th scope="row">{{ _('Yarns Used') }}</th>
+                                    <td>
+                                        {% for yarn in project.linked_yarns %}
+                                        <div>
+                                            {{ yarn.name }}
+                                            {% if yarn.brand %} ({{ yarn.brand }}{% if yarn.colorway %} · {{ yarn.colorway }}{% endif %}){% elif yarn.colorway %} ({{ yarn.colorway }}){% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if other_materials_plain %}
+                                <tr>
+                                    <th scope="row">{{ _('Other Materials') }}</th>
+                                    <td>{{ other_materials_plain }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if project.needles %}
+                                <tr>
+                                    <th scope="row">{{ _('Recommended Needles') }}</th>
+                                    <td>{{ project.needles | trim }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if project.stitch_sample_html %}
+                                <tr>
+                                    <th scope="row">{{ _('Stitch Sample') }}</th>
+                                    <td>
+                                        <div class="prose prose-sm prose-compact max-w-none">
+                                            {{ project.stitch_sample_html | safe }}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="print:hidden space-y-6">
                     <!-- Yarns Used -->
                     {% if project.linked_yarns %}
                     <div class="bg-base-200/30 rounded-xl border border-base-200 p-5">
@@ -548,6 +591,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                         {% endif %}
                     </div>
                     {% endif %}
+                </div>
                 </div>
             </div>
 

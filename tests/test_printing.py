@@ -16,6 +16,7 @@ def test_project_details_has_print_table_markup() -> None:
 
     # Print-only details table for compact output.
     assert "project-details-print-table" in content
+    assert "technical-specs-print-table" in content
 
 
 def test_project_detail_js_expands_instructions_before_print() -> None:
