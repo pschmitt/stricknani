@@ -55,19 +55,38 @@ class User(Base):
     @property
     def avatar_url(self) -> str:
         """Get the user's avatar URL."""
+        from stricknani.config import config
         from stricknani.utils.files import get_file_url
         from stricknani.utils.gravatar import gravatar_url
 
         if self.profile_image:
+            media_path = config.MEDIA_ROOT / "users" / str(self.id) / self.profile_image
+            if not media_path.exists():
+                return gravatar_url(self.email)
             return get_file_url(self.profile_image, self.id, subdir="users")
         return gravatar_url(self.email)
 
     @property
     def avatar_thumbnail_url(self) -> str:
         """Get the user's avatar thumbnail URL."""
+        from pathlib import Path
+
+        from stricknani.config import config
         from stricknani.utils.files import get_thumbnail_url
         from stricknani.utils.gravatar import gravatar_url
 
         if self.profile_image:
-            return get_thumbnail_url(self.profile_image, self.id, subdir="users")
+            thumb_name = f"thumb_{Path(self.profile_image).stem}.jpg"
+            thumb_path = (
+                config.MEDIA_ROOT / "thumbnails" / "users" / str(self.id) / thumb_name
+            )
+            if thumb_path.exists():
+                return get_thumbnail_url(self.profile_image, self.id, subdir="users")
+
+            media_path = config.MEDIA_ROOT / "users" / str(self.id) / self.profile_image
+            if media_path.exists():
+                from stricknani.utils.files import get_file_url
+
+                return get_file_url(self.profile_image, self.id, subdir="users")
+            return gravatar_url(self.email, size=96)
         return gravatar_url(self.email, size=96)

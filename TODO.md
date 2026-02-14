@@ -46,6 +46,7 @@ Execution-oriented backlog for Stricknani.
 | T45 | P1 | done | ux | bug | Fix printing bug: collapsed instructions not included in print output
 | T44 | P2 | done | test | feat | Add comprehensive tests for printing features
 | T43 | P2 | done | ux | refactor | Hide "yarns used" widget when no yarns are linked to project |
+| T48 | P1 | done | demo | bug | Fix missing demo user profile picture (404 error)
 | T47 | P2 | done | ux | refactor | Reformatting the "technical specs" section for better print layout
 | T46 | P2 | done | cli | refactor | Improve stricknani-cli project export command arguments
 | T1 | P4 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
@@ -176,6 +177,42 @@ Execution-oriented backlog for Stricknani.
   - Consistent with other conditional rendering patterns in the app
   - Better user experience by only showing relevant information
   - Reduces visual clutter on project pages
+
+### T48: Fix missing demo user profile picture (404 error)
+
+- **Area**: demo
+- **Priority**: P1
+- **Status**: todo
+- **Category**: bug
+- **Description**:
+  - Demo user's profile picture is missing, resulting in 404 error
+  - GET request to `/media/thumbnails/users/1/thumb_20260210_153146_a6139a25.jpg` returns 404
+  - This affects the visual appearance of demo projects and user interface
+- **Root Cause**:
+  - Missing profile image file in the media directory
+  - Either the file was never created, was deleted, or the path is incorrect
+  - Demo setup process may not be properly handling user profile images
+- **Implementation**:
+  - Verify the expected location and filename of the demo user profile picture
+  - Ensure the image file exists in the correct media directory
+  - Update demo seeding process to properly handle user profile images
+  - Add validation to check for missing media files during demo setup
+  - Consider using a fallback image or placeholder when profile picture is missing
+- **Files to Check/Modify**:
+  - `stricknani/scripts/seed_demo.py` - demo data seeding script
+  - Media directory structure and file permissions
+  - User profile image handling logic
+  - Template fallback logic for missing images
+- **Specific Fixes**:
+  - Ensure demo user profile image file exists at expected path
+  - Update seeding script to copy/create the profile image properly
+  - Add error handling for missing media files
+  - Consider using Gravatar or generated avatar as fallback
+- **Testing**:
+  - Verify profile picture displays correctly after fix
+  - Test with fresh demo database setup
+  - Ensure no 404 errors for user profile images
+  - Test fallback behavior when image is missing
 
 ### T47: Reformatting the "technical specs" section for better print layout
 
