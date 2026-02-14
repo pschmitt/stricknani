@@ -33,6 +33,8 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T34 | P2 | todo | cli | refactor | Make --query flag positional in `stricknani-cli project show` |
+| T35 | P2 | todo | ux | refactor | Hide empty "other materials" widget on project view page |
 | T18 | P1 | done | demo | feat | Improve demo assets with knitting-related images and content |
 | T30 | P1 | done | cli | feat | Add `stricknani-cli project|yarn ID_OR_NAME` with pretty print and --json support |
 | T31 | P0 | done | nix | feat | Add backup.enable, schedule, and retention settings to Nix module (enabled by default) |
@@ -295,3 +297,33 @@ Execution-oriented backlog for Stricknani.
   - Add configurable `backup.schedule` (cron expression, default: daily)
   - Add `backup.retention` settings (keep last N backups, default: 7)
   - Implement automatic backup archive containing database + media with retention policy
+
+### T34: Make --query flag positional in `stricknani-cli project show`
+
+- **Area**: cli
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Change the `--query Q` flag to a positional argument in the `stricknani-cli project show` command
+  - Update command signature from `stricknani-cli project show --query Q` to `stricknani-cli project show Q`
+  - Maintain backward compatibility if possible, or update documentation
+- **Implementation**:
+  - Modify the Click command definition to use a positional argument instead of an option
+  - Update help text and usage examples
+  - Ensure the query parameter is still optional with appropriate default behavior
+
+### T35: Hide empty "other materials" widget on project view page
+
+- **Area**: ux
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Conditionally render the "other materials" widget only when there is content to display
+  - Hide the widget when the field is empty, null, or contains only whitespace
+  - Improve UI consistency by not showing empty sections
+- **Implementation**:
+  - Update the project detail template to check if other_materials has content before rendering
+  - Add appropriate Jinja2 conditional logic in the template
+  - Ensure the change doesn't affect the edit/form views where the field should always be visible
