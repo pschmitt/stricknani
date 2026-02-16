@@ -58,4 +58,4 @@ directories:
       # renovate: datasource=github-releases depName=getsentry/sentry-javascript
       - path: sentry
         http:
-          url: https://browser.sentry-cdn.com/10.38.0/bundle.tracing.min.js
+          url: https://browser.sentry-cdn.com/10.39.0/bundle.tracing.min.js
