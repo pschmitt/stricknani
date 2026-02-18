@@ -42,7 +42,7 @@ directories:
       # renovate: datasource=npm depName=@tailwindcss/browser
       - path: tailwindcss-browser
         http:
-          url: https://registry.npmjs.org/@tailwindcss/browser/-/browser-4.1.18.tgz
+          url: https://registry.npmjs.org/@tailwindcss/browser/-/browser-4.2.0.tgz
         newRootPath: package/dist
         includePaths:
           - package/dist/index.global.js
