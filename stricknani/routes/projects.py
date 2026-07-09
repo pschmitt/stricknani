@@ -27,6 +27,8 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from stricknani.config import config
 from stricknani.database import get_db
+from stricknani.importing.fetch import FetchError, import_fetch_http_error
+from stricknani.importing.ssrf import SSRFError
 from stricknani.models import (
     Attachment,
     Category,
@@ -1089,6 +1091,12 @@ async def import_pattern(
 
     except HTTPException:
         raise
+    except (FetchError, SSRFError) as e:
+        logger.warning("Import fetch failed: %s", e)
+        if trace:
+            trace.record_error("import_fetch_failure", e)
+        error_status, detail = import_fetch_http_error(e)
+        raise HTTPException(status_code=error_status, detail=detail) from e
     except Exception as e:
         logger.error(f"Import failed: {e}", exc_info=True)
         if trace:

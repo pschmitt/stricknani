@@ -1,3 +1,4 @@
+import socket
 from collections.abc import AsyncGenerator
 from typing import Any
 
@@ -17,6 +18,30 @@ from stricknani.utils.auth import get_password_hash
 def anyio_backend() -> str:
     """Run AnyIO tests on asyncio backend in this test environment."""
     return "asyncio"
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_ssrf_dns(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the suite offline.
+
+    The SSRF guard (T52) resolves hostnames via ``socket.getaddrinfo`` before
+    every import fetch. Stub it to a fixed public address so import-path tests
+    that only mock HTTP don't require real DNS. Tests that assert DNS-based
+    blocking (``tests/test_ssrf.py``) override this in-test.
+    """
+
+    def _public_getaddrinfo(*args: Any, **kwargs: Any) -> list[Any]:
+        return [
+            (
+                socket.AF_INET,
+                socket.SOCK_STREAM,
+                socket.IPPROTO_TCP,
+                "",
+                ("93.184.216.34", 0),
+            )
+        ]
+
+    monkeypatch.setattr(socket, "getaddrinfo", _public_getaddrinfo)
 
 
 @pytest.fixture

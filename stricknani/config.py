@@ -57,6 +57,11 @@ class Config:
     COOKIE_SAMESITE: Literal["lax", "strict", "none"] = cast(
         Literal["lax", "strict", "none"], os.getenv("COOKIE_SAMESITE", "strict")
     )
+    # SSRF guard: allow imports to resolve to private/loopback hosts. Secure by
+    # default (False); self-hosters can opt in for a trusted LAN import source.
+    ALLOW_PRIVATE_IMPORT_HOSTS: bool = (
+        os.getenv("ALLOW_PRIVATE_IMPORT_HOSTS", "false").lower() == "true"
+    )
 
     # Features
     FEATURE_SIGNUP_ENABLED: bool = (

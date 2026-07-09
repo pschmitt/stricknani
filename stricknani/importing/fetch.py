@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+from urllib.parse import urljoin
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -25,6 +26,11 @@ logger = logging.getLogger("stricknani.imports")
 # Chrome is a good default: it exercises the most common/maintained TLS
 # fingerprint in curl-impersonate and is what defeats garnstudio's Cloudflare.
 DEFAULT_IMPERSONATE = "chrome"
+
+# HTTP status codes that indicate a redirect (with a Location header).
+_REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+# Cap manual redirect following to avoid loops / redirect chains.
+_MAX_REDIRECTS = 5
 
 
 @dataclass
@@ -69,20 +75,46 @@ async def fetch_url(
 
     Raises:
         FetchError: If the request fails or returns an error status.
+        SSRFError: If the URL (or a redirect target) resolves to a
+            private/loopback/reserved address.
     """
     from curl_cffi.requests import AsyncSession
     from curl_cffi.requests.exceptions import RequestException
 
+    from stricknani.importing.ssrf import validate_public_url
+
     request_headers = dict(headers) if headers else None
+
+    # SSRF guard: reject the initial URL before making any outbound request.
+    # Redirects are followed manually below (curl_cffi's automatic redirect
+    # handling would connect to a redirect target before we could inspect it),
+    # re-validating each hop's Location so a redirect cannot be used to reach an
+    # internal host.
+    validate_public_url(url)
+
+    current_url = url
     try:
         async with AsyncSession() as session:
-            response = await session.get(
-                url,
-                timeout=timeout,
-                headers=request_headers,
-                allow_redirects=follow_redirects,
-                impersonate=impersonate,
-            )
+            for _ in range(_MAX_REDIRECTS + 1):
+                response = await session.get(
+                    current_url,
+                    timeout=timeout,
+                    headers=request_headers,
+                    allow_redirects=False,
+                    impersonate=impersonate,
+                )
+                location = response.headers.get("location")
+                if (
+                    follow_redirects
+                    and response.status_code in _REDIRECT_STATUSES
+                    and location
+                ):
+                    current_url = urljoin(current_url, location)
+                    validate_public_url(current_url)
+                    continue
+                break
+            else:
+                raise FetchError(f"Too many redirects for {url}")
             response.raise_for_status()
     except RequestException as exc:
         status = getattr(getattr(exc, "response", None), "status_code", None)
@@ -106,4 +138,38 @@ async def fetch_url(
     )
 
 
-__all__ = ["DEFAULT_IMPERSONATE", "FetchError", "FetchResponse", "fetch_url"]
+def import_fetch_http_error(exc: Exception) -> tuple[int, str]:
+    """Map a fetch/SSRF failure to an ``(HTTP status, user message)`` pair.
+
+    Used at the web import boundary so a fetch failure produces a friendly
+    4xx/5xx response instead of an HTTP 500 that leaks the raw exception string.
+
+    Args:
+        exc: The exception raised while fetching an import URL.
+
+    Returns:
+        A ``(status_code, detail)`` tuple with a user-facing message that does
+        not echo the raw exception.
+    """
+    from stricknani.importing.ssrf import SSRFError
+
+    if isinstance(exc, SSRFError):
+        return 400, "The URL is not allowed."
+    if isinstance(exc, FetchError):
+        status = exc.status_code
+        if status is not None and 400 <= status < 500:
+            return 400, "Could not fetch the URL (the page returned an error)."
+        if status is not None and 500 <= status < 600:
+            return 502, "The remote server returned an error."
+        # No HTTP status code means a network/timeout/connection failure.
+        return 504, "Could not reach the URL (the request timed out or failed)."
+    return 500, "Failed to import the URL."
+
+
+__all__ = [
+    "DEFAULT_IMPERSONATE",
+    "FetchError",
+    "FetchResponse",
+    "fetch_url",
+    "import_fetch_http_error",
+]

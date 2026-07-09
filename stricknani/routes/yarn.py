@@ -24,6 +24,8 @@ from sqlalchemy.orm import selectinload
 
 from stricknani.config import config
 from stricknani.database import get_db
+from stricknani.importing.fetch import FetchError, import_fetch_http_error
+from stricknani.importing.ssrf import SSRFError
 from stricknani.models import Project, User, Yarn, YarnImage, user_favorite_yarns
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.services.audit import (
@@ -340,6 +342,10 @@ async def import_yarn(
 
     except HTTPException:
         raise
+    except (FetchError, SSRFError) as e:
+        logger.warning("Yarn import fetch failed: %s", e)
+        error_status, detail = import_fetch_http_error(e)
+        raise HTTPException(status_code=error_status, detail=detail) from e
     except Exception as e:
         logger.error(f"Yarn import failed: {e}", exc_info=True)
         raise HTTPException(
