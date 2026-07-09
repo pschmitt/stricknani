@@ -1,6 +1,11 @@
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from stricknani.utils.importer import GarnstudioPatternImporter
+
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "garnstudio"
 
 
 @pytest.mark.asyncio
@@ -9,10 +14,13 @@ async def test_garnstudio_pattern_to_yarn_links_extraction() -> None:
     url = "https://www.garnstudio.com/pattern.php?id=12174&cid=9"
     importer = GarnstudioPatternImporter(url)
 
-    # We use the real URL here since it's an integration-style test for extraction rules
-    # but we can also mock if needed. Given the project style,
-    # direct extraction is often tested.
-    data = await importer.fetch_and_parse()
+    html = (FIXTURE_DIR / "pattern_12174.html").read_text(encoding="utf-8")
+    with patch("httpx.AsyncClient.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.text = html
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+        data = await importer.fetch_and_parse()
 
     assert data.get("title") == "Violet Reverie"
     yarn_details = data.get("yarn_details", [])
@@ -32,7 +40,13 @@ async def test_garnstudio_yarn_page_extraction() -> None:
     url = "https://www.garnstudio.com/yarn.php?show=drops-kid-silk&cid=9"
     importer = GarnstudioPatternImporter(url)
 
-    data = await importer.fetch_and_parse()
+    html = (FIXTURE_DIR / "yarn_drops-kid-silk.html").read_text(encoding="utf-8")
+    with patch("httpx.AsyncClient.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.text = html
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+        data = await importer.fetch_and_parse()
 
     # Name should be cleaned (no DROPS prefix, no subtitle)
     assert data.get("name") == "Kid-Silk"

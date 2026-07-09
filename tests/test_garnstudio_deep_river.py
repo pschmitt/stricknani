@@ -1,6 +1,11 @@
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from stricknani.utils.importer import GarnstudioPatternImporter
+
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "garnstudio"
 
 
 @pytest.mark.asyncio
@@ -8,8 +13,14 @@ async def test_garnstudio_deep_river_cardigan() -> None:
     url = "https://www.garnstudio.com/pattern.php?id=11991&cid=9"
     importer = GarnstudioPatternImporter(url)
 
-    # We use a real fetch here to see what trafilatura does in the real app
-    data = await importer.fetch_and_parse()
+    # Parse the recorded page HTML through the full fetch_and_parse path.
+    html = (FIXTURE_DIR / "pattern_11991.html").read_text(encoding="utf-8")
+    with patch("httpx.AsyncClient.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.text = html
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+        data = await importer.fetch_and_parse()
 
     assert data["title"] == "Deep River Cardigan"
 
@@ -85,7 +96,14 @@ async def test_garnstudio_yarn_split_regression_11899() -> None:
     """Test regression for pattern 11899 where yarns were split incorrectly by comma."""
     url = "https://www.garnstudio.com/pattern.php?id=11899&cid=9"
     importer = GarnstudioPatternImporter(url)
-    data = await importer.fetch_and_parse()
+
+    html = (FIXTURE_DIR / "pattern_11899.html").read_text(encoding="utf-8")
+    with patch("httpx.AsyncClient.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.text = html
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+        data = await importer.fetch_and_parse()
 
     yarn_text = data["yarn"]
     assert "DROPS ALPACA" in yarn_text
