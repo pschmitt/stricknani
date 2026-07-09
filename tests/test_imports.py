@@ -52,7 +52,7 @@ async def test_import_url_basic(test_client: "TestClientFixture") -> None:
     </html>
     """
 
-    with patch("httpx.AsyncClient.get") as mock_get:
+    with patch("stricknani.importing.fetch.fetch_url") as mock_get:
         mock_response = MagicMock()
         mock_response.text = mock_html
         mock_response.status_code = 200
@@ -124,7 +124,18 @@ async def test_import_url_extracts_steps_and_images(
         }
         return mock_resp
 
-    with patch("httpx.AsyncClient.get", side_effect=_mock_get):
+    async def _mock_page(*args: Any, **kwargs: Any) -> MagicMock:
+        # The page fetch goes through curl_cffi (fetch_url); image downloads
+        # still go through httpx (_mock_get above).
+        page = MagicMock()
+        page.text = mock_html
+        page.status_code = 200
+        return page
+
+    with (
+        patch("stricknani.importing.fetch.fetch_url", side_effect=_mock_page),
+        patch("httpx.AsyncClient.get", side_effect=_mock_get),
+    ):
         response = await client.post(
             "/projects/import",
             data={
@@ -187,7 +198,7 @@ async def test_import_url_with_ai(test_client: "TestClientFixture") -> None:
     }
 
     with (
-        patch("httpx.AsyncClient.get") as mock_get,
+        patch("stricknani.importing.fetch.fetch_url") as mock_get,
         patch(
             "stricknani.utils.ai_importer.AIPatternImporter.fetch_and_parse"
         ) as mock_ai,
@@ -244,7 +255,7 @@ async def test_import_ai_fallback(test_client: "TestClientFixture") -> None:
     """
 
     with (
-        patch("httpx.AsyncClient.get") as mock_get,
+        patch("stricknani.importing.fetch.fetch_url") as mock_get,
         patch(
             "stricknani.utils.ai_importer.AIPatternImporter.fetch_and_parse"
         ) as mock_ai,
@@ -606,7 +617,7 @@ async def test_import_trace_written(
     """
 
     try:
-        with patch("httpx.AsyncClient.get") as mock_get:
+        with patch("stricknani.importing.fetch.fetch_url") as mock_get:
             mock_response = MagicMock()
             mock_response.text = mock_html
             mock_response.status_code = 200

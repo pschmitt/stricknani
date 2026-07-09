@@ -15,7 +15,7 @@ async def test_garnstudio_deep_river_cardigan() -> None:
 
     # Parse the recorded page HTML through the full fetch_and_parse path.
     html = (FIXTURE_DIR / "pattern_11991.html").read_text(encoding="utf-8")
-    with patch("httpx.AsyncClient.get") as mock_get:
+    with patch("stricknani.importing.fetch.fetch_url") as mock_get:
         mock_response = MagicMock()
         mock_response.text = html
         mock_response.status_code = 200
@@ -98,7 +98,7 @@ async def test_garnstudio_yarn_split_regression_11899() -> None:
     importer = GarnstudioPatternImporter(url)
 
     html = (FIXTURE_DIR / "pattern_11899.html").read_text(encoding="utf-8")
-    with patch("httpx.AsyncClient.get") as mock_get:
+    with patch("stricknani.importing.fetch.fetch_url") as mock_get:
         mock_response = MagicMock()
         mock_response.text = html
         mock_response.status_code = 200

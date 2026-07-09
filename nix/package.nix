@@ -17,6 +17,7 @@ let
     beautifulsoup4
     nh3
     cryptography
+    curl-cffi
     fastapi
     fastapi-csrf-protect
     httpx

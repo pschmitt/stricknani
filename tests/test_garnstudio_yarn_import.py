@@ -15,7 +15,7 @@ async def test_garnstudio_pattern_to_yarn_links_extraction() -> None:
     importer = GarnstudioPatternImporter(url)
 
     html = (FIXTURE_DIR / "pattern_12174.html").read_text(encoding="utf-8")
-    with patch("httpx.AsyncClient.get") as mock_get:
+    with patch("stricknani.importing.fetch.fetch_url") as mock_get:
         mock_response = MagicMock()
         mock_response.text = html
         mock_response.status_code = 200
@@ -41,7 +41,7 @@ async def test_garnstudio_yarn_page_extraction() -> None:
     importer = GarnstudioPatternImporter(url)
 
     html = (FIXTURE_DIR / "yarn_drops-kid-silk.html").read_text(encoding="utf-8")
-    with patch("httpx.AsyncClient.get") as mock_get:
+    with patch("stricknani.importing.fetch.fetch_url") as mock_get:
         mock_response = MagicMock()
         mock_response.text = html
         mock_response.status_code = 200
