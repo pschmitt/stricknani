@@ -76,6 +76,10 @@
 
             shellHook = ''
               ${pre-commit-check.shellHook}
+
+              # Ensure prebuilt binary wheels (greenlet, numpy, ...) in the uv
+              # venv can load libstdc++.so.6 from the Nix C++ stdlib.
+              export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
             '';
           };
 

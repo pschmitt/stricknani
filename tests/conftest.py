@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 from typing import Any
 
 import pytest
@@ -17,6 +17,51 @@ from stricknani.utils.auth import get_password_hash
 def anyio_backend() -> str:
     """Run AnyIO tests on asyncio backend in this test environment."""
     return "asyncio"
+
+
+@pytest.fixture(autouse=True)
+def _testing_flag() -> Generator[None]:
+    """Force ``config.TESTING`` on for every test and restore it afterwards.
+
+    ``config.TESTING`` is evaluated at import time, before pytest sets
+    ``PYTEST_CURRENT_TEST``, so it defaults to ``False``. The suite relies on it
+    being ``True`` (it short-circuits the global CSRF dependency). Previously
+    only the ``test_client`` fixture set it, and it was never reset, so the
+    value leaked between tests: whether a CSRF-agnostic test saw ``True``
+    depended purely on ordering. Establishing it here makes the default
+    deterministic; tests that need real CSRF validation flip it off explicitly.
+    """
+    original = config.TESTING
+    config.TESTING = True
+    try:
+        yield
+    finally:
+        config.TESTING = original
+
+
+# Tests that perform live pattern imports against garnstudio.com. On this
+# branch they reach the real site (the offline HTML-fixture conversion lives on
+# a separate branch), so they are the only place a real network socket is
+# needed. Everything else drives the app in-process via httpx's ASGITransport
+# and an in-memory SQLite database, so sockets stay disabled (see the
+# `--disable-socket` addopts in pyproject.toml).
+_NETWORK_TEST_NODEIDS = frozenset(
+    {
+        "tests/test_garnstudio_3491.py::test_garnstudio_3491_outdoor_fun_yarn_needles_steps",
+        "tests/test_garnstudio_deep_river.py::test_garnstudio_deep_river_cardigan",
+        "tests/test_garnstudio_deep_river.py::test_garnstudio_yarn_split_regression_11899",
+        "tests/test_garnstudio_diagram_legend.py::test_garnstudio_diagram_legend_is_attached_to_diagram_steps",
+        "tests/test_garnstudio_yarn_import.py::test_garnstudio_pattern_to_yarn_links_extraction",
+        "tests/test_garnstudio_yarn_import.py::test_garnstudio_yarn_page_extraction",
+    }
+)
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Re-enable real sockets only for the known live-network import tests."""
+    for item in items:
+        if item.nodeid in _NETWORK_TEST_NODEIDS:
+            item.add_marker(pytest.mark.enable_socket)
 
 
 @pytest.fixture

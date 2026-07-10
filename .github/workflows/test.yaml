@@ -28,5 +28,32 @@ jobs:
       - name: Install dependencies
         run: just ci-setup-py
 
-      - name: Run tests
-        run: just test
+      - name: Run tests with coverage
+        run: uv run pytest -v --cov=stricknani --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  test-nix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      # Runs the suite inside the Nix devShell so the shellHook's
+      # libstdc++ LD_LIBRARY_PATH export is exercised (prebuilt binary
+      # wheels such as numpy/greenlet fail to load without it).
+      - name: Run tests in Nix devShell
+        run: nix develop --command bash -c 'just ci-setup-py && just test'

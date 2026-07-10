@@ -41,6 +41,8 @@ dependencies = [
 dev = [
     "pytest>=8.3.3",
     "pytest-asyncio>=0.24.0",
+    "pytest-cov>=5.0.0",
+    "pytest-socket>=0.7.0",
     "ruff>=0.6.9",
     "mypy>=1.11.2",
     "types-markdown>=3.7.0.20240822",
@@ -130,3 +132,8 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+# Block real network access during tests. The suite talks to the app through
+# httpx's in-process ASGITransport and an in-memory SQLite DB, so no real
+# sockets are needed. AF_UNIX sockets stay allowed because asyncio's event
+# loop uses socketpair(2) internally for its self-pipe.
+addopts = "--disable-socket --allow-unix-socket"
