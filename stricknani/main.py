@@ -20,7 +20,7 @@ from stricknani.logging_config import configure_logging
 from stricknani.utils.auth import ensure_initial_admin
 from stricknani.utils.markdown import render_markdown
 from stricknani.web.middleware import SecurityHeadersMiddleware
-from stricknani.web.staticfiles import ImmutableStaticFiles, MediaStaticFiles
+from stricknani.web.staticfiles import ImmutableStaticFiles
 from stricknani.web.templating import render_template
 
 
@@ -179,13 +179,12 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
 
 static_path = Path(__file__).parent / "static"
 static_path.mkdir(exist_ok=True)
-app.mount(
-    "/static", ImmutableStaticFiles(directory=str(static_path)), name="static"
-)
+app.mount("/static", ImmutableStaticFiles(directory=str(static_path)), name="static")
 
-# Mount media files. MediaStaticFiles adds nosniff/Content-Disposition and
-# denies serving of internal import directories (T57/T59).
-app.mount("/media", MediaStaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
+# Media files are served through an ownership-checked route (T70), not a raw
+# static mount: stricknani.routes.media resolves the owning project/yarn/user
+# for each requested path and only streams the file once the current user is
+# confirmed to own it. See that module's docstring for details.
 
 
 @app.get("/manifest.webmanifest")
@@ -258,6 +257,7 @@ from stricknani.routes import (  # noqa: E402
     admin,
     auth,
     gauge,
+    media,
     projects,
     search,
     user,
@@ -273,6 +273,10 @@ app.include_router(user.router)
 app.include_router(yarn.router)
 app.include_router(admin.router)
 app.include_router(utils.router)
+# Registered last: media's catch-all "/media/{path:path}" deny route must not
+# shadow any more specific route declared above (none currently overlap, but
+# this keeps the ordering intentional).
+app.include_router(media.router)
 
 
 # Login page
