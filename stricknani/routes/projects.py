@@ -7,6 +7,7 @@ import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
+from urllib.parse import urlencode
 
 from fastapi import (
     APIRouter,
@@ -21,7 +22,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy import and_, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -129,6 +130,10 @@ from stricknani.web.templating import get_language, render_template, templates
 
 logger = logging.getLogger(__name__)
 
+# Number of cards fetched per page for the list view / HTMX infinite scroll.
+# 24 divides evenly across the 1/2/3-column responsive grid.
+LIST_PAGE_SIZE = 24
+
 router = APIRouter(
     prefix="/projects",
     tags=["projects"],
@@ -224,12 +229,11 @@ async def list_projects(
     category: str | None = None,
     tag: str | None = None,
     search: str | None = None,
+    page: int = Query(1, ge=1),
 ) -> Response:
     """List all projects for the current user."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-
-    query = select(Project).where(Project.owner_id == current_user.id)
 
     if search:
         category_token, remaining = _extract_search_token(search, "cat:")
@@ -245,6 +249,22 @@ async def list_projects(
             tag = hash_token
             search = remaining or None
 
+    # Favorites-first ordering is pushed into SQL via a LEFT JOIN against the
+    # favorites association so that ORDER BY and LIMIT/OFFSET pagination are
+    # honoured by the database (no Python re-sort that would defeat both).
+    favorite_marker = user_favorites.c.user_id
+    query = (
+        select(Project, favorite_marker.isnot(None))
+        .outerjoin(
+            user_favorites,
+            and_(
+                user_favorites.c.project_id == Project.id,
+                user_favorites.c.user_id == current_user.id,
+            ),
+        )
+        .where(Project.owner_id == current_user.id)
+    )
+
     if category:
         query = query.where(Project.category == category)
 
@@ -254,26 +274,39 @@ async def list_projects(
     if search:
         query = query.where(Project.name.ilike(f"%{search}%"))
 
-    query = query.options(
-        selectinload(Project.images).selectinload(Image.step),
-        selectinload(Project.yarns),
-    ).order_by(Project.created_at.desc())
-
-    favorite_rows = await db.execute(
-        select(user_favorites.c.project_id).where(
-            user_favorites.c.user_id == current_user.id
+    offset = (page - 1) * LIST_PAGE_SIZE
+    query = (
+        query.options(
+            selectinload(Project.images).selectinload(Image.step),
+            selectinload(Project.yarns),
         )
+        .order_by(
+            favorite_marker.is_(None),
+            func.lower(Project.name),
+            Project.id,
+        )
+        .offset(offset)
+        .limit(LIST_PAGE_SIZE + 1)
     )
-    favorite_ids = {row[0] for row in favorite_rows}
+
     result = await db.execute(query)
-    projects = result.scalars().unique().all()
-    projects = sorted(
-        projects,
-        key=lambda project: (
-            project.id not in favorite_ids,
-            project.name.casefold(),
-        ),
-    )
+    rows = result.all()
+    has_more = len(rows) > LIST_PAGE_SIZE
+    rows = rows[:LIST_PAGE_SIZE]
+    projects = [row[0] for row in rows]
+    favorite_ids = {row[0].id for row in rows if row[1]}
+
+    next_page_url: str | None = None
+    if has_more:
+        params: dict[str, str] = {}
+        if search:
+            params["search"] = search
+        if category:
+            params["category"] = category
+        if tag:
+            params["tag"] = tag
+        params["page"] = str(page + 1)
+        next_page_url = f"/projects?{urlencode(params)}"
 
     def _serialize_project(project: Project) -> dict[str, object]:
         # Get all title images (or first image if no title image set)
@@ -332,9 +365,25 @@ async def list_projects(
             "tags": project.tag_list(),
         }
 
-    # If this is an HTMX request, only return the projects list
+    projects_data = [_serialize_project(p) for p in projects]
+
+    # HTMX infinite scroll: subsequent pages return only the card fragment
+    # (cards plus the next-page sentinel), swapped in-place after the last row.
+    if request.headers.get("HX-Request") and page > 1:
+        language = get_language(request)
+        with language_context(language):
+            return templates.TemplateResponse(
+                "projects/_cards_page.html",
+                {
+                    "request": request,
+                    "projects": projects_data,
+                    "current_language": language,
+                    "next_page_url": next_page_url,
+                },
+            )
+
+    # HTMX search/filter: return the reset list (grid + first page).
     if request.headers.get("HX-Request"):
-        projects_data = [_serialize_project(p) for p in projects]
         language = get_language(request)
         with language_context(language):
             return templates.TemplateResponse(
@@ -346,10 +395,9 @@ async def list_projects(
                     "search": search or "",
                     "selected_category": category,
                     "selected_tag": tag,
+                    "next_page_url": next_page_url,
                 },
             )
-
-    projects_data = [_serialize_project(p) for p in projects]
 
     categories = await get_user_categories(db, current_user.id)
 
@@ -366,6 +414,7 @@ async def list_projects(
             "selected_category": category,
             "selected_tag": tag,
             "search": search,
+            "next_page_url": next_page_url,
             "has_openai_key": config.FEATURE_AI_IMPORT_ENABLED and has_ai_api_key(),
         },
     )
