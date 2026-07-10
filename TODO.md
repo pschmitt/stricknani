@@ -53,8 +53,8 @@ Execution-oriented backlog for Stricknani.
 | T48 | P1 | done | demo | bug | Fix missing demo user profile picture (404 error)
 | T47 | P2 | done | ux | refactor | Reformatting the "technical specs" section for better print layout
 | T46 | P2 | done | cli | refactor | Improve stricknani-cli project export command arguments
-| T1 | P4 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
-| T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
+| T1 | P4 | wip (PID: orchestrator, AGENT: t1-static-css) | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
+| T32 | P3 | wip (PID: orchestrator, AGENT: t32-pwa-offline) | frontend | feat | Implement offline mode (PWA) |
 | T33 | P3 | done | frontend | feat | Add PWA installation capability |
 | T51 | P2 | done | ux | refactor | Add line breaks between consecutive images in wysiwyg editor preview |
 | T53 | P0 | done | security | bug | Fail-fast on default/unset SECRET_KEY (and CSRF_SECRET_KEY) in production |
@@ -72,8 +72,8 @@ Execution-oriented backlog for Stricknani.
 | T66 | P2 | done | test | refactor | Add pytest-socket --disable-socket to lock in offline tests |
 | T67 | P2 | done | build | refactor | Compile .mo catalogs at build time (Dockerfile + nix) instead of lazy runtime write |
 | T68 | P2 | done | ci | feat | CI parity: add `nix develop -c just test` job, lint-template-js step, and coverage measurement |
-| T69 | P2 | wip (PID: 1924748, AGENT: claude-code) | security | feat | Add login/signup rate limiting, password policy, and revocable sessions |
-| T70 | P2 | todo | security | feat | Per-object media authorization — serve /media through an ownership-checked route (deferred from T59) |
+| T69 | P2 | wip (PID: orchestrator, AGENT: t69-auth-hardening) | security | feat | Add login/signup rate limiting, password policy, and revocable sessions |
+| T70 | P2 | wip (PID: orchestrator, AGENT: t70-media-authz) | security | feat | Per-object media authorization — serve /media through an ownership-checked route (deferred from T59) |
 | T71 | P2 | todo | security | refactor | Tighten CSP to a strict nonce-based policy after removing runtime Tailwind + inline JS (depends on T1/T36; deferred from T58) |
 
 
