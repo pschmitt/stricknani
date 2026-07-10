@@ -1,6 +1,7 @@
 """Main FastAPI application."""
 
 import logging
+import sys
 import time
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -9,15 +10,18 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 from fastapi_csrf_protect.flexible import CsrfProtect as FlexibleCsrfProtect
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from stricknani import __version__
 from stricknani.config import config
 from stricknani.database import init_db
 from stricknani.logging_config import configure_logging
 from stricknani.utils.auth import ensure_initial_admin
 from stricknani.utils.markdown import render_markdown
+from stricknani.web.middleware import SecurityHeadersMiddleware
+from stricknani.web.staticfiles import ImmutableStaticFiles
 from stricknani.web.templating import render_template
 
 
@@ -25,6 +29,7 @@ from stricknani.web.templating import render_template
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Application lifespan manager."""
     # Startup
+    config.validate_secrets()
     await init_db()
     await ensure_initial_admin()
     yield
@@ -83,6 +88,18 @@ app = FastAPI(
     dependencies=[Depends(csrf_validation_dependency)],
 )
 
+# Baseline security response headers (T58).
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Reject requests with an unexpected Host header (T58). Guard against the
+# wildcard / empty configuration so a misconfigured ALLOWED_HOSTS does not turn
+# into a blanket 400 for every request. Skip under pytest, whose ASGI client
+# uses a synthetic Host that would otherwise be rejected.
+_allowed_hosts = [host.strip() for host in config.ALLOWED_HOSTS if host.strip()]
+_under_pytest = "pytest" in sys.modules
+if _allowed_hosts and "*" not in _allowed_hosts and not _under_pytest:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
+
 
 @app.exception_handler(CsrfProtectError)
 async def csrf_protect_exception_handler(
@@ -140,6 +157,23 @@ async def forbidden_exception_handler(
     )
 
 
+@app.exception_handler(429)
+async def too_many_requests_exception_handler(
+    request: Request, exc: HTTPException
+) -> HTMLResponse:
+    """Handle 429 (rate limit) errors by rendering a custom template (T69)."""
+    response = await render_template(
+        "errors/429.html",
+        request,
+        context={"current_user": None},
+        status_code=429,
+    )
+    retry_after = getattr(exc, "headers", None) or {}
+    if "Retry-After" in retry_after:
+        response.headers["Retry-After"] = retry_after["Retry-After"]
+    return response
+
+
 @app.exception_handler(Exception)
 async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
     """Handle all other unhandled exceptions by rendering a 500 template."""
@@ -150,6 +184,8 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
             return await unauthorized_exception_handler(request, exc)
         if exc.status_code == 403:
             return await forbidden_exception_handler(request, exc)
+        if exc.status_code == 429:
+            return await too_many_requests_exception_handler(request, exc)
 
     # Log the exception for debugging
     access_logger.exception("Unhandled exception: %s", str(exc))
@@ -163,10 +199,24 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
 
 static_path = Path(__file__).parent / "static"
 static_path.mkdir(exist_ok=True)
-app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+app.mount("/static", ImmutableStaticFiles(directory=str(static_path)), name="static")
 
-# Mount media files
-app.mount("/media", StaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
+# Media files are served through an ownership-checked route (T70), not a raw
+# static mount: stricknani.routes.media resolves the owning project/yarn/user
+# for each requested path and only streams the file once the current user is
+# confirmed to own it. See that module's docstring for details.
+
+access_logger = logging.getLogger("stricknani.access")
+
+# Changes on every process start, so it doubles as a cheap "did we just
+# deploy" signal for both the dev auto-reload banner and the service worker
+# cache version below.
+dev_reload_token = str(time.time_ns())
+
+# Cache names derived from this change on every deploy (process restart),
+# so the service worker's `activate` handler cleans up the previous
+# version's caches instead of serving stale HTML/CSS/JS indefinitely.
+SW_BUILD_ID = f"{__version__}-{dev_reload_token}"
 
 
 @app.get("/manifest.webmanifest")
@@ -178,15 +228,17 @@ async def pwa_manifest() -> FileResponse:
 
 
 @app.get("/sw.js")
-async def service_worker() -> FileResponse:
-    return FileResponse(
-        static_path / "sw.js",
+async def service_worker() -> Response:
+    """Serve the service worker with the current build's cache version baked in."""
+    content = (static_path / "js" / "sw.js").read_text(encoding="utf-8")
+    content = content.replace("__STRICKNANI_BUILD_VERSION__", SW_BUILD_ID)
+    return Response(
+        content=content,
         media_type="application/javascript",
+        # Service workers should always be revalidated so updates (and their
+        # new cache version) are picked up promptly after a deploy.
+        headers={"Cache-Control": "no-cache"},
     )
-
-
-access_logger = logging.getLogger("stricknani.access")
-dev_reload_token = str(time.time_ns())
 
 
 @app.middleware("http")
@@ -239,6 +291,7 @@ from stricknani.routes import (  # noqa: E402
     admin,
     auth,
     gauge,
+    media,
     projects,
     search,
     user,
@@ -254,6 +307,23 @@ app.include_router(user.router)
 app.include_router(yarn.router)
 app.include_router(admin.router)
 app.include_router(utils.router)
+# Registered last: media's catch-all "/media/{path:path}" deny route must not
+# shadow any more specific route declared above (none currently overlap, but
+# this keeps the ordering intentional).
+app.include_router(media.router)
+
+
+# Offline fallback page (precached by the service worker; see
+# stricknani/static/js/sw.js). Served when a navigation fails while offline
+# and no cached copy of the requested page exists.
+@app.get("/offline", response_class=HTMLResponse)
+async def offline_page(request: Request) -> HTMLResponse:
+    """Show the offline fallback page."""
+    return await render_template(
+        "offline.html",
+        request,
+        {"current_user": None},
+    )
 
 
 # Login page

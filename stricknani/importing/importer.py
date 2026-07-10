@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urljoin, urlparse
 
-import httpx
 from bs4 import BeautifulSoup
 from bs4.element import AttributeValueList, NavigableString, PageElement, Tag
 
@@ -95,15 +94,16 @@ class PatternImporter:
     async def fetch_and_parse(self, image_limit: int = 10) -> dict[str, Any]:
         """Fetch URL and extract pattern data."""
         logger.info("Importing pattern from %s", self.url)
-        async with httpx.AsyncClient(
+        # Use curl_cffi (via fetch_url) with a browser TLS fingerprint. Plain
+        # httpx is blocked by Cloudflare bot management on garnstudio.com
+        # (HTTP 403 "Just a moment..." interstitial) regardless of User-Agent.
+        from stricknani.importing import fetch
+
+        response = await fetch.fetch_url(
+            self.url,
             timeout=self.timeout,
             follow_redirects=True,
             headers={
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/120.0.0.0 Safari/537.36"
-                ),
                 "Accept": (
                     "text/html,application/xhtml+xml,application/xml;"
                     "q=0.9,image/avif,image/webp,image/apng,*/*;"
@@ -111,14 +111,12 @@ class PatternImporter:
                 ),
                 "Accept-Language": "en-US,en;q=0.9",
             },
-        ) as client:
-            response = await client.get(self.url)
-            response.raise_for_status()
-            logger.debug(
-                "Import response %s %s",
-                response.status_code,
-                response.headers.get("content-type", ""),
-            )
+        )
+        logger.debug(
+            "Import response %s %s",
+            response.status_code,
+            response.headers.get("content-type", ""),
+        )
 
         soup = BeautifulSoup(response.text, "html.parser")
         self._last_soup = soup

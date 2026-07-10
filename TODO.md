@@ -28,6 +28,8 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T52 | P0 | done | security | bug | Add SSRF guard to import fetch layer (block private/loopback/link-local, re-validate redirects) |
+| T54 | P0 | done | import | bug | Return friendly 4xx/502 on import fetch failures instead of 500 with raw error text |
 
 ## Next
 
@@ -52,9 +54,27 @@ Execution-oriented backlog for Stricknani.
 | T47 | P2 | done | ux | refactor | Reformatting the "technical specs" section for better print layout
 | T46 | P2 | done | cli | refactor | Improve stricknani-cli project export command arguments
 | T1 | P4 | done | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
-| T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
+| T32 | P3 | done | frontend | feat | Implement offline mode (PWA) |
 | T33 | P3 | done | frontend | feat | Add PWA installation capability |
 | T51 | P2 | done | ux | refactor | Add line breaks between consecutive images in wysiwyg editor preview |
+| T53 | P0 | done | security | bug | Fail-fast on default/unset SECRET_KEY (and CSRF_SECRET_KEY) in production |
+| T55 | P0 | done | security | bug | Enforce upload size cap and set Image.MAX_IMAGE_PIXELS (memory-DoS / decompression bomb) |
+| T56 | P1 | done | data-model | refactor | Add DB indexes on FK columns (Image.project_id/step_id, Step.project_id, Attachment.project_id, Category.user_id) |
+| T57 | P1 | done | perf | refactor | Add Cache-Control immutable headers to /static and /media |
+| T58 | P1 | done | security | feat | Add security-headers middleware (baseline CSP, nosniff, X-Frame-Options, Referrer-Policy, HSTS) and TrustedHostMiddleware (strict CSP → T71) |
+| T59 | P1 | done | security | refactor | Media serving hardening: nosniff + Content-Disposition + block traces/imports + upload extension allowlist (per-object authz → T70) |
+| T60 | P1 | done | test | bug | Reset config.TESTING in conftest teardown; add real CSRF enforcement test |
+| T61 | P1 | done | api | bug | Add server-side gauge validation (gt=0, safe int parse) to prevent crafted-input 500s |
+| T62 | P1 | done | a11y | bug | Enforce/render alt text on uploaded images (template + JS previews) |
+| T63 | P1 | done | a11y | refactor | Add aria-labels to icon-only buttons and a skip-link/#main-content landmark |
+| T64 | P2 | done | perf | feat | Paginate project & yarn lists; push favorite/name ordering into SQL |
+| T65 | P2 | done | perf | refactor | Persist image width/height columns; stop PIL-opening every image on detail render |
+| T66 | P2 | done | test | refactor | Add pytest-socket --disable-socket to lock in offline tests |
+| T67 | P2 | done | build | refactor | Compile .mo catalogs at build time (Dockerfile + nix) instead of lazy runtime write |
+| T68 | P2 | done | ci | feat | CI parity: add `nix develop -c just test` job, lint-template-js step, and coverage measurement |
+| T69 | P2 | done | security | feat | Add login/signup rate limiting, password policy, and revocable sessions |
+| T70 | P2 | done | security | feat | Per-object media authorization — serve /media through an ownership-checked route (deferred from T59) |
+| T71 | P2 | todo | security | refactor | Tighten CSP to a strict nonce-based policy after removing runtime Tailwind + inline JS (depends on T1/T36; deferred from T58) |
 
 
 ## Done
@@ -382,7 +402,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: frontend
 - **Priority**: P3
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Add service worker for offline caching of static assets
@@ -760,3 +780,212 @@ Execution-oriented backlog for Stricknani.
   - Improve code maintainability and developer experience
   - Better separation of concerns between backend templating and frontend logic
   - Easier to apply consistent formatting across the codebase
+
+### T52: Add SSRF guard to import fetch layer
+
+- **Area**: security
+- **Priority**: P0
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - Import fetches arbitrary user-supplied URLs server-side (`fetch_url`, curl_cffi with Chrome impersonation, `follow_redirects=True`); `is_valid_import_url` only checks scheme + netloc.
+  - An authenticated user can make the server fetch `http://169.254.169.254/...` (cloud metadata), `http://127.0.0.1`, `http://10.x` internal services; response text is reflected in the import result. Redirects to internal hosts are not re-validated.
+- **Implementation**:
+  - Add a shared guard: resolve the host, reject private/loopback/link-local/reserved/multicast IPs (`ipaddress` + `socket.getaddrinfo`), enforce http/https.
+  - Apply inside `fetch_url` before the request AND after each redirect hop (disable auto-redirects and follow manually, validating each `Location`).
+  - Apply the same guard in `ImageDownloader` (httpx path).
+- **Files**: `stricknani/importing/fetch.py`, `stricknani/importing/images/validator.py`, `stricknani/importing/images/downloader.py`, `stricknani/utils/wayback.py`
+- **Testing**: guard unit tests (internal IPs/hosts rejected, redirect-to-internal rejected, external allowed via mocked DNS).
+
+### T53: Fail-fast on default/unset SECRET_KEY
+
+- **Area**: security
+- **Priority**: P0
+- **Status**: todo
+- **Category**: bug
+- **Description**:
+  - `SECRET_KEY` falls back to a hardcoded `"dev-secret-key-change-in-production"` (`config.py:21`); session tokens are HS256 JWTs signed with it, so an operator who forgets to set it exposes a publicly-known signing key → forge any session incl. admin.
+- **Implementation**:
+  - In non-DEBUG/non-TESTING, refuse to start (raise at import/lifespan) if `SECRET_KEY` is unset or equals the default. Apply the same guard to `CSRF_SECRET_KEY` (also fixes its random-per-process value breaking CSRF across workers/restarts).
+- **Files**: `stricknani/config.py`, `stricknani/main.py`
+
+### T54: Friendly error on import fetch failures
+
+- **Area**: import
+- **Priority**: P0
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - `PatternImporter.fetch_and_parse` calls `fetch_url` with no try/except; `FetchError` (network/timeout/non-2xx) bubbles to the catch-all `except Exception` → HTTP 500 with `str(e)` leaked. The most common real case (dead/404 link) crashes instead of returning a clean 4xx/502. The graceful `URLSource`/`ImportPipeline` mapping is dead code in the web path.
+- **Implementation**:
+  - Catch `FetchError` at the import route boundary (or route endpoints through `URLSource`/`ImportPipeline`) and translate to `HTTPException(400/502/504)` using `FetchError.status_code`, without echoing the raw exception string.
+- **Files**: `stricknani/importing/importer.py`, `stricknani/routes/projects.py`, `stricknani/routes/yarn.py`
+- **Testing**: import of a URL that 404s/times out → 4xx/502, no raw error text in the response.
+
+### T55: Upload size cap + Pillow decompression-bomb guard
+
+- **Area**: security
+- **Priority**: P0
+- **Status**: todo
+- **Category**: bug
+- **Description**:
+  - `save_uploaded_file` does `await upload_file.read()` (whole file into memory, no cap); `Image.MAX_IMAGE_PIXELS` is never set. A large upload exhausts RAM; a crafted small "gigapixel" image is a decompression bomb opened by Pillow in `create_thumbnail`/`get_image_dimensions`/OCR.
+- **Implementation**:
+  - Enforce a `MAX_UPLOAD_BYTES` (reject oversized → 413, ideally streamed) across direct upload paths.
+  - Set `Image.MAX_IMAGE_PIXELS` to a sane cap at startup and wrap opens in `try/except DecompressionBombError`.
+  - Validate real content type via magic bytes before persisting.
+- **Files**: `stricknani/utils/files.py`, `stricknani/services/projects/images.py`, `stricknani/services/projects/attachments.py`, `stricknani/main.py`
+
+### T56: Add DB indexes on FK columns
+
+- **Area**: data-model
+- **Priority**: P1
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - `Image.project_id`/`step_id`, `Step.project_id`, `Attachment.project_id`, `Category.user_id` have no `index=True`, so every `selectinload` (`WHERE project_id IN (...)`) full-scans. On the hottest list/detail paths.
+- **Implementation**: add `index=True` (consider composite `(project_id, is_title_image)` on images) + one Alembic migration (`uv run alembic -c stricknani/alembic.ini revision -m ...`).
+- **Files**: `stricknani/models/project.py`, `stricknani/models/category.py`, `stricknani/alembic/versions/`
+
+### T57: Cache-Control on /static and /media
+
+- **Area**: perf
+- **Priority**: P1
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - `/static` and `/media` are plain `StaticFiles` with no `Cache-Control max-age`, so the browser revalidates every asset (incl. a 400 KB font, 260 KB Tailwind JS, every thumbnail) on every navigation — a serial RTT each, worst on mobile.
+- **Implementation**: subclass `StaticFiles` to add `Cache-Control: public, max-age=31536000, immutable` for content-addressed media/vendor assets (filenames are already unique), shorter TTL where appropriate.
+- **Files**: `stricknani/main.py`
+
+### T58: Security-headers middleware + TrustedHost
+
+- **Area**: security
+- **Priority**: P1
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - No CSP, `X-Content-Type-Options: nosniff`, `X-Frame-Options`, `Referrer-Policy`, or HSTS; `ALLOWED_HOSTS` is defined but `TrustedHostMiddleware` is never registered.
+- **Implementation**: add a response-header middleware (nosniff, X-Frame-Options DENY, Referrer-Policy, HSTS when TLS, CSP baseline) and register `TrustedHostMiddleware(allowed_hosts=config.ALLOWED_HOSTS)`. Strict CSP depends on T1/T36.
+- **Files**: `stricknani/main.py`
+
+### T59: Authorize /media serving
+
+- **Area**: security
+- **Priority**: P1
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - `/media` is an unauthenticated raw static mount → IDOR on private photos/PDF attachments/import-traces, and stored-XSS via a preserved `.svg`/`.html` upload extension served without `nosniff`.
+- **Implementation**: serve media through an ownership-checked route (or at minimum deny `import-traces`/`imports`, force safe `Content-Type` + `Content-Disposition: attachment` + `nosniff`, and restrict stored extensions to an image allowlist).
+- **Files**: `stricknani/main.py`, `stricknani/routes/`, `stricknani/utils/files.py`
+
+### T60: Fix config.TESTING leak + add CSRF test
+
+- **Area**: test
+- **Priority**: P1
+- **Status**: todo
+- **Category**: bug
+- **Description**:
+  - `tests/conftest.py:67` sets `config.TESTING = True` and never resets it; `test_login_cookie_not_secure_by_default` fails when run in isolation (order-dependent). The flag also short-circuits CSRF validation, so the entire CSRF path is untested.
+- **Implementation**: reset `TESTING` in fixture teardown (or an autouse fixture); add a test with `TESTING=False` asserting POST without token → 403 and with token → success.
+- **Files**: `tests/conftest.py`, `tests/` (new CSRF test)
+
+### T61: Server-side gauge validation
+
+- **Area**: api
+- **Priority**: P1
+- **Status**: todo
+- **Category**: bug
+- **Description**:
+  - `/gauge/calculate` divides by `pattern_gauge_stitches`/`rows` with no `gt=0` and does `int(pattern_row_count)` on a raw string; only client-side `min=1`. Crafted POST → `ZeroDivisionError`/`ValueError` → 500.
+- **Implementation**: use `Annotated[int, Form(gt=0)]` for gauge fields and validated/optional parse for row count.
+- **Files**: `stricknani/routes/gauge.py`, `stricknani/utils/gauge.py`
+
+### T62: Enforce alt text on uploaded images
+
+- **Area**: a11y
+- **Priority**: P1
+- **Status**: todo
+- **Category**: bug
+- **Description**:
+  - SPEC §11 makes alt text mandatory. `image_upload.html:74` renders `alt="{{ image.alt_text or '' }}"` and JS previews render `<img>` with no alt (`projects/form.js:1637,2182`, `yarn/form.js:161,767`).
+- **Implementation**: make alt required in the upload flow; render a meaningful fallback (project/step name + index); add `alt` to the template-literal previews.
+- **Files**: `stricknani/templates/macros/image_upload.html`, `stricknani/templates/projects/form.js`, `stricknani/templates/yarn/form.js`
+
+### T63: aria-labels + skip-link
+
+- **Area**: a11y
+- **Priority**: P1
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Icon-only buttons lack accessible names (delete-image `image_upload.html:85`, mobile language `unified_navbar.html:296`, theme toggle `:285`); no skip-link and `<main>` has no id.
+- **Implementation**: add `aria-label` (copy the WYSIWYG toolbar pattern); add `id="main-content"` on `<main>` and a focusable skip link in `base.html`; add `aria-label` to `<nav>`.
+- **Files**: `stricknani/templates/macros/image_upload.html`, `stricknani/templates/shared/unified_navbar.html`, `stricknani/templates/base.html`
+
+### T64: Paginate project & yarn lists
+
+- **Area**: perf
+- **Priority**: P2
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - `list_projects`/`list_yarns` select all of a user's rows with full eager loads and render all cards; also re-sort in Python after a SQL `ORDER BY`, defeating both the sort and pagination.
+- **Implementation**: push favorite+name ordering into SQL; add LIMIT/OFFSET (or keyset) pagination with HTMX infinite-scroll on the existing `_list_partial`.
+- **Files**: `stricknani/routes/projects.py`, `stricknani/routes/yarn.py`, list partials
+
+### T65: Persist image dimensions
+
+- **Area**: perf
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Project detail render calls `get_image_dimensions` per image, `PIL.Image.open`-ing every full-res file serially and uncached; also displays full-size originals in thumbnail-sized grid cells.
+- **Implementation**: store `width`/`height` columns on `Image` at upload time (+ migration) and read from the row; point grid `<img src>` at `thumbnail_url` (keep the lightbox `<a href>` on the original).
+- **Files**: `stricknani/models/project.py`, `stricknani/services/projects/images.py`, `stricknani/templates/projects/detail.html`, `stricknani/alembic/versions/`
+
+### T66: Lock in offline tests with pytest-socket
+
+- **Area**: test
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - The suite is offline only by convention; a future test that forgets to mock `fetch_url`/AI/wayback would silently hit the network and flake CI.
+- **Implementation**: add `pytest-socket` dev dep, `addopts = --disable-socket` in `[tool.pytest.ini_options]`, allow sockets only where a fixture explicitly opts in.
+- **Files**: `pyproject.toml`, `tests/conftest.py`
+
+### T67: Compile .mo at build time
+
+- **Area**: build
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - `.mo` files are gitignored and compiled lazily at first request into the package dir (fails on read-only rootfs → silent English; non-atomic write races). Neither Docker nor nix compiles them.
+- **Implementation**: run `just i18n-compile` at Docker build and in the nix package; and/or compile once atomically in the FastAPI lifespan; add a read-only-fallback test.
+- **Files**: `Dockerfile`, `nix/package.nix`, `stricknani/utils/i18n.py`
+
+### T68: CI parity
+
+- **Area**: ci
+- **Priority**: P2
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - CI runs bare uv (not `nix develop`), so the devShell libstdc++ fix is never exercised; `lint-template-js`/`-format` run in `just check` but no workflow; no coverage measurement.
+- **Implementation**: add a `nix develop -c just test` job (or flake `checks` entry), add the template-JS lint step to lint.yaml, add pytest-cov with a threshold.
+- **Files**: `.github/workflows/`, `pyproject.toml`, `flake.nix`
+
+### T69: Auth hardening (rate limit, password policy, revocable sessions)
+
+- **Area**: security
+- **Priority**: P2
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - No rate limiting/lockout on login/signup; no password policy (1-char accepted); sessions are non-revocable 1-week JWTs (logout only clears the cookie).
+- **Implementation**: add per-IP/per-account rate limiting (e.g. slowapi); enforce a minimum password policy; add a token version/jti in the DB checked in `get_current_user`, bumped on password change/logout-all.
+- **Files**: `stricknani/routes/auth.py`, `stricknani/utils/auth.py`, `stricknani/models/user.py`, `stricknani/config.py`
