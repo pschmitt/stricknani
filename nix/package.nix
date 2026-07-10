@@ -52,11 +52,19 @@ python.pkgs.buildPythonApplication {
 
   nativeBuildInputs = with python.pkgs; [
     hatchling
+    babel
   ] ++ [
     makeWrapper
   ];
 
   propagatedBuildInputs = pythonDeps;
+
+  # Compile gettext catalogs (.mo) at build time so they are shipped in the
+  # store output and never lazily compiled into the read-only store at
+  # request time.
+  preBuild = ''
+    ${python.pkgs.babel}/bin/pybabel compile -d stricknani/locales
+  '';
 
   postFixup = ''
     wrapProgram "$out/bin/stricknani" \
