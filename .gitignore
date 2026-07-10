@@ -67,3 +67,6 @@ ingest/
 .direnv
 .pre-commit-config.yaml
 *.log
+
+# Generated static assets (built via `just build-css`; see Dockerfile / nix/package.nix)
+/stricknani/static/css/tailwind.css

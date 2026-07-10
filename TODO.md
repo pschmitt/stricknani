@@ -51,7 +51,7 @@ Execution-oriented backlog for Stricknani.
 | T48 | P1 | done | demo | bug | Fix missing demo user profile picture (404 error)
 | T47 | P2 | done | ux | refactor | Reformatting the "technical specs" section for better print layout
 | T46 | P2 | done | cli | refactor | Improve stricknani-cli project export command arguments
-| T1 | P4 | todo | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
+| T1 | P4 | done | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 | T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
 | T33 | P3 | done | frontend | feat | Add PWA installation capability |
 | T51 | P2 | done | ux | refactor | Add line breaks between consecutive images in wysiwyg editor preview |

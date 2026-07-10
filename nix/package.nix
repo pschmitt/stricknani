@@ -5,6 +5,7 @@
   tesseract,
   python3,
   fastapi-csrf-protect,
+  tailwindcss_4,
 }:
 
 let
@@ -54,9 +55,20 @@ python.pkgs.buildPythonApplication {
     hatchling
   ] ++ [
     makeWrapper
+    tailwindcss_4
   ];
 
   propagatedBuildInputs = pythonDeps;
+
+  # Prebuild the static Tailwind CSS bundle (scans templates + static/js for
+  # utility classes) so the package ships without any runtime/browser
+  # Tailwind JIT. Mirrors `just build-css` / the Dockerfile build stage.
+  preBuild = ''
+    tailwindcss \
+      -i stricknani/static/css/tailwind.input.css \
+      -o stricknani/static/css/tailwind.css \
+      --minify
+  '';
 
   postFixup = ''
     wrapProgram "$out/bin/stricknani" \
