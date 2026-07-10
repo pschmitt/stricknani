@@ -1,5 +1,5 @@
 import socket
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 from typing import Any
 
 import pytest
@@ -42,6 +42,26 @@ def _hermetic_ssrf_dns(monkeypatch: pytest.MonkeyPatch) -> None:
         ]
 
     monkeypatch.setattr(socket, "getaddrinfo", _public_getaddrinfo)
+
+
+@pytest.fixture(autouse=True)
+def _testing_flag() -> Generator[None]:
+    """Force ``config.TESTING`` on for every test and restore it afterwards.
+
+    ``config.TESTING`` is evaluated at import time, before pytest sets
+    ``PYTEST_CURRENT_TEST``, so it defaults to ``False``. The suite relies on it
+    being ``True`` (it short-circuits the global CSRF dependency). Previously
+    only the ``test_client`` fixture set it, and it was never reset, so the
+    value leaked between tests: whether a CSRF-agnostic test saw ``True``
+    depended purely on ordering. Establishing it here makes the default
+    deterministic; tests that need real CSRF validation flip it off explicitly.
+    """
+    original = config.TESTING
+    config.TESTING = True
+    try:
+        yield
+    finally:
+        config.TESTING = original
 
 
 @pytest.fixture
