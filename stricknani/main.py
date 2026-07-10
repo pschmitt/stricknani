@@ -1,6 +1,7 @@
 """Main FastAPI application."""
 
 import logging
+import sys
 import time
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -9,15 +10,17 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 from fastapi_csrf_protect.flexible import CsrfProtect as FlexibleCsrfProtect
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from stricknani.config import config
 from stricknani.database import init_db
 from stricknani.logging_config import configure_logging
 from stricknani.utils.auth import ensure_initial_admin
 from stricknani.utils.markdown import render_markdown
+from stricknani.web.middleware import SecurityHeadersMiddleware
+from stricknani.web.staticfiles import ImmutableStaticFiles, MediaStaticFiles
 from stricknani.web.templating import render_template
 
 
@@ -25,6 +28,7 @@ from stricknani.web.templating import render_template
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Application lifespan manager."""
     # Startup
+    config.validate_secrets()
     await init_db()
     await ensure_initial_admin()
     yield
@@ -82,6 +86,18 @@ app = FastAPI(
     lifespan=lifespan,
     dependencies=[Depends(csrf_validation_dependency)],
 )
+
+# Baseline security response headers (T58).
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Reject requests with an unexpected Host header (T58). Guard against the
+# wildcard / empty configuration so a misconfigured ALLOWED_HOSTS does not turn
+# into a blanket 400 for every request. Skip under pytest, whose ASGI client
+# uses a synthetic Host that would otherwise be rejected.
+_allowed_hosts = [host.strip() for host in config.ALLOWED_HOSTS if host.strip()]
+_under_pytest = "pytest" in sys.modules
+if _allowed_hosts and "*" not in _allowed_hosts and not _under_pytest:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
 
 
 @app.exception_handler(CsrfProtectError)
@@ -163,10 +179,13 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
 
 static_path = Path(__file__).parent / "static"
 static_path.mkdir(exist_ok=True)
-app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+app.mount(
+    "/static", ImmutableStaticFiles(directory=str(static_path)), name="static"
+)
 
-# Mount media files
-app.mount("/media", StaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
+# Mount media files. MediaStaticFiles adds nosniff/Content-Disposition and
+# denies serving of internal import directories (T57/T59).
+app.mount("/media", MediaStaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
 
 
 @app.get("/manifest.webmanifest")
