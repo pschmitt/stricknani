@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-14 09:34+0100\n"
+"POT-Creation-Date: 2026-07-10 08:54+0200\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -18,10 +18,10 @@ msgstr ""
 "Generated-By: Babel 2.17.0\n"
 
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
-#: stricknani/templates/base.html:124 stricknani/templates/errors/401.html:3
+#: stricknani/templates/base.html:131 stricknani/templates/errors/401.html:3
 #: stricknani/templates/errors/403.html:3
 #: stricknani/templates/errors/404.html:3
-#: stricknani/templates/errors/500.html:3
+#: stricknani/templates/errors/500.html:3 stricknani/templates/offline.html:3
 #: stricknani/templates/shared/unified_navbar.html:14
 #: stricknani/templates/yarn/list.html:5
 msgid "Stricknani"
@@ -31,8 +31,8 @@ msgstr "Stricknani"
 #: stricknani/templates/admin/users.html:88
 #: stricknani/templates/admin/users.html:126
 #: stricknani/templates/admin/users.html:143 stricknani/templates/base.html:22
-#: stricknani/templates/base.html:143 stricknani/templates/base.html:221
-#: stricknani/templates/base.html:392
+#: stricknani/templates/base.html:150 stricknani/templates/base.html:228
+#: stricknani/templates/base.html:399
 #: stricknani/templates/projects/_delete_dialog.html:18
 #: stricknani/templates/projects/detail.html:1059
 #: stricknani/templates/projects/form.html:818
@@ -45,7 +45,7 @@ msgstr "Stricknani"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: stricknani/templates/base.html:23 stricknani/templates/base.html:225
+#: stricknani/templates/base.html:23 stricknani/templates/base.html:232
 msgid "Confirm"
 msgstr "Bestätigen"
 
@@ -230,98 +230,127 @@ msgstr "Archiv-Snapshot angefordert"
 msgid "Archive snapshot request unavailable"
 msgstr "Archiv-Snapshot kann nicht angefordert werden"
 
-#: stricknani/templates/base.html:124
+#: stricknani/templates/base.html:119
+msgid "You are offline. Some features may be unavailable."
+msgstr "Du bist offline. Einige Funktionen sind möglicherweise nicht verfügbar."
+
+#: stricknani/templates/base.html:131
 msgid "GPL-3.0-only"
 msgstr "GPL-3.0-only"
 
-#: stricknani/templates/base.html:137
+#: stricknani/templates/base.html:144
 msgid "Crop Profile Picture"
 msgstr "Profilbild zuschneiden"
 
-#: stricknani/templates/base.html:144
+#: stricknani/templates/base.html:151
 msgid "Save & Upload"
 msgstr "Speichern & Hochladen"
 
-#: stricknani/templates/base.html:166
+#: stricknani/templates/base.html:173
 msgid "Search projects, yarns..."
 msgstr "Projekte, Garne suchen..."
 
-#: stricknani/templates/base.html:180
+#: stricknani/templates/base.html:187
 msgid "Start typing to search..."
 msgstr "Tippen um zu suchen..."
 
-#: stricknani/templates/base.html:185
+#: stricknani/templates/base.html:192
 msgid "↑↓ to navigate"
 msgstr "↑↓ zum Navigieren"
 
-#: stricknani/templates/base.html:186
+#: stricknani/templates/base.html:193
 msgid "Enter to select"
 msgstr "Enter zum Auswählen"
 
-#: stricknani/templates/base.html:206
+#: stricknani/templates/base.html:213
 msgid "Confirm Action"
 msgstr "Aktion bestätigen"
 
-#: stricknani/templates/base.html:212
+#: stricknani/templates/base.html:219
 msgid "Are you sure you want to proceed?"
 msgstr "Bist du sicher, dass du fortfahren möchtest?"
 
-#: stricknani/templates/base.html:237 stricknani/templates/base.html:253
-#: stricknani/templates/base.html:263
+#: stricknani/templates/base.html:244 stricknani/templates/base.html:260
+#: stricknani/templates/base.html:270
 #: stricknani/templates/projects/form.html:46
 #: stricknani/templates/yarn/form.html:48
 msgid "Preview"
 msgstr "Vorschau"
 
-#: stricknani/templates/base.html:242 stricknani/templates/base.html:268
+#: stricknani/templates/base.html:249 stricknani/templates/base.html:275
 #: stricknani/templates/projects/detail.html:186
 #: stricknani/templates/projects/form.html:263
 msgid "Download"
 msgstr "Herunterladen"
 
-#: stricknani/templates/base.html:246 stricknani/templates/base.html:272
-#: stricknani/templates/base.html:306
+#: stricknani/templates/base.html:253 stricknani/templates/base.html:279
+#: stricknani/templates/base.html:313
 msgid "close"
 msgstr "schließen"
 
-#: stricknani/templates/base.html:293
+#: stricknani/templates/base.html:300
 msgid "OCR"
 msgstr "OCR"
 
-#: stricknani/templates/base.html:298
+#: stricknani/templates/base.html:305
 msgid "Copy text"
 msgstr "Text kopieren"
 
-#: stricknani/templates/base.html:302
+#: stricknani/templates/base.html:309
 #: stricknani/templates/projects/detail.html:340
 #: stricknani/templates/projects/detail.html:986
 #: stricknani/templates/yarn/detail.html:512
 msgid "Retry"
 msgstr "Wiederholen"
 
-#: stricknani/templates/base.html:345
+#: stricknani/templates/base.html:352
 msgid "Crop Image"
 msgstr "Bild zuschneiden"
 
-#: stricknani/templates/base.html:352
+#: stricknani/templates/base.html:359
 msgid "Reset crop"
 msgstr "Zuschneiden zurücksetzen"
 
-#: stricknani/templates/base.html:354
+#: stricknani/templates/base.html:361
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: stricknani/templates/base.html:357
+#: stricknani/templates/base.html:364
 msgid "Close"
 msgstr "Schließen"
 
-#: stricknani/templates/base.html:388
+#: stricknani/templates/base.html:395
 msgid "Drag to crop, scroll to zoom"
 msgstr "Zum Zuschneiden ziehen, zum Zoomen scrollen"
 
-#: stricknani/templates/base.html:394
+#: stricknani/templates/base.html:401
 msgid "Save Crop"
 msgstr "Ausschnitt speichern"
+
+#: stricknani/templates/offline.html:3
+msgid "You are offline"
+msgstr "Du bist offline"
+
+#: stricknani/templates/offline.html:6
+msgid "Offline"
+msgstr "Offline"
+
+#: stricknani/templates/offline.html:7
+msgid "No connection"
+msgstr "Keine Verbindung"
+
+#: stricknani/templates/offline.html:9
+msgid ""
+"You're offline and this page hasn't been viewed before, so it isn't "
+"available yet. Previously viewed projects and yarns still work offline."
+msgstr ""
+"Du bist offline und diese Seite wurde noch nicht aufgerufen, daher ist "
+"sie noch nicht verfügbar. Bereits angesehene Projekte und Garne "
+"funktionieren weiterhin offline."
+
+#: stricknani/templates/offline.html:14
+msgid "Try Again"
+msgstr "Erneut versuchen"
 
 #: stricknani/templates/admin/_user_card.html:9
 #: stricknani/templates/shared/unified_navbar.html:206
@@ -3348,3 +3377,4 @@ msgstr ""
 
 #~ msgid "Link yarn"
 #~ msgstr "Garn verknüpfen"
+

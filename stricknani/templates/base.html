@@ -112,6 +112,13 @@
 <body class="min-h-screen bg-base-300 flex flex-col">
     {% import "macros/dialogs.html" as dialogs %}
 
+    <div id="offlineBanner"
+        class="hidden sticky top-0 z-[2147483647] flex items-center justify-center gap-2 bg-warning px-4 py-2 text-center text-sm font-medium text-warning-content"
+        role="status" aria-live="polite">
+        <span class="mdi mdi-wifi-off text-base"></span>
+        <span>{{ _('You are offline. Some features may be unavailable.') }}</span>
+    </div>
+
     {% block navbar %}
     {# Default navbar - pages can override this block #}
     {% endblock %}

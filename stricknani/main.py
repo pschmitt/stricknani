@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 from fastapi_csrf_protect.flexible import CsrfProtect as FlexibleCsrfProtect
 
+from stricknani import __version__
 from stricknani.config import config
 from stricknani.database import init_db
 from stricknani.logging_config import configure_logging
@@ -168,6 +169,18 @@ app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 # Mount media files
 app.mount("/media", StaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
 
+access_logger = logging.getLogger("stricknani.access")
+
+# Changes on every process start, so it doubles as a cheap "did we just
+# deploy" signal for both the dev auto-reload banner and the service worker
+# cache version below.
+dev_reload_token = str(time.time_ns())
+
+# Cache names derived from this change on every deploy (process restart),
+# so the service worker's `activate` handler cleans up the previous
+# version's caches instead of serving stale HTML/CSS/JS indefinitely.
+SW_BUILD_ID = f"{__version__}-{dev_reload_token}"
+
 
 @app.get("/manifest.webmanifest")
 async def pwa_manifest() -> FileResponse:
@@ -178,15 +191,17 @@ async def pwa_manifest() -> FileResponse:
 
 
 @app.get("/sw.js")
-async def service_worker() -> FileResponse:
-    return FileResponse(
-        static_path / "sw.js",
+async def service_worker() -> Response:
+    """Serve the service worker with the current build's cache version baked in."""
+    content = (static_path / "js" / "sw.js").read_text(encoding="utf-8")
+    content = content.replace("__STRICKNANI_BUILD_VERSION__", SW_BUILD_ID)
+    return Response(
+        content=content,
         media_type="application/javascript",
+        # Service workers should always be revalidated so updates (and their
+        # new cache version) are picked up promptly after a deploy.
+        headers={"Cache-Control": "no-cache"},
     )
-
-
-access_logger = logging.getLogger("stricknani.access")
-dev_reload_token = str(time.time_ns())
 
 
 @app.middleware("http")
@@ -254,6 +269,19 @@ app.include_router(user.router)
 app.include_router(yarn.router)
 app.include_router(admin.router)
 app.include_router(utils.router)
+
+
+# Offline fallback page (precached by the service worker; see
+# stricknani/static/js/sw.js). Served when a navigation fails while offline
+# and no cached copy of the requested page exists.
+@app.get("/offline", response_class=HTMLResponse)
+async def offline_page(request: Request) -> HTMLResponse:
+    """Show the offline fallback page."""
+    return await render_template(
+        "offline.html",
+        request,
+        {"current_user": None},
+    )
 
 
 # Login page
