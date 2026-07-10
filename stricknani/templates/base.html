@@ -115,6 +115,13 @@
     <a href="#main-content"
         class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-base-100 focus:px-4 focus:py-2 focus:shadow-lg focus:ring focus:ring-primary">{{ _('Skip to main content') }}</a>
 
+    <div id="offlineBanner"
+        class="hidden sticky top-0 z-[2147483647] flex items-center justify-center gap-2 bg-warning px-4 py-2 text-center text-sm font-medium text-warning-content"
+        role="status" aria-live="polite">
+        <span class="mdi mdi-wifi-off text-base"></span>
+        <span>{{ _('You are offline. Some features may be unavailable.') }}</span>
+    </div>
+
     {% block navbar %}
     {# Default navbar - pages can override this block #}
     {% endblock %}

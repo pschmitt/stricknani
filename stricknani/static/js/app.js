@@ -301,6 +301,44 @@
 				console.debug("Install prompt failed:", err);
 			}
 		});
+
+		// Tell the service worker to drop its cache of authenticated pages on
+		// logout, so a later user on a shared device/browser profile can't see
+		// this session's cached content offline. Logout is a plain form POST
+		// (full navigation), so this just needs to fire before the browser
+		// follows through with it.
+		document.addEventListener("submit", (event) => {
+			const form = event.target;
+			if (
+				form instanceof HTMLFormElement &&
+				form.getAttribute("action") === "/auth/logout" &&
+				navigator.serviceWorker.controller
+			) {
+				navigator.serviceWorker.controller.postMessage({
+					type: "CLEAR_RUNTIME_CACHE",
+				});
+			}
+		});
+	};
+
+	// Offline/online status banner (`#offlineBanner` in base.html). Looks up
+	// the element lazily on each event so it works regardless of whether the
+	// body has finished parsing yet when this script runs.
+	const setupOfflineIndicator = () => {
+		const updateStatus = () => {
+			const banner = document.getElementById("offlineBanner");
+			if (!banner) {
+				return;
+			}
+			const isOnline = navigator.onLine;
+			banner.classList.toggle("hidden", isOnline);
+			banner.setAttribute("aria-hidden", String(isOnline));
+		};
+
+		window.addEventListener("online", updateStatus);
+		window.addEventListener("offline", updateStatus);
+		document.addEventListener("DOMContentLoaded", updateStatus);
+		updateStatus();
 	};
 
 	const resolveDialog = (dialogOrId) => {
@@ -1581,4 +1619,5 @@
 	};
 
 	setupPwaInstall();
+	setupOfflineIndicator();
 })();
