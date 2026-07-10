@@ -983,3 +983,10 @@ textarea::placeholder {
 [data-theme="dark"] .wysiwyg-toolbar {
 	background: color-mix(in srgb, currentColor 8%, transparent);
 }
+
+/* Checkerboard pattern used behind transparent images in the crop dialog
+ * (base.html). Extracted from an inline style="" attribute for CSP T71. */
+.checkerboard-bg {
+	background-image: radial-gradient(#000 1px, transparent 1px);
+	background-size: 20px 20px;
+}

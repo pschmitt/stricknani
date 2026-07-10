@@ -986,6 +986,23 @@
 			);
 		});
 
+		// Drag-and-drop image handlers (e.g. dragging a gallery image into a
+		// markdown textarea). `dragstart` needs the live event object (it reads
+		// `event.target`/`event.dataTransfer`), so callers pass `"$event"` via
+		// data-call-dragstart-args.
+		document.addEventListener("dragstart", (event) => {
+			const el = event.target.closest?.("[data-call-dragstart]");
+			if (!el) {
+				return;
+			}
+			invokeCall(
+				el,
+				event,
+				el.getAttribute("data-call-dragstart"),
+				el.getAttribute("data-call-dragstart-args"),
+			);
+		});
+
 		document.addEventListener("keydown", (event) => {
 			const row = document.activeElement?.closest?.(
 				'[data-action="open-attachment"]',
@@ -1617,6 +1634,29 @@
 			true,
 		);
 	};
+
+	// Broken-image fallback: swap a thumbnail for its sibling
+	// `[data-fallback-icon]` placeholder when it fails to load. `error`
+	// events don't bubble, so this must be a capturing listener on
+	// `document` rather than a normal delegated one.
+	document.addEventListener(
+		"error",
+		(event) => {
+			const img = event.target;
+			if (
+				!(img instanceof HTMLImageElement) ||
+				!img.hasAttribute("data-img-fallback")
+			) {
+				return;
+			}
+			const fallback = img.parentElement?.querySelector("[data-fallback-icon]");
+			if (fallback) {
+				img.replaceWith(fallback.cloneNode(true));
+				fallback.classList.remove("hidden");
+			}
+		},
+		true,
+	);
 
 	setupPwaInstall();
 	setupOfflineIndicator();
