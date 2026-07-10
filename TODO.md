@@ -53,7 +53,7 @@ Execution-oriented backlog for Stricknani.
 | T48 | P1 | done | demo | bug | Fix missing demo user profile picture (404 error)
 | T47 | P2 | done | ux | refactor | Reformatting the "technical specs" section for better print layout
 | T46 | P2 | done | cli | refactor | Improve stricknani-cli project export command arguments
-| T1 | P4 | wip (PID: orchestrator, AGENT: t1-static-css) | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
+| T1 | P4 | done | frontend/build | refactor | Replace runtime Tailwind with prebuilt static CSS bundle |
 | T32 | P3 | done | frontend | feat | Implement offline mode (PWA) |
 | T33 | P3 | done | frontend | feat | Add PWA installation capability |
 | T51 | P2 | done | ux | refactor | Add line breaks between consecutive images in wysiwyg editor preview |
@@ -75,6 +75,7 @@ Execution-oriented backlog for Stricknani.
 | T69 | P2 | done | security | feat | Add login/signup rate limiting, password policy, and revocable sessions |
 | T70 | P2 | done | security | feat | Per-object media authorization — serve /media through an ownership-checked route (deferred from T59) |
 | T71 | P2 | todo | security | refactor | Tighten CSP to a strict nonce-based policy after removing runtime Tailwind + inline JS (depends on T1/T36; deferred from T58) |
+| T72 | P1 | todo | build | bug | `nix flake check`/`nix build` fails: pyproject requires `curl-cffi>=0.15.0` but nixpkgs pins `python3.pkgs.curl-cffi` at 0.12.0 (pythonRuntimeDepsCheckHook rejects it); Docker/uv build is unaffected since it pulls curl-cffi from PyPI |
 
 
 ## Done

@@ -5,6 +5,7 @@
   tesseract,
   python3,
   fastapi-csrf-protect,
+  tailwindcss_4,
 }:
 
 let
@@ -56,14 +57,23 @@ python.pkgs.buildPythonApplication {
     babel
   ] ++ [
     makeWrapper
+    tailwindcss_4
   ];
 
   propagatedBuildInputs = pythonDeps;
 
-  # Compile gettext catalogs (.mo) at build time so they are shipped in the
-  # store output and never lazily compiled into the read-only store at
+  # Prebuild the static Tailwind CSS bundle (scans templates + static/js for
+  # utility classes) so the package ships without any runtime/browser
+  # Tailwind JIT. Mirrors `just build-css` / the Dockerfile build stage.
+  #
+  # Also compile gettext catalogs (.mo) at build time so they are shipped in
+  # the store output and never lazily compiled into the read-only store at
   # request time.
   preBuild = ''
+    tailwindcss \
+      -i stricknani/static/css/tailwind.input.css \
+      -o stricknani/static/css/tailwind.css \
+      --minify
     ${python.pkgs.babel}/bin/pybabel compile -d stricknani/locales
   '';
 

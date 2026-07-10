@@ -72,6 +72,7 @@
               tesseract
               vendir
               biome
+              tailwindcss_4
             ];
 
             shellHook = ''

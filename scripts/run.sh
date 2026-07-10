@@ -20,6 +20,35 @@ Options:
 EOF
 }
 
+CSS_WATCH_PID=""
+
+stop_css_watch() {
+  if [[ -n "$CSS_WATCH_PID" ]]
+  then
+    kill "$CSS_WATCH_PID" 2>/dev/null || true
+  fi
+}
+
+# Build the static Tailwind CSS bundle once up front, then keep it fresh in
+# the background as templates/JS change (there's no runtime/browser Tailwind
+# JIT anymore, see T1).
+watch_css() {
+  if ! command -v tailwindcss &>/dev/null
+  then
+    echo "WARNING: tailwindcss not found; static/css/tailwind.css will not be (re)built. Run 'just build-css' manually." >&2
+    return 0
+  fi
+
+  local input="${REPO_ROOT}/stricknani/static/css/tailwind.input.css"
+  local output="${REPO_ROOT}/stricknani/static/css/tailwind.css"
+
+  tailwindcss -i "$input" -o "$output" --minify
+
+  tailwindcss -i "$input" -o "$output" --minify --watch &
+  CSS_WATCH_PID=$!
+  trap stop_css_watch EXIT
+}
+
 wait_for_health() {
   local health_url="http://localhost:${PORT}/healthz"
   local timeout_seconds=20
@@ -88,6 +117,8 @@ run_dev_server() {
       exec nix develop -c "${SCRIPT_DIR}/$(basename "$0")" "${nix_args[@]}"
     fi
   fi
+
+  watch_css
 
   if [[ -z "$DONT_OPEN_BROWSER" ]]
   then
