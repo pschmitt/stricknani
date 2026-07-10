@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="{{ url_for('static', path='vendor/mdi/css/materialdesignicons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='vendor/photoswipe/photoswipe.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
-    <script>
+    <script nonce="{{ csp_nonce }}">
         window.STRICKNANI = window.STRICKNANI || {};
         window.STRICKNANI.i18n = {{
             {
@@ -79,7 +79,7 @@
     </script>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
     <script src="{{ url_for('static', path='vendor/cropperjs/cropper.min.js') }}"></script>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         // Theme initialization - MUST run before page renders
         (function () {
             let theme = localStorage.getItem('theme');
@@ -157,7 +157,7 @@
         {{ dialogs.modal_backdrop() }}
     </dialog>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         window.STRICKNANI = window.STRICKNANI || {};
         window.STRICKNANI.profileCropper = {
             currentUserId: {{ current_user.id }},
@@ -374,9 +374,7 @@
             <!-- Crop Area -->
             <div class="flex-1 min-h-0 bg-base-300 relative group overflow-hidden">
                 <!-- Checkerboard pattern for transparency -->
-                <div class="absolute inset-0 opacity-20 pointer-events-none"
-                    style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;">
-                </div>
+                <div class="absolute inset-0 opacity-20 pointer-events-none checkerboard-bg"></div>
 
                 <div class="w-full h-full p-4 sm:p-8" id="pswpCropContainer">
                     <img id="pswpCropImage" class="max-w-full block opacity-0 transition-opacity duration-300" src=""
@@ -425,14 +423,14 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         window.STRICKNANI = window.STRICKNANI || {};
         window.STRICKNANI.photoswipe = {
             ocrEndpoint: "/utils/ocr",
             pswpModuleUrl: "{{ url_for('static', path='vendor/photoswipe/photoswipe.esm.min.js') }}",
         };
     </script>
-    <script type="module">
+    <script type="module" nonce="{{ csp_nonce }}">
         import PhotoSwipeLightbox from "{{ url_for('static', path='vendor/photoswipe/photoswipe-lightbox.esm.min.js') }}";
         window.STRICKNANI.photoswipe.PhotoSwipeLightbox = PhotoSwipeLightbox;
         import("{{ url_for('static', path='js/features/photoswipe.js') }}");
@@ -441,7 +439,7 @@
     <script src="{{ url_for('static', path='js/features/swipe_nav.js') }}"></script>
     {% if sentry_frontend_enabled %}
     <script src="{{ url_for('static', path='vendor/sentry/bundle.tracing.min.js') }}"></script>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         Sentry.init({
             dsn: {{ sentry_frontend_dsn | tojson }},
             environment: {{ sentry_frontend_env | tojson }},

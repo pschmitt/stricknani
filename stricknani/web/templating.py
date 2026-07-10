@@ -118,6 +118,10 @@ async def render_template(
     )
     context.setdefault("auto_reload_enabled", config.AUTO_RELOAD)
     context.setdefault("feature_wayback_enabled", config.FEATURE_WAYBACK_ENABLED)
+    # Set by SecurityHeadersMiddleware (T71) before the route handler runs;
+    # inline <script> tags must echo this back via nonce="{{ csp_nonce }}"
+    # to satisfy the nonce-based script-src CSP directive.
+    context.setdefault("csp_nonce", getattr(request.state, "csp_nonce", ""))
 
     csrf = FlexibleCsrfProtect()
     csrf_token: str | None = None

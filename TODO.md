@@ -74,7 +74,7 @@ Execution-oriented backlog for Stricknani.
 | T68 | P2 | done | ci | feat | CI parity: add `nix develop -c just test` job, lint-template-js step, and coverage measurement |
 | T69 | P2 | done | security | feat | Add login/signup rate limiting, password policy, and revocable sessions |
 | T70 | P2 | done | security | feat | Per-object media authorization — serve /media through an ownership-checked route (deferred from T59) |
-| T71 | P2 | wip (PID: orchestrator, AGENT: t71-strict-csp) | security | refactor | Tighten CSP to a strict nonce-based policy after removing runtime Tailwind + inline JS (depends on T1/T36; deferred from T58) |
+| T71 | P2 | done | security | refactor | Tighten CSP to a strict nonce-based policy after removing runtime Tailwind + inline JS (depends on T1/T36; deferred from T58) |
 | T72 | P1 | todo | build | bug | `nix flake check`/`nix build` fails: pyproject requires `curl-cffi>=0.15.0` but nixpkgs pins `python3.pkgs.curl-cffi` at 0.12.0 (pythonRuntimeDepsCheckHook rejects it); Docker/uv build is unaffected since it pulls curl-cffi from PyPI |
 
 

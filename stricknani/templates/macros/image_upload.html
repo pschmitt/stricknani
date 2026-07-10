@@ -70,7 +70,8 @@ disabled_text=None
         data-pswp-caption="{{ image.alt_text or '' }}" {% if show_promote %}data-pswp-promote="true" {% endif %} {% if
         show_delete %}data-pswp-delete="true" {% endif %} {% if show_crop %}data-pswp-crop="true" {% endif %}
         data-pswp-is-primary="{{ 'true' if image.is_title_image else 'false' }}" class="block" {% if draggable
-        %}draggable="true" ondragstart="handleImageDragStart(event)" {% endif %}>
+        %}draggable="true" data-call-dragstart="handleImageDragStart" data-call-dragstart-args='["$event"]' {% endif
+        %}>
         <img src="{{ image.thumbnail_url or image.url }}" alt="{{ image.alt_text or _('Uploaded image') }}"
             class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
     </a>

@@ -91,7 +91,7 @@
 {% endblock %}
 
 {% block page_scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
     document.addEventListener('DOMContentLoaded', () => {
         {% if error %}
         window.showToast?.({{ error | tojson }}, 'error');

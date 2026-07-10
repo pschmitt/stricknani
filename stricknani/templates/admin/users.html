@@ -149,7 +149,7 @@ attrs='data-call="openCreateUserDialog"') }}
 </div>
 {% endcall %}
 
-<script>
+<script nonce="{{ csp_nonce }}">
 {% include "admin/users.js" %}
 </script>
 {% endblock %}
