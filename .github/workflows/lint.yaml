@@ -55,6 +55,33 @@ jobs:
       - name: Run MyPy
         run: just lint-mypy
 
+  template-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: just ci-setup-py
+
+      - name: Lint template JS syntax
+        run: just lint-template-js
+
+      - name: Check template JS formatting
+        run: just lint-template-js-format
+
   javascript:
     runs-on: ubuntu-latest
     steps:

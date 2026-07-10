@@ -1,6 +1,7 @@
 """Main FastAPI application."""
 
 import logging
+import sys
 import time
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -9,9 +10,9 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 from fastapi_csrf_protect.flexible import CsrfProtect as FlexibleCsrfProtect
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from stricknani import __version__
 from stricknani.config import config
@@ -19,6 +20,8 @@ from stricknani.database import init_db
 from stricknani.logging_config import configure_logging
 from stricknani.utils.auth import ensure_initial_admin
 from stricknani.utils.markdown import render_markdown
+from stricknani.web.middleware import SecurityHeadersMiddleware
+from stricknani.web.staticfiles import ImmutableStaticFiles
 from stricknani.web.templating import render_template
 
 
@@ -26,6 +29,7 @@ from stricknani.web.templating import render_template
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Application lifespan manager."""
     # Startup
+    config.validate_secrets()
     await init_db()
     await ensure_initial_admin()
     yield
@@ -83,6 +87,18 @@ app = FastAPI(
     lifespan=lifespan,
     dependencies=[Depends(csrf_validation_dependency)],
 )
+
+# Baseline security response headers (T58).
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Reject requests with an unexpected Host header (T58). Guard against the
+# wildcard / empty configuration so a misconfigured ALLOWED_HOSTS does not turn
+# into a blanket 400 for every request. Skip under pytest, whose ASGI client
+# uses a synthetic Host that would otherwise be rejected.
+_allowed_hosts = [host.strip() for host in config.ALLOWED_HOSTS if host.strip()]
+_under_pytest = "pytest" in sys.modules
+if _allowed_hosts and "*" not in _allowed_hosts and not _under_pytest:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
 
 
 @app.exception_handler(CsrfProtectError)
@@ -164,10 +180,12 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
 
 static_path = Path(__file__).parent / "static"
 static_path.mkdir(exist_ok=True)
-app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+app.mount("/static", ImmutableStaticFiles(directory=str(static_path)), name="static")
 
-# Mount media files
-app.mount("/media", StaticFiles(directory=str(config.MEDIA_ROOT)), name="media")
+# Media files are served through an ownership-checked route (T70), not a raw
+# static mount: stricknani.routes.media resolves the owning project/yarn/user
+# for each requested path and only streams the file once the current user is
+# confirmed to own it. See that module's docstring for details.
 
 access_logger = logging.getLogger("stricknani.access")
 
@@ -254,6 +272,7 @@ from stricknani.routes import (  # noqa: E402
     admin,
     auth,
     gauge,
+    media,
     projects,
     search,
     user,
@@ -269,6 +288,10 @@ app.include_router(user.router)
 app.include_router(yarn.router)
 app.include_router(admin.router)
 app.include_router(utils.router)
+# Registered last: media's catch-all "/media/{path:path}" deny route must not
+# shadow any more specific route declared above (none currently overlap, but
+# this keeps the ordering intentional).
+app.include_router(media.router)
 
 
 # Offline fallback page (precached by the service worker; see

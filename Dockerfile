@@ -18,6 +18,10 @@ COPY stricknani ./stricknani
 # Install dependencies
 RUN uv pip install --system -e .
 
+# Compile gettext catalogs (.mo) at build time so they ship in the image and
+# are never lazily compiled into a read-only rootfs at request time.
+RUN python -m babel.messages.frontend compile -d stricknani/locales
+
 # Create media directory
 RUN mkdir -p /app/media
 
