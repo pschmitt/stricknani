@@ -1,0 +1,11 @@
+{% extends "errors/base.html" %}
+
+{% block title %}429 - {{ _('Too Many Requests') }} - {{ _('Stricknani') }}{% endblock %}
+
+{% block error_icon %}mdi-timer-sand{% endblock %}
+{% block error_icon_color %}text-warning{% endblock %}
+{% block error_code %}429{% endblock %}
+{% block error_title %}{{ _('Slow down') }}{% endblock %}
+{% block error_message %}
+    {{ _("Too many attempts. Please wait a few minutes and try again.") }}
+{% endblock %}

@@ -156,6 +156,23 @@ async def forbidden_exception_handler(
     )
 
 
+@app.exception_handler(429)
+async def too_many_requests_exception_handler(
+    request: Request, exc: HTTPException
+) -> HTMLResponse:
+    """Handle 429 (rate limit) errors by rendering a custom template (T69)."""
+    response = await render_template(
+        "errors/429.html",
+        request,
+        context={"current_user": None},
+        status_code=429,
+    )
+    retry_after = getattr(exc, "headers", None) or {}
+    if "Retry-After" in retry_after:
+        response.headers["Retry-After"] = retry_after["Retry-After"]
+    return response
+
+
 @app.exception_handler(Exception)
 async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
     """Handle all other unhandled exceptions by rendering a 500 template."""
@@ -166,6 +183,8 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
             return await unauthorized_exception_handler(request, exc)
         if exc.status_code == 403:
             return await forbidden_exception_handler(request, exc)
+        if exc.status_code == 429:
+            return await too_many_requests_exception_handler(request, exc)
 
     # Log the exception for debugging
     access_logger.exception("Unhandled exception: %s", str(exc))
@@ -179,9 +198,7 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
 
 static_path = Path(__file__).parent / "static"
 static_path.mkdir(exist_ok=True)
-app.mount(
-    "/static", ImmutableStaticFiles(directory=str(static_path)), name="static"
-)
+app.mount("/static", ImmutableStaticFiles(directory=str(static_path)), name="static")
 
 # Mount media files. MediaStaticFiles adds nosniff/Content-Disposition and
 # denies serving of internal import directories (T57/T59).

@@ -111,6 +111,21 @@ class Config:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 1 week
     ALGORITHM: str = "HS256"
 
+    # Auth rate limiting (T69): per-IP and per-account attempt caps on
+    # login/signup, enforced by an in-memory sliding-window limiter.
+    RATE_LIMIT_LOGIN_MAX_ATTEMPTS: int = int(
+        os.getenv("RATE_LIMIT_LOGIN_MAX_ATTEMPTS", "5")
+    )
+    RATE_LIMIT_LOGIN_WINDOW_SECONDS: int = int(
+        os.getenv("RATE_LIMIT_LOGIN_WINDOW_SECONDS", "300")
+    )
+    RATE_LIMIT_SIGNUP_MAX_ATTEMPTS: int = int(
+        os.getenv("RATE_LIMIT_SIGNUP_MAX_ATTEMPTS", "5")
+    )
+    RATE_LIMIT_SIGNUP_WINDOW_SECONDS: int = int(
+        os.getenv("RATE_LIMIT_SIGNUP_WINDOW_SECONDS", "3600")
+    )
+
     # Initial admin bootstrap
     INITIAL_ADMIN_EMAIL: str | None = os.getenv(
         "INITIAL_ADMIN_EMAIL", os.getenv("INITIAL_ADMIN_USERNAME")

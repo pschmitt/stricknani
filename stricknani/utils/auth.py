@@ -11,6 +11,61 @@ from stricknani.config import config
 from stricknani.database import AsyncSessionLocal
 from stricknani.models import User
 
+# Minimum password policy (T69): enforced at signup and password-change
+# time. Kept intentionally simple (length + a small common-password
+# blocklist) rather than pulling in an external strength-scoring dependency.
+MIN_PASSWORD_LENGTH = 8
+
+_COMMON_WEAK_PASSWORDS = frozenset(
+    {
+        "password",
+        "password1",
+        "password123",
+        "12345678",
+        "123456789",
+        "1234567890",
+        "qwertyui",
+        "qwerty123",
+        "letmein1",
+        "iloveyou1",
+        "admin1234",
+        "welcome1",
+        "welcome123",
+        "abcd1234",
+        "11111111",
+        "00000000",
+        "changeme1",
+        "trustno1",
+        "sunshine1",
+        "monkey123",
+    }
+)
+
+
+class PasswordPolicyError(ValueError):
+    """Raised when a candidate password fails the minimum policy.
+
+    `reason` is a stable machine-readable code ("too_short" or "common") so
+    callers can render a localized, user-facing message.
+    """
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(reason)
+
+
+def validate_password_policy(password: str) -> None:
+    """Enforce the minimum password policy.
+
+    Raises:
+        PasswordPolicyError: if the password is too short or a common/trivially
+            guessable password.
+    """
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise PasswordPolicyError("too_short")
+    if password.strip().lower() in _COMMON_WEAK_PASSWORDS:
+        raise PasswordPolicyError("common")
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a hash."""
@@ -43,14 +98,32 @@ def create_access_token(
     return encoded_jwt
 
 
-def decode_access_token(token: str) -> str | None:
-    """Decode JWT access token and return user email."""
+def decode_access_token(token: str) -> tuple[str, int] | None:
+    """Decode a JWT access token and return `(email, token_version)`.
+
+    `token_version` (claim `"ver"`) supports revocable sessions (T69):
+    `get_current_user` compares it against the user's current
+    `token_version` and rejects the session on mismatch (e.g. after logout
+    or a password change), even though the JWT signature itself is still
+    valid. Tokens minted before this claim existed default to version 0,
+    matching newly created users' default `token_version`.
+    """
     try:
         payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
-        email: str | None = payload.get("sub")
-        return email
     except JWTError:
         return None
+
+    email = payload.get("sub")
+    if not email:
+        return None
+
+    raw_version = payload.get("ver", 0)
+    try:
+        version = int(raw_version)
+    except (TypeError, ValueError):
+        version = 0
+
+    return email, version
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> User | None:

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-07-10 06:44+0200\n"
+"POT-Creation-Date: 2026-07-10 08:58+0200\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -17,10 +17,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
+#: stricknani/routes/admin.py:60 stricknani/routes/auth.py:47
+msgid "Password must be at least 8 characters long."
+msgstr "Das Passwort muss mindestens 8 Zeichen lang sein."
+
+#: stricknani/routes/admin.py:63 stricknani/routes/auth.py:50
+msgid "This password is too common. Please choose a stronger one."
+msgstr "Dieses Passwort ist zu häufig verwendet. Bitte wähle ein sichereres Passwort."
+
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
 #: stricknani/templates/base.html:127 stricknani/templates/errors/401.html:3
 #: stricknani/templates/errors/403.html:3
 #: stricknani/templates/errors/404.html:3
+#: stricknani/templates/errors/429.html:3
 #: stricknani/templates/errors/500.html:3
 #: stricknani/templates/shared/unified_navbar.html:14
 #: stricknani/templates/yarn/list.html:5
@@ -619,6 +628,18 @@ msgstr ""
 "möglicherweise verschoben, gelöscht oder hat in unserer Anleitung "
 "vielleicht nie existiert."
 
+#: stricknani/templates/errors/429.html:3
+msgid "Too Many Requests"
+msgstr "Zu viele Anfragen"
+
+#: stricknani/templates/errors/429.html:8
+msgid "Slow down"
+msgstr "Nicht so schnell"
+
+#: stricknani/templates/errors/429.html:10
+msgid "Too many attempts. Please wait a few minutes and try again."
+msgstr "Zu viele Versuche. Bitte warte ein paar Minuten und versuche es erneut."
+
 #: stricknani/templates/errors/500.html:3
 msgid "Internal Server Error"
 msgstr "Interner Serverfehler"
@@ -794,74 +815,74 @@ msgstr "Wiederholen"
 msgid "Edit Markdown"
 msgstr "Markdown bearbeiten"
 
-#: stricknani/templates/projects/_cards.html:8
+#: stricknani/templates/projects/_cards_page.html:5
 #, python-format
 msgid "%(count)s linked yarn: %(names)s"
 msgstr "%(count)s verknüpftes Garn: %(names)s"
 
-#: stricknani/templates/projects/_cards.html:11
+#: stricknani/templates/projects/_cards_page.html:8
 #, python-format
 msgid "%(count)s linked yarns: %(names)s"
 msgstr "%(count)s verknüpfte Garne: %(names)s"
 
-#: stricknani/templates/projects/_cards.html:15
+#: stricknani/templates/projects/_cards_page.html:12
 msgid "No linked yarns"
 msgstr "Keine verknüpften Garne"
 
-#: stricknani/templates/projects/_cards.html:59
+#: stricknani/templates/projects/_cards_page.html:56
 msgid "Open project details"
 msgstr "Projektdetails öffnen"
 
-#: stricknani/templates/projects/_cards.html:62
+#: stricknani/templates/projects/_cards_page.html:59
 #, python-format
 msgid "Open project details for %(name)s"
 msgstr "Projektdetails für %(name)s öffnen"
 
-#: stricknani/templates/projects/_cards.html:68
-#: stricknani/templates/yarn/_list_partial.html:54
+#: stricknani/templates/projects/_cards_page.html:65
+#: stricknani/templates/yarn/_cards_page.html:50
 #, python-format
 msgid "Edit %(name)s"
 msgstr "%(name)s bearbeiten"
 
-#: stricknani/templates/projects/_cards.html:70
-#: stricknani/templates/projects/_cards.html:116
+#: stricknani/templates/projects/_cards_page.html:67
+#: stricknani/templates/projects/_cards_page.html:113
 #: stricknani/templates/projects/detail.html:17
 #: stricknani/templates/projects/form.html:7
-#: stricknani/templates/yarn/_list_partial.html:56
-#: stricknani/templates/yarn/_list_partial.html:132
+#: stricknani/templates/yarn/_cards_page.html:52
+#: stricknani/templates/yarn/_cards_page.html:128
 #: stricknani/templates/yarn/detail.html:17
 msgid "Edit"
 msgstr "Bearbeiten"
 
-#: stricknani/templates/projects/_cards.html:83
+#: stricknani/templates/projects/_cards_page.html:80
 #: stricknani/templates/shared/_favorite_toggle.html:39
 #: stricknani/templates/shared/_favorite_toggle.html:50
-#: stricknani/templates/yarn/_list_partial.html:68
+#: stricknani/templates/yarn/_cards_page.html:64
 msgid "In favorites"
 msgstr "In den Favoriten"
 
-#: stricknani/templates/projects/_cards.html:87
+#: stricknani/templates/projects/_cards_page.html:84
 #: stricknani/templates/projects/detail.html:292
 #: stricknani/templates/projects/detail.html:938
 #: stricknani/templates/projects/form.html:388
 #: stricknani/templates/projects/form.html:731
-#: stricknani/templates/yarn/_list_partial.html:72
+#: stricknani/templates/yarn/_cards_page.html:68
 #: stricknani/templates/yarn/detail.html:386
 #: stricknani/templates/yarn/form.html:211
 #: stricknani/templates/yarn/form.html:475
 msgid "AI Enhanced"
 msgstr "KI-optimiert"
 
-#: stricknani/templates/projects/_cards.html:122
+#: stricknani/templates/projects/_cards_page.html:119
 #: stricknani/templates/projects/detail.html:35
 msgid "Print"
 msgstr "Drucken"
 
-#: stricknani/templates/projects/_cards.html:128
+#: stricknani/templates/projects/_cards_page.html:125
 #: stricknani/templates/projects/detail.html:41
 #: stricknani/templates/projects/form.html:355
 #: stricknani/templates/projects/form.html:697
-#: stricknani/templates/yarn/_list_partial.html:138
+#: stricknani/templates/yarn/_cards_page.html:134
 #: stricknani/templates/yarn/detail.html:35
 #: stricknani/templates/yarn/form.html:179
 #: stricknani/templates/yarn/form.html:255
@@ -869,14 +890,19 @@ msgstr "Drucken"
 msgid "Re-import"
 msgstr "Erneut importieren"
 
-#: stricknani/templates/projects/_cards.html:134
+#: stricknani/templates/projects/_cards_page.html:131
 #: stricknani/templates/projects/detail.html:48
 #: stricknani/templates/projects/form.html:268
 #: stricknani/templates/projects/form.html:820
-#: stricknani/templates/yarn/_list_partial.html:144
+#: stricknani/templates/yarn/_cards_page.html:140
 #: stricknani/templates/yarn/detail.html:42
 msgid "Delete"
 msgstr "Löschen"
+
+#: stricknani/templates/projects/_cards_page.html:142
+#: stricknani/templates/yarn/_cards_page.html:151
+msgid "Loading…"
+msgstr "Lädt…"
 
 #: stricknani/templates/projects/_delete_dialog.html:7
 #: stricknani/templates/projects/_delete_dialog.html:20
@@ -1603,6 +1629,49 @@ msgstr "Design umschalten"
 msgid "Change language"
 msgstr "Sprache ändern"
 
+#: stricknani/templates/yarn/_cards_page.html:6
+#, python-format
+msgid "Brand: %(brand)s"
+msgstr "Marke: %(brand)s"
+
+#: stricknani/templates/yarn/_cards_page.html:9
+#, python-format
+msgid "Colorway: %(colorway)s"
+msgstr "Farbvariante: %(colorway)s"
+
+#: stricknani/templates/yarn/_cards_page.html:13
+#, python-format
+msgid "%(count)s linked project"
+msgstr "%(count)s verknüpftes Projekt"
+
+#: stricknani/templates/yarn/_cards_page.html:15
+#, python-format
+msgid "%(count)s linked projects"
+msgstr "%(count)s verknüpfte Projekte"
+
+#: stricknani/templates/yarn/_cards_page.html:18
+msgid "No linked projects"
+msgstr "Keine verknüpften Projekte"
+
+#: stricknani/templates/yarn/_cards_page.html:27
+#, python-format
+msgid "Photo for %(name)s"
+msgstr "Foto von %(name)s"
+
+#: stricknani/templates/yarn/_cards_page.html:35
+#: stricknani/templates/yarn/_cards_page.html:42
+msgid "Open yarn details"
+msgstr "Garndetails öffnen"
+
+#: stricknani/templates/yarn/_cards_page.html:44
+#, python-format
+msgid "Open yarn details for %(name)s"
+msgstr "Garndetails für %(name)s öffnen"
+
+#: stricknani/templates/yarn/_cards_page.html:117
+msgid "No description yet."
+msgstr "Noch keine Beschreibung."
+
 #: stricknani/templates/yarn/_delete_dialog.html:7
 #: stricknani/templates/yarn/_delete_dialog.html:20
 #: stricknani/templates/yarn/detail.html:600
@@ -1652,49 +1721,6 @@ msgstr ""
 #: stricknani/templates/yarn/_import_dialog.html:13
 msgid "AI-powered extraction enabled"
 msgstr "KI-gestützte Extraktion aktiviert"
-
-#: stricknani/templates/yarn/_list_partial.html:10
-#, python-format
-msgid "Brand: %(brand)s"
-msgstr "Marke: %(brand)s"
-
-#: stricknani/templates/yarn/_list_partial.html:13
-#, python-format
-msgid "Colorway: %(colorway)s"
-msgstr "Farbvariante: %(colorway)s"
-
-#: stricknani/templates/yarn/_list_partial.html:17
-#, python-format
-msgid "%(count)s linked project"
-msgstr "%(count)s verknüpftes Projekt"
-
-#: stricknani/templates/yarn/_list_partial.html:19
-#, python-format
-msgid "%(count)s linked projects"
-msgstr "%(count)s verknüpfte Projekte"
-
-#: stricknani/templates/yarn/_list_partial.html:22
-msgid "No linked projects"
-msgstr "Keine verknüpften Projekte"
-
-#: stricknani/templates/yarn/_list_partial.html:31
-#, python-format
-msgid "Photo for %(name)s"
-msgstr "Foto von %(name)s"
-
-#: stricknani/templates/yarn/_list_partial.html:39
-#: stricknani/templates/yarn/_list_partial.html:46
-msgid "Open yarn details"
-msgstr "Garndetails öffnen"
-
-#: stricknani/templates/yarn/_list_partial.html:48
-#, python-format
-msgid "Open yarn details for %(name)s"
-msgstr "Garndetails für %(name)s öffnen"
-
-#: stricknani/templates/yarn/_list_partial.html:121
-msgid "No description yet."
-msgstr "Noch keine Beschreibung."
 
 #: stricknani/templates/yarn/detail.html:6
 #: stricknani/templates/yarn/form.html:7 stricknani/templates/yarn/list.html:5
