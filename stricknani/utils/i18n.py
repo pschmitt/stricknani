@@ -1,7 +1,9 @@
 """Internationalization utilities."""
 
+import os
+import tempfile
 from collections.abc import Callable
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from contextvars import ContextVar, Token
 from pathlib import Path
 from typing import Any
@@ -19,6 +21,30 @@ _CURRENT_LANGUAGE: ContextVar[str] = ContextVar(
     "stricknani_current_language",
     default=config.DEFAULT_LANGUAGE,
 )
+
+
+def _compile_catalog(po_path: Path, mo_path: Path) -> None:
+    """Compile a ``.po`` catalog to ``.mo`` atomically.
+
+    The catalog is written to a temporary file in the target directory and
+    then atomically moved into place with :func:`os.replace`, avoiding
+    partially written ``.mo`` files under concurrent access.
+
+    Raises:
+        OSError: If the target directory is not writable.
+    """
+    mo_path.parent.mkdir(parents=True, exist_ok=True)
+    with po_path.open("r", encoding="utf-8") as po_file:
+        catalog = read_po(po_file)
+    fd, tmp_name = tempfile.mkstemp(dir=str(mo_path.parent), suffix=".mo.tmp")
+    try:
+        with os.fdopen(fd, "wb") as mo_file:
+            write_mo(mo_file, catalog)
+        os.replace(tmp_name, mo_path)
+    except BaseException:
+        with suppress(OSError):
+            os.unlink(tmp_name)
+        raise
 
 
 def get_translations(language: str) -> Translations | NullTranslations:
@@ -48,19 +74,15 @@ def get_translations(language: str) -> Translations | NullTranslations:
             should_compile = po_path.stat().st_mtime > mo_path.stat().st_mtime
 
         if should_compile:
+            # Lazy fallback compile: prefer the package locales dir, but fall
+            # back to the writable media cache when the package dir is
+            # read-only. Both writes are atomic; if neither is writable we do
+            # not crash and simply serve untranslated strings.
             try:
-                target_path = mo_path
-                translations_path.mkdir(parents=True, exist_ok=True)
-                with po_path.open("r", encoding="utf-8") as po_file:
-                    catalog = read_po(po_file)
-                with target_path.open("wb") as mo_file:
-                    write_mo(mo_file, catalog)
+                _compile_catalog(po_path, mo_path)
             except OSError:
-                cache_path.parent.mkdir(parents=True, exist_ok=True)
-                with po_path.open("r", encoding="utf-8") as po_file:
-                    catalog = read_po(po_file)
-                with cache_path.open("wb") as mo_file:
-                    write_mo(mo_file, catalog)
+                with suppress(OSError):
+                    _compile_catalog(po_path, cache_path)
 
     if cache_path.exists():
         return Translations.load(
