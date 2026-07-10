@@ -112,11 +112,14 @@
 <body class="min-h-screen bg-base-300 flex flex-col">
     {% import "macros/dialogs.html" as dialogs %}
 
+    <a href="#main-content"
+        class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-base-100 focus:px-4 focus:py-2 focus:shadow-lg focus:ring focus:ring-primary">{{ _('Skip to main content') }}</a>
+
     {% block navbar %}
     {# Default navbar - pages can override this block #}
     {% endblock %}
 
-    <main class="flex-grow w-full" {% block main_attrs %}{% endblock %}>
+    <main id="main-content" class="flex-grow w-full" {% block main_attrs %}{% endblock %}>
         {% block content %}{% endblock %}
     </main>
 
