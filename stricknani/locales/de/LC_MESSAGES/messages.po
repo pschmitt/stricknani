@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-02-14 09:34+0100\n"
+"POT-Creation-Date: 2026-07-10 06:44+0200\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Generated-By: Babel 2.17.0\n"
 
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
-#: stricknani/templates/base.html:124 stricknani/templates/errors/401.html:3
+#: stricknani/templates/base.html:127 stricknani/templates/errors/401.html:3
 #: stricknani/templates/errors/403.html:3
 #: stricknani/templates/errors/404.html:3
 #: stricknani/templates/errors/500.html:3
@@ -31,8 +31,8 @@ msgstr "Stricknani"
 #: stricknani/templates/admin/users.html:88
 #: stricknani/templates/admin/users.html:126
 #: stricknani/templates/admin/users.html:143 stricknani/templates/base.html:22
-#: stricknani/templates/base.html:143 stricknani/templates/base.html:221
-#: stricknani/templates/base.html:392
+#: stricknani/templates/base.html:146 stricknani/templates/base.html:224
+#: stricknani/templates/base.html:395
 #: stricknani/templates/projects/_delete_dialog.html:18
 #: stricknani/templates/projects/detail.html:1059
 #: stricknani/templates/projects/form.html:818
@@ -45,7 +45,7 @@ msgstr "Stricknani"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: stricknani/templates/base.html:23 stricknani/templates/base.html:225
+#: stricknani/templates/base.html:23 stricknani/templates/base.html:228
 msgid "Confirm"
 msgstr "Bestätigen"
 
@@ -86,6 +86,7 @@ msgid "Only image files are supported"
 msgstr "Nur Bilddateien werden unterstützt"
 
 #: stricknani/templates/base.html:33
+#: stricknani/templates/macros/image_upload.html:86
 msgid "Delete image"
 msgstr "Bild löschen"
 
@@ -230,96 +231,100 @@ msgstr "Archiv-Snapshot angefordert"
 msgid "Archive snapshot request unavailable"
 msgstr "Archiv-Snapshot kann nicht angefordert werden"
 
-#: stricknani/templates/base.html:124
+#: stricknani/templates/base.html:116
+msgid "Skip to main content"
+msgstr "Zum Hauptinhalt springen"
+
+#: stricknani/templates/base.html:127
 msgid "GPL-3.0-only"
 msgstr "GPL-3.0-only"
 
-#: stricknani/templates/base.html:137
+#: stricknani/templates/base.html:140
 msgid "Crop Profile Picture"
 msgstr "Profilbild zuschneiden"
 
-#: stricknani/templates/base.html:144
+#: stricknani/templates/base.html:147
 msgid "Save & Upload"
 msgstr "Speichern & Hochladen"
 
-#: stricknani/templates/base.html:166
+#: stricknani/templates/base.html:169
 msgid "Search projects, yarns..."
 msgstr "Projekte, Garne suchen..."
 
-#: stricknani/templates/base.html:180
+#: stricknani/templates/base.html:183
 msgid "Start typing to search..."
 msgstr "Tippen um zu suchen..."
 
-#: stricknani/templates/base.html:185
+#: stricknani/templates/base.html:188
 msgid "↑↓ to navigate"
 msgstr "↑↓ zum Navigieren"
 
-#: stricknani/templates/base.html:186
+#: stricknani/templates/base.html:189
 msgid "Enter to select"
 msgstr "Enter zum Auswählen"
 
-#: stricknani/templates/base.html:206
+#: stricknani/templates/base.html:209
 msgid "Confirm Action"
 msgstr "Aktion bestätigen"
 
-#: stricknani/templates/base.html:212
+#: stricknani/templates/base.html:215
 msgid "Are you sure you want to proceed?"
 msgstr "Bist du sicher, dass du fortfahren möchtest?"
 
-#: stricknani/templates/base.html:237 stricknani/templates/base.html:253
-#: stricknani/templates/base.html:263
+#: stricknani/templates/base.html:240 stricknani/templates/base.html:256
+#: stricknani/templates/base.html:266
 #: stricknani/templates/projects/form.html:46
 #: stricknani/templates/yarn/form.html:48
 msgid "Preview"
 msgstr "Vorschau"
 
-#: stricknani/templates/base.html:242 stricknani/templates/base.html:268
+#: stricknani/templates/base.html:245 stricknani/templates/base.html:271
 #: stricknani/templates/projects/detail.html:186
 #: stricknani/templates/projects/form.html:263
 msgid "Download"
 msgstr "Herunterladen"
 
-#: stricknani/templates/base.html:246 stricknani/templates/base.html:272
-#: stricknani/templates/base.html:306
+#: stricknani/templates/base.html:249 stricknani/templates/base.html:275
+#: stricknani/templates/base.html:309
 msgid "close"
 msgstr "schließen"
 
-#: stricknani/templates/base.html:293
+#: stricknani/templates/base.html:296
 msgid "OCR"
 msgstr "OCR"
 
-#: stricknani/templates/base.html:298
+#: stricknani/templates/base.html:301
 msgid "Copy text"
 msgstr "Text kopieren"
 
-#: stricknani/templates/base.html:302
+#: stricknani/templates/base.html:305
 #: stricknani/templates/projects/detail.html:340
 #: stricknani/templates/projects/detail.html:986
 #: stricknani/templates/yarn/detail.html:512
 msgid "Retry"
 msgstr "Wiederholen"
 
-#: stricknani/templates/base.html:345
+#: stricknani/templates/base.html:348
 msgid "Crop Image"
 msgstr "Bild zuschneiden"
 
-#: stricknani/templates/base.html:352
+#: stricknani/templates/base.html:355
 msgid "Reset crop"
 msgstr "Zuschneiden zurücksetzen"
 
-#: stricknani/templates/base.html:354
+#: stricknani/templates/base.html:357
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: stricknani/templates/base.html:357
+#: stricknani/templates/base.html:360
 msgid "Close"
 msgstr "Schließen"
 
-#: stricknani/templates/base.html:388
+#: stricknani/templates/base.html:391
 msgid "Drag to crop, scroll to zoom"
 msgstr "Zum Zuschneiden ziehen, zum Zoomen scrollen"
 
-#: stricknani/templates/base.html:394
+#: stricknani/templates/base.html:397
 msgid "Save Crop"
 msgstr "Ausschnitt speichern"
 
@@ -732,6 +737,10 @@ msgstr "Bilder hierher ziehen oder zum Hochladen klicken"
 #: stricknani/templates/macros/image_upload.html:59
 msgid "Save the project before adding images to this step"
 msgstr "Speichere das Projekt, bevor du diesem Schritt Bilder hinzufügst"
+
+#: stricknani/templates/macros/image_upload.html:74
+msgid "Uploaded image"
+msgstr "Hochgeladenes Bild"
 
 #: stricknani/templates/macros/image_upload.html:80
 msgid "Make title image"
@@ -1544,6 +1553,10 @@ msgstr "Zum Importieren loslassen"
 msgid "Release to start AI analysis"
 msgstr "Loslassen, um KI-Analyse zu starten"
 
+#: stricknani/templates/shared/unified_navbar.html:16
+msgid "Main navigation"
+msgstr "Hauptnavigation"
+
 #: stricknani/templates/shared/unified_navbar.html:68
 #: stricknani/templates/shared/unified_navbar.html:136
 #: stricknani/templates/yarn/list.html:9 stricknani/templates/yarn/list.html:36
@@ -1585,6 +1598,10 @@ msgstr "Abmelden"
 #: stricknani/templates/shared/unified_navbar.html:286
 msgid "Toggle theme"
 msgstr "Design umschalten"
+
+#: stricknani/templates/shared/unified_navbar.html:297
+msgid "Change language"
+msgstr "Sprache ändern"
 
 #: stricknani/templates/yarn/_delete_dialog.html:7
 #: stricknani/templates/yarn/_delete_dialog.html:20
@@ -3348,3 +3365,4 @@ msgstr ""
 
 #~ msgid "Link yarn"
 #~ msgstr "Garn verknüpfen"
+
