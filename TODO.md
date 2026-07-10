@@ -72,7 +72,7 @@ Execution-oriented backlog for Stricknani.
 | T66 | P2 | done | test | refactor | Add pytest-socket --disable-socket to lock in offline tests |
 | T67 | P2 | done | build | refactor | Compile .mo catalogs at build time (Dockerfile + nix) instead of lazy runtime write |
 | T68 | P2 | done | ci | feat | CI parity: add `nix develop -c just test` job, lint-template-js step, and coverage measurement |
-| T69 | P2 | wip (PID: orchestrator, AGENT: t69-auth-hardening) | security | feat | Add login/signup rate limiting, password policy, and revocable sessions |
+| T69 | P2 | done | security | feat | Add login/signup rate limiting, password policy, and revocable sessions |
 | T70 | P2 | done | security | feat | Per-object media authorization — serve /media through an ownership-checked route (deferred from T59) |
 | T71 | P2 | todo | security | refactor | Tighten CSP to a strict nonce-based policy after removing runtime Tailwind + inline JS (depends on T1/T36; deferred from T58) |
 

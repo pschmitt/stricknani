@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-10 09:05+0200\n"
+"POT-Creation-Date: 2026-07-10 09:13+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,10 +17,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
+#: stricknani/routes/admin.py:60 stricknani/routes/auth.py:46
+msgid "Password must be at least 8 characters long."
+msgstr ""
+
+#: stricknani/routes/admin.py:63 stricknani/routes/auth.py:48
+msgid "This password is too common. Please choose a stronger one."
+msgstr ""
+
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
 #: stricknani/templates/base.html:134 stricknani/templates/errors/401.html:3
 #: stricknani/templates/errors/403.html:3
 #: stricknani/templates/errors/404.html:3
+#: stricknani/templates/errors/429.html:3
 #: stricknani/templates/errors/500.html:3 stricknani/templates/offline.html:3
 #: stricknani/templates/shared/unified_navbar.html:14
 #: stricknani/templates/yarn/list.html:5
@@ -635,6 +644,18 @@ msgstr ""
 msgid ""
 "We couldn't find the page you're looking for. It might have been moved, "
 "deleted, or perhaps it never existed in our pattern."
+msgstr ""
+
+#: stricknani/templates/errors/429.html:3
+msgid "Too Many Requests"
+msgstr ""
+
+#: stricknani/templates/errors/429.html:8
+msgid "Slow down"
+msgstr ""
+
+#: stricknani/templates/errors/429.html:10
+msgid "Too many attempts. Please wait a few minutes and try again."
 msgstr ""
 
 #: stricknani/templates/errors/500.html:3

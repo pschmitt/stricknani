@@ -12,6 +12,7 @@ from stricknani.main import app
 from stricknani.models import Base, Project, ProjectCategory, Step, User
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.utils.auth import get_password_hash
+from stricknani.utils.rate_limit import reset_rate_limits
 
 
 @pytest.fixture
@@ -62,6 +63,17 @@ def _testing_flag() -> Generator[None]:
         yield
     finally:
         config.TESTING = original
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits() -> Generator[None]:
+    """Clear auth rate-limit state (T69) so tests don't leak attempts across
+    each other via the shared client IP used by the test transport."""
+    reset_rate_limits()
+    try:
+        yield
+    finally:
+        reset_rate_limits()
 
 
 @pytest.fixture

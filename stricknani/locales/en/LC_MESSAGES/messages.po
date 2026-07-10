@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-07-10 09:05+0200\n"
+"POT-Creation-Date: 2026-07-10 09:13+0200\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -17,10 +17,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
+#: stricknani/routes/admin.py:60 stricknani/routes/auth.py:46
+msgid "Password must be at least 8 characters long."
+msgstr "Password must be at least 8 characters long."
+
+#: stricknani/routes/admin.py:63 stricknani/routes/auth.py:48
+msgid "This password is too common. Please choose a stronger one."
+msgstr "This password is too common. Please choose a stronger one."
+
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
 #: stricknani/templates/base.html:134 stricknani/templates/errors/401.html:3
 #: stricknani/templates/errors/403.html:3
 #: stricknani/templates/errors/404.html:3
+#: stricknani/templates/errors/429.html:3
 #: stricknani/templates/errors/500.html:3 stricknani/templates/offline.html:3
 #: stricknani/templates/shared/unified_navbar.html:14
 #: stricknani/templates/yarn/list.html:5
@@ -655,6 +664,18 @@ msgid ""
 msgstr ""
 "We couldn't find the page you're looking for. It might have been moved, "
 "deleted, or perhaps it never existed in our pattern."
+
+#: stricknani/templates/errors/429.html:3
+msgid "Too Many Requests"
+msgstr "Too Many Requests"
+
+#: stricknani/templates/errors/429.html:8
+msgid "Slow down"
+msgstr "Slow down"
+
+#: stricknani/templates/errors/429.html:10
+msgid "Too many attempts. Please wait a few minutes and try again."
+msgstr "Too many attempts. Please wait a few minutes and try again."
 
 #: stricknani/templates/errors/500.html:3
 msgid "Internal Server Error"
