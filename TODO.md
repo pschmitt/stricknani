@@ -57,22 +57,24 @@ Execution-oriented backlog for Stricknani.
 | T32 | P3 | todo | frontend | feat | Implement offline mode (PWA) |
 | T33 | P3 | done | frontend | feat | Add PWA installation capability |
 | T51 | P2 | done | ux | refactor | Add line breaks between consecutive images in wysiwyg editor preview |
-| T53 | P0 | todo | security | bug | Fail-fast on default/unset SECRET_KEY (and CSRF_SECRET_KEY) in production |
-| T55 | P0 | todo | security | bug | Enforce upload size cap and set Image.MAX_IMAGE_PIXELS (memory-DoS / decompression bomb) |
-| T56 | P1 | todo | data-model | refactor | Add DB indexes on FK columns (Image.project_id/step_id, Step.project_id, Attachment.project_id, Category.user_id) |
-| T57 | P1 | todo | perf | refactor | Add Cache-Control immutable headers to /static and /media |
-| T58 | P1 | todo | security | feat | Add security-headers middleware (CSP baseline, nosniff, X-Frame-Options, Referrer-Policy, HSTS) and TrustedHostMiddleware |
-| T59 | P1 | todo | security | refactor | Serve /media with ownership auth (or block traces/imports) + nosniff + extension allowlist |
-| T60 | P1 | todo | test | bug | Reset config.TESTING in conftest teardown; add real CSRF enforcement test |
-| T61 | P1 | todo | api | bug | Add server-side gauge validation (gt=0, safe int parse) to prevent crafted-input 500s |
-| T62 | P1 | todo | a11y | bug | Enforce/render alt text on uploaded images (template + JS previews) |
-| T63 | P1 | todo | a11y | refactor | Add aria-labels to icon-only buttons and a skip-link/#main-content landmark |
-| T64 | P2 | todo | perf | feat | Paginate project & yarn lists; push favorite/name ordering into SQL |
-| T65 | P2 | todo | perf | refactor | Persist image width/height columns; stop PIL-opening every image on detail render |
-| T66 | P2 | todo | test | refactor | Add pytest-socket --disable-socket to lock in offline tests |
-| T67 | P2 | todo | build | refactor | Compile .mo catalogs at build time (Dockerfile + nix) instead of lazy runtime write |
-| T68 | P2 | todo | ci | feat | CI parity: add `nix develop -c just test` job, lint-template-js step, and coverage measurement |
-| T69 | P2 | todo | security | feat | Add login/signup rate limiting, password policy, and revocable sessions |
+| T53 | P0 | done | security | bug | Fail-fast on default/unset SECRET_KEY (and CSRF_SECRET_KEY) in production |
+| T55 | P0 | done | security | bug | Enforce upload size cap and set Image.MAX_IMAGE_PIXELS (memory-DoS / decompression bomb) |
+| T56 | P1 | done | data-model | refactor | Add DB indexes on FK columns (Image.project_id/step_id, Step.project_id, Attachment.project_id, Category.user_id) |
+| T57 | P1 | done | perf | refactor | Add Cache-Control immutable headers to /static and /media |
+| T58 | P1 | done | security | feat | Add security-headers middleware (baseline CSP, nosniff, X-Frame-Options, Referrer-Policy, HSTS) and TrustedHostMiddleware (strict CSP → T71) |
+| T59 | P1 | done | security | refactor | Media serving hardening: nosniff + Content-Disposition + block traces/imports + upload extension allowlist (per-object authz → T70) |
+| T60 | P1 | done | test | bug | Reset config.TESTING in conftest teardown; add real CSRF enforcement test |
+| T61 | P1 | done | api | bug | Add server-side gauge validation (gt=0, safe int parse) to prevent crafted-input 500s |
+| T62 | P1 | done | a11y | bug | Enforce/render alt text on uploaded images (template + JS previews) |
+| T63 | P1 | done | a11y | refactor | Add aria-labels to icon-only buttons and a skip-link/#main-content landmark |
+| T64 | P2 | done | perf | feat | Paginate project & yarn lists; push favorite/name ordering into SQL |
+| T65 | P2 | done | perf | refactor | Persist image width/height columns; stop PIL-opening every image on detail render |
+| T66 | P2 | done | test | refactor | Add pytest-socket --disable-socket to lock in offline tests |
+| T67 | P2 | done | build | refactor | Compile .mo catalogs at build time (Dockerfile + nix) instead of lazy runtime write |
+| T68 | P2 | done | ci | feat | CI parity: add `nix develop -c just test` job, lint-template-js step, and coverage measurement |
+| T69 | P2 | wip (PID: 1924748, AGENT: claude-code) | security | feat | Add login/signup rate limiting, password policy, and revocable sessions |
+| T70 | P2 | todo | security | feat | Per-object media authorization — serve /media through an ownership-checked route (deferred from T59) |
+| T71 | P2 | todo | security | refactor | Tighten CSP to a strict nonce-based policy after removing runtime Tailwind + inline JS (depends on T1/T36; deferred from T58) |
 
 
 ## Done
