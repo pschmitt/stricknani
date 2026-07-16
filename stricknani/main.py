@@ -21,7 +21,7 @@ from stricknani.logging_config import configure_logging
 from stricknani.utils.auth import ensure_initial_admin
 from stricknani.utils.markdown import render_markdown
 from stricknani.web.middleware import SecurityHeadersMiddleware
-from stricknani.web.staticfiles import ImmutableStaticFiles
+from stricknani.web.staticfiles import CachedStaticFiles
 from stricknani.web.templating import render_template
 
 
@@ -199,7 +199,7 @@ async def catch_all_exception_handler(request: Request, exc: Exception) -> HTMLR
 
 static_path = Path(__file__).parent / "static"
 static_path.mkdir(exist_ok=True)
-app.mount("/static", ImmutableStaticFiles(directory=str(static_path)), name="static")
+app.mount("/static", CachedStaticFiles(directory=str(static_path)), name="static")
 
 # Media files are served through an ownership-checked route (T70), not a raw
 # static mount: stricknani.routes.media resolves the owning project/yarn/user

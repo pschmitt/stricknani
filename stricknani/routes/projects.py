@@ -308,7 +308,7 @@ async def list_projects(
         if tag:
             params["tag"] = tag
         params["page"] = str(page + 1)
-        next_page_url = f"/projects?{urlencode(params)}"
+        next_page_url = f"/projects/?{urlencode(params)}"
 
     def _serialize_project(project: Project) -> dict[str, object]:
         # Get all title images (or first image if no title image set)

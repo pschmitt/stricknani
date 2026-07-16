@@ -11,19 +11,24 @@ from fastapi.staticfiles import StaticFiles
 from starlette.responses import Response
 from starlette.types import Scope
 
-# One year, marked immutable. Safe because bundled vendor assets are
-# content-addressed (hashed filenames), so a given URL always maps to the
-# same bytes.
-_IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable"
+# Unlike /media (see stricknani.routes.media), files under /static are NOT
+# content-addressed -- app.js, app.css, the built Tailwind bundle, and the
+# vendored libraries all keep stable filenames across deploys/version bumps.
+# A long `immutable` Cache-Control would make browsers keep serving pre-deploy
+# bytes for up to a year. Cache for a short window and require revalidation
+# after that instead; Starlette's StaticFiles already sets ETag/Last-Modified,
+# so an unchanged file only costs a cheap conditional GET (304), not a full
+# re-download.
+_CACHE_CONTROL = "public, max-age=300, must-revalidate"
 
 
-class ImmutableStaticFiles(StaticFiles):
-    """Serve static files with a long-lived, immutable ``Cache-Control``."""
+class CachedStaticFiles(StaticFiles):
+    """Serve static files with short-lived, revalidated ``Cache-Control``."""
 
     async def get_response(self, path: str, scope: Scope) -> Response:
         response = await super().get_response(path, scope)
-        # Only apply aggressive caching to real file responses (2xx). Error
-        # responses (e.g. 404) should not be cached for a year.
+        # Only apply caching to real file responses (2xx). Error responses
+        # (e.g. 404) should not be cached.
         if 200 <= response.status_code < 300:
-            response.headers["Cache-Control"] = _IMMUTABLE_CACHE_CONTROL
+            response.headers["Cache-Control"] = _CACHE_CONTROL
         return response

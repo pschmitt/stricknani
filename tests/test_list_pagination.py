@@ -101,6 +101,10 @@ async def test_project_list_htmx_infinite_scroll_fragment(
     assert partial.status_code == 200
     assert "data-infinite-scroll" in partial.text
     assert "page=2" in partial.text
+    # The sentinel's hx-get must include the router's trailing slash
+    # (/projects/, not /projects) or every infinite-scroll fetch takes an
+    # avoidable redirect.
+    assert 'hx-get="/projects/?' in partial.text
     # It is a fragment: no full HTML document chrome.
     assert "<html" not in partial.text.lower()
 
@@ -161,3 +165,35 @@ async def test_yarn_list_pagination_and_ordering(
     assert len(page2_ids) == total - LIST_PAGE_SIZE
     assert page2_ids == expected[LIST_PAGE_SIZE:]
     assert page1_ids + page2_ids == expected
+
+
+@pytest.mark.asyncio
+async def test_yarn_list_htmx_infinite_scroll_fragment(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, user_id, _project_id, _step_id = test_client
+
+    total_extra = LIST_PAGE_SIZE + 6
+    async with session_factory() as session:
+        for i in range(total_extra):
+            session.add(Yarn(name=f"Scroll-{i:02d}", owner_id=user_id))
+        await session.commit()
+
+    # First page (HTMX search/reset) carries a sentinel pointing at page 2.
+    partial = await client.get("/yarn/", headers={"HX-Request": "true"})
+    assert partial.status_code == 200
+    assert "data-infinite-scroll" in partial.text
+    assert "page=2" in partial.text
+    # The sentinel's hx-get must include the router's trailing slash
+    # (/yarn/, not /yarn) or every infinite-scroll fetch takes an avoidable
+    # redirect.
+    assert 'hx-get="/yarn/?' in partial.text
+    assert "<html" not in partial.text.lower()
+
+    # Second page fragment returns cards only; it is the last page, so there is
+    # no further sentinel.
+    fragment = await client.get("/yarn/?page=2", headers={"HX-Request": "true"})
+    assert fragment.status_code == 200
+    assert "data-yarn-card" in fragment.text
+    assert "data-infinite-scroll" not in fragment.text
+    assert "page=3" not in fragment.text

@@ -471,7 +471,7 @@ async def list_yarns(
         if brand:
             params["brand"] = brand
         params["page"] = str(page + 1)
-        next_page_url = f"/yarn?{urlencode(params)}"
+        next_page_url = f"/yarn/?{urlencode(params)}"
 
     yarn_cards = serialize_yarn_cards(yarns, owner)
 

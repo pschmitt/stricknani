@@ -39,6 +39,7 @@ const PRECACHE_URLS = [
 	"/manifest.webmanifest",
 	"/static/favicon.svg",
 	"/static/css/app.css",
+	"/static/css/tailwind.css",
 	"/static/js/app.js",
 	"/static/js/htmx/csrf.js",
 	"/static/vendor/htmx/htmx.min.js",
