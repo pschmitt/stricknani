@@ -73,7 +73,7 @@
               vendir
               biome
               tailwindcss_4
-              # Only needed to regenerate stricknani/static/vendor/tiptap/
+              # Only needed to regenerate stricknani/static/vendor-tiptap/
               # (`just vendor-tiptap`) when bumping TipTap's pinned version;
               # the committed bundle is what actually ships at runtime.
               nodejs

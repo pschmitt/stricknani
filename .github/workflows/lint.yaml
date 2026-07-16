@@ -76,6 +76,11 @@ jobs:
       - name: Install dependencies
         run: just ci-setup-py
 
+      - name: Set up Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: "2.2.5"
+
       - name: Lint template JS syntax
         run: just lint-template-js
 
@@ -92,6 +97,8 @@ jobs:
 
       - name: Set up Biome
         uses: biomejs/setup-biome@v2
+        with:
+          version: "2.2.5"
 
       - name: Run JavaScript lint
         run: just lint-js
@@ -106,6 +113,8 @@ jobs:
 
       - name: Set up Biome
         uses: biomejs/setup-biome@v2
+        with:
+          version: "2.2.5"
 
       - name: Run CSS lint
         run: just lint-css

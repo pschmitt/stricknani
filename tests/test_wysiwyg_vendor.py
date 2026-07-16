@@ -12,11 +12,7 @@ from typing import Any
 import pytest
 
 VENDOR_TIPTAP_DIR = (
-    Path(__file__).resolve().parent.parent
-    / "stricknani"
-    / "static"
-    / "vendor"
-    / "tiptap"
+    Path(__file__).resolve().parent.parent / "stricknani" / "static" / "vendor-tiptap"
 )
 BUNDLE_PATH = VENDOR_TIPTAP_DIR / "tiptap-bundle.min.js"
 
@@ -29,7 +25,7 @@ async def test_wysiwyg_editor_js_has_no_cdn_import(test_client: Any) -> None:
     assert response.status_code == 200
     body = response.text
     assert "https://esm.sh" not in body
-    assert "/static/vendor/tiptap/tiptap-bundle.min.js" in body
+    assert "/static/vendor-tiptap/tiptap-bundle.min.js" in body
 
 
 @pytest.mark.asyncio
@@ -38,7 +34,7 @@ async def test_tiptap_bundle_is_served_and_self_contained(
 ) -> None:
     """The vendored bundle must be servable and free of external imports."""
     client, _, _, _, _ = test_client
-    response = await client.get("/static/vendor/tiptap/tiptap-bundle.min.js")
+    response = await client.get("/static/vendor-tiptap/tiptap-bundle.min.js")
     assert response.status_code == 200
     body = response.text
 

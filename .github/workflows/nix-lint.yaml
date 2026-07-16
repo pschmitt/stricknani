@@ -25,4 +25,4 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Run statix
-        run: just lint-nix
+        run: nix develop --command just lint-nix

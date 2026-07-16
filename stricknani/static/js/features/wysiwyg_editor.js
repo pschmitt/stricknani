@@ -1,21 +1,24 @@
 // TipTap is vendored as a single bundled ESM file (built by `just
-// vendor-tiptap` from stricknani/static/vendor/tiptap/entry.js via esbuild)
+// vendor-tiptap` from stricknani/static/vendor-tiptap/entry.js via esbuild)
 // instead of importing from esm.sh, per AGENTS.md's no-CDN vendoring rule --
-// see stricknani/static/vendor/tiptap/package.json for the pinned versions.
+// see stricknani/static/vendor-tiptap/package.json for the pinned versions.
+// It lives outside stricknani/static/vendor/ (not stricknani/static/vendor/tiptap/)
+// because that directory is exclusively managed by `vendir sync`, which would
+// delete anything under it that isn't declared in vendir.yml.
 import {
-	Editor,
-	mergeAttributes,
-	Image,
-	Link,
-	Underline,
-	Markdown,
 	chainCommands,
 	createParagraphNear,
+	Editor,
+	Image,
+	Link,
 	liftEmptyBlock,
+	Markdown,
+	mergeAttributes,
 	newlineInCode,
-	splitBlock,
 	StarterKit,
-} from "/static/vendor/tiptap/tiptap-bundle.min.js";
+	splitBlock,
+	Underline,
+} from "/static/vendor-tiptap/tiptap-bundle.min.js";
 
 const WYSIWYG_INSTANCES = new Map();
 let currentImageAutocomplete = null;
