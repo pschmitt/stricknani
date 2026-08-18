@@ -740,9 +740,14 @@ Markdown document with an H1 header, **bold**, _italic_, a link, a bullet list, 
 `![]()` image hosted on an external URL. All of it rendered correctly - heading size/weight, bold,
 italics, underlined link styling, bullet glyphs, and the inline image loaded and displayed inline
 below the list, proving the Coil3 image transformer picks up the app's existing image loader with
-no special-case wiring. Also deployed to the Mi Pad 4 (`just deploy-all`); Pixel 5 still
-unreachable over wireless adb this session (same recurring Home Assistant/Tasker reconnect gap as
-SNA-20/SNA-21/SNA-27 - not fixable without physical access to the phone).
+no special-case wiring. Also deployed the APK to the Mi Pad 4 (`just deploy-all`), but couldn't
+visually re-verify there this pass - the device is showing the onboarding screen (no stored
+server URL/PAT), unrelated to this change. Re-onboarding needs a fresh PAT for `ai@anika.blue`;
+the `/auth/login` CSRF flow that worked for the Zenfone's initial onboarding returned a 403 this
+time (double-submit-cookie CSRF likely needs the token as a header, not just a form field - not
+investigated further since it's orthogonal to SNA-22). Pixel 5 still unreachable over wireless adb
+this session (same recurring Home Assistant/Tasker reconnect gap as SNA-20/SNA-21/SNA-27 - not
+fixable without physical access to the phone).
 
 ## SNA-23: Full-screen image viewer (pinch-zoom gallery)
 
