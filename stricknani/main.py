@@ -306,6 +306,7 @@ from stricknani.routes import (  # noqa: E402
     utils,
     yarn,
 )
+from stricknani.routes import api as json_api  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(projects.router)
@@ -315,6 +316,7 @@ app.include_router(user.router)
 app.include_router(yarn.router)
 app.include_router(admin.router)
 app.include_router(utils.router)
+app.include_router(json_api.router)
 # Registered last: media's catch-all "/media/{path:path}" deny route must not
 # shadow any more specific route declared above (none currently overlap, but
 # this keeps the ordering intentional).

@@ -72,18 +72,39 @@ Architecture summary and SNA-5/SNA-6 below.
 
 ## SNA-2: Versioned JSON API for projects/yarns/categories (`/api/v1/`)
 
-- [ ] `stricknani/routes/api/` package, `/api/v1` prefix, `require_api_token`-authenticated
-- [ ] Projects: list (paginated, filter by category/tag/favorite), detail (incl. steps, images,
-      attachments, linked yarns), create, update, delete - reuse `services/projects/*` business
-      logic rather than duplicating it
-- [ ] Yarns: list/detail/create/update/delete - reuse `services/yarn/*`
-- [ ] Categories: list/create
-- [ ] Image/attachment upload as multipart endpoints mirroring the existing form routes
-- [ ] `GET /api/v1/meta` - server version/build id, so the app can detect it needs a full resync
-      after a breaking server upgrade (mirrors how the web app's own service worker versions its
-      caches via `SW_BUILD_ID`)
+- [x] `stricknani/routes/api/` package, `/api/v1` prefix, `require_api_token`-authenticated
+      (`stricknani/routes/api/__init__.py` aggregates `meta`/`categories`/`yarns`/`projects`)
+- [x] Projects: list (paginated, filter by category/tag/favorite), detail (incl. steps, images,
+      attachments, linked yarns), create, update, delete + favorite/unfavorite
+      (`stricknani/routes/api/projects.py`). Reuses `services/projects/categories`,
+      `services/projects/tags`, `services/projects/yarns.load_owned_yarns`,
+      `services/audit.create_audit_log`; core field writes are new lean handlers rather than
+      reusing the HTML routes' much larger create/update functions (those are entangled with
+      URL-import/wayback-archiving concerns the app doesn't need - see file docstring reasoning
+      in the commit)
+- [x] Yarns: list/detail/create/update/delete + favorite/unfavorite + photo upload/delete
+      (`stricknani/routes/api/yarns.py`). Reuses `services/yarn/presentation.resolve_yarn_preview`
+- [x] Categories: list/create (`stricknani/routes/api/categories.py`, reuses
+      `services/projects/categories.ensure_category`/`sync_project_categories`)
+- [x] Image/attachment upload as multipart endpoints: project title image + step images (reusing
+      `services/projects/images.upload_title_image`/`upload_step_image`) and attachments
+      (reusing `services/projects/attachments.store_project_attachment`), plus yarn photo
+      upload/delete
+- [x] `GET /api/v1/meta` - server version/build id (unauthenticated by design, so the app can
+      validate "is this a Stricknani server" during onboarding before a token exists - see SNA-6)
+- [x] Tests: `tests/test_api_v1.py` (18 tests: meta/auth-required/invalid-token, category
+      list/create, yarn CRUD+favorite+photos, project CRUD+steps+yarn-links+favorite,
+      title/step image + attachment upload/delete, cross-user ownership 404s)
 
-Status: not started
+Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` (246 passed),
+`uv run ruff check .`, `uv run mypy .`. Two real bugs caught by the new tests and fixed before
+landing: (1) serializing an ORM object's relationship after `db.commit()` under an async engine
+raised `MissingGreenlet` (commit expires relationship attributes, and this session can't satisfy
+a lazy-load) - fixed by re-fetching with eager `selectinload` after every commit that's followed
+by serialization, in `yarns.py`'s create/update/favorite/unfavorite and the matching
+`projects.py` favorite/unfavorite handlers; (2) project step replacement on update via a raw
+`DELETE` query left old steps in place - fixed by mutating the `project.steps` relationship
+collection directly so the `delete-orphan` cascade handles it.
 
 ## SNA-3: Delta-sync endpoints
 
@@ -223,6 +244,70 @@ Status: not started
 
 - [ ] Optional local notification when a background sync finds changes, or when an async backend
       job (e.g. link archiving) completes for a project/yarn
+
+Status: not started
+
+## SNA-15: Backup/restore support
+
+- [ ] Local encrypted export of the Room cache (projects, yarns, categories, settings) plus
+      cached media, matching syncwich's "optional encrypted backups with password and schedule
+      support" and nyetbox's backup/restore feature
+- [ ] Restore flow: pick a backup file, decrypt with the password, repopulate Room (subject to a
+      confirmation prompt since it can overwrite local state - reconcile against a subsequent
+      `/api/v1/sync/*` pull rather than treating the backup as more authoritative than the server)
+- [ ] Optional scheduled/automatic backups (WorkManager), configurable in Settings
+- [ ] Decide storage target: on-device (SAF file picker) at minimum; consider matching syncwich's
+      scope before deciding whether cloud/remote destinations are in scope
+
+Status: not started
+
+## SNA-16: Configurable navbar
+
+- [ ] Let the user choose which destinations appear in the bottom nav / nav rail and in what
+      order, matching nyetbox's configurable navbar - persisted in DataStore, editable from
+      Settings
+- [ ] Sensible default order (Home / Projects / Yarn Stash / Search / Settings, per SNA-5) so this
+      is a customization on top of a good default, not a required setup step
+
+Status: not started
+
+## SNA-17: Deep links ("open with" a project/yarn URL)
+
+- [ ] Android App Links so a stricknani project/yarn URL (from the web app, a share, a browser)
+      opens directly in the app instead of the browser, matching syncwich's
+      `docs/deep-links.md`/`assetlinks.json` pattern - server-side, this needs a per-server
+      `.well-known/assetlinks.json` (the server URL is user-configured, not hardcoded, so this
+      can't be baked into a single static manifest the way a single-tenant app's can)
+- [ ] Handle both `https://<server>/projects/{id}` and `/yarn/{id}` style URLs, resolving to the
+      matching local Room entity when cached, falling back to an online fetch/onboarding-required
+      state when not yet synced or the app isn't set up for that server
+- [ ] "Share" / "Open in app" surfaces from project/yarn detail screens, consistent with the
+      existing web app's share links
+
+Status: not started
+
+## SNA-18: Settings screen with an About section
+
+- [ ] Dedicated Settings screen (nav destination placeholder already listed in SNA-5): server
+      URL/account (sign-out), theme (light/dark/auto), sync interval/policy, navbar
+      customization (SNA-16), backup/restore (SNA-15) - the UI surface over `SettingsRepository`
+      from SNA-6, not a data-layer task itself
+- [ ] About section: app version/build (+ server version/build from `/api/v1/meta`), GPL-3.0
+      license, link to the GitHub repo, changelog/`android/TODO.md`-derived release notes -
+      matches the sibling apps' About screens
+
+Status: not started
+
+## SNA-19: Redesign the app icon, shared consistently between web and Android
+
+- [ ] Design a new primary app icon/brand mark for Stricknani (current `stricknani/static/
+      favicon.svg` is a minimal placeholder) - used as the Android adaptive launcher icon
+      (foreground/background/monochrome layers, per SNA-5) and the web app's favicon/PWA icons
+      (`stricknani/static/favicon.svg`, `manifest.webmanifest` icons), so both surfaces present
+      the same mark instead of independently designed ones
+- [ ] Single source-of-truth asset (e.g. an SVG in one place, likely under the web app's static
+      dir or a new top-level `branding/`) that both `android/` (launcher icon generation) and
+      `stricknani/static/` derive from, to keep them from drifting apart later
 
 Status: not started
 
