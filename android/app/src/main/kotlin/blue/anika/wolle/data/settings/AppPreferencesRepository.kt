@@ -2,8 +2,10 @@ package blue.anika.wolle.data.settings
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import blue.anika.wolle.data.backup.BackupFrequency
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.map
@@ -51,8 +53,34 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_NAVBAR_ITEMS] = json.encodeToString(items) }
     }
 
+    /** SNA-15 scheduled backups - the SAF tree the user picked, `null` until one is chosen. */
+    val scheduledBackupFolderUri = dataStore.data.map { prefs -> prefs[KEY_BACKUP_FOLDER_URI] }
+
+    suspend fun setScheduledBackupFolderUri(uri: String) {
+        dataStore.edit { prefs -> prefs[KEY_BACKUP_FOLDER_URI] = uri }
+    }
+
+    val scheduledBackupEnabled = dataStore.data.map { prefs -> prefs[KEY_BACKUP_ENABLED] ?: false }
+
+    suspend fun setScheduledBackupEnabled(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_BACKUP_ENABLED] = enabled }
+    }
+
+    val scheduledBackupFrequency =
+        dataStore.data.map { prefs ->
+            prefs[KEY_BACKUP_FREQUENCY]?.let { runCatching { BackupFrequency.valueOf(it) }.getOrNull() }
+                ?: BackupFrequency.WEEKLY
+        }
+
+    suspend fun setScheduledBackupFrequency(frequency: BackupFrequency) {
+        dataStore.edit { prefs -> prefs[KEY_BACKUP_FREQUENCY] = frequency.name }
+    }
+
     private companion object {
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_NAVBAR_ITEMS = stringPreferencesKey("navbar_items")
+        val KEY_BACKUP_FOLDER_URI = stringPreferencesKey("scheduled_backup_folder_uri")
+        val KEY_BACKUP_ENABLED = booleanPreferencesKey("scheduled_backup_enabled")
+        val KEY_BACKUP_FREQUENCY = stringPreferencesKey("scheduled_backup_frequency")
     }
 }

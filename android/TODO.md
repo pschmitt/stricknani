@@ -535,17 +535,64 @@ behavior).
 
 ## SNA-15: Backup/restore support
 
-- [ ] Local encrypted export of the Room cache (projects, yarns, categories, settings) plus
-      cached media, matching syncwich's "optional encrypted backups with password and schedule
-      support" and nyetbox's backup/restore feature
-- [ ] Restore flow: pick a backup file, decrypt with the password, repopulate Room (subject to a
-      confirmation prompt since it can overwrite local state - reconcile against a subsequent
-      `/api/v1/sync/*` pull rather than treating the backup as more authoritative than the server)
-- [ ] Optional scheduled/automatic backups (WorkManager), configurable in Settings
-- [ ] Decide storage target: on-device (SAF file picker) at minimum; consider matching syncwich's
-      scope before deciding whether cloud/remote destinations are in scope
+- [x] User confirmed (2026-08-18, asked because the ticket as written matches syncwich's
+      always-authoritative-local-data model, which doesn't quite fit here) to build full syncwich
+      parity - same PBKDF2+AES-GCM crypto, zip container, SAF UX, WorkManager scheduling - but
+      **deliberately excluding the Room cache and cached media** from what gets backed up, unlike
+      syncwich. `DatabaseModule.provideAppDatabase`'s own kdoc already frames every `AppDatabase`
+      table as a disposable server-side mirror (`fallbackToDestructiveMigration` on every schema
+      bump, no hand-written migrations) - backing that up would just risk restoring stale rows that
+      then fight the next sync. The credentials + settings are the genuinely non-reproducible part
+      (losing the API token means re-onboarding from scratch), so that's the whole backup payload.
+      This also directly satisfies the ticket's own restore requirement ("reconcile against a
+      subsequent sync pull rather than treating the backup as more authoritative than the server")
+      - there's nothing backed up that *could* conflict with the server in the first place.
+- [x] `data/backup/BackupCrypto.kt`: PBKDF2WithHmacSHA256 (210k iterations, 256-bit key) -> AES/GCM
+      /NoPadding, magic `"STB1"` + plain/encrypted flag + salt/iv framing - same scheme as syncwich/
+      nyetbox's own `BackupCrypto`, just this app's own magic bytes. Unit-tested
+      (`BackupCryptoTest`: round-trip, wrong password, tampered ciphertext, garbage input) since
+      it's pure JVM logic with no Android framework binding, matching the `GaugeCalculatorTest`/
+      `NavbarCustomizationTest` precedent.
+- [x] `data/backup/BackupManager.kt`: builds/reads a zip (`manifest.json`, `credentials.json`,
+      `settings.json`) via `java.util.zip` (no new dependency, matching syncwich), passed through
+      `BackupCrypto`. `import()` doesn't touch Room - the caller (`SettingsViewModel.importBackup`)
+      triggers `SyncScheduler.syncNow()` right after a successful restore instead.
+- [x] `data/backup/{BackupScheduler,BackupWorker}.kt`: `BackupWorker` (`@HiltWorker`, matching
+      `SyncWorker`/`WriteReplayWorker`'s pattern) writes into the SAF folder tree the user picked,
+      using platform `DocumentsContract` directly (no `androidx.documentfile` dependency needed for
+      a single create-and-write). `BackupScheduler` enqueues/cancels it via
+      `PeriodicWorkRequestBuilder` keyed by `BackupFrequency` (Daily/Weekly/Monthly).
+      `AppPreferencesRepository` gained the folder-URI/enabled/frequency prefs (plain DataStore,
+      matching its existing non-secret settings); the optional backup password is a deliberate
+      deviation from syncwich - stored via `SettingsRepository`'s existing
+      `EncryptedSharedPreferences` instead of a plain DataStore string, since this app already has
+      Keystore-backed storage available and a backup password is exactly the secret it exists for.
+- [x] `ui/settings/BackupSettingsScreen.kt` (new `SettingsCategory.Backup` entry): manual "Export
+      now" (`ActivityResultContracts.CreateDocument`, optional password via a dialog before the
+      write) / "Choose file" restore (`OpenDocument`, a password dialog only appears if
+      `BackupManager.import` throws `BackupPasswordRequiredException`), and a "Scheduled backups"
+      card (enable switch that launches `OpenDocumentTree` + calls
+      `takePersistableUriPermission` - otherwise the grant is transient and `BackupWorker` loses
+      folder access the next time the process restarts - frequency chips, folder/password rows).
+      All state lives on the existing shared `SettingsViewModel` (not a dedicated
+      `BackupSettingsViewModel` like syncwich's), matching this app's one-shared-ViewModel-per-hub
+      convention from SNA-21.
 
-Status: not started
+Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean, `BackupCryptoTest`
+green), then confirmed for real on the Zenfone 10: the Backup category card and screen render
+correctly; "Export now" launches the `CreateDocument` picker with a sensible suggested filename
+(and, incidentally, confirmed sibling apps syncwich/nyetbox/jollyfin really do already have
+matching `*-backup*.bin`/`*_backup.bin` files sitting in Downloads, exactly the reference pattern
+this was built from); "Choose file" launches the `OpenDocument` picker; the scheduled-backup
+password dialog round-tripped for real through `SettingsRepository`'s `EncryptedSharedPreferences`
+("Backup password set" / "Backup password removed" snackbars, "Backup password" row correctly
+flipping between "Set"/"Not set (unencrypted)"). Didn't complete an actual end-to-end
+export-a-file-then-restore-it pass - the on-device system file picker's rename-on-save text field
+didn't respond reliably to `adb shell input text`/`keyevent` (a driving-the-picker-via-adb
+limitation, not an app bug), and completing it risked overwriting an unrelated file already sitting
+in the shared test device's Downloads folder, so I backed out of the picker rather than force it.
+Mi Pad 4 wireless adb dropped again this pass (same recurring gap); Pixel 5 still unreachable.
 
 ## SNA-16: Configurable navbar
 

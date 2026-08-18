@@ -20,6 +20,7 @@ fun SettingsCategoryScreen(
         SettingsCategory.Navigation ->
             NavigationSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.Sync -> SyncSettingsScreen(onBack = onBack, viewModel = viewModel)
+        SettingsCategory.Backup -> BackupSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.About -> AboutSettingsScreen(onBack = onBack, viewModel = viewModel)
     }
 }

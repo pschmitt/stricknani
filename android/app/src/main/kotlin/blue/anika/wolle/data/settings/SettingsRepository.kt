@@ -47,6 +47,26 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     val isConfigured: StateFlow<Boolean> = _isConfigured.asStateFlow()
 
     /**
+     * SNA-15 scheduled backups' optional password - kept here (Keystore-backed) rather than in
+     * `AppPreferencesRepository`'s plain DataStore, unlike syncwich's equivalent, since this app
+     * already has an encrypted store available and a backup password is exactly the kind of secret
+     * it exists for.
+     */
+    private val _scheduledBackupPassword =
+        MutableStateFlow(prefs.getString(KEY_BACKUP_PASSWORD, null))
+    val scheduledBackupPassword: StateFlow<String?> = _scheduledBackupPassword.asStateFlow()
+
+    fun setScheduledBackupPassword(password: String?) {
+        if (password.isNullOrBlank()) {
+            prefs.edit().remove(KEY_BACKUP_PASSWORD).apply()
+            _scheduledBackupPassword.value = null
+        } else {
+            prefs.edit().putString(KEY_BACKUP_PASSWORD, password).apply()
+            _scheduledBackupPassword.value = password
+        }
+    }
+
+    /**
      * Only call once the server has actually confirmed this URL/token pair works - see
      * [blue.anika.wolle.data.onboarding.OnboardingValidator].
      */
@@ -78,5 +98,6 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     private companion object {
         const val KEY_SERVER_URL = "server_url"
         const val KEY_API_TOKEN = "api_token"
+        const val KEY_BACKUP_PASSWORD = "scheduled_backup_password"
     }
 }

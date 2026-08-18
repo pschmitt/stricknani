@@ -1,9 +1,16 @@
 package blue.anika.wolle.ui.settings
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.data.api.MetaApi
 import blue.anika.wolle.data.api.dto.MetaDto
+import blue.anika.wolle.data.backup.BackupFrequency
+import blue.anika.wolle.data.backup.BackupManager
+import blue.anika.wolle.data.backup.BackupPasswordRequiredException
+import blue.anika.wolle.data.backup.BackupScheduler
 import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.settings.AppPreferencesRepository
@@ -11,8 +18,10 @@ import blue.anika.wolle.data.settings.NavbarItemPreference
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.data.util.DateTimeUtils
+import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.navigation.NavbarCustomization
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +42,10 @@ constructor(
     private val database: AppDatabase,
     syncStateDao: SyncStateDao,
     private val metaApi: MetaApi,
+    private val backupManager: BackupManager,
+    private val backupScheduler: BackupScheduler,
+    private val syncScheduler: SyncScheduler,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     val serverUrl: StateFlow<String> =
@@ -105,6 +118,118 @@ constructor(
     fun signOut() {
         settingsRepository.signOut()
         viewModelScope.launch { withContext(Dispatchers.IO) { database.clearAllTables() } }
+    }
+
+    // --- SNA-15: backup/restore ---
+
+    private val _backupState = MutableStateFlow<BackupOperationState>(BackupOperationState.Idle)
+    val backupState: StateFlow<BackupOperationState> = _backupState.asStateFlow()
+
+    /** Set when [importBackup] hits [BackupPasswordRequiredException], for [retryImportWithPassword]. */
+    private var pendingRestoreUri: Uri? = null
+
+    val scheduledBackupEnabled: StateFlow<Boolean> =
+        appPreferencesRepository.scheduledBackupEnabled.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            false,
+        )
+
+    val scheduledBackupFolderUri: StateFlow<String?> =
+        appPreferencesRepository.scheduledBackupFolderUri.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            null,
+        )
+
+    val scheduledBackupFrequency: StateFlow<BackupFrequency> =
+        appPreferencesRepository.scheduledBackupFrequency.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            BackupFrequency.WEEKLY,
+        )
+
+    val scheduledBackupPasswordSet: StateFlow<Boolean> =
+        settingsRepository.scheduledBackupPassword
+            .map { !it.isNullOrBlank() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
+
+    fun exportBackup(uri: Uri, password: String?) {
+        viewModelScope.launch {
+            _backupState.value = BackupOperationState.InProgress
+            _backupState.value =
+                try {
+                    val bytes = backupManager.export(password?.takeIf { it.isNotBlank() })
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                            ?: error("Could not open the selected file for writing")
+                    }
+                    BackupOperationState.Success("Backup exported")
+                } catch (e: Exception) {
+                    BackupOperationState.Error(e.message ?: "Export failed")
+                }
+        }
+    }
+
+    fun importBackup(uri: Uri, password: String? = null) {
+        viewModelScope.launch {
+            _backupState.value = BackupOperationState.InProgress
+            _backupState.value =
+                try {
+                    val bytes =
+                        withContext(Dispatchers.IO) {
+                            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                                ?: error("Could not open the selected file for reading")
+                        }
+                    backupManager.import(bytes, password?.takeIf { it.isNotBlank() })
+                    pendingRestoreUri = null
+                    syncScheduler.syncNow()
+                    BackupOperationState.Success("Backup restored - syncing latest data now")
+                } catch (e: BackupPasswordRequiredException) {
+                    pendingRestoreUri = uri
+                    BackupOperationState.PasswordRequired
+                } catch (e: Exception) {
+                    BackupOperationState.Error(e.message ?: "Restore failed")
+                }
+        }
+    }
+
+    fun retryImportWithPassword(password: String) {
+        pendingRestoreUri?.let { importBackup(it, password) }
+    }
+
+    fun dismissBackupState() {
+        _backupState.value = BackupOperationState.Idle
+    }
+
+    fun enableScheduledBackup(folderUri: Uri) {
+        // OpenDocumentTree's grant is otherwise transient - without this, BackupWorker loses
+        // access to the folder the next time the app process restarts.
+        context.contentResolver.takePersistableUriPermission(
+            folderUri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+        )
+        viewModelScope.launch {
+            appPreferencesRepository.setScheduledBackupFolderUri(folderUri.toString())
+            appPreferencesRepository.setScheduledBackupEnabled(true)
+            backupScheduler.schedule(scheduledBackupFrequency.value)
+        }
+    }
+
+    fun disableScheduledBackup() {
+        viewModelScope.launch { appPreferencesRepository.setScheduledBackupEnabled(false) }
+        backupScheduler.cancel()
+    }
+
+    fun setScheduledBackupFrequency(frequency: BackupFrequency) {
+        viewModelScope.launch {
+            appPreferencesRepository.setScheduledBackupFrequency(frequency)
+            if (scheduledBackupEnabled.value) backupScheduler.schedule(frequency)
+        }
+    }
+
+    fun setScheduledBackupPassword(password: String?) {
+        settingsRepository.setScheduledBackupPassword(password)
     }
 
     private companion object {
