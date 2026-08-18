@@ -728,11 +728,29 @@ Status: not started
 
 ## SNA-23: Full-screen image viewer (pinch-zoom gallery)
 
-- [ ] No dedicated full-screen/pinch-zoom image viewer exists yet - tapping a project/yarn image
-      currently does nothing. User feedback (2026-08-18): needs a real viewer matching nyetbox's
-      and syncwich's (full-screen, swipeable between a gallery's images, pinch-to-zoom)
+- [x] Ported nyetbox's `ImageViewerDialog.kt` pattern (the more general/reusable of the two
+      sibling implementations - syncwich's `RecipeImageViewer` is recipe-specific, not a shared
+      component) to `ui/common/ImageViewerDialog.kt`, trimmed to just `imageUrls: List<String>` +
+      `initialIndex` (dropped nyetbox's PDF/metadata-link/edit-action fields - not needed here).
+      No new Gradle dependency - `HorizontalPager` is core Compose Foundation; zoom/pan/dismiss are
+      hand-rolled `pointerInput`/`awaitEachGesture` gesture detection, same as nyetbox's
+- [x] Shown as a plain `Dialog`, not a nav route: `HorizontalPager` swipe between images,
+      pinch-to-zoom + pan (double-tap toggles 1x/2.5x), vertical drag-to-dismiss, explicit close
+      button, chevron prev/next buttons when there's more than one image
+- [x] Wired into `ProjectDetailScreen`/`YarnDetailScreen`: added `.clickable` to the existing image
+      thumbnails (previously did nothing), `viewerIndex: Int?` state holds which index is open. Uses
+      `itemsIndexed` (not `items` + `.indexOf`) for the index and builds the URL list with `map`
+      (not `mapNotNull`) so indices stay aligned with `viewerIndex` even if a URL somehow fails to
+      resolve
 
-Status: not started
+Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL` after a one-off corrupted remote
+KSP incremental cache needed `just clean` first - unrelated to this change, see `android/AGENTS.md`
+if it recurs), then confirmed for real on the Zenfone 10 and Mi Pad 4: created a real test project
+via the API with an uploaded title image (`ai@anika.blue` account), tapped its thumbnail on-device,
+the full-screen viewer opened correctly (image fit to width, close button, no crash), and
+double-tap-to-zoom didn't crash (the test image is a flat color, so the zoom itself isn't visually
+distinguishable, but the gesture path is exercised).
 
 ## SNA-25: Production backend deploy + dedicated AI-testing account
 
@@ -775,11 +793,9 @@ deploy-zenfone debug` + `just mipad-install` and confirmed for real on both agai
 `ai@anika.blue` account: the Projects search field renders as a fully rounded pill, no crash on
 either device.
 
-Status: not started
-
 ## SNA-24: Verify/harden offline image caching
 
-- [ ] User feedback (2026-08-18): "make sure we cache the img assets properly" - the backend
+- [x] User feedback (2026-08-18): "make sure we cache the img assets properly" - the backend
       already sends `Cache-Control: public, max-age=31536000, immutable` on `/media/*` responses
       (`stricknani/routes/media.py`), and SNA-7 wired a dedicated 256 MiB Coil3 disk cache
       (`@MediaClient`), so this may already work - **not yet verified on a real device with real
@@ -787,7 +803,15 @@ Status: not started
       account as of this note). Needs: add a real image to a test project/yarn, view it once
       online, then confirm it still renders with the device in airplane mode
 
-Status: not started
+Status: **done** (2026-08-18) - created a real test project via `POST /api/v1/projects` and
+uploaded a real title image via `POST /api/v1/projects/{id}/images/title` (both against the live
+`ai@anika.blue` account), synced it to the Zenfone 10, then disabled WiFi (`adb shell svc wifi
+disable` - a real network-down state, not just a UI toggle) and relaunched the app: **both the
+list thumbnail and the full-size detail-screen image rendered correctly with zero network**,
+alongside the expected "Couldn't sync - showing cached data." banner (SNA-7's failed-sync-keeps-
+cached-data behavior, also confirmed working for real here). No code changes were needed - the
+existing SNA-7 Coil3 disk cache + backend `Cache-Control` headers already worked correctly; this
+ticket was pure verification.
 
 ## SNA-27: Fix dead space above screen headers
 

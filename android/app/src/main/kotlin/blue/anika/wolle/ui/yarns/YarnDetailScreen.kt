@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.yarns
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,7 +36,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.data.api.dto.YarnDto
+import blue.anika.wolle.ui.common.ImageViewerDialog
 import coil3.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,16 +136,24 @@ private fun YarnDetailContent(
     onProjectClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var viewerIndex by remember { mutableStateOf<Int?>(null) }
+    // map (not mapNotNull) - keeps indices aligned with detail.photos/viewerIndex even if a
+    // url somehow fails to resolve.
+    val photoUrls = remember(detail.photos) { detail.photos.map { resolveMediaUrl(it.url) ?: "" } }
+
     LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
         if (detail.photos.isNotEmpty()) {
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(detail.photos, key = { it.id }) { photo ->
+                    itemsIndexed(detail.photos, key = { _, photo -> photo.id }) { index, photo ->
                         AsyncImage(
                             model = resolveMediaUrl(photo.url),
                             contentDescription = photo.altText,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)),
+                            modifier =
+                                Modifier.size(160.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable { viewerIndex = index },
                         )
                     }
                 }
@@ -199,6 +212,14 @@ private fun YarnDetailContent(
                 )
             }
         }
+    }
+
+    viewerIndex?.let { index ->
+        ImageViewerDialog(
+            imageUrls = photoUrls,
+            initialIndex = index,
+            onDismiss = { viewerIndex = null },
+        )
     }
 }
 
