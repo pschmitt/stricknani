@@ -11,7 +11,7 @@
     "@tiptap/markdown": "3.19.0",
     "@tiptap/pm": "3.19.0",
     "@tiptap/starter-kit": "3.19.0",
-    "esbuild": "0.25.5"
+    "esbuild": "0.28.2"
   },
   "scripts": {
     "build": "esbuild entry.js --bundle --format=esm --minify --outfile=tiptap-bundle.min.js"
