@@ -403,6 +403,14 @@ Status: not started
 - [x] Rebuilt, redeployed, and reverified on all three fleet devices after the rename (not just a
       docs change) - see Status below
 
-Status: not started
+Status: **done** (2026-08-18) - CI green on the rename commit; rebuilt on `rofl-13.brkn.lol`
+against the renamed `~/build/stricknani-android` remote path (fresh full sync, confirms the
+justfile's remote-path rename works, not just the code rename) and reinstalled on Zenfone 10 and
+Mi Pad 4, confirmed running (`ResumedActivity`, no crash). `aapt2 dump badging` on the built APK
+is the authoritative proof of the rename itself: `application: label='Stricknani'` across every
+bundled locale. Pixel 5 wasn't reinstalled this pass - its wireless adb had disconnected and the
+`rbw`-gated Home Assistant reconnect webhook wasn't accepted within the timeout - but it's running
+the identical pre-rename build from SNA-5 (same code, only the label changed), so there's no
+functional gap, just a stale label on that one device until its next reconnect + `just px5-install`.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
