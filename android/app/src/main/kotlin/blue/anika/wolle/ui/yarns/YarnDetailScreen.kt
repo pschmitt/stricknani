@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -151,9 +151,9 @@ private fun YarnDetailContent(
                             contentDescription = photo.altText,
                             contentScale = ContentScale.Crop,
                             modifier =
-                                Modifier.size(160.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .clickable { viewerIndex = index },
+                                Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
+                                    viewerIndex = index
+                                },
                         )
                     }
                 }

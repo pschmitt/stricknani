@@ -57,8 +57,8 @@ private fun targetIndex(currentPage: Int, pageCount: Int, step: Int): Int? {
  * Full-screen swipe-to-dismiss image viewer (SNA-23) - pinch-to-zoom/pan on the current image,
  * horizontal swipe between [imageUrls] via [HorizontalPager], vertical drag-down dismisses (an
  * explicit close button is also shown for discoverability). Shown as a plain [Dialog], not a
- * navigation route. Ported from nyetbox's `ImageViewerDialog` (no third-party zoom/pager
- * dependency needed - `HorizontalPager` is core Compose Foundation).
+ * navigation route. Ported from nyetbox's `ImageViewerDialog` (no third-party zoom/pager dependency
+ * needed - `HorizontalPager` is core Compose Foundation).
  */
 @Composable
 fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () -> Unit) {
@@ -116,7 +116,9 @@ fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () 
                 ) { page ->
                     ZoomableImagePage(
                         url = imageUrls[page],
-                        onZoomChanged = { zoomed -> if (page == pagerState.currentPage) isZoomed = zoomed },
+                        onZoomChanged = { zoomed ->
+                            if (page == pagerState.currentPage) isZoomed = zoomed
+                        },
                     )
                 }
             }
@@ -172,9 +174,9 @@ fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () 
 }
 
 /**
- * Pinch-to-zoom + pan-while-zoomed on a single page; leaves single-finger drags unconsumed while
- * at 1x scale so the enclosing [HorizontalPager] (page swipe) and the dismiss-drag [Box] above
- * still receive them.
+ * Pinch-to-zoom + pan-while-zoomed on a single page; leaves single-finger drags unconsumed while at
+ * 1x scale so the enclosing [HorizontalPager] (page swipe) and the dismiss-drag [Box] above still
+ * receive them.
  */
 @Composable
 private fun ZoomableImagePage(url: String, onZoomChanged: (Boolean) -> Unit) {
