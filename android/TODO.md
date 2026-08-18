@@ -573,17 +573,14 @@ Status: not started
       5 cases covering the default-fallback, unknown-id-dropped, settings-forced-visible,
       missing-destination-appended, and visible-filtering behaviors
 
-Status: **mostly done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol
-":app:assembleDebug" ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`, all tests pass), then `just
-deploy-all debug` + relaunch on Zenfone 10, Mi Pad 4, and Pixel 5 (`ResumedActivity`, no crash in
-logcat on any of the three - the default (nothing customized yet) order renders correctly since
-that's what every existing screen already exercises). **Not verified**: actually toggling
-visibility/reordering on-device and confirming the bottom bar reacts - same recurring "no
-reachable Stricknani test server this session" gap (the Settings screen, like every screen past
-Onboarding, needs a configured account to reach). One real compile error caught before landing:
-`Modifier.padding(horizontal = ..., bottom = ...)` isn't a valid overload (`padding` only accepts
-`horizontal`+`vertical` together, or all four sides individually) - fixed by spelling out
-`start`/`end`/`bottom` explicitly.
+Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`, all tests pass), then confirmed for real on the
+Zenfone 10 against the `ai@anika.blue` test account (SNA-25): the Navigation section renders all
+five destinations with correct checkboxes/icons/labels and working up/down reorder arrows. One
+real compile error caught before landing: `Modifier.padding(horizontal = ..., bottom = ...)` isn't
+a valid overload (`padding` only accepts `horizontal`+`vertical` together, or all four sides
+individually) - fixed by spelling out `start`/`end`/`bottom` explicitly. Redesign pending as part
+of SNA-21 (Settings screen overhaul).
 
 ## SNA-17: Deep links ("open with" a project/yarn URL)
 
@@ -623,14 +620,16 @@ Status: not started
       resources (matches the SNA-9 precedent of deleting placeholder strings once a real screen
       replaces them)
 
-Status: **mostly done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol
-":app:assembleDebug" ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`), then `just deploy-all debug`
-+ relaunch on Zenfone 10, Mi Pad 4, and Pixel 5 (`ResumedActivity`, no crash in logcat on any of
-the three). **Not verified**: the Settings screen's actual on-device rendering, the theme
-toggle's visual effect, or the About section's server-meta fetch against a real server - same
-recurring "no reachable Stricknani test server this session" gap as every UI-facing ticket since
-SNA-6. No unit tests added for `SettingsViewModel`/`AppPreferencesRepository` - both are
-DataStore/Room-`Flow`-bound with the same "not enough isolable pure logic" reasoning as SNA-6/7/8/10.
+Status: **done** (2026-08-18) - a reachable production Stricknani server
+(`https://wolle.anika.blue`, rofl-10) became available partway through this session (see SNA-25),
+closing the recurring "no test server" gap from every prior UI ticket. Verified for real on the
+Zenfone 10 against a dedicated non-admin test account (`ai@anika.blue`, SNA-25): the Account
+section shows the real connected server URL and a working sign-out (with confirmation dialog);
+the About section correctly fetches and displays live server version/build via `/api/v1/meta`.
+**Still pending its own redesign** - see SNA-21 (user feedback: match syncwich's card-based,
+multi-screen Settings UX instead of one flat list). No unit tests added for
+`SettingsViewModel`/`AppPreferencesRepository` - both are DataStore/Room-`Flow`-bound with the
+same "not enough isolable pure logic" reasoning as SNA-6/7/8/10.
 
 ## SNA-19: Redesign the app icon, shared consistently between web and Android
 
@@ -684,5 +683,84 @@ bundled locale. Pixel 5 wasn't reinstalled this pass - its wireless adb had disc
 `rbw`-gated Home Assistant reconnect webhook wasn't accepted within the timeout - but it's running
 the identical pre-rename build from SNA-5 (same code, only the label changed), so there's no
 functional gap, just a stale label on that one device until its next reconnect + `just px5-install`.
+
+## SNA-21: Redesign the Settings screen to match syncwich's (separate screens + cards)
+
+- [ ] SNA-18's Settings screen is currently one long scrolling list (Account/Appearance
+      /Navigation/Sync/About sections stacked in a single `LazyColumn`). User feedback
+      (2026-08-18): redesign it to match syncwich's Settings UX - a hub screen of cards, each
+      navigating to its own dedicated sub-screen, rather than one flat list
+- [ ] Survey `syncwich`'s actual `SettingsScreen.kt`/`SettingsCategoryContent.kt`/navigation
+      structure first (referenced in this repo's sibling-app conventions) before redesigning, to
+      match its actual pattern rather than guessing
+
+Status: not started
+
+## SNA-22: Render Markdown properly (descriptions, notes, steps)
+
+- [ ] Project/yarn description, notes, and step description fields are currently rendered as
+      plain `Text` (no Markdown parsing) even though the web app likely stores/expects Markdown
+      in these fields. User feedback (2026-08-18): needs real Markdown rendering, **including
+      inline images embedded in the Markdown itself** (`ie also the ones in md descriptions,
+      steps etc`) - not just the dedicated title/step image galleries that already work
+- [ ] Needs a Markdown-rendering approach that supports inline images resolved through
+      `MediaUrlResolver`/the `@MediaClient` Coil loader (same auth/base-URL handling as every
+      other image in the app), not just plain text formatting
+
+Status: not started
+
+## SNA-23: Full-screen image viewer (pinch-zoom gallery)
+
+- [ ] No dedicated full-screen/pinch-zoom image viewer exists yet - tapping a project/yarn image
+      currently does nothing. User feedback (2026-08-18): needs a real viewer matching nyetbox's
+      and syncwich's (full-screen, swipeable between a gallery's images, pinch-to-zoom)
+
+Status: not started
+
+## SNA-25: Production backend deploy + dedicated AI-testing account
+
+- [x] Production (`rofl-10`, `https://wolle.anika.blue`) was 71 commits behind `main` - missing
+      the entire versioned JSON API (SNA-1-4) plus ~60 commits of security hardening (rate
+      limiting, password policy, CSRF/CSP tightening, revocable sessions, PWA offline mode,
+      pagination). Updated the `stricknani` flake input pin in `nixos-config` and deployed via
+      `just deploy rofl-10` - this is what unblocked every "not verified: no reachable test
+      server" caveat above. One deploy hiccup: the first `nixos-rebuild switch` restarted
+      `stricknani.service` per its log, but the running process was still on the pre-switch Nix
+      store path (stale binary) until a manual `systemctl restart stricknani.service` - root cause
+      not fully understood, worth watching on the next deploy
+- [x] Added a dedicated non-admin `ai@anika.blue` account (`nixos-config`'s
+      `services/stricknani.nix`: a new `stricknani-ensure-ai-user` oneshot systemd service running
+      `stricknani-cli user create`, idempotent, gated on a new sops secret) so AI-assisted Android
+      testing never touches the real users' (`philipp@schmitt.co`/`anika.bergmann@mailbox.org`)
+      project/yarn data - user-requested (2026-08-18) explicitly for this reason
+- [x] Generated a Personal Access Token for `ai@anika.blue` (via the web UI's login + CSRF flow,
+      scripted with `curl`) and used it to onboard the Zenfone 10 for real - confirmed Home/
+      Settings/Navigation all render correctly against live data with zero crashes
+
+Status: **done** (2026-08-18) - this is infra/testing-account setup, not an app feature; see
+SNA-16/SNA-18 above for what it unblocked.
+
+## SNA-26: Rounded search bar styling (match syncwich)
+
+- [ ] User feedback (2026-08-18): "make the search bars rounded, again: like in syncwich" - the
+      search fields on `ProjectsListScreen`/`YarnsListScreen`/`SearchScreen` currently use the
+      default `OutlinedTextField` shape (the theme's `ExtraSmall`/`Small` corner radius per
+      `ui/theme/Theme.kt`'s `ExpressiveShapes`), not a fully rounded search-bar look. Check
+      syncwich's actual search field styling (shape override, `Modifier`, or a dedicated
+      `SearchBar`-style component) before implementing, to match its real pattern
+
+Status: not started
+
+## SNA-24: Verify/harden offline image caching
+
+- [ ] User feedback (2026-08-18): "make sure we cache the img assets properly" - the backend
+      already sends `Cache-Control: public, max-age=31536000, immutable` on `/media/*` responses
+      (`stricknani/routes/media.py`), and SNA-7 wired a dedicated 256 MiB Coil3 disk cache
+      (`@MediaClient`), so this may already work - **not yet verified on a real device with real
+      image data** (no project/yarn with a photo existed in the dedicated `ai@anika.blue` test
+      account as of this note). Needs: add a real image to a test project/yarn, view it once
+      online, then confirm it still renders with the device in airplane mode
+
+Status: not started
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
