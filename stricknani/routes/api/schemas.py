@@ -14,6 +14,20 @@ class MetaResponse(BaseModel):
     build_id: str
 
 
+class TokenMintRequest(BaseModel):
+    """Password-login onboarding (SNA-13): trade an email/password for a fresh PAT."""
+
+    email: str
+    password: str
+    token_name: str = "Android (password login)"
+
+
+class TokenMintResponse(BaseModel):
+    """The raw token is only ever returned here - only its hash is persisted."""
+
+    token: str
+
+
 class CategoryResponse(BaseModel):
     id: int
     name: str

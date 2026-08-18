@@ -1,6 +1,9 @@
 [versions]
 android-plugin = "9.3.1"
 androidx-activity = "1.13.0"
+# QR scanning for SNA-13's onboarding flow - same versions as the sibling apps' scanners
+# (nyetbox/jollyfin), so the fleet stays on one known-good CameraX/ZXing combination.
+androidx-camera = "1.6.1"
 androidx-compose = "1.11.4"
 # Decoupled from androidx-compose above - this artifact's release cadence lags the rest of
 # Compose, but it's just a large set of static ImageVector vals with no API coupling to newer
@@ -37,10 +40,15 @@ okhttp = "5.4.0"
 retrofit = "3.0.0"
 retrofit-kotlinx-serialization-converter = "1.0.0"
 timber = "5.0.1"
+zxing-core = "3.5.4"
 
 [libraries]
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "androidx-activity" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity" }
+androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "androidx-camera" }
+androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "androidx-camera" }
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "androidx-camera" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "androidx-camera" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "androidx-compose" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "androidx-compose-material-icons-extended" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "androidx-compose-material3" }
@@ -91,6 +99,7 @@ okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver",
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-kotlinx-serialization-converter = { group = "com.jakewharton.retrofit", name = "retrofit2-kotlinx-serialization-converter", version.ref = "retrofit-kotlinx-serialization-converter" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing-core" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-plugin" }

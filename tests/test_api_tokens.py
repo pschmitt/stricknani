@@ -176,6 +176,33 @@ async def test_create_list_and_revoke_api_token(
         assert result.scalar_one_or_none() is None
 
 
+async def test_qr_setup_creates_token_and_renders_qr(
+    test_client: tuple[
+        AsyncClient,
+        async_sessionmaker[AsyncSession],
+        int,
+        int,
+        int,
+    ],
+) -> None:
+    """SNA-13: /user/api-tokens/qr-setup mints a token and embeds it in a QR image."""
+    client, session_factory, user_id, _project_id, _step_id = test_client
+
+    response = await client.post("/user/api-tokens/qr-setup")
+    assert response.status_code == 200
+    assert "QR setup" in response.text
+    assert 'src="data:image/png;base64,' in response.text
+    assert "stricknani://setup?p=" in response.text
+
+    async with session_factory() as session:
+        result = await session.execute(
+            select(ApiToken).where(
+                ApiToken.user_id == user_id, ApiToken.name == "QR setup"
+            )
+        )
+        assert result.scalar_one_or_none() is not None
+
+
 async def test_cannot_revoke_another_users_token(
     test_client: tuple[
         AsyncClient,

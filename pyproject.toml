@@ -35,6 +35,8 @@ dependencies = [
     "waybackpy>=3.0.6",
     "weasyprint>=60.0",
     "pymupdf>=1.26.4",
+    # QR-code setup payloads for the Android app's SNA-13 onboarding flow.
+    "qrcode[pil]>=7.4.2",
     # 0.12.0 is the version pinned in nixpkgs' python3.pkgs.curl-cffi at the
     # time of writing; keep the floor at what nixpkgs ships so `nix build`
     # doesn't outrun it. Only stable, long-established curl_cffi APIs

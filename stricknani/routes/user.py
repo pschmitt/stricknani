@@ -28,6 +28,12 @@ from stricknani.utils.files import (
     delete_file,
     save_uploaded_file,
 )
+from stricknani.utils.qr_setup import (
+    build_setup_uri,
+    render_qr_data_uri,
+    request_base_url,
+)
+from stricknani.web.middleware import _is_secure_request
 from stricknani.web.templating import render_template
 
 logger = logging.getLogger(__name__)
@@ -55,7 +61,12 @@ async def api_tokens_page(
     return await render_template(
         "user/api_tokens.html",
         request,
-        {"current_user": current_user, "tokens": tokens, "new_token": None},
+        {
+            "current_user": current_user,
+            "tokens": tokens,
+            "new_token": None,
+            "qr_setup": None,
+        },
     )
 
 
@@ -80,7 +91,49 @@ async def create_api_token(
     return await render_template(
         "user/api_tokens.html",
         request,
-        {"current_user": current_user, "tokens": tokens, "new_token": raw_token},
+        {
+            "current_user": current_user,
+            "tokens": tokens,
+            "new_token": raw_token,
+            "qr_setup": None,
+        },
+    )
+
+
+@router.post("/api-tokens/qr-setup", response_class=HTMLResponse)
+async def create_qr_setup_token(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> HTMLResponse:
+    """Mint a token and render it as a QR code the Android app can scan (SNA-13).
+
+    Same one-shown-once token as `create_api_token` above - just also
+    packaged as a `stricknani://setup` QR so onboarding a new device doesn't
+    require manually copying a server URL and pasting a token.
+    """
+    raw_token, token_hash = generate_api_token()
+    db.add(ApiToken(user_id=current_user.id, name="QR setup", token_hash=token_hash))
+    await db.commit()
+
+    scheme = "https" if _is_secure_request(request) else "http"
+    host = request.headers.get("host") or request.url.netloc
+    base_url = request_base_url(scheme, host)
+    setup_uri = build_setup_uri(base_url, raw_token)
+
+    tokens = await _user_api_tokens(db, current_user.id)
+    return await render_template(
+        "user/api_tokens.html",
+        request,
+        {
+            "current_user": current_user,
+            "tokens": tokens,
+            "new_token": None,
+            "qr_setup": {
+                "uri": setup_uri,
+                "qr_data_uri": render_qr_data_uri(setup_uri),
+            },
+        },
     )
 
 

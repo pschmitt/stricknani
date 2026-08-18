@@ -1,6 +1,10 @@
 package blue.anika.wolle.ui.onboarding
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -9,13 +13,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,8 +42,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 
+private enum class OnboardingMode(val label: String) {
+    MANUAL("Manual"),
+    QR("QR code"),
+    PASSWORD("Sign in"),
+}
+
 /**
- * Server URL + personal access token entry. Validated against the real server
+ * Server URL + personal access token entry, plus two SNA-13 shortcuts that both end up at the
+ * same [OnboardingViewModel.connect]/[OnboardingViewModel.persistAndSucceed] destination: scanning
+ * the web Settings page's setup QR, or signing in with an email/password (which mints a PAT
+ * server-side instead of requiring a trip to the web UI first). Validated against the real server
  * ([blue.anika.wolle.data.onboarding.OnboardingValidator]) before anything is saved - see
  * [OnboardingViewModel]. Success flips
  * [blue.anika.wolle.data.settings.SettingsRepository.isConfigured], which `MainActivity` observes
@@ -45,9 +61,14 @@ import blue.anika.wolle.R
 @Composable
 fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var mode by remember { mutableStateOf(OnboardingMode.MANUAL) }
     var serverUrl by remember { mutableStateOf("") }
     var apiToken by remember { mutableStateOf("") }
     var tokenVisible by remember { mutableStateOf(false) }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var showScanner by remember { mutableStateOf(false) }
     val isValidating = uiState is OnboardingUiState.Validating
 
     Column(
@@ -64,51 +85,69 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
+            modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
         )
 
-        OutlinedTextField(
-            value = serverUrl,
-            onValueChange = { serverUrl = it },
-            label = { Text(stringResource(R.string.onboarding_server_url_label)) },
-            placeholder = { Text(stringResource(R.string.onboarding_server_url_placeholder)) },
-            singleLine = true,
-            enabled = !isValidating,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-            modifier = Modifier.fillMaxWidth(),
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+        ) {
+            OnboardingMode.entries.forEach { candidate ->
+                FilterChip(
+                    selected = mode == candidate,
+                    onClick = { mode = candidate },
+                    enabled = !isValidating,
+                    label = { Text(candidate.label) },
+                )
+            }
+        }
+        Spacer(Modifier.padding(top = 16.dp))
 
-        OutlinedTextField(
-            value = apiToken,
-            onValueChange = { apiToken = it },
-            label = { Text(stringResource(R.string.onboarding_api_token_label)) },
-            singleLine = true,
-            enabled = !isValidating,
-            visualTransformation =
-                if (tokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                IconButton(onClick = { tokenVisible = !tokenVisible }) {
-                    Icon(
-                        imageVector =
-                            if (tokenVisible) Icons.Filled.VisibilityOff
-                            else Icons.Filled.Visibility,
-                        contentDescription =
-                            stringResource(
-                                if (tokenVisible) R.string.onboarding_hide_token
-                                else R.string.onboarding_show_token
-                            ),
+        when (mode) {
+            OnboardingMode.MANUAL ->
+                ManualOnboardingFields(
+                    serverUrl = serverUrl,
+                    onServerUrlChange = { serverUrl = it },
+                    apiToken = apiToken,
+                    onApiTokenChange = { apiToken = it },
+                    tokenVisible = tokenVisible,
+                    onTokenVisibleChange = { tokenVisible = it },
+                    enabled = !isValidating,
+                )
+            OnboardingMode.QR ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "Scan the setup QR code from Stricknani's web Settings → API Tokens page.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
                     )
+                    OutlinedButton(
+                        onClick = { showScanner = true },
+                        enabled = !isValidating,
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    ) {
+                        Icon(
+                            Icons.Filled.QrCodeScanner,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp),
+                        )
+                        Text("Scan QR code")
+                    }
                 }
-            },
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-        )
-
-        Text(
-            text = stringResource(R.string.onboarding_api_token_help),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp),
-        )
+            OnboardingMode.PASSWORD ->
+                PasswordOnboardingFields(
+                    serverUrl = serverUrl,
+                    onServerUrlChange = { serverUrl = it },
+                    email = email,
+                    onEmailChange = { email = it },
+                    password = password,
+                    onPasswordChange = { password = it },
+                    passwordVisible = passwordVisible,
+                    onPasswordVisibleChange = { passwordVisible = it },
+                    enabled = !isValidating,
+                )
+        }
 
         if (uiState is OnboardingUiState.Error) {
             Text(
@@ -120,19 +159,149 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
             )
         }
 
-        Button(
-            onClick = { viewModel.connect(serverUrl, apiToken) },
-            enabled = !isValidating,
-            modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
-        ) {
-            if (isValidating) {
-                CircularProgressIndicator(
-                    modifier = Modifier.width(20.dp).padding(end = 8.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp,
+        if (mode != OnboardingMode.QR) {
+            Button(
+                onClick = {
+                    when (mode) {
+                        OnboardingMode.MANUAL -> viewModel.connect(serverUrl, apiToken)
+                        OnboardingMode.PASSWORD ->
+                            viewModel.signInWithPassword(serverUrl, email, password)
+                        OnboardingMode.QR -> Unit
+                    }
+                },
+                enabled = !isValidating,
+                modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+            ) {
+                if (isValidating) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.width(20.dp).padding(end = 8.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp,
+                    )
+                }
+                Text(
+                    if (mode == OnboardingMode.PASSWORD) "Sign in"
+                    else stringResource(R.string.onboarding_connect_button)
                 )
             }
-            Text(stringResource(R.string.onboarding_connect_button))
         }
     }
+
+    if (showScanner) {
+        QrScannerDialog(
+            onResult = { text ->
+                showScanner = false
+                viewModel.connectFromScannedText(text)
+            },
+            onDismiss = { showScanner = false },
+        )
+    }
+}
+
+@Composable
+private fun ManualOnboardingFields(
+    serverUrl: String,
+    onServerUrlChange: (String) -> Unit,
+    apiToken: String,
+    onApiTokenChange: (String) -> Unit,
+    tokenVisible: Boolean,
+    onTokenVisibleChange: (Boolean) -> Unit,
+    enabled: Boolean,
+) {
+    OutlinedTextField(
+        value = serverUrl,
+        onValueChange = onServerUrlChange,
+        label = { Text(stringResource(R.string.onboarding_server_url_label)) },
+        placeholder = { Text(stringResource(R.string.onboarding_server_url_placeholder)) },
+        singleLine = true,
+        enabled = enabled,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    OutlinedTextField(
+        value = apiToken,
+        onValueChange = onApiTokenChange,
+        label = { Text(stringResource(R.string.onboarding_api_token_label)) },
+        singleLine = true,
+        enabled = enabled,
+        visualTransformation =
+            if (tokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        trailingIcon = {
+            IconButton(onClick = { onTokenVisibleChange(!tokenVisible) }) {
+                Icon(
+                    imageVector =
+                        if (tokenVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                    contentDescription =
+                        stringResource(
+                            if (tokenVisible) R.string.onboarding_hide_token
+                            else R.string.onboarding_show_token
+                        ),
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+    )
+
+    Text(
+        text = stringResource(R.string.onboarding_api_token_help),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+}
+
+@Composable
+private fun PasswordOnboardingFields(
+    serverUrl: String,
+    onServerUrlChange: (String) -> Unit,
+    email: String,
+    onEmailChange: (String) -> Unit,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    passwordVisible: Boolean,
+    onPasswordVisibleChange: (Boolean) -> Unit,
+    enabled: Boolean,
+) {
+    OutlinedTextField(
+        value = serverUrl,
+        onValueChange = onServerUrlChange,
+        label = { Text(stringResource(R.string.onboarding_server_url_label)) },
+        placeholder = { Text(stringResource(R.string.onboarding_server_url_placeholder)) },
+        singleLine = true,
+        enabled = enabled,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    OutlinedTextField(
+        value = email,
+        onValueChange = onEmailChange,
+        label = { Text("Email") },
+        singleLine = true,
+        enabled = enabled,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+    )
+
+    OutlinedTextField(
+        value = password,
+        onValueChange = onPasswordChange,
+        label = { Text("Password") },
+        singleLine = true,
+        enabled = enabled,
+        visualTransformation =
+            if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        trailingIcon = {
+            IconButton(onClick = { onPasswordVisibleChange(!passwordVisible) }) {
+                Icon(
+                    imageVector =
+                        if (passwordVisible) Icons.Filled.VisibilityOff
+                        else Icons.Filled.Visibility,
+                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+    )
 }

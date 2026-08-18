@@ -54,6 +54,35 @@
         </div>
         {% endif %}
 
+        {% if qr_setup %}
+        <div class="alert alert-success flex-col items-stretch gap-3">
+            <div class="flex items-center gap-2">
+                <span class="mdi mdi-check-circle text-2xl"></span>
+                <h3 class="font-bold">{{ _('Scan to set up the app') }}</h3>
+            </div>
+            <p class="text-sm">
+                {{ _("This code is only shown once - it lets a device scanning it sign in immediately. Treat it like a password until it's scanned.") }}
+            </p>
+            <div class="flex justify-center bg-white p-4 rounded-lg">
+                <img src="{{ qr_setup.qr_data_uri }}" alt="{{ _('Stricknani setup QR code') }}" class="w-64 h-64">
+            </div>
+            <p class="text-xs font-mono opacity-60 break-all">{{ qr_setup.uri }}</p>
+        </div>
+        {% endif %}
+
+        <div class="card bg-base-200 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-lg">{{ _('Set up a new device') }}</h2>
+                <p class="text-sm opacity-70">
+                    {{ _('Scan this from the Stricknani app during onboarding instead of typing the server URL and token by hand.') }}
+                </p>
+                <form method="post" action="/user/api-tokens/qr-setup" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    {{ buttons.primary(_('Generate setup QR code'), type='submit', icon='mdi-qrcode') }}
+                </form>
+            </div>
+        </div>
+
         <div class="card bg-base-200 shadow-xl">
             <div class="card-body">
                 <h2 class="card-title text-lg">{{ _('New token') }}</h2>

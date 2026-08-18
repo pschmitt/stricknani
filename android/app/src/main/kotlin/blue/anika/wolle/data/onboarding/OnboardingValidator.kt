@@ -22,6 +22,9 @@ sealed interface OnboardingError {
     /** The server was reachable and is Stricknani, but rejected the token (HTTP 401/403). */
     data object Unauthorized : OnboardingError
 
+    /** Password-login onboarding (SNA-13): the server rejected the email/password. */
+    data object InvalidCredentials : OnboardingError
+
     /** The server was unreachable (DNS/connect/timeout failure). */
     data object Unreachable : OnboardingError
 

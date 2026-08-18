@@ -10,6 +10,10 @@
     <!-- API 33+ runtime permission for optional background sync result notifications (SNA-14).
          Sync never depends on it being granted. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- QR-code onboarding scanner (SNA-13) - requested at scan time, not on launch. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
         android:name=".StricknaniApp"
@@ -60,6 +64,15 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="http" android:host="*" android:pathPattern="/projects/.*" />
                 <data android:scheme="http" android:host="*" android:pathPattern="/yarn/.*" />
+            </intent-filter>
+            <!-- Setup QR payloads (SNA-13) are self-identifying custom-scheme URIs, so a generic
+                 camera app's own QR auto-detection can hand them back to this app too, not just
+                 the in-app scanner - matches nyetbox's `nyetbox://setup` registration. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="stricknani" android:host="setup" />
             </intent-filter>
         </activity>
 

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-08-18 12:17+0200\n"
+"POT-Creation-Date: 2026-08-18 23:27+0200\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -48,7 +48,7 @@ msgstr ""
 #: stricknani/templates/projects/form.html:834
 #: stricknani/templates/shared/_import_dialog.html:119
 #: stricknani/templates/shared/form_base.html:19
-#: stricknani/templates/user/api_tokens.html:103
+#: stricknani/templates/user/api_tokens.html:132
 #: stricknani/templates/yarn/_delete_dialog.html:18
 #: stricknani/templates/yarn/detail.html:612
 #: stricknani/templates/yarn/form.html:511
@@ -1119,7 +1119,7 @@ msgstr "Tags"
 #: stricknani/templates/projects/detail.html:281
 #: stricknani/templates/projects/detail.html:878
 #: stricknani/templates/projects/detail.html:930
-#: stricknani/templates/user/api_tokens.html:84
+#: stricknani/templates/user/api_tokens.html:113
 #, fuzzy
 msgid "Created"
 msgstr "Category created"
@@ -1710,45 +1710,73 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: stricknani/templates/user/api_tokens.html:59
-msgid "New token"
+#: stricknani/templates/user/api_tokens.html:61
+msgid "Scan to set up the app"
 msgstr ""
 
-#: stricknani/templates/user/api_tokens.html:66
-msgid "Stricknani Android"
+#: stricknani/templates/user/api_tokens.html:64
+msgid ""
+"This code is only shown once - it lets a device scanning it sign in "
+"immediately. Treat it like a password until it's scanned."
 msgstr ""
 
-#: stricknani/templates/user/api_tokens.html:69
-msgid "Create token"
+#: stricknani/templates/user/api_tokens.html:67
+msgid "Stricknani setup QR code"
 msgstr ""
 
 #: stricknani/templates/user/api_tokens.html:75
-msgid "Active tokens"
+msgid "Set up a new device"
 msgstr ""
 
-#: stricknani/templates/user/api_tokens.html:86
-msgid "Last used"
+#: stricknani/templates/user/api_tokens.html:77
+msgid ""
+"Scan this from the Stricknani app during onboarding instead of typing the"
+" server URL and token by hand."
+msgstr ""
+
+#: stricknani/templates/user/api_tokens.html:81
+msgid "Generate setup QR code"
 msgstr ""
 
 #: stricknani/templates/user/api_tokens.html:88
-msgid "Never used"
+msgid "New token"
 msgstr ""
 
-#: stricknani/templates/user/api_tokens.html:92
-#: stricknani/templates/user/api_tokens.html:99
-#: stricknani/templates/user/api_tokens.html:106
-msgid "Revoke"
+#: stricknani/templates/user/api_tokens.html:95
+msgid "Stricknani Android"
 msgstr ""
 
-#: stricknani/templates/user/api_tokens.html:97
-msgid "Revoke token"
+#: stricknani/templates/user/api_tokens.html:98
+msgid "Create token"
 msgstr ""
 
-#: stricknani/templates/user/api_tokens.html:100
-msgid "Any app using this token will stop working immediately."
+#: stricknani/templates/user/api_tokens.html:104
+msgid "Active tokens"
 msgstr ""
 
 #: stricknani/templates/user/api_tokens.html:115
+msgid "Last used"
+msgstr ""
+
+#: stricknani/templates/user/api_tokens.html:117
+msgid "Never used"
+msgstr ""
+
+#: stricknani/templates/user/api_tokens.html:121
+#: stricknani/templates/user/api_tokens.html:128
+#: stricknani/templates/user/api_tokens.html:135
+msgid "Revoke"
+msgstr ""
+
+#: stricknani/templates/user/api_tokens.html:126
+msgid "Revoke token"
+msgstr ""
+
+#: stricknani/templates/user/api_tokens.html:129
+msgid "Any app using this token will stop working immediately."
+msgstr ""
+
+#: stricknani/templates/user/api_tokens.html:144
 msgid "No API tokens yet."
 msgstr ""
 

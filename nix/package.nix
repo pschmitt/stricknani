@@ -32,6 +32,7 @@ let
     python-dotenv
     python-jose
     python-multipart
+    qrcode
     rich
     scikit-image
     sentry-sdk

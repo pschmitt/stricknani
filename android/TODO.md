@@ -531,11 +531,64 @@ decision (see above).
 
 ## SNA-13: QR-code onboarding
 
-- [ ] Generate a setup QR from the web Settings page (server URL + a freshly created PAT) that
-      the app can scan during onboarding instead of manual entry - matches nyetbox's
-      `nix run .#nyetbox-setup` / jollyfin's QR device-provisioning UX
+- [x] Researched nyetbox's/jollyfin's QR setup patterns first (2026-08-18): both are *local,
+      offline* tools (a Nix/`qrencode` CLI for nyetbox against third-party NetBox; an in-app
+      device-to-device config export for jollyfin, no server involved at all) - neither actually
+      has a web-side generation component, since neither app's own backend is first-party the way
+      Stricknani's is. So this is a genuinely new capability, not a port: server-side QR rendering
+      on the web Settings page, built from nyetbox's proven wire format
+      (`stricknani://setup?p=<base64url-JSON>`, unencrypted like nyetbox's - not jollyfin's
+      password-protected variant, since this is shown once on an already-authenticated page and
+      scanned immediately, not carried around long-term) and its CameraX+ZXing scanning stack.
+- [x] **Web (backend)**: `stricknani/utils/qr_setup.py` builds the setup URI and renders it as a
+      `data:image/png` QR via the new `qrcode[pil]` dependency (`pyproject.toml`, `nix/package.nix`,
+      `uv.lock`); `POST /user/api-tokens/qr-setup` (`stricknani/routes/user.py`) mints a token named
+      "QR setup" and renders it on the existing API Tokens page (`templates/user/api_tokens.html`),
+      reusing `web/middleware.py`'s `_is_secure_request` to build the right `scheme://host` even
+      behind a TLS-terminating reverse proxy. New template strings extracted/translated into German
+      (`just i18n-update`, `i18n-check` passes).
+- [x] **Also added** (adjacent, same "get a token onto a new device without visiting the web UI
+      first" goal, user-requested 2026-08-18): `POST /api/v1/auth/token`
+      (`stricknani/routes/api/auth.py`) trades an email/password for a freshly minted PAT in one
+      request - simpler than syncwich's Mealie-backed two-step JWT-then-mint-token dance, since
+      Stricknani's own backend controls both ends. Reuses `authenticate_user`/rate-limiting exactly
+      like `/auth/login`. Needs its own CSRF exemption (`main.py`'s `_CSRF_EXEMPT_PATHS`, by exact
+      path) since - unlike every other `/api/v1` route - it has no Bearer token yet to exempt via
+      the normal header check. 5 new tests (`tests/test_api_auth_token.py`): success, custom token
+      name, wrong password, unknown email, rate-limited after repeated failures.
+- [x] **Android**: `data/onboarding/QrConfigCodec.kt` (decode-only, generation is server-side) and
+      `data/onboarding/PasswordTokenMinter.kt` (plain `OkHttpClient` + manual JSON, matching
+      `OnboardingValidator`'s existing pattern rather than introducing Retrofit for one endpoint).
+      `scanner/BarcodeAnalyzer.kt` + `ui/onboarding/QrScannerDialog.kt`: CameraX + ZXing (same
+      versions as nyetbox/jollyfin's scanners), deliberately much simpler than nyetbox's full
+      `ScannerScreen` (no lens switching/zoom/torch/tap-to-focus - a one-shot setup-code scan
+      doesn't need any of that), shown as a plain `Dialog` like `ImageViewerDialog` rather than a
+      nav route. `OnboardingScreen` now has a 3-way mode switch (Manual / QR code / Sign in);
+      `OnboardingViewModel` gained `signInWithPassword`/`connectFromScannedText`, both funneling
+      into a shared `persistAndSucceed` (extracted from `connect`, matching syncwich's
+      `persistAndSucceed` split - minted/QR-scanned tokens don't need `connect`'s own validation
+      round-trip the same way, though QR still goes through it since a scanned code could be stale
+      by the time it's actually scanned, unlike a token minted in the same request). Also
+      registered `stricknani://setup` as a manifest intent-filter, so a phone's own default camera
+      app's QR auto-detection can hand the payload back to Stricknani too, not just the in-app
+      scanner. `QrConfigCodecTest` includes a cross-check against a payload built exactly the way
+      the Python backend encodes it, not just this class's own round-trip.
 
-Status: not started
+Status: **mostly done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` (261 passed)
++ `ruff format`/`ruff check` clean + `just i18n-check` passing on the backend, and
+`just gradle rofl-13.brkn.lol ":app:assembleDebug" ":app:testDebugUnitTest" ":app:lintDebug"`
+(`BUILD SUCCESSFUL`, lint clean) on Android. Confirmed for real on the Zenfone 10: signed out to
+reach the new onboarding screen, all three mode chips render and fit on screen (fixed a real bug
+here - the initial "Server URL + token"/"Scan QR code"/"Sign in" labels overflowed off the right
+edge on this phone's width; shortened to "Manual"/"QR code"/"Sign in" and added a horizontal-scroll
+fallback), the QR scanner dialog correctly requests camera permission and binds a live CameraX
+preview with the dimmed-viewfinder overlay (status bar's green camera indicator confirms real
+binding, not just a UI mock). The password sign-in flow itself is **not yet confirmed working
+end-to-end** - it correctly reached the real production server and got a real HTTP 404, because
+this backend work (the new `/api/v1/auth/token` and `/user/api-tokens/qr-setup` routes) hasn't been
+deployed to production (rofl-10/wolle.anika.blue) yet as of this note. That deploy is the next
+step before this ticket can be marked fully done; the 404 itself is expected/correct evidence the
+Android-side error handling and the real network path both work, not a bug.
 
 ## SNA-14: Sync-completion notifications
 

@@ -61,6 +61,14 @@ def get_csrf_config() -> list[tuple[str, Any]]:
     ]
 
 
+# Routes that authenticate via a request-body credential (not a cookie, not yet a
+# Bearer token - that's the whole point) rather than the normal Bearer-header
+# exemption below. Exempt by exact path since there's no other signal available
+# before the handler runs (SNA-13's password-login onboarding path:
+# /api/v1/auth/token mints the very first token from an email+password body).
+_CSRF_EXEMPT_PATHS = frozenset({"/api/v1/auth/token"})
+
+
 async def csrf_validation_dependency(
     request: Request, csrf_protect: FlexibleCsrfProtect = Depends()
 ) -> None:
@@ -74,6 +82,8 @@ async def csrf_validation_dependency(
     if config.TESTING:
         return
     if request.headers.get("Authorization", "").lower().startswith("bearer "):
+        return
+    if request.url.path in _CSRF_EXEMPT_PATHS:
         return
     if request.method in {"POST", "PUT", "DELETE", "PATCH"}:
         try:

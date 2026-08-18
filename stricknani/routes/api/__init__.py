@@ -10,9 +10,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from stricknani.routes.api import categories, meta, projects, sync, yarns
+from stricknani.routes.api import auth, categories, meta, projects, sync, yarns
 
 router: APIRouter = APIRouter(prefix="/api/v1")
+router.include_router(auth.router)
 router.include_router(meta.router)
 router.include_router(categories.router)
 router.include_router(yarns.router)
