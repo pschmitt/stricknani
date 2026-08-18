@@ -321,7 +321,10 @@ set up this session, same gap noted in SNA-6), and there is no UI yet that displ
 end-to-end once SNA-9 replaces those placeholders with real screens reading from these
 repositories. Local `ktfmtCheck` was not run given its documented unreliable-NO-SOURCE caveat
 (see this file's SNA-5/SNA-6 notes and `android/AGENTS.md`) - pushing and letting CI be the
-authoritative formatting/lint check instead.
+authoritative formatting/lint check instead. CI's `Android Lint` job did catch real ktfmt
+violations on the first push (as expected per that caveat); fixed by applying the run's
+`ktfmt-diff-patch` artifact, re-verified with another remote debug build, and CI is green on the
+follow-up push.
 
 ## SNA-8: Offline write queue
 
@@ -332,20 +335,60 @@ authoritative formatting/lint check instead.
 - [ ] A replay failure (e.g. the project was deleted server-side in the meantime) surfaces a
       conflict banner rather than silently dropping the local edit
 
-Status: not started
+Status: not started. Resequenced after SNA-9: an offline write queue has nothing to exercise it
+while Home/Projects/Yarns/Search are still `PlaceholderScreen`s, and it naturally pairs with
+SNA-10's create/edit flows (the write queue exists to serve them) rather than being built as an
+untestable, screen-less abstraction first.
 
 ### Android app screens
 
 ## SNA-9: Core browsing screens
 
-- [ ] Home/dashboard: sync status, favorites, recently viewed
-- [ ] Projects list: search, category/tag filter chips, favorite toggle
-- [ ] Project detail: steps, images, gauge/needles/materials, linked yarns, notes
-- [ ] Yarn stash list + detail: filter by brand/colorway/weight, photos
-- [ ] Category management
-- [ ] Global search across projects and yarns
+- [x] Home/dashboard: favorites (projects + yarns) and recently-updated projects, pull-to-refresh
+- [x] Projects list: search, category filter chips (+ inline "add category" dialog), favorite
+      toggle, pull-to-refresh
+- [x] Project detail: steps, images, needles/stitch sample/other materials, linked yarns
+      (tappable, resolved from `yarn_ids` against the local yarn cache), notes
+- [x] Yarn stash list + detail: search by name/brand/colorway, favorites-only filter, photos
+- [x] Category management: create via the Projects screen's filter row (`CategoriesApi` direct
+      call + `CategoryRepository.sync()`); rename/delete not implemented (categories.py has no
+      such endpoints yet either)
+- [x] Global search across projects and yarns - client-side over the Room cache, so it works fully
+      offline with zero network call
 
-Status: not started
+Status: done (2026-08-18), with one caveat below. No dedicated "tag filter chips" UI landed
+(the checklist item was originally "category/tag filter chips") - category filtering is real;
+tag filtering was scoped out to keep this task bounded and can follow as a small addition.
+
+Favorite toggling (`ProjectsApi`/`YarnsApi` `favorite`/`unfavorite`, wired into
+`ProjectRepository`/`YarnRepository`) is a direct online call with local optimistic-update +
+rollback-on-failure, not routed through the still-nonexistent SNA-8 write queue - reasonable for a
+single idempotent boolean field; full create/update/delete writes still wait for SNA-8/SNA-10.
+
+Media: `data/media/MediaUrlResolver.kt` turns a DTO's relative `/media/...` path into an absolute
+URL using the currently configured server, consumed by every screen via `viewModel.previewUrl()`/
+`resolveMediaUrl()` and rendered with Coil3's `AsyncImage` against the `@MediaClient` image loader
+wired in SNA-7.
+
+Navigation: added `Route.ProjectDetail(projectId)`/`Route.YarnDetail(yarnId)` (type-safe nav args
+via `SavedStateHandle.toRoute<>()`, same pattern as syncwich); `StricknaniNavHost` now routes all
+five bottom-nav destinations to real screens plus the two detail routes - no `PlaceholderScreen`
+usages remain anywhere in the nav graph. Removed the now-unused `placeholder_home_*`/
+`placeholder_projects_*`/`placeholder_yarns_*`/`placeholder_search_*` string resources
+(`placeholder_settings_*` stays - `SettingsScreen` is still sign-out-only pending SNA-18).
+
+Verified: `just build debug rofl-13.brkn.lol` - `BUILD SUCCESSFUL` (fixed one real compile error
+along the way: a missing `androidx.compose.foundation.layout.height` import in
+`YarnsListScreen.kt`, caught by the remote build, not local static checks). Installed and launched
+on the Zenfone 10 (`just deploy-zenfone debug`) - app starts with no crash, `logcat` shows
+`SyncWorker` completing successfully (`Worker result SUCCESS` x2, from the periodic + startup
+enqueue in `StricknaniApp.onCreate`), and the Onboarding screen renders correctly. **Not
+verified**: actually rendering synced Home/Projects/Yarns/Search data on-device - the device's
+saved credentials from earlier SNA-6 testing are no longer present (onboarding showed instead of
+the main shell), and per SNA-7's own "not verified" note, no reachable Stricknani test server was
+set up this session either, so re-onboarding wasn't possible. Onboarding's own network-gated
+validation means the main shell (and therefore these new screens) cannot be reached at all without
+a real server + token - closing this gap needs a reachable test instance in a future session.
 
 ## SNA-10: Create/edit flows
 

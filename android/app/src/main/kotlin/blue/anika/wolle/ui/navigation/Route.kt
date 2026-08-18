@@ -22,6 +22,10 @@ sealed interface Route {
     @Serializable data object Search : Route
 
     @Serializable data object Settings : Route
+
+    @Serializable data class ProjectDetail(val projectId: Int) : Route
+
+    @Serializable data class YarnDetail(val yarnId: Int) : Route
 }
 
 /** The five bottom-navigation destinations, in display order (see android/TODO.md SNA-5/SNA-9). */

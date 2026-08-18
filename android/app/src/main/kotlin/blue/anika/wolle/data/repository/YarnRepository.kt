@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.repository
 
 import blue.anika.wolle.data.api.SyncApi
+import blue.anika.wolle.data.api.YarnsApi
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.dao.YarnDao
@@ -22,6 +23,7 @@ constructor(
     private val yarnDao: YarnDao,
     private val syncStateDao: SyncStateDao,
     private val syncApi: SyncApi,
+    private val yarnsApi: YarnsApi,
     private val json: Json,
 ) {
     fun observeAll(): Flow<List<YarnEntity>> = yarnDao.observeAll()
@@ -29,6 +31,19 @@ constructor(
     fun observeById(id: Int): Flow<YarnEntity?> = yarnDao.observeById(id)
 
     fun decodeDetail(entity: YarnEntity): YarnDto = json.decodeFromString(entity.detailJson)
+
+    /** See `ProjectRepository.toggleFavorite`'s kdoc - same optimistic-with-rollback pattern. */
+    suspend fun toggleFavorite(entity: YarnEntity, wasFavorite: Boolean) {
+        yarnDao.upsertAll(listOf(entity.copy(isFavorite = !wasFavorite)))
+        try {
+            val updated =
+                if (wasFavorite) yarnsApi.unfavoriteYarn(entity.id) else yarnsApi.favoriteYarn(entity.id)
+            yarnDao.upsertAll(listOf(updated.toEntity(json)))
+        } catch (e: Exception) {
+            yarnDao.upsertAll(listOf(entity.copy(isFavorite = wasFavorite)))
+            throw e
+        }
+    }
 
     suspend fun sync() {
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)

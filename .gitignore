@@ -45,8 +45,8 @@ htmlcov/
 *.db
 *.db-journal
 
-# Media files
-media/
+# Media files (uploaded content directory, repo root only - not android/**/data/media/ etc.)
+/media/
 
 # Environment
 .env*

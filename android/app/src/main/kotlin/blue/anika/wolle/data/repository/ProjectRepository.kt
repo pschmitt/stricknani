@@ -1,5 +1,6 @@
 package blue.anika.wolle.data.repository
 
+import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.db.dao.ProjectDao
@@ -22,6 +23,7 @@ constructor(
     private val projectDao: ProjectDao,
     private val syncStateDao: SyncStateDao,
     private val syncApi: SyncApi,
+    private val projectsApi: ProjectsApi,
     private val json: Json,
 ) {
     fun observeAll(): Flow<List<ProjectEntity>> = projectDao.observeAll()
@@ -31,6 +33,24 @@ constructor(
     fun decodeDetail(entity: ProjectEntity): ProjectDto = json.decodeFromString(entity.detailJson)
 
     fun decodeTags(entity: ProjectEntity): List<String> = json.decodeFromString(entity.tagsJson)
+
+    /**
+     * Flips the favorite flag immediately in Room (optimistic), then fires the network call; on
+     * failure the row is reverted to `wasFavorite` rather than left showing a lie. Direct online
+     * call, not queued - see `ProjectsApi`'s kdoc for why favorites skip SNA-8.
+     */
+    suspend fun toggleFavorite(entity: ProjectEntity, wasFavorite: Boolean) {
+        projectDao.upsertAll(listOf(entity.copy(isFavorite = !wasFavorite)))
+        try {
+            val updated =
+                if (wasFavorite) projectsApi.unfavoriteProject(entity.id)
+                else projectsApi.favoriteProject(entity.id)
+            projectDao.upsertAll(listOf(updated.toEntity(json)))
+        } catch (e: Exception) {
+            projectDao.upsertAll(listOf(entity.copy(isFavorite = wasFavorite)))
+            throw e
+        }
+    }
 
     suspend fun sync() {
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)

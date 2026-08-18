@@ -9,7 +9,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -17,15 +16,19 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import blue.anika.wolle.R
-import blue.anika.wolle.ui.common.PlaceholderScreen
+import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
+import blue.anika.wolle.ui.projects.ProjectDetailScreen
+import blue.anika.wolle.ui.projects.ProjectsListScreen
+import blue.anika.wolle.ui.search.SearchScreen
 import blue.anika.wolle.ui.settings.SettingsScreen
+import blue.anika.wolle.ui.yarns.YarnDetailScreen
+import blue.anika.wolle.ui.yarns.YarnsListScreen
 
 /**
  * The app's main scaffold: a Material 3 bottom navigation bar switching between the five top-level
- * destinations. Most destinations are still a [PlaceholderScreen] - real screens land in
- * SNA-9/SNA-10; the configurable navbar (reordering/hiding items) is SNA-16.
+ * destinations, plus non-top-level detail routes (`ProjectDetail`/`YarnDetail`). Create/edit flows
+ * are SNA-10; the configurable navbar (reordering/hiding items) is SNA-16.
  *
  * @param startDestination [Route.Onboarding] until a server URL + API token are saved, otherwise
  *   [Route.Home] - `MainActivity` picks this reactively from `SettingsRepository.isConfigured` and
@@ -77,34 +80,38 @@ fun StricknaniNavHost(modifier: Modifier = Modifier, startDestination: Route = R
         ) {
             composable<Route.Onboarding> { OnboardingScreen() }
             composable<Route.Home> {
-                PlaceholderScreen(
-                    icon = TopLevelDestination.HOME.icon,
-                    title = stringResource(R.string.placeholder_home_title),
-                    subtitle = stringResource(R.string.placeholder_home_subtitle),
+                HomeScreen(
+                    onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                    onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                 )
             }
             composable<Route.Projects> {
-                PlaceholderScreen(
-                    icon = TopLevelDestination.PROJECTS.icon,
-                    title = stringResource(R.string.placeholder_projects_title),
-                    subtitle = stringResource(R.string.placeholder_projects_subtitle),
+                ProjectsListScreen(
+                    onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) }
                 )
             }
             composable<Route.Yarns> {
-                PlaceholderScreen(
-                    icon = TopLevelDestination.YARNS.icon,
-                    title = stringResource(R.string.placeholder_yarns_title),
-                    subtitle = stringResource(R.string.placeholder_yarns_subtitle),
-                )
+                YarnsListScreen(onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) })
             }
             composable<Route.Search> {
-                PlaceholderScreen(
-                    icon = TopLevelDestination.SEARCH.icon,
-                    title = stringResource(R.string.placeholder_search_title),
-                    subtitle = stringResource(R.string.placeholder_search_subtitle),
+                SearchScreen(
+                    onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                    onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                 )
             }
             composable<Route.Settings> { SettingsScreen() }
+            composable<Route.ProjectDetail> {
+                ProjectDetailScreen(
+                    onBack = { navController.navigateUp() },
+                    onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                )
+            }
+            composable<Route.YarnDetail> {
+                YarnDetailScreen(
+                    onBack = { navController.navigateUp() },
+                    onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                )
+            }
         }
     }
 }
