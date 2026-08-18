@@ -80,6 +80,7 @@ Execution-oriented backlog for Stricknani.
 | T74 | P1 | done | api | feat | Add `ApiToken` model + `/user/api-tokens` settings UI, `require_api_token` Bearer-auth dependency, and CSRF exemption for Bearer requests (backend foundation for the Android app; mirrors `android/TODO.md` SNA-1) |
 | T75 | P1 | done | api | feat | Add versioned JSON API (`/api/v1/`): projects/yarns/categories CRUD, favorites, image/attachment upload, `GET /api/v1/meta` (backend foundation for the Android app; mirrors `android/TODO.md` SNA-2) |
 | T76 | P1 | done | api | feat | Add `require_auth_or_api_token` dependency so `/media` serving accepts either the session cookie or a Bearer API token (backend foundation for the Android app; mirrors `android/TODO.md` SNA-4) |
+| T77 | P1 | done | api | feat | Add delta-sync endpoints (`/api/v1/sync/{projects,yarns,categories}`) sourcing deletions from `AuditLog` (backend foundation for the Android app; mirrors `android/TODO.md` SNA-3) |
 
 
 ## Done

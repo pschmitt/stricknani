@@ -184,3 +184,30 @@ class ProjectPage(BaseModel):
     page: int
     per_page: int
     has_more: bool
+
+
+class ProjectSyncResponse(BaseModel):
+    """Delta-sync result for projects (see `routes/api/sync.py`)."""
+
+    updated: list[ProjectResponse]
+    deleted_ids: list[int]
+    server_time: datetime
+    full_resync_required: bool = False
+
+
+class YarnSyncResponse(BaseModel):
+    """Delta-sync result for yarns (see `routes/api/sync.py`)."""
+
+    updated: list[YarnResponse]
+    deleted_ids: list[int]
+    server_time: datetime
+    full_resync_required: bool = False
+
+
+class CategorySyncResponse(BaseModel):
+    """Sync result for categories - always a full list, see `routes/api/sync.py`."""
+
+    updated: list[CategoryResponse]
+    deleted_ids: list[int]
+    server_time: datetime
+    full_resync_required: bool = False

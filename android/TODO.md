@@ -108,15 +108,33 @@ collection directly so the `delete-orphan` cascade handles it.
 
 ## SNA-3: Delta-sync endpoints
 
-- [ ] `GET /api/v1/sync/projects?since=<iso8601>` -> `{updated: [...], deleted_ids: [...],
-      server_time: <iso8601>}`; same shape for `/api/v1/sync/yarns` and `/api/v1/sync/categories`
-- [ ] Source `deleted_ids` from the existing `AuditLog` table (`entity_type`/`action="delete"`/
-      `created_at`) instead of adding a new tombstone table
-- [ ] Confirm `AuditLog` retention is long enough that a client that hasn't synced in a while
-      doesn't miss deletions (or force a full resync if the requested `since` predates the oldest
-      retained audit entry)
+- [x] `GET /api/v1/sync/projects?since=<iso8601>` -> `{updated: [...], deleted_ids: [...],
+      server_time: <iso8601>, full_resync_required: bool}`; same shape for `/api/v1/sync/yarns`.
+      `since` omitted/absent means "full sync" (all rows, no deletions to report)
+- [x] `GET /api/v1/sync/categories` - same response shape, but always returns the full current
+      list: categories have no `updated_at` and their deletions aren't recorded in `AuditLog`
+      (only projects/yarns are audited), so there's no delta to compute; the list is small enough
+      that this is cheap. `since` is accepted but unused, kept only for a consistent shape
+- [x] Source `deleted_ids` from the existing `AuditLog` table (`entity_type`/`action="deleted"`/
+      `created_at`, scoped to the requesting user) instead of adding a new tombstone table
+- [x] `full_resync_required` is always `False` for now rather than the originally-planned "since
+      predates the oldest retained AuditLog entry" check - that check was implemented, then
+      reverted after `tests/test_api_sync.py` caught it producing false positives for the entirely
+      ordinary case of a `since` captured before a fresh account's very first `AuditLog` row
+      (nothing to do with missing deletion coverage; `AuditLog` has no retention/pruning today so
+      there's no actual gap to guard against yet). Field is kept in the response shape as a
+      forward-compatible hook - see `sync.py`'s module docstring for what a correct future check
+      would need (a recorded pruning cutoff, not "oldest row that happens to exist")
+- [x] Tests: `tests/test_api_sync.py` (6 tests: initial full sync, delta returns only
+      recently-updated rows, deletion reporting for both projects and yarns, the ancient-`since`
+      false-positive regression case, category full-list sync)
 
-Status: not started
+Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` against a fresh
+(non-locally-migrated) `DATABASE_URL` to match CI's environment (255 passed), `uv run ruff check
+.`, `uv run mypy .`. Also fixed a timezone-comparison bug caught along the way: `since` arrives
+possibly-aware (client sends an offset), but `updated_at`/`created_at` are stored as naive UTC
+(SQLite has no real datetime type and just compares the bound string) - `since` is now normalized
+to naive UTC before use in any query.
 
 ## SNA-4: Bearer-auth support on the media route
 
