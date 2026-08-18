@@ -41,7 +41,7 @@ sealed interface Route {
 enum class TopLevelDestination(val route: Route, val label: String, val icon: ImageVector) {
     HOME(Route.Home, "Home", Icons.Filled.Home),
     PROJECTS(Route.Projects, "Projects", Icons.Filled.Folder),
-    YARNS(Route.Yarns, "Yarn Stash", Icons.Filled.Palette),
+    YARNS(Route.Yarns, "Yarns", Icons.Filled.Palette),
     SEARCH(Route.Search, "Search", Icons.Filled.Search),
     SETTINGS(Route.Settings, "Settings", Icons.Filled.Settings),
 }
