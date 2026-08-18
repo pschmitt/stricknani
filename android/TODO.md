@@ -574,7 +574,7 @@ decision (see above).
       scanner. `QrConfigCodecTest` includes a cross-check against a payload built exactly the way
       the Python backend encodes it, not just this class's own round-trip.
 
-Status: **mostly done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` (261 passed)
+Status: **done** (2026-08-19) - verified via `nix develop -c uv run pytest -q` (261 passed)
 + `ruff format`/`ruff check` clean + `just i18n-check` passing on the backend, and
 `just gradle rofl-13.brkn.lol ":app:assembleDebug" ":app:testDebugUnitTest" ":app:lintDebug"`
 (`BUILD SUCCESSFUL`, lint clean) on Android. Confirmed for real on the Zenfone 10: signed out to
@@ -583,12 +583,15 @@ here - the initial "Server URL + token"/"Scan QR code"/"Sign in" labels overflow
 edge on this phone's width; shortened to "Manual"/"QR code"/"Sign in" and added a horizontal-scroll
 fallback), the QR scanner dialog correctly requests camera permission and binds a live CameraX
 preview with the dimmed-viewfinder overlay (status bar's green camera indicator confirms real
-binding, not just a UI mock). The password sign-in flow itself is **not yet confirmed working
-end-to-end** - it correctly reached the real production server and got a real HTTP 404, because
-this backend work (the new `/api/v1/auth/token` and `/user/api-tokens/qr-setup` routes) hasn't been
-deployed to production (rofl-10/wolle.anika.blue) yet as of this note. That deploy is the next
-step before this ticket can be marked fully done; the 404 itself is expected/correct evidence the
-Android-side error handling and the real network path both work, not a bug.
+binding, not just a UI mock). The password sign-in flow is now **confirmed working end-to-end**:
+the initial live test correctly reached production and got a real HTTP 404 because the backend
+work hadn't been deployed yet (rofl-10 was still pinned to a pre-SNA-13 `stricknani` rev in
+`nixos-config.git`'s `flake.lock` - a stale pin, not a bad deploy attempt). Re-ran
+`nix flake lock --update-input stricknani` + `just deploy rofl-10` and confirmed via
+`curl https://wolle.anika.blue/openapi.json` that `/api/v1/auth/token` and
+`/user/api-tokens/qr-setup` are now live; then signed in on the Zenfone with the dedicated
+`ai@anika.blue` test account against production and landed on Home with a real synced project
+list - the full round trip (password → minted token → persisted connection → sync) works.
 
 ## SNA-14: Sync-completion notifications
 
