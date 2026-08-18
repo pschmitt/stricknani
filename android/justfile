@@ -27,13 +27,13 @@ local_dist := env_var_or_default("WOLLE_DIST_DIR", "./dist")
 default_abi := env_var_or_default("WOLLE_ABI", "arm64-v8a")
 gradle_extra_props := ""
 
-# No physical test devices assigned to this app yet (SNA-12) - kept defined (even if empty/unused)
-# since single-module.just's device-deploy recipes reference these variables unconditionally.
-zenfone_serial := env_var_or_default("ZENFONE_SERIAL", "")
-mipad_host := env_var_or_default("MIPAD_HOST", "")
+# Same physical fleet hardware the sibling apps deploy to (see AGENTS-shared.md) - confirmed
+# working here 2026-08-18 (just deploy-all installed blue.anika.wolle.debug on all three).
+zenfone_serial := env_var_or_default("ZENFONE_SERIAL", "R6AIB700W850L7G")
+mipad_host := env_var_or_default("MIPAD_HOST", "mi-pad-4.lan")
 mipad_ssh_port := env_var_or_default("MIPAD_SSH_PORT", "8022")
 mipad_adb_port := env_var_or_default("MIPAD_ADB_PORT", "5555")
-px5_host := env_var_or_default("PX5_HOST", "")
+px5_host := env_var_or_default("PX5_HOST", "px5.lan")
 
 # Release builds aren't signed with a persistent CI keystore yet (SNA-12) - `build variant=release`
 # just runs assembleRelease unsigned (falls back to the host's throwaway debug keystore) until

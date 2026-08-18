@@ -183,25 +183,36 @@ Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` (
       project sits at the repo root, which isn't true in this monorepo (`android/` is a
       subdirectory alongside the Python web app) - only the cwd-agnostic
       `setup-jdk-gradle` composite action is reused, with `working-directory: android` in each
-      step. No ktfmt-diff-patch auto-fix/auto-PR yet (the reusable workflow's nicer failure UX -
-      see its comments in `.just/android-app-ci` for what porting that would look like).
-      **`release.yaml` is deferred to SNA-12** (needs signing-keystore infrastructure decisions -
-      `android/justfile` has `enable_release_signing := "false"` as a placeholder)
+      step. Uploads a `ktfmt-diff-patch` artifact on failure (mirroring the reusable workflow),
+      used live to fix a real formatting nit this session - but no auto-fix-commit/auto-PR yet
+      (the reusable workflow's nicer failure UX - see its comments in `.just/android-app-ci` for
+      what porting that would look like). **`release.yaml` is deferred to SNA-12** (needs signing
+      -keystore infrastructure decisions - `android/justfile` has `enable_release_signing :=
+      "false"` as a placeholder)
 - [x] Material You theme (`ui/theme/{Color,Theme}.kt`): dynamic color on Android 12+, yarn/craft
       -inspired fallback palette (placeholder pending SNA-19) matching the launcher icon. Bottom
       navigation bar (`ui/navigation/WolleNavHost.kt`) with `PlaceholderScreen`s for the five
       Home / Projects / Yarn Stash / Search / Settings destinations, type-safe Navigation Compose
       routes (`ui/navigation/Route.kt`, kotlinx.serialization `@Serializable` route objects)
 
-Status: **mostly done** (2026-08-18) - written and self-consistency-checked (XML well-formedness,
-YAML/TOML syntax, brace balance, every `R.string`/drawable/mipmap/color reference resolves to a
-real resource) but **not yet compiled or run** - this environment has no Android SDK/JDK and
-Gradle must never run locally per AGENTS.md, so it needs a real `just check`/`just build debug`
-against rofl-13 or rofl-14 (remote build access wasn't set up this session - see the "Set up
-remote build access" option that was deferred) before it can be called verified. Package name
-corrected to `blue.anika.wolle` (was a placeholder `dev.pschmitt.stricknani`) per user
-correction; app is branded "Wolle" (German for "wool/yarn", matching the package) rather than
-reusing the web app's "Stricknani" name, mirroring how syncwich (app name) differs from Mealie
+Status: **done** (2026-08-18) - fully verified: CI green (`android-lint.yaml` ktfmt + Android
+Lint, `android-build.yaml` unit tests + debug APK assembly) against `blue.anika.wolle.debug`, and
+`just build-fetch debug` on `rofl-13.brkn.lol` + `just {zenfone,mipad,px5}-install` confirmed the
+app actually installs and runs on all three fleet devices (Zenfone 10, Mi Pad 4, Pixel 5) -
+`pm list packages`, `dumpsys activity activities` (`ResumedActivity`, no crash in logcat) on each,
+plus a live screenshot from the Zenfone showing the bottom nav and dynamic Material You dark theme
+rendering correctly. Caught and fixed two real issues along the way: (1) a
+latent `worktree_suffix` bug in the justfile - it compared an absolute `git rev-parse --git-dir`
+against a cwd-relative `--git-common-dir`, so it falsely treated every normal checkout as a linked
+worktree whenever `just` runs from `android/` (a subdirectory) rather than the repo root, unlike
+the sibling apps whose Gradle project *is* the repo root; (2) a ktfmt formatting nit (KDoc comment
+line-wrapping) on two files, fixed via the `ktfmt-diff-patch` CI artifact after a manual
+`ktfmtCheck`/`ktfmtFormat` rerun on rofl-13 proved unreliable (reported `NO-SOURCE` for the main
+sourceSet for reasons that didn't reproduce CI's environment - CI itself was used as the oracle
+instead of guessing). Package name corrected to `blue.anika.wolle` (was a placeholder
+`dev.pschmitt.stricknani`) per user correction; app is branded "Wolle" (German for "wool/yarn",
+matching the package) rather than reusing the web app's "Stricknani" name, mirroring how syncwich
+(app name) differs from Mealie
 (the backend product it's a client for) - flag if this naming guess is wrong.
 
 ## SNA-6: Onboarding + credential storage

@@ -56,9 +56,11 @@ directory, not mixed into the root one.
 
 ## Physical test devices
 
-None configured yet for this app (unlike the sibling apps' Zenfone 10 / Mi Pad 4 / Pixel 5 - see
-the shared doc). Add device-deploy recipes to `android/justfile` and this section once real
-hardware is set aside for it (SNA-12).
+Same fleet hardware as the sibling apps - Zenfone 10 / Mi Pad 4 / Pixel 5, see the shared doc for
+connection details/gotchas. `android/justfile` has the same device identifiers committed as
+defaults (`zenfone_serial`, `mipad_host`, `px5_host`); `just deploy-all [variant]` builds, fetches,
+and installs on all three. Confirmed working live 2026-08-18. Release-build signing and Play Store
+parity are still deferred (SNA-12) - this only covers debug-build device installs.
 
 ## Architecture
 
