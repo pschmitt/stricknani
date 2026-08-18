@@ -15,16 +15,19 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +50,7 @@ import coil3.compose.AsyncImage
 fun HomeScreen(
     onProjectClick: (Int) -> Unit,
     onYarnClick: (Int) -> Unit,
+    onGaugeClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val favoriteProjects by viewModel.favoriteProjects.collectAsStateWithLifecycle()
@@ -65,7 +69,19 @@ fun HomeScreen(
 
     val isEmpty = favoriteProjects.isEmpty() && favoriteYarns.isEmpty() && recentProjects.isEmpty()
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Stricknani") },
+                actions = {
+                    IconButton(onClick = onGaugeClick) {
+                        Icon(Icons.Filled.Calculate, contentDescription = "Gauge calculator")
+                    }
+                },
+            )
+        },
+    ) { innerPadding ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = viewModel::refresh,

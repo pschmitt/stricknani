@@ -32,6 +32,9 @@ sealed interface Route {
 
     /** `yarnId == null` is create; a value is edit. */
     @Serializable data class YarnEditor(val yarnId: Int? = null) : Route
+
+    /** Gauge calculator (SNA-11) - pure math, reachable from `HomeScreen`'s top bar. */
+    @Serializable data object Gauge : Route
 }
 
 /** The five bottom-navigation destinations, in display order (see android/TODO.md SNA-5/SNA-9). */

@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
 import blue.anika.wolle.ui.projects.ProjectDetailScreen
@@ -86,6 +87,7 @@ fun StricknaniNavHost(modifier: Modifier = Modifier, startDestination: Route = R
                 HomeScreen(
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                    onGaugeClick = { navController.navigate(Route.Gauge) },
                 )
             }
             composable<Route.Projects> {
@@ -142,6 +144,9 @@ fun StricknaniNavHost(modifier: Modifier = Modifier, startDestination: Route = R
                     },
                     onBack = { navController.navigateUp() },
                 )
+            }
+            composable<Route.Gauge> {
+                GaugeCalculatorScreen(onBack = { navController.navigateUp() })
             }
         }
     }

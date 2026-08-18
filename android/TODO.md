@@ -448,11 +448,37 @@ pure logic yet" reasoning as SNA-6.
 
 ## SNA-11: Gauge calculator
 
-- [ ] Port `stricknani/utils/gauge.py`'s calculation logic natively into Kotlin (pure math, no
-      network call needed) rather than adding a backend endpoint for it - keeps this screen fully
-      offline-capable with zero dependency on server reachability
+- [x] Port `stricknani/utils/gauge.py`'s calculation logic natively into Kotlin
+      (`data/util/GaugeCalculator.kt`, pure math, no network call needed) rather than adding a
+      backend endpoint for it - keeps this screen fully offline-capable with zero dependency on
+      server reachability
+- [x] `ui/gauge/GaugeCalculatorScreen.kt`: no ViewModel - the screen holds its own `remember`/
+      `rememberSaveable` state directly since there's nothing to inject (no repository, no
+      network, no persistence), unlike every other screen in the app. Mirrors
+      `templates/gauge/calculator.html`'s three field groups (pattern gauge / your gauge / pattern
+      counts) and result card; the Calculate button is disabled until every required field is a
+      positive integer, matching the backend's `Form(gt=0)` validation but rejected client-side
+      before submission is even possible rather than surfaced as a 4xx after the fact
+- [x] Reachable from `HomeScreen`'s new `TopAppBar` (a calculator icon action) via
+      `Route.Gauge` - not a bottom-nav destination, since the five-item bottom nav is fixed
+      (SNA-5/9) and this is an occasional-use tool, not core browsing
+- [x] Unit tests (`GaugeCalculatorTest.kt`, JUnit4 - this repo's **first** Android unit test,
+      finally isolable pure logic per the reasoning in SNA-6/7/8/10's notes): 4 cases ported
+      verbatim from `tests/test_gauge.py`'s test vectors
 
-Status: not started
+Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest"` (all 4 new tests pass, `BUILD SUCCESSFUL`), then `just deploy-all debug`
++ relaunch on Zenfone 10, Mi Pad 4, and Pixel 5 (`ResumedActivity`, no crash in logcat on any of
+the three). One real correctness bug caught and fixed before landing: the initial port used
+`kotlin.math.roundToInt()` (round-half-up), but Python's builtin `round()` - what the backend
+actually uses - is round-half-to-even, and gauge ratios land exactly on `.5` often enough in
+practice (e.g. 121 cast-on stitches at a 19/22 gauge ratio = exactly 104.5) that the two would have
+silently disagreed with the web app on that boundary; the port test caught it (expected 104 per
+`tests/test_gauge.py`, got 105) and it's now fixed via `Math.rint()`. **Not verified**: the
+calculator screen's actual on-device rendering/interaction - reaching it requires being past
+Onboarding, and no reachable Stricknani test server has been set up in any session so far (same
+recurring gap as SNA-6/7/8/9/10); only confirmed the app still launches without crashing after this
+change, not that the new screen looks/behaves correctly once opened.
 
 ## SNA-12: Fleet release parity
 
