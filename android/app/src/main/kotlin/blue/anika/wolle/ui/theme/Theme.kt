@@ -18,24 +18,24 @@ import androidx.compose.ui.unit.sp
 
 internal val LightColors =
     lightColorScheme(
-        primary = WolleBerry40,
-        secondary = WolleSage40,
-        tertiary = WolleMustard40,
-        error = WolleError40,
-        background = WolleLightBackground,
-        surface = WolleLightSurface,
-        surfaceContainer = WolleLightSurfaceContainer,
+        primary = StricknaniBerry40,
+        secondary = StricknaniSage40,
+        tertiary = StricknaniMustard40,
+        error = StricknaniError40,
+        background = StricknaniLightBackground,
+        surface = StricknaniLightSurface,
+        surfaceContainer = StricknaniLightSurfaceContainer,
     )
 
 internal val DarkColors =
     darkColorScheme(
-        primary = WolleBerry80,
-        secondary = WolleSage80,
-        tertiary = WolleMustard80,
-        error = WolleError80,
-        background = WolleDarkBackground,
-        surface = WolleDarkSurface,
-        surfaceContainer = WolleDarkSurfaceContainer,
+        primary = StricknaniBerry80,
+        secondary = StricknaniSage80,
+        tertiary = StricknaniMustard80,
+        error = StricknaniError80,
+        background = StricknaniDarkBackground,
+        surface = StricknaniDarkSurface,
+        surfaceContainer = StricknaniDarkSurfaceContainer,
     )
 
 /** A deliberately varied shape scale: expressive cards are soft, while controls stay compact. */
@@ -65,7 +65,7 @@ internal val ExpressiveTypography =
  * light/dark/auto toggle lands in SNA-18 - this only follows the system setting for now.
  */
 @Composable
-fun WolleTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun StricknaniTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val context = LocalContext.current
     val colorScheme =
         when {

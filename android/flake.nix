@@ -1,5 +1,5 @@
 {
-  description = "Wolle Android development environment";
+  description = "Stricknani Android development environment";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -34,7 +34,7 @@
 
       androidEnv = import "${android-app-ci}/nix/devshells.nix" {
         inherit pkgs android-nixpkgs system;
-        appName = "Wolle";
+        appName = "Stricknani";
         buildToolsVersion = "37.0.0";
         platformVersion = "37-0";
         gitHooksLib = git-hooks.lib;

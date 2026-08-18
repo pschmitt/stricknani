@@ -1,4 +1,4 @@
-rootProject.name = "wolle"
+rootProject.name = "stricknani-android"
 
 include(":app")
 

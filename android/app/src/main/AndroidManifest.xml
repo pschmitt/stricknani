@@ -12,7 +12,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
-        android:name=".WolleApp"
+        android:name=".StricknaniApp"
         android:allowBackup="false"
         tools:ignore="DataExtractionRules"
         android:enableOnBackInvokedCallback="true"
@@ -20,7 +20,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Wolle"
+        android:theme="@style/Theme.Stricknani"
         android:usesCleartextTraffic="true"
         tools:targetApi="34">
 
@@ -31,7 +31,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.Wolle.Splash"
+            android:theme="@style/Theme.Stricknani.Splash"
             android:windowSoftInputMode="adjustResize">
 
             <intent-filter>

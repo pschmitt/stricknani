@@ -9,7 +9,7 @@ import timber.log.Timber
  * deliberately minimal for now (SNA-5: repo scaffold + Compose shell).
  */
 @HiltAndroidApp
-class WolleApp : Application() {
+class StricknaniApp : Application() {
 
     override fun onCreate() {
         super.onCreate()

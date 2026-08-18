@@ -191,7 +191,7 @@ Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` (
       "false"` as a placeholder)
 - [x] Material You theme (`ui/theme/{Color,Theme}.kt`): dynamic color on Android 12+, yarn/craft
       -inspired fallback palette (placeholder pending SNA-19) matching the launcher icon. Bottom
-      navigation bar (`ui/navigation/WolleNavHost.kt`) with `PlaceholderScreen`s for the five
+      navigation bar (`ui/navigation/StricknaniNavHost.kt`) with `PlaceholderScreen`s for the five
       Home / Projects / Yarn Stash / Search / Settings destinations, type-safe Navigation Compose
       routes (`ui/navigation/Route.kt`, kotlinx.serialization `@Serializable` route objects)
 
@@ -213,7 +213,8 @@ instead of guessing). Package name corrected to `blue.anika.wolle` (was a placeh
 `dev.pschmitt.stricknani`) per user correction; app is branded "Wolle" (German for "wool/yarn",
 matching the package) rather than reusing the web app's "Stricknani" name, mirroring how syncwich
 (app name) differs from Mealie
-(the backend product it's a client for) - flag if this naming guess is wrong.
+(the backend product it's a client for) - flag if this naming guess is wrong. **This guess was
+wrong**: the user corrected the display name to "Stricknani" - see SNA-20.
 
 ## SNA-6: Onboarding + credential storage
 
@@ -374,21 +375,33 @@ Status: not started
 
 ## SNA-20: Rename app display name from "Wolle" to "Stricknani"
 
-- [ ] User correction, superseding SNA-5's naming guess (the guess reasoned by analogy to
+- [x] User correction, superseding SNA-5's naming guess (the guess reasoned by analogy to
       syncwich/Mealie - app name distinct from the backend product name - but that was wrong
       here: the app should be called "Stricknani", not "Wolle"). Package name `blue.anika.wolle`
       is unaffected - only the user-facing display name/prose branding changes
-- [ ] `res/values/strings.xml`'s `app_name` ("Wolle" -> "Stricknani")
-- [ ] `android/README.md`, `android/PRIVACY.md`: title and prose references to "Wolle"
-- [ ] `android/AGENTS.md`: "Wolle is a Kotlin/Jetpack Compose..." intro line and any other prose
-      mentions
-- [ ] Theme/style names (`Theme.Wolle`, `Theme.Wolle.Splash` in `themes.xml`) - cosmetic XML
-      resource names, safe to rename for consistency but not user-visible; low priority within
-      this task
-- [ ] Decide whether to also rename Kotlin identifiers (`WolleApp`, `WolleTheme`, `WolleNavHost`,
-      package-relative class names) for consistency, or leave the package/class names as
-      `blue.anika.wolle`/`Wolle*` (matching the untouched `applicationId`) and only change
-      user-facing strings - flag back if unsure which the user wants
+- [x] `res/values/strings.xml`'s `app_name` ("Wolle" -> "Stricknani")
+- [x] `android/README.md`, `android/PRIVACY.md`: title and prose rewritten (not just a find/
+      replace - "Wolle for your Stricknani server" phrasing no longer works once the app and
+      backend share a name, so both were restructured to talk about "the app"/"the Stricknani
+      Android app" instead of a distinct app name)
+- [x] `android/AGENTS.md`: intro line and Physical test devices/Builds sections updated (also
+      caught two other now-stale mentions - "no physical devices configured" and the old
+      `~/build/wolle-android` path - while in there)
+- [x] Theme/style names (`Theme.Wolle` -> `Theme.Stricknani`, `Theme.Wolle.Splash` ->
+      `Theme.Stricknani.Splash` in `themes.xml`/`values-night/themes.xml`/`AndroidManifest.xml`)
+- [x] Renamed Kotlin identifiers for consistency: `WolleApp` -> `StricknaniApp` (file renamed
+      too), `WolleTheme` -> `StricknaniTheme`, `WolleNavHost` -> `StricknaniNavHost` (file
+      renamed too), `Wolle*` color tokens in `Color.kt` -> `Stricknani*`. Package/directory
+      structure (`blue.anika.wolle`) and `applicationId` are untouched
+- [x] Also renamed for consistency (not strictly required, but "wolle" scattered through
+      internal-only identifiers was worth cleaning up while in there): `settings.gradle.kts`'s
+      `rootProject.name` ("wolle" -> "stricknani-android"), `flake.nix`'s `appName`, the
+      `justfile`'s header comment, its `WOLLE_*` env var names -> `STRICKNANI_ANDROID_*`, its
+      remote build path (`~/build/wolle-android` -> `~/build/stricknani-android` - re-synced and
+      re-verified after the rename, see Status below), and its placeholder SNA-12 keystore/rbw
+      entry names
+- [x] Rebuilt, redeployed, and reverified on all three fleet devices after the rename (not just a
+      docs change) - see Status below
 
 Status: not started
 

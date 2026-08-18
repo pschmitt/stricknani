@@ -5,8 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import blue.anika.wolle.ui.navigation.WolleNavHost
-import blue.anika.wolle.ui.theme.WolleTheme
+import blue.anika.wolle.ui.navigation.StricknaniNavHost
+import blue.anika.wolle.ui.theme.StricknaniTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -22,6 +22,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        setContent { WolleTheme { WolleNavHost() } }
+        setContent { StricknaniTheme { StricknaniNavHost() } }
     }
 }

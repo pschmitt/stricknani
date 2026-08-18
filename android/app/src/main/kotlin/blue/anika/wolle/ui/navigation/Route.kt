@@ -9,7 +9,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.serialization.Serializable
 
-/** Type-safe Navigation Compose destinations (see MainActivity/WolleNavHost). */
+/** Type-safe Navigation Compose destinations (see MainActivity/StricknaniNavHost). */
 sealed interface Route {
     @Serializable data object Home : Route
 

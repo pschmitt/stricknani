@@ -27,7 +27,7 @@ import blue.anika.wolle.ui.common.PlaceholderScreen
  * destination is SNA-6.
  */
 @Composable
-fun WolleNavHost(modifier: Modifier = Modifier) {
+fun StricknaniNavHost(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
 
     Scaffold(

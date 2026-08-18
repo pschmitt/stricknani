@@ -1,4 +1,4 @@
-# Wolle (Android) task runner.
+# Stricknani (Android) task runner.
 #
 # Gradle must never run on this machine directly - every build/test/lint recipe here shells out to
 # a remote host (rofl-13.brkn.lol or rofl-14.brkn.lol) over SSH instead. See AGENTS.md.
@@ -8,7 +8,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 application_id := "blue.anika.wolle"
 play_package := "blue.anika.wolle"
 
-remote_host := env_var_or_default("WOLLE_REMOTE_HOST", "rofl-13.brkn.lol")
+remote_host := env_var_or_default("STRICKNANI_ANDROID_REMOTE_HOST", "rofl-13.brkn.lol")
 
 # Empty for the main checkout; "-<worktree-dirname>" when run from a linked git worktree (e.g. one
 # of Claude's isolated agent worktrees under .claude/worktrees/). Keeps parallel worktree agents
@@ -21,14 +21,15 @@ remote_host := env_var_or_default("WOLLE_REMOTE_HOST", "rofl-13.brkn.lol")
 # worktree) checkout as a worktree here, aliasing every agent's remote build directory together.
 worktree_suffix := `gd=$(git rev-parse --absolute-git-dir); gcd=$(cd "$(git rev-parse --git-common-dir)" && pwd); if [ "$gd" != "$gcd" ]; then basename "$(git rev-parse --show-toplevel)" | sed 's/^/-/'; fi`
 
-remote_path := env_var_or_default("WOLLE_REMOTE_PATH", "~/build/wolle-android" + worktree_suffix)
-local_dist := env_var_or_default("WOLLE_DIST_DIR", "./dist")
+remote_path := env_var_or_default("STRICKNANI_ANDROID_REMOTE_PATH", "~/build/stricknani-android" + worktree_suffix)
+local_dist := env_var_or_default("STRICKNANI_ANDROID_DIST_DIR", "./dist")
 
-default_abi := env_var_or_default("WOLLE_ABI", "arm64-v8a")
+default_abi := env_var_or_default("STRICKNANI_ANDROID_ABI", "arm64-v8a")
 gradle_extra_props := ""
 
 # Same physical fleet hardware the sibling apps deploy to (see AGENTS-shared.md) - confirmed
-# working here 2026-08-18 (just deploy-all installed blue.anika.wolle.debug on all three).
+# working here 2026-08-18 (just deploy-all installed blue.anika.wolle.debug, labeled "Stricknani",
+# on all three).
 zenfone_serial := env_var_or_default("ZENFONE_SERIAL", "R6AIB700W850L7G")
 mipad_host := env_var_or_default("MIPAD_HOST", "mi-pad-4.lan")
 mipad_ssh_port := env_var_or_default("MIPAD_SSH_PORT", "8022")
@@ -39,10 +40,10 @@ px5_host := env_var_or_default("PX5_HOST", "px5.lan")
 # just runs assembleRelease unsigned (falls back to the host's throwaway debug keystore) until
 # this is set up.
 enable_release_signing := "false"
-rbw_keystore_entry := "Wolle CI Signing Keystore"
-keystore_jks_attachment := "wolle-ci.jks"
-keystore_env_attachment := "wolle-ci-keystore.env"
-ci_tmp_dir_name := ".wolle-ci-tmp"
+rbw_keystore_entry := "Stricknani Android CI Signing Keystore"
+keystore_jks_attachment := "stricknani-android-ci.jks"
+keystore_env_attachment := "stricknani-android-ci-keystore.env"
+ci_tmp_dir_name := ".stricknani-android-ci-tmp"
 
 # List all available recipes. Must stay the first recipe in this file (not just the first line
 # overall) - `just` only considers recipes written directly here, not ones pulled in via the

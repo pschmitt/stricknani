@@ -1,19 +1,20 @@
 # AGENTS.md
 
-Repository instructions for AI coding agents working in `android/` - the Wolle Android app, a
+Repository instructions for AI coding agents working in `android/` - the Stricknani Android app, a
 native offline-first client for the Stricknani web app (`stricknani/`, one directory up).
 
 See `.just/android-app-ci/AGENTS-shared.md` for the fleet-wide task-tracking convention, dev
 environment (`nix develop`/`git-hooks.nix`), CI-is-the-sole-lint-authority rule, and physical test
-device docs (this app currently has none configured - see "Physical test devices" below) - read it
+device docs (this app shares the fleet's devices - see "Physical test devices" below) - read it
 alongside this file, not instead of it.
 
 ## Project shape
 
-Wolle is a Kotlin/Jetpack Compose Android app: a Material You, **offline-first** client for a
-self-hosted [Stricknani](../README.md) instance (knitting projects and yarn stash). Package
-`blue.anika.wolle`, debug applicationId `blue.anika.wolle.debug`, GPL-3.0 (matches the repo-root
-`LICENSE`). Single `:app` Gradle module - this app doesn't need a multi-module split.
+The Stricknani Android app is a Kotlin/Jetpack Compose app: a Material You, **offline-first**
+client for a self-hosted [Stricknani](../README.md) server (knitting projects and yarn stash).
+Package `blue.anika.wolle` (a separate, personal namespace predating this repo - not renamed to
+match the app/product name), debug applicationId `blue.anika.wolle.debug`, GPL-3.0 (matches the
+repo-root `LICENSE`). Single `:app` Gradle module - this app doesn't need a multi-module split.
 
 **Unlike the sibling apps (syncwich, nyetbox, jollyfin, augh), this one lives inside the backend's
 own repo** (`stricknani.git/android/`) rather than a dedicated repo of its own - see root
@@ -44,7 +45,7 @@ directory, not mixed into the root one.
 - **Never run Gradle builds locally on this machine** - always build on `rofl-13.brkn.lol` or
   `rofl-14.brkn.lol` instead (`just sync`, `just gradle`, `just build [variant]`, `just lint`,
   `just test`, `just check`, `just fetch`, `just build-fetch`, run from `android/`). Remote build
-  directory: `~/build/wolle-android` (see `android/justfile`).
+  directory: `~/build/stricknani-android` (see `android/justfile`).
 - See the shared doc for the CI-lint-authority rule and `ktfmt-diff-patch` retrieval procedure.
 - CI workflows here are hand-written (`android/.github` doesn't exist - see repo-root
   `.github/workflows/android-*.yaml`), not the fleet's reusable `lint.yaml`/`build.yaml` called
