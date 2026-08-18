@@ -202,7 +202,7 @@ private fun ProjectDetailContent(
                 Text("Linked yarns", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
             }
-            items(linkedYarns, key = { it.id }) { yarn ->
+            items(linkedYarns, key = { "yarn-${it.id}" }) { yarn ->
                 Card(
                     onClick = { onYarnClick(yarn.id) },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
@@ -229,7 +229,7 @@ private fun ProjectDetailContent(
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 Text("Steps", style = MaterialTheme.typography.titleMedium)
             }
-            items(detail.steps.sortedBy { it.stepNumber }, key = { it.id }) { step ->
+            items(detail.steps.sortedBy { it.stepNumber }, key = { "step-${it.id}" }) { step ->
                 Column(Modifier.padding(top = 12.dp)) {
                     Text(
                         "${step.stepNumber}. ${step.title}",

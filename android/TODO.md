@@ -41,6 +41,20 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Next
 
+- SNA-30: Redesign the Project detail view with cards, more readable/modern layout; linked-yarn
+  rows should show the yarn's icon/primary photo, not bare text
+- SNA-31: Move per-item actions (edit, favorite, etc.) into an overflow menu
+- SNA-32: "New X" FAB label collapses to icon-only while scrolled (matches syncwich), only full
+  width at the top of the list
+- SNA-33: Harden offline sync - deletes/edits from both sides (device and server) need to resolve
+  without data loss; needs an explicit conflict-handling strategy, not just last-write-wins by
+  accident
+- SNA-34: Developer mode easter egg + an "open source libraries used" screen, ported from syncwich
+- SNA-35: In-app crash handler screen with a copyable stack trace, ported from nyetbox/syncwich
+- SNA-36: Performance pass - scrolling smoothness and sync throughput
+- SNA-37: German (DE) translations for the Android app's UI strings, plus an in-app language
+  setting (default: device locale, fallback English) rather than relying on system locale alone
+
 ### Backend (`stricknani/`) - JSON API for the app
 
 ## SNA-1: `ApiToken` model + Settings UI for Personal Access Tokens
@@ -1134,5 +1148,28 @@ next to the project name instead of bare text. Test yarn deleted afterward; one 
 PAT ("temp-test-token") remains on the isolated `ai@anika.blue` test account. Mi Pad 4/Pixel 5 not
 redeployed this pass (Mi Pad needs re-onboarding per SNA-22's note; Pixel 5 was reachable earlier
 this session but not re-checked for this specific batch).
+
+## SNA-29: Fix `ProjectDetailScreen` LazyColumn duplicate-key crash
+
+- [x] Found via live crash-testing on the Pixel 5 (2026-08-19): scrolling a project's detail
+      screen crashed with `java.lang.IllegalArgumentException: Key "3" was already used` (a
+      `LazyColumn` requires globally-unique keys across every `items()`/`itemsIndexed()` call
+      inside it, not just within each call). `ProjectDetailContent`'s single outer `LazyColumn` had
+      both the linked-yarns row (`items(linkedYarns, key = { it.id })`) and the steps list
+      (`items(detail.steps, key = { it.id })`) keyed by their raw, unprefixed database id - since
+      yarns and steps are independent auto-increment tables, a yarn and a step can easily land on
+      the same id (confirmed by reproducing it: creating yarns 8/9/10 and a project whose 10 steps
+      landed on ids 8-17 crashes instantly pre-fix). Fixed by prefixing each section's key
+      (`"yarn-${it.id}"` / `"step-${it.id}"`) so they can never collide. Audited every other
+      `LazyColumn`/`LazyRow` in the app (`YarnDetailScreen`, `YarnsListScreen`,
+      `ProjectsListScreen`) - none of the others mix two differently-sourced id spaces inside one
+      list scope, so this was the only spot with the bug.
+
+Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`), then reproduced the exact pre-fix crash scenario
+against production (a real project with yarn ids 8/9/10 and step ids 8-17) and confirmed on the
+Zenfone 10 with the fixed build: the project detail screen renders both sections correctly and
+survives repeated aggressive fling-scrolls in both directions with no crash and no exception in
+logcat. Deployed to Zenfone 10, Mi Pad 4, and Pixel 5.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
