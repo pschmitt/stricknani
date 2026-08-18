@@ -18,9 +18,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -104,7 +104,7 @@ fun YarnsListScreen(
 
                 if (yarns.isEmpty()) {
                     EmptyState(
-                        icon = Icons.Filled.Palette,
+                        icon = Icons.Filled.Checkroom,
                         title = "No yarns yet",
                         subtitle = "Pull to refresh, or adjust your filters.",
                     )
@@ -150,7 +150,7 @@ private fun YarnListCard(
                         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Filled.Palette, contentDescription = null)
+                        Icon(Icons.Filled.Checkroom, contentDescription = null)
                     }
                 }
             }

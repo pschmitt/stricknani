@@ -1024,4 +1024,59 @@ Verified for real (not just build-success) on Zenfone 10 and Mi Pad 4, `ResumedA
 on both; Pixel 5's wireless adb was disconnected at deploy time (unrelated, recurring issue - see
 SNA-20's notes on the same gap) so it's still running the pre-fix build until its next reconnect.
 
+## SNA-28: Small UI feedback batch (Settings header, yarn icon, Gauge in navbar, Home sync card, "Used in" thumbnails)
+
+- [x] Settings hub screen (`SettingsScreen.kt`) had no `TopAppBar`/page title at all - a real
+      regression from the SNA-21 redesign (the old flat-list screen it replaced didn't need one
+      since it also had no header, but every *other* top-level destination has some visual anchor:
+      Home's `TopAppBar`, Projects'/Yarns' search field). syncwich's own Settings hub has one too.
+      Fixed by wrapping it in a `Scaffold`/`TopAppBar(title = { Text("Settings") })`, matching
+      Home's pattern exactly (`Modifier.padding(innerPadding)` on the content, no manual inset math).
+- [x] Yarn-related icons across the app (`TopLevelDestination.YARNS`, `YarnsListScreen`'s empty
+      state/FAB, `SearchScreen`'s yarn-result fallback, `HomeScreen`'s yarn `HomeCard` fallback)
+      used `Icons.Filled.Palette` - a paint-palette icon, which reads as "color/theme", not yarn
+      (and collides thematically with `AppearanceSettingsScreen`'s legitimate palette-for-theme
+      icon). Swapped to `Icons.Filled.Checkroom` (a garment on a hanger - what you actually knit)
+      everywhere yarn-specific, chosen after checking the actual `material-icons-extended` jar's
+      contents on the remote build host for a real semantic match rather than guessing a name that
+      might not exist in the version pinned here.
+- [x] Gauge calculator (SNA-11) was only reachable via a `HomeScreen` top-bar icon button - added
+      `TopLevelDestination.GAUGE` so it's also a navbar-customizable destination (Settings ->
+      Navigation). No other wiring needed: `Route.Gauge`'s single `composable<Route.Gauge>` entry
+      in `StricknaniNavHost` already works identically regardless of whether it's reached via the
+      Home button or a bottom-nav tap, and `NavbarCustomization.sanitize`'s existing "missing
+      destination -> appended as visible" rule (for a destination added in a later release)
+      applies here unchanged, so anyone with an already-saved navbar preference gets it appended
+      automatically rather than needing a special case.
+- [x] `HomeSyncStatusCard` (`ui/home/SyncStatusCard.kt`): a persistent Home-screen card reporting
+      sync freshness - "like in syncwich and nyetbox" (user request, 2026-08-18). Simpler than
+      syncwich's full `SyncStatus` state machine (no live-syncing/stale-threshold tracking, which
+      needs deeper WorkManager state observation not scoped into this pass) but covers what this
+      app's data actually exposes today: refreshing (`HomeViewModel.isRefreshing`, already existed
+      for pull-to-refresh), queued-but-unsynced local edits (`PendingMutationDao.observeCount()`,
+      SNA-8's write queue), a replay failure (`PendingMutationDao.observeFailed()`), or a plain
+      last-synced timestamp (`SyncStateDao.observeAll()`, the same query `SettingsViewModel`'s Sync
+      screen already used). Shown above both the empty and populated Home states.
+- [x] `YarnDetailScreen`'s "Used in" linked-projects list was plain `Text(project.name)` rows -
+      "makes it more distinctive" (user request, 2026-08-18). Added a 48dp preview-image thumbnail
+      (or a folder-icon fallback) per row, matching `HomeCard`'s existing
+      image-or-fallback-icon pattern exactly. Needed threading `previewUrl` through
+      `YarnDetailViewModel.LinkedProject` (`ProjectEntity.previewUrl` was already there, just
+      wasn't in the mapped-down DTO) and `resolveMediaUrl` (already available in
+      `YarnDetailContent`, just not previously used for this list).
+
+Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean, existing
+`NavbarCustomizationTest` still passes unchanged with 6 destinations since it iterates
+`TopLevelDestination.entries` rather than hardcoding a count), then confirmed for real on the
+Zenfone 10: Settings now shows a "Settings" title; the bottom nav shows a clothes-hanger icon for
+Yarns and a new "Gauge" tab; Home shows a "Synced / Last synced just now" card; and - after linking
+a real test yarn to the "SNA-22 Markdown Test" project via the API (`yarn_ids` field on
+`PUT /api/v1/projects/{id}`, since no CLI command exists for this) - the yarn's "Used in" row shows
+a thumbnail (a folder-icon fallback here, since that particular test project has no title image)
+next to the project name instead of bare text. Test yarn deleted afterward; one harmless leftover
+PAT ("temp-test-token") remains on the isolated `ai@anika.blue` test account. Mi Pad 4/Pixel 5 not
+redeployed this pass (Mi Pad needs re-onboarding per SNA-22's note; Pixel 5 was reachable earlier
+this session but not re-checked for this specific batch).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

@@ -2,12 +2,15 @@ package blue.anika.wolle.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import blue.anika.wolle.data.db.dao.PendingMutationDao
+import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.util.DateTimeUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +36,8 @@ constructor(
     private val yarnRepository: YarnRepository,
     private val categoryRepository: CategoryRepository,
     private val mediaUrlResolver: MediaUrlResolver,
+    syncStateDao: SyncStateDao,
+    pendingMutationDao: PendingMutationDao,
 ) : ViewModel() {
 
     private val _isRefreshing = MutableStateFlow(false)
@@ -40,6 +45,25 @@ constructor(
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    /** Most recent of the per-entity-type sync cursors, or null if nothing has synced yet. */
+    val lastSyncedMillis: StateFlow<Long?> =
+        syncStateDao
+            .observeAll()
+            .map { states -> states.maxOfOrNull { DateTimeUtils.parseToEpochMillis(it.cursor) } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    /** Local edits (SNA-8) not yet replayed to the server. */
+    val pendingChangesCount: StateFlow<Int> =
+        pendingMutationDao
+            .observeCount()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), 0)
+
+    val hasSyncFailures: StateFlow<Boolean> =
+        pendingMutationDao
+            .observeFailed()
+            .map { it.isNotEmpty() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
 
     val favoriteProjects: StateFlow<List<ProjectEntity>> =
         projectRepository

@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -16,9 +18,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,6 +61,9 @@ fun HomeScreen(
     val recentProjects by viewModel.recentProjects.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val lastSyncedMillis by viewModel.lastSyncedMillis.collectAsStateWithLifecycle()
+    val pendingChangesCount by viewModel.pendingChangesCount.collectAsStateWithLifecycle()
+    val hasSyncFailures by viewModel.hasSyncFailures.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     RequestNotificationPermissionEffect()
@@ -91,13 +96,31 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
         ) {
             if (isEmpty) {
-                EmptyState(
-                    icon = Icons.Filled.Home,
-                    title = "Welcome to Stricknani",
-                    subtitle = "Pull to refresh to sync your projects and yarn stash.",
-                )
+                Column(Modifier.fillMaxSize()) {
+                    HomeSyncStatusCard(
+                        isRefreshing = isRefreshing,
+                        lastSyncedMillis = lastSyncedMillis,
+                        pendingChangesCount = pendingChangesCount,
+                        hasSyncFailures = hasSyncFailures,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                    EmptyState(
+                        icon = Icons.Filled.Home,
+                        title = "Welcome to Stricknani",
+                        subtitle = "Pull to refresh to sync your projects and yarn stash.",
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             } else {
                 Column(Modifier.fillMaxSize().padding(vertical = 16.dp)) {
+                    HomeSyncStatusCard(
+                        isRefreshing = isRefreshing,
+                        lastSyncedMillis = lastSyncedMillis,
+                        pendingChangesCount = pendingChangesCount,
+                        hasSyncFailures = hasSyncFailures,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                    Spacer(Modifier.height(16.dp))
                     if (favoriteProjects.isNotEmpty()) {
                         HomeSection(title = "Favorite projects") {
                             items(favoriteProjects, key = { "fp-${it.id}" }) { project ->
@@ -116,7 +139,7 @@ fun HomeScreen(
                                 HomeCard(
                                     title = yarn.name,
                                     previewUrl = viewModel.previewUrl(yarn.previewUrl),
-                                    fallbackIcon = Icons.Filled.Palette,
+                                    fallbackIcon = Icons.Filled.Checkroom,
                                     onClick = { onYarnClick(yarn.id) },
                                 )
                             }

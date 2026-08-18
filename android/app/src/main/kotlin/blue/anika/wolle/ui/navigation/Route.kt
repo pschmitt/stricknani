@@ -1,9 +1,10 @@
 package blue.anika.wolle.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -43,11 +44,18 @@ sealed interface Route {
     @Serializable data class SettingsCategoryRoute(val categoryName: String) : Route
 }
 
-/** The five bottom-navigation destinations, in display order (see android/TODO.md SNA-5/SNA-9). */
+/**
+ * The customizable bottom-navigation destinations, in default display order (see android/TODO.md
+ * SNA-5/SNA-9/SNA-16). [GAUGE] (SNA-11's calculator, previously only reachable via `HomeScreen`'s
+ * top bar icon) was added as a navbar option per user feedback (2026-08-18) -
+ * `NavbarCustomization.sanitize`'s "missing destination" handling appends it as visible for
+ * anyone with an already-saved navbar preference, same as any other newly added destination.
+ */
 enum class TopLevelDestination(val route: Route, val label: String, val icon: ImageVector) {
     HOME(Route.Home, "Home", Icons.Filled.Home),
     PROJECTS(Route.Projects, "Projects", Icons.Filled.Folder),
-    YARNS(Route.Yarns, "Yarns", Icons.Filled.Palette),
+    YARNS(Route.Yarns, "Yarns", Icons.Filled.Checkroom),
     SEARCH(Route.Search, "Search", Icons.Filled.Search),
+    GAUGE(Route.Gauge, "Gauge", Icons.Filled.Calculate),
     SETTINGS(Route.Settings, "Settings", Icons.Filled.Settings),
 }

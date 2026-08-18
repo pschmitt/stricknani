@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class LinkedProject(val id: Int, val name: String)
+data class LinkedProject(val id: Int, val name: String, val previewUrl: String?)
 
 sealed interface YarnDetailUiState {
     data object Loading : YarnDetailUiState
@@ -60,7 +60,7 @@ constructor(
                     val linked =
                         projects
                             .filter { it.id in detail.projectIds }
-                            .map { LinkedProject(it.id, it.name) }
+                            .map { LinkedProject(it.id, it.name, it.previewUrl) }
                     YarnDetailUiState.Loaded(entity, detail, linked)
                 }
             }
