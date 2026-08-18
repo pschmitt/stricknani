@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
 
 @Composable
@@ -47,13 +47,11 @@ fun SearchScreen(
 
     Scaffold { innerPadding ->
         Column(Modifier.fillMaxSize().padding(innerPadding)) {
-            OutlinedTextField(
+            SearchField(
                 value = query,
                 onValueChange = viewModel::onQueryChange,
+                placeholder = "Search projects and yarns",
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
-                placeholder = { Text("Search projects and yarns") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                singleLine = true,
             )
 
             when {

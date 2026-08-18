@@ -81,8 +81,11 @@ internal fun AccountSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMo
                     Button(
                         onClick = { showSignOutDialog = true },
                         colors =
-                            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            ),
+                        modifier =
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     ) {
                         Text(stringResource(R.string.settings_sign_out))
                     }

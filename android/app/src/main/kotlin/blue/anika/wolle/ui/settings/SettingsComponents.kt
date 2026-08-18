@@ -19,8 +19,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/** Shared building blocks for the Settings hub and its per-category screens (SNA-21) - mirrors
- * syncwich's `SettingsGroupCard`/`SettingsSingleItemCard`/`SettingsListItem`. */
+/**
+ * Shared building blocks for the Settings hub and its per-category screens (SNA-21) - mirrors
+ * syncwich's `SettingsGroupCard`/`SettingsSingleItemCard`/`SettingsListItem`.
+ */
 @Composable
 internal fun SettingsListItem(
     modifier: Modifier = Modifier,
@@ -48,7 +50,8 @@ internal fun SettingsGroupCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        colors =
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(vertical = 4.dp)) {
@@ -75,7 +78,8 @@ internal fun SettingsSingleItemCard(content: @Composable ColumnScope.() -> Unit)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        colors =
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(vertical = 4.dp), content = content)

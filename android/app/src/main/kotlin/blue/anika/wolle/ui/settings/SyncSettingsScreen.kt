@@ -55,7 +55,9 @@ internal fun SyncSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel
                     SettingsListItem(
                         headlineContent = { Text("Sync policy") },
                         supportingContent = {
-                            Text("Automatically every 6 hours, on launch, and right after each edit")
+                            Text(
+                                "Automatically every 6 hours, on launch, and right after each edit"
+                            )
                         },
                     )
                 }

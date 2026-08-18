@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -29,7 +28,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -49,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,13 +87,11 @@ fun YarnsListScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
         ) {
             Column(Modifier.fillMaxSize()) {
-                OutlinedTextField(
+                SearchField(
                     value = searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
+                    placeholder = "Search yarns",
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    placeholder = { Text("Search yarns") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    singleLine = true,
                 )
                 Row(modifier = Modifier.padding(horizontal = 16.dp)) {
                     FilterChip(

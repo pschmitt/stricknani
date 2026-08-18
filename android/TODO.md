@@ -759,12 +759,21 @@ SNA-16/SNA-18 above for what it unblocked.
 
 ## SNA-26: Rounded search bar styling (match syncwich)
 
-- [ ] User feedback (2026-08-18): "make the search bars rounded, again: like in syncwich" - the
-      search fields on `ProjectsListScreen`/`YarnsListScreen`/`SearchScreen` currently use the
-      default `OutlinedTextField` shape (the theme's `ExtraSmall`/`Small` corner radius per
-      `ui/theme/Theme.kt`'s `ExpressiveShapes`), not a fully rounded search-bar look. Check
-      syncwich's actual search field styling (shape override, `Modifier`, or a dedicated
-      `SearchBar`-style component) before implementing, to match its real pattern
+- [x] Found syncwich's actual pattern: a shared `ui/common/SearchField.kt` composable - a `TextField`
+      (not `OutlinedTextField`) with `shape = RoundedCornerShape(28.dp)` (fully pill-shaped),
+      filled `surfaceContainerHighest` background, transparent focus/unfocus indicators (no
+      underline), and a clear button shown once there's text - explicitly said to mirror nyetbox's
+      `ModernSearchField` too, so this is the fleet-wide convention, not syncwich-specific
+- [x] Ported it verbatim to `ui/common/SearchField.kt` and swapped it into the three search entry
+      points that used the default `OutlinedTextField` shape before:
+      `ProjectsListScreen`/`YarnsListScreen`/`SearchScreen`. The `AddCategoryDialog`'s text field
+      (`ProjectsListScreen`) is untouched - it's a dialog input, not a search bar
+
+Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean), then `just
+deploy-zenfone debug` + `just mipad-install` and confirmed for real on both against the live
+`ai@anika.blue` account: the Projects search field renders as a fully rounded pill, no crash on
+either device.
 
 Status: not started
 

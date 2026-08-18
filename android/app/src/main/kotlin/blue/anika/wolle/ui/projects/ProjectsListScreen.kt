@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +54,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,13 +97,11 @@ fun ProjectsListScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
         ) {
             Column(Modifier.fillMaxSize()) {
-                OutlinedTextField(
+                SearchField(
                     value = searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
+                    placeholder = "Search projects",
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    placeholder = { Text("Search projects") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    singleLine = true,
                 )
 
                 LazyRow(

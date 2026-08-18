@@ -64,7 +64,9 @@ internal fun AboutSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMode
                     SettingsListItem(
                         headlineContent = { Text("Server version") },
                         supportingContent = {
-                            Text(serverMeta?.let { "${it.version} (${it.buildId})" } ?: "Unavailable")
+                            Text(
+                                serverMeta?.let { "${it.version} (${it.buildId})" } ?: "Unavailable"
+                            )
                         },
                     )
                 }
