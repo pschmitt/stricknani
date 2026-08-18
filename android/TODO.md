@@ -633,16 +633,46 @@ same "not enough isolable pure logic" reasoning as SNA-6/7/8/10.
 
 ## SNA-19: Redesign the app icon, shared consistently between web and Android
 
-- [ ] Design a new primary app icon/brand mark for Stricknani (current `stricknani/static/
-      favicon.svg` is a minimal placeholder) - used as the Android adaptive launcher icon
-      (foreground/background/monochrome layers, per SNA-5) and the web app's favicon/PWA icons
-      (`stricknani/static/favicon.svg`, `manifest.webmanifest` icons), so both surfaces present
-      the same mark instead of independently designed ones
-- [ ] Single source-of-truth asset (e.g. an SVG in one place, likely under the web app's static
-      dir or a new top-level `branding/`) that both `android/` (launcher icon generation) and
-      `stricknani/static/` derive from, to keep them from drifting apart later
+- [x] Turns out `stricknani/static/favicon.svg` was *not* actually a placeholder by the time this
+      was picked up - it already carries a real brand mark (a blue->purple yarn-ball gradient
+      circle, three crossed yarn-strand curves, two knitting needles poking past the edge) that
+      matches `stricknani/static/icons/icon-{192,512}.png`. The Android side was the actual
+      placeholder (`ic_launcher_foreground.xml`'s own comment said as much: "pending the real icon
+      design (SNA-19)", a plain circle + 3 plain arcs, maroon `icon_background` unrelated to the
+      web palette). So the real scope here was: stop the two surfaces drifting apart, not invent a
+      new mark from scratch.
+- [x] Added `branding/icon.svg` at the repo root as the single source of truth (SNA-19's
+      "single source-of-truth asset" ask) - identical mark to `stricknani/static/favicon.svg`,
+      which now has a comment pointing back at it. If the mark changes, regenerate both derivatives
+      from this file.
+- [x] Rebuilt the Android adaptive icon from that same mark instead of the placeholder:
+      `ic_launcher_foreground.xml` translates the source SVG's 64x64 path data by a flat
+      `<group android:translateX="22" android:translateY="22">` into the 108x108 adaptive icon
+      canvas (no rescaling needed - the mark's own farthest point, a needle tip at radius ~30.5,
+      already sits inside the ~66dp/33 safe-zone radius once recentered), with the yarn-ball
+      circle expressed as a two-arc `pathData` circle using an `aapt:attr`-embedded linear
+      gradient (`#2563EB` -> `#7C3AED`, matching the web mark's gradient exactly, positioned via
+      the translated bounding box). `ic_launcher_monochrome.xml` (also used as `SyncNotifier`'s
+      small notification icon) mirrors the same geometry as a single-alpha silhouette, per
+      Android's themed-icon convention. `colors.xml`'s `icon_background` changed from the old
+      unrelated maroon `#8B3A4A` to `#2563EB` - the exact same hex as
+      `manifest.webmanifest`'s `theme_color`, so the launcher background and the web app's browser
+      chrome color are now literally the same value. Regenerated the legacy flattened
+      `mipmap/ic_launcher.png` (used pre-API26 and as the splash screen's
+      `windowSplashScreenAnimatedIcon`) straight from `branding/icon.svg` via
+      `rsvg-convert` (`nix run nixpkgs#librsvg` - note its default app *is* `rsvg-convert`, so
+      don't repeat the binary name after `--` or it's parsed as a second input file and fails with
+      a confusing "Multiple SVG files" error).
 
-Status: not started
+Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"`
+(`BUILD SUCCESSFUL` - confirms the `aapt:attr`/gradient vector syntax is valid), then confirmed for
+real on the Zenfone 10: the app drawer now shows the blue-purple yarn-ball mark (searched
+"stricknani" to find it since it isn't pinned to the home screen), and the splash screen shows the
+same mark centered on a matching solid blue background with no visible seam between the launcher
+icon and window background colors. Also deployed to the Mi Pad 4 (`just deploy-all`) but didn't
+screenshot-verify there this pass (same onboarding-screen gap noted under SNA-22 - unrelated to
+this change, the icon itself doesn't require a server connection to render). Pixel 5 still
+unreachable over wireless adb this session.
 
 ## SNA-20: Rename app display name from "Wolle" to "Stricknani"
 

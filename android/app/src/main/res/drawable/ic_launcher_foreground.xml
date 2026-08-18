@@ -1,28 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder launcher foreground (a simple yarn-ball glyph) pending the real icon design
-     (SNA-19) - see mipmap/ic_launcher.png for the matching flattened raster used pre-adaptive-icon
-     contexts (e.g. the splash screen). -->
+<!-- Launcher foreground (SNA-19) - the branding/icon.svg yarn-ball mark, translated from its
+     native 64x64 viewBox into the 108x108 adaptive icon canvas (translate +22,+22 keeps every
+     point, including the needle tips that intentionally bleed past the yarn ball, within the
+     ~66dp safe-zone circle centered on this canvas, so no launcher mask shape clips it). Keep in
+     sync with ../../../../../../../../branding/icon.svg if that mark ever changes. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#FFF6E8"
-        android:pathData="M54,22 A32,32 0 1 1 53.99,22 Z" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#8B3A4A"
-        android:strokeWidth="3.5"
-        android:pathData="M28,46 C40,38 68,38 80,46" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#8B3A4A"
-        android:strokeWidth="3.5"
-        android:pathData="M26,58 C40,52 68,52 82,58" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#8B3A4A"
-        android:strokeWidth="3.5"
-        android:pathData="M28,70 C40,66 68,66 80,70" />
+    <group android:translateX="22" android:translateY="22">
+        <path android:pathData="M4,32 a28,28 0 1,0 56,0 a28,28 0 1,0 -56,0">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="26"
+                    android:startY="26"
+                    android:endX="82"
+                    android:endY="82"
+                    android:startColor="#2563EB"
+                    android:endColor="#7C3AED" />
+            </aapt:attr>
+        </path>
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#F9FAFB"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:pathData="M18,22c6,2 18,8 24,20" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#E0F2FE"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:pathData="M46,18c-4,2 -16,6 -24,20" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#BFDBFE"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:pathData="M14,36c8,2 20,6 30,18" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#1E293B"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:pathData="M50,34l6,14" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#1E293B"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:pathData="M54,30l6,14" />
+    </group>
 </vector>

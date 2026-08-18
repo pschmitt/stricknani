@@ -1,4 +1,9 @@
-<!-- Source of truth: ../../branding/icon.svg (SNA-19) - regenerate this file from there if the mark changes. -->
+<!--
+  Stricknani brand mark (SNA-19) - single source of truth shared by the web app's favicon/PWA
+  icons (stricknani/static/favicon.svg, stricknani/static/icons/icon-*.png) and the Android
+  adaptive launcher icon (android/app/src/main/res/drawable/ic_launcher_*.xml). If this design
+  changes, regenerate both derivatives from this file so the two surfaces don't drift apart.
+-->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <linearGradient id="yarn" x1="0%" y1="0%" x2="100%" y2="100%">

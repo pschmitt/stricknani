@@ -1,28 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Themed/monochrome launcher icon (Android 13+ "themed icons"): the system applies its own
-     tint, so every path here is a single solid color regardless of the real brand palette.
-     Placeholder pending the real icon design (SNA-19). -->
+<!-- Themed/monochrome launcher icon (Android 13+ "themed icons") and the small notification icon
+     (SyncNotifier.kt) - the system applies its own tint, so only alpha (not RGB) matters here.
+     Same geometry as ic_launcher_foreground.xml (SNA-19), translated the same way. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#FF000000"
-        android:pathData="M54,22 A32,32 0 1 1 53.99,22 Z" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="3.5"
-        android:pathData="M28,46 C40,38 68,38 80,46" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="3.5"
-        android:pathData="M26,58 C40,52 68,52 82,58" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="3.5"
-        android:pathData="M28,70 C40,66 68,66 80,70" />
+    <group android:translateX="22" android:translateY="22">
+        <path
+            android:fillColor="#FF000000"
+            android:pathData="M4,32 a28,28 0 1,0 56,0 a28,28 0 1,0 -56,0" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:pathData="M18,22c6,2 18,8 24,20" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:pathData="M46,18c-4,2 -16,6 -24,20" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:pathData="M14,36c8,2 20,6 30,18" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:pathData="M50,34l6,14" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:pathData="M54,30l6,14" />
+    </group>
 </vector>
