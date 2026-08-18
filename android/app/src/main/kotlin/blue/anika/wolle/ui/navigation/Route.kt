@@ -48,8 +48,8 @@ sealed interface Route {
  * The customizable bottom-navigation destinations, in default display order (see android/TODO.md
  * SNA-5/SNA-9/SNA-16). [GAUGE] (SNA-11's calculator, previously only reachable via `HomeScreen`'s
  * top bar icon) was added as a navbar option per user feedback (2026-08-18) -
- * `NavbarCustomization.sanitize`'s "missing destination" handling appends it as visible for
- * anyone with an already-saved navbar preference, same as any other newly added destination.
+ * `NavbarCustomization.sanitize`'s "missing destination" handling appends it as visible for anyone
+ * with an already-saved navbar preference, same as any other newly added destination.
  */
 enum class TopLevelDestination(val route: Route, val label: String, val icon: ImageVector) {
     HOME(Route.Home, "Home", Icons.Filled.Home),

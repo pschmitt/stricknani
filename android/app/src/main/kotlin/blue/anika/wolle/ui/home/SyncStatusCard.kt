@@ -27,12 +27,12 @@ import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
 
 /**
- * Persistent Home feedback for the background sync/write-queue (user-requested, 2026-08-18,
- * "like in syncwich and nyetbox") - it never gates or replaces Room content, just reports on it.
- * Simpler than syncwich's full `SyncStatus` state machine (no live syncing/stale-threshold
- * tracking) since that needs deeper WorkManager state observation this pass didn't scope in;
- * covers the states this app's data actually exposes today: refreshing, queued-but-unsynced local
- * edits (SNA-8), a replay failure, or a plain last-synced timestamp.
+ * Persistent Home feedback for the background sync/write-queue (user-requested, 2026-08-18, "like
+ * in syncwich and nyetbox") - it never gates or replaces Room content, just reports on it. Simpler
+ * than syncwich's full `SyncStatus` state machine (no live syncing/stale-threshold tracking) since
+ * that needs deeper WorkManager state observation this pass didn't scope in; covers the states this
+ * app's data actually exposes today: refreshing, queued-but-unsynced local edits (SNA-8), a replay
+ * failure, or a plain last-synced timestamp.
  */
 @Composable
 fun HomeSyncStatusCard(
