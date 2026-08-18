@@ -11,6 +11,8 @@ import kotlinx.serialization.Serializable
 
 /** Type-safe Navigation Compose destinations (see MainActivity/StricknaniNavHost). */
 sealed interface Route {
+    @Serializable data object Onboarding : Route
+
     @Serializable data object Home : Route
 
     @Serializable data object Projects : Route

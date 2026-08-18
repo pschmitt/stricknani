@@ -218,14 +218,42 @@ wrong**: the user corrected the display name to "Stricknani" - see SNA-20.
 
 ## SNA-6: Onboarding + credential storage
 
-- [ ] Onboarding screen: server URL + PAT entry, validated against `/api/v1/meta` (or a
-      `/api/v1/users/self`-equivalent once it exists)
-- [ ] `SettingsRepository`: `EncryptedSharedPreferences`-backed server URL + token storage, plus
-      DataStore for non-secret sync bookkeeping (last-sync timestamps, sync interval preference)
-- [ ] `DynamicBaseUrlInterceptor` + `AuthInterceptor` (nyetbox pattern), `di/NetworkModule.kt`
-- [ ] Sign-out wipes both credentials and the Room cache
+- [x] Onboarding screen (`ui/onboarding/OnboardingScreen.kt`/`OnboardingViewModel.kt`): server URL
+      + PAT entry, token visibility toggle, inline error messages. `OnboardingValidator`
+      validates in two steps before anything is persisted: unauthenticated `GET /api/v1/meta`
+      (confirms it's a Stricknani server at all, distinct "wrong URL" vs "wrong token" errors)
+      then an authenticated `GET /api/v1/categories` with the entered token (there's no
+      `/api/v1/users/self`-equivalent yet, so this is the stand-in "does this token actually
+      work" check - cheap, real, `require_api_token`-gated endpoint). Uses its own
+      unauthenticated `@ValidationClient` OkHttpClient rather than the app's normal stack, since
+      that stack's interceptors read the *saved* connection - exactly what's being validated
+      before it's saved (same pattern as syncwich's `OnboardingValidator`)
+- [x] `SettingsRepository`: `EncryptedSharedPreferences`-backed server URL + token storage
+      (`data/settings/SettingsRepository.kt`), `StateFlow<Boolean> isConfigured` that
+      `MainActivity` observes to reactively pick `Route.Onboarding` vs `Route.Home` as the nav
+      graph's start destination (a full recreation of `StricknaniNavHost`, not an in-place
+      `navController.navigate` - see its kdoc). DataStore for non-secret sync bookkeeping
+      (last-sync timestamps, sync interval preference) is **deferred to SNA-7**: nothing reads or
+      writes it before the sync engine exists, so scaffolding it now would be unused code
+- [x] `DynamicBaseUrlInterceptor` + `AuthInterceptor` (nyetbox pattern, `data/api/`),
+      `di/NetworkModule.kt` (main authenticated `OkHttpClient` + the separate
+      `@ValidationClient` one). Nothing injects the main client yet - SNA-7 wires Retrofit/Coil
+      against it; a Hilt `@Provides` binding is inert until something actually requests it
+- [x] Sign-out: `SettingsRepository.signOut()` wipes credentials, wired to a real (if minimal)
+      `ui/settings/SettingsScreen.kt` - the full SNA-18 Settings screen doesn't exist yet, but
+      sign-out needed to be reachable/testable end to end rather than left as dead code behind a
+      `PlaceholderScreen`. **The Room cache half is not wiped** - there's no Room cache yet
+      (SNA-7); this needs a follow-up once it exists
 
-Status: not started
+Status: **in progress** (2026-08-18) - `just build debug`/`ktfmtCheck :app:testDebugUnitTest
+lintDebug` all green on `rofl-13.brkn.lol`. Not yet pushed/CI-verified or reinstalled on a device
+- see the next entry in this file's history for that confirmation once it's done. No unit tests
+added for `OnboardingValidator`'s error-mapping or URL parsing - `SettingsRepository` needs
+Android's `EncryptedSharedPreferences`/`MasterKey` (instrumented test territory, not plain JVM
+unit tests) and nothing else here has enough pure logic yet to be worth isolating; revisit once
+SNA-7 adds more. A full live connect against a real running Stricknani server + a freshly
+generated PAT is also not verified - only the compiled validation/error-mapping logic and (once
+reinstalled) the screen rendering.
 
 ## SNA-7: Offline data layer + sync engine
 

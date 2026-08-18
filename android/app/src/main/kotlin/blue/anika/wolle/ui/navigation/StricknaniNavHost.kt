@@ -19,51 +19,64 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.PlaceholderScreen
+import blue.anika.wolle.ui.onboarding.OnboardingScreen
+import blue.anika.wolle.ui.settings.SettingsScreen
 
 /**
- * The app's main scaffold: a Material 3 bottom navigation bar switching between the five top-level
- * destinations. Every destination is a [PlaceholderScreen] for now - real screens land in
- * SNA-9/SNA-10; the configurable navbar (reordering/hiding items) is SNA-16. Onboarding-gated start
- * destination is SNA-6.
+ * The app's main scaffold: a Material 3 bottom navigation bar switching between the five
+ * top-level destinations. Most destinations are still a [PlaceholderScreen] - real screens land
+ * in SNA-9/SNA-10; the configurable navbar (reordering/hiding items) is SNA-16.
+ *
+ * @param startDestination [Route.Onboarding] until a server URL + API token are saved, otherwise
+ *   [Route.Home] - `MainActivity` picks this reactively from
+ *   `SettingsRepository.isConfigured` and recreates this whole composable (a fresh
+ *   `NavController`) when it flips, rather than this composable navigating between the two
+ *   itself.
  */
 @Composable
-fun StricknaniNavHost(modifier: Modifier = Modifier) {
+fun StricknaniNavHost(modifier: Modifier = Modifier, startDestination: Route = Route.Home) {
     val navController = rememberNavController()
 
     Scaffold(
         modifier = modifier,
         bottomBar = {
-            val backStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = backStackEntry?.destination
+            if (startDestination != Route.Onboarding) {
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = backStackEntry?.destination
 
-            NavigationBar {
-                TopLevelDestination.entries.forEach { destination ->
-                    val selected =
-                        currentDestination?.hierarchy?.any { it.hasRoute(destination.route::class) }
-                            ?: false
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                NavigationBar {
+                    TopLevelDestination.entries.forEach { destination ->
+                        val selected =
+                            currentDestination?.hierarchy?.any {
+                                it.hasRoute(destination.route::class)
+                            } ?: false
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(destination.icon, contentDescription = destination.label) },
-                        label = { Text(destination.label) },
-                    )
+                            },
+                            icon = {
+                                Icon(destination.icon, contentDescription = destination.label)
+                            },
+                            label = { Text(destination.label) },
+                        )
+                    }
                 }
             }
         },
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Route.Home,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding),
         ) {
+            composable<Route.Onboarding> { OnboardingScreen() }
             composable<Route.Home> {
                 PlaceholderScreen(
                     icon = TopLevelDestination.HOME.icon,
@@ -92,13 +105,7 @@ fun StricknaniNavHost(modifier: Modifier = Modifier) {
                     subtitle = stringResource(R.string.placeholder_search_subtitle),
                 )
             }
-            composable<Route.Settings> {
-                PlaceholderScreen(
-                    icon = TopLevelDestination.SETTINGS.icon,
-                    title = stringResource(R.string.placeholder_settings_title),
-                    subtitle = stringResource(R.string.placeholder_settings_subtitle),
-                )
-            }
+            composable<Route.Settings> { SettingsScreen() }
         }
     }
 }

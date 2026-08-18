@@ -11,5 +11,18 @@
     <string name="placeholder_search_title">Search</string>
     <string name="placeholder_search_subtitle">Global search across projects and yarns (SNA-9).</string>
     <string name="placeholder_settings_title">Settings</string>
-    <string name="placeholder_settings_subtitle">Server connection, sync, and app settings land here (SNA-6/SNA-18).</string>
+    <string name="placeholder_settings_subtitle">More settings land here (SNA-18).</string>
+
+    <string name="onboarding_title">Connect to Stricknani</string>
+    <string name="onboarding_subtitle">Enter your self-hosted Stricknani server\'s URL and a personal access token. Nothing is sent anywhere else.</string>
+    <string name="onboarding_server_url_label">Server URL</string>
+    <string name="onboarding_server_url_placeholder">https://stricknani.example.com</string>
+    <string name="onboarding_api_token_label">API token</string>
+    <string name="onboarding_api_token_help">Generate one in Stricknani under your account menu → API Tokens.</string>
+    <string name="onboarding_show_token">Show token</string>
+    <string name="onboarding_hide_token">Hide token</string>
+    <string name="onboarding_connect_button">Connect</string>
+
+    <string name="settings_sign_out">Sign out</string>
+    <string name="settings_sign_out_description">Removes the saved server URL and API token from this device.</string>
 </resources>
