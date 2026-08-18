@@ -372,4 +372,24 @@ Status: not started
 
 Status: not started
 
+## SNA-20: Rename app display name from "Wolle" to "Stricknani"
+
+- [ ] User correction, superseding SNA-5's naming guess (the guess reasoned by analogy to
+      syncwich/Mealie - app name distinct from the backend product name - but that was wrong
+      here: the app should be called "Stricknani", not "Wolle"). Package name `blue.anika.wolle`
+      is unaffected - only the user-facing display name/prose branding changes
+- [ ] `res/values/strings.xml`'s `app_name` ("Wolle" -> "Stricknani")
+- [ ] `android/README.md`, `android/PRIVACY.md`: title and prose references to "Wolle"
+- [ ] `android/AGENTS.md`: "Wolle is a Kotlin/Jetpack Compose..." intro line and any other prose
+      mentions
+- [ ] Theme/style names (`Theme.Wolle`, `Theme.Wolle.Splash` in `themes.xml`) - cosmetic XML
+      resource names, safe to rename for consistency but not user-visible; low priority within
+      this task
+- [ ] Decide whether to also rename Kotlin identifiers (`WolleApp`, `WolleTheme`, `WolleNavHost`,
+      package-relative class names) for consistency, or leave the package/class names as
+      `blue.anika.wolle`/`Wolle*` (matching the untouched `applicationId`) and only change
+      user-facing strings - flag back if unsure which the user wants
+
+Status: not started
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
