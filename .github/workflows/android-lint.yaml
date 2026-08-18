@@ -4,9 +4,9 @@ name: Android Lint
 # workflow assumes the Gradle project sits at the repo root, which isn't true here (it's at
 # android/, alongside the unrelated Python web app at the repo root) - see android/AGENTS.md's
 # Builds section. Reuses only the shared setup-jdk-gradle composite action (cwd-agnostic) and runs
-# ./gradlew with working-directory: android itself. No ktfmt-diff-patch auto-fix/auto-PR yet
-# (SNA-12) - see the reusable workflow in .just/android-app-ci for what that looks like once
-# ported.
+# ./gradlew with working-directory: android itself. No auto-fix-commit/auto-PR yet (SNA-12) - see
+# the reusable workflow in .just/android-app-ci for what that looks like once ported; this only
+# uploads the ktfmt-diff-patch artifact on failure, matching that workflow's mechanism.
 on:
   push:
     branches:
@@ -31,8 +31,22 @@ jobs:
         uses: actions/checkout@v7
       - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
       - name: Check with ktfmt
+        id: ktfmt_check
         working-directory: android
         run: ./gradlew ktfmtCheck
+      - name: Produce ktfmt diff patch
+        if: ${{ failure() && steps.ktfmt_check.outcome == 'failure' }}
+        working-directory: android
+        run: |
+          ./gradlew ktfmtFormat
+          git diff > /tmp/ktfmt.patch
+      - name: Upload ktfmt diff patch
+        if: ${{ failure() && steps.ktfmt_check.outcome == 'failure' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ktfmt-diff-patch
+          path: /tmp/ktfmt.patch
+          if-no-files-found: error
 
   android-lint:
     name: Android Lint

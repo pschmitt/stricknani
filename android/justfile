@@ -13,7 +13,13 @@ remote_host := env_var_or_default("WOLLE_REMOTE_HOST", "rofl-13.brkn.lol")
 # Empty for the main checkout; "-<worktree-dirname>" when run from a linked git worktree (e.g. one
 # of Claude's isolated agent worktrees under .claude/worktrees/). Keeps parallel worktree agents
 # from clobbering each other's remote sync directory mid-build.
-worktree_suffix := `gd=$(git rev-parse --git-dir); gcd=$(git rev-parse --git-common-dir); if [ "$gd" != "$gcd" ]; then basename "$(git rev-parse --show-toplevel)" | sed 's/^/-/'; fi`
+#
+# Both paths are resolved to absolute form before comparing - unlike the sibling apps (whose
+# Gradle project sits at the repo root), this justfile runs from android/, a subdirectory of the
+# repo root; `git rev-parse --git-dir` returns an absolute path but `--git-common-dir` returns one
+# relative to cwd, so a naive string comparison of the two falsely treated every normal (non-
+# worktree) checkout as a worktree here, aliasing every agent's remote build directory together.
+worktree_suffix := `gd=$(git rev-parse --absolute-git-dir); gcd=$(cd "$(git rev-parse --git-common-dir)" && pwd); if [ "$gd" != "$gcd" ]; then basename "$(git rev-parse --show-toplevel)" | sed 's/^/-/'; fi`
 
 remote_path := env_var_or_default("WOLLE_REMOTE_PATH", "~/build/wolle-android" + worktree_suffix)
 local_dist := env_var_or_default("WOLLE_DIST_DIR", "./dist")
