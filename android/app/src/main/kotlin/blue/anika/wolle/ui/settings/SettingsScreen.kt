@@ -10,10 +10,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -34,7 +40,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.R
+import blue.anika.wolle.data.settings.NavbarItemPreference
 import blue.anika.wolle.data.settings.ThemeMode
+import blue.anika.wolle.ui.navigation.NavbarCustomization
+import blue.anika.wolle.ui.navigation.TopLevelDestination
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -49,6 +58,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val lastSyncedMillis by viewModel.lastSyncedMillis.collectAsStateWithLifecycle()
     val serverMeta by viewModel.serverMeta.collectAsStateWithLifecycle()
+    val navbarItems by viewModel.navbarItems.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
     var showSignOutDialog by remember { mutableStateOf(false) }
 
@@ -79,6 +89,22 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             HorizontalDivider(Modifier.padding(vertical = 16.dp))
             SettingsSectionTitle("Appearance")
             ThemeModeSelector(selected = themeMode, onSelect = viewModel::setThemeMode)
+        }
+
+        item {
+            HorizontalDivider(Modifier.padding(vertical = 16.dp))
+            SettingsSectionTitle("Navigation")
+            Text(
+                text = "Choose which destinations appear in the bottom bar, and in what order.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            )
+            NavbarItemsEditor(
+                items = navbarItems,
+                onMove = viewModel::moveNavbarItem,
+                onVisibilityChange = viewModel::setNavbarItemVisible,
+            )
         }
 
         item {
@@ -164,6 +190,47 @@ private fun ThemeMode.label(): String =
         ThemeMode.LIGHT -> "Light"
         ThemeMode.DARK -> "Dark"
     }
+
+@Composable
+private fun NavbarItemsEditor(
+    items: List<NavbarItemPreference>,
+    onMove: (index: Int, delta: Int) -> Unit,
+    onVisibilityChange: (id: String, visible: Boolean) -> Unit,
+) {
+    val destinations = NavbarCustomization.toDestinations(items)
+    Column {
+        items.forEachIndexed { index, item ->
+            val destination = destinations.getOrNull(index) ?: return@forEachIndexed
+            val isSettings = destination == TopLevelDestination.SETTINGS
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = item.visible,
+                    onCheckedChange = { checked -> onVisibilityChange(item.id, checked) },
+                    enabled = !isSettings,
+                )
+                Icon(
+                    destination.icon,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+                Text(
+                    text = destination.label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = { onMove(index, -1) }, enabled = index > 0) {
+                    Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Move up")
+                }
+                IconButton(onClick = { onMove(index, 1) }, enabled = index < items.lastIndex) {
+                    Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Move down")
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun SettingsSectionTitle(title: String) {

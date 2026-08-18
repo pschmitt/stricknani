@@ -9,6 +9,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -29,10 +31,10 @@ import blue.anika.wolle.ui.yarns.YarnEditorScreen
 import blue.anika.wolle.ui.yarns.YarnsListScreen
 
 /**
- * The app's main scaffold: a Material 3 bottom navigation bar switching between the five top-level
- * destinations, plus non-top-level detail routes (`ProjectDetail`/`YarnDetail`) and create/edit
- * routes (`ProjectEditor`/`YarnEditor`, SNA-10). The configurable navbar (reordering/hiding items)
- * is SNA-16.
+ * The app's main scaffold: a Material 3 bottom navigation bar switching between the top-level
+ * destinations the user has kept visible (`NavBarViewModel`, SNA-16 - defaults to all five in
+ * declared order), plus non-top-level detail routes (`ProjectDetail`/`YarnDetail`) and create/edit
+ * routes (`ProjectEditor`/`YarnEditor`, SNA-10).
  *
  * @param startDestination [Route.Onboarding] until a server URL + API token are saved, otherwise
  *   [Route.Home] - `MainActivity` picks this reactively from `SettingsRepository.isConfigured` and
@@ -40,7 +42,11 @@ import blue.anika.wolle.ui.yarns.YarnsListScreen
  *   composable navigating between the two itself.
  */
 @Composable
-fun StricknaniNavHost(modifier: Modifier = Modifier, startDestination: Route = Route.Home) {
+fun StricknaniNavHost(
+    modifier: Modifier = Modifier,
+    startDestination: Route = Route.Home,
+    navBarViewModel: NavBarViewModel = hiltViewModel(),
+) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -49,9 +55,10 @@ fun StricknaniNavHost(modifier: Modifier = Modifier, startDestination: Route = R
             if (startDestination != Route.Onboarding) {
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = backStackEntry?.destination
+                val visibleDestinations by navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
 
                 NavigationBar {
-                    TopLevelDestination.entries.forEach { destination ->
+                    visibleDestinations.forEach { destination ->
                         val selected =
                             currentDestination?.hierarchy?.any {
                                 it.hasRoute(destination.route::class)

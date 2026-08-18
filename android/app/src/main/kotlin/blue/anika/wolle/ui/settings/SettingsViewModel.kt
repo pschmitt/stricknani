@@ -7,9 +7,11 @@ import blue.anika.wolle.data.api.dto.MetaDto
 import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.settings.AppPreferencesRepository
+import blue.anika.wolle.data.settings.NavbarItemPreference
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.data.util.DateTimeUtils
+import blue.anika.wolle.ui.navigation.NavbarCustomization
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +68,32 @@ constructor(
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { appPreferencesRepository.setThemeMode(mode) }
+    }
+
+    /** Sanitized (all destinations, in the user's chosen order, each with a visibility flag). */
+    val navbarItems: StateFlow<List<NavbarItemPreference>> =
+        appPreferencesRepository.navbarItems
+            .map { raw -> NavbarCustomization.sanitize(raw) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                NavbarCustomization.sanitize(null),
+            )
+
+    /** Swaps the item at [index] with its neighbor in [delta]'s direction (-1 up, +1 down). */
+    fun moveNavbarItem(index: Int, delta: Int) {
+        val current = navbarItems.value.toMutableList()
+        val target = index + delta
+        if (index !in current.indices || target !in current.indices) return
+        val moved = current.removeAt(index)
+        current.add(target, moved)
+        viewModelScope.launch { appPreferencesRepository.setNavbarItems(current) }
+    }
+
+    /** [TopLevelDestination.SETTINGS] can't be hidden - see `NavbarCustomization.sanitize`'s kdoc. */
+    fun setNavbarItemVisible(id: String, visible: Boolean) {
+        val updated = navbarItems.value.map { if (it.id == id) it.copy(visible = visible) else it }
+        viewModelScope.launch { appPreferencesRepository.setNavbarItems(updated) }
     }
 
     /**

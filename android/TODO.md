@@ -521,13 +521,41 @@ Status: not started
 
 ## SNA-16: Configurable navbar
 
-- [ ] Let the user choose which destinations appear in the bottom nav / nav rail and in what
-      order, matching nyetbox's configurable navbar - persisted in DataStore, editable from
-      Settings
-- [ ] Sensible default order (Home / Projects / Yarn Stash / Search / Settings, per SNA-5) so this
-      is a customization on top of a good default, not a required setup step
+- [x] Let the user choose which destinations appear in the bottom nav and in what order
+      (`ui/settings/SettingsScreen.kt`'s new "Navigation" section: a checkbox + up/down arrows
+      per destination), matching nyetbox's configurable navbar in spirit - simplified to
+      up/down-arrow reordering rather than drag-and-drop, to avoid a new dependency for a
+      5-item list. Persisted via a new `AppPreferencesRepository.navbarItems` (DataStore,
+      `NavbarItemPreference(id, visible)` list serialized as JSON) - reused rather than adding a
+      second DataStore-backed repository just for this
+- [x] Sensible default order (Home / Projects / Yarn Stash / Search / Settings, per SNA-5, in
+      `TopLevelDestination`'s declared order) so this is a customization on top of a good
+      default, not a required setup step - `NavbarCustomization.sanitize(null)` (nothing saved
+      yet) returns exactly that
+- [x] `TopLevelDestination.SETTINGS` can never be hidden (its checkbox is disabled) - it's the
+      only way back to this customization UI, so hiding it would lock the user out of un-hiding
+      anything. Enforced twice: the checkbox is disabled in the UI, and
+      `NavbarCustomization.sanitize` forces it visible again even if a corrupted/hand-edited
+      DataStore value claims otherwise
+- [x] Forward/backward compatible against future destination changes: an unknown saved id is
+      dropped (a destination removed in a later release), and a destination missing from a saved
+      preference is appended as visible (one added in a later release) - `NavBarViewModel` backs
+      the bottom bar itself, reading through the same sanitizer
+- [x] Unit tests (`NavbarCustomizationTest.kt`, JUnit4 - second Android unit test after SNA-11's):
+      5 cases covering the default-fallback, unknown-id-dropped, settings-forced-visible,
+      missing-destination-appended, and visible-filtering behaviors
 
-Status: not started
+Status: **mostly done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol
+":app:assembleDebug" ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`, all tests pass), then `just
+deploy-all debug` + relaunch on Zenfone 10, Mi Pad 4, and Pixel 5 (`ResumedActivity`, no crash in
+logcat on any of the three - the default (nothing customized yet) order renders correctly since
+that's what every existing screen already exercises). **Not verified**: actually toggling
+visibility/reordering on-device and confirming the bottom bar reacts - same recurring "no
+reachable Stricknani test server this session" gap (the Settings screen, like every screen past
+Onboarding, needs a configured account to reach). One real compile error caught before landing:
+`Modifier.padding(horizontal = ..., bottom = ...)` isn't a valid overload (`padding` only accepts
+`horizontal`+`vertical` together, or all four sides individually) - fixed by spelling out
+`start`/`end`/`bottom` explicitly.
 
 ## SNA-17: Deep links ("open with" a project/yarn URL)
 
