@@ -77,11 +77,19 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_BACKUP_FREQUENCY] = frequency.name }
     }
 
+    /** SNA-34's tap-to-unlock easter egg, matching syncwich's `developer_mode` flag. */
+    val developerMode = dataStore.data.map { prefs -> prefs[KEY_DEVELOPER_MODE] ?: false }
+
+    suspend fun setDeveloperMode(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_DEVELOPER_MODE] = enabled }
+    }
+
     private companion object {
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_NAVBAR_ITEMS = stringPreferencesKey("navbar_items")
         val KEY_BACKUP_FOLDER_URI = stringPreferencesKey("scheduled_backup_folder_uri")
         val KEY_BACKUP_ENABLED = booleanPreferencesKey("scheduled_backup_enabled")
         val KEY_BACKUP_FREQUENCY = stringPreferencesKey("scheduled_backup_frequency")
+        val KEY_DEVELOPER_MODE = booleanPreferencesKey("developer_mode")
     }
 }

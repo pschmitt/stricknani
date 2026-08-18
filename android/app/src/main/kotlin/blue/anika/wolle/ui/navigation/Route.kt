@@ -37,6 +37,9 @@ sealed interface Route {
     /** Gauge calculator (SNA-11) - pure math, reachable from `HomeScreen`'s top bar. */
     @Serializable data object Gauge : Route
 
+    /** Open-source libraries used (SNA-34) - reachable from Settings' About category. */
+    @Serializable data object Libraries : Route
+
     /**
      * A Settings sub-screen (SNA-21). [categoryName] is `SettingsCategory.name` (a plain `String`
      * rather than the enum itself, to sidestep any Navigation Compose enum-as-route-arg quirks).

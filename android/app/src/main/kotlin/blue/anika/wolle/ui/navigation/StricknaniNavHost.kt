@@ -28,6 +28,7 @@ import blue.anika.wolle.ui.projects.ProjectDetailScreen
 import blue.anika.wolle.ui.projects.ProjectEditorScreen
 import blue.anika.wolle.ui.projects.ProjectsListScreen
 import blue.anika.wolle.ui.search.SearchScreen
+import blue.anika.wolle.ui.settings.LibrariesScreen
 import blue.anika.wolle.ui.settings.SettingsCategory
 import blue.anika.wolle.ui.settings.SettingsCategoryScreen
 import blue.anika.wolle.ui.settings.SettingsScreen
@@ -152,7 +153,11 @@ fun StricknaniNavHost(
                 SettingsCategoryScreen(
                     category = SettingsCategory.valueOf(route.categoryName),
                     onBack = { navController.navigateUp() },
+                    onShowLibraries = { navController.navigate(Route.Libraries) },
                 )
+            }
+            composable<Route.Libraries> {
+                LibrariesScreen(onBack = { navController.navigateUp() })
             }
             composable<Route.ProjectDetail> {
                 ProjectDetailScreen(

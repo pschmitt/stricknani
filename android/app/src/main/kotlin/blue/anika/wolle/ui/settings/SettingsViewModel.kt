@@ -3,6 +3,7 @@ package blue.anika.wolle.ui.settings
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.data.api.MetaApi
@@ -24,9 +25,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -79,6 +83,54 @@ constructor(
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { appPreferencesRepository.setThemeMode(mode) }
+    }
+
+    // --- SNA-34: developer mode easter egg ------------------------------------------------
+
+    private val developerMode: StateFlow<Boolean> =
+        appPreferencesRepository.developerMode.stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            false,
+        )
+
+    private val _developerModeToast =
+        MutableSharedFlow<String>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val developerModeToast = _developerModeToast.asSharedFlow()
+
+    private val developerModeTapState = DeveloperModeTapState()
+    private var developerModeUnlocked = false
+    private var developerModeUnlockInProgress = false
+
+    /** Tap target is the "Build" row on the About screen, matching syncwich's easter egg. */
+    fun onBuildRowTap() {
+        if (developerModeUnlockInProgress) return
+        when (
+            val action =
+                developerModeTapState.onTap(
+                    SystemClock.elapsedRealtime(),
+                    developerMode.value || developerModeUnlocked,
+                )
+        ) {
+            DeveloperModeTapAction.AlreadyDeveloper ->
+                _developerModeToast.tryEmit("You are already a developer")
+            is DeveloperModeTapAction.Progress ->
+                _developerModeToast.tryEmit("${action.remainingTaps} more taps to become a developer")
+            DeveloperModeTapAction.Unlock -> {
+                developerModeUnlockInProgress = true
+                viewModelScope.launch {
+                    var enabled = false
+                    try {
+                        appPreferencesRepository.setDeveloperMode(true)
+                        enabled = true
+                        _developerModeToast.tryEmit("Developer mode enabled")
+                    } finally {
+                        if (enabled) developerModeUnlocked = true
+                        developerModeUnlockInProgress = false
+                    }
+                }
+            }
+        }
     }
 
     /** Sanitized (all destinations, in the user's chosen order, each with a visibility flag). */
@@ -237,5 +289,35 @@ constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+    }
+}
+
+internal sealed interface DeveloperModeTapAction {
+    data object AlreadyDeveloper : DeveloperModeTapAction
+
+    data object Unlock : DeveloperModeTapAction
+
+    data class Progress(val remainingTaps: Int) : DeveloperModeTapAction
+}
+
+/** 7 taps within a 2s rolling window unlocks developer mode - matches syncwich's easter egg. */
+internal class DeveloperModeTapState(
+    private val requiredTaps: Int = 7,
+    private val tapWindowMillis: Long = 2_000L,
+) {
+    private var tapCount = 0
+    private var lastTapAt = 0L
+
+    fun onTap(now: Long, developerModeEnabled: Boolean): DeveloperModeTapAction {
+        if (developerModeEnabled) return DeveloperModeTapAction.AlreadyDeveloper
+        if (now - lastTapAt > tapWindowMillis) tapCount = 0
+        lastTapAt = now
+        tapCount++
+        return if (tapCount >= requiredTaps) {
+            tapCount = 0
+            DeveloperModeTapAction.Unlock
+        } else {
+            DeveloperModeTapAction.Progress(requiredTaps - tapCount)
+        }
     }
 }

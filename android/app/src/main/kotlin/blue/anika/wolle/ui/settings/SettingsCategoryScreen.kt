@@ -11,6 +11,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun SettingsCategoryScreen(
     category: SettingsCategory,
     onBack: () -> Unit,
+    onShowLibraries: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     when (category) {
@@ -21,6 +22,11 @@ fun SettingsCategoryScreen(
             NavigationSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.Sync -> SyncSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.Backup -> BackupSettingsScreen(onBack = onBack, viewModel = viewModel)
-        SettingsCategory.About -> AboutSettingsScreen(onBack = onBack, viewModel = viewModel)
+        SettingsCategory.About ->
+            AboutSettingsScreen(
+                onBack = onBack,
+                onShowLibraries = onShowLibraries,
+                viewModel = viewModel,
+            )
     }
 }

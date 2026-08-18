@@ -46,7 +46,6 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 - SNA-33: Harden offline sync - deletes/edits from both sides (device and server) need to resolve
   without data loss; needs an explicit conflict-handling strategy, not just last-write-wins by
   accident
-- SNA-34: Developer mode easter egg + an "open source libraries used" screen, ported from syncwich
 - SNA-36: Performance pass - scrolling smoothness and sync throughput
 - SNA-37: German (DE) translations for the Android app's UI strings, plus an in-app language
   setting (default: device locale, fallback English) rather than relying on system locale alone
@@ -1229,5 +1228,30 @@ Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app
 Zenfone 10 by forcing an actual crash (`adb shell am crash blue.anika.wolle.debug "..."`) and
 relaunching: the dialog appeared with the full report (build/device/thread/stack trace, tokens
 redacted), Copy worked, and Restart app cleanly relaunched straight to Home with no residual state.
+
+## SNA-34: Developer mode easter egg + libraries screen
+
+- [x] Ported syncwich's `DeveloperModeTapState`/`DeveloperModeTapAction` near-verbatim into
+      `SettingsViewModel` (Stricknani uses one shared settings view model rather than
+      per-category ones like syncwich, so the tap state lives there instead of a dedicated
+      `AboutSettingsViewModel`): 7 taps on the About screen's "Build" row within a rolling 2s
+      window sets a new `AppPreferencesRepository.developerMode` DataStore flag, with toast
+      feedback at each step ("N more taps...", "Developer mode enabled", or "You are already a
+      developer" if already unlocked). Currently a pure easter egg with no gated feature behind it
+      yet, matching upstream syncwich's own current state.
+- [x] `ui/settings/LibrariesScreen.kt`: hand-maintained static list (no `aboutlibraries` Gradle
+      plugin, matching syncwich's choice) of the app's actual runtime dependencies from
+      `gradle/libs.versions.toml`, each row opening its GitHub URL. New `Route.Libraries`
+      destination reachable from a "Libraries" row added to the About screen's second card
+      (above "License").
+
+Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`), then confirmed for real on the Zenfone 10: tapping
+"Build" repeatedly showed the countdown toasts, then "Developer mode enabled", then (on a further
+tap) "You are already a developer" - confirming the DataStore flag persisted; tapping "Libraries"
+opened the new screen with all dependencies listed correctly. One real quirk hit during testing:
+rapid-fire `adb shell input tap` calls under ~150ms apart didn't all register as discrete clicks
+(only 2 of 7 landed) - not an app bug, just `adb input tap`'s own dispatch timing; spacing taps
+~400ms apart worked reliably.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
