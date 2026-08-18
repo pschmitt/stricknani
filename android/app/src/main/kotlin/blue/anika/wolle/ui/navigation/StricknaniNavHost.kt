@@ -23,15 +23,14 @@ import blue.anika.wolle.ui.onboarding.OnboardingScreen
 import blue.anika.wolle.ui.settings.SettingsScreen
 
 /**
- * The app's main scaffold: a Material 3 bottom navigation bar switching between the five
- * top-level destinations. Most destinations are still a [PlaceholderScreen] - real screens land
- * in SNA-9/SNA-10; the configurable navbar (reordering/hiding items) is SNA-16.
+ * The app's main scaffold: a Material 3 bottom navigation bar switching between the five top-level
+ * destinations. Most destinations are still a [PlaceholderScreen] - real screens land in
+ * SNA-9/SNA-10; the configurable navbar (reordering/hiding items) is SNA-16.
  *
  * @param startDestination [Route.Onboarding] until a server URL + API token are saved, otherwise
- *   [Route.Home] - `MainActivity` picks this reactively from
- *   `SettingsRepository.isConfigured` and recreates this whole composable (a fresh
- *   `NavController`) when it flips, rather than this composable navigating between the two
- *   itself.
+ *   [Route.Home] - `MainActivity` picks this reactively from `SettingsRepository.isConfigured` and
+ *   recreates this whole composable (a fresh `NavController`) when it flips, rather than this
+ *   composable navigating between the two itself.
  */
 @Composable
 fun StricknaniNavHost(modifier: Modifier = Modifier, startDestination: Route = Route.Home) {

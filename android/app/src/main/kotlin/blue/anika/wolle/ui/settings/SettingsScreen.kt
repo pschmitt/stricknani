@@ -23,8 +23,9 @@ import blue.anika.wolle.R
 
 /**
  * Sign-out only for now - the full Settings screen (server/theme/sync/navbar/backup) is SNA-18.
- * Kept as a real, stateful screen rather than a plain [blue.anika.wolle.ui.common.PlaceholderScreen]
- * since sign-out needs to be reachable/testable end to end (SNA-6).
+ * Kept as a real, stateful screen rather than a plain
+ * [blue.anika.wolle.ui.common.PlaceholderScreen] since sign-out needs to be reachable/testable end
+ * to end (SNA-6).
  */
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {

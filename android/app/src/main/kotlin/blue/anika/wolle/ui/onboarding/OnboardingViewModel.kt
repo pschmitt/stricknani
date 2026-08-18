@@ -49,7 +49,9 @@ constructor(
                     settingsRepository.save(serverUrl, apiToken)
                     _uiState.value = OnboardingUiState.Success
                 }
-                .onFailure { error -> _uiState.value = OnboardingUiState.Error(error.toUserMessage()) }
+                .onFailure { error ->
+                    _uiState.value = OnboardingUiState.Error(error.toUserMessage())
+                }
         }
     }
 

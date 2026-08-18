@@ -39,9 +39,9 @@ import blue.anika.wolle.R
 /**
  * Server URL + personal access token entry. Validated against the real server
  * ([blue.anika.wolle.data.onboarding.OnboardingValidator]) before anything is saved - see
- * [OnboardingViewModel]. Success flips [blue.anika.wolle.data.settings.SettingsRepository.isConfigured],
- * which `MainActivity` observes to swap to the Home-rooted nav graph; this screen doesn't
- * navigate itself.
+ * [OnboardingViewModel]. Success flips
+ * [blue.anika.wolle.data.settings.SettingsRepository.isConfigured], which `MainActivity` observes
+ * to swap to the Home-rooted nav graph; this screen doesn't navigate itself.
  */
 @Composable
 fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
@@ -52,8 +52,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
     val isValidating = uiState is OnboardingUiState.Validating
 
     Column(
-        modifier =
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -93,7 +92,8 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                 IconButton(onClick = { tokenVisible = !tokenVisible }) {
                     Icon(
                         imageVector =
-                            if (tokenVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                            if (tokenVisible) Icons.Filled.VisibilityOff
+                            else Icons.Filled.Visibility,
                         contentDescription =
                             stringResource(
                                 if (tokenVisible) R.string.onboarding_hide_token

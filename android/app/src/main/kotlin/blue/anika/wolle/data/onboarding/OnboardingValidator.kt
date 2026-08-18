@@ -37,8 +37,8 @@ class OnboardingValidationException(val error: OnboardingError, cause: Throwable
  * server *before* [blue.anika.wolle.data.settings.SettingsRepository] persists them. Deliberately
  * uses its own unauthenticated, static-baseurl OkHttpClient ([ValidationClient]) rather than the
  * app's normal OkHttp stack, since that stack's interceptors read the currently *saved*
- * connection - which, during onboarding, is exactly what's being validated before being saved.
- * Same two-step pattern as syncwich's `OnboardingValidator`, adapted for Stricknani's endpoints:
+ * connection - which, during onboarding, is exactly what's being validated before being saved. Same
+ * two-step pattern as syncwich's `OnboardingValidator`, adapted for Stricknani's endpoints:
  * `/api/v1/meta` needs no auth (it exists so the app can identify "is this even a Stricknani
  * server" before a token is entered), so a second, authenticated request against a real
  * `require_api_token` endpoint is needed to actually validate the token.
@@ -63,7 +63,9 @@ class OnboardingValidator @Inject constructor(@ValidationClient private val clie
 
     private fun checkIsStricknaniServer(baseUrl: HttpUrl): Result<Unit> {
         val request =
-            Request.Builder().url(baseUrl.newBuilder().addPathSegments("api/v1/meta").build()).build()
+            Request.Builder()
+                .url(baseUrl.newBuilder().addPathSegments("api/v1/meta").build())
+                .build()
         return try {
             client.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
@@ -95,7 +97,9 @@ class OnboardingValidator @Inject constructor(@ValidationClient private val clie
                         Result.failure(OnboardingValidationException(OnboardingError.Unauthorized))
                     else ->
                         Result.failure(
-                            OnboardingValidationException(OnboardingError.ServerError(response.code))
+                            OnboardingValidationException(
+                                OnboardingError.ServerError(response.code)
+                            )
                         )
                 }
             }

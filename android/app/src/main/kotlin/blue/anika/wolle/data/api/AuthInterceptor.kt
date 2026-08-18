@@ -5,8 +5,10 @@ import javax.inject.Inject
 import okhttp3.Interceptor
 import okhttp3.Response
 
-/** Attaches the stored personal access token - the API only ever accepts `Bearer <token>` (see
- * `require_api_token` in `stricknani/routes/auth.py`), no legacy scheme to branch on. */
+/**
+ * Attaches the stored personal access token - the API only ever accepts `Bearer <token>` (see
+ * `require_api_token` in `stricknani/routes/auth.py`), no legacy scheme to branch on.
+ */
 class AuthInterceptor @Inject constructor(private val settingsRepository: SettingsRepository) :
     Interceptor {
 

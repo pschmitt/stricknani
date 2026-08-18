@@ -10,10 +10,9 @@ class SettingsViewModel @Inject constructor(private val settingsRepository: Sett
     ViewModel() {
 
     /**
-     * Wipes credentials, which flips `SettingsRepository.isConfigured` to false -
-     * `MainActivity` observes that and swaps to the Onboarding-rooted nav graph, so no
-     * navigation call is needed here. The Room cache (SNA-7) isn't wiped yet - nothing to wipe
-     * until that lands.
+     * Wipes credentials, which flips `SettingsRepository.isConfigured` to false - `MainActivity`
+     * observes that and swaps to the Onboarding-rooted nav graph, so no navigation call is needed
+     * here. The Room cache (SNA-7) isn't wiped yet - nothing to wipe until that lands.
      */
     fun signOut() {
         settingsRepository.signOut()

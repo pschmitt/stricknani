@@ -21,8 +21,8 @@ data class StricknaniCredentials(val serverUrl: String, val apiToken: String) {
  * these anyway). Same pattern as the sibling apps (e.g. nyetbox's `SettingsRepository`).
  *
  * Non-secret sync bookkeeping (last-sync timestamps, sync interval preference - SNA-7) is
- * deliberately not here yet: DataStore for that lands with the sync engine that actually reads
- * and writes it, rather than an unused scaffold now.
+ * deliberately not here yet: DataStore for that lands with the sync engine that actually reads and
+ * writes it, rather than an unused scaffold now.
  */
 // AndroidX Security Crypto currently deprecates this API without providing a replacement for the
 // same encrypted SharedPreferences migration path. Keep it until the library offers one; the
@@ -46,8 +46,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     private val _isConfigured = MutableStateFlow(_credentials.value.isValid)
     val isConfigured: StateFlow<Boolean> = _isConfigured.asStateFlow()
 
-    /** Only call once the server has actually confirmed this URL/token pair works - see
-     * [blue.anika.wolle.data.onboarding.OnboardingValidator]. */
+    /**
+     * Only call once the server has actually confirmed this URL/token pair works - see
+     * [blue.anika.wolle.data.onboarding.OnboardingValidator].
+     */
     fun save(serverUrl: String, apiToken: String) {
         val normalizedUrl = serverUrl.trim().trimEnd('/')
         val trimmedToken = apiToken.trim()

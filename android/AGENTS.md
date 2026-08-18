@@ -47,6 +47,13 @@ directory, not mixed into the root one.
   `just test`, `just check`, `just fetch`, `just build-fetch`, run from `android/`). Remote build
   directory: `~/build/stricknani-android` (see `android/justfile`).
 - See the shared doc for the CI-lint-authority rule and `ktfmt-diff-patch` retrieval procedure.
+  **Confirmed unreliable here, twice**: running `ktfmtCheck` via `nix develop --command ./gradlew`
+  on `rofl-13`/`rofl-14` reports `ktfmtCheckMain NO-SOURCE` (i.e. "nothing to check") even when
+  real files under `src/main/kotlin` have genuine formatting violations that CI's `ktfmtCheck`
+  (GitHub Actions runner, system JDK, no nix) catches immediately - root cause not identified. Do
+  not treat a clean local `ktfmtCheck`/`ktfmtFormat` run as proof of formatting correctness; push
+  and let CI's `Android Lint` workflow be the actual check, and if it fails, fetch that run's
+  `ktfmt-diff-patch` artifact and apply it rather than re-attempting a local check.
 - CI workflows here are hand-written (`android/.github` doesn't exist - see repo-root
   `.github/workflows/android-*.yaml`), not the fleet's reusable `lint.yaml`/`build.yaml` called
   directly: those reusable workflows assume the Gradle project sits at the repo root, which isn't

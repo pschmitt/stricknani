@@ -16,8 +16,8 @@ import okhttp3.logging.HttpLoggingInterceptor
 /**
  * Unauthenticated, static-baseurl client used only by
  * [blue.anika.wolle.data.onboarding.OnboardingValidator] - deliberately bypasses
- * [DynamicBaseUrlInterceptor]/[AuthInterceptor], which read the currently *saved* connection
- * rather than the one being validated. Same pattern as syncwich's `ValidationClient`.
+ * [DynamicBaseUrlInterceptor]/[AuthInterceptor], which read the currently *saved* connection rather
+ * than the one being validated. Same pattern as syncwich's `ValidationClient`.
  */
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class ValidationClient
 
@@ -41,10 +41,10 @@ object NetworkModule {
         }
 
     /**
-     * The app's main HTTP client: every request is rewritten to the configured server and
-     * carries the stored PAT. Nothing injects this yet (SNA-7 wires up Retrofit/Coil against it)
-     * - declaring it now, since a Hilt `@Provides` binding is only ever instantiated once
-     * something actually requests it.
+     * The app's main HTTP client: every request is rewritten to the configured server and carries
+     * the stored PAT. Nothing injects this yet (SNA-7 wires up Retrofit/Coil against it)
+     * - declaring it now, since a Hilt `@Provides` binding is only ever instantiated once something
+     *   actually requests it.
      */
     @Provides
     @Singleton
