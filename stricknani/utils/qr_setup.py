@@ -22,6 +22,7 @@ import time
 from io import BytesIO
 
 import qrcode
+from qrcode.image.pil import PilImage
 
 _SCHEME_VERSION = 1
 _QR_BOX_SIZE = 8
@@ -48,7 +49,7 @@ def request_base_url(scheme: str, host: str) -> str:
 
 def render_qr_data_uri(data: str) -> str:
     """Render `data` as a QR code, returned as an inline `data:image/png` URI."""
-    img = qrcode.make(data, box_size=_QR_BOX_SIZE)
+    img = qrcode.make(data, box_size=_QR_BOX_SIZE, image_factory=PilImage)
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
