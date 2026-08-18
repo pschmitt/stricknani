@@ -35,8 +35,8 @@ import blue.anika.wolle.data.util.GaugeCalculator
 import blue.anika.wolle.data.util.GaugeResult
 
 /**
- * Ports `stricknani/routes/gauge.py`'s calculator UI (see `templates/gauge/calculator.html`) -
- * pure client-side math via `GaugeCalculator`, no ViewModel/network call needed (SNA-11).
+ * Ports `stricknani/routes/gauge.py`'s calculator UI (see `templates/gauge/calculator.html`) - pure
+ * client-side math via `GaugeCalculator`, no ViewModel/network call needed (SNA-11).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,9 +89,7 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            item {
-                Text("Pattern gauge (per 10cm)", style = MaterialTheme.typography.titleSmall)
-            }
+            item { Text("Pattern gauge (per 10cm)", style = MaterialTheme.typography.titleSmall) }
             item {
                 GaugeRow(
                     stitches = patternStitches,
@@ -183,15 +181,20 @@ private fun GaugeRow(
 
 @Composable
 private fun GaugeResultCard(result: GaugeResult) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+    Card(
+        colors =
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+    ) {
         Column(Modifier.padding(16.dp)) {
             Text("Calculation results", style = MaterialTheme.typography.titleMedium)
-            Row(modifier = Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            Row(
+                modifier = Modifier.padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
                 GaugeStat(label = "Adjusted stitches", value = result.adjustedStitches.toString())
                 GaugeStat(label = "Adjusted rows", value = result.adjustedRows?.toString() ?: "N/A")
             }
-            val rowsText =
-                result.patternRowCount?.let { " and $it rows" } ?: ""
+            val rowsText = result.patternRowCount?.let { " and $it rows" } ?: ""
             Text(
                 "Based on a pattern cast-on of ${result.patternCastOnStitches} stitches$rowsText.",
                 style = MaterialTheme.typography.bodySmall,

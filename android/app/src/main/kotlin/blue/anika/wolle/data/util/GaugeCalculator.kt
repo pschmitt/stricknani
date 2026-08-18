@@ -13,9 +13,9 @@ data class GaugeResult(
  * gauge calculator screen works fully offline (see `android/TODO.md` SNA-11).
  *
  * Rounds via [Math.rint] (round-half-to-even), not [kotlin.math.roundToInt] (round-half-up):
- * Python's builtin `round()` - what the backend uses - is round-half-to-even, and gauge ratios
- * land exactly on `.5` often enough (e.g. 121 cast-on sts at a 19/22 ratio = 104.5) that the two
- * would silently disagree with the web app on that boundary case otherwise.
+ * Python's builtin `round()` - what the backend uses - is round-half-to-even, and gauge ratios land
+ * exactly on `.5` often enough (e.g. 121 cast-on sts at a 19/22 ratio = 104.5) that the two would
+ * silently disagree with the web app on that boundary case otherwise.
  */
 object GaugeCalculator {
     fun calculate(
@@ -29,10 +29,9 @@ object GaugeCalculator {
         val adjustedStitches =
             Math.rint(patternCastOnStitches * (userGaugeStitches.toDouble() / patternGaugeStitches))
                 .toInt()
-        val adjustedRows =
-            patternRowCount?.let { rows ->
-                Math.rint(rows * (userGaugeRows.toDouble() / patternGaugeRows)).toInt()
-            }
+        val adjustedRows = patternRowCount?.let { rows ->
+            Math.rint(rows * (userGaugeRows.toDouble() / patternGaugeRows)).toInt()
+        }
         return GaugeResult(
             adjustedStitches = adjustedStitches,
             adjustedRows = adjustedRows,
