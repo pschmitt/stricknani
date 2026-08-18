@@ -98,14 +98,15 @@ async def test_api_requires_bearer_token() -> None:
     assert response.status_code == 401
 
 
-async def test_api_rejects_invalid_bearer_token() -> None:
-    transport = ASGITransport(app=app)
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-        headers={"Authorization": "Bearer sna_not-a-real-token"},
-    ) as client:
-        response = await client.get("/api/v1/yarns")
+async def test_api_rejects_invalid_bearer_token(api_client: ClientFixture) -> None:
+    # Reuses api_client's DB override (get_user_from_api_token still has to
+    # run a real query) rather than a bare client against the app's real,
+    # unmigrated-in-CI database - a per-request header overrides the
+    # fixture's default valid one (httpx: request-level headers win).
+    client, _session_factory, _user_id = api_client
+    response = await client.get(
+        "/api/v1/yarns", headers={"Authorization": "Bearer sna_not-a-real-token"}
+    )
     assert response.status_code == 401
 
 
