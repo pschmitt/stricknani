@@ -15,8 +15,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * SNA-14: an optional local notification when a background sync finds changes. Scoped to that
- * one case only - notifying on an async backend job completing (e.g. link archiving) would need a
+ * SNA-14: an optional local notification when a background sync finds changes. Scoped to that one
+ * case only - notifying on an async backend job completing (e.g. link archiving) would need a
  * server-side way to detect that specific event, which doesn't exist yet.
  */
 @Singleton
@@ -28,7 +28,9 @@ class SyncNotifier @Inject constructor(@ApplicationContext private val context: 
         val channel =
             NotificationChannel(CHANNEL_ID, "Sync updates", NotificationManager.IMPORTANCE_LOW)
                 .apply { description = "New changes found during a background sync" }
-        context.getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
+        context
+            .getSystemService(NotificationManager::class.java)
+            ?.createNotificationChannel(channel)
     }
 
     /**
@@ -38,8 +40,10 @@ class SyncNotifier @Inject constructor(@ApplicationContext private val context: 
     fun notifySyncFoundChanges() {
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-                    PackageManager.PERMISSION_GRANTED
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ) != PackageManager.PERMISSION_GRANTED
         ) {
             return
         }

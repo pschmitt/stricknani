@@ -12,15 +12,14 @@ import androidx.core.content.ContextCompat
 
 /**
  * Requests `POST_NOTIFICATIONS` (Android 13+) once, the first time this composable enters
- * composition - used on `HomeScreen` rather than at cold start, so the prompt appears once the
- * user has actually reached the app's main shell (post-onboarding) instead of before they've seen
- * any value in it. A no-op on API < 33 (the permission doesn't exist) or once already granted.
+ * composition - used on `HomeScreen` rather than at cold start, so the prompt appears once the user
+ * has actually reached the app's main shell (post-onboarding) instead of before they've seen any
+ * value in it. A no-op on API < 33 (the permission doesn't exist) or once already granted.
  */
 @Composable
 fun RequestNotificationPermissionEffect() {
     val context = LocalContext.current
-    val launcher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@LaunchedEffect

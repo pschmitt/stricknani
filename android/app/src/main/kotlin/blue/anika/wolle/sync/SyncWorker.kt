@@ -20,10 +20,10 @@ import timber.log.Timber
  * detail screens display category names sourced from this cache.
  *
  * SNA-14: fires a local notification when [KEY_NOTIFY_ON_CHANGE] is set (only true for
- * `SyncScheduler.schedulePeriodic()`'s periodic request - a manual pull-to-refresh or the
- * on-launch sync means the user is already looking at the fresh data, so notifying then would
- * just be noise) and a project/yarn sync actually found a change. Categories are excluded: they
- * have no real delta (`CategoryRepository.sync()`'s kdoc), so "changed" there is meaningless noise.
+ * `SyncScheduler.schedulePeriodic()`'s periodic request - a manual pull-to-refresh or the on-launch
+ * sync means the user is already looking at the fresh data, so notifying then would just be noise)
+ * and a project/yarn sync actually found a change. Categories are excluded: they have no real delta
+ * (`CategoryRepository.sync()`'s kdoc), so "changed" there is meaningless noise.
  */
 @HiltWorker
 class SyncWorker

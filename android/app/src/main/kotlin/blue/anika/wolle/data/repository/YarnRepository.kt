@@ -54,7 +54,9 @@ constructor(
         }
     }
 
-    /** Returns whether this sync actually pulled any change - see SyncWorker/SyncNotifier (SNA-14). */
+    /**
+     * Returns whether this sync actually pulled any change - see SyncWorker/SyncNotifier (SNA-14).
+     */
     suspend fun sync(): Boolean {
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)
         val response = syncApi.syncYarns(since = cursor)
