@@ -26,18 +26,21 @@ object QrConfigCodec {
 
     fun looksLikeQrConfigUri(text: String): Boolean = text.trim().startsWith(URI_PREFIX)
 
-    /** Returns null for anything that isn't a recognizable, well-formed `stricknani://setup` payload. */
+    /**
+     * Returns null for anything that isn't a recognizable, well-formed `stricknani://setup`
+     * payload.
+     */
     fun decode(text: String): QrSetupPayload? {
         val trimmed = text.trim()
         val encoded = trimmed.removePrefix(URI_PREFIX)
         if (encoded == trimmed) return null
         return runCatching {
-                val bytes = Base64.getUrlDecoder().decode(encoded)
-                val envelope = json.decodeFromString<QrSetupEnvelope>(bytes.decodeToString())
-                envelope.takeIf { it.baseUrl.isNotBlank() && it.token.isNotBlank() }?.let {
-                    QrSetupPayload(it.baseUrl, it.token)
-                }
-            }
+            val bytes = Base64.getUrlDecoder().decode(encoded)
+            val envelope = json.decodeFromString<QrSetupEnvelope>(bytes.decodeToString())
+            envelope
+                .takeIf { it.baseUrl.isNotBlank() && it.token.isNotBlank() }
+                ?.let { QrSetupPayload(it.baseUrl, it.token) }
+        }
             .getOrNull()
     }
 }

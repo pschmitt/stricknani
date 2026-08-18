@@ -79,15 +79,16 @@ constructor(
     }
 
     /**
-     * QR-code onboarding (SNA-13): decodes a payload scanned from the web Settings page's setup
-     * QR, then goes through the normal [connect] validation - unlike [signInWithPassword]'s freshly
+     * QR-code onboarding (SNA-13): decodes a payload scanned from the web Settings page's setup QR,
+     * then goes through the normal [connect] validation - unlike [signInWithPassword]'s freshly
      * minted token, a QR code can sit around (screenshotted, scanned later) so its token could be
      * stale or already revoked by the time it's actually scanned.
      */
     fun connectFromScannedText(scannedText: String) {
         val payload = QrConfigCodec.decode(scannedText)
         if (payload == null) {
-            _uiState.value = OnboardingUiState.Error("That doesn't look like a Stricknani setup code")
+            _uiState.value =
+                OnboardingUiState.Error("That doesn't look like a Stricknani setup code")
             return
         }
         connect(payload.baseUrl, payload.token)

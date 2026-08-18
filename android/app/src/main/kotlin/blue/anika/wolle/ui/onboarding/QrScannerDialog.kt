@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -47,8 +46,8 @@ import java.util.concurrent.Executors
 import timber.log.Timber
 
 /**
- * Full-screen QR scanner for onboarding (SNA-13) - a plain [Dialog] like `ImageViewerDialog`, not
- * a nav route, since it's a one-shot capture rather than a real destination. Deliberately much
+ * Full-screen QR scanner for onboarding (SNA-13) - a plain [Dialog] like `ImageViewerDialog`, not a
+ * nav route, since it's a one-shot capture rather than a real destination. Deliberately much
  * simpler than nyetbox's `ScannerScreen` (no lens switching/zoom/torch/tap-to-focus): a single
  * back-camera preview is all a one-time setup-code scan needs.
  */
@@ -70,7 +69,10 @@ fun QrScannerDialog(onResult: (String) -> Unit, onDismiss: () -> Unit) {
         if (!hasCameraPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
         Box(Modifier.fillMaxSize()) {
             if (hasCameraPermission) {
                 ScannerCameraPreview(onCodeScanned = onResult)
@@ -108,21 +110,22 @@ private fun ScannerCameraPreview(onCodeScanned: (String) -> Unit) {
             onDispose {}
         } else {
             val provider = cameraProviderFuture.get()
-            val preview = Preview.Builder().build().also { it.surfaceProvider = view.surfaceProvider }
+            val preview =
+                Preview.Builder().build().also { it.surfaceProvider = view.surfaceProvider }
             val analysis =
                 ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
                     .also { it.setAnalyzer(cameraExecutor, BarcodeAnalyzer(onCodeScanned)) }
             runCatching {
-                    provider.unbindAll()
-                    provider.bindToLifecycle(
-                        lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                        analysis,
-                    )
-                }
+                provider.unbindAll()
+                provider.bindToLifecycle(
+                    lifecycleOwner,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    preview,
+                    analysis,
+                )
+            }
                 .onFailure { Timber.e(it, "Unable to bind camera for QR scanning") }
             onDispose { runCatching { provider.unbindAll() } }
         }
@@ -131,7 +134,9 @@ private fun ScannerCameraPreview(onCodeScanned: (String) -> Unit) {
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { ctx ->
-            PreviewView(ctx).apply { implementationMode = PreviewView.ImplementationMode.COMPATIBLE }
+            PreviewView(ctx).apply {
+                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            }
         },
         update = { view -> previewView = view },
     )

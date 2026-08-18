@@ -34,11 +34,11 @@ private data class TokenMintRequest(
  * both ends.
  *
  * Uses [ValidationClient] (a plain, unauthenticated OkHttpClient against a caller-supplied base
- * URL) rather than the app's normal Retrofit stack, for the same reason [OnboardingValidator]
- * does: that stack's interceptors read the currently *saved* connection, which during onboarding
- * is exactly what's being set up. The password itself is only ever a local `val` for the duration
- * of this one request; it's never persisted or logged (this app has no HTTP logging interceptor
- * on [ValidationClient] to begin with).
+ * URL) rather than the app's normal Retrofit stack, for the same reason [OnboardingValidator] does:
+ * that stack's interceptors read the currently *saved* connection, which during onboarding is
+ * exactly what's being set up. The password itself is only ever a local `val` for the duration of
+ * this one request; it's never persisted or logged (this app has no HTTP logging interceptor on
+ * [ValidationClient] to begin with).
  */
 @Singleton
 class PasswordTokenMinter

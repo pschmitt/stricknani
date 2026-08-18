@@ -49,10 +49,10 @@ private enum class OnboardingMode(val label: String) {
 }
 
 /**
- * Server URL + personal access token entry, plus two SNA-13 shortcuts that both end up at the
- * same [OnboardingViewModel.connect]/[OnboardingViewModel.persistAndSucceed] destination: scanning
- * the web Settings page's setup QR, or signing in with an email/password (which mints a PAT
- * server-side instead of requiring a trip to the web UI first). Validated against the real server
+ * Server URL + personal access token entry, plus two SNA-13 shortcuts that both end up at the same
+ * [OnboardingViewModel.connect]/[OnboardingViewModel.persistAndSucceed] destination: scanning the
+ * web Settings page's setup QR, or signing in with an email/password (which mints a PAT server-side
+ * instead of requiring a trip to the web UI first). Validated against the real server
  * ([blue.anika.wolle.data.onboarding.OnboardingValidator]) before anything is saved - see
  * [OnboardingViewModel]. Success flips
  * [blue.anika.wolle.data.settings.SettingsRepository.isConfigured], which `MainActivity` observes
