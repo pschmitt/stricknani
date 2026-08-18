@@ -26,6 +26,12 @@ sealed interface Route {
     @Serializable data class ProjectDetail(val projectId: Int) : Route
 
     @Serializable data class YarnDetail(val yarnId: Int) : Route
+
+    /** `projectId == null` is create; a value is edit. */
+    @Serializable data class ProjectEditor(val projectId: Int? = null) : Route
+
+    /** `yarnId == null` is create; a value is edit. */
+    @Serializable data class YarnEditor(val yarnId: Int? = null) : Route
 }
 
 /** The five bottom-navigation destinations, in display order (see android/TODO.md SNA-5/SNA-9). */

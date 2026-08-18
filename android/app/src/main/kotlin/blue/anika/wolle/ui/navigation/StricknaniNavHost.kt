@@ -19,16 +19,19 @@ import androidx.navigation.compose.rememberNavController
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
 import blue.anika.wolle.ui.projects.ProjectDetailScreen
+import blue.anika.wolle.ui.projects.ProjectEditorScreen
 import blue.anika.wolle.ui.projects.ProjectsListScreen
 import blue.anika.wolle.ui.search.SearchScreen
 import blue.anika.wolle.ui.settings.SettingsScreen
 import blue.anika.wolle.ui.yarns.YarnDetailScreen
+import blue.anika.wolle.ui.yarns.YarnEditorScreen
 import blue.anika.wolle.ui.yarns.YarnsListScreen
 
 /**
  * The app's main scaffold: a Material 3 bottom navigation bar switching between the five top-level
- * destinations, plus non-top-level detail routes (`ProjectDetail`/`YarnDetail`). Create/edit flows
- * are SNA-10; the configurable navbar (reordering/hiding items) is SNA-16.
+ * destinations, plus non-top-level detail routes (`ProjectDetail`/`YarnDetail`) and create/edit
+ * routes (`ProjectEditor`/`YarnEditor`, SNA-10). The configurable navbar (reordering/hiding items)
+ * is SNA-16.
  *
  * @param startDestination [Route.Onboarding] until a server URL + API token are saved, otherwise
  *   [Route.Home] - `MainActivity` picks this reactively from `SettingsRepository.isConfigured` and
@@ -87,12 +90,14 @@ fun StricknaniNavHost(modifier: Modifier = Modifier, startDestination: Route = R
             }
             composable<Route.Projects> {
                 ProjectsListScreen(
-                    onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) }
+                    onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                    onAddProjectClick = { navController.navigate(Route.ProjectEditor()) },
                 )
             }
             composable<Route.Yarns> {
                 YarnsListScreen(
-                    onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) }
+                    onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                    onAddYarnClick = { navController.navigate(Route.YarnEditor()) },
                 )
             }
             composable<Route.Search> {
@@ -106,12 +111,36 @@ fun StricknaniNavHost(modifier: Modifier = Modifier, startDestination: Route = R
                 ProjectDetailScreen(
                     onBack = { navController.navigateUp() },
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                    onEditClick = { id -> navController.navigate(Route.ProjectEditor(id)) },
                 )
             }
             composable<Route.YarnDetail> {
                 YarnDetailScreen(
                     onBack = { navController.navigateUp() },
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                    onEditClick = { id -> navController.navigate(Route.YarnEditor(id)) },
+                )
+            }
+            composable<Route.ProjectEditor> {
+                ProjectEditorScreen(
+                    onSaved = { navController.navigateUp() },
+                    onDeleted = {
+                        navController.navigate(Route.Projects) {
+                            popUpTo(Route.Projects) { inclusive = true }
+                        }
+                    },
+                    onBack = { navController.navigateUp() },
+                )
+            }
+            composable<Route.YarnEditor> {
+                YarnEditorScreen(
+                    onSaved = { navController.navigateUp() },
+                    onDeleted = {
+                        navController.navigate(Route.Yarns) {
+                            popUpTo(Route.Yarns) { inclusive = true }
+                        }
+                    },
+                    onBack = { navController.navigateUp() },
                 )
             }
         }

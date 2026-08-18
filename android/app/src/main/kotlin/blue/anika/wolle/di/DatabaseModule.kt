@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.CategoryDao
+import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.ProjectDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.dao.YarnDao
@@ -34,4 +35,8 @@ object DatabaseModule {
     @Provides fun provideCategoryDao(database: AppDatabase): CategoryDao = database.categoryDao()
 
     @Provides fun provideSyncStateDao(database: AppDatabase): SyncStateDao = database.syncStateDao()
+
+    @Provides
+    fun providePendingMutationDao(database: AppDatabase): PendingMutationDao =
+        database.pendingMutationDao()
 }

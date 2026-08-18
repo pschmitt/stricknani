@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.AssistChip
@@ -51,6 +52,7 @@ import coil3.compose.AsyncImage
 fun ProjectDetailScreen(
     onBack: () -> Unit,
     onYarnClick: (Int) -> Unit,
+    onEditClick: (Int) -> Unit,
     viewModel: ProjectDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,6 +81,9 @@ fun ProjectDetailScreen(
                 },
                 actions = {
                     if (state is ProjectDetailUiState.Loaded) {
+                        IconButton(onClick = { onEditClick(state.entity.id) }) {
+                            Icon(Icons.Filled.Edit, contentDescription = "Edit project")
+                        }
                         IconButton(onClick = viewModel::toggleFavorite) {
                             Icon(
                                 imageVector =

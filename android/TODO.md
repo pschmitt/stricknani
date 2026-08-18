@@ -328,17 +328,29 @@ follow-up push.
 
 ## SNA-8: Offline write queue
 
-- [ ] Local "pending mutation" outbox table (create/update/delete ops, client-generated temp ids
-      for offline-created rows)
-- [ ] `WriteReplayWorker`: flushes the outbox when connectivity returns, reconciles temp ids with
-      server-assigned ids from the response
-- [ ] A replay failure (e.g. the project was deleted server-side in the meantime) surfaces a
-      conflict banner rather than silently dropping the local edit
+- [x] Local "pending mutation" outbox table (`PendingMutationEntity`/`PendingMutationDao`,
+      `pending_mutations` table, DB version bumped to 2): create/update/delete ops, client
+      -generated negative temp ids for offline-created rows (`ProjectDao`/`YarnDao.minId()` mints
+      the next one)
+- [x] `WriteReplayWorker`: flushes the outbox when connectivity returns (periodic, every 15
+      minutes, plus an immediate one-off chained before every post-write sync via
+      `SyncScheduler.replayThenSyncNow()`), replays strictly in insertion order, reconciles temp
+      ids with server-assigned ids via `PendingMutationDao.reassignLocalId` once a queued create
+      actually lands
+- [x] A replay failure leaves the mutation queued with `lastErrorMessage` recorded
+      (`PendingMutationDao.observeFailed()` exposed for a future conflict-banner UI - not
+      surfaced anywhere yet, see caveat below) rather than silently dropping the local edit; the
+      worker returns `Result.retry()` when any mutation failed
 
-Status: not started. Resequenced after SNA-9: an offline write queue has nothing to exercise it
-while Home/Projects/Yarns/Search are still `PlaceholderScreen`s, and it naturally pairs with
-SNA-10's create/edit flows (the write queue exists to serve them) rather than being built as an
-untestable, screen-less abstraction first.
+Status: **mostly done** (2026-08-18), landed together with SNA-10 - see that entry for scope
+(text fields only this pass; step reordering + image/photo upload deferred). **Not done**: no UI
+surfaces `observeFailed()` yet, so a stuck/conflicting queued mutation is currently invisible to
+the user beyond it simply not showing as synced - a conflict-banner UI is a follow-up. **Not
+verified**: an actual end-to-end replay against a running Stricknani server (no reachable test
+server was set up this session, same gap as SNA-6/7/9) - verified so far only via a successful
+remote debug build (`just build debug rofl-13.brkn.lol`, `BUILD SUCCESSFUL`) confirming the outbox
+/worker/DI wiring compiles and Room's schema migration (v1 -> v2, `fallbackToDestructiveMigration`)
+is consistent; not yet installed/exercised on a physical device this session.
 
 ### Android app screens
 
@@ -395,12 +407,44 @@ build, and CI is green on the follow-up push.
 
 ## SNA-10: Create/edit flows
 
-- [ ] Project create/edit form (fields mirroring the web app), step reordering, image
-      picker/upload
-- [ ] Yarn create/edit form, photo picker/upload
-- [ ] All writes go through the offline queue (SNA-8), so they work with zero connectivity
+- [x] Project create/edit form (`ui/projects/ProjectEditorScreen.kt`/`ProjectEditorViewModel.kt`):
+      name/category/needles/stitch sample/other materials/tags/link/description/notes text
+      fields, category suggestion chips (reuses `CategoryRepository`), linked-yarn multi-select
+      via `FilterChip`s. Step reordering and image/attachment picker/upload are **explicitly
+      deferred** to a follow-up (multipart upload is materially more work and doesn't block the
+      outbox mechanism itself being real and testable)
+- [x] Yarn create/edit form (`ui/yarns/YarnEditorScreen.kt`/`YarnEditorViewModel.kt`): same text
+      -field shape as the project form, mirroring `YarnWriteRequest`. Photo picker/upload
+      deferred, same reasoning
+- [x] All writes go through the offline queue (SNA-8) via
+      `ProjectRepository.createProject`/`updateProject`/`deleteProject` (and the yarn
+      equivalents) - zero-connectivity create/edit/delete shows up in Room immediately and
+      replays once connectivity returns
+- [x] Delete wired end-to-end too (confirmation dialog in both editor screens' top bar), even
+      though it wasn't explicitly in this task's original checklist - the write-queue delete
+      path already existed from SNA-8's `deleteProject`/`deleteYarn`/`replayDelete`, so exposing
+      it in the UI was a small addition that makes the offline queue fully exercisable rather than
+      leaving one of its three operations UI-dead
+- [x] Navigation: `Route.ProjectEditor(projectId: Int? = null)`/`Route.YarnEditor(yarnId: Int? =
+      null)` (`null` = create, a value = edit) wired into `StricknaniNavHost` - a "New
+      project"/"New yarn" `ExtendedFloatingActionButton` on the respective list screens, an edit
+      icon in the respective detail screens' `TopAppBar`
 
-Status: not started
+Status: **mostly done** (2026-08-18) - verified via a successful remote debug build (`just build
+debug rofl-13.brkn.lol`, `BUILD SUCCESSFUL`) after fixing two real compile errors caught along the
+way: (1) `androidx.compose.material3.ExposedDropdownMenu`/`ExposedDropdownMenuBox` doesn't resolve
+against this project's Material3 1.4.0 (the API this session initially reached for isn't present
+under that name/signature in this version) - replaced the category picker with a plain text field
+plus `FilterChip` suggestion chips instead of chasing the right dropdown API, which is simpler and
+matches the category-filter chip row already used on `ProjectsListScreen`; (2) `Modifier.weight()`
+inside `YarnEditorScreen`'s weight/length `Row` failed because `weight` was (wrongly) imported as a
+top-level symbol - it's a `RowScope`-member extension, not a top-level function, and resolves
+automatically inside a `Row { }` lambda without any import. **Not verified**: installed/exercised
+on a physical device, or an actual live create/edit/delete round-trip against a running Stricknani
+server (no reachable test server was set up this session, same recurring gap noted in
+SNA-6/7/8/9). No unit tests added - `ProjectEditorViewModel`/`YarnEditorViewModel` are mostly
+Android-lifecycle-bound (`SavedStateHandle`, `Flow` collection) with the same "not enough isolable
+pure logic yet" reasoning as SNA-6.
 
 ## SNA-11: Gauge calculator
 

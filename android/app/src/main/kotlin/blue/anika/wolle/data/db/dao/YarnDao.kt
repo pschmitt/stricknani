@@ -12,6 +12,11 @@ interface YarnDao {
 
     @Query("SELECT * FROM yarns WHERE id = :id") fun observeById(id: Int): Flow<YarnEntity?>
 
+    @Query("SELECT * FROM yarns WHERE id = :id") suspend fun getById(id: Int): YarnEntity?
+
+    /** Lowest id currently cached, used to mint a fresh negative client-generated temp id. */
+    @Query("SELECT MIN(id) FROM yarns") suspend fun minId(): Int?
+
     @Upsert suspend fun upsertAll(yarns: List<YarnEntity>)
 
     @Query("DELETE FROM yarns WHERE id IN (:ids)") suspend fun deleteByIds(ids: List<Int>)

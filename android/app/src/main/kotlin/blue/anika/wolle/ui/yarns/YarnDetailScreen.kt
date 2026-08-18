@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
@@ -49,6 +50,7 @@ import coil3.compose.AsyncImage
 fun YarnDetailScreen(
     onBack: () -> Unit,
     onProjectClick: (Int) -> Unit,
+    onEditClick: (Int) -> Unit,
     viewModel: YarnDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -75,6 +77,9 @@ fun YarnDetailScreen(
                 },
                 actions = {
                     if (state is YarnDetailUiState.Loaded) {
+                        IconButton(onClick = { onEditClick(state.entity.id) }) {
+                            Icon(Icons.Filled.Edit, contentDescription = "Edit yarn")
+                        }
                         IconButton(onClick = viewModel::toggleFavorite) {
                             Icon(
                                 imageVector =
