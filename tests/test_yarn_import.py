@@ -40,7 +40,7 @@ async def test_import_yarn_wolle_roedel(test_client: Any) -> None:
     </html>
     """
 
-    with patch("httpx.AsyncClient.get") as mock_get:
+    with patch("stricknani.importing.fetch.fetch_url") as mock_get:
         mock_response = MagicMock()
         mock_response.text = mock_html
         mock_response.status_code = 200

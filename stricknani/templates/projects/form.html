@@ -2,7 +2,7 @@
 {% import "macros/buttons.html" as buttons %}
 {% import "macros/dialogs.html" as dialogs %}
 {% import "macros/image_upload.html" as image_upload %}
-{% import "macros/wysiwyg.html" as wysiwyg %}
+{% import "macros/wysiwyg.html" as wysiwyg with context %}
 
 {% block title %}{{ _('Edit') if project else _('New') }} {{ _('Project') }} - Stricknani{% endblock %}
 
@@ -755,7 +755,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 {% endblock %}
 
 {% block page_scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 {% include "projects/form.js" %}
 </script>
 {{ wysiwyg.wysiwyg_scripts() }}

@@ -777,7 +777,7 @@ function initYarnSelector() {
 				"flex items-center gap-3 py-2.5 px-3.5 bg-primary/10 text-primary border border-primary/20 rounded-xl";
 
 			const imageHtml = yarn.imageUrl
-				? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-10 h-10 rounded-lg object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
+				? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-10 h-10 rounded-lg object-cover" data-img-fallback="1">`
 				: "";
 
 			chip.innerHTML = `
@@ -807,7 +807,7 @@ function initYarnSelector() {
 				"flex items-center gap-3 py-2.5 px-3.5 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl";
 
 			const imageHtml = yarn.imageUrl
-				? `<img src="${yarn.imageUrl}" alt="${name}" class="w-10 h-10 rounded-lg object-cover" onerror="this.replaceWith(this.parentElement.querySelector('[data-fallback-icon]').cloneNode(true)); this.parentElement.querySelector('[data-fallback-icon]').classList.remove('hidden')">`
+				? `<img src="${yarn.imageUrl}" alt="${name}" class="w-10 h-10 rounded-lg object-cover" data-img-fallback="1">`
 				: "";
 
 			chip.innerHTML = `
@@ -1048,7 +1048,7 @@ function createImagePreviewHTML(imageData, options = {}) {
                ${showPromote ? 'data-pswp-promote="true"' : ""}
                ${showDelete ? 'data-pswp-delete="true"' : ""}
                data-pswp-is-primary="${isPrimary ? "true" : "false"}"
-               draggable="true" ondragstart="handleImageDragStart(event)"
+               draggable="true" data-call-dragstart="handleImageDragStart" data-call-dragstart-args='["$event"]'
                class="block">
                 <img src="${thumbUrl}"
                      alt="${altText}"
@@ -1632,9 +1632,9 @@ function addPendingTitleImageToGallery(url, options = {}) {
 	div.innerHTML = `
         <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption=""
             data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false"
-            draggable="true" ondragstart="handleImageDragStart(event)"
+            draggable="true" data-call-dragstart="handleImageDragStart" data-call-dragstart-args='["$event"]'
             class="block">
-            <img src="${url}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
+            <img src="${url}" alt="{{ _('Uploaded image') }}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
         </a>
 	        <button type="button" data-call="promotePendingImage" data-call-args='["$this","$dataset:url"]' data-url="${url}"
 	            class="promote-pending-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
@@ -2174,12 +2174,12 @@ function addStep(elOrTitle = "", description = "", stepImages = []) {
 				        </h4>
 			        <div class="step-images mb-2 grid grid-cols-3 gap-2 pswp-gallery ${stepImages.length > 0 ? "" : "hidden"}" data-pswp-gallery>
 		            ${stepImages
-									.map((img) => {
+									.map((img, imageIndex) => {
 										const url = typeof img === "string" ? img : img.url;
 										return `
 		                <div class="relative" data-pending-url="${url}">
 		                    <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" data-pswp-delete="true" class="block">
-		                        <img src="${url}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" draggable="true" ondragstart="handleImageDragStart(event)">
+		                        <img src="${url}" alt="{{ _('Step') }} ${stepNumber} #${imageIndex + 1}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" draggable="true" data-call-dragstart="handleImageDragStart" data-call-dragstart-args='["$event"]'>
 		                    </a>
 		                    <button type="button" data-call="removePendingStepImage" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
 		                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>

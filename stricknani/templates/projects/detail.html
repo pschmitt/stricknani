@@ -110,7 +110,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                                 <a href="{{ image.url }}" class="block h-full w-full"
                                     data-pswp-width="{{ image.width or 1200 }}"
                                     data-pswp-height="{{ image.height or 1200 }}" data-pswp-caption="{{ image.alt_text }}">
-                                    <img src="{{ image.url }}" alt="{{ image.alt_text }}"
+                                    <img src="{{ image.thumbnail_url or image.url }}" alt="{{ image.alt_text }}"
                                         class="h-full w-full object-cover cursor-zoom-in transition duration-300 hover:scale-105"
                                         loading="lazy">
                                 </a>
@@ -379,8 +379,9 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                         </div>
                     </div>
                     <div class="collapse-content relative pt-2">
-                        <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20 absolute top-2 right-2"
-                            onclick='copyToClipboard({{ (project.notes or '')|tojson }}, this)'
+                        <button type="button" class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20 absolute top-2 right-2"
+                            data-call="copyToClipboard"
+                            data-call-args='[{{ (project.notes or "")|tojson }}, "$this"]'
                             title="{{ _('Copy Notes') }}">
                             <span class="mdi mdi-content-copy"></span>
                         </button>
@@ -424,8 +425,9 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                     </h2>
                 </div>
                 <div class="collapse-content relative pt-2">
-                    <button class="btn btn-ghost btn-xs gap-1 absolute top-2 right-2"
-                        onclick='copyToClipboard({{ (project.description or '')|tojson }}, this)'
+                    <button type="button" class="btn btn-ghost btn-xs gap-1 absolute top-2 right-2"
+                        data-call="copyToClipboard"
+                        data-call-args='[{{ (project.description or "")|tojson }}, "$this"]'
                         title="{{ _('Copy Description') }}">
                         <span class="mdi mdi-content-copy"></span>
                     </button>
@@ -581,7 +583,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                                     class="relative aspect-square rounded-lg overflow-hidden bg-base-200 border border-base-200 block"
                                     data-pswp-width="{{ image.width or 1200 }}" data-pswp-height="{{ image.height or 1200 }}"
                                     data-pswp-caption="{{ image.alt_text }} ({{ _('Stitch Sample') }})">
-                                    <img src="{{ image.url }}" alt="{{ image.alt_text }}"
+                                    <img src="{{ image.thumbnail_url or image.url }}" alt="{{ image.alt_text }}"
                                         class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
                                         loading="lazy">
                                 </a>
@@ -634,8 +636,9 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                                     </div>
                                 </div>
                                 <div class="collapse-content relative pt-2">
-                                    <button class="btn btn-ghost btn-xs absolute top-2 right-2"
-                                        onclick='copyToClipboard({{ (step.description or '')|tojson }}, this)'
+                                    <button type="button" class="btn btn-ghost btn-xs absolute top-2 right-2"
+                                        data-call="copyToClipboard"
+                                        data-call-args='[{{ (step.description or "")|tojson }}, "$this"]'
                                         title="{{ _('Copy Instructions') }}">
                                         <span class="mdi mdi-content-copy"></span>
                                     </button>
@@ -660,7 +663,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                                                 data-pswp-width="{{ image.width or 1200 }}"
                                                 data-pswp-height="{{ image.height or 1200 }}"
                                                 data-pswp-caption="{{ image.alt_text }} ({{ step.title }})">
-                                                <img src="{{ image.url }}" alt="{{ image.alt_text }}"
+                                                <img src="{{ image.thumbnail_url or image.url }}" alt="{{ image.alt_text }}"
                                                     class="h-full w-full object-cover cursor-zoom-in hover:opacity-90 transition"
                                                     loading="lazy">
                                             </a>
@@ -1010,7 +1013,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
 	                        </div>
 
 	                        </div>
-	
+
 	                        {% if project.notes_html %}
 	                        <div class="divider my-3"></div>
 	                        <div class="rounded-xl border border-yellow-100 dark:border-yellow-900/30 bg-yellow-50/70 dark:bg-yellow-900/10 p-4">
@@ -1019,8 +1022,9 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                                     <span class="mdi mdi-notebook-outline"></span>
                                     {{ _('Notes') }}
                                 </div>
-                                <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
-                                    onclick='copyToClipboard({{ (project.notes or '')|tojson }}, this)'
+                                <button type="button" class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20"
+                                    data-call="copyToClipboard"
+                                    data-call-args='[{{ (project.notes or "")|tojson }}, "$this"]'
                                     title="{{ _('Copy Notes') }}">
                                     <span class="mdi mdi-content-copy"></span>
                                 </button>
@@ -1067,7 +1071,7 @@ data-shortcut-delete-dialog="deleteProjectDialog"
 {% endcall %}
 
 <script src="{{ url_for('static', path='js/features/detail_sidebar_toggle.js') }}"></script>
-<script>
+<script nonce="{{ csp_nonce }}">
 {% include "projects/detail.js" %}
 </script>
     {% endblock %}

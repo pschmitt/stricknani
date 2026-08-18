@@ -109,6 +109,12 @@ fmt-template-js:
 fmt-css:
   biome format --write stricknani/static/css
 
+# Build the static Tailwind CSS bundle (scans templates + static/js for
+# utility classes). Replaces the old runtime/browser Tailwind JIT script.
+[group: 'build']
+build-css:
+  tailwindcss -i stricknani/static/css/tailwind.input.css -o stricknani/static/css/tailwind.css --minify
+
 # Trim trailing whitespace
 [group: 'fmt']
 trim:
@@ -151,8 +157,21 @@ alias vendor-check := vendir-check
 vendir-check: vendir-sync
   git diff --exit-code -- vendir.lock.yml stricknani/static/vendor
 
+# Rebuild the vendored TipTap bundle (stricknani/static/vendor-tiptap/tiptap-bundle.min.js).
+# TipTap's npm packages pull in ~30 transitive modules (prosemirror-*, etc.)
+# that reference each other via bare specifiers, so vendir alone can't vendor
+# them; esbuild bundles the pinned versions in package.json into one
+# self-contained file instead. Lives outside stricknani/static/vendor/ (not
+# .../vendor/tiptap/) because that directory is exclusively managed by
+# `vendir sync`, which would delete anything under it not declared in
+# vendir.yml. Run after bumping versions in package.json and commit the
+# regenerated bundle + package-lock.json.
+[group: 'vendir']
+vendor-tiptap:
+  cd stricknani/static/vendor-tiptap && npm install && npm run build
+
 # Run all checks (lint + test)
-check: lint lint-nix test i18n-check
+check: lint lint-nix build-css test i18n-check
 
 # Lint Nix files
 [group: 'lint']

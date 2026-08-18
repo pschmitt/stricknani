@@ -1,0 +1,16 @@
+{% extends "errors/base.html" %}
+
+{% block title %}{{ _('You are offline') }} - {{ _('Stricknani') }}{% endblock %}
+
+{% block error_icon %}mdi-wifi-off{% endblock %}
+{% block error_code %}{{ _('Offline') }}{% endblock %}
+{% block error_title %}{{ _('No connection') }}{% endblock %}
+{% block error_message %}
+    {{ _("You're offline and this page hasn't been viewed before, so it isn't available yet. Previously viewed projects and yarns still work offline.") }}
+{% endblock %}
+{% block extra_actions %}
+<button type="button" class="btn btn-ghost px-8" data-action="reload">
+    <span class="mdi mdi-refresh mr-2"></span>
+    {{ _('Try Again') }}
+</button>
+{% endblock %}

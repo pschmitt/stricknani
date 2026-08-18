@@ -31,7 +31,7 @@
     </div>
 </div>
 {% block page_scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
     window.STRICKNANI_I18N = window.STRICKNANI_I18N || {};
     window.STRICKNANI_I18N.drop_to_import = '{{ _("Drop to Import") }}';
     window.STRICKNANI_I18N.drop_files_hint = '{{ _("Release to start AI analysis") }}';

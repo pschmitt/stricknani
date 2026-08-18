@@ -51,8 +51,9 @@
                             data-toast-variant="success">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             {% if user.is_active %}
-                            <button type="submit" class="w-full text-left flex items-center gap-2 py-2 px-4" {% if
-                                user.id==current_user.id %}disabled style="cursor: not-allowed" {% endif %}>
+                            <button type="submit"
+                                class="w-full text-left flex items-center gap-2 py-2 px-4 {% if user.id==current_user.id %}cursor-not-allowed{% endif %}"
+                                {% if user.id==current_user.id %}disabled{% endif %}>
                                 <span class="mdi mdi-account-off"></span>
                                 {{ _('Disable') }}
                             </button>
@@ -84,17 +85,18 @@
                             data-toast-message="{{ _('Admin access revoked') if user.is_admin else _('Admin access granted') }}"
                             data-toast-variant="success">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                            <button type="submit" class="w-full text-left flex items-center gap-2 py-2 px-4" {% if
-                                user.id==current_user.id %}disabled style="cursor: not-allowed" text-base-content/50{%
-                                endif %}>
+                            <button type="submit"
+                                class="w-full text-left flex items-center gap-2 py-2 px-4 {% if user.id==current_user.id %}cursor-not-allowed text-base-content/50{% endif %}"
+                                {% if user.id==current_user.id %}disabled{% endif %}>
                                 <span class="mdi {{ 'mdi-shield-off' if user.is_admin else 'mdi-shield-plus' }}"></span>
                                 {{ _('Revoke admin') if user.is_admin else _('Make admin') }}
                             </button>
                         </form>
                     </li>
                     <li class="{% if user.id == current_user.id %}menu-disabled opacity-50{% endif %}">
-                        <button type="button" class="text-error hover:bg-error/10" {% if user.id==current_user.id
-                            %}disabled style="cursor: not-allowed" {% endif %} data-user-id="{{ user.id }}"
+                        <button type="button"
+                            class="text-error hover:bg-error/10 {% if user.id==current_user.id %}cursor-not-allowed{% endif %}"
+                            {% if user.id==current_user.id %}disabled{% endif %} data-user-id="{{ user.id }}"
                             data-user-email="{{ user.email }}" data-call="openDeleteUserDialog">
                             <span class="mdi mdi-delete"></span> {{ _('Delete user') }}
                         </button>
@@ -144,17 +146,18 @@
                             data-toast-message="{{ _('Admin access revoked') if user.is_admin else _('Admin access granted') }}"
                             data-toast-variant="success">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                            <button type="submit" class="w-full text-left flex items-center gap-2 py-2 px-4" {% if
-                                user.id==current_user.id %}disabled style="cursor: not-allowed" text-base-content/50{%
-                                endif %}>
+                            <button type="submit"
+                                class="w-full text-left flex items-center gap-2 py-2 px-4 {% if user.id==current_user.id %}cursor-not-allowed text-base-content/50{% endif %}"
+                                {% if user.id==current_user.id %}disabled{% endif %}>
                                 <span class="mdi {{ 'mdi-shield-off' if user.is_admin else 'mdi-shield-plus' }}"></span>
                                 {{ _('Revoke admin') if user.is_admin else _('Make admin') }}
                             </button>
                         </form>
                     </li>
                     <li class="{% if user.id == current_user.id %}menu-disabled opacity-50{% endif %}">
-                        <button type="button" class="text-error hover:bg-error/10" {% if user.id==current_user.id
-                            %}disabled style="cursor: not-allowed" {% endif %} data-user-id="{{ user.id }}"
+                        <button type="button"
+                            class="text-error hover:bg-error/10 {% if user.id==current_user.id %}cursor-not-allowed{% endif %}"
+                            {% if user.id==current_user.id %}disabled{% endif %} data-user-id="{{ user.id }}"
                             data-user-email="{{ user.email }}" data-call="openDeleteUserDialog">
                             <span class="mdi mdi-delete"></span> {{ _('Delete user') }}
                         </button>

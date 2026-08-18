@@ -1,13 +1,25 @@
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from stricknani.utils.importer import GarnstudioPatternImporter
+
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "garnstudio"
 
 
 @pytest.mark.asyncio
 async def test_garnstudio_3491_outdoor_fun_yarn_needles_steps() -> None:
     url = "https://www.garnstudio.com/pattern.php?id=3491&cid=9"
     importer = GarnstudioPatternImporter(url)
-    data = await importer.fetch_and_parse(image_limit=0)
+
+    html = (FIXTURE_DIR / "pattern_3491.html").read_text(encoding="utf-8")
+    with patch("stricknani.importing.fetch.fetch_url") as mock_get:
+        mock_response = MagicMock()
+        mock_response.text = html
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+        data = await importer.fetch_and_parse(image_limit=0)
 
     assert data.get("title") == "Outdoor Fun"
 

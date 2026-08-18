@@ -44,7 +44,7 @@ async def test_ai_import_minimizes_redundancy(test_client: "TestClientFixture") 
     }
 
     with (
-        patch("httpx.AsyncClient.get") as mock_get,
+        patch("stricknani.importing.fetch.fetch_url") as mock_get,
         patch(
             "stricknani.utils.ai_importer.AIPatternImporter.fetch_and_parse"
         ) as mock_ai,

@@ -17,6 +17,7 @@ from stricknani.utils.importer import filter_import_image_urls
 class _FakeResponse:
     content: bytes
     headers: dict[str, str]
+    status_code: int = 200
 
     def raise_for_status(self) -> None:
         return

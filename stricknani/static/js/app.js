@@ -301,6 +301,44 @@
 				console.debug("Install prompt failed:", err);
 			}
 		});
+
+		// Tell the service worker to drop its cache of authenticated pages on
+		// logout, so a later user on a shared device/browser profile can't see
+		// this session's cached content offline. Logout is a plain form POST
+		// (full navigation), so this just needs to fire before the browser
+		// follows through with it.
+		document.addEventListener("submit", (event) => {
+			const form = event.target;
+			if (
+				form instanceof HTMLFormElement &&
+				form.getAttribute("action") === "/auth/logout" &&
+				navigator.serviceWorker.controller
+			) {
+				navigator.serviceWorker.controller.postMessage({
+					type: "CLEAR_RUNTIME_CACHE",
+				});
+			}
+		});
+	};
+
+	// Offline/online status banner (`#offlineBanner` in base.html). Looks up
+	// the element lazily on each event so it works regardless of whether the
+	// body has finished parsing yet when this script runs.
+	const setupOfflineIndicator = () => {
+		const updateStatus = () => {
+			const banner = document.getElementById("offlineBanner");
+			if (!banner) {
+				return;
+			}
+			const isOnline = navigator.onLine;
+			banner.classList.toggle("hidden", isOnline);
+			banner.setAttribute("aria-hidden", String(isOnline));
+		};
+
+		window.addEventListener("online", updateStatus);
+		window.addEventListener("offline", updateStatus);
+		document.addEventListener("DOMContentLoaded", updateStatus);
+		updateStatus();
 	};
 
 	const resolveDialog = (dialogOrId) => {
@@ -948,6 +986,23 @@
 			);
 		});
 
+		// Drag-and-drop image handlers (e.g. dragging a gallery image into a
+		// markdown textarea). `dragstart` needs the live event object (it reads
+		// `event.target`/`event.dataTransfer`), so callers pass `"$event"` via
+		// data-call-dragstart-args.
+		document.addEventListener("dragstart", (event) => {
+			const el = event.target.closest?.("[data-call-dragstart]");
+			if (!el) {
+				return;
+			}
+			invokeCall(
+				el,
+				event,
+				el.getAttribute("data-call-dragstart"),
+				el.getAttribute("data-call-dragstart-args"),
+			);
+		});
+
 		document.addEventListener("keydown", (event) => {
 			const row = document.activeElement?.closest?.(
 				'[data-action="open-attachment"]',
@@ -1580,5 +1635,29 @@
 		);
 	};
 
+	// Broken-image fallback: swap a thumbnail for its sibling
+	// `[data-fallback-icon]` placeholder when it fails to load. `error`
+	// events don't bubble, so this must be a capturing listener on
+	// `document` rather than a normal delegated one.
+	document.addEventListener(
+		"error",
+		(event) => {
+			const img = event.target;
+			if (
+				!(img instanceof HTMLImageElement) ||
+				!img.hasAttribute("data-img-fallback")
+			) {
+				return;
+			}
+			const fallback = img.parentElement?.querySelector("[data-fallback-icon]");
+			if (fallback) {
+				img.replaceWith(fallback.cloneNode(true));
+				fallback.classList.remove("hidden");
+			}
+		},
+		true,
+	);
+
 	setupPwaInstall();
+	setupOfflineIndicator();
 })();

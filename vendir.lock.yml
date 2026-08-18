@@ -10,8 +10,6 @@ directories:
   - http: {}
     path: daisyui
   - http: {}
-    path: tailwindcss-browser
-  - http: {}
     path: htmx
   - http: {}
     path: sentry

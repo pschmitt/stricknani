@@ -1,16 +1,24 @@
-import { Editor, mergeAttributes } from "https://esm.sh/@tiptap/core@3.19.0";
-import Image from "https://esm.sh/@tiptap/extension-image@3.19.0";
-import Link from "https://esm.sh/@tiptap/extension-link@3.19.0";
-import Underline from "https://esm.sh/@tiptap/extension-underline@3.19.0";
-import { Markdown } from "https://esm.sh/@tiptap/markdown@3.19.0";
+// TipTap is vendored as a single bundled ESM file (built by `just
+// vendor-tiptap` from stricknani/static/vendor-tiptap/entry.js via esbuild)
+// instead of importing from esm.sh, per AGENTS.md's no-CDN vendoring rule --
+// see stricknani/static/vendor-tiptap/package.json for the pinned versions.
+// It lives outside stricknani/static/vendor/ (not stricknani/static/vendor/tiptap/)
+// because that directory is exclusively managed by `vendir sync`, which would
+// delete anything under it that isn't declared in vendir.yml.
 import {
 	chainCommands,
 	createParagraphNear,
+	Editor,
+	Image,
+	Link,
 	liftEmptyBlock,
+	Markdown,
+	mergeAttributes,
 	newlineInCode,
+	StarterKit,
 	splitBlock,
-} from "https://esm.sh/@tiptap/pm@3.19.0/commands?target=es2022";
-import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.19.0";
+	Underline,
+} from "/static/vendor-tiptap/tiptap-bundle.min.js";
 
 const WYSIWYG_INSTANCES = new Map();
 let currentImageAutocomplete = null;

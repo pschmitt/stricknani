@@ -158,7 +158,7 @@ function addPendingImageToGallery(url) {
 
 	div.innerHTML = `
             <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false" class="block h-full w-full">
-                <img src="${url}" class="h-full w-full object-cover cursor-zoom-in">
+                <img src="${url}" alt="{{ _('Uploaded image') }}" class="h-full w-full object-cover cursor-zoom-in">
             </a>
             <input type="hidden" name="import_image_urls" value="${url}">
 	            <button type="button" data-call="promotePendingYarnImage" data-call-args='["$this","$dataset:url"]' data-url="${url}"
@@ -764,7 +764,7 @@ function previewImages(input) {
 				div.setAttribute("data-preview-index", index);
 				div.innerHTML = `
                     <a href="${e.target.result}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-delete="true" class="block h-full w-full">
-                        <img src="${e.target.result}" class="h-full w-full object-cover opacity-90 transition group-hover:opacity-100 cursor-zoom-in">
+                        <img src="${e.target.result}" alt="{{ _('Uploaded image') }} #${index + 1}" class="h-full w-full object-cover opacity-90 transition group-hover:opacity-100 cursor-zoom-in">
                     </a>
 	                    <button type="button" data-call="removeYarnFile" data-call-args='[${index}]' class="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-100 transition-opacity hover:bg-red-700 z-20" aria-label="{{ _('Remove image') }}">
 	                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>

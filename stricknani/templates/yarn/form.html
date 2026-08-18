@@ -2,7 +2,7 @@
 {% import "macros/buttons.html" as buttons %}
 {% import "macros/dialogs.html" as dialogs %}
 {% import "macros/image_upload.html" as image_upload %}
-{% import "macros/wysiwyg.html" as wysiwyg %}
+{% import "macros/wysiwyg.html" as wysiwyg with context %}
 
 {% block title %}{{ yarn.name if yarn else _('Add Yarn') }} - {{ _('Yarn') }}{% endblock %}
 
@@ -524,7 +524,7 @@ attrs='data-action="open-dialog" data-dialog-id="deleteYarnDialog"', class="w-fu
 {% endblock %}
 
 {% block page_scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 {% include "yarn/form.js" %}
 </script>
 {{ wysiwyg.wysiwyg_scripts() }}
