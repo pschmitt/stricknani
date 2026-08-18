@@ -137,7 +137,12 @@ private fun HomeSection(title: String, content: LazyListScope.() -> Unit) {
 }
 
 @Composable
-private fun HomeCard(title: String, previewUrl: String?, fallbackIcon: ImageVector, onClick: () -> Unit) {
+private fun HomeCard(
+    title: String,
+    previewUrl: String?,
+    fallbackIcon: ImageVector,
+    onClick: () -> Unit,
+) {
     Column(modifier = Modifier.width(120.dp)) {
         Box(
             modifier =

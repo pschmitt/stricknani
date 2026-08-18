@@ -44,17 +44,28 @@ constructor(
     val categories: StateFlow<List<CategoryEntity>> =
         categoryRepository
             .observeAll()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     val projects: StateFlow<List<ProjectEntity>> =
-        combine(projectRepository.observeAll(), searchQuery, selectedCategory) { entities, query, category ->
+        combine(projectRepository.observeAll(), searchQuery, selectedCategory) {
+                entities,
+                query,
+                category ->
                 entities
                     .asSequence()
                     .filter { category == null || it.category == category }
                     .filter { query.isBlank() || it.name.contains(query, ignoreCase = true) }
                     .toList()
             }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     init {
         refresh()

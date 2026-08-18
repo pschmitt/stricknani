@@ -50,7 +50,9 @@ constructor(
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     val uiState: StateFlow<YarnDetailUiState> =
-        combine(yarnRepository.observeById(yarnId), projectRepository.observeAll()) { entity, projects ->
+        combine(yarnRepository.observeById(yarnId), projectRepository.observeAll()) {
+                entity,
+                projects ->
                 if (entity == null) {
                     YarnDetailUiState.NotFound
                 } else {
@@ -62,7 +64,11 @@ constructor(
                     YarnDetailUiState.Loaded(entity, detail, linked)
                 }
             }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), YarnDetailUiState.Loading)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                YarnDetailUiState.Loading,
+            )
 
     fun resolveMediaUrl(path: String?): String? = mediaUrlResolver.resolve(path)
 

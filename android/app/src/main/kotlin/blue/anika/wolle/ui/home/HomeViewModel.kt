@@ -20,9 +20,11 @@ import kotlinx.coroutines.launch
 
 private const val SECTION_LIMIT = 10
 
-/** No "recently viewed" tracking exists yet (would need a view-log table) - "recent" here is the
+/**
+ * No "recently viewed" tracking exists yet (would need a view-log table) - "recent" here is the
  * same most-recently-updated ordering `ProjectDao`/`YarnDao` already sort by, a reasonable stand-in
- * until per-user view history is worth adding. */
+ * until per-user view history is worth adding.
+ */
 @HiltViewModel
 class HomeViewModel
 @Inject
@@ -43,19 +45,31 @@ constructor(
         projectRepository
             .observeAll()
             .map { it.filter { project -> project.isFavorite }.take(SECTION_LIMIT) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     val favoriteYarns: StateFlow<List<YarnEntity>> =
         yarnRepository
             .observeAll()
             .map { it.filter { yarn -> yarn.isFavorite }.take(SECTION_LIMIT) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     val recentProjects: StateFlow<List<ProjectEntity>> =
         projectRepository
             .observeAll()
             .map { it.take(SECTION_LIMIT) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     init {
         refresh()

@@ -18,8 +18,10 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class YarnsListViewModel
 @Inject
-constructor(private val yarnRepository: YarnRepository, private val mediaUrlResolver: MediaUrlResolver) :
-    ViewModel() {
+constructor(
+    private val yarnRepository: YarnRepository,
+    private val mediaUrlResolver: MediaUrlResolver,
+) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -34,7 +36,10 @@ constructor(private val yarnRepository: YarnRepository, private val mediaUrlReso
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     val yarns: StateFlow<List<YarnEntity>> =
-        combine(yarnRepository.observeAll(), searchQuery, favoritesOnly) { entities, query, favoritesOnly ->
+        combine(yarnRepository.observeAll(), searchQuery, favoritesOnly) {
+                entities,
+                query,
+                favoritesOnly ->
                 entities
                     .asSequence()
                     .filter { !favoritesOnly || it.isFavorite }
@@ -46,7 +51,11 @@ constructor(private val yarnRepository: YarnRepository, private val mediaUrlReso
                     }
                     .toList()
             }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     init {
         refresh()

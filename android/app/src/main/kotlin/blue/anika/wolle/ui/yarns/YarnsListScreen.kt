@@ -161,7 +161,8 @@ private fun YarnListCard(
             }
             IconButton(onClick = onFavoriteClick) {
                 Icon(
-                    imageVector = if (yarn.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    imageVector =
+                        if (yarn.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                     contentDescription = if (yarn.isFavorite) "Unfavorite" else "Favorite",
                     tint =
                         if (yarn.isFavorite) MaterialTheme.colorScheme.primary

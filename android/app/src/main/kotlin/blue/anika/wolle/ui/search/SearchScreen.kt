@@ -70,7 +70,9 @@ fun SearchScreen(
                         subtitle = "Try a different search term.",
                     )
                 else ->
-                    LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+                    LazyColumn(
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
                         items(
                             results,
                             key = {
@@ -93,7 +95,10 @@ fun SearchScreen(
                                     SearchResultCard(
                                         title = result.entity.name,
                                         subtitle =
-                                            listOfNotNull(result.entity.brand, result.entity.colorway)
+                                            listOfNotNull(
+                                                    result.entity.brand,
+                                                    result.entity.colorway,
+                                                )
                                                 .joinToString(" · ")
                                                 .ifBlank { null },
                                         previewUrl = viewModel.previewUrl(result.entity.previewUrl),
@@ -139,7 +144,11 @@ private fun SearchResultCard(
             Column {
                 Text(title, style = MaterialTheme.typography.titleSmall)
                 subtitle?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }

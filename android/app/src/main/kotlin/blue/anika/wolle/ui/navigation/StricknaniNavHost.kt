@@ -91,7 +91,9 @@ fun StricknaniNavHost(modifier: Modifier = Modifier, startDestination: Route = R
                 )
             }
             composable<Route.Yarns> {
-                YarnsListScreen(onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) })
+                YarnsListScreen(
+                    onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) }
+                )
             }
             composable<Route.Search> {
                 SearchScreen(

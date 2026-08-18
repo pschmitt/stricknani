@@ -2,7 +2,6 @@ package blue.anika.wolle.ui.yarns
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -94,11 +93,17 @@ fun YarnDetailScreen(
     ) { innerPadding ->
         when (state) {
             is YarnDetailUiState.Loading ->
-                Box(Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier.fillMaxSize().padding(innerPadding),
+                    contentAlignment = Alignment.Center,
+                ) {
                     CircularProgressIndicator()
                 }
             is YarnDetailUiState.NotFound ->
-                Box(Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier.fillMaxSize().padding(innerPadding),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text("Yarn not found", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             is YarnDetailUiState.Loaded ->
@@ -141,9 +146,15 @@ private fun YarnDetailContent(
         detail.brand?.let { value -> item { DetailRow(label = "Brand", value = value) } }
         detail.colorway?.let { value -> item { DetailRow(label = "Colorway", value = value) } }
         detail.dyeLot?.let { value -> item { DetailRow(label = "Dye lot", value = value) } }
-        detail.fiberContent?.let { value -> item { DetailRow(label = "Fiber content", value = value) } }
-        detail.weightCategory?.let { value -> item { DetailRow(label = "Weight category", value = value) } }
-        detail.recommendedNeedles?.let { value -> item { DetailRow(label = "Recommended needles", value = value) } }
+        detail.fiberContent?.let { value ->
+            item { DetailRow(label = "Fiber content", value = value) }
+        }
+        detail.weightCategory?.let { value ->
+            item { DetailRow(label = "Weight category", value = value) }
+        }
+        detail.recommendedNeedles?.let { value ->
+            item { DetailRow(label = "Recommended needles", value = value) }
+        }
         if (detail.weightGrams != null || detail.lengthMeters != null) {
             item {
                 val amount =
@@ -176,7 +187,11 @@ private fun YarnDetailContent(
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 Text("Notes", style = MaterialTheme.typography.titleMedium)
-                Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                Text(
+                    value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
         }
     }

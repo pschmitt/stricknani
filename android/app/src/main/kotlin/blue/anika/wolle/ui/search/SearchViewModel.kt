@@ -39,26 +39,31 @@ constructor(
     val query: StateFlow<String> = _query.asStateFlow()
 
     val results: StateFlow<List<SearchResult>> =
-        combine(projectRepository.observeAll(), yarnRepository.observeAll(), query) { projects, yarns, query ->
+        combine(projectRepository.observeAll(), yarnRepository.observeAll(), query) {
+                projects,
+                yarns,
+                query ->
                 if (query.isBlank()) {
                     emptyList()
                 } else {
-                    val matchedProjects =
-                        projects.filter {
-                            it.name.contains(query, ignoreCase = true) ||
-                                it.category?.contains(query, ignoreCase = true) == true
-                        }
-                    val matchedYarns =
-                        yarns.filter {
-                            it.name.contains(query, ignoreCase = true) ||
-                                it.brand?.contains(query, ignoreCase = true) == true ||
-                                it.colorway?.contains(query, ignoreCase = true) == true
-                        }
+                    val matchedProjects = projects.filter {
+                        it.name.contains(query, ignoreCase = true) ||
+                            it.category?.contains(query, ignoreCase = true) == true
+                    }
+                    val matchedYarns = yarns.filter {
+                        it.name.contains(query, ignoreCase = true) ||
+                            it.brand?.contains(query, ignoreCase = true) == true ||
+                            it.colorway?.contains(query, ignoreCase = true) == true
+                    }
                     matchedProjects.map { SearchResult.ProjectResult(it) } +
                         matchedYarns.map { SearchResult.YarnResult(it) }
                 }
             }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     fun onQueryChange(query: String) {
         _query.value = query

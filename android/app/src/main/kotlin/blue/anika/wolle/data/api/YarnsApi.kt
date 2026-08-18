@@ -9,8 +9,8 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
- * `stricknani/routes/api/yarns.py`. Read (list/detail) + favorite toggle - see `ProjectsApi`'s
- * kdoc for why favorite/unfavorite don't wait on the offline write queue (SNA-8). Create/update
+ * `stricknani/routes/api/yarns.py`. Read (list/detail) + favorite toggle - see `ProjectsApi`'s kdoc
+ * for why favorite/unfavorite don't wait on the offline write queue (SNA-8). Create/update
  * /delete/photos are SNA-8/SNA-10.
  */
 interface YarnsApi {

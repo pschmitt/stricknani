@@ -33,7 +33,11 @@ fun EmptyState(icon: ImageVector, title: String, subtitle: String, modifier: Mod
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 16.dp),
         )
-        Text(text = title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+        )
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodyMedium,

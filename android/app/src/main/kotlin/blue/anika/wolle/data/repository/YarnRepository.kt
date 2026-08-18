@@ -37,7 +37,8 @@ constructor(
         yarnDao.upsertAll(listOf(entity.copy(isFavorite = !wasFavorite)))
         try {
             val updated =
-                if (wasFavorite) yarnsApi.unfavoriteYarn(entity.id) else yarnsApi.favoriteYarn(entity.id)
+                if (wasFavorite) yarnsApi.unfavoriteYarn(entity.id)
+                else yarnsApi.favoriteYarn(entity.id)
             yarnDao.upsertAll(listOf(updated.toEntity(json)))
         } catch (e: Exception) {
             yarnDao.upsertAll(listOf(entity.copy(isFavorite = wasFavorite)))

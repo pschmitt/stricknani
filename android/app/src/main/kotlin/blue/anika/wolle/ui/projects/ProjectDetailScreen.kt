@@ -69,7 +69,9 @@ fun ProjectDetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(if (state is ProjectDetailUiState.Loaded) state.entity.name else "") },
+                title = {
+                    Text(if (state is ProjectDetailUiState.Loaded) state.entity.name else "")
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -95,11 +97,17 @@ fun ProjectDetailScreen(
     ) { innerPadding ->
         when (state) {
             is ProjectDetailUiState.Loading ->
-                Box(Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier.fillMaxSize().padding(innerPadding),
+                    contentAlignment = Alignment.Center,
+                ) {
                     CircularProgressIndicator()
                 }
             is ProjectDetailUiState.NotFound ->
-                Box(Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier.fillMaxSize().padding(innerPadding),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text("Project not found", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             is ProjectDetailUiState.Loaded ->
@@ -139,11 +147,17 @@ private fun ProjectDetailContent(
             }
         }
 
-        detail.category?.let { category -> item { DetailRow(label = "Category", value = category) } }
+        detail.category?.let { category ->
+            item { DetailRow(label = "Category", value = category) }
+        }
         detail.needles?.let { value -> item { DetailRow(label = "Needles", value = value) } }
-        detail.stitchSample?.let { value -> item { DetailRow(label = "Stitch sample", value = value) } }
+        detail.stitchSample?.let { value ->
+            item { DetailRow(label = "Stitch sample", value = value) }
+        }
         detail.yarn?.let { value -> item { DetailRow(label = "Yarn", value = value) } }
-        detail.otherMaterials?.let { value -> item { DetailRow(label = "Other materials", value = value) } }
+        detail.otherMaterials?.let { value ->
+            item { DetailRow(label = "Other materials", value = value) }
+        }
 
         if (detail.tags.isNotEmpty()) {
             item {
@@ -173,7 +187,11 @@ private fun ProjectDetailContent(
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 Text("Description", style = MaterialTheme.typography.titleMedium)
-                Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                Text(
+                    value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
         }
 
@@ -184,9 +202,16 @@ private fun ProjectDetailContent(
             }
             items(detail.steps.sortedBy { it.stepNumber }, key = { it.id }) { step ->
                 Column(Modifier.padding(top = 12.dp)) {
-                    Text("${step.stepNumber}. ${step.title}", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "${step.stepNumber}. ${step.title}",
+                        style = MaterialTheme.typography.titleSmall,
+                    )
                     step.description?.let {
-                        Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
                     }
                 }
             }
@@ -196,7 +221,11 @@ private fun ProjectDetailContent(
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 Text("Notes", style = MaterialTheme.typography.titleMedium)
-                Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                Text(
+                    value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
         }
     }

@@ -207,7 +207,9 @@ private fun ProjectListCard(
             }
             IconButton(onClick = onFavoriteClick) {
                 Icon(
-                    imageVector = if (project.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    imageVector =
+                        if (project.isFavorite) Icons.Filled.Favorite
+                        else Icons.Filled.FavoriteBorder,
                     contentDescription = if (project.isFavorite) "Unfavorite" else "Favorite",
                     tint =
                         if (project.isFavorite) MaterialTheme.colorScheme.primary

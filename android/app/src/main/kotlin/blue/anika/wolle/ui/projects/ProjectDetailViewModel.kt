@@ -50,19 +50,23 @@ constructor(
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     val uiState: StateFlow<ProjectDetailUiState> =
-        combine(projectRepository.observeById(projectId), yarnRepository.observeAll()) { entity, yarns ->
+        combine(projectRepository.observeById(projectId), yarnRepository.observeAll()) {
+                entity,
+                yarns ->
                 if (entity == null) {
                     ProjectDetailUiState.NotFound
                 } else {
                     val detail = projectRepository.decodeDetail(entity)
                     val linked =
-                        yarns
-                            .filter { it.id in detail.yarnIds }
-                            .map { LinkedYarn(it.id, it.name) }
+                        yarns.filter { it.id in detail.yarnIds }.map { LinkedYarn(it.id, it.name) }
                     ProjectDetailUiState.Loaded(entity, detail, linked)
                 }
             }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), ProjectDetailUiState.Loading)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                ProjectDetailUiState.Loading,
+            )
 
     fun resolveMediaUrl(path: String?): String? = mediaUrlResolver.resolve(path)
 
@@ -71,7 +75,10 @@ constructor(
         if (state !is ProjectDetailUiState.Loaded) return
         viewModelScope.launch {
             try {
-                projectRepository.toggleFavorite(state.entity, wasFavorite = state.entity.isFavorite)
+                projectRepository.toggleFavorite(
+                    state.entity,
+                    wasFavorite = state.entity.isFavorite,
+                )
             } catch (e: Exception) {
                 _errorMessage.value = "Couldn't update favorite - try again."
             }
