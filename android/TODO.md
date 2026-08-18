@@ -546,15 +546,35 @@ Status: not started
 
 ## SNA-18: Settings screen with an About section
 
-- [ ] Dedicated Settings screen (nav destination placeholder already listed in SNA-5): server
-      URL/account (sign-out), theme (light/dark/auto), sync interval/policy, navbar
-      customization (SNA-16), backup/restore (SNA-15) - the UI surface over `SettingsRepository`
-      from SNA-6, not a data-layer task itself
-- [ ] About section: app version/build (+ server version/build from `/api/v1/meta`), GPL-3.0
-      license, link to the GitHub repo, changelog/`android/TODO.md`-derived release notes -
-      matches the sibling apps' About screens
+- [x] Dedicated Settings screen (`ui/settings/SettingsScreen.kt`/`SettingsViewModel.kt`): Account
+      (server URL display + sign-out, unchanged from SNA-6), Appearance (light/dark/"follow
+      system" radio group, new `ThemeMode` persisted via a new `AppPreferencesRepository` -
+      DataStore `Preferences`, not `EncryptedSharedPreferences`, since nothing here needs
+      Keystore encryption), Sync (last-synced timestamp derived from `SyncStateDao`'s per-entity
+      cursors + a static description of the current fixed policy). Navbar customization
+      (SNA-16) and backup/restore (SNA-15) are **not** shown - there's nothing to surface until
+      those tickets exist; the screen doesn't invent placeholder UI for features that don't work
+      yet
+- [x] `MainActivity` now reads `AppPreferencesRepository.themeMode` and passes the resolved
+      `darkTheme: Boolean` into `StricknaniTheme` (was hardcoded to `isSystemInDarkTheme()`)
+- [x] About section: app version/build (`BuildConfig.VERSION_NAME`/`VERSION_CODE`/
+      `GIT_REVISION`), server version/build (`MetaApi.getMeta()`, fetched once on screen open,
+      falls back to "Unavailable" rather than blocking the screen if the server isn't reachable),
+      GPL-3.0 license label, a "View source on GitHub" link (`LocalUriHandler`) -
+      `android/TODO.md`-derived release notes were scoped out (no changelog-rendering UI exists
+      anywhere else in the app either, and this file isn't bundled into the APK)
+- [x] Removed the now-dead `placeholder_settings_title`/`placeholder_settings_subtitle` string
+      resources (matches the SNA-9 precedent of deleting placeholder strings once a real screen
+      replaces them)
 
-Status: not started
+Status: **mostly done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol
+":app:assembleDebug" ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`), then `just deploy-all debug`
++ relaunch on Zenfone 10, Mi Pad 4, and Pixel 5 (`ResumedActivity`, no crash in logcat on any of
+the three). **Not verified**: the Settings screen's actual on-device rendering, the theme
+toggle's visual effect, or the About section's server-meta fetch against a real server - same
+recurring "no reachable Stricknani test server this session" gap as every UI-facing ticket since
+SNA-6. No unit tests added for `SettingsViewModel`/`AppPreferencesRepository` - both are
+DataStore/Room-`Flow`-bound with the same "not enough isolable pure logic" reasoning as SNA-6/7/8/10.
 
 ## SNA-19: Redesign the app icon, shared consistently between web and Android
 

@@ -4,10 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.navigation.StricknaniNavHost
 import blue.anika.wolle.ui.theme.StricknaniTheme
@@ -24,6 +27,7 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var settingsRepository: SettingsRepository
+    @Inject lateinit var appPreferencesRepository: AppPreferencesRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -32,7 +36,15 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val isConfigured by settingsRepository.isConfigured.collectAsStateWithLifecycle()
-            StricknaniTheme {
+            val themeMode by
+                appPreferencesRepository.themeMode.collectAsStateWithLifecycle(ThemeMode.SYSTEM)
+            val darkTheme =
+                when (themeMode) {
+                    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                    ThemeMode.LIGHT -> false
+                    ThemeMode.DARK -> true
+                }
+            StricknaniTheme(darkTheme = darkTheme) {
                 StricknaniNavHost(
                     startDestination = if (isConfigured) Route.Home else Route.Onboarding
                 )

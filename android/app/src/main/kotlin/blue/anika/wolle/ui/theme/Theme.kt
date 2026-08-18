@@ -61,8 +61,10 @@ internal val ExpressiveTypography =
 
 /**
  * Full Material You theming: dynamic, wallpaper-derived color on Android 12+, falling back to a
- * warm, yarn/craft-inspired hand-picked palette on older devices (see Color.kt). A user-facing
- * light/dark/auto toggle lands in SNA-18 - this only follows the system setting for now.
+ * warm, yarn/craft-inspired hand-picked palette on older devices (see Color.kt). `darkTheme`
+ * defaults to following the system setting; `MainActivity` overrides it from
+ * `AppPreferencesRepository.themeMode` (SNA-18's light/dark/auto toggle) when the user picked
+ * something other than "system".
  */
 @Composable
 fun StricknaniTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {

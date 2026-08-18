@@ -2,9 +2,6 @@
 <resources>
     <string name="app_name">Stricknani</string>
 
-    <string name="placeholder_settings_title">Settings</string>
-    <string name="placeholder_settings_subtitle">More settings land here (SNA-18).</string>
-
     <string name="onboarding_title">Connect to Stricknani</string>
     <string name="onboarding_subtitle">Enter your self-hosted Stricknani server\'s URL and a personal access token. Nothing is sent anywhere else.</string>
     <string name="onboarding_server_url_label">Server URL</string>
