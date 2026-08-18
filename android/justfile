@@ -1,0 +1,68 @@
+# Wolle (Android) task runner.
+#
+# Gradle must never run on this machine directly - every build/test/lint recipe here shells out to
+# a remote host (rofl-13.brkn.lol or rofl-14.brkn.lol) over SSH instead. See AGENTS.md.
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+application_id := "blue.anika.wolle"
+play_package := "blue.anika.wolle"
+
+remote_host := env_var_or_default("WOLLE_REMOTE_HOST", "rofl-13.brkn.lol")
+
+# Empty for the main checkout; "-<worktree-dirname>" when run from a linked git worktree (e.g. one
+# of Claude's isolated agent worktrees under .claude/worktrees/). Keeps parallel worktree agents
+# from clobbering each other's remote sync directory mid-build.
+worktree_suffix := `gd=$(git rev-parse --git-dir); gcd=$(git rev-parse --git-common-dir); if [ "$gd" != "$gcd" ]; then basename "$(git rev-parse --show-toplevel)" | sed 's/^/-/'; fi`
+
+remote_path := env_var_or_default("WOLLE_REMOTE_PATH", "~/build/wolle-android" + worktree_suffix)
+local_dist := env_var_or_default("WOLLE_DIST_DIR", "./dist")
+
+default_abi := env_var_or_default("WOLLE_ABI", "arm64-v8a")
+gradle_extra_props := ""
+
+# No physical test devices assigned to this app yet (SNA-12) - kept defined (even if empty/unused)
+# since single-module.just's device-deploy recipes reference these variables unconditionally.
+zenfone_serial := env_var_or_default("ZENFONE_SERIAL", "")
+mipad_host := env_var_or_default("MIPAD_HOST", "")
+mipad_ssh_port := env_var_or_default("MIPAD_SSH_PORT", "8022")
+mipad_adb_port := env_var_or_default("MIPAD_ADB_PORT", "5555")
+px5_host := env_var_or_default("PX5_HOST", "")
+
+# Release builds aren't signed with a persistent CI keystore yet (SNA-12) - `build variant=release`
+# just runs assembleRelease unsigned (falls back to the host's throwaway debug keystore) until
+# this is set up.
+enable_release_signing := "false"
+rbw_keystore_entry := "Wolle CI Signing Keystore"
+keystore_jks_attachment := "wolle-ci.jks"
+keystore_env_attachment := "wolle-ci-keystore.env"
+ci_tmp_dir_name := ".wolle-ci-tmp"
+
+# List all available recipes. Must stay the first recipe in this file (not just the first line
+# overall) - `just` only considers recipes written directly here, not ones pulled in via the
+# import below, when deciding what a bare `just` invocation runs.
+default:
+    @just --list
+
+# Recipes shared across the app fleet: format/nix-fmt/nix-lint/screenshots-upload (common.just)
+# and the remote sync/build/deploy pipeline - sync/gradle/build/fetch/build-fetch/clean/lint/test
+# plus the zenfone-*/mipad-*/px5-*/deploy-all device recipes (single-module.just). Pulled in via a
+# git submodule at .just/android-app-ci (tracking that repo's main branch); `just update-common`
+# (defined at the bottom of this file) refreshes it. The devShell's shellHook auto-runs
+# `git submodule update --init` on every `nix develop` entry, so a fresh git worktree never needs
+# a manual `--init` step before `just` works.
+import '.just/android-app-ci/just/common.just'
+import '.just/android-app-ci/just/single-module.just'
+
+# ktfmtCheck + unit tests + Android Lint, remotely - the full local pre-push check.
+check host=remote_host: (gradle host "ktfmtCheck :app:testDebugUnitTest lintDebug")
+
+# --- Shared recipes (pschmitt/android-app-ci) -------------------------------
+
+# Advance the .just/android-app-ci submodule to the tip of its tracked branch (main) and stage the
+# result - review the diff like any other dependency bump before committing it.
+update-common:
+    git submodule update --remote .just/android-app-ci
+    git add .just/android-app-ci
+
+# vim: set ft=sh et ts=2 sw=2 :

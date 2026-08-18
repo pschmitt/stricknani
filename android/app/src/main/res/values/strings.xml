@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wolle</string>
+
+    <string name="placeholder_home_title">Home</string>
+    <string name="placeholder_home_subtitle">Your knitting dashboard lands here (SNA-9).</string>
+    <string name="placeholder_projects_title">Projects</string>
+    <string name="placeholder_projects_subtitle">Browse and search your projects (SNA-9).</string>
+    <string name="placeholder_yarns_title">Yarn Stash</string>
+    <string name="placeholder_yarns_subtitle">Browse your yarn stash (SNA-9).</string>
+    <string name="placeholder_search_title">Search</string>
+    <string name="placeholder_search_subtitle">Global search across projects and yarns (SNA-9).</string>
+    <string name="placeholder_settings_title">Settings</string>
+    <string name="placeholder_settings_subtitle">Server connection, sync, and app settings land here (SNA-6/SNA-18).</string>
+</resources>

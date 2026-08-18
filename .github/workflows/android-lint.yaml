@@ -1,0 +1,55 @@
+name: Android Lint
+
+# Hand-written rather than delegating to pschmitt/android-app-ci's reusable lint.yaml: that
+# workflow assumes the Gradle project sits at the repo root, which isn't true here (it's at
+# android/, alongside the unrelated Python web app at the repo root) - see android/AGENTS.md's
+# Builds section. Reuses only the shared setup-jdk-gradle composite action (cwd-agnostic) and runs
+# ./gradlew with working-directory: android itself. No ktfmt-diff-patch auto-fix/auto-PR yet
+# (SNA-12) - see the reusable workflow in .just/android-app-ci for what that looks like once
+# ported.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-lint.yaml'
+  pull_request:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-lint.yaml'
+  workflow_dispatch:
+
+jobs:
+  ktfmt:
+    name: ktfmt
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+      - name: Check with ktfmt
+        working-directory: android
+        run: ./gradlew ktfmtCheck
+
+  android-lint:
+    name: Android Lint
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+      - name: Run Android Lint
+        working-directory: android
+        run: ./gradlew lintDebug
+      - name: Upload Android Lint report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-lint-report
+          path: android/app/build/reports/lint-results-debug.html
+          if-no-files-found: warn

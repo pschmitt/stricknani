@@ -73,3 +73,16 @@ ingest/
 
 # Generated static assets (built via `just build-css`; see Dockerfile / nix/package.nix)
 /stricknani/static/css/tailwind.css
+
+# Android (android/) - Gradle/Android Studio local build state, never built locally anyway
+# (AGENTS.md: Gradle always runs on rofl-13/rofl-14), so this is purely IDE/remote-build noise.
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/*/build/
+android/*/*/build/
+android/captures/
+android/.cxx/
+*.jks
+*.keystore
+

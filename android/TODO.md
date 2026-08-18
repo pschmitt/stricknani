@@ -155,29 +155,54 @@ Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` (
 
 ## SNA-5: Repo scaffold + Compose shell
 
-- [ ] `android/` Gradle project: single `:app` module, Kotlin + Jetpack Compose + Material 3
+- [x] `android/` Gradle project: single `:app` module, Kotlin + Jetpack Compose + Material 3
       (Expressive), Hilt, Room, Retrofit/OkHttp + kotlinx.serialization, Coil3, WorkManager +
       Hilt-Work, DataStore + `androidx.security` crypto - version catalog matching the sibling
-      apps' current stack (see `gradle/libs.versions.toml` in syncwich/nyetbox for a baseline)
-- [ ] Vendor the shared fleet conventions as a git submodule at
-      `android/.just/android-app-ci` (same path convention as the sibling repos)
-- [ ] `android/justfile`: remote-build recipes against rofl-13/rofl-14 (never build Gradle
-      locally), Zenfone 10 / Mi Pad 4 / Pixel 5 device recipes, matching the sibling apps exactly
-- [ ] `android/AGENTS.md` (references the vendored shared doc + this file's architecture summary),
-      `android/README.md`, `android/PRIVACY.md`, GPL-3.0 (already covered by repo-root `LICENSE`)
-- [ ] Add a short pointer to `android/AGENTS.md`/`android/TODO.md` in the repo-root `AGENTS.md`
+      apps' current stack (`android/gradle/libs.versions.toml`, baselined off syncwich's). Only
+      the Compose/Hilt shell actually uses its dependencies yet - Room/Retrofit/WorkManager are
+      wired into the build but unused until SNA-6/SNA-7 add real code against them
+- [x] Vendored the shared fleet conventions as a git submodule at `android/.just/android-app-ci`
+      (same path convention as the sibling repos)
+- [x] `android/justfile`: remote-build recipes against rofl-13/rofl-14 (never build Gradle
+      locally) via the vendored `common.just`/`single-module.just`. Zenfone/Mi Pad/Pixel 5 device
+      recipes are pulled in by the import but have no real target yet - **no physical test
+      devices are assigned to this app** (deferred to SNA-12, unlike the sibling apps)
+- [x] `android/AGENTS.md` (references the vendored shared doc + `android/TODO.md`'s architecture
+      summary), `android/README.md`, `android/PRIVACY.md`, GPL-3.0 (already covered by repo-root
+      `LICENSE`)
+- [x] Added a pointer to `android/AGENTS.md`/`android/TODO.md` in the repo-root `AGENTS.md`
       Documentation Layout section
-- [ ] App icon/branding (`android/docs/branding/`), adaptive launcher icon + monochrome variant,
-      splash screen (`core-splashscreen`)
-- [ ] CI: `lint.yaml` (ktfmt + Android Lint, path-scoped to `android/` so it doesn't run on
-      Python-only changes and vice versa), `build.yaml`, `release.yaml` modeled on the sibling
-      apps' workflows
-- [ ] Material You theme: dynamic color on Android 12+, yarn/craft-inspired fallback palette
-      matching the launcher icon; bottom-nav or nav-rail Compose shell with placeholder
+- [x] App icon/branding: adaptive launcher icon (background/foreground/monochrome layers) +
+      splash screen (`core-splashscreen`) wired up and building, but the actual artwork is a
+      placeholder (a simple generated yarn-ball glyph, warm berry `#8B3A4A`) - **real icon design
+      is SNA-19**, filed separately; no `android/docs/branding/` yet since there's no real design
+      to document there
+- [x] CI: `.github/workflows/android-lint.yaml` (ktfmt + Android Lint) and `android-build.yaml`
+      (unit tests + debug APK), both path-scoped to `android/**`. **Hand-written rather than
+      delegating to the fleet's reusable `lint.yaml`/`build.yaml`**: those assume the Gradle
+      project sits at the repo root, which isn't true in this monorepo (`android/` is a
+      subdirectory alongside the Python web app) - only the cwd-agnostic
+      `setup-jdk-gradle` composite action is reused, with `working-directory: android` in each
+      step. No ktfmt-diff-patch auto-fix/auto-PR yet (the reusable workflow's nicer failure UX -
+      see its comments in `.just/android-app-ci` for what porting that would look like).
+      **`release.yaml` is deferred to SNA-12** (needs signing-keystore infrastructure decisions -
+      `android/justfile` has `enable_release_signing := "false"` as a placeholder)
+- [x] Material You theme (`ui/theme/{Color,Theme}.kt`): dynamic color on Android 12+, yarn/craft
+      -inspired fallback palette (placeholder pending SNA-19) matching the launcher icon. Bottom
+      navigation bar (`ui/navigation/WolleNavHost.kt`) with `PlaceholderScreen`s for the five
       Home / Projects / Yarn Stash / Search / Settings destinations, type-safe Navigation Compose
-      routes
+      routes (`ui/navigation/Route.kt`, kotlinx.serialization `@Serializable` route objects)
 
-Status: not started
+Status: **mostly done** (2026-08-18) - written and self-consistency-checked (XML well-formedness,
+YAML/TOML syntax, brace balance, every `R.string`/drawable/mipmap/color reference resolves to a
+real resource) but **not yet compiled or run** - this environment has no Android SDK/JDK and
+Gradle must never run locally per AGENTS.md, so it needs a real `just check`/`just build debug`
+against rofl-13 or rofl-14 (remote build access wasn't set up this session - see the "Set up
+remote build access" option that was deferred) before it can be called verified. Package name
+corrected to `blue.anika.wolle` (was a placeholder `dev.pschmitt.stricknani`) per user
+correction; app is branded "Wolle" (German for "wool/yarn", matching the package) rather than
+reusing the web app's "Stricknani" name, mirroring how syncwich (app name) differs from Mealie
+(the backend product it's a client for) - flag if this naming guess is wrong.
 
 ## SNA-6: Onboarding + credential storage
 
