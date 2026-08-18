@@ -46,6 +46,15 @@ directory, not mixed into the root one.
   `rofl-14.brkn.lol` instead (`just sync`, `just gradle`, `just build [variant]`, `just lint`,
   `just test`, `just check`, `just fetch`, `just build-fetch`, run from `android/`). Remote build
   directory: `~/build/stricknani-android` (see `android/justfile`).
+- **`just build` does NOT copy the APK back** - it only builds remotely. If you then run
+  `just <device>-install "./dist/..."` without an intervening `just fetch`, you reinstall
+  whatever stale APK already happened to be in the local `./dist/` directory, with no error or
+  warning that anything is wrong - `adb install -r` reports "Success" either way. Confirmed the
+  hard way (2026-08-18): iterating on a real layout bug this way produced two "the fix had zero
+  visual effect" false negatives in a row, burning a real debugging detour before the stale-APK
+  explanation was found. Use `just build-fetch` (or `just deploy-zenfone`/`just deploy-all`, which
+  call it) whenever you need the on-device result to reflect the latest source - never bare
+  `just build` followed by a manual install step.
 - See the shared doc for the CI-lint-authority rule and `ktfmt-diff-patch` retrieval procedure.
   **Confirmed unreliable here, twice**: running `ktfmtCheck` via `nix develop --command ./gradlew`
   on `rofl-13`/`rofl-14` reports `ktfmtCheckMain NO-SOURCE` (i.e. "nothing to check") even when

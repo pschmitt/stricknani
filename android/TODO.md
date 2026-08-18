@@ -763,4 +763,34 @@ Status: not started
 
 Status: not started
 
+## SNA-27: Fix dead space above screen headers
+
+- [x] User feedback (2026-08-18): "there is a lot of dead space above the header... always refer
+      to the other apps, esp syncwich and nyetbox". Two distinct real bugs found (not one):
+      1. `StricknaniNavHost`'s outer `Scaffold` didn't zero its `contentWindowInsets`, so every
+         destination's own `Scaffold`/`TopAppBar` was (architecturally) at risk of double-applying
+         the status-bar inset on top of the outer one - fixed by setting
+         `contentWindowInsets = WindowInsets(0, 0, 0, 0)`, matching syncwich's
+         `SyncwichNavHost` exactly (including its explanatory comment)
+      2. The actual visible bug, on `OnboardingScreen`: its root `Column` used
+         `verticalArrangement = Arrangement.Center`, vertically centering the whole form and
+         leaving a large empty gap above the title - syncwich's equivalent screen anchors to the
+         top (`Alignment.TopCenter` via its `CenteredContent` wrapper, `Arrangement.spacedBy`
+         inside). Fixed by removing the `Center` arrangement (defaults to `Top`)
+- [x] Confirmed both fixes visually on the Zenfone 10, before/after screenshots, against the live
+      `ai@anika.blue` account: Onboarding's title now starts immediately below the status bar
+      (previously ~28% down the screen); Home's title sits directly under the status bar with no
+      gap beyond the `TopAppBar`'s normal height
+
+Status: **done** (2026-08-18) - a debugging detour is worth recording here: two rebuild+redeploy
+cycles in a row showed **zero visual change** after real, correct source edits, because a bare
+`just build` (used directly instead of `just build-fetch`/`just deploy-zenfone`) never copies the
+built APK back to local `./dist/` - so `just zenfone-install "./dist/..."` kept reinstalling a
+stale APK with `adb install -r` reporting "Success" regardless. Resolved with a canary text
+marker to unambiguously prove code changes were/weren't reaching the device, then traced to the
+missing `fetch` step. Documented in `android/AGENTS.md`'s Builds section so it isn't repeated.
+Verified for real (not just build-success) on Zenfone 10 and Mi Pad 4, `ResumedActivity`/no crash
+on both; Pixel 5's wireless adb was disconnected at deploy time (unrelated, recurring issue - see
+SNA-20's notes on the same gap) so it's still running the pre-fix build until its next reconnect.
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

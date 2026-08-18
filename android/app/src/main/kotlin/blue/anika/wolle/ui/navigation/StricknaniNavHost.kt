@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -51,6 +52,13 @@ fun StricknaniNavHost(
 
     Scaffold(
         modifier = modifier,
+        // Each destination owns its content scaffold and applies the status-bar inset alongside
+        // its own top app bar (or, for Onboarding, its own padding). Applying the outer scaffold's
+        // default system-bar insets here would offset that whole destination a second time -
+        // exactly the "dead space above the header" bug (see android/TODO.md's note on this fix).
+        // NavigationBar still contributes its full height (including the nav-bar inset) to the
+        // content padding below - matches syncwich's `SyncwichNavHost` pattern.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (startDestination != Route.Onboarding) {
                 val backStackEntry by navController.currentBackStackEntryAsState()
