@@ -21,10 +21,10 @@ import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.PlaceholderScreen
 
 /**
- * The app's main scaffold: a Material 3 bottom navigation bar switching between the five
- * top-level destinations. Every destination is a [PlaceholderScreen] for now - real screens land
- * in SNA-9/SNA-10; the configurable navbar (reordering/hiding items) is SNA-16. Onboarding-gated
- * start destination is SNA-6.
+ * The app's main scaffold: a Material 3 bottom navigation bar switching between the five top-level
+ * destinations. Every destination is a [PlaceholderScreen] for now - real screens land in
+ * SNA-9/SNA-10; the configurable navbar (reordering/hiding items) is SNA-16. Onboarding-gated start
+ * destination is SNA-6.
  */
 @Composable
 fun WolleNavHost(modifier: Modifier = Modifier) {
