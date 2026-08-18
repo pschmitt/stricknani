@@ -521,13 +521,11 @@ change, not that the new screen looks/behaves correctly once opened.
       all (self-hosted homelab audience, Obtainium/GitHub Releases already covers it) - a product
       decision for the user, not something to default into.
 
-Status: **mostly done** (2026-08-18) - the release workflow has no `paths:` filter (see above), so
-committing it fires the first real run on this very push: a signed rolling "latest" prerelease,
-published as a real (if prerelease-flagged) GitHub Release. That's the pipeline's normal designed
-behavior, identical to every sibling app - not a special test run - but it's still the first time
-this exact workflow has ever executed, so treat that run as the actual verification and be ready to
-fix real issues (permissions, action versions, a path typo) rather than assume it's correct. Play
-Store publishing deliberately left as a follow-up decision (see above).
+Status: **mostly done** (2026-08-18) - the release workflow's first-ever run (triggered by its own
+landing commit, since it has no `paths:` filter) succeeded outright: all 9 CI checks green
+including `Release`, and `gh release view latest` confirms a real signed prerelease with all 8 APKs
+(4 ABIs x debug/release) plus `SHA256SUMS`. Play Store publishing deliberately left as a follow-up
+decision (see above).
 
 ## Stretch / later
 
