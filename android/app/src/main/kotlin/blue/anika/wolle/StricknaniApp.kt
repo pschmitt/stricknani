@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import blue.anika.wolle.di.MediaClient
+import blue.anika.wolle.sync.SyncNotifier
 import blue.anika.wolle.sync.SyncScheduler
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -27,6 +28,7 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var syncScheduler: SyncScheduler
+    @Inject lateinit var syncNotifier: SyncNotifier
     @Inject @MediaClient lateinit var mediaOkHttpClient: OkHttpClient
 
     override val workManagerConfiguration: Configuration
@@ -48,6 +50,7 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
+        syncNotifier.ensureChannel()
         // Both no-op quickly (WorkManager dedupes the periodic request; SyncWorker itself no-ops
         // pre-onboarding) so it's safe to call unconditionally on every process start.
         syncScheduler.schedulePeriodic()

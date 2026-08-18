@@ -12,9 +12,9 @@ object NavbarCustomization {
     /**
      * `null`/empty/corrupt input falls back to every destination visible in declared order.
      * [TopLevelDestination.SETTINGS] is always forced visible - it's the only way back to this
-     * customization UI, so hiding it would lock the user out of un-hiding anything. Unknown ids
-     * are dropped (e.g. a destination removed in a later release); destinations missing from a
-     * saved preference (e.g. one added in a later release) are appended as visible, at the end.
+     * customization UI, so hiding it would lock the user out of un-hiding anything. Unknown ids are
+     * dropped (e.g. a destination removed in a later release); destinations missing from a saved
+     * preference (e.g. one added in a later release) are appended as visible, at the end.
      */
     fun sanitize(raw: List<NavbarItemPreference>?): List<NavbarItemPreference> {
         val known =
@@ -24,7 +24,8 @@ object NavbarCustomization {
                     TopLevelDestination.entries
                         .find { it.name == pref.id }
                         ?.let { destination ->
-                            val visible = destination == TopLevelDestination.SETTINGS || pref.visible
+                            val visible =
+                                destination == TopLevelDestination.SETTINGS || pref.visible
                             NavbarItemPreference(pref.id, visible)
                         }
                 }
@@ -36,7 +37,9 @@ object NavbarCustomization {
     }
 
     fun toDestinations(items: List<NavbarItemPreference>): List<TopLevelDestination> =
-        items.mapNotNull { pref -> TopLevelDestination.entries.find { it.name == pref.id } }
+        items.mapNotNull { pref ->
+            TopLevelDestination.entries.find { it.name == pref.id }
+        }
 
     fun visibleDestinations(items: List<NavbarItemPreference>): List<TopLevelDestination> =
         toDestinations(items.filter { it.visible })

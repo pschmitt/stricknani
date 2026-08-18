@@ -72,7 +72,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             SettingsRow(label = "Server", value = serverUrl.ifBlank { "Not connected" })
             Button(
                 onClick = { showSignOutDialog = true },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                colors =
+                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             ) {
                 Text(stringResource(R.string.settings_sign_out))
@@ -120,7 +121,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         item {
             HorizontalDivider(Modifier.padding(vertical = 16.dp))
             SettingsSectionTitle("About")
-            SettingsRow(label = "App version", value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+            SettingsRow(
+                label = "App version",
+                value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+            )
             SettingsRow(label = "Build", value = BuildConfig.GIT_REVISION)
             SettingsRow(
                 label = "Server version",

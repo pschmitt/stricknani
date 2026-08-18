@@ -47,23 +47,21 @@ constructor(
             ThemeMode.SYSTEM,
         )
 
-    /** Most recent of the per-entity-type sync cursors (SNA-7's `SyncStateEntity`), or null if
-     * nothing has synced yet. */
+    /**
+     * Most recent of the per-entity-type sync cursors (SNA-7's `SyncStateEntity`), or null if
+     * nothing has synced yet.
+     */
     val lastSyncedMillis: StateFlow<Long?> =
         syncStateDao
             .observeAll()
-            .map { states ->
-                states.maxOfOrNull { DateTimeUtils.parseToEpochMillis(it.cursor) }
-            }
+            .map { states -> states.maxOfOrNull { DateTimeUtils.parseToEpochMillis(it.cursor) } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     private val _serverMeta = MutableStateFlow<MetaDto?>(null)
     val serverMeta: StateFlow<MetaDto?> = _serverMeta.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            _serverMeta.value = runCatching { metaApi.getMeta() }.getOrNull()
-        }
+        viewModelScope.launch { _serverMeta.value = runCatching { metaApi.getMeta() }.getOrNull() }
     }
 
     fun setThemeMode(mode: ThemeMode) {
@@ -90,7 +88,9 @@ constructor(
         viewModelScope.launch { appPreferencesRepository.setNavbarItems(current) }
     }
 
-    /** [TopLevelDestination.SETTINGS] can't be hidden - see `NavbarCustomization.sanitize`'s kdoc. */
+    /**
+     * [TopLevelDestination.SETTINGS] can't be hidden - see `NavbarCustomization.sanitize`'s kdoc.
+     */
     fun setNavbarItemVisible(id: String, visible: Boolean) {
         val updated = navbarItems.value.map { if (it.id == id) it.copy(visible = visible) else it }
         viewModelScope.launch { appPreferencesRepository.setNavbarItems(updated) }

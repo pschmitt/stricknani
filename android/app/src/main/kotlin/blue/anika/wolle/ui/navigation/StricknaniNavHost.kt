@@ -55,7 +55,8 @@ fun StricknaniNavHost(
             if (startDestination != Route.Onboarding) {
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = backStackEntry?.destination
-                val visibleDestinations by navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
+                val visibleDestinations by
+                    navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
 
                 NavigationBar {
                     visibleDestinations.forEach { destination ->

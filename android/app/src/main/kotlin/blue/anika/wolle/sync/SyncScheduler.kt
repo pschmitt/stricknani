@@ -2,6 +2,7 @@ package blue.anika.wolle.sync
 
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
+import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
@@ -27,6 +28,9 @@ class SyncScheduler @Inject constructor(private val workManager: WorkManager) {
         val syncRequest =
             PeriodicWorkRequestBuilder<SyncWorker>(SYNC_PERIODIC_INTERVAL_HOURS, TimeUnit.HOURS)
                 .setConstraints(constraints)
+                .setInputData(
+                    Data.Builder().putBoolean(SyncWorker.KEY_NOTIFY_ON_CHANGE, true).build()
+                )
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
                     BACKOFF_DELAY_MINUTES,

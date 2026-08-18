@@ -54,7 +54,8 @@ constructor(
         }
     }
 
-    suspend fun sync() {
+    /** Returns whether this sync actually pulled any change - see SyncWorker/SyncNotifier (SNA-14). */
+    suspend fun sync(): Boolean {
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)
         val response = syncApi.syncYarns(since = cursor)
         if (response.updated.isNotEmpty()) {
@@ -64,6 +65,7 @@ constructor(
             yarnDao.deleteByIds(response.deletedIds)
         }
         syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, response.serverTime))
+        return response.updated.isNotEmpty() || response.deletedIds.isNotEmpty()
     }
 
     /** See `ProjectRepository.createProject`'s kdoc - same placeholder-row-plus-queue pattern. */

@@ -10,7 +10,10 @@ class NavbarCustomizationTest {
     fun `null input falls back to every destination visible in declared order`() {
         val sanitized = NavbarCustomization.sanitize(null)
 
-        assertEquals(TopLevelDestination.entries.toList(), NavbarCustomization.toDestinations(sanitized))
+        assertEquals(
+            TopLevelDestination.entries.toList(),
+            NavbarCustomization.toDestinations(sanitized),
+        )
         assertEquals(sanitized.size, sanitized.count { it.visible })
     }
 
@@ -21,7 +24,10 @@ class NavbarCustomizationTest {
                 listOf(NavbarItemPreference("NOT_A_REAL_DESTINATION", visible = true))
             )
 
-        assertEquals(TopLevelDestination.entries.toList(), NavbarCustomization.toDestinations(sanitized))
+        assertEquals(
+            TopLevelDestination.entries.toList(),
+            NavbarCustomization.toDestinations(sanitized),
+        )
     }
 
     @Test
@@ -38,7 +44,9 @@ class NavbarCustomizationTest {
     @Test
     fun `missing destinations are appended as visible`() {
         val sanitized =
-            NavbarCustomization.sanitize(listOf(NavbarItemPreference(TopLevelDestination.HOME.name)))
+            NavbarCustomization.sanitize(
+                listOf(NavbarItemPreference(TopLevelDestination.HOME.name))
+            )
 
         assertEquals(TopLevelDestination.entries.size, sanitized.size)
         assertEquals(true, sanitized.all { it.visible })

@@ -60,7 +60,8 @@ constructor(
         }
     }
 
-    suspend fun sync() {
+    /** Returns whether this sync actually pulled any change - see SyncWorker/SyncNotifier (SNA-14). */
+    suspend fun sync(): Boolean {
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)
         val response = syncApi.syncProjects(since = cursor)
         if (response.updated.isNotEmpty()) {
@@ -70,6 +71,7 @@ constructor(
             projectDao.deleteByIds(response.deletedIds)
         }
         syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, response.serverTime))
+        return response.updated.isNotEmpty() || response.deletedIds.isNotEmpty()
     }
 
     /**

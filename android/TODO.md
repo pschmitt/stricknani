@@ -500,10 +500,38 @@ Status: not started
 
 ## SNA-14: Sync-completion notifications
 
-- [ ] Optional local notification when a background sync finds changes, or when an async backend
-      job (e.g. link archiving) completes for a project/yarn
+- [x] Optional local notification when a background sync finds changes (new `SyncNotifier`:
+      channel creation + posting, gated on the `POST_NOTIFICATIONS` runtime permission -
+      Android 13+, silently no-ops if denied/not yet granted). **Scoped down** from the original
+      "or when an async backend job (e.g. link archiving) completes" - that half needs a
+      server-side way to detect a specific async job's completion, which doesn't exist yet; only
+      the background-sync-found-changes half is tractable today
+- [x] Only the *periodic* background sync notifies - `SyncWorker` reads a
+      `KEY_NOTIFY_ON_CHANGE` input-data flag that `SyncScheduler.schedulePeriodic()` sets (and
+      `syncNow()`/`replayThenSyncNow()` don't), since a manual pull-to-refresh or the on-launch
+      sync means the user is already looking at the fresh data - notifying then would just be
+      noise
+- [x] Only project/yarn sync results count as "changes" - categories are excluded since they have
+      no real delta (`CategoryRepository.sync()` always replaces the whole list; "changed" there
+      is meaningless noise, not a signal). `ProjectRepository.sync()`/`YarnRepository.sync()` now
+      return `Boolean` (did this pull anything) instead of `Unit`
+- [x] `POST_NOTIFICATIONS` requested once from `HomeScreen` (`RequestNotificationPermissionEffect`,
+      `ui/common/`) rather than at cold start - the prompt appears once the user has actually
+      reached the app's main shell (post-onboarding), not before they've seen any value in it
 
-Status: not started
+Status: **mostly done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol
+":app:assembleDebug" ":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean -
+including the `POST_NOTIFICATIONS`-gated `NotificationManagerCompat.notify()` call, which lint
+would otherwise flag as a missing-permission call), then `just deploy-all debug` + relaunch on
+Zenfone 10, Mi Pad 4, and Pixel 5 (`ResumedActivity`, no crash in logcat on any of the three).
+**Not verified**: an actual notification firing on-device - that needs a periodic `SyncWorker` run
+that both finds real changes and has connectivity to a real Stricknani server, none of which is
+reachable this session (same recurring gap as every sync-touching ticket since SNA-6/7). No unit
+tests added for `SyncNotifier` itself (Android `NotificationManager`/permission-check-bound, same
+"not enough isolable pure logic" reasoning as SNA-6/7/8/10/18) - the pure boolean-return change to
+`ProjectRepository.sync()`/`YarnRepository.sync()` doesn't have new pure logic worth isolating
+either (it's a one-line derivation already exercised implicitly by the repositories' existing
+behavior).
 
 ## SNA-15: Backup/restore support
 

@@ -21,7 +21,9 @@ class NavBarViewModel @Inject constructor(appPreferencesRepository: AppPreferenc
 
     val visibleDestinations: StateFlow<List<TopLevelDestination>> =
         appPreferencesRepository.navbarItems
-            .map { raw -> NavbarCustomization.visibleDestinations(NavbarCustomization.sanitize(raw)) }
+            .map { raw ->
+                NavbarCustomization.visibleDestinations(NavbarCustomization.sanitize(raw))
+            }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5_000L),
