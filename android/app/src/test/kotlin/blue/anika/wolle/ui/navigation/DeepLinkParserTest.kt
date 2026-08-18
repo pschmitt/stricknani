@@ -24,7 +24,10 @@ class DeepLinkParserTest {
 
     @Test
     fun `parses regardless of host or scheme`() {
-        assertEquals(Route.ProjectDetail(1), DeepLinkParser.parse("http://192.168.1.5:8080/projects/1"))
+        assertEquals(
+            Route.ProjectDetail(1),
+            DeepLinkParser.parse("http://192.168.1.5:8080/projects/1"),
+        )
     }
 
     @Test

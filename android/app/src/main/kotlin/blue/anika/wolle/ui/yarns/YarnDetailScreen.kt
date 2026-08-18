@@ -89,9 +89,7 @@ fun YarnDetailScreen(
                     if (state is YarnDetailUiState.Loaded) {
                         val context = LocalContext.current
                         IconButton(
-                            onClick = {
-                                viewModel.shareUrl()?.let { url -> context.shareUrl(url) }
-                            }
+                            onClick = { viewModel.shareUrl()?.let { url -> context.shareUrl(url) } }
                         ) {
                             Icon(Icons.Filled.Share, contentDescription = "Share yarn")
                         }

@@ -46,8 +46,8 @@ import blue.anika.wolle.ui.yarns.YarnsListScreen
  *   recreates this whole composable (a fresh `NavController`) when it flips, rather than this
  *   composable navigating between the two itself.
  * @param pendingDeepLinkRoute a project/yarn link the user tapped (SNA-17,
- *   `MainActivity`/`DeepLinkParser`), navigated to once and then cleared via
- *   [onDeepLinkConsumed] - `null` means there's nothing pending.
+ *   `MainActivity`/`DeepLinkParser`), navigated to once and then cleared via [onDeepLinkConsumed] -
+ *   `null` means there's nothing pending.
  */
 @Composable
 fun StricknaniNavHost(

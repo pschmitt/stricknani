@@ -93,9 +93,7 @@ fun ProjectDetailScreen(
                     if (state is ProjectDetailUiState.Loaded) {
                         val context = LocalContext.current
                         IconButton(
-                            onClick = {
-                                viewModel.shareUrl()?.let { url -> context.shareUrl(url) }
-                            }
+                            onClick = { viewModel.shareUrl()?.let { url -> context.shareUrl(url) } }
                         ) {
                             Icon(Icons.Filled.Share, contentDescription = "Share project")
                         }
