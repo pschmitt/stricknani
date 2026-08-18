@@ -8,6 +8,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,14 +45,26 @@ import blue.anika.wolle.ui.yarns.YarnsListScreen
  *   [Route.Home] - `MainActivity` picks this reactively from `SettingsRepository.isConfigured` and
  *   recreates this whole composable (a fresh `NavController`) when it flips, rather than this
  *   composable navigating between the two itself.
+ * @param pendingDeepLinkRoute a project/yarn link the user tapped (SNA-17,
+ *   `MainActivity`/`DeepLinkParser`), navigated to once and then cleared via
+ *   [onDeepLinkConsumed] - `null` means there's nothing pending.
  */
 @Composable
 fun StricknaniNavHost(
     modifier: Modifier = Modifier,
     startDestination: Route = Route.Home,
     navBarViewModel: NavBarViewModel = hiltViewModel(),
+    pendingDeepLinkRoute: Route? = null,
+    onDeepLinkConsumed: () -> Unit = {},
 ) {
     val navController = rememberNavController()
+
+    LaunchedEffect(pendingDeepLinkRoute) {
+        pendingDeepLinkRoute?.let { route ->
+            navController.navigate(route)
+            onDeepLinkConsumed()
+        }
+    }
 
     Scaffold(
         modifier = modifier,

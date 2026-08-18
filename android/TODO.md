@@ -631,18 +631,62 @@ of SNA-21 (Settings screen overhaul).
 
 ## SNA-17: Deep links ("open with" a project/yarn URL)
 
-- [ ] Android App Links so a stricknani project/yarn URL (from the web app, a share, a browser)
-      opens directly in the app instead of the browser, matching syncwich's
-      `docs/deep-links.md`/`assetlinks.json` pattern - server-side, this needs a per-server
-      `.well-known/assetlinks.json` (the server URL is user-configured, not hardcoded, so this
-      can't be baked into a single static manifest the way a single-tenant app's can)
-- [ ] Handle both `https://<server>/projects/{id}` and `/yarn/{id}` style URLs, resolving to the
-      matching local Room entity when cached, falling back to an online fetch/onboarding-required
-      state when not yet synced or the app isn't set up for that server
-- [ ] "Share" / "Open in app" surfaces from project/yarn detail screens, consistent with the
-      existing web app's share links
+- [x] Researched syncwich's/nyetbox's actual App Links implementations before starting (both
+      sibling repos, via a research pass) rather than assume the ticket's own premise held up:
+      **neither app actually solves the "one APK, arbitrary self-hosted domain, verified/no-dialog
+      App Links" problem.** syncwich only gets `autoVerify`+no-dialog behavior because it targets
+      one hardcoded domain (`nom.brkn.lol`) baked into its own manifest - its
+      `docs/deep-links.md` explicitly says supporting a different self-hosted domain needs a
+      manifest edit and a new release build, which doesn't fit Stricknani's actually-multi-tenant,
+      one-APK-many-servers model at all. nyetbox's `docs/app-links.md` is the real precedent: it
+      explicitly rejects verified App Links for exactly this reason and ships a wildcard-host,
+      non-`autoVerify` intent filter instead, relying on Android's normal link-handling (the user
+      can promote the app via Settings -> Apps -> Stricknani -> "Open by default", or Android's
+      "Open with" chooser where that appears) - so that's the pattern this follows.
+- [x] `AndroidManifest.xml`: two new `android:host="*"`, non-`autoVerify` intent-filters (https and
+      http, matching `usesCleartextTraffic`) with `android:pathPattern="/projects/.*"` and
+      `"/yarn/.*"`, exactly matching the web app's own `stricknani/routes/{projects,yarn}.py`
+      route prefixes (confirmed by reading those routers directly rather than guessing).
+- [x] `ui/navigation/DeepLink.kt` (`DeepLinkParser.parse`): parses only the URL's *path*, not its
+      host - like nyetbox's `NetBoxUrlParser`, a Stricknani install is single-server-per-device
+      (one `SettingsRepository.serverUrl`), so whichever server is currently configured is
+      necessarily the right target for any matching path; there's no "link points to a server I'm
+      not connected to" case to handle. Unit-tested (`DeepLinkParserTest`, pure logic, matches the
+      `BackupCryptoTest`/`GaugeCalculatorTest` precedent).
+- [x] `MainActivity.kt` (`pendingDeepLink` state, `onCreate`/`onNewIntent` - the manifest's
+      existing `android:launchMode="singleTask"` means a warm relaunch hits `onNewIntent`, not a
+      fresh `onCreate`) + `StricknaniNavHost.kt` (`pendingDeepLinkRoute`/`onDeepLinkConsumed`
+      params, consumed via a `LaunchedEffect` alongside the `NavController` it already owns):
+      deferred (not dropped) until `SettingsRepository.isConfigured` is true, matching nyetbox's/
+      syncwich's onboarding-gating pattern, then a single `navController.navigate(route)`.
+- [x] Share action: `ProjectDetailViewModel`/`YarnDetailViewModel` gained `shareUrl()` (reuses
+      `MediaUrlResolver.resolve("/projects/$id")`/`"/yarn/$id"` - it already does exactly "prepend
+      the configured server's base URL", no new code needed there), wired to a new Share icon in
+      both detail screens' `TopAppBar` via a small `Context.shareUrl()` extension
+      (`ui/common/ShareUrl.kt`, plain `ACTION_SEND` + `createChooser`).
 
-Status: not started
+Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean, `DeepLinkParserTest`
+green), then confirmed for real on the Zenfone 10 against the `ai@anika.blue` account. Checked
+Android's actual platform behavior directly rather than assume: `adb shell dumpsys package
+domain-preferred-apps` and the `android.settings.APP_OPEN_BY_DEFAULT_SETTINGS` screen both confirm
+Stricknani is correctly registered as a link-capable app for these paths ("Open supported links"
+already on, "0 verified links" - exactly the expected unverified-wildcard-host state, not a bug).
+A plain `am start -a VIEW -d https://wolle.anika.blue/projects/6` (no explicit component) opened
+Chrome, not the chooser - expected: modern Android silently prefers the assigned system default
+browser for *unverified* web-scheme links rather than offering non-browser apps in a chooser,
+which is exactly nyetbox's own documented limitation, not a defect in this implementation.
+Targeting `MainActivity` explicitly (equivalent to what a real "Open with" chooser selection would
+deliver) proved the app's own handling is correct end-to-end: a project link cold-started the app
+straight into "SNA-22 Markdown Test" (id 6), and a yarn link sent to the already-running app (
+`onNewIntent`, confirmed via adb's "delivered to currently running top-most instance" message)
+correctly routed to the Yarn detail screen's existing "Yarn not found" state for a nonexistent id -
+proving both the cold-start and warm-relaunch paths, and that an invalid id degrades gracefully
+instead of crashing. The Share icon was also verified for real: tapping it on the same test project
+opened the system share sheet pre-filled with the exact expected URL
+(`https://wolle.anika.blue/projects/6`) - backed out without selecting a real contact, since this
+is a shared test device with the owner's actual contacts in that sheet. Mi Pad 4 still needs
+re-onboarding (unrelated, noted under SNA-22); Pixel 5 still unreachable over wireless adb.
 
 ## SNA-18: Settings screen with an About section
 

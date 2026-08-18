@@ -72,6 +72,9 @@ constructor(
 
     fun resolveMediaUrl(path: String?): String? = mediaUrlResolver.resolve(path)
 
+    /** The web URL for this yarn (SNA-17), for the detail screen's share action. */
+    fun shareUrl(): String? = mediaUrlResolver.resolve("/yarn/$yarnId")
+
     fun toggleFavorite() {
         val state = uiState.value
         if (state !is YarnDetailUiState.Loaded) return

@@ -70,6 +70,9 @@ constructor(
 
     fun resolveMediaUrl(path: String?): String? = mediaUrlResolver.resolve(path)
 
+    /** The web URL for this project (SNA-17), for the detail screen's share action. */
+    fun shareUrl(): String? = mediaUrlResolver.resolve("/projects/$projectId")
+
     fun toggleFavorite() {
         val state = uiState.value
         if (state !is ProjectDetailUiState.Loaded) return
