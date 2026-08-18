@@ -389,6 +389,9 @@ the main shell), and per SNA-7's own "not verified" note, no reachable Stricknan
 set up this session either, so re-onboarding wasn't possible. Onboarding's own network-gated
 validation means the main shell (and therefore these new screens) cannot be reached at all without
 a real server + token - closing this gap needs a reachable test instance in a future session.
+CI (`Android Lint`) caught real ktfmt violations on the first push, as expected per the documented
+caveat; fixed via the run's `ktfmt-diff-patch` artifact, re-verified with another remote debug
+build, and CI is green on the follow-up push.
 
 ## SNA-10: Create/edit flows
 
