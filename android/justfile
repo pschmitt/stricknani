@@ -36,10 +36,10 @@ mipad_ssh_port := env_var_or_default("MIPAD_SSH_PORT", "8022")
 mipad_adb_port := env_var_or_default("MIPAD_ADB_PORT", "5555")
 px5_host := env_var_or_default("PX5_HOST", "px5.lan")
 
-# Release builds aren't signed with a persistent CI keystore yet (SNA-12) - `build variant=release`
-# just runs assembleRelease unsigned (falls back to the host's throwaway debug keystore) until
-# this is set up.
-enable_release_signing := "false"
+# Release builds are signed with the persistent CI keystore (SNA-12), fetched from the rbw entry
+# below and staged on the build host only for the duration of the build - matches the sibling
+# apps' pattern exactly (see e.g. syncwich's justfile).
+enable_release_signing := "true"
 rbw_keystore_entry := "Stricknani Android CI Signing Keystore"
 keystore_jks_attachment := "stricknani-android-ci.jks"
 keystore_env_attachment := "stricknani-android-ci-keystore.env"

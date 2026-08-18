@@ -482,11 +482,52 @@ change, not that the new screen looks/behaves correctly once opened.
 
 ## SNA-12: Fleet release parity
 
-- [ ] Obtainium + GitHub Releases distribution, `declaroid` entry in `android/README.md`
-- [ ] Physical-device deploy recipes verified on Zenfone 10 / Mi Pad 4 / Pixel 5
-- [ ] Optional Play Store publishing workflow (mirror syncwich's `play-store.yaml`)
+- [x] Generated a real release-signing keystore (RSA 4096, `keytool`, 30yr validity, alias
+      `stricknani-ci`) - PKCS12 forces a single store/key password, unlike the older JKS format
+      the sibling apps' comments assume, so `CI_KEYSTORE_PASSWORD` and `CI_KEY_PASSWORD` are the
+      same value here. User asked (2026-08-18) to also save it to Bitwarden, matching the fleet's
+      existing pattern - stored as the "Stricknani Android CI Signing Keystore" rbw entry (a
+      `secure_note`, two attachments: `stricknani-android-ci.jks` +
+      `stricknani-android-ci-keystore.env`), verified with a round-trip download/diff before
+      registering `CI_KEYSTORE_BASE64`/`CI_KEYSTORE_PASSWORD`/`CI_KEY_ALIAS`/`CI_KEY_PASSWORD` as
+      GitHub Actions repo secrets and flipping `android/justfile`'s `enable_release_signing` to
+      `"true"` (the justfile's `rbw_keystore_entry`/attachment-name variables already matched this
+      exact naming before today - only the keystore/secrets themselves were missing). All local
+      copies of the keystore/passwords were `shred -u`'d after upload; only the rbw entry and the
+      GitHub secrets hold it now.
+- [x] `.github/workflows/release.yaml`: hand-written (not delegated to
+      `pschmitt/android-app-ci`'s reusable release workflow) for the same repo-root-vs-`android/`
+      subdirectory reason as `android-build.yaml`/`android-lint.yaml`, but mirrors that reusable
+      workflow's actual logic closely - signed release + debug APK builds, a rolling `latest`
+      prerelease on every `main` push and a real permanent release on a semver tag push,
+      `SHA256SUMS`, SLSA build provenance attestation, embedded-version-name and
+      embedded-`GIT_REVISION` verification, stale-asset vacuuming on the `latest` tag. Deliberately
+      has **no** `paths:` filter (unlike the other two workflows) - GitHub ANDs `paths` with `tags`
+      on the same `push` trigger, and path-diff filtering is unreliable for a brand-new tag ref, so
+      a real version-tag release could silently no-op; an occasional unneeded rebuild on a
+      backend-only commit to `main` is a far smaller cost than that.
+- [x] Obtainium badge + `declaroid` YAML snippet added to `android/README.md`'s new
+      "Installation" section, matching jollyfin's exact wording/structure - the Obtainium deep
+      link's `additionalSettings` filters to `.*-release\.apk$` (excludes the `latest` tag's debug
+      APKs) with `autoApkFilterByArch: true` so it auto-picks the right ABI split.
+- [x] Physical-device deploy recipes: already re-verified repeatedly this session (`just
+      deploy-all` on the Zenfone 10 across SNA-19/21/22/23/24/25/26/27's device-testing passes;
+      Mi Pad 4 mostly works but needs occasional wireless-adb reconnects; Pixel 5 has been
+      unreachable over wireless adb for this entire session - a Home Assistant/Tasker webhook gap
+      outside this app's control, not a deploy-recipe defect).
+- [ ] Play Store publishing workflow: explicitly optional in the ticket, and left undone - it
+      needs a real Play Console account/listing (screenshots, store copy, content rating,
+      data-safety form) and a decision about whether Stricknani should even be on Play Store at
+      all (self-hosted homelab audience, Obtainium/GitHub Releases already covers it) - a product
+      decision for the user, not something to default into.
 
-Status: not started
+Status: **mostly done** (2026-08-18) - the release workflow has no `paths:` filter (see above), so
+committing it fires the first real run on this very push: a signed rolling "latest" prerelease,
+published as a real (if prerelease-flagged) GitHub Release. That's the pipeline's normal designed
+behavior, identical to every sibling app - not a special test run - but it's still the first time
+this exact workflow has ever executed, so treat that run as the actual verification and be ready to
+fix real issues (permissions, action versions, a path typo) rather than assume it's correct. Play
+Store publishing deliberately left as a follow-up decision (see above).
 
 ## Stretch / later
 
