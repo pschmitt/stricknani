@@ -269,22 +269,59 @@ isolating; revisit once SNA-7 adds more.
 
 ## SNA-7: Offline data layer + sync engine
 
-- [ ] Room schema: `ProjectEntity`/`YarnEntity`/`CategoryEntity` with flat filter/sort columns +
+- [x] Room schema: `ProjectEntity`/`YarnEntity`/`CategoryEntity` with flat filter/sort columns +
       a `detailJson` blob column for full nested detail, decoded at read time
-- [ ] Cache-first repositories (`ProjectRepository`, `YarnRepository`, `CategoryRepository`) -
+- [x] Cache-first repositories (`ProjectRepository`, `YarnRepository`, `CategoryRepository`) -
       every read is a Room `Flow`; a failed `refresh()` never clears cached data
-- [ ] `SyncWorker` (WorkManager periodic, `NetworkType.CONNECTED`) + `SyncScheduler`, driven by
+- [x] `SyncWorker` (WorkManager periodic, `NetworkType.CONNECTED`) + `SyncScheduler`, driven by
       the `/api/v1/sync/*` delta endpoints (SNA-3) - upsert `updated`, delete `deleted_ids`, never
       a naive full refetch
-- [ ] Manual pull-to-refresh + best-effort sync on launch; sync failure surfaces a subtle
-      staleness indicator, never blocks or clears already-cached data
-- [ ] Coil3 image loading sharing the authenticated OkHttp client (so image requests carry the
-      Bearer token), disk-cached, not duplicated into Room
+- [x] Best-effort sync on launch (`StricknaniApp.onCreate` + right after onboarding succeeds, both
+      via `SyncScheduler.syncNow()`); a failed sync step is caught per-step in `SyncWorker` and
+      never clears already-cached data. Pull-to-refresh itself and a staleness indicator are UI
+      surface that doesn't exist yet - deferred to SNA-9, not duplicated here
+- [x] Coil3 image loading via a dedicated `@MediaClient` OkHttp client (`AuthInterceptor` only, no
+      `DynamicBaseUrlInterceptor` - Stricknani's media URLs are already relative, so double-
+      prefixing would break subpath-hosted instances), wired as `StricknaniApp`'s
+      `SingletonImageLoader.Factory`, disk-cached (256 MiB cap), not duplicated into Room
 
-Status: in progress (2026-08-18) - starting with Retrofit DTOs/API interfaces + Room
-entities/DAOs, then repositories + SyncWorker/SyncScheduler + Coil wiring. Scoped to the *read*
-path (sync pulls data in) per this task's own checklist - write endpoints/UI are SNA-8 (offline
-write queue) and SNA-10 (create/edit screens), not duplicated here.
+Status: done (2026-08-18). Scoped to the *read* path per this task's own checklist - write
+endpoints/UI are SNA-8 (offline write queue) and SNA-10 (create/edit screens), not duplicated here.
+
+DTOs (`data/api/dto/*.kt`) mirror `stricknani/routes/api/schemas.py` field-for-field, re-verified
+against the live source during this task (not just recalled from memory) - every response/request
+schema, `@GET`/`@POST` path and query param cross-checked against `routes/api/{meta,categories,
+yarns,projects,sync}.py`. Timestamp fields are plain `String` (not `kotlinx.datetime.Instant`),
+parsed defensively by `data/util/DateTimeUtils.kt` at the repository/mapper layer - handles both
+the naive-UTC form the backend's `created_at`/`updated_at` actually serialize as and the offset-
+aware form `server_time` uses, rather than assuming a single strict ISO8601 shape.
+
+Room: one table per entity (`projects`/`yarns`/`categories`) combining flat sort/filter columns
+with a `detailJson` blob of the full synced DTO (same pattern as syncwich's `RecipeDetailEntity`),
+plus a `sync_state` table persisting each entity type's last `server_time` cursor (replayed
+verbatim as the next `since`, never reformatted client-side) so it commits atomically with the
+rows it gates. `YarnResponse`/`ProjectResponse` have no server-computed `preview_url` (only their
+`*ListItemResponse` counterparts do) - the repository computes an equivalent client-side from the
+primary/title image's thumbnail. `fallbackToDestructiveMigration(dropAllTables = true)`: every
+table here is a rebuildable server cache, not user data, so a future schema bump just wipes and
+resyncs. `SettingsViewModel.signOut()` now also clears the whole database, so a sign-out doesn't
+leak the previous account's cached rows into a fresh sign-in.
+
+WorkManager's default ContentProvider auto-init was already pre-disabled in the manifest back in
+SNA-5/6 (anticipating this task) - `di/WorkModule.kt` provides `WorkManager.getInstance(context)`
+explicitly instead, which needed one fix during this task: the first remote build failed with a
+Dagger `MissingBinding` on `WorkManager` (`SyncScheduler` needed it, nothing provided it) - added
+`WorkModule` (mirrors syncwich's) and the remote debug build went green on the retry.
+
+Verified: `just build debug rofl-13.brkn.lol` (remote, per this repo's build convention) compiles
+clean - `BUILD SUCCESSFUL`, Hilt/KSP/Room codegen all resolve, no unresolved references. **Not
+verified**: an actual live sync against a running Stricknani server (no reachable test server was
+set up this session, same gap noted in SNA-6), and there is no UI yet that displays synced data
+(Home/Projects/Yarns/Search are still `PlaceholderScreen`s from SNA-5) - both are exercised
+end-to-end once SNA-9 replaces those placeholders with real screens reading from these
+repositories. Local `ktfmtCheck` was not run given its documented unreliable-NO-SOURCE caveat
+(see this file's SNA-5/SNA-6 notes and `android/AGENTS.md`) - pushing and letting CI be the
+authoritative formatting/lint check instead.
 
 ## SNA-8: Offline write queue
 

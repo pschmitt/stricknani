@@ -6,6 +6,7 @@ import blue.anika.wolle.data.onboarding.OnboardingError
 import blue.anika.wolle.data.onboarding.OnboardingValidationException
 import blue.anika.wolle.data.onboarding.OnboardingValidator
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,7 @@ class OnboardingViewModel
 constructor(
     private val validator: OnboardingValidator,
     private val settingsRepository: SettingsRepository,
+    private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<OnboardingUiState>(OnboardingUiState.Idle)
@@ -47,6 +49,8 @@ constructor(
                     // Only persisted - and only now starts being read by the network layer's
                     // interceptors - once the server has actually confirmed this token works.
                     settingsRepository.save(serverUrl, apiToken)
+                    // So the first sync doesn't wait for the periodic schedule.
+                    syncScheduler.syncNow()
                     _uiState.value = OnboardingUiState.Success
                 }
                 .onFailure { error ->
