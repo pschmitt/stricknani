@@ -715,16 +715,34 @@ Status: not started
 
 ## SNA-22: Render Markdown properly (descriptions, notes, steps)
 
-- [ ] Project/yarn description, notes, and step description fields are currently rendered as
+- [x] Project/yarn description, notes, and step description fields are currently rendered as
       plain `Text` (no Markdown parsing) even though the web app likely stores/expects Markdown
       in these fields. User feedback (2026-08-18): needs real Markdown rendering, **including
       inline images embedded in the Markdown itself** (`ie also the ones in md descriptions,
       steps etc`) - not just the dedicated title/step image galleries that already work
-- [ ] Needs a Markdown-rendering approach that supports inline images resolved through
+- [x] Needs a Markdown-rendering approach that supports inline images resolved through
       `MediaUrlResolver`/the `@MediaClient` Coil loader (same auth/base-URL handling as every
       other image in the app), not just plain text formatting
+- [x] Added `com.mikepenz:multiplatform-markdown-renderer` 0.43.0 (+ `-m3` for Material3 styling,
+      `-coil3` for image support) to `gradle/libs.versions.toml`/`app/build.gradle.kts`. Replaced
+      the plain `Text(value, ...)` calls for `ProjectDetailScreen`'s description/step
+      description/notes and `YarnDetailScreen`'s notes with `com.mikepenz.markdown.m3.Markdown(
+      content = value, imageTransformer = Coil3ImageTransformerImpl, ...)`. `Coil3ImageTransformerImpl`
+      resolves inline `![]()` images through whatever `SingletonImageLoader` is installed
+      app-wide (`StricknaniApp.kt`'s authenticated `@MediaClient` OkHttp client) with zero extra
+      wiring - confirmed this is exactly why the `-coil3` artifact (not `-coil` for Coil2) was
+      the right pick.
 
-Status: not started
+Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`), then confirmed for real on the Zenfone 10: created
+a project (`stricknani-cli project add --owner-email ai@anika.blue ...`) whose notes field is a
+Markdown document with an H1 header, **bold**, _italic_, a link, a bullet list, and an inline
+`![]()` image hosted on an external URL. All of it rendered correctly - heading size/weight, bold,
+italics, underlined link styling, bullet glyphs, and the inline image loaded and displayed inline
+below the list, proving the Coil3 image transformer picks up the app's existing image loader with
+no special-case wiring. Also deployed to the Mi Pad 4 (`just deploy-all`); Pixel 5 still
+unreachable over wireless adb this session (same recurring Home Assistant/Tasker reconnect gap as
+SNA-20/SNA-21/SNA-27 - not fixable without physical access to the phone).
 
 ## SNA-23: Full-screen image viewer (pinch-zoom gallery)
 

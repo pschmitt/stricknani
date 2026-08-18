@@ -51,6 +51,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import coil3.compose.AsyncImage
+import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
+import com.mikepenz.markdown.m3.Markdown
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -205,9 +207,9 @@ private fun ProjectDetailContent(
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 Text("Description", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    value,
-                    style = MaterialTheme.typography.bodyMedium,
+                Markdown(
+                    content = value,
+                    imageTransformer = Coil3ImageTransformerImpl,
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
@@ -225,9 +227,9 @@ private fun ProjectDetailContent(
                         style = MaterialTheme.typography.titleSmall,
                     )
                     step.description?.let {
-                        Text(
-                            it,
-                            style = MaterialTheme.typography.bodyMedium,
+                        Markdown(
+                            content = it,
+                            imageTransformer = Coil3ImageTransformerImpl,
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }
@@ -239,9 +241,9 @@ private fun ProjectDetailContent(
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 Text("Notes", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    value,
-                    style = MaterialTheme.typography.bodyMedium,
+                Markdown(
+                    content = value,
+                    imageTransformer = Coil3ImageTransformerImpl,
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }

@@ -139,6 +139,13 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
 
+    // Markdown rendering for descriptions/notes/steps (SNA-22) - the -coil3 artifact resolves
+    // inline images through the same SingletonImageLoader (StricknaniApp.kt) every other image in
+    // the app already uses, so it picks up the authenticated @MediaClient loader automatically.
+    implementation(libs.markdown.renderer)
+    implementation(libs.markdown.renderer.m3)
+    implementation(libs.markdown.renderer.coil3)
+
     // Offline cache (SNA-7)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
