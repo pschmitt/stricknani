@@ -17,8 +17,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.main import app
-from stricknani.models import Base, Image, Project, User, Yarn, YarnImage
-from stricknani.utils.auth import create_access_token, get_password_hash
+from stricknani.models import ApiToken, Base, Image, Project, User, Yarn, YarnImage
+from stricknani.utils.auth import (
+    create_access_token,
+    generate_api_token,
+    get_password_hash,
+)
 
 
 @pytest.fixture
@@ -77,6 +81,20 @@ async def media_authz_client(
         session.add(yarn_image)
         await session.commit()
 
+        owner_raw_api_token, owner_token_hash = generate_api_token()
+        session.add(
+            ApiToken(
+                user_id=owner.id, name="Owner API Token", token_hash=owner_token_hash
+            )
+        )
+        other_raw_api_token, other_token_hash = generate_api_token()
+        session.add(
+            ApiToken(
+                user_id=other.id, name="Other API Token", token_hash=other_token_hash
+            )
+        )
+        await session.commit()
+
         owner_id = owner.id
         other_id = other.id
         admin_id = admin.id
@@ -125,6 +143,8 @@ async def media_authz_client(
             "owner_token": create_access_token(data={"sub": owner.email}),
             "other_token": create_access_token(data={"sub": other.email}),
             "admin_token": create_access_token(data={"sub": admin.email}),
+            "owner_api_token": owner_raw_api_token,
+            "other_api_token": other_raw_api_token,
         }
 
     app.dependency_overrides.clear()
@@ -360,3 +380,47 @@ async def test_unknown_subdir_returns_404(
     response = await client.get("/media/whatever/1/file.jpg")
 
     assert response.status_code == 404
+
+
+async def test_bearer_token_owner_can_access_own_project_image(
+    media_authz_client: dict[str, Any],
+) -> None:
+    """T74/SNA-4: the API-token auth path works alongside the session cookie."""
+    client = media_authz_client["client"]
+    _anonymous(client)
+
+    response = await client.get(
+        f"/media/projects/{media_authz_client['project_id']}/20260101_000000_aaaaaaaa.jpg",
+        headers={"Authorization": f"Bearer {media_authz_client['owner_api_token']}"},
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"fake-jpeg-bytes"
+
+
+async def test_bearer_token_non_owner_is_forbidden(
+    media_authz_client: dict[str, Any],
+) -> None:
+    client = media_authz_client["client"]
+    _anonymous(client)
+
+    response = await client.get(
+        f"/media/projects/{media_authz_client['project_id']}/20260101_000000_aaaaaaaa.jpg",
+        headers={"Authorization": f"Bearer {media_authz_client['other_api_token']}"},
+    )
+
+    assert response.status_code == 403
+
+
+async def test_invalid_bearer_token_is_unauthorized(
+    media_authz_client: dict[str, Any],
+) -> None:
+    client = media_authz_client["client"]
+    _anonymous(client)
+
+    response = await client.get(
+        f"/media/projects/{media_authz_client['project_id']}/20260101_000000_aaaaaaaa.jpg",
+        headers={"Authorization": "Bearer sna_not-a-real-token"},
+    )
+
+    assert response.status_code == 401

@@ -120,11 +120,18 @@ Status: not started
 
 ## SNA-4: Bearer-auth support on the media route
 
-- [ ] `stricknani/routes/media.py`'s ownership-checked serving route currently resolves the user
-      via cookie session only - teach it to also accept `Authorization: Bearer <token>` so the app
-      can load project/yarn images authenticated with the PAT
+- [x] New `get_current_user_any`/`require_auth_or_api_token` dependency in `stricknani/routes/
+      auth.py`: tries the `Authorization: Bearer <token>` header first, falls back to the
+      session cookie - shared by both the browser and the app rather than being media-specific
+- [x] `stricknani/routes/media.py`'s `serve_media`/`serve_media_thumbnail` routes now depend on
+      `require_auth_or_api_token` instead of `require_auth`, so the app can load project/yarn
+      images (and thumbnails) straight from the JSON API responses' URLs, authenticated with
+      the PAT
+- [x] Tests: 3 new cases in `tests/test_media_authz.py` (Bearer-token owner access, Bearer-token
+      cross-user 403, invalid Bearer token 401), added to the existing per-object authz fixture
 
-Status: not started
+Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` (249 passed),
+`uv run ruff check .`, `uv run mypy .`.
 
 ### Android app scaffolding
 

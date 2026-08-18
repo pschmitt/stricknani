@@ -15,6 +15,11 @@ Stricknani has no concept of publicly-viewable/demo projects: the seeded
 "demo" account (``stricknani/scripts/seed_demo.py``) is an ordinary user
 whose content is only visible to itself (like any other user), so no
 unauthenticated bypass is needed here.
+
+Authenticated via ``require_auth_or_api_token`` (T74/SNA-4), so the same
+routes serve both the browser (session cookie) and the Android app
+(``Authorization: Bearer <token>``), which loads project/yarn images
+straight from the JSON API responses' URLs.
 """
 
 from __future__ import annotations
@@ -30,7 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.models import Project, User, Yarn
-from stricknani.routes.auth import require_auth
+from stricknani.routes.auth import require_auth_or_api_token
 
 router: APIRouter = APIRouter(tags=["media"])
 
@@ -147,7 +152,7 @@ async def serve_media_thumbnail(
     subdir: str,
     entity_id: str,
     filename: str,
-    current_user: User = Depends(require_auth),
+    current_user: User = Depends(require_auth_or_api_token),
     db: AsyncSession = Depends(get_db),
 ) -> FileResponse:
     """Serve a thumbnail once ownership of the source object is confirmed."""
@@ -161,7 +166,7 @@ async def serve_media(
     subdir: str,
     entity_id: str,
     filename: str,
-    current_user: User = Depends(require_auth),
+    current_user: User = Depends(require_auth_or_api_token),
     db: AsyncSession = Depends(get_db),
 ) -> FileResponse:
     """Serve a media object once ownership of it is confirmed."""

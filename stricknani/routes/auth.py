@@ -131,6 +131,39 @@ async def require_api_token(
     return current_user
 
 
+async def get_current_user_any(
+    session_token: Annotated[str | None, Cookie()] = None,
+    authorization: Annotated[str | None, Header()] = None,
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Resolve the current user from either an API Bearer token or the
+    session cookie.
+
+    Used by routes shared between the browser (HTML/HTMX) and the app
+    (`stricknani/routes/media.py`'s image-serving routes), which need to
+    authenticate both kinds of caller.
+    """
+    if authorization:
+        scheme, _, raw_token = authorization.partition(" ")
+        if scheme.lower() == "bearer" and raw_token:
+            api_user = await get_user_from_api_token(db, raw_token)
+            if api_user:
+                return api_user
+    return await get_current_user(session_token=session_token, db=db)
+
+
+async def require_auth_or_api_token(
+    current_user: User | None = Depends(get_current_user_any),
+) -> User:
+    """Require authentication via either the session cookie or a Bearer token."""
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+    return current_user
+
+
 @router.post("/signup")
 async def signup(
     request: Request,
