@@ -245,15 +245,27 @@ wrong**: the user corrected the display name to "Stricknani" - see SNA-20.
       `PlaceholderScreen`. **The Room cache half is not wiped** - there's no Room cache yet
       (SNA-7); this needs a follow-up once it exists
 
-Status: **in progress** (2026-08-18) - `just build debug`/`ktfmtCheck :app:testDebugUnitTest
-lintDebug` all green on `rofl-13.brkn.lol`. Not yet pushed/CI-verified or reinstalled on a device
-- see the next entry in this file's history for that confirmation once it's done. No unit tests
-added for `OnboardingValidator`'s error-mapping or URL parsing - `SettingsRepository` needs
-Android's `EncryptedSharedPreferences`/`MasterKey` (instrumented test territory, not plain JVM
-unit tests) and nothing else here has enough pure logic yet to be worth isolating; revisit once
-SNA-7 adds more. A full live connect against a real running Stricknani server + a freshly
-generated PAT is also not verified - only the compiled validation/error-mapping logic and (once
-reinstalled) the screen rendering.
+Status: **done** (2026-08-18) - CI green (`android-lint.yaml`, `android-build.yaml`), reinstalled
+on the Zenfone 10 and verified live with real network calls against real hostnames (not just
+"it compiles"): a fresh install with no saved credentials opens straight on the Onboarding screen
+with no bottom nav bar; a syntactically-invalid URL produces the `MalformedUrl` error message; a
+syntactically-valid but unresolvable URL (`https://nonexistent.invalid.example`) produces the
+distinct `Unreachable` error message, confirming `OnboardingValidator`'s two-step check and error
+-mapping both work end to end on-device. **A caught false alarm worth recording**: a first pass at
+this same "unreachable" test showed the stale `MalformedUrl` message after entering a valid URL -
+turned out to be a mistap (the Connect button's y-coordinate shifted once the earlier error text
+was on-screen, so the tap landed above it and never re-triggered validation), not a real bug;
+retested from a clean, error-free state with correct coordinates and got the right result. Also
+hit, fixed, and documented in `android/AGENTS.md`: a local `ktfmtCheck` run via
+`nix develop --command ./gradlew` on `rofl-13` again (second time) falsely reported
+`ktfmtCheckMain NO-SOURCE` while 11 files actually had real formatting violations that CI's
+`Android Lint` caught - fixed via CI's `ktfmt-diff-patch` artifact, not local re-attempts. **Not
+verified**: a full live connect against an actual running Stricknani server + a freshly generated
+PAT (only failure paths were exercised, not the success path, since no reachable test server was
+set up this session). No unit tests added for `OnboardingValidator`'s error-mapping/URL parsing -
+`SettingsRepository` needs Android's `EncryptedSharedPreferences`/`MasterKey` (instrumented test
+territory, not plain JVM unit tests) and nothing else here has enough pure logic yet to be worth
+isolating; revisit once SNA-7 adds more.
 
 ## SNA-7: Offline data layer + sync engine
 
