@@ -711,8 +711,6 @@ render/behave identically to their SNA-16/SNA-18 counterparts, just inside the n
 per-category layout. Pixel 5 not reinstalled this pass - wireless adb was disconnected and didn't
 reconnect within the Home Assistant/Tasker webhook's timeout (same recurring gap as SNA-20/SNA-27).
 
-Status: not started
-
 ## SNA-22: Render Markdown properly (descriptions, notes, steps)
 
 - [x] Project/yarn description, notes, and step description fields are currently rendered as
