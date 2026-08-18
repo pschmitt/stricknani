@@ -85,9 +85,9 @@ constructor(
             credentials ?: throw BackupDecryptionException("Backup is missing credentials.json")
         settingsRepository.save(restoredCredentials.serverUrl, restoredCredentials.apiToken)
         settings?.let { restored ->
-            runCatching { ThemeMode.valueOf(restored.themeMode) }.getOrNull()?.let {
-                appPreferencesRepository.setThemeMode(it)
-            }
+            runCatching { ThemeMode.valueOf(restored.themeMode) }
+                .getOrNull()
+                ?.let { appPreferencesRepository.setThemeMode(it) }
             appPreferencesRepository.setNavbarItems(restored.navbarItems)
         }
     }

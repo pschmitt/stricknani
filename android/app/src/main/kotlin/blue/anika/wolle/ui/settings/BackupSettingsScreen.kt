@@ -67,7 +67,9 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
     val exportLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.CreateDocument("application/octet-stream")
-        ) { uri -> pendingExportUri = uri }
+        ) { uri ->
+            pendingExportUri = uri
+        }
 
     val restoreLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -140,7 +142,9 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                     }
                     SettingsListItem(
                         headlineContent = { Text("Restore from backup") },
-                        supportingContent = { Text("Overwrites the server connection on this device") },
+                        supportingContent = {
+                            Text("Overwrites the server connection on this device")
+                        },
                     )
                     OutlinedButton(
                         onClick = { restoreLauncher.launch(arrayOf("*/*")) },
@@ -177,9 +181,7 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                         },
                         leadingContent = { Icon(Icons.Filled.Folder, contentDescription = null) },
                         trailingContent = {
-                            TextButton(onClick = { folderLauncher.launch(null) }) {
-                                Text("Change")
-                            }
+                            TextButton(onClick = { folderLauncher.launch(null) }) { Text("Change") }
                         },
                     )
                     Text(

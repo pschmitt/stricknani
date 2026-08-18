@@ -125,7 +125,10 @@ constructor(
     private val _backupState = MutableStateFlow<BackupOperationState>(BackupOperationState.Idle)
     val backupState: StateFlow<BackupOperationState> = _backupState.asStateFlow()
 
-    /** Set when [importBackup] hits [BackupPasswordRequiredException], for [retryImportWithPassword]. */
+    /**
+     * Set when [importBackup] hits [BackupPasswordRequiredException], for
+     * [retryImportWithPassword].
+     */
     private var pendingRestoreUri: Uri? = null
 
     val scheduledBackupEnabled: StateFlow<Boolean> =

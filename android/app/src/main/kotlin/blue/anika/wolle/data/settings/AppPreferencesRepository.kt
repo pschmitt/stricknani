@@ -68,8 +68,9 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
 
     val scheduledBackupFrequency =
         dataStore.data.map { prefs ->
-            prefs[KEY_BACKUP_FREQUENCY]?.let { runCatching { BackupFrequency.valueOf(it) }.getOrNull() }
-                ?: BackupFrequency.WEEKLY
+            prefs[KEY_BACKUP_FREQUENCY]?.let {
+                runCatching { BackupFrequency.valueOf(it) }.getOrNull()
+            } ?: BackupFrequency.WEEKLY
         }
 
     suspend fun setScheduledBackupFrequency(frequency: BackupFrequency) {

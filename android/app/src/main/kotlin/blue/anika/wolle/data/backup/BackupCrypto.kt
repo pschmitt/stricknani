@@ -14,8 +14,8 @@ import javax.crypto.spec.SecretKeySpec
  * (syncwich/nyetbox: PBKDF2 210k -> AES-GCM), just with Stricknani's own magic bytes so a backup
  * file is unambiguously attributable to this app.
  *
- * Wire format: `"STB1"` (4 bytes) + flag (1 byte: 0=plain, 1=encrypted) +, only if encrypted,
- * salt (16 bytes) + iv (12 bytes), then the (cipher)text.
+ * Wire format: `"STB1"` (4 bytes) + flag (1 byte: 0=plain, 1=encrypted) +, only if encrypted, salt
+ * (16 bytes) + iv (12 bytes), then the (cipher)text.
  */
 object BackupCrypto {
     private val MAGIC = "STB1".toByteArray(Charsets.US_ASCII)
@@ -34,7 +34,11 @@ object BackupCrypto {
         val salt = ByteArray(SALT_LENGTH_BYTES).also { SecureRandom().nextBytes(it) }
         val iv = ByteArray(IV_LENGTH_BYTES).also { SecureRandom().nextBytes(it) }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, deriveKey(password, salt), GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+        cipher.init(
+            Cipher.ENCRYPT_MODE,
+            deriveKey(password, salt),
+            GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv),
+        )
         return MAGIC + byteArrayOf(FLAG_ENCRYPTED) + salt + iv + cipher.doFinal(payload)
     }
 
@@ -63,7 +67,11 @@ object BackupCrypto {
         val ciphertext = data.copyOfRange(offset, data.size)
         return try {
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.DECRYPT_MODE, deriveKey(password, salt), GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+            cipher.init(
+                Cipher.DECRYPT_MODE,
+                deriveKey(password, salt),
+                GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv),
+            )
             cipher.doFinal(ciphertext)
         } catch (e: Exception) {
             throw BackupDecryptionException("Wrong password or corrupted backup")
@@ -72,7 +80,8 @@ object BackupCrypto {
 
     private fun deriveKey(password: String, salt: ByteArray): SecretKeySpec {
         val spec = PBEKeySpec(password.toCharArray(), salt, PBKDF2_ITERATIONS, KEY_LENGTH_BITS)
-        val keyBytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+        val keyBytes =
+            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
         return SecretKeySpec(keyBytes, "AES")
     }
 }

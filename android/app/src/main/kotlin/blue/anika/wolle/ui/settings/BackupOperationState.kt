@@ -10,6 +10,8 @@ sealed interface BackupOperationState {
 
     data class Error(val message: String) : BackupOperationState
 
-    /** The picked file is password-protected; retry via [SettingsViewModel.retryImportWithPassword]. */
+    /**
+     * The picked file is password-protected; retry via [SettingsViewModel.retryImportWithPassword].
+     */
     data object PasswordRequired : BackupOperationState
 }
