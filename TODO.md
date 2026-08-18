@@ -77,6 +77,7 @@ Execution-oriented backlog for Stricknani.
 | T71 | P2 | done | security | refactor | Tighten CSP to a strict nonce-based policy after removing runtime Tailwind + inline JS (depends on T1/T36; deferred from T58) |
 | T72 | P1 | done | build | bug | `nix flake check`/`nix build` fails: pyproject requires `curl-cffi>=0.15.0` but nixpkgs pins `python3.pkgs.curl-cffi` at 0.12.0 (pythonRuntimeDepsCheckHook rejects it); Docker/uv build is unaffected since it pulls curl-cffi from PyPI |
 | T73 | P1 | done | security | bug | `stricknani/static/js/features/wysiwyg_editor.js` imports TipTap modules directly from `https://esm.sh/...`, violating AGENTS.md's no-CDN-links rule and already unreachable under T71's strict `script-src 'self'` CSP (module load will be blocked); vendor TipTap via `vendir.yml` per AGENTS.md |
+| T74 | P1 | done | api | feat | Add `ApiToken` model + `/user/api-tokens` settings UI, `require_api_token` Bearer-auth dependency, and CSRF exemption for Bearer requests (backend foundation for the Android app; mirrors `android/TODO.md` SNA-1) |
 
 
 ## Done

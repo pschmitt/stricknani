@@ -1,5 +1,7 @@
 """Authentication utilities."""
 
+import hashlib
+import secrets
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
@@ -9,7 +11,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.config import config
 from stricknani.database import AsyncSessionLocal
-from stricknani.models import User
+from stricknani.models import ApiToken, User
+
+# Prefix on generated personal access tokens, purely for readability (so a
+# token is recognizable at a glance, e.g. in logs or a paste) - it carries no
+# security meaning and is included in the hashed value like the rest of the
+# token.
+API_TOKEN_PREFIX = "sna_"
+
+# Only bump `last_used_at` if it's stale by more than this, so a client
+# polling the API frequently doesn't turn every request into a write.
+API_TOKEN_LAST_USED_RESOLUTION = timedelta(seconds=60)
 
 # Minimum password policy (T69): enforced at signup and password-change
 # time. Kept intentionally simple (length + a small common-password
@@ -153,6 +165,63 @@ async def create_user(
     db.add(user)
     await db.commit()
     await db.refresh(user)
+    return user
+
+
+def hash_api_token(raw_token: str) -> str:
+    """Hash a raw API token for storage/lookup.
+
+    A plain SHA-256 digest (not bcrypt) is deliberate here: the token itself
+    is a high-entropy random secret (unlike a user-chosen password), so it
+    doesn't need a slow, salted KDF - and a fast hash keeps every
+    Bearer-authenticated request cheap.
+    """
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+
+def generate_api_token() -> tuple[str, str]:
+    """Generate a new personal access token.
+
+    Returns `(raw_token, token_hash)`. Only `token_hash` should ever be
+    persisted; `raw_token` must be shown to the user once and is not
+    recoverable afterwards.
+    """
+    raw_token = API_TOKEN_PREFIX + secrets.token_urlsafe(32)
+    return raw_token, hash_api_token(raw_token)
+
+
+async def get_user_from_api_token(db: AsyncSession, raw_token: str) -> User | None:
+    """Resolve a raw `Authorization: Bearer <token>` value to its owning user.
+
+    Also opportunistically bumps `last_used_at` on the token and rejects
+    expired or inactive-user tokens.
+    """
+    token_hash = hash_api_token(raw_token)
+    result = await db.execute(select(ApiToken).where(ApiToken.token_hash == token_hash))
+    api_token = result.scalar_one_or_none()
+    if not api_token:
+        return None
+
+    now = datetime.now(UTC)
+
+    expires_at = api_token.expires_at
+    if expires_at is not None:
+        if expires_at.tzinfo is None:  # Handle naive datetime from SQLite
+            expires_at = expires_at.replace(tzinfo=UTC)
+        if expires_at < now:
+            return None
+
+    user = await db.get(User, api_token.user_id)
+    if not user or not user.is_active:
+        return None
+
+    last_used_at = api_token.last_used_at
+    if last_used_at is not None and last_used_at.tzinfo is None:
+        last_used_at = last_used_at.replace(tzinfo=UTC)
+    if last_used_at is None or (now - last_used_at) > API_TOKEN_LAST_USED_RESOLUTION:
+        api_token.last_used_at = now
+        await db.commit()
+
     return user
 
 

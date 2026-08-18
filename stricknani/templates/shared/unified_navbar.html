@@ -270,6 +270,10 @@
                             </div>
                         </div>
                         <div class="space-y-2 px-4 py-4">
+                            <a href="/user/api-tokens" class="btn btn-ghost w-full justify-start">
+                                <span class="mdi mdi-key-chain-variant text-lg"></span>
+                                {{ _('API Tokens') }}
+                            </a>
                             <form action="/auth/logout" method="post">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit" class="btn btn-ghost w-full justify-start text-error">

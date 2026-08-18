@@ -8,6 +8,7 @@ from fastapi import (
     Cookie,
     Depends,
     Form,
+    Header,
     HTTPException,
     Request,
     Response,
@@ -26,6 +27,7 @@ from stricknani.utils.auth import (
     create_user,
     decode_access_token,
     get_user_by_email,
+    get_user_from_api_token,
     validate_password_policy,
 )
 from stricknani.utils.i18n import gettext
@@ -95,6 +97,36 @@ async def require_admin(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
+        )
+    return current_user
+
+
+async def get_current_user_from_api_token(
+    authorization: Annotated[str | None, Header()] = None,
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Get the current user from a `Authorization: Bearer <token>` header.
+
+    Independent of the cookie-session `get_current_user` above - used by the
+    non-browser JSON API (`stricknani/routes/api/`) rather than the
+    HTML/HTMX routes.
+    """
+    if not authorization:
+        return None
+    scheme, _, raw_token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not raw_token:
+        return None
+    return await get_user_from_api_token(db, raw_token)
+
+
+async def require_api_token(
+    current_user: User | None = Depends(get_current_user_from_api_token),
+) -> User:
+    """Require a valid API token, for the non-browser JSON API."""
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API token",
         )
     return current_user
 

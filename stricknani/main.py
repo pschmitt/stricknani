@@ -64,8 +64,16 @@ def get_csrf_config() -> list[tuple[str, Any]]:
 async def csrf_validation_dependency(
     request: Request, csrf_protect: FlexibleCsrfProtect = Depends()
 ) -> None:
-    """Global CSRF validation dependency."""
+    """Global CSRF validation dependency.
+
+    Bearer-authenticated requests (the non-browser JSON API) are exempt:
+    CSRF protects *cookie*-authenticated state, and a cross-site page can't
+    make a browser attach a custom `Authorization` header to a request, so
+    there's nothing for a CSRF token to protect there.
+    """
     if config.TESTING:
+        return
+    if request.headers.get("Authorization", "").lower().startswith("bearer "):
         return
     if request.method in {"POST", "PUT", "DELETE", "PATCH"}:
         try:

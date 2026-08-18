@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% import "macros/buttons.html" as buttons %}
+{% import "macros/dialogs.html" as dialogs %}
+
+{% block title %}{{ _('API Tokens') }} - Stricknani{% endblock %}
+
+{% set page_title %}{{ _('API Tokens') }}{% endset %}
+
+{% block navbar %}
+{% include "shared/unified_navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col gap-8">
+        <div>
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <span class="mdi mdi-key-chain-variant text-primary"></span>
+                {{ _('API Tokens') }}
+            </h1>
+            <p class="opacity-70 mt-2">
+                {{ _('Personal access tokens let apps like the Stricknani Android app sign in without your password. Anyone with a token can access your account through the API, so treat it like a password.') }}
+            </p>
+        </div>
+
+        {% if new_token %}
+        <div class="alert alert-success flex-col items-stretch gap-3">
+            <div class="flex items-center gap-2">
+                <span class="mdi mdi-check-circle text-2xl"></span>
+                <h3 class="font-bold">{{ _('Token created') }}</h3>
+            </div>
+            <p class="text-sm">
+                {{ _("Copy this token now - for your security, it won't be shown again.") }}
+            </p>
+            <div class="join w-full">
+                <input
+                    type="text"
+                    readonly
+                    value="{{ new_token }}"
+                    id="new-api-token-value"
+                    class="input input-bordered join-item w-full font-mono text-sm"
+                    onclick="this.select()"
+                >
+                <button
+                    type="button"
+                    class="btn btn-neutral join-item gap-2"
+                    data-call="copyToClipboard"
+                    data-call-args='["$value:#new-api-token-value","$this"]'
+                >
+                    <span class="mdi mdi-content-copy"></span>
+                    {{ _('Copy') }}
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card bg-base-200 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-lg">{{ _('New token') }}</h2>
+                <form method="post" action="/user/api-tokens" class="flex flex-col sm:flex-row gap-3 mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input
+                        type="text"
+                        name="name"
+                        maxlength="255"
+                        placeholder="{{ _('Stricknani Android') }}"
+                        class="input input-bordered flex-1"
+                    >
+                    {{ buttons.primary(_('Create token'), type='submit', icon='mdi-plus') }}
+                </form>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-bold mb-3">{{ _('Active tokens') }}</h2>
+            {% if tokens %}
+            <div class="space-y-3">
+                {% for token in tokens %}
+                <div class="card bg-base-200">
+                    <div class="card-body flex-row items-center justify-between gap-4 py-4">
+                        <div class="min-w-0">
+                            <p class="font-semibold truncate">{{ token.name }}</p>
+                            <p class="text-xs opacity-60">
+                                {{ _('Created') }} {{ token.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% if token.last_used_at %}
+                                &middot; {{ _('Last used') }} {{ token.last_used_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                &middot; {{ _('Never used') }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        {{ buttons.danger(_('Revoke'), type='button', icon='mdi-delete-outline', class='btn-sm',
+                            attrs='data-action="open-dialog" data-dialog-id="deleteToken' ~ token.id ~ 'Dialog"') }}
+                    </div>
+                </div>
+
+                {% call dialogs.modal('deleteToken' ~ token.id ~ 'Dialog', title=_('Revoke token')) %}
+                <p class="mb-6">
+                    {{ _('Revoke') }} <strong class="text-base-content">{{ token.name }}</strong>?
+                    {{ _('Any app using this token will stop working immediately.') }}
+                </p>
+                <div class="modal-action">
+                    {{ dialogs.dialog_cancel(_('Cancel')) }}
+                    <form method="post" action="/user/api-tokens/{{ token.id }}/delete">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        {{ dialogs.dialog_danger(_('Revoke'), type='submit') }}
+                    </form>
+                </div>
+                {% endcall %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 opacity-60">
+                <span class="mdi mdi-key-outline text-4xl"></span>
+                <p class="mt-2">{{ _('No API tokens yet.') }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

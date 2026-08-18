@@ -83,3 +83,5 @@ Use this file as the operational source of truth for working in Stricknani.
 - Work queue: `TODO.md`
 - User/developer runbook: `README.md`
 - Product spec + implementation snapshot: `docs/spec-and-implementation.md`
+- Android app (offline-first native client, `android/`): its own `AGENTS.md`/`TODO.md`
+  (`SNA-N` prefix) once scaffolded - see `android/TODO.md` for the current plan
