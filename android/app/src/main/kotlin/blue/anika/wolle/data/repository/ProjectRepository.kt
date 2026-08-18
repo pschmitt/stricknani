@@ -188,8 +188,10 @@ private fun ProjectWriteRequest.toPlaceholderEntity(tempId: Int, json: Json): Pr
         .toEntity(json)
 }
 
-/** Applies edited fields onto the cached detail, preserving what the form doesn't touch (steps
- * /images/attachments/favorite state/the read-only `yarn` free-text field). */
+/**
+ * Applies edited fields onto the cached detail, preserving what the form doesn't touch (steps
+ * /images/attachments/favorite state/the read-only `yarn` free-text field).
+ */
 private fun ProjectWriteRequest.applyTo(existing: ProjectEntity, json: Json): ProjectEntity {
     val current = json.decodeFromString<ProjectDto>(existing.detailJson)
     val updated =

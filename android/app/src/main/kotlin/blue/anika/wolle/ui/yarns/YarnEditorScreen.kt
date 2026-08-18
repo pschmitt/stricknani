@@ -53,12 +53,8 @@ fun YarnEditorScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(saved) {
-        if (saved) onSaved()
-    }
-    LaunchedEffect(deleted) {
-        if (deleted) onDeleted()
-    }
+    LaunchedEffect(saved) { if (saved) onSaved() }
+    LaunchedEffect(deleted) { if (deleted) onDeleted() }
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -137,7 +133,9 @@ fun YarnEditorScreen(
             item {
                 OutlinedTextField(
                     value = form.fiberContent,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(fiberContent = value) } },
+                    onValueChange = { value ->
+                        viewModel.updateForm { it.copy(fiberContent = value) }
+                    },
                     label = { Text("Fiber content") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -170,7 +168,9 @@ fun YarnEditorScreen(
                     OutlinedTextField(
                         value = form.weightGrams,
                         onValueChange = { value ->
-                            viewModel.updateForm { it.copy(weightGrams = value.filter(Char::isDigit)) }
+                            viewModel.updateForm {
+                                it.copy(weightGrams = value.filter(Char::isDigit))
+                            }
                         },
                         label = { Text("Weight (g)") },
                         modifier = Modifier.weight(1f),
@@ -180,7 +180,9 @@ fun YarnEditorScreen(
                     OutlinedTextField(
                         value = form.lengthMeters,
                         onValueChange = { value ->
-                            viewModel.updateForm { it.copy(lengthMeters = value.filter(Char::isDigit)) }
+                            viewModel.updateForm {
+                                it.copy(lengthMeters = value.filter(Char::isDigit))
+                            }
                         },
                         label = { Text("Length (m)") },
                         modifier = Modifier.weight(1f),
@@ -201,7 +203,9 @@ fun YarnEditorScreen(
             item {
                 OutlinedTextField(
                     value = form.description,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(description = value) } },
+                    onValueChange = { value ->
+                        viewModel.updateForm { it.copy(description = value) }
+                    },
                     label = { Text("Description") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,

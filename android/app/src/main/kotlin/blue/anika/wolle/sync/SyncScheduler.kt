@@ -76,8 +76,8 @@ class SyncScheduler @Inject constructor(private val workManager: WorkManager) {
 
     /**
      * Queues an immediate replay-then-sync pass without making the caller wait for it - replay
-     * first so a just-made local edit reaches the server before the resulting sync pulls fresh
-     * data back down. Called right after every `ProjectRepository`/`YarnRepository` write.
+     * first so a just-made local edit reaches the server before the resulting sync pulls fresh data
+     * back down. Called right after every `ProjectRepository`/`YarnRepository` write.
      */
     fun replayThenSyncNow() {
         val replayRequest =

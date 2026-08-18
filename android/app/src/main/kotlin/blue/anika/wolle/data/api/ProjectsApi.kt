@@ -40,7 +40,8 @@ interface ProjectsApi {
         @Body request: ProjectWriteRequest,
     ): ProjectDto
 
-    @DELETE("api/v1/projects/{projectId}") suspend fun deleteProject(@Path("projectId") projectId: Int)
+    @DELETE("api/v1/projects/{projectId}")
+    suspend fun deleteProject(@Path("projectId") projectId: Int)
 
     @POST("api/v1/projects/{projectId}/favorite")
     suspend fun favoriteProject(@Path("projectId") projectId: Int): ProjectDto

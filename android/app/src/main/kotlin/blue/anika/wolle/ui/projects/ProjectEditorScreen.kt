@@ -1,7 +1,6 @@
 package blue.anika.wolle.ui.projects
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,12 +55,8 @@ fun ProjectEditorScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(saved) {
-        if (saved) onSaved()
-    }
-    LaunchedEffect(deleted) {
-        if (deleted) onDeleted()
-    }
+    LaunchedEffect(saved) { if (saved) onSaved() }
+    LaunchedEffect(deleted) { if (deleted) onDeleted() }
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -125,7 +120,9 @@ fun ProjectEditorScreen(
                         categories.forEach { category ->
                             FilterChip(
                                 selected = form.category == category.name,
-                                onClick = { viewModel.updateForm { it.copy(category = category.name) } },
+                                onClick = {
+                                    viewModel.updateForm { it.copy(category = category.name) }
+                                },
                                 label = { Text(category.name) },
                             )
                         }
@@ -144,7 +141,9 @@ fun ProjectEditorScreen(
             item {
                 OutlinedTextField(
                     value = form.stitchSample,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(stitchSample = value) } },
+                    onValueChange = { value ->
+                        viewModel.updateForm { it.copy(stitchSample = value) }
+                    },
                     label = { Text("Stitch sample") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -153,7 +152,9 @@ fun ProjectEditorScreen(
             item {
                 OutlinedTextField(
                     value = form.otherMaterials,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(otherMaterials = value) } },
+                    onValueChange = { value ->
+                        viewModel.updateForm { it.copy(otherMaterials = value) }
+                    },
                     label = { Text("Other materials") },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -179,7 +180,9 @@ fun ProjectEditorScreen(
             item {
                 OutlinedTextField(
                     value = form.description,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(description = value) } },
+                    onValueChange = { value ->
+                        viewModel.updateForm { it.copy(description = value) }
+                    },
                     label = { Text("Description") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,

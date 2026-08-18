@@ -26,9 +26,9 @@ import timber.log.Timber
  * having replayed first to learn the real server id.
  *
  * A replay failure (e.g. the row was deleted server-side in the meantime, or the device is still
- * offline) leaves the mutation queued with its error message recorded (`lastErrorMessage`,
- * surfaced as a conflict/pending-changes indicator by the UI) rather than silently dropping the
- * local edit - it retries on the next pass.
+ * offline) leaves the mutation queued with its error message recorded (`lastErrorMessage`, surfaced
+ * as a conflict/pending-changes indicator by the UI) rather than silently dropping the local edit -
+ * it retries on the next pass.
  */
 @HiltWorker
 class WriteReplayWorker
@@ -74,7 +74,11 @@ constructor(
             MutationOperation.CREATE -> {
                 val request = json.decodeFromString<ProjectWriteRequest>(mutation.payloadJson!!)
                 val realId = projectRepository.replayCreate(mutation.localId, request)
-                pendingMutationDao.reassignLocalId(MutationEntityType.PROJECT, mutation.localId, realId)
+                pendingMutationDao.reassignLocalId(
+                    MutationEntityType.PROJECT,
+                    mutation.localId,
+                    realId,
+                )
             }
             MutationOperation.UPDATE -> {
                 val request = json.decodeFromString<ProjectWriteRequest>(mutation.payloadJson!!)
@@ -89,7 +93,11 @@ constructor(
             MutationOperation.CREATE -> {
                 val request = json.decodeFromString<YarnWriteRequest>(mutation.payloadJson!!)
                 val realId = yarnRepository.replayCreate(mutation.localId, request)
-                pendingMutationDao.reassignLocalId(MutationEntityType.YARN, mutation.localId, realId)
+                pendingMutationDao.reassignLocalId(
+                    MutationEntityType.YARN,
+                    mutation.localId,
+                    realId,
+                )
             }
             MutationOperation.UPDATE -> {
                 val request = json.decodeFromString<YarnWriteRequest>(mutation.payloadJson!!)

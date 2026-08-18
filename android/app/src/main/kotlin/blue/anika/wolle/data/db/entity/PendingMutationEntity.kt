@@ -20,8 +20,8 @@ object MutationOperation {
  * One queued offline write, replayed by `sync/WriteReplayWorker.kt` once connectivity returns.
  * [localId] is the id the row is currently known by in Room: a negative client-generated temp id
  * for a still-unsynced [MutationOperation.CREATE] (see `ProjectRepository.createProject`/
- * `YarnRepository.createYarn`), or the real server id otherwise. [payloadJson] is the write
- * request DTO (`ProjectWriteRequest`/`YarnWriteRequest`), verbatim JSON - `null` for a delete.
+ * `YarnRepository.createYarn`), or the real server id otherwise. [payloadJson] is the write request
+ * DTO (`ProjectWriteRequest`/`YarnWriteRequest`), verbatim JSON - `null` for a delete.
  */
 @Entity(tableName = "pending_mutations")
 data class PendingMutationEntity(

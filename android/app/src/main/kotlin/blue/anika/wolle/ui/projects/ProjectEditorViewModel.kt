@@ -68,12 +68,20 @@ constructor(
     val categories: StateFlow<List<CategoryEntity>> =
         categoryRepository
             .observeAll()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     val yarns: StateFlow<List<YarnEntity>> =
         yarnRepository
             .observeAll()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     init {
         val id = route.projectId

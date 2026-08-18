@@ -13,8 +13,8 @@ import retrofit2.http.Query
 
 /**
  * `stricknani/routes/api/yarns.py`. Read (list/detail), favorite toggle (see `ProjectsApi`'s kdoc
- * for why it doesn't wait on the offline write queue), and create/update/delete (queued through
- * the write queue - SNA-8). Photo upload is a later follow-up (multipart, deferred).
+ * for why it doesn't wait on the offline write queue), and create/update/delete (queued through the
+ * write queue - SNA-8). Photo upload is a later follow-up (multipart, deferred).
  */
 interface YarnsApi {
     @GET("api/v1/yarns")
