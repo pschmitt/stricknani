@@ -47,7 +47,6 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
   without data loss; needs an explicit conflict-handling strategy, not just last-write-wins by
   accident
 - SNA-34: Developer mode easter egg + an "open source libraries used" screen, ported from syncwich
-- SNA-35: In-app crash handler screen with a copyable stack trace, ported from nyetbox/syncwich
 - SNA-36: Performance pass - scrolling smoothness and sync throughput
 - SNA-37: German (DE) translations for the Android app's UI strings, plus an in-app language
   setting (default: device locale, fallback English) rather than relying on system locale alone
@@ -1207,5 +1206,28 @@ confirmed live on the Zenfone 10 that the FAB shows "New yarn" (icon+label) at t
 and collapses to icon-only once scrolled down, then re-expands back to icon+label on returning to
 the top - both directions work. Test yarns left in place on the isolated test account (harmless,
 same account SNA-28 already accumulates test data on).
+
+## SNA-35: In-app crash handler with a copyable stack trace
+
+- [x] Ported nyetbox's mechanism near-verbatim (no `CrashActivity`, no manifest changes, no Intent
+      extras): `crash/CrashReport.kt` installs a `Thread.UncaughtExceptionHandler` in
+      `StricknaniApp.onCreate()` (first line) that formats the throwable (build info, device info,
+      thread name, stack trace) and persists it via a **synchronous** `SharedPreferences` commit
+      (`edit(commit = true)`, since the process may die before an async `apply()` write lands) -
+      then delegates to whatever handler was previously registered so normal fatal-crash behavior
+      (system dialog, process death) is unaffected. `MainActivity.onCreate()` reads and clears the
+      pending report on the *next* launch and shows `ui/common/CrashReportDialog.kt` (an
+      `AlertDialog` with a selectable monospace stack trace, "Copy report", and "Restart app" -
+      relaunches via `packageManager.getLaunchIntentForPackage` + `FLAG_ACTIVITY_NEW_TASK or
+      FLAG_ACTIVITY_CLEAR_TASK`, then `finishAffinity()`). Redaction regex adapted to Stricknani's
+      own token format (`sna_...` PATs) rather than nyetbox's NetBox token pattern.
+      `CrashReportTest.kt` covers both the formatter's redaction and the handler's
+      save-then-delegate behavior, adapted from nyetbox's own test.
+
+Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`, new unit tests pass), then confirmed for real on the
+Zenfone 10 by forcing an actual crash (`adb shell am crash blue.anika.wolle.debug "..."`) and
+relaunching: the dialog appeared with the full report (build/device/thread/stack trace, tokens
+redacted), Copy worked, and Restart app cleanly relaunched straight to Home with no residual state.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

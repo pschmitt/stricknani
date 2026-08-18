@@ -3,6 +3,7 @@ package blue.anika.wolle
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import blue.anika.wolle.crash.CrashReportInstaller
 import blue.anika.wolle.di.MediaClient
 import blue.anika.wolle.sync.SyncNotifier
 import blue.anika.wolle.sync.SyncScheduler
@@ -47,6 +48,7 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
 
     override fun onCreate() {
         super.onCreate()
+        CrashReportInstaller.install(this)
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
