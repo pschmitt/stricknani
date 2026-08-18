@@ -19,6 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
@@ -26,6 +27,8 @@ import blue.anika.wolle.ui.projects.ProjectDetailScreen
 import blue.anika.wolle.ui.projects.ProjectEditorScreen
 import blue.anika.wolle.ui.projects.ProjectsListScreen
 import blue.anika.wolle.ui.search.SearchScreen
+import blue.anika.wolle.ui.settings.SettingsCategory
+import blue.anika.wolle.ui.settings.SettingsCategoryScreen
 import blue.anika.wolle.ui.settings.SettingsScreen
 import blue.anika.wolle.ui.yarns.YarnDetailScreen
 import blue.anika.wolle.ui.yarns.YarnEditorScreen
@@ -124,7 +127,20 @@ fun StricknaniNavHost(
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                 )
             }
-            composable<Route.Settings> { SettingsScreen() }
+            composable<Route.Settings> {
+                SettingsScreen(
+                    onCategoryClick = { category ->
+                        navController.navigate(Route.SettingsCategoryRoute(category.name))
+                    }
+                )
+            }
+            composable<Route.SettingsCategoryRoute> { backStackEntry ->
+                val route: Route.SettingsCategoryRoute = backStackEntry.toRoute()
+                SettingsCategoryScreen(
+                    category = SettingsCategory.valueOf(route.categoryName),
+                    onBack = { navController.navigateUp() },
+                )
+            }
             composable<Route.ProjectDetail> {
                 ProjectDetailScreen(
                     onBack = { navController.navigateUp() },

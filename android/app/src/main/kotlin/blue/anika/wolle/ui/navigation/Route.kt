@@ -35,6 +35,12 @@ sealed interface Route {
 
     /** Gauge calculator (SNA-11) - pure math, reachable from `HomeScreen`'s top bar. */
     @Serializable data object Gauge : Route
+
+    /**
+     * A Settings sub-screen (SNA-21). [categoryName] is `SettingsCategory.name` (a plain `String`
+     * rather than the enum itself, to sidestep any Navigation Compose enum-as-route-arg quirks).
+     */
+    @Serializable data class SettingsCategoryRoute(val categoryName: String) : Route
 }
 
 /** The five bottom-navigation destinations, in display order (see android/TODO.md SNA-5/SNA-9). */

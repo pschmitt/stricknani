@@ -686,13 +686,30 @@ functional gap, just a stale label on that one device until its next reconnect +
 
 ## SNA-21: Redesign the Settings screen to match syncwich's (separate screens + cards)
 
-- [ ] SNA-18's Settings screen is currently one long scrolling list (Account/Appearance
-      /Navigation/Sync/About sections stacked in a single `LazyColumn`). User feedback
-      (2026-08-18): redesign it to match syncwich's Settings UX - a hub screen of cards, each
-      navigating to its own dedicated sub-screen, rather than one flat list
-- [ ] Survey `syncwich`'s actual `SettingsScreen.kt`/`SettingsCategoryContent.kt`/navigation
-      structure first (referenced in this repo's sibling-app conventions) before redesigning, to
-      match its actual pattern rather than guessing
+- [x] Surveyed syncwich's actual `SettingsScreen.kt`/`SettingsCategory.kt` pattern first: a hub
+      screen (`SettingsGroupCard`/`SettingsSingleItemCard` of category rows) navigating to a
+      dedicated full screen per category (its own `Scaffold`/`TopAppBar`/back arrow), one shared
+      `SettingsViewModel` instance passed down from a `SettingsCategoryScreen` dispatcher - not
+      guessed
+- [x] Replaced SNA-18's single flat `LazyColumn` with exactly that shape: `SettingsCategory`
+      enum (Account/Appearance/Navigation/Sync/About - fewer categories than syncwich's, matching
+      what this app actually has), a new `Route.SettingsCategoryRoute(categoryName: String)` nav
+      route (the category passed as its `.name` string rather than the enum directly, to avoid
+      any Navigation Compose enum-as-route-arg edge cases), `SettingsCategoryScreen` dispatching
+      to five new dedicated screens (`AccountSettingsScreen`/`AppearanceSettingsScreen`
+      /`NavigationSettingsScreen`/`SyncSettingsScreen`/`AboutSettingsScreen`), and shared
+      `SettingsGroupCard`/`SettingsSingleItemCard`/`SettingsListItem` building blocks
+      (`SettingsComponents.kt`) ported from syncwich's
+- [x] `SettingsScreen` (the hub) no longer takes a `SettingsViewModel` itself - it only needs the
+      list of categories to render as rows, no live data
+
+Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean), then confirmed for
+real on the Zenfone 10 and Mi Pad 4 against the live `ai@anika.blue` account: the hub renders all
+five category cards correctly, and both Appearance and Navigation sub-screens were opened and
+render/behave identically to their SNA-16/SNA-18 counterparts, just inside the new card-based
+per-category layout. Pixel 5 not reinstalled this pass - wireless adb was disconnected and didn't
+reconnect within the Home Assistant/Tasker webhook's timeout (same recurring gap as SNA-20/SNA-27).
 
 Status: not started
 
