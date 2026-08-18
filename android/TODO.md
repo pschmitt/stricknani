@@ -281,7 +281,10 @@ isolating; revisit once SNA-7 adds more.
 - [ ] Coil3 image loading sharing the authenticated OkHttp client (so image requests carry the
       Bearer token), disk-cached, not duplicated into Room
 
-Status: not started
+Status: in progress (2026-08-18) - starting with Retrofit DTOs/API interfaces + Room
+entities/DAOs, then repositories + SyncWorker/SyncScheduler + Coil wiring. Scoped to the *read*
+path (sync pulls data in) per this task's own checklist - write endpoints/UI are SNA-8 (offline
+write queue) and SNA-10 (create/edit screens), not duplicated here.
 
 ## SNA-8: Offline write queue
 
