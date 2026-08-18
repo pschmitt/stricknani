@@ -13,9 +13,11 @@ data class YarnPhotoDto(
     @SerialName("is_primary") val isPrimary: Boolean,
 )
 
-/** `stricknani/routes/api/schemas.py`'s `YarnResponse`. All timestamp fields are the raw wire
- * string (may or may not carry a UTC offset depending on the backend's datetime - see
- * `DateTimeUtils`) - parsed only where actually needed, not at the DTO layer. */
+/**
+ * `stricknani/routes/api/schemas.py`'s `YarnResponse`. All timestamp fields are the raw wire string
+ * (may or may not carry a UTC offset depending on the backend's datetime - see `DateTimeUtils`) -
+ * parsed only where actually needed, not at the DTO layer.
+ */
 @Serializable
 data class YarnDto(
     val id: Int,

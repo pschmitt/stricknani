@@ -44,8 +44,8 @@ constructor(
 }
 
 /**
- * `YarnResponse` (unlike `YarnListItemResponse`) has no server-computed `preview_url` - the
- * primary photo's thumbnail is the client-side equivalent, falling back to the first photo.
+ * `YarnResponse` (unlike `YarnListItemResponse`) has no server-computed `preview_url` - the primary
+ * photo's thumbnail is the client-side equivalent, falling back to the first photo.
  */
 private fun YarnDto.toEntity(json: Json): YarnEntity =
     YarnEntity(

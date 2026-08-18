@@ -8,13 +8,13 @@ import blue.anika.wolle.data.api.MetaApi
 import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Qualifier
 import javax.inject.Singleton
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -33,8 +33,8 @@ import retrofit2.Retrofit
  * Client used for media (image) loading only: [AuthInterceptor] but deliberately NOT
  * [DynamicBaseUrlInterceptor]. Stricknani's media URLs (`/media/...`) are already relative paths
  * the app resolves against the configured server base URL itself before handing them to Coil -
- * running them back through the rewrite interceptor would double-prefix the path on
- * subpath-hosted instances. Mirrors nyetbox's `@DownloadClient`.
+ * running them back through the rewrite interceptor would double-prefix the path on subpath-hosted
+ * instances. Mirrors nyetbox's `@DownloadClient`.
  */
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class MediaClient
 
@@ -57,7 +57,10 @@ object NetworkModule {
                 else HttpLoggingInterceptor.Level.NONE
         }
 
-    /** The app's main HTTP client: every request is rewritten to the configured server and carries the stored PAT. */
+    /**
+     * The app's main HTTP client: every request is rewritten to the configured server and carries
+     * the stored PAT.
+     */
     @Provides
     @Singleton
     fun provideOkHttpClient(
@@ -98,11 +101,14 @@ object NetworkModule {
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
 
-    @Provides @Singleton fun provideMetaApi(retrofit: Retrofit): MetaApi = retrofit.create(MetaApi::class.java)
+    @Provides
+    @Singleton
+    fun provideMetaApi(retrofit: Retrofit): MetaApi = retrofit.create(MetaApi::class.java)
 
     @Provides
     @Singleton
-    fun provideCategoriesApi(retrofit: Retrofit): CategoriesApi = retrofit.create(CategoriesApi::class.java)
+    fun provideCategoriesApi(retrofit: Retrofit): CategoriesApi =
+        retrofit.create(CategoriesApi::class.java)
 
     @Provides
     @Singleton
@@ -110,7 +116,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideProjectsApi(retrofit: Retrofit): ProjectsApi = retrofit.create(ProjectsApi::class.java)
+    fun provideProjectsApi(retrofit: Retrofit): ProjectsApi =
+        retrofit.create(ProjectsApi::class.java)
 
-    @Provides @Singleton fun provideSyncApi(retrofit: Retrofit): SyncApi = retrofit.create(SyncApi::class.java)
+    @Provides
+    @Singleton
+    fun provideSyncApi(retrofit: Retrofit): SyncApi = retrofit.create(SyncApi::class.java)
 }

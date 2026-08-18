@@ -7,9 +7,9 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 /**
- * `stricknani/routes/api/sync.py`. `since` is an ISO8601 timestamp string (the previous
- * response's `serverTime`, passed through verbatim - never reformatted client-side) or `null` for
- * a first/full sync.
+ * `stricknani/routes/api/sync.py`. `since` is an ISO8601 timestamp string (the previous response's
+ * `serverTime`, passed through verbatim - never reformatted client-side) or `null` for a first/full
+ * sync.
  */
 interface SyncApi {
     @GET("api/v1/sync/projects")

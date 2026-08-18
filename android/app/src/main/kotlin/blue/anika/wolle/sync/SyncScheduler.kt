@@ -23,7 +23,11 @@ class SyncScheduler @Inject constructor(private val workManager: WorkManager) {
         val request =
             PeriodicWorkRequestBuilder<SyncWorker>(PERIODIC_INTERVAL_HOURS, TimeUnit.HOURS)
                 .setConstraints(constraints)
-                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_DELAY_MINUTES, TimeUnit.MINUTES)
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    BACKOFF_DELAY_MINUTES,
+                    TimeUnit.MINUTES,
+                )
                 .build()
         workManager.enqueueUniquePeriodicWork(
             PERIODIC_WORK_NAME,
@@ -37,7 +41,11 @@ class SyncScheduler @Inject constructor(private val workManager: WorkManager) {
         val request =
             OneTimeWorkRequestBuilder<SyncWorker>()
                 .setConstraints(constraints)
-                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_DELAY_MINUTES, TimeUnit.MINUTES)
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    BACKOFF_DELAY_MINUTES,
+                    TimeUnit.MINUTES,
+                )
                 .build()
         workManager.enqueueUniqueWork(ONE_OFF_WORK_NAME, ExistingWorkPolicy.REPLACE, request)
     }

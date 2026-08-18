@@ -19,8 +19,8 @@ constructor(private val settingsRepository: SettingsRepository, private val data
     /**
      * Wipes credentials, which flips `SettingsRepository.isConfigured` to false - `MainActivity`
      * observes that and swaps to the Onboarding-rooted nav graph, so no navigation call is needed
-     * here. The Room cache is a rebuildable server-side mirror (not user data), so it's cleared
-     * too rather than left to leak the previous account's cached projects/yarns into a fresh sign-in.
+     * here. The Room cache is a rebuildable server-side mirror (not user data), so it's cleared too
+     * rather than left to leak the previous account's cached projects/yarns into a fresh sign-in.
      */
     fun signOut() {
         settingsRepository.signOut()

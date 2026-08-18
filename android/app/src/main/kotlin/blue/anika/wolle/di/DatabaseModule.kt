@@ -33,6 +33,5 @@ object DatabaseModule {
 
     @Provides fun provideCategoryDao(database: AppDatabase): CategoryDao = database.categoryDao()
 
-    @Provides
-    fun provideSyncStateDao(database: AppDatabase): SyncStateDao = database.syncStateDao()
+    @Provides fun provideSyncStateDao(database: AppDatabase): SyncStateDao = database.syncStateDao()
 }

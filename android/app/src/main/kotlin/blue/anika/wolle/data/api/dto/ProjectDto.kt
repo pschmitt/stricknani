@@ -44,8 +44,10 @@ data class AttachmentDto(
     val url: String,
 )
 
-/** `stricknani/routes/api/schemas.py`'s `ProjectResponse`. Timestamp fields are the raw wire
- * string - see `YarnDto`'s kdoc for why. */
+/**
+ * `stricknani/routes/api/schemas.py`'s `ProjectResponse`. Timestamp fields are the raw wire
+ * string - see `YarnDto`'s kdoc for why.
+ */
 @Serializable
 data class ProjectDto(
     val id: Int,
