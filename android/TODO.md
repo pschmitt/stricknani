@@ -43,9 +43,6 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 - SNA-30: Redesign the Project detail view with cards, more readable/modern layout; linked-yarn
   rows should show the yarn's icon/primary photo, not bare text
-- SNA-31: Move per-item actions (edit, favorite, etc.) into an overflow menu
-- SNA-32: "New X" FAB label collapses to icon-only while scrolled (matches syncwich), only full
-  width at the top of the list
 - SNA-33: Harden offline sync - deletes/edits from both sides (device and server) need to resolve
   without data loss; needs an explicit conflict-handling strategy, not just last-write-wins by
   accident
@@ -1171,5 +1168,44 @@ against production (a real project with yarn ids 8/9/10 and step ids 8-17) and c
 Zenfone 10 with the fixed build: the project detail screen renders both sections correctly and
 survives repeated aggressive fling-scrolls in both directions with no crash and no exception in
 logcat. Deployed to Zenfone 10, Mi Pad 4, and Pixel 5.
+
+## SNA-31: Move per-item actions into an overflow menu
+
+- [x] `ProjectDetailScreen`'s and `YarnDetailScreen`'s `TopAppBar` each had three always-visible
+      `IconButton`s (Share, Edit, Favorite). Replaced with a single `MoreVert` icon that opens a
+      `DropdownMenu` with `DropdownMenuItem`s for Favorite/Unfavorite, Edit, and Share (in that
+      order - favorite toggle first since it's the single most common action). Researched first
+      whether syncwich keeps Favorite pinned outside the overflow menu for exactly this reason, but
+      the user explicitly asked for "edit, favorite etc" to move into the menu, so all three moved
+      together rather than special-casing favorite. Noted but out of scope: neither screen (nor
+      their view models) has a delete action anywhere yet - a real gap, but a separate concern from
+      "move existing actions into a menu".
+
+Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`) and confirmed for real on the Zenfone 10: the
+project detail `TopAppBar` now shows just a back arrow and a 3-dot menu; tapping it opens
+Favorite/Edit/Share as expected. Deployed to Zenfone 10 and Mi Pad 4 (Pixel 5 skipped this pass -
+the user was actively using it for an interactive Termux/Claude session at the time, confirmed via
+`dumpsys activity activities`, so it was left untouched rather than force-stopping their
+foreground app).
+
+## SNA-32: "New X" FAB collapses to icon-only while scrolled
+
+- [x] Ported syncwich's exact one-line pattern rather than a custom `derivedStateOf`/nested-scroll
+      implementation: `ExtendedFloatingActionButton`'s built-in `expanded: Boolean` param wired
+      directly to `!listState.canScrollBackward`, where `listState` is the same
+      `rememberLazyListState()` passed to the screen's `LazyColumn`. `canScrollBackward` is already
+      a reactive `State<Boolean>` Compose reads on every scroll frame, so this needed no extra
+      state plumbing - just hoisting a `LazyListState` above the `Scaffold` in both
+      `YarnsListScreen` and `ProjectsListScreen` (it didn't exist there before; the `LazyColumn` was
+      using an implicit unremembered state).
+
+Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`). The `ai@anika.blue` test account only had a handful
+of yarns, not enough to scroll, so created 17 more via the API to get real scrollable content;
+confirmed live on the Zenfone 10 that the FAB shows "New yarn" (icon+label) at the top of the list
+and collapses to icon-only once scrolled down, then re-expands back to icon+label on returning to
+the top - both directions work. Test yarns left in place on the isolated test account (harmless,
+same account SNA-28 already accumulates test data on).
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

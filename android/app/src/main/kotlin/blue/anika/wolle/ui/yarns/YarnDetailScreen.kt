@@ -23,9 +23,12 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -90,23 +93,52 @@ fun YarnDetailScreen(
                 actions = {
                     if (state is YarnDetailUiState.Loaded) {
                         val context = LocalContext.current
-                        IconButton(
-                            onClick = { viewModel.shareUrl()?.let { url -> context.shareUrl(url) } }
+                        var menuExpanded by remember { mutableStateOf(false) }
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = "More actions")
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
                         ) {
-                            Icon(Icons.Filled.Share, contentDescription = "Share yarn")
-                        }
-                        IconButton(onClick = { onEditClick(state.entity.id) }) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Edit yarn")
-                        }
-                        IconButton(onClick = viewModel::toggleFavorite) {
-                            Icon(
-                                imageVector =
-                                    if (state.entity.isFavorite) Icons.Filled.Favorite
-                                    else Icons.Filled.FavoriteBorder,
-                                contentDescription = "Toggle favorite",
-                                tint =
-                                    if (state.entity.isFavorite) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (state.entity.isFavorite) "Unfavorite" else "Favorite"
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector =
+                                            if (state.entity.isFavorite) Icons.Filled.Favorite
+                                            else Icons.Filled.FavoriteBorder,
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    viewModel.toggleFavorite()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Edit") },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Edit, contentDescription = null)
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onEditClick(state.entity.id)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Share") },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Share, contentDescription = null)
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    viewModel.shareUrl()?.let { url -> context.shareUrl(url) }
+                                },
                             )
                         }
                     }

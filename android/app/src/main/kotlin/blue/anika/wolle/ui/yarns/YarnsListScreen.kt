@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -63,6 +64,7 @@ fun YarnsListScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val listState = rememberLazyListState()
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -78,6 +80,7 @@ fun YarnsListScreen(
                 onClick = onAddYarnClick,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text("New yarn") },
+                expanded = !listState.canScrollBackward,
             )
         },
     ) { innerPadding ->
@@ -110,6 +113,7 @@ fun YarnsListScreen(
                     )
                 } else {
                     LazyColumn(
+                        state = listState,
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -73,6 +74,7 @@ fun ProjectsListScreen(
 
     var showAddCategoryDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val listState = rememberLazyListState()
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -88,6 +90,7 @@ fun ProjectsListScreen(
                 onClick = onAddProjectClick,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text("New project") },
+                expanded = !listState.canScrollBackward,
             )
         },
     ) { innerPadding ->
@@ -144,6 +147,7 @@ fun ProjectsListScreen(
                     )
                 } else {
                     LazyColumn(
+                        state = listState,
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
