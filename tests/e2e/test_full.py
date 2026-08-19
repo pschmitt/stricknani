@@ -109,7 +109,7 @@ def test_full_user_journey() -> None:
             screenshot(page, "full-07-offline-banner.png")
             context.set_offline(False)
 
-            page.locator("button.avatar").click()
+            page.locator("button.md3-navbar__account-trigger").click()
             page.locator('form[action="/auth/logout"] button[type="submit"]').evaluate(
                 "button => button.click()"
             )
