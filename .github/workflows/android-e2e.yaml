@@ -87,35 +87,14 @@ jobs:
           heap-size: 512M
           cores: 4
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
+          working-directory: android
           script: |
-            cd android
             curl -fsSL https://raw.githubusercontent.com/pschmitt/android-app-ci/main/scripts/wait-for-android-emulator.sh | bash
             adb reverse tcp:7674 tcp:7674
-            adb install -r android/app/build/outputs/apk/debug/app-x86_64-debug.apk
+            adb install -r app/build/outputs/apk/debug/app-x86_64-debug.apk
             adb shell pm clear blue.anika.wolle.debug || true
             adb shell pm grant blue.anika.wolle.debug android.permission.POST_NOTIFICATIONS || true
-            if [ "$E2E_LANE" = "focused" ]
-            then
-              for test_class in \
-                blue.anika.wolle.focused.FocusedAppSemanticsTest \
-                blue.anika.wolle.focused.FocusedComponentSemanticsTest
-              do
-                ./gradlew connectedDebugAndroidTest --stacktrace \
-                  -Pandroid.testInstrumentationRunnerArguments.class="$test_class" \
-                  -Pandroid.testInstrumentationRunnerArguments.e2e_base_url=http://127.0.0.1:7674 \
-                  -Pandroid.testInstrumentationRunnerArguments.e2e_token="$E2E_TOKEN"
-              done
-            else
-              test_class="blue.anika.wolle.e2e.StricknaniSmokeTest"
-              if [ "$E2E_LANE" = "full" ]
-              then
-                test_class="blue.anika.wolle.e2e.StricknaniFullE2eTest"
-              fi
-              ./gradlew connectedDebugAndroidTest --stacktrace \
-                -Pandroid.testInstrumentationRunnerArguments.class="$test_class" \
-                -Pandroid.testInstrumentationRunnerArguments.e2e_base_url=http://127.0.0.1:7674 \
-                -Pandroid.testInstrumentationRunnerArguments.e2e_token="$E2E_TOKEN"
-            fi
+            ./scripts/run-e2e-tests.sh
 
       - name: Capture emulator diagnostics
         if: ${{ always() }}
