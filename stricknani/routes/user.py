@@ -24,9 +24,10 @@ from stricknani.models import ApiToken, User
 from stricknani.routes.auth import require_auth
 from stricknani.utils.auth import generate_api_token
 from stricknani.utils.files import (
+    UploadTooLargeError,
     create_thumbnail,
     delete_file,
-    save_uploaded_file,
+    save_uploaded_image,
 )
 from stricknani.utils.qr_setup import (
     build_setup_uri,
@@ -179,10 +180,19 @@ async def upload_profile_image(
         )
 
     try:
-        filename, _ = await save_uploaded_file(file, user.id, subdir="users")
+        filename, _ = await save_uploaded_image(file, user.id, subdir="users")
     except ValueError as exc:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+            status_code=(
+                status.HTTP_413_CONTENT_TOO_LARGE
+                if isinstance(exc, UploadTooLargeError)
+                else status.HTTP_400_BAD_REQUEST
+            ),
+            detail=(
+                "Uploaded file is too large"
+                if isinstance(exc, UploadTooLargeError)
+                else str(exc)
+            ),
         ) from exc
 
     file_path = config.MEDIA_ROOT / "users" / str(user.id) / filename

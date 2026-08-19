@@ -18,7 +18,15 @@ from stricknani.database import get_db
 from stricknani.models import Image, ImageType, Project, User, Yarn, YarnImage
 from stricknani.routes.auth import require_auth
 from stricknani.services.images import get_image_dimensions
-from stricknani.utils.files import create_thumbnail, get_file_url, get_thumbnail_url
+from stricknani.utils.files import (
+    InvalidImageError,
+    UploadTooLargeError,
+    create_thumbnail,
+    get_file_url,
+    get_thumbnail_url,
+    read_upload_content,
+    validate_image_upload,
+)
 from stricknani.utils.ocr import DEFAULT_OCR_LANG, extract_text_from_media_file
 
 router: APIRouter = APIRouter(prefix="/utils", tags=["utils"])
@@ -187,21 +195,33 @@ async def crop_image(
             )
             original_yarn_image = result.scalar_one_or_none()
 
-        # Generate filename for cropped image
+        try:
+            content = await read_upload_content(file)
+            _content_type, safe_extension = validate_image_upload(content)
+        except UploadTooLargeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                detail="Uploaded file is too large",
+            ) from exc
+        except InvalidImageError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file is not a supported image",
+            ) from exc
+
+        # Generate filename for cropped image using the validated extension.
         original_name = original_path.stem
-        original_ext = original_path.suffix
-        crop_name = f"{original_name}_crop{original_ext}"
+        crop_name = f"{original_name}_crop{safe_extension}"
         crop_path = original_path.parent / crop_name
 
         # Ensure unique filename
         counter = 1
         while crop_path.exists():
-            crop_name = f"{original_name}_crop_{counter}{original_ext}"
+            crop_name = f"{original_name}_crop_{counter}{safe_extension}"
             crop_path = original_path.parent / crop_name
             counter += 1
 
         # Save the cropped file
-        content = await file.read()
         crop_path.write_bytes(content)
 
         # Create thumbnail for the cropped image

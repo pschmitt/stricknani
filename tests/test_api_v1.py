@@ -285,6 +285,30 @@ async def test_yarn_photo_upload_and_delete(api_client: ClientFixture) -> None:
     assert detail_after.json()["photos"] == []
 
 
+async def test_yarn_photo_upload_rejects_non_image(api_client: ClientFixture) -> None:
+    """All direct yarn-photo paths must validate bytes before persisting them."""
+    client, _session_factory, _user_id = api_client
+
+    create_response = await client.post("/api/v1/yarns", json={"name": "Safe Yarn"})
+    yarn_id = create_response.json()["id"]
+
+    upload_response = await client.post(
+        f"/api/v1/yarns/{yarn_id}/photos",
+        files={
+            "file": (
+                "not-an-image.html",
+                b"<html>not an image</html>",
+                "text/html",
+            )
+        },
+    )
+    assert upload_response.status_code == 400
+    assert upload_response.json()["detail"] == "Uploaded file is not a supported image"
+
+    detail = await client.get(f"/api/v1/yarns/{yarn_id}")
+    assert detail.json()["photos"] == []
+
+
 async def test_project_crud_with_steps_and_yarn_links(
     api_client: ClientFixture,
 ) -> None:

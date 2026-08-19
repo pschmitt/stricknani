@@ -100,6 +100,7 @@ Execution-oriented backlog for Stricknani.
 | T94 | P1 | done | web/ux | bug | Fix web UI regressions: repair the search bar styling and header arrow rendering |
 | T95 | P1 | done | web/ux | bug | Repair shared dialog regressions introduced by the Material 3 migration, including import and create-user dialogs |
 | T96 | P1 | done | web/ux | bug | Normalize admin user-profile icon sizing so avatars render consistently |
+| T97 | P0 | done | security | bug | Normalize upload ingress through bounded reads and validated image storage |
 
 
 ## Done
@@ -1261,3 +1262,22 @@ Execution-oriented backlog for Stricknani.
 - **Completed**: Added the public `/privacy` page, linked it from the shared footer and login/
   signup experience, documented hosted/self-hosted web behavior alongside the existing Android
   policy, and added English/German rendering and public-link regression tests.
+
+### T97: Normalize upload ingress through bounded reads and validated image storage
+
+- **Area**: security
+- **Priority**: P0
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - The backend audit found that yarn photos and user/admin profile images bypassed the shared
+    image validator and saved arbitrary upload bytes using the client-provided extension.
+  - Several project, attachment, import, and crop-image paths also read uploads without a bounded
+    size check, leaving memory and thumbnailing failures dependent on untrusted input.
+- **Implementation**:
+  - Added a configurable `MAX_UPLOAD_BYTES` limit and chunked upload reader.
+  - Routed image upload paths through content validation and canonical safe image extensions, with
+    explicit 400 responses for invalid images and 413 responses for oversized uploads.
+  - Applied bounded reads to project images, attachments, imports, and crop-image operations.
+- **Testing**: Added regression coverage for invalid avatar/yarn-photo uploads and the size cap;
+  the focused user/API/yarn/health suite passes (28 tests), along with Ruff and mypy.

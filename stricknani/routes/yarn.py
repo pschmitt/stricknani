@@ -46,11 +46,14 @@ from stricknani.services.yarn import (
 )
 from stricknani.utils.ai_provider import has_ai_api_key
 from stricknani.utils.files import (
+    InvalidImageError,
+    UploadTooLargeError,
     create_thumbnail,
     delete_file,
     get_file_url,
     get_thumbnail_url,
-    save_uploaded_file,
+    read_upload_content,
+    save_uploaded_image,
 )
 from stricknani.utils.importer import (
     filter_import_image_urls,
@@ -190,8 +193,14 @@ async def import_yarn(
                     detail="File is required",
                 )
 
-            # Read file content
-            content_bytes = await selected_file.read()
+            # Read file content under the shared request-body cap.
+            try:
+                content_bytes = await read_upload_content(selected_file)
+            except UploadTooLargeError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                    detail="Uploaded file is too large",
+                ) from exc
             filename = selected_file.filename or "unknown"
 
             from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
@@ -553,11 +562,22 @@ async def _handle_photo_uploads(
             continue
         if not upload.filename:
             continue
-        saved_name, original = await save_uploaded_file(
-            upload,
-            yarn.id,
-            subdir="yarns",
-        )
+        try:
+            saved_name, original = await save_uploaded_image(
+                upload,
+                yarn.id,
+                subdir="yarns",
+            )
+        except UploadTooLargeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                detail="Uploaded file is too large",
+            ) from exc
+        except InvalidImageError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file is not a supported image",
+            ) from exc
         source_path = config.MEDIA_ROOT / "yarns" / str(yarn.id) / saved_name
         await create_thumbnail(source_path, yarn.id, subdir="yarns")
         if is_ocr_available():
@@ -973,7 +993,18 @@ async def upload_yarn_photo(
         )
 
     # Save file
-    saved_name, original = await save_uploaded_file(file, yarn_id, subdir="yarns")
+    try:
+        saved_name, original = await save_uploaded_image(file, yarn_id, subdir="yarns")
+    except UploadTooLargeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Uploaded file is too large",
+        ) from exc
+    except InvalidImageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is not a supported image",
+        ) from exc
 
     # Create thumbnail
     source_path = config.MEDIA_ROOT / "yarns" / str(yarn_id) / saved_name

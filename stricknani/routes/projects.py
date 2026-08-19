@@ -111,9 +111,11 @@ from stricknani.services.projects.yarns import (
 )
 from stricknani.utils.ai_provider import has_ai_api_key
 from stricknani.utils.files import (
+    UploadTooLargeError,
     delete_file,
     get_file_url,
     get_thumbnail_url,
+    read_upload_content,
 )
 from stricknani.utils.i18n import language_context
 from stricknani.utils.image_similarity import (
@@ -521,7 +523,13 @@ async def import_pattern(
 
         # Collect uploaded files
         for f in files or []:
-            content = await f.read()
+            try:
+                content = await read_upload_content(f)
+            except UploadTooLargeError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                    detail="Uploaded file is too large",
+                ) from exc
             c_type = get_content_type(f.content_type, f.filename)
             source_contents.append(
                 {

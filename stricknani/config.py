@@ -54,6 +54,10 @@ class Config:
         os.getenv("IMPORT_TRACE_DIR", str(MEDIA_ROOT / "import-traces"))
     )
     IMPORT_TRACE_MAX_CHARS: int = int(os.getenv("IMPORT_TRACE_MAX_CHARS", "12000"))
+    # Uploaded source files and images are read in bounded chunks. Keep the
+    # default high enough for a pattern PDF while preventing an unbounded
+    # request body from being copied into process memory.
+    MAX_UPLOAD_BYTES: int = int(os.getenv("MAX_UPLOAD_BYTES", str(25 * 1024 * 1024)))
 
     # Security
     ALLOWED_HOSTS: list[str] = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(
