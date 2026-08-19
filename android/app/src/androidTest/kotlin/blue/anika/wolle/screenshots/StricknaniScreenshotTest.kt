@@ -2,6 +2,7 @@ package blue.anika.wolle.screenshots
 
 import android.graphics.Bitmap
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -90,10 +91,8 @@ class StricknaniScreenshotTest {
     }
 
     private fun connectToFixture() {
-        composeRule.onNodeWithText("Server URL", useUnmergedTree = true).performClick()
-        composeRule.onNodeWithText("Server URL", useUnmergedTree = true).performTextInput(baseUrl)
-        composeRule.onNodeWithText("API token", useUnmergedTree = true).performClick()
-        composeRule.onNodeWithText("API token", useUnmergedTree = true).performTextInput(token)
+        composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
+        composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
         composeRule.onNodeWithText("Connect").performClick()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
     }

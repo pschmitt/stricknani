@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -225,7 +226,7 @@ private fun ManualOnboardingFields(
         singleLine = true,
         enabled = enabled,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("e2e-onboarding-server-url"),
     )
 
     OutlinedTextField(
@@ -249,7 +250,8 @@ private fun ManualOnboardingFields(
                 )
             }
         },
-        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        modifier =
+            Modifier.fillMaxWidth().padding(top = 12.dp).testTag("e2e-onboarding-api-token"),
     )
 
     Text(
@@ -280,7 +282,7 @@ private fun PasswordOnboardingFields(
         singleLine = true,
         enabled = enabled,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("e2e-onboarding-server-url"),
     )
 
     OutlinedTextField(

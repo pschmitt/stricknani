@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -42,13 +43,11 @@ class FocusedAppSemanticsTest {
         composeRule.onNodeWithText("Connect").performClick()
         waitForText("Enter both the server URL and the API token")
 
-        composeRule.onNodeWithText("Server URL", useUnmergedTree = true).performClick()
         composeRule
-            .onNodeWithText("Server URL", useUnmergedTree = true)
+            .onNodeWithTag("e2e-onboarding-server-url")
             .performTextInput("not-a-server-url")
-        composeRule.onNodeWithText("API token", useUnmergedTree = true).performClick()
         composeRule
-            .onNodeWithText("API token", useUnmergedTree = true)
+            .onNodeWithTag("e2e-onboarding-api-token")
             .performTextInput("focused-test-token")
         composeRule.onNodeWithContentDescription("Show token").performClick()
         composeRule.onNodeWithContentDescription("Hide token").assertIsDisplayed()
@@ -169,13 +168,11 @@ class FocusedAppSemanticsTest {
                 "configured focused journeys require e2e_base_url and e2e_token",
                 !baseUrl.isNullOrBlank() && !token.isNullOrBlank(),
             )
-            composeRule.onNodeWithText("Server URL", useUnmergedTree = true).performClick()
             composeRule
-                .onNodeWithText("Server URL", useUnmergedTree = true)
+                .onNodeWithTag("e2e-onboarding-server-url")
                 .performTextInput(baseUrl!!)
-            composeRule.onNodeWithText("API token", useUnmergedTree = true).performClick()
             composeRule
-                .onNodeWithText("API token", useUnmergedTree = true)
+                .onNodeWithTag("e2e-onboarding-api-token")
                 .performTextInput(token!!)
             composeRule.onNodeWithText("Connect").performClick()
         }
