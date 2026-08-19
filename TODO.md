@@ -93,6 +93,7 @@ Execution-oriented backlog for Stricknani.
 | T87 | P3 | todo | release/decision | feat | Decide whether Stricknani should publish to Google Play and, if yes, add the gated store-assets and publishing workflow |
 | T88 | P2 | done | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
+| T90 | P1 | todo | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
 
 
 ## Done
@@ -1218,3 +1219,25 @@ Execution-oriented backlog for Stricknani.
 - **Completed**: The template and German catalog already contained the translation; added a
   request-scoped regression test proving the rendered login page uses it and does not leak the
   English source string.
+
+### T90: Publish a complete privacy policy for the web app and Android client
+
+- **Area**: privacy/legal
+- **Priority**: P1
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Provide a clear, user-facing privacy policy covering the hosted web app, Android client,
+    authentication/API tokens, offline cache, synchronization, uploaded media, logs, and
+    self-hosted deployments.
+- **Implementation**:
+  - Publish the policy at a stable web route and link it from the login/signup experience and
+    footer; keep the Android-facing copy aligned with `android/PRIVACY.md`.
+  - Document data collected, purpose, retention, third-party services, controller/contact,
+    deletion/export rights, security limitations, and how self-hosted operators adapt the policy.
+  - Add German coverage or an explicit language/fallback policy, and avoid claiming guarantees the
+    deployment cannot enforce.
+- **Files**: privacy-policy template/route, footer/auth templates, locale catalogs, `android/PRIVACY.md`,
+  and related documentation.
+- **Testing**: assert the route is reachable without authentication, linked from public entry
+  points, translated/fallback-safe, and covered by web/browser smoke tests.
