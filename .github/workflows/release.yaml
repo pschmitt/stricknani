@@ -20,12 +20,6 @@ concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: write
-  actions: write
-  id-token: write
-  attestations: write
-
 jobs:
   release:
     uses: pschmitt/android-app-ci/.github/workflows/release.yaml@main
@@ -54,3 +48,8 @@ jobs:
       trigger-screenshots: true
       verify-git-revision: true
     secrets: inherit
+    permissions:
+      contents: write
+      actions: write
+      id-token: write
+      attestations: write
