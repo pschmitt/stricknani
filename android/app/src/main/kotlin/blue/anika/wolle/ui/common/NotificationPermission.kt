@@ -20,19 +20,16 @@ internal fun shouldRequestNotificationPermission(
     sdkInt: Int,
     permissionGranted: Boolean,
     requestAlreadyMade: Boolean,
-): Boolean =
-    sdkInt >= Build.VERSION_CODES.TIRAMISU && !permissionGranted && !requestAlreadyMade
+): Boolean = sdkInt >= Build.VERSION_CODES.TIRAMISU && !permissionGranted && !requestAlreadyMade
 
 /**
  * Requests `POST_NOTIFICATIONS` (Android 13+) once, the first time this composable enters
  * composition - used from the configured app shell rather than at cold start, so the prompt appears
- * once the user has actually reached the main shell (post-onboarding) instead of before they've seen
- * any value in it. A no-op on API < 33 (the permission doesn't exist) or once already granted.
+ * once the user has actually reached the main shell (post-onboarding) instead of before they've
+ * seen any value in it. A no-op on API < 33 (the permission doesn't exist) or once already granted.
  */
 @Composable
-fun RequestNotificationPermissionEffect(
-    appPreferencesRepository: AppPreferencesRepository,
-) {
+fun RequestNotificationPermissionEffect(appPreferencesRepository: AppPreferencesRepository) {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     val requestAlreadyMade by

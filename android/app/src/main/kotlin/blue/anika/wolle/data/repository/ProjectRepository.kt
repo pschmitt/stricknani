@@ -401,9 +401,7 @@ internal fun ProjectWriteRequest.withExpectedUpdatedAt(
         expectedUpdatedAt =
             localId
                 .takeIf { it > 0 }
-                ?.let {
-                    json.decodeFromString<ProjectDto>(existingDetailJson).updatedAt
-                }
+                ?.let { json.decodeFromString<ProjectDto>(existingDetailJson).updatedAt }
     )
 
 private fun stepsFromRequest(

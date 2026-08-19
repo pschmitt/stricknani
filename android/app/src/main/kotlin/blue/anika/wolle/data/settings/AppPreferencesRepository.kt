@@ -84,7 +84,9 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_DEVELOPER_MODE] = enabled }
     }
 
-    /** SNA-14: prevents re-prompting for notification permission after the user has answered once. */
+    /**
+     * SNA-14: prevents re-prompting for notification permission after the user has answered once.
+     */
     val notificationPermissionRequested =
         dataStore.data.map { prefs -> prefs[KEY_NOTIFICATION_PERMISSION_REQUESTED] ?: false }
 

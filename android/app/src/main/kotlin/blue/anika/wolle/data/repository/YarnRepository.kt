@@ -271,7 +271,5 @@ internal fun YarnWriteRequest.withExpectedUpdatedAt(
         expectedUpdatedAt =
             localId
                 .takeIf { it > 0 }
-                ?.let {
-                    json.decodeFromString<YarnDto>(existingDetailJson).updatedAt
-                }
+                ?.let { json.decodeFromString<YarnDto>(existingDetailJson).updatedAt }
     )
