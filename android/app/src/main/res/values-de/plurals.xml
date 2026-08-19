@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <plurals name="sync_issue_count">
+        <item quantity="one">1 ausstehende Änderung braucht Aufmerksamkeit.</item>
+        <item quantity="other">%1$d ausstehende Änderungen brauchen Aufmerksamkeit.</item>
+    </plurals>
     <plurals name="sync_status_changes_failed">
         <item quantity="one">%1$d Änderung konnte den Server noch nicht erreichen.</item>
         <item quantity="other">%1$d Änderungen konnten den Server noch nicht erreichen.</item>

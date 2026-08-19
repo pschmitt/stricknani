@@ -20,6 +20,8 @@ import blue.anika.wolle.data.backup.BackupPasswordRequiredException
 import blue.anika.wolle.data.backup.BackupScheduler
 import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.SyncStateDao
+import blue.anika.wolle.data.db.dao.PendingMutationDao
+import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.NavbarItemPreference
@@ -52,6 +54,7 @@ constructor(
     private val appPreferencesRepository: AppPreferencesRepository,
     private val database: AppDatabase,
     syncStateDao: SyncStateDao,
+    pendingMutationDao: PendingMutationDao,
     private val metaApi: MetaApi,
     private val backupManager: BackupManager,
     private val backupScheduler: BackupScheduler,
@@ -81,6 +84,11 @@ constructor(
             .map { states -> states.maxOfOrNull { DateTimeUtils.parseToEpochMillis(it.cursor) } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
+    val failedMutations: StateFlow<List<PendingMutationEntity>> =
+        pendingMutationDao
+            .observeFailed()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+
     private val _serverMeta = MutableStateFlow<MetaDto?>(null)
     val serverMeta: StateFlow<MetaDto?> = _serverMeta.asStateFlow()
 
@@ -91,6 +99,8 @@ constructor(
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { appPreferencesRepository.setThemeMode(mode) }
     }
+
+    fun retryFailedMutations() = syncScheduler.replayThenSyncNow()
 
     // --- SNA-37: in-app language picker -----------------------------------------------------
 

@@ -4,15 +4,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,6 +26,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.db.entity.PendingMutationEntity
+import blue.anika.wolle.ui.common.hasRetryableSyncIssues
+import blue.anika.wolle.ui.common.syncIssuePresentation
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -30,6 +38,7 @@ import java.time.format.FormatStyle
 @Composable
 internal fun SyncSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel) {
     val lastSyncedMillis by viewModel.lastSyncedMillis.collectAsStateWithLifecycle()
+    val failedMutations by viewModel.failedMutations.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -72,6 +81,66 @@ internal fun SyncSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel
                     )
                 }
             }
+            if (failedMutations.isNotEmpty()) {
+                item {
+                    SyncIssuesSettingsCard(
+                        issues = failedMutations,
+                        onRetry = viewModel::retryFailedMutations,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SyncIssuesSettingsCard(
+    issues: List<PendingMutationEntity>,
+    onRetry: () -> Unit,
+) {
+    SettingsGroupCard(
+        title = stringResource(R.string.sync_issue_settings_title),
+        icon = Icons.Filled.ErrorOutline,
+    ) {
+        issues.forEach { issue ->
+            val presentation = issue.syncIssuePresentation()
+            SettingsListItem(
+                leadingContent = {
+                    Icon(
+                        Icons.Filled.ErrorOutline,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                },
+                headlineContent = {
+                    Text(stringResource(presentation.operationLabelResId))
+                },
+                supportingContent = {
+                    Text(
+                        stringResource(presentation.headlineResId) +
+                            " — " +
+                            stringResource(presentation.detailResId)
+                    )
+                },
+            )
+        }
+        if (issues.hasRetryableSyncIssues()) {
+            SettingsListItem(
+                headlineContent = { Text(stringResource(R.string.sync_issue_retry_title)) },
+                supportingContent = {
+                    Text(stringResource(R.string.sync_issue_retry_description))
+                },
+                trailingContent = {
+                    TextButton(onClick = onRetry) {
+                        Icon(
+                            Icons.Filled.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(stringResource(R.string.sync_issue_retry))
+                    }
+                },
+            )
         }
     }
 }

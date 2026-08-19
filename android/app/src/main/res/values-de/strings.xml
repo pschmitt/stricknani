@@ -82,6 +82,16 @@
     <string name="project_editor_link_label">Link</string>
     <string name="project_editor_delete_dialog_title">Projekt „%1$s“ löschen?</string>
     <string name="project_editor_delete_dialog_text">Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="project_editor_steps_label">Schritte</string>
+    <string name="project_editor_step_title_label">Schritt-Titel</string>
+    <string name="project_editor_step_description_label">Schrittbeschreibung</string>
+    <string name="project_editor_add_step">Schritt hinzufügen</string>
+    <string name="project_editor_add_step_image">Schrittbild hinzufügen</string>
+    <string name="project_editor_add_title_image">Projektbild hinzufügen</string>
+    <string name="project_editor_remove_image">Ausgewähltes Bild entfernen</string>
+    <string name="project_editor_move_step_up">Schritt nach oben</string>
+    <string name="project_editor_move_step_down">Schritt nach unten</string>
+    <string name="project_editor_remove_step">Schritt entfernen</string>
     <string name="projects_list_search_placeholder">Projekte durchsuchen</string>
     <string name="projects_list_category_all">Alle</string>
     <string name="projects_list_add_category_description">Kategorie hinzufügen</string>
@@ -145,6 +155,9 @@
     <string name="yarn_editor_weight_grams_label">Gewicht (g)</string>
     <string name="yarn_editor_length_meters_label">Lauflänge (m)</string>
     <string name="yarn_editor_delete_dialog_title">Wolle „%1$s“ löschen?</string>
+    <string name="yarn_editor_add_photo">Wollfotos hinzufügen</string>
+    <string name="yarn_editor_remove_photo">Ausgewähltes Foto entfernen</string>
+    <string name="editor_image_select_failed">Das ausgewählte Bild konnte nicht zum Hochladen gespeichert werden.</string>
 
     <!-- Settings categories (hub screen) -->
     <string name="settings_category_account_title">Konto</string>
@@ -170,6 +183,23 @@
     <string name="settings_sync_policy_label">Synchronisierungsrichtlinie</string>
     <string name="settings_sync_policy_description">Automatisch alle 6 Stunden, beim Start und direkt nach jeder Änderung</string>
     <string name="settings_sync_never">Nie</string>
+    <string name="sync_issue_settings_title">Ausstehende Änderungen</string>
+    <string name="sync_issue_banner_title">Synchronisierung benötigt Aufmerksamkeit</string>
+    <string name="sync_issue_view_details">Details anzeigen</string>
+    <string name="sync_issue_retry">Erneut versuchen</string>
+    <string name="sync_issue_retry_title">Fehlgeschlagene Änderungen erneut versuchen</string>
+    <string name="sync_issue_retry_description">Ausstehende Änderungen jetzt erneut senden.</string>
+    <string name="sync_issue_project_create">Projekt erstellen</string>
+    <string name="sync_issue_project_update">Projekt aktualisieren</string>
+    <string name="sync_issue_project_delete">Projekt löschen</string>
+    <string name="sync_issue_yarn_create">Wolle erstellen</string>
+    <string name="sync_issue_yarn_update">Wolle aktualisieren</string>
+    <string name="sync_issue_yarn_delete">Wolle löschen</string>
+    <string name="sync_issue_unknown_change">Ausstehende Änderung</string>
+    <string name="sync_issue_conflict_headline">Konflikt gelöst</string>
+    <string name="sync_issue_conflict_detail">Die Serverversion bleibt erhalten; diese Änderung wurde nicht angewendet.</string>
+    <string name="sync_issue_failure_headline">Synchronisierung fehlgeschlagen</string>
+    <string name="sync_issue_failure_detail">Diese Änderung bleibt ausstehend und wird automatisch erneut versucht.</string>
     <string name="settings_sign_out">Abmelden</string>
     <string name="settings_sign_out_description">Entfernt die gespeicherte Server-URL und das API-Token von diesem Gerät.</string>
 

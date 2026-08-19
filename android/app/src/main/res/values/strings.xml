@@ -82,6 +82,16 @@
     <string name="project_editor_link_label">Link</string>
     <string name="project_editor_delete_dialog_title">Delete project “%1$s”?</string>
     <string name="project_editor_delete_dialog_text">This can\'t be undone.</string>
+    <string name="project_editor_steps_label">Steps</string>
+    <string name="project_editor_step_title_label">Step title</string>
+    <string name="project_editor_step_description_label">Step description</string>
+    <string name="project_editor_add_step">Add step</string>
+    <string name="project_editor_add_step_image">Add step image</string>
+    <string name="project_editor_add_title_image">Add project image</string>
+    <string name="project_editor_remove_image">Remove selected image</string>
+    <string name="project_editor_move_step_up">Move step up</string>
+    <string name="project_editor_move_step_down">Move step down</string>
+    <string name="project_editor_remove_step">Remove step</string>
     <string name="projects_list_search_placeholder">Search projects</string>
     <string name="projects_list_category_all">All</string>
     <string name="projects_list_add_category_description">Add category</string>
@@ -145,6 +155,9 @@
     <string name="yarn_editor_weight_grams_label">Weight (g)</string>
     <string name="yarn_editor_length_meters_label">Length (m)</string>
     <string name="yarn_editor_delete_dialog_title">Delete yarn “%1$s”?</string>
+    <string name="yarn_editor_add_photo">Add yarn photos</string>
+    <string name="yarn_editor_remove_photo">Remove selected photo</string>
+    <string name="editor_image_select_failed">The selected image could not be saved for upload.</string>
 
     <!-- Settings categories (hub screen) -->
     <string name="settings_category_account_title">Account</string>
@@ -170,6 +183,23 @@
     <string name="settings_sync_policy_label">Sync policy</string>
     <string name="settings_sync_policy_description">Automatically every 6 hours, on launch, and right after each edit</string>
     <string name="settings_sync_never">Never</string>
+    <string name="sync_issue_settings_title">Queued changes</string>
+    <string name="sync_issue_banner_title">Sync needs attention</string>
+    <string name="sync_issue_view_details">View details</string>
+    <string name="sync_issue_retry">Retry</string>
+    <string name="sync_issue_retry_title">Retry failed changes</string>
+    <string name="sync_issue_retry_description">Try sending queued changes again now.</string>
+    <string name="sync_issue_project_create">Create project</string>
+    <string name="sync_issue_project_update">Update project</string>
+    <string name="sync_issue_project_delete">Delete project</string>
+    <string name="sync_issue_yarn_create">Create yarn</string>
+    <string name="sync_issue_yarn_update">Update yarn</string>
+    <string name="sync_issue_yarn_delete">Delete yarn</string>
+    <string name="sync_issue_unknown_change">Queued change</string>
+    <string name="sync_issue_conflict_headline">Conflict resolved</string>
+    <string name="sync_issue_conflict_detail">The server kept the latest version; this change was not applied.</string>
+    <string name="sync_issue_failure_headline">Sync failed</string>
+    <string name="sync_issue_failure_detail">This change is still queued and will be retried automatically.</string>
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_sign_out_description">Removes the saved server URL and API token from this device.</string>
 

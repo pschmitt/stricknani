@@ -51,6 +51,7 @@ import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
+import blue.anika.wolle.ui.common.SyncIssueBanner
 import coil3.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,6 +60,7 @@ fun HomeScreen(
     onProjectClick: (Int) -> Unit,
     onYarnClick: (Int) -> Unit,
     onGaugeClick: () -> Unit,
+    onOpenSyncIssues: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val favoriteProjects by viewModel.favoriteProjects.collectAsStateWithLifecycle()
@@ -69,6 +71,7 @@ fun HomeScreen(
     val lastSyncedMillis by viewModel.lastSyncedMillis.collectAsStateWithLifecycle()
     val pendingChangesCount by viewModel.pendingChangesCount.collectAsStateWithLifecycle()
     val hasSyncFailures by viewModel.hasSyncFailures.collectAsStateWithLifecycle()
+    val failedMutations by viewModel.failedMutations.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     RequestNotificationPermissionEffect()
@@ -111,6 +114,14 @@ fun HomeScreen(
                         )
                     }
                     item {
+                        SyncIssueBanner(
+                            issues = failedMutations,
+                            onRetry = viewModel::retryFailedMutations,
+                            onOpenDetails = onOpenSyncIssues,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                    item {
                         Box(Modifier.fillMaxWidth().height(480.dp)) {
                             EmptyState(
                                 icon = Icons.Filled.Home,
@@ -131,6 +142,14 @@ fun HomeScreen(
                             lastSyncedMillis = lastSyncedMillis,
                             pendingChangesCount = pendingChangesCount,
                             hasSyncFailures = hasSyncFailures,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                    item {
+                        SyncIssueBanner(
+                            issues = failedMutations,
+                            onRetry = viewModel::retryFailedMutations,
+                            onOpenDetails = onOpenSyncIssues,
                             modifier = Modifier.padding(horizontal = 16.dp),
                         )
                     }

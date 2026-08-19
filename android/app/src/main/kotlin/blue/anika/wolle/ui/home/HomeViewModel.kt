@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
+import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
@@ -14,6 +15,7 @@ import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
+import blue.anika.wolle.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,6 +40,7 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     syncStateDao: SyncStateDao,
     pendingMutationDao: PendingMutationDao,
+    private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
 
     private val refreshController = RefreshController(viewModelScope)
@@ -60,9 +63,13 @@ constructor(
             .observeCount()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), 0)
 
-    val hasSyncFailures: StateFlow<Boolean> =
+    val failedMutations: StateFlow<List<PendingMutationEntity>> =
         pendingMutationDao
             .observeFailed()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+
+    val hasSyncFailures: StateFlow<Boolean> =
+        failedMutations
             .map { it.isNotEmpty() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
 
@@ -112,6 +119,8 @@ constructor(
     }
 
     fun dismissRefreshFeedback() = refreshController.clearFeedback()
+
+    fun retryFailedMutations() = syncScheduler.replayThenSyncNow()
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
