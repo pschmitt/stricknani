@@ -191,7 +191,9 @@ constructor(
     fun addAttachment(uri: Uri) {
         viewModelScope.launch {
             runCatching { pendingUploadStore.copy(uri) }
-                .onSuccess { upload -> updateForm { it.copy(attachments = it.attachments + upload) } }
+                .onSuccess { upload ->
+                    updateForm { it.copy(attachments = it.attachments + upload) }
+                }
                 .onFailure { mutationFeedback.show(R.string.editor_file_select_failed) }
         }
     }

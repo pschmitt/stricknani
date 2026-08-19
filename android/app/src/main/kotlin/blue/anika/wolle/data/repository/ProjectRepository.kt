@@ -13,8 +13,8 @@ import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
-import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingAttachmentDelete
+import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.data.util.DateTimeUtils
 import java.time.OffsetDateTime
@@ -295,8 +295,8 @@ constructor(
     }
 
     /**
-     * Attachment deletion is idempotent: a 404 means the attachment is already gone, which is
-     * the desired end state for this queued mutation.
+     * Attachment deletion is idempotent: a 404 means the attachment is already gone, which is the
+     * desired end state for this queued mutation.
      */
     suspend fun replayAttachmentDelete(id: Int, attachmentId: Int) {
         try {

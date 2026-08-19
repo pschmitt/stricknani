@@ -31,8 +31,7 @@ class ProjectAttachmentMutationTest {
     fun `attachment deletion payload preserves server attachment id`() {
         val pending = PendingAttachmentDelete(attachmentId = 42)
 
-        val replayed =
-            json.decodeFromString<PendingAttachmentDelete>(json.encodeToString(pending))
+        val replayed = json.decodeFromString<PendingAttachmentDelete>(json.encodeToString(pending))
 
         assertEquals(42, replayed.attachmentId)
     }

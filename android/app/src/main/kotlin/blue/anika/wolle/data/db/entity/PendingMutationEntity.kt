@@ -27,8 +27,8 @@ object MutationOperation {
  * for a still-unsynced [MutationOperation.CREATE] (see `ProjectRepository.createProject`/
  * `YarnRepository.createYarn`), or the real server id otherwise. [payloadJson] is the write request
  * DTO (`ProjectWriteRequest`/`YarnWriteRequest`), a serialized `PendingUpload` for a media upload,
- * or a serialized `PendingAttachmentDelete` for an attachment delete, verbatim JSON - `null` for
- * a regular entity delete.
+ * or a serialized `PendingAttachmentDelete` for an attachment delete, verbatim JSON - `null` for a
+ * regular entity delete.
  */
 @Entity(tableName = "pending_mutations")
 data class PendingMutationEntity(
