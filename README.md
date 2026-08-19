@@ -112,7 +112,8 @@ just lint           # ruff + mypy
 just fmt            # ruff format + fixes
 just test           # pytest -v
 uv run playwright install chromium  # Install the local E2E browser
-just e2e            # Run the disposable browser E2E journey
+just e2e-smoke      # Run the fast disposable browser smoke suite
+just e2e-full       # Run the longer disposable browser suite
 just i18n-check     # Verify translations
 just check          # lint + test + i18n-check
 just build-image    # Build Docker image

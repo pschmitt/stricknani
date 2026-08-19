@@ -145,7 +145,17 @@ todo-todo:
 test:
   uv run pytest -v --cov=stricknani --cov-report=term-missing --cov-report=xml
 
-# Run the browser end-to-end suite against a disposable local database.
+# Run the fast browser smoke suite against a disposable local database.
+[group: 'test']
+e2e-smoke:
+  ./scripts/e2e.sh smoke
+
+# Run the longer browser suite against a disposable local database.
+[group: 'test']
+e2e-full:
+  ./scripts/e2e.sh full
+
+# Backwards-compatible alias for the pull-request smoke suite.
 [group: 'test']
 e2e *args:
   ./scripts/e2e.sh {{ args }}

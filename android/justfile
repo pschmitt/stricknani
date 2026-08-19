@@ -64,6 +64,12 @@ import '.just/android-app-ci/just/single-module.just'
 # ktfmtCheck + unit tests + Android Lint, remotely - the full local pre-push check.
 check host=remote_host: (gradle host "ktfmtCheck :app:testDebugUnitTest lintDebug")
 
+# Compile the app and instrumentation APKs remotely. The emulator itself belongs to the CI
+# workflow; keeping this recipe remote preserves the repository rule that Gradle never runs on the
+# developer workstation. The workflow builds the same two tasks on its GitHub runner before booting
+# its API-34 emulator.
+e2e-build host=remote_host: (gradle host "assembleDebug assembleDebugAndroidTest")
+
 # --- Shared recipes (pschmitt/android-app-ci) -------------------------------
 
 # Advance the .just/android-app-ci submodule to the tip of its tracked branch (main) and stage the

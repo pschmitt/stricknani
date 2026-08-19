@@ -11,9 +11,18 @@ on:
       - "tests/e2e/**"
       - "uv.lock"
   workflow_dispatch:
+    inputs:
+      suite:
+        description: Browser suite to run
+        required: true
+        default: full
+        type: choice
+        options:
+          - smoke
+          - full
 
 concurrency:
-  group: web-e2e-${{ github.ref }}
+  group: web-e2e-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -21,9 +30,11 @@ permissions:
 
 jobs:
   browser:
-    name: Chromium smoke journey
+    name: Chromium ${{ github.event_name == 'pull_request' && 'PR smoke' || inputs.suite }} suite
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
+    env:
+      E2E_SUITE: ${{ github.event_name == 'pull_request' && 'smoke' || inputs.suite }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -48,13 +59,13 @@ jobs:
       - name: Install Chromium
         run: uv run playwright install --with-deps chromium
 
-      - name: Run browser journey
-        run: just e2e
+      - name: Run browser ${{ env.E2E_SUITE }} suite
+        run: just e2e-${{ env.E2E_SUITE }}
 
       - name: Upload E2E artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: web-e2e-artifacts
+          name: web-e2e-${{ env.E2E_SUITE }}-artifacts
           path: e2e-artifacts/
           if-no-files-found: warn

@@ -83,10 +83,10 @@ Execution-oriented backlog for Stricknani.
 | T77 | P1 | done | api | feat | Add delta-sync endpoints (`/api/v1/sync/{projects,yarns,categories}`) sourcing deletions from `AuditLog` (backend foundation for the Android app; mirrors `android/TODO.md` SNA-3) |
 | T78 | P1 | done | test/ci | feat | Add disposable browser E2E tests for critical Stricknani user journeys, following the NetBox/Syncwich CI pattern |
 | T79 | P2 | done | ci | feat | Capture named Stricknani browser screenshots in CI E2E runs and upload them as reviewable artifacts, following the NetBox/Syncwich screenshot pattern |
-| T80 | P1 | todo | android/test/ci | feat | Add disposable Android instrumentation E2E tests against a seeded Stricknani fixture, with PR smoke and manual full journeys |
+| T80 | P1 | wip | android/test/ci | feat | Add disposable Android instrumentation E2E tests against a seeded Stricknani fixture, with PR smoke and manual full journeys |
 | T81 | P1 | todo | android/test | feat | Add focused Android Compose/instrumentation coverage for route, accessibility, dialog, loading/error, and offline UI states |
 | T82 | P2 | todo | android/ci | feat | Add manual Android screenshot capture CI for phone and tablet layouts, light/dark themes, and reviewable artifacts |
-| T83 | P2 | todo | test/ci | refactor | Split browser E2E into a fast pull-request smoke suite and a longer manual cache/offline journey |
+| T83 | P2 | done | test/ci | refactor | Split browser E2E into a fast pull-request smoke suite and a longer manual cache/offline journey |
 | T84 | P2 | done | ci/test | refactor | Enforce the documented 80% Python coverage threshold in CI instead of only uploading a report |
 | T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
@@ -1044,18 +1044,19 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: android/test/ci
 - **Priority**: P1
-- **Status**: todo
+- **Status**: wip
 - **Category**: feat
 - **Description**:
   - The Android app has instrumentation-test dependencies but no `androidTest` sources or emulator journey; CI currently runs only JVM tests and APK assembly.
   - Add an isolated Android E2E environment that never uses the production Stricknani server or personal data.
 - **Implementation**:
-  - Start a disposable Stricknani instance with temporary database/media storage, seed a deterministic user, API token, categories, projects, yarns, and representative images, then wait for `/healthz`.
-  - Add a short onboarding/sync/detail/settings smoke journey for pull requests and a longer manual journey covering cached browsing, search, offline mode, and queued edits.
-  - Pass the fixture URL/token through instrumentation arguments, build before emulator startup, use a fresh API-34 emulator, and tear down the fixture with volumes on every exit path.
-  - Upload instrumentation reports, logcat, emulator screenshots, server logs, and host diagnostics on every run.
+  - [x] Start a disposable Stricknani instance with temporary database/media storage, seed the existing deterministic demo user, API token, categories, projects, yarns, and representative images, then wait for `/healthz`.
+  - [x] Add a short onboarding/sync/detail/settings smoke journey for pull requests and a manual full-lane scaffold covering cached browsing, search, and settings.
+  - [x] Pass the fixture URL/token through instrumentation arguments, build before emulator startup, use a fresh API-34 emulator, and tear down the fixture with volumes on every exit path.
+  - [x] Upload instrumentation reports, logcat, emulator screenshots, server logs, and host diagnostics on every run.
+  - [ ] Extend the manual full lane with an explicit network-offline cached browse and queued-edit assertion once the emulator authority runs the new lane.
 - **Files**: `android/app/src/androidTest/`, `.github/workflows/android-e2e.yaml`, `ci/stricknani/`, `android/justfile`, and Android E2E documentation.
-- **Testing**: verify both the pull-request smoke lane and the manual full lane against the disposable fixture; confirm no production endpoint is contacted.
+- **Testing**: remote `just e2e-build rofl-13.brkn.lol` and `just check rofl-13.brkn.lol` pass; GitHub Actions must still run both lanes against the disposable fixture and confirm no production endpoint is contacted.
 
 ### T81: Add focused Android Compose/instrumentation coverage
 
@@ -1094,7 +1095,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: test/ci
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - T78 currently describes one browser E2E journey; the CI cost and coverage need separate pull-request and deeper verification paths.
