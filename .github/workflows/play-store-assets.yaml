@@ -87,8 +87,8 @@ jobs:
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
-          credentials_file="$(mktemp)"
-          trap 'rm -f "$credentials_file"' EXIT
+          credentials_file="$RUNNER_TEMP/play-service-account.json"
+          umask 077
           printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > "$credentials_file"
           gpc auth login \
             --name default \
