@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.api
 
 import blue.anika.wolle.data.api.dto.ImageDto
+import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectPageDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
@@ -69,4 +70,17 @@ interface ProjectsApi {
         @Part file: MultipartBody.Part,
         @Part("alt_text") altText: RequestBody? = null,
     ): ImageDto
+
+    @Multipart
+    @POST("api/v1/projects/{projectId}/attachments")
+    suspend fun uploadAttachment(
+        @Path("projectId") projectId: Int,
+        @Part file: MultipartBody.Part,
+    ): AttachmentDto
+
+    @DELETE("api/v1/projects/{projectId}/attachments/{attachmentId}")
+    suspend fun deleteAttachment(
+        @Path("projectId") projectId: Int,
+        @Path("attachmentId") attachmentId: Int,
+    )
 }

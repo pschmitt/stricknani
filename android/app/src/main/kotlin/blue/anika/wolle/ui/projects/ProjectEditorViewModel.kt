@@ -42,6 +42,7 @@ data class ProjectEditorFormState(
     val selectedYarnIds: Set<Int> = emptySet(),
     val steps: List<ProjectEditorStep> = emptyList(),
     val titleImages: List<PendingUpload> = emptyList(),
+    val attachments: List<PendingUpload> = emptyList(),
 )
 
 data class ProjectEditorStep(
@@ -187,6 +188,22 @@ constructor(
         viewModelScope.launch { pendingUploadStore.delete(upload) }
     }
 
+    fun addAttachment(uri: Uri) {
+        viewModelScope.launch {
+            runCatching { pendingUploadStore.copy(uri) }
+                .onSuccess { upload -> updateForm { it.copy(attachments = it.attachments + upload) } }
+                .onFailure { mutationFeedback.show(R.string.editor_file_select_failed) }
+        }
+    }
+
+    fun removeAttachment(index: Int) {
+        val upload = _form.value.attachments.getOrNull(index) ?: return
+        updateForm {
+            it.copy(attachments = it.attachments.filterIndexed { position, _ -> position != index })
+        }
+        viewModelScope.launch { pendingUploadStore.delete(upload) }
+    }
+
     fun addStepImage(index: Int, uri: Uri) {
         viewModelScope.launch {
             runCatching { pendingUploadStore.copy(uri, stepIndex = index) }
@@ -253,6 +270,9 @@ constructor(
                             upload.copy(stepIndex = index),
                         )
                     }
+                }
+                current.attachments.forEach { upload ->
+                    projectRepository.queueAttachmentUpload(projectId, upload)
                 }
                 syncScheduler.replayThenSyncNow()
                 mutationFeedback.show(

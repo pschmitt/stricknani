@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
@@ -87,6 +88,7 @@ fun ProjectDetailScreen(
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var attachmentToDelete by remember { mutableStateOf<AttachmentDto?>(null) }
 
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
@@ -219,6 +221,7 @@ fun ProjectDetailScreen(
                         linkedYarns = state.linkedYarns,
                         resolveMediaUrl = viewModel::resolveMediaUrl,
                         onYarnClick = onYarnClick,
+                        onDeleteAttachment = { attachmentToDelete = it },
                     )
             }
         }
@@ -235,6 +238,22 @@ fun ProjectDetailScreen(
             onDismiss = { showDeleteDialog = false },
         )
     }
+
+    attachmentToDelete?.let { attachment ->
+        DestructiveDeleteDialog(
+            title =
+                stringResource(
+                    R.string.project_attachment_delete_dialog_title,
+                    attachment.originalFilename,
+                ),
+            text = stringResource(R.string.project_attachment_delete_dialog_text),
+            onConfirm = {
+                attachmentToDelete = null
+                viewModel.deleteAttachment(attachment.id)
+            },
+            onDismiss = { attachmentToDelete = null },
+        )
+    }
 }
 
 @Composable
@@ -243,6 +262,7 @@ private fun ProjectDetailContent(
     linkedYarns: List<LinkedYarn>,
     resolveMediaUrl: (String?) -> String?,
     onYarnClick: (Int) -> Unit,
+    onDeleteAttachment: (AttachmentDto) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
@@ -283,6 +303,39 @@ private fun ProjectDetailContent(
                                     viewerIndex = index
                                 },
                         )
+                    }
+                }
+            }
+        }
+
+        if (detail.attachments.isNotEmpty()) {
+            item {
+                DetailSectionCard(
+                    title = stringResource(R.string.project_detail_attachments_title)
+                ) {
+                    detail.attachments.forEachIndexed { index, attachment ->
+                        if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    attachment.originalFilename,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                )
+                                Text(
+                                    attachment.contentType,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            IconButton(onClick = { onDeleteAttachment(attachment) }) {
+                                DestructiveDeleteIcon(
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.project_detail_delete_attachment_description
+                                        )
+                                )
+                            }
+                        }
                     }
                 }
             }

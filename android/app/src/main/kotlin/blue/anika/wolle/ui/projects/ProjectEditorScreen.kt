@@ -73,6 +73,10 @@ fun ProjectEditorScreen(
             if (index != null) uris.forEach { uri -> viewModel.addStepImage(index, uri) }
             pickingStepIndex = null
         }
+    val attachmentPicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+            uris.forEach(viewModel::addAttachment)
+        }
 
     LaunchedEffect(saved) { if (saved) onSaved() }
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
@@ -356,6 +360,31 @@ fun ProjectEditorScreen(
                                 Icons.Filled.Delete,
                                 contentDescription =
                                     stringResource(R.string.project_editor_remove_image),
+                            )
+                        }
+                    }
+                }
+            }
+            item {
+                Text(
+                    stringResource(R.string.project_editor_attachments_label),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                TextButton(onClick = { attachmentPicker.launch("*/*") }) {
+                    Text(stringResource(R.string.project_editor_add_attachment))
+                }
+                form.attachments.forEachIndexed { index, attachment ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            attachment.fileName,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = { viewModel.removeAttachment(index) }) {
+                            Icon(
+                                Icons.Filled.Delete,
+                                contentDescription =
+                                    stringResource(R.string.project_editor_remove_attachment),
                             )
                         }
                     }

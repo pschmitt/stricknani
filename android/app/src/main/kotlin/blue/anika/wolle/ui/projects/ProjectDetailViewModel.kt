@@ -147,6 +147,19 @@ constructor(
         }
     }
 
+    fun deleteAttachment(attachmentId: Int) {
+        if (uiState.value !is ProjectDetailUiState.Loaded) return
+        viewModelScope.launch {
+            try {
+                projectRepository.queueAttachmentDelete(projectId, attachmentId)
+                syncScheduler.replayThenSyncNow()
+                mutationFeedback.show(R.string.mutation_project_attachment_deleted_queued)
+            } catch (e: Exception) {
+                mutationFeedback.show(R.string.error_attachment_delete_failed)
+            }
+        }
+    }
+
     fun dismissRefreshFeedback() = refreshController.clearFeedback()
 
     private companion object {

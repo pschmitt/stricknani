@@ -75,6 +75,8 @@
     <string name="project_detail_description_title">Description</string>
     <string name="project_detail_steps_title">Steps</string>
     <string name="project_detail_notes_title">Notes</string>
+    <string name="project_detail_attachments_title">Attachments</string>
+    <string name="project_detail_delete_attachment_description">Delete attachment</string>
     <string name="project_editor_title_edit">Edit project</string>
     <string name="project_editor_delete_description">Delete project</string>
     <string name="project_editor_name_label">Name</string>
@@ -92,6 +94,11 @@
     <string name="project_editor_move_step_up">Move step up</string>
     <string name="project_editor_move_step_down">Move step down</string>
     <string name="project_editor_remove_step">Remove step</string>
+    <string name="project_editor_attachments_label">Attachments</string>
+    <string name="project_editor_add_attachment">Add project attachments</string>
+    <string name="project_editor_remove_attachment">Remove selected attachment</string>
+    <string name="project_attachment_delete_dialog_title">Delete attachment “%1$s”?</string>
+    <string name="project_attachment_delete_dialog_text">This can\'t be undone.</string>
     <string name="projects_list_search_placeholder">Search projects</string>
     <string name="projects_list_category_all">All</string>
     <string name="projects_list_add_category_description">Add category</string>
@@ -158,6 +165,7 @@
     <string name="yarn_editor_add_photo">Add yarn photos</string>
     <string name="yarn_editor_remove_photo">Remove selected photo</string>
     <string name="editor_image_select_failed">The selected image could not be saved for upload.</string>
+    <string name="editor_file_select_failed">The selected file could not be saved for upload.</string>
 
     <!-- Settings categories (hub screen) -->
     <string name="settings_category_account_title">Account</string>
@@ -317,6 +325,7 @@
     <string name="error_favorite_failed">Couldn\'t update favorite - try again.</string>
     <string name="error_save_failed">Couldn\'t save - try again.</string>
     <string name="error_delete_failed">Couldn\'t delete - try again.</string>
+    <string name="error_attachment_delete_failed">Couldn\'t delete the attachment - try again.</string>
     <string name="error_name_required">Name is required</string>
     <string name="error_create_category_failed">Couldn\'t create category \'%1$s\'.</string>
 
@@ -328,6 +337,7 @@
     <string name="mutation_project_created_queued">Project created locally and queued to sync.</string>
     <string name="mutation_project_updated_queued">Project updated locally and queued to sync.</string>
     <string name="mutation_project_deleted_queued">Project deleted locally and queued to sync.</string>
+    <string name="mutation_project_attachment_deleted_queued">Attachment deleted locally and queued to sync.</string>
     <string name="mutation_project_imported_queued">Project “%1$s” imported locally and queued to sync.</string>
     <string name="mutation_yarn_created_queued">Yarn created locally and queued to sync.</string>
     <string name="mutation_yarn_updated_queued">Yarn updated locally and queued to sync.</string>

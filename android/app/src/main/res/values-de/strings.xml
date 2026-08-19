@@ -75,6 +75,8 @@
     <string name="project_detail_description_title">Beschreibung</string>
     <string name="project_detail_steps_title">Schritte</string>
     <string name="project_detail_notes_title">Notizen</string>
+    <string name="project_detail_attachments_title">Anhänge</string>
+    <string name="project_detail_delete_attachment_description">Anhang löschen</string>
     <string name="project_editor_title_edit">Projekt bearbeiten</string>
     <string name="project_editor_delete_description">Projekt löschen</string>
     <string name="project_editor_name_label">Name</string>
@@ -92,6 +94,11 @@
     <string name="project_editor_move_step_up">Schritt nach oben</string>
     <string name="project_editor_move_step_down">Schritt nach unten</string>
     <string name="project_editor_remove_step">Schritt entfernen</string>
+    <string name="project_editor_attachments_label">Anhänge</string>
+    <string name="project_editor_add_attachment">Projektanhänge hinzufügen</string>
+    <string name="project_editor_remove_attachment">Ausgewählten Anhang entfernen</string>
+    <string name="project_attachment_delete_dialog_title">Anhang „%1$s“ löschen?</string>
+    <string name="project_attachment_delete_dialog_text">Dies kann nicht rückgängig gemacht werden.</string>
     <string name="projects_list_search_placeholder">Projekte durchsuchen</string>
     <string name="projects_list_category_all">Alle</string>
     <string name="projects_list_add_category_description">Kategorie hinzufügen</string>
@@ -158,6 +165,7 @@
     <string name="yarn_editor_add_photo">Wollfotos hinzufügen</string>
     <string name="yarn_editor_remove_photo">Ausgewähltes Foto entfernen</string>
     <string name="editor_image_select_failed">Das ausgewählte Bild konnte nicht zum Hochladen gespeichert werden.</string>
+    <string name="editor_file_select_failed">Die ausgewählte Datei konnte nicht zum Hochladen gespeichert werden.</string>
 
     <!-- Settings categories (hub screen) -->
     <string name="settings_category_account_title">Konto</string>
@@ -317,6 +325,7 @@
     <string name="error_favorite_failed">Favorit konnte nicht aktualisiert werden - versuche es erneut.</string>
     <string name="error_save_failed">Speichern fehlgeschlagen - versuche es erneut.</string>
     <string name="error_delete_failed">Löschen fehlgeschlagen - versuche es erneut.</string>
+    <string name="error_attachment_delete_failed">Der Anhang konnte nicht gelöscht werden - versuche es erneut.</string>
     <string name="error_name_required">Name ist erforderlich</string>
     <string name="error_create_category_failed">Kategorie \'%1$s\' konnte nicht erstellt werden.</string>
 
@@ -328,6 +337,7 @@
     <string name="mutation_project_created_queued">Projekt lokal erstellt und zur Synchronisierung vorgemerkt.</string>
     <string name="mutation_project_updated_queued">Projekt lokal aktualisiert und zur Synchronisierung vorgemerkt.</string>
     <string name="mutation_project_deleted_queued">Projekt lokal gelöscht und zur Synchronisierung vorgemerkt.</string>
+    <string name="mutation_project_attachment_deleted_queued">Anhang lokal gelöscht und zur Synchronisierung vorgemerkt.</string>
     <string name="mutation_project_imported_queued">Projekt „%1$s“ lokal importiert und zur Synchronisierung vorgemerkt.</string>
     <string name="mutation_yarn_created_queued">Wolle lokal erstellt und zur Synchronisierung vorgemerkt.</string>
     <string name="mutation_yarn_updated_queued">Wolle lokal aktualisiert und zur Synchronisierung vorgemerkt.</string>

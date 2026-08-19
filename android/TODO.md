@@ -403,7 +403,8 @@ build, and CI is green on the follow-up push.
 - [x] Project create/edit form (`ui/projects/ProjectEditorScreen.kt`/`ProjectEditorViewModel.kt`):
       name/category/needles/stitch sample/other materials/tags/link/description/notes text
       fields, category suggestion chips (reuses `CategoryRepository`), linked-yarn multi-select
-      via `FilterChip`s, step reordering, and queued title/step image uploads
+      via `FilterChip`s, step reordering, queued title/step image uploads, and project attachment
+      picker uploads/deletions
 - [x] Yarn create/edit form (`ui/yarns/YarnEditorScreen.kt`/`YarnEditorViewModel.kt`): same text
       -field shape as the project form, mirroring `YarnWriteRequest`, plus queued multi-photo
       uploads
@@ -422,10 +423,10 @@ build, and CI is green on the follow-up push.
       icon in the respective detail screens' `TopAppBar`
 
 Status: **mostly done** (2026-08-19) - verified via remote `just check rofl-13.brkn.lol` (ktfmt,
-unit tests, and Android Lint), plus focused step-reordering unit coverage and API regression tests
-that confirm step IDs and attached images survive an update reorder. An actual live
-create/edit/delete/upload round-trip remains unverified because no reachable disposable
-Stricknani server was available.
+unit tests, and Android Lint), plus focused step-reordering and project-attachment mutation tests
+and API regression tests that confirm step IDs and attached images survive an update reorder. An
+actual live create/edit/delete/upload round-trip remains unverified because no reachable
+disposable Stricknani server was available.
 
 ## SNA-11: Gauge calculator
 

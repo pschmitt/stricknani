@@ -14,6 +14,7 @@ import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.uploads.PendingUpload
+import blue.anika.wolle.data.uploads.PendingAttachmentDelete
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.data.util.DateTimeUtils
 import java.time.OffsetDateTime
@@ -176,6 +177,41 @@ constructor(
         )
     }
 
+    /** Queues a project attachment upload; the copied file survives picker/activity teardown. */
+    suspend fun queueAttachmentUpload(projectId: Int, upload: PendingUpload) {
+        pendingMutationDao.insert(
+            PendingMutationEntity(
+                entityType = MutationEntityType.PROJECT,
+                operation = MutationOperation.PROJECT_ATTACHMENT_UPLOAD,
+                localId = projectId,
+                payloadJson = json.encodeToString(upload),
+                createdAt = System.currentTimeMillis(),
+            )
+        )
+    }
+
+    /**
+     * Removes an attachment from the cache immediately and queues its server-side deletion. The
+     * mutation keeps the project id in [PendingMutationEntity.localId], so it is still retargeted
+     * by the existing temp-id reassignment when a queued project create is replayed.
+     */
+    suspend fun queueAttachmentDelete(projectId: Int, attachmentId: Int) {
+        projectDao.getById(projectId)?.let { existing ->
+            val current = json.decodeFromString<ProjectDto>(existing.detailJson)
+            val updated = removeProjectAttachment(current, attachmentId)
+            if (updated != current) projectDao.upsertAll(listOf(updated.toEntity(json)))
+        }
+        pendingMutationDao.insert(
+            PendingMutationEntity(
+                entityType = MutationEntityType.PROJECT,
+                operation = MutationOperation.PROJECT_ATTACHMENT_DELETE,
+                localId = projectId,
+                payloadJson = json.encodeToString(PendingAttachmentDelete(attachmentId)),
+                createdAt = System.currentTimeMillis(),
+            )
+        )
+    }
+
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */
     suspend fun replayCreate(tempId: Int, request: ProjectWriteRequest): Int {
         val created = projectsApi.createProject(request)
@@ -247,6 +283,29 @@ constructor(
         pendingUploadStore.delete(upload)
         runCatching { refreshOne(id) }
     }
+
+    /** Called only by [blue.anika.wolle.sync.WriteReplayWorker]. */
+    suspend fun replayAttachmentUpload(id: Int, upload: PendingUpload) {
+        projectsApi.uploadAttachment(
+            projectId = id,
+            file = pendingUploadStore.multipart(upload),
+        )
+        pendingUploadStore.delete(upload)
+        runCatching { refreshOne(id) }
+    }
+
+    /**
+     * Attachment deletion is idempotent: a 404 means the attachment is already gone, which is
+     * the desired end state for this queued mutation.
+     */
+    suspend fun replayAttachmentDelete(id: Int, attachmentId: Int) {
+        try {
+            projectsApi.deleteAttachment(projectId = id, attachmentId = attachmentId)
+        } catch (e: HttpException) {
+            if (e.code() != 404) throw e
+        }
+        runCatching { refreshOne(id) }
+    }
 }
 
 /**
@@ -264,6 +323,9 @@ private fun ProjectDto.toEntity(json: Json): ProjectEntity =
         previewUrl = (images.firstOrNull { it.isTitleImage } ?: images.firstOrNull())?.thumbnailUrl,
         detailJson = json.encodeToString(this),
     )
+
+internal fun removeProjectAttachment(project: ProjectDto, attachmentId: Int): ProjectDto =
+    project.copy(attachments = project.attachments.filterNot { it.id == attachmentId })
 
 private fun nowIso(): String = OffsetDateTime.now(ZoneOffset.UTC).toString()
 

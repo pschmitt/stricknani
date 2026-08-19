@@ -14,6 +14,7 @@ import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.uploads.PendingAttachmentDelete
 import blue.anika.wolle.data.uploads.PendingUpload
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -130,6 +131,15 @@ constructor(
             MutationOperation.PROJECT_STEP_IMAGE_UPLOAD -> {
                 val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
                 projectRepository.replayStepImageUpload(mutation.localId, upload)
+            }
+            MutationOperation.PROJECT_ATTACHMENT_UPLOAD -> {
+                val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
+                projectRepository.replayAttachmentUpload(mutation.localId, upload)
+            }
+            MutationOperation.PROJECT_ATTACHMENT_DELETE -> {
+                val deletion =
+                    json.decodeFromString<PendingAttachmentDelete>(mutation.payloadJson!!)
+                projectRepository.replayAttachmentDelete(mutation.localId, deletion.attachmentId)
             }
         }
     }
