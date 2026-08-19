@@ -87,6 +87,16 @@ abstract class StricknaniE2eTest {
         waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
     }
 
+    protected fun openHeirloomProject() {
+        openProjects()
+        composeRule.onNodeWithText("Heirloom Baby Blanket").performClick()
+        waitForText("Heirloom Baby Blanket")
+        composeRule
+            .onNodeWithTag("e2e-project-detail")
+            .performScrollToNode(hasTextMatcher("Description"))
+        waitForText("Description", timeoutMillis = 120_000)
+    }
+
     protected fun openSettingsAccount() {
         composeRule.onNodeWithText("Settings").performClick()
         waitForText("Settings")
@@ -142,9 +152,7 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
         connectToFixture()
         captureE2eScreenshot("full-01-home")
 
-        openProjects()
-        composeRule.onNodeWithText("Heirloom Baby Blanket").performClick()
-        waitForText("Description")
+        openHeirloomProject()
         composeRule.onNodeWithContentDescription("Back").performClick()
 
         enterSearchTerm("Riverbend")
@@ -158,9 +166,7 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
     @Test
     fun cachedBrowsingAndQueuedEditSurviveOfflineMode() {
         connectToFixture()
-        openProjects()
-        composeRule.onNodeWithText("Heirloom Baby Blanket").performClick()
-        waitForText("Description")
+        openHeirloomProject()
 
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         setAirplaneMode(device, enabled = true)
