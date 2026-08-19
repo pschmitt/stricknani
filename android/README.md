@@ -1,4 +1,8 @@
-# Stricknani
+<p align="center">
+  <img src="../branding/icon.svg" alt="Stricknani icon" width="128">
+</p>
+
+<h1 align="center">Stricknani</h1>
 
 **A Material You, offline-first Android client for your own [Stricknani](../README.md) server.**
 
