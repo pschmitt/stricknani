@@ -152,9 +152,9 @@ class StricknaniScreenshotTest {
         waitForText("Synced", timeoutMillis = 120_000)
         setAirplaneMode(enabled = true)
         try {
-            // Use the same device-level gesture as the focused offline-refresh test. Compose's
-            // node-local gesture can be consumed by the nested list before PullToRefreshBox sees it
-            // on the smaller screenshot profiles.
+            // The fixture is reached through adb reverse, which remains available during airplane
+            // mode. Tell the host-side screenshot harness to remove that reverse before pulling.
+            signalOfflineCapture()
             device.swipe(
                 device.displayWidth / 2,
                 device.displayHeight / 3,
@@ -216,7 +216,18 @@ class StricknaniScreenshotTest {
             }
     }
 
+    private fun signalOfflineCapture() {
+        InstrumentationRegistry.getInstrumentation()
+            .uiAutomation
+            .executeShellCommand("touch $OFFLINE_CAPTURE_MARKER")
+            .use {}
+    }
+
     private fun requiredArgument(name: String): String =
         arguments.getString(name)?.takeIf(String::isNotBlank)
             ?: error("$name instrumentation argument is required")
+
+    private companion object {
+        const val OFFLINE_CAPTURE_MARKER = "/data/local/tmp/stricknani-screenshot-offline"
+    }
 }

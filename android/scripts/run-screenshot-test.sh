@@ -2,6 +2,39 @@
 
 set -euo pipefail
 
+offline_marker=/data/local/tmp/stricknani-screenshot-offline
+offline_watch_pid=''
+
+watch_for_offline_capture() {
+  local attempts=180
+
+  while (( attempts > 0 ))
+  do
+    if adb shell test -f "$offline_marker" >/dev/null 2>&1
+    then
+      adb reverse --remove tcp:7674 >/dev/null 2>&1 || true
+      return 0
+    fi
+    sleep 1
+    attempts=$((attempts - 1))
+  done
+}
+
+cleanup_offline_capture() {
+  if [[ -n "$offline_watch_pid" ]]
+  then
+    kill "$offline_watch_pid" 2>/dev/null || true
+    wait "$offline_watch_pid" 2>/dev/null || true
+  fi
+  adb reverse tcp:7674 tcp:7674 >/dev/null 2>&1 || true
+  adb shell rm -f "$offline_marker" >/dev/null 2>&1 || true
+}
+
+adb shell rm -f "$offline_marker" >/dev/null 2>&1 || true
+watch_for_offline_capture &
+offline_watch_pid=$!
+trap cleanup_offline_capture EXIT
+
 test_rc=0
 if ./gradlew connectedDebugAndroidTest --stacktrace \
     -Pandroid.testInstrumentationRunnerArguments.class=blue.anika.wolle.screenshots.StricknaniScreenshotTest \
