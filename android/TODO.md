@@ -1576,4 +1576,17 @@ Status: not started (2026-08-19).
 
 Status: not started (2026-08-19).
 
+## SNA-49: Fix Stitch sample image and HTML entity rendering
+
+- [ ] Reproduce the Stitch sample rendering issue against project 3 on `wolle.anika.blue`, including
+      missing images and literal `&nbsp;` text.
+- [ ] Normalize or sanitize the sample's HTML/Markdown before rendering so entities display as
+      whitespace and authorized image URLs resolve through the configured server and image cache.
+- [ ] Preserve safe handling for malformed content, missing images, and offline cached samples.
+- [ ] Add focused rendering/URL-resolution tests and screenshot coverage for a populated Stitch
+      sample in English and German.
+- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android device.
+
+Status: not started (2026-08-19).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
