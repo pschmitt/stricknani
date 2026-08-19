@@ -47,6 +47,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "playwright>=1.50.0",
     "pytest>=8.3.3",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=5.0.0",
@@ -145,4 +146,7 @@ python_functions = ["test_*"]
 # httpx's in-process ASGITransport and an in-memory SQLite DB, so no real
 # sockets are needed. AF_UNIX sockets stay allowed because asyncio's event
 # loop uses socketpair(2) internally for its self-pipe.
-addopts = "--disable-socket --allow-unix-socket"
+addopts = "--disable-socket --allow-unix-socket --ignore=tests/e2e"
+markers = [
+    "e2e: browser tests that require a running Stricknani server",
+]

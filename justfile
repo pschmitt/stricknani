@@ -145,6 +145,11 @@ todo-todo:
 test:
   uv run pytest -v
 
+# Run the browser end-to-end suite against a disposable local database.
+[group: 'test']
+e2e *args:
+  ./scripts/e2e.sh {{ args }}
+
 # Sync vendored assets
 alias vendor-sync := vendir-sync
 [group: 'vendir']

@@ -107,6 +107,8 @@ just run            # Run dev server (reload)
 just lint           # ruff + mypy
 just fmt            # ruff format + fixes
 just test           # pytest -v
+uv run playwright install chromium  # Install the local E2E browser
+just e2e            # Run the disposable browser E2E journey
 just i18n-check     # Verify translations
 just check          # lint + test + i18n-check
 just build-image    # Build Docker image

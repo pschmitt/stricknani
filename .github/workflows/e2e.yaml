@@ -1,0 +1,59 @@
+name: Web E2E
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/e2e.yaml"
+      - "justfile"
+      - "pyproject.toml"
+      - "scripts/e2e.sh"
+      - "stricknani/**"
+      - "tests/e2e/**"
+      - "uv.lock"
+  workflow_dispatch:
+
+concurrency:
+  group: web-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    name: Chromium smoke journey
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install application dependencies
+        run: just ci-setup-py
+
+      - name: Install Chromium
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run browser journey
+        run: just e2e
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-e2e-artifacts
+          path: e2e-artifacts/
+          if-no-files-found: warn
