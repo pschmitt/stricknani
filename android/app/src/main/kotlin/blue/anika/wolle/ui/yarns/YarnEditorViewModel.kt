@@ -4,9 +4,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import android.net.Uri
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.uploads.PendingUpload
+import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.navigation.Route
@@ -32,6 +35,7 @@ data class YarnEditorFormState(
     val notes: String = "",
     val link: String = "",
     val isAiEnhanced: Boolean = false,
+    val photos: List<PendingUpload> = emptyList(),
 )
 
 @HiltViewModel
@@ -42,6 +46,7 @@ constructor(
     private val yarnRepository: YarnRepository,
     private val syncScheduler: SyncScheduler,
     private val mutationFeedback: MutationFeedback,
+    private val pendingUploadStore: PendingUploadStore,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.YarnEditor>()
@@ -91,6 +96,22 @@ constructor(
         _form.value = transform(_form.value)
     }
 
+    fun addPhotos(uris: List<Uri>) {
+        viewModelScope.launch {
+            uris.forEach { uri ->
+                runCatching { pendingUploadStore.copy(uri) }
+                    .onSuccess { upload -> updateForm { it.copy(photos = it.photos + upload) } }
+                    .onFailure { mutationFeedback.show(R.string.editor_image_select_failed) }
+            }
+        }
+    }
+
+    fun removePhoto(index: Int) {
+        val upload = _form.value.photos.getOrNull(index) ?: return
+        updateForm { it.copy(photos = it.photos.filterIndexed { position, _ -> position != index }) }
+        viewModelScope.launch { pendingUploadStore.delete(upload) }
+    }
+
     fun save() {
         val current = _form.value
         if (current.name.isBlank()) {
@@ -117,8 +138,14 @@ constructor(
                         isAiEnhanced = current.isAiEnhanced,
                     )
                 val id = route.yarnId
-                if (id != null) yarnRepository.updateYarn(id, request)
-                else yarnRepository.createYarn(request)
+                val yarnId =
+                    if (id != null) {
+                        yarnRepository.updateYarn(id, request)
+                        id
+                    } else {
+                        yarnRepository.createYarn(request)
+                    }
+                current.photos.forEach { upload -> yarnRepository.queuePhotoUpload(yarnId, upload) }
                 syncScheduler.replayThenSyncNow()
                 mutationFeedback.show(
                     if (id == null) R.string.mutation_yarn_created_queued

@@ -14,6 +14,9 @@ object MutationOperation {
     const val CREATE = "create"
     const val UPDATE = "update"
     const val DELETE = "delete"
+    const val PROJECT_TITLE_IMAGE_UPLOAD = "project_title_image_upload"
+    const val PROJECT_STEP_IMAGE_UPLOAD = "project_step_image_upload"
+    const val YARN_PHOTO_UPLOAD = "yarn_photo_upload"
 }
 
 /**
@@ -21,7 +24,8 @@ object MutationOperation {
  * [localId] is the id the row is currently known by in Room: a negative client-generated temp id
  * for a still-unsynced [MutationOperation.CREATE] (see `ProjectRepository.createProject`/
  * `YarnRepository.createYarn`), or the real server id otherwise. [payloadJson] is the write request
- * DTO (`ProjectWriteRequest`/`YarnWriteRequest`), verbatim JSON - `null` for a delete.
+ * DTO (`ProjectWriteRequest`/`YarnWriteRequest`) or a serialized `PendingUpload` for a media
+ * upload, verbatim JSON - `null` for a delete.
  */
 @Entity(tableName = "pending_mutations")
 data class PendingMutationEntity(

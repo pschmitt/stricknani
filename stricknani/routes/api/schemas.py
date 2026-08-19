@@ -109,6 +109,9 @@ class StepResponse(BaseModel):
 class StepWriteRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
+    # Existing ids let API clients reorder/edit steps without deleting their
+    # attached images.  Omit the id when creating a new step.
+    id: int | None = None
     title: str
     description: str | None = None
     step_number: int = 0

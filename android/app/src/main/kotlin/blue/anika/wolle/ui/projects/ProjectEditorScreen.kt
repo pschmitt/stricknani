@@ -1,15 +1,25 @@
 package blue.anika.wolle.ui.projects
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -19,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,6 +62,17 @@ fun ProjectEditorScreen(
     val saved by viewModel.saved.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var pickingStepIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+    val titleImagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+            uris.forEach(viewModel::addTitleImage)
+        }
+    val stepImagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+            val index = pickingStepIndex
+            if (index != null) uris.forEach { uri -> viewModel.addStepImage(index, uri) }
+            pickingStepIndex = null
+        }
 
     LaunchedEffect(saved) { if (saved) onSaved() }
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
@@ -215,6 +238,123 @@ fun ProjectEditorScreen(
                                 selected = yarn.id in form.selectedYarnIds,
                                 onClick = { viewModel.toggleYarnSelected(yarn.id) },
                                 label = { Text(yarn.name) },
+                            )
+                        }
+                    }
+                }
+            }
+            item {
+                Text(
+                    stringResource(R.string.project_editor_steps_label),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
+            itemsIndexed(
+                form.steps,
+                key = { index, step -> step.id ?: "new-step-$index" },
+            ) { index, step ->
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "${index + 1}",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(
+                            onClick = { viewModel.moveStep(index, -1) },
+                            enabled = index > 0,
+                        ) {
+                            Icon(
+                                Icons.Filled.ArrowUpward,
+                                contentDescription =
+                                    stringResource(R.string.project_editor_move_step_up),
+                            )
+                        }
+                        IconButton(
+                            onClick = { viewModel.moveStep(index, 1) },
+                            enabled = index < form.steps.lastIndex,
+                        ) {
+                            Icon(
+                                Icons.Filled.ArrowDownward,
+                                contentDescription =
+                                    stringResource(R.string.project_editor_move_step_down),
+                            )
+                        }
+                        IconButton(onClick = { viewModel.removeStep(index) }) {
+                            Icon(
+                                Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.project_editor_remove_step),
+                            )
+                        }
+                    }
+                    OutlinedTextField(
+                        value = step.title,
+                        onValueChange = { value ->
+                            viewModel.updateStep(index) { it.copy(title = value) }
+                        },
+                        label = { Text(stringResource(R.string.project_editor_step_title_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    OutlinedTextField(
+                        value = step.description,
+                        onValueChange = { value ->
+                            viewModel.updateStep(index) { it.copy(description = value) }
+                        },
+                        label = {
+                            Text(stringResource(R.string.project_editor_step_description_label))
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                    )
+                    TextButton(
+                        onClick = {
+                            pickingStepIndex = index
+                            stepImagePicker.launch("image/*")
+                        },
+                    ) {
+                        Text(stringResource(R.string.project_editor_add_step_image))
+                    }
+                    step.images.forEachIndexed { imageIndex, image ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                image.fileName,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconButton(onClick = { viewModel.removeStepImage(index, imageIndex) }) {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription =
+                                        stringResource(R.string.project_editor_remove_image),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            item {
+                TextButton(onClick = viewModel::addStep) {
+                    Text(stringResource(R.string.project_editor_add_step))
+                }
+            }
+            item {
+                TextButton(onClick = { titleImagePicker.launch("image/*") }) {
+                    Text(stringResource(R.string.project_editor_add_title_image))
+                }
+                form.titleImages.forEachIndexed { index, image ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            image.fileName,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = { viewModel.removeTitleImage(index) }) {
+                            Icon(
+                                Icons.Filled.Delete,
+                                contentDescription =
+                                    stringResource(R.string.project_editor_remove_image),
                             )
                         }
                     }

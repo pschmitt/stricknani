@@ -337,20 +337,13 @@ follow-up push.
       `SyncScheduler.replayThenSyncNow()`), replays strictly in insertion order, reconciles temp
       ids with server-assigned ids via `PendingMutationDao.reassignLocalId` once a queued create
       actually lands
-- [x] A replay failure leaves the mutation queued with `lastErrorMessage` recorded
-      (`PendingMutationDao.observeFailed()` exposed for a future conflict-banner UI - not
-      surfaced anywhere yet, see caveat below) rather than silently dropping the local edit; the
-      worker returns `Result.retry()` when any mutation failed
+- [x] A replay failure leaves the mutation queued with `lastErrorMessage` recorded and the worker
+      returns `Result.retry()` when any mutation failed; the Home and Settings screens surface
+      queued sync issues and offer retry/dismiss actions rather than hiding a stuck local edit
 
-Status: **mostly done** (2026-08-18), landed together with SNA-10 - see that entry for scope
-(text fields only this pass; step reordering + image/photo upload deferred). **Not done**: no UI
-surfaces `observeFailed()` yet, so a stuck/conflicting queued mutation is currently invisible to
-the user beyond it simply not showing as synced - a conflict-banner UI is a follow-up. **Not
-verified**: an actual end-to-end replay against a running Stricknani server (no reachable test
-server was set up this session, same gap as SNA-6/7/9) - verified so far only via a successful
-remote debug build (`just build debug rofl-13.brkn.lol`, `BUILD SUCCESSFUL`) confirming the outbox
-/worker/DI wiring compiles and Room's schema migration (v1 -> v2, `fallbackToDestructiveMigration`)
-is consistent; not yet installed/exercised on a physical device this session.
+Status: **mostly done** (2026-08-19) - verified with the new conflict/sync-issue unit tests and
+remote `just check rofl-13.brkn.lol` (ktfmt, unit tests, and Android Lint). A live replay against a
+running Stricknani server remains unverified because no disposable test server was available.
 
 ### Android app screens
 
@@ -410,12 +403,10 @@ build, and CI is green on the follow-up push.
 - [x] Project create/edit form (`ui/projects/ProjectEditorScreen.kt`/`ProjectEditorViewModel.kt`):
       name/category/needles/stitch sample/other materials/tags/link/description/notes text
       fields, category suggestion chips (reuses `CategoryRepository`), linked-yarn multi-select
-      via `FilterChip`s. Step reordering and image/attachment picker/upload are **explicitly
-      deferred** to a follow-up (multipart upload is materially more work and doesn't block the
-      outbox mechanism itself being real and testable)
+      via `FilterChip`s, step reordering, and queued title/step image uploads
 - [x] Yarn create/edit form (`ui/yarns/YarnEditorScreen.kt`/`YarnEditorViewModel.kt`): same text
-      -field shape as the project form, mirroring `YarnWriteRequest`. Photo picker/upload
-      deferred, same reasoning
+      -field shape as the project form, mirroring `YarnWriteRequest`, plus queued multi-photo
+      uploads
 - [x] All writes go through the offline queue (SNA-8) via
       `ProjectRepository.createProject`/`updateProject`/`deleteProject` (and the yarn
       equivalents) - zero-connectivity create/edit/delete shows up in Room immediately and
@@ -430,21 +421,11 @@ build, and CI is green on the follow-up push.
       project"/"New yarn" `ExtendedFloatingActionButton` on the respective list screens, an edit
       icon in the respective detail screens' `TopAppBar`
 
-Status: **mostly done** (2026-08-18) - verified via a successful remote debug build (`just build
-debug rofl-13.brkn.lol`, `BUILD SUCCESSFUL`) after fixing two real compile errors caught along the
-way: (1) `androidx.compose.material3.ExposedDropdownMenu`/`ExposedDropdownMenuBox` doesn't resolve
-against this project's Material3 1.4.0 (the API this session initially reached for isn't present
-under that name/signature in this version) - replaced the category picker with a plain text field
-plus `FilterChip` suggestion chips instead of chasing the right dropdown API, which is simpler and
-matches the category-filter chip row already used on `ProjectsListScreen`; (2) `Modifier.weight()`
-inside `YarnEditorScreen`'s weight/length `Row` failed because `weight` was (wrongly) imported as a
-top-level symbol - it's a `RowScope`-member extension, not a top-level function, and resolves
-automatically inside a `Row { }` lambda without any import. **Not verified**: installed/exercised
-on a physical device, or an actual live create/edit/delete round-trip against a running Stricknani
-server (no reachable test server was set up this session, same recurring gap noted in
-SNA-6/7/8/9). No unit tests added - `ProjectEditorViewModel`/`YarnEditorViewModel` are mostly
-Android-lifecycle-bound (`SavedStateHandle`, `Flow` collection) with the same "not enough isolable
-pure logic yet" reasoning as SNA-6.
+Status: **mostly done** (2026-08-19) - verified via remote `just check rofl-13.brkn.lol` (ktfmt,
+unit tests, and Android Lint), plus focused step-reordering unit coverage and API regression tests
+that confirm step IDs and attached images survive an update reorder. An actual live
+create/edit/delete/upload round-trip remains unverified because no reachable disposable
+Stricknani server was available.
 
 ## SNA-11: Gauge calculator
 

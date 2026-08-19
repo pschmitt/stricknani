@@ -4,6 +4,7 @@ import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
+import blue.anika.wolle.data.api.dto.StepDto
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.ProjectDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
@@ -13,6 +14,8 @@ import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.util.DateTimeUtils
+import blue.anika.wolle.data.uploads.PendingUpload
+import blue.anika.wolle.data.uploads.PendingUploadStore
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import javax.inject.Inject
@@ -20,6 +23,8 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 
 private const val ENTITY_TYPE = "project"
@@ -36,6 +41,7 @@ constructor(
     private val syncApi: SyncApi,
     private val projectsApi: ProjectsApi,
     private val pendingMutationDao: PendingMutationDao,
+    private val pendingUploadStore: PendingUploadStore,
     private val json: Json,
 ) {
     fun observeAll(): Flow<List<ProjectEntity>> = projectDao.observeAll()
@@ -145,6 +151,31 @@ constructor(
         )
     }
 
+    suspend fun queueTitleImageUpload(projectId: Int, upload: PendingUpload) {
+        pendingMutationDao.insert(
+            PendingMutationEntity(
+                entityType = MutationEntityType.PROJECT,
+                operation = MutationOperation.PROJECT_TITLE_IMAGE_UPLOAD,
+                localId = projectId,
+                payloadJson = json.encodeToString(upload),
+                createdAt = System.currentTimeMillis(),
+            )
+        )
+    }
+
+    suspend fun queueStepImageUpload(projectId: Int, upload: PendingUpload) {
+        require(upload.stepIndex != null) { "A step image needs its step index" }
+        pendingMutationDao.insert(
+            PendingMutationEntity(
+                entityType = MutationEntityType.PROJECT,
+                operation = MutationOperation.PROJECT_STEP_IMAGE_UPLOAD,
+                localId = projectId,
+                payloadJson = json.encodeToString(upload),
+                createdAt = System.currentTimeMillis(),
+            )
+        )
+    }
+
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */
     suspend fun replayCreate(tempId: Int, request: ProjectWriteRequest): Int {
         val created = projectsApi.createProject(request)
@@ -189,6 +220,32 @@ constructor(
             if (e.code() != 404) throw e
         }
     }
+
+    /** Called only by [blue.anika.wolle.sync.WriteReplayWorker]. */
+    suspend fun replayTitleImageUpload(id: Int, upload: PendingUpload) {
+        projectsApi.uploadTitleImage(
+            projectId = id,
+            file = pendingUploadStore.multipart(upload),
+            altText = upload.altText.toRequestBody("text/plain".toMediaType()),
+        )
+        pendingUploadStore.delete(upload)
+        runCatching { refreshOne(id) }
+    }
+
+    /** Resolves the current server step by its editor position, then uploads its image. */
+    suspend fun replayStepImageUpload(id: Int, upload: PendingUpload) {
+        val stepIndex = requireNotNull(upload.stepIndex) { "A step image needs its step index" }
+        val step = projectsApi.getProject(id).steps.getOrNull(stepIndex)
+            ?: error("Project step $stepIndex no longer exists")
+        projectsApi.uploadStepImage(
+            projectId = id,
+            stepId = step.id,
+            file = pendingUploadStore.multipart(upload),
+            altText = upload.altText.toRequestBody("text/plain".toMediaType()),
+        )
+        pendingUploadStore.delete(upload)
+        runCatching { refreshOne(id) }
+    }
 }
 
 /**
@@ -230,7 +287,7 @@ private fun ProjectWriteRequest.toPlaceholderEntity(tempId: Int, json: Json): Pr
             createdAt = now,
             updatedAt = now,
             yarnIds = yarnIds,
-            steps = emptyList(),
+            steps = stepsFromRequest(emptyList(), steps),
             images = emptyList(),
             attachments = emptyList(),
         )
@@ -243,6 +300,7 @@ private fun ProjectWriteRequest.toPlaceholderEntity(tempId: Int, json: Json): Pr
  */
 private fun ProjectWriteRequest.applyTo(existing: ProjectEntity, json: Json): ProjectEntity {
     val current = json.decodeFromString<ProjectDto>(existing.detailJson)
+    val existingSteps = current.steps
     val updated =
         current.copy(
             name = name,
@@ -256,7 +314,22 @@ private fun ProjectWriteRequest.applyTo(existing: ProjectEntity, json: Json): Pr
             link = link,
             isAiEnhanced = isAiEnhanced,
             yarnIds = yarnIds,
+            steps = stepsFromRequest(existingSteps, steps),
             updatedAt = nowIso(),
         )
     return updated.toEntity(json)
 }
+
+private fun stepsFromRequest(
+    existing: List<StepDto>,
+    requested: List<blue.anika.wolle.data.api.dto.StepWriteRequest>,
+): List<StepDto> =
+    requested.mapIndexed { index, step ->
+        val existingStep = step.id?.let { id -> existing.firstOrNull { it.id == id } }
+        StepDto(
+            id = existingStep?.id ?: step.id ?: -(index + 1),
+            title = step.title,
+            description = step.description,
+            stepNumber = step.stepNumber.takeIf { it > 0 } ?: index + 1,
+        )
+    }

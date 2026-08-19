@@ -15,6 +15,8 @@ data class StepDto(
 /** `stricknani/routes/api/schemas.py`'s `StepWriteRequest`. */
 @Serializable
 data class StepWriteRequest(
+    /** Existing ids are preserved during reorder/update so step images survive. */
+    val id: Int? = null,
     val title: String,
     val description: String? = null,
     @SerialName("step_number") val stepNumber: Int = 0,

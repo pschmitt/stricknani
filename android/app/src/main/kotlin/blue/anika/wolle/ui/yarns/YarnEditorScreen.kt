@@ -1,6 +1,9 @@
 package blue.anika.wolle.ui.yarns
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -18,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +53,10 @@ fun YarnEditorScreen(
     val saved by viewModel.saved.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    val photoPicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+            viewModel.addPhotos(uris)
+        }
 
     LaunchedEffect(saved) { if (saved) onSaved() }
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
@@ -106,6 +115,29 @@ fun YarnEditorScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
+            }
+            item {
+                Column {
+                    TextButton(onClick = { photoPicker.launch("image/*") }) {
+                        Text(stringResource(R.string.yarn_editor_add_photo))
+                    }
+                    form.photos.forEachIndexed { index, photo ->
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text(
+                                photo.fileName,
+                                modifier = Modifier.weight(1f),
+                                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                            )
+                            IconButton(onClick = { viewModel.removePhoto(index) }) {
+                                Icon(
+                                    androidx.compose.material.icons.Icons.Filled.Delete,
+                                    contentDescription =
+                                        stringResource(R.string.yarn_editor_remove_photo),
+                                )
+                            }
+                        }
+                    }
+                }
             }
             item {
                 OutlinedTextField(

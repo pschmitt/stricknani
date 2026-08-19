@@ -274,6 +274,8 @@ async def test_project_crud_with_steps_and_yarn_links(
     assert project["yarn_ids"] == [yarn_id]
     assert len(project["steps"]) == 2
     project_id = project["id"]
+    first_step_id = project["steps"][0]["id"]
+    second_step_id = project["steps"][1]["id"]
 
     get_response = await client.get(f"/api/v1/projects/{project_id}")
     assert get_response.status_code == 200
@@ -290,14 +292,25 @@ async def test_project_crud_with_steps_and_yarn_links(
             "name": "Striped Socks v2",
             "tags": ["socks"],
             "yarn_ids": [],
-            "steps": [{"title": "Cast on", "step_number": 1}],
+            "steps": [
+                {
+                    "id": second_step_id,
+                    "title": "Knit heel first",
+                    "step_number": 1,
+                },
+                {"id": first_step_id, "title": "Cast on", "step_number": 2},
+            ],
         },
     )
     assert update_response.status_code == 200
     updated = update_response.json()
     assert updated["name"] == "Striped Socks v2"
     assert updated["yarn_ids"] == []
-    assert len(updated["steps"]) == 1
+    assert [step["id"] for step in updated["steps"]] == [
+        second_step_id,
+        first_step_id,
+    ]
+    assert [step["step_number"] for step in updated["steps"]] == [1, 2]
 
     fav_response = await client.post(f"/api/v1/projects/{project_id}/favorite")
     assert fav_response.status_code == 200
@@ -405,6 +418,19 @@ async def test_project_title_image_step_image_and_attachment(
     assert step_image_response.status_code == 201
     step_image = step_image_response.json()
     assert step_image["step_id"] == step_id
+
+    reordered_response = await client.put(
+        f"/api/v1/projects/{project_id}",
+        json={
+            "name": "Media Project",
+            "steps": [{"id": step_id, "title": "Step one", "step_number": 1}],
+        },
+    )
+    assert reordered_response.status_code == 200
+    assert reordered_response.json()["steps"][0]["id"] == step_id
+    assert any(
+        image["step_id"] == step_id for image in reordered_response.json()["images"]
+    )
 
     attachment_response = await client.post(
         f"/api/v1/projects/{project_id}/attachments",

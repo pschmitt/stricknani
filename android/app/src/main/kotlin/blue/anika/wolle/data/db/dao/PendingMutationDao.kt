@@ -12,6 +12,9 @@ interface PendingMutationDao {
     @Query("SELECT * FROM pending_mutations WHERE isConflict = 0 ORDER BY id ASC")
     suspend fun getAll(): List<PendingMutationEntity>
 
+    @Query("SELECT * FROM pending_mutations WHERE id = :id")
+    suspend fun getById(id: Long): PendingMutationEntity?
+
     @Query("SELECT COUNT(*) FROM pending_mutations") fun observeCount(): Flow<Int>
 
     @Query("SELECT * FROM pending_mutations WHERE lastErrorMessage IS NOT NULL ORDER BY id ASC")

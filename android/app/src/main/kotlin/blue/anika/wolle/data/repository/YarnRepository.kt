@@ -12,6 +12,8 @@ import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
+import blue.anika.wolle.data.uploads.PendingUpload
+import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.data.util.DateTimeUtils
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -36,6 +38,7 @@ constructor(
     private val syncApi: SyncApi,
     private val yarnsApi: YarnsApi,
     private val pendingMutationDao: PendingMutationDao,
+    private val pendingUploadStore: PendingUploadStore,
     private val json: Json,
 ) {
     fun observeAll(): Flow<List<YarnEntity>> = yarnDao.observeAll()
@@ -130,6 +133,18 @@ constructor(
         )
     }
 
+    suspend fun queuePhotoUpload(yarnId: Int, upload: PendingUpload) {
+        pendingMutationDao.insert(
+            PendingMutationEntity(
+                entityType = MutationEntityType.YARN,
+                operation = MutationOperation.YARN_PHOTO_UPLOAD,
+                localId = yarnId,
+                payloadJson = json.encodeToString(upload),
+                createdAt = System.currentTimeMillis(),
+            )
+        )
+    }
+
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */
     suspend fun replayCreate(tempId: Int, request: YarnWriteRequest): Int {
         val created = yarnsApi.createYarn(request)
@@ -161,6 +176,13 @@ constructor(
         } catch (e: HttpException) {
             if (e.code() != 404) throw e
         }
+    }
+
+    /** Called only by [blue.anika.wolle.sync.WriteReplayWorker]. */
+    suspend fun replayPhotoUpload(id: Int, upload: PendingUpload) {
+        yarnsApi.uploadPhoto(id, pendingUploadStore.multipart(upload))
+        pendingUploadStore.delete(upload)
+        runCatching { refreshOne(id) }
     }
 }
 

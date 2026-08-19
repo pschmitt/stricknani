@@ -14,6 +14,7 @@ import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.uploads.PendingUpload
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
@@ -52,7 +53,10 @@ constructor(
 
     override suspend fun doWork(): Result {
         var anyFailure = false
-        for (mutation in pendingMutationDao.getAll()) {
+        // Re-read each row after the previous mutation. A CREATE can reassign the local temp id on
+        // all later mutations, so replaying the initial snapshot would still target the old id.
+        for (queuedMutation in pendingMutationDao.getAll()) {
+            val mutation = pendingMutationDao.getById(queuedMutation.id) ?: continue
             try {
                 replay(mutation)
                 pendingMutationDao.delete(mutation.id)
@@ -119,6 +123,14 @@ constructor(
                 }
             }
             MutationOperation.DELETE -> projectRepository.replayDelete(mutation.localId)
+            MutationOperation.PROJECT_TITLE_IMAGE_UPLOAD -> {
+                val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
+                projectRepository.replayTitleImageUpload(mutation.localId, upload)
+            }
+            MutationOperation.PROJECT_STEP_IMAGE_UPLOAD -> {
+                val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
+                projectRepository.replayStepImageUpload(mutation.localId, upload)
+            }
         }
     }
 
@@ -158,6 +170,10 @@ constructor(
                 }
             }
             MutationOperation.DELETE -> yarnRepository.replayDelete(mutation.localId)
+            MutationOperation.YARN_PHOTO_UPLOAD -> {
+                val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
+                yarnRepository.replayPhotoUpload(mutation.localId, upload)
+            }
         }
     }
 
