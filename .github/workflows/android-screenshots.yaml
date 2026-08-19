@@ -179,7 +179,7 @@ jobs:
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
-          name: stricknani-${{ matrix.device }}-${{ env.SCREENSHOT_THEME }}-diagnostics-${{ github.run_id }}
+          name: stricknani-${{ matrix.device }}-${{ env.SCREENSHOT_THEME }}-fixture-logs-${{ github.run_id }}
           if-no-files-found: ignore
           path: screenshot-stricknani.log
 
