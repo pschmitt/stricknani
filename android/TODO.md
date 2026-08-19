@@ -1513,16 +1513,17 @@ Status: **done** (2026-08-19; remotely verified with `just check rofl-13.brkn.lo
 
 ## SNA-44: Render Markdown and embedded images in notes and stitch samples
 
-- [ ] Investigate why Markdown content and embedded images in project/yarn notes and stitch samples
+- [x] Investigate why Markdown content and embedded images in project/yarn notes and stitch samples
       do not render like descriptions and steps.
-- [ ] Render the supported Markdown syntax consistently, resolving authorized relative media URLs
+- [x] Render the supported Markdown syntax consistently, resolving authorized relative media URLs
       through the configured server and preserving offline cached images where available.
-- [ ] Handle missing/invalid images and plain text safely without blank sections or crashes.
-- [ ] Add focused rendering/URL-resolution tests for notes and stitch samples, including embedded
+- [x] Handle missing/invalid images and plain text safely without blank sections or crashes.
+- [x] Add focused rendering/URL-resolution tests for notes and stitch samples, including embedded
       images, offline cache behavior, and English/German UI labels.
-- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android screen.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android screen.
 
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19; remotely verified with `ktfmtCheck`, 45 unit tests, and `lintDebug` on
+`rofl-13.brkn.lol`).
 
 ## SNA-45: Scale down Markdown heading styles
 
