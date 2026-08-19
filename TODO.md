@@ -91,7 +91,7 @@ Execution-oriented backlog for Stricknani.
 | T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
  | T87 | P3 | wip (PID: main, AGENT: codex-main) | release/decision | feat | Prepare gated Google Play store-assets and publishing workflow; external Console/listing setup remains |
- | T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
+ | T88 | P2 | done | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
 | T90 | P1 | done | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
 
@@ -1162,7 +1162,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: release/decision
 - **Priority**: P3
-- **Status**: wip
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Android release signing, GitHub Releases, and Obtainium are implemented; Google Play publishing remains deliberately undecided and is currently documented only in `android/TODO.md`.
@@ -1197,9 +1197,11 @@ Execution-oriented backlog for Stricknani.
 - **Completed**:
   - Added shared M3 light/dark color, typography, shape, elevation, motion, focus, and tonal
     surface tokens without adding an unvendored frontend dependency.
-  - Applied the shared system to the app bar, footer, buttons, controls, cards, dialogs, empty
-    states, list/detail/form shells, tabs, alerts, and responsive mobile FAB behavior.
-  - Added browser coverage for the dark system theme and responsive Material shell.
+  - Applied explicit M3 component roles and styling to the app bar/navigation menu, filled/outlined/
+    text/icon/FAB buttons, text fields, elevated/outlined cards, dialogs, filter surfaces, footer,
+    empty states, list/detail/form shells, tabs, alerts, and responsive mobile behavior.
+  - Added browser coverage for the dark system theme and responsive Material shell; local smoke
+    coverage passed with 3 tests on 2026-08-19 and produced the M3 login screenshot artifact.
 - **Files**: `stricknani/templates/`, `stricknani/static/css/`, `stricknani/static/js/`,
   `vendir.yml`, and both translation catalogs as UI strings change.
 - **Testing**: add/update browser E2E and screenshot coverage for light/dark themes and key

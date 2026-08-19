@@ -1,6 +1,6 @@
 services:
   stricknani:
-    image: stricknani:e2e
+    image: ${E2E_IMAGE:-stricknani:e2e}
     environment:
       ALLOWED_HOSTS: "*"
       CSRF_SECRET_KEY: ci-only-csrf-secret

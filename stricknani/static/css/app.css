@@ -1367,3 +1367,199 @@ body {
 	}
 
 }
+
+/*
+ * Material 3 component layer.
+ *
+ * Keep the legacy utility classes for compatibility with existing pages, but
+ * give shared components explicit roles. This makes the design system
+ * inspectable in the markup and prevents DaisyUI's generic component rules
+ * from deciding the visual language of the application.
+ */
+.md3-button {
+	position: relative;
+	isolation: isolate;
+	min-height: 2.5rem;
+	border-radius: 999px;
+	font: inherit;
+	font-weight: 650;
+	letter-spacing: 0.01em;
+	line-height: 1.25;
+	transition: box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing),
+		background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing),
+		color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing),
+		transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing);
+}
+
+.md3-button::before {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: inherit;
+	background: currentColor;
+	content: "";
+	opacity: 0;
+	transition: opacity var(--md-sys-motion-duration-short) var(--md-sys-motion-easing);
+}
+
+.md3-button:hover::before,
+.md3-button:focus-visible::before {
+	opacity: 0.08;
+}
+
+.md3-button:active::before {
+	opacity: 0.12;
+}
+
+.md3-button--filled {
+	background: var(--md-sys-color-primary);
+	color: var(--md-sys-color-on-primary);
+	box-shadow: var(--md-sys-elevation-level-1);
+}
+
+.md3-button--filled:hover {
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+.md3-button--outlined {
+	border: 1px solid var(--md-sys-color-outline);
+	background: transparent;
+	color: var(--md-sys-color-primary);
+}
+
+.md3-button--text {
+	background: transparent;
+	color: var(--md-sys-color-primary);
+}
+
+.md3-button--text:hover {
+	box-shadow: none;
+}
+
+.md3-button--destructive {
+	background: var(--md-sys-color-error);
+	color: var(--md-sys-color-on-error);
+}
+
+.md3-button--favorite {
+	border-color: color-mix(in srgb, var(--md-sys-color-error) 42%, var(--md-sys-color-outline));
+	color: var(--md-sys-color-error);
+}
+
+.md3-button--icon {
+	width: 2.5rem;
+	min-width: 2.5rem;
+	padding: 0;
+}
+
+.md3-button--fab {
+	width: 3.5rem;
+	min-width: 3.5rem;
+	height: 3.5rem;
+	min-height: 3.5rem;
+	border-radius: 1rem;
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+.md3-card {
+	border-radius: var(--md-sys-shape-corner-large);
+	color: var(--md-sys-color-on-surface);
+	transition: box-shadow var(--md-sys-motion-duration-medium) var(--md-sys-motion-easing),
+		border-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing),
+		transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing);
+}
+
+.md3-card--elevated {
+	background: var(--md-sys-color-surface-container-low);
+	border-color: var(--md-sys-color-outline-variant);
+	box-shadow: var(--md-sys-elevation-level-1);
+}
+
+.md3-card--elevated:hover {
+	border-color: color-mix(in srgb, var(--md-sys-color-primary) 45%, var(--md-sys-color-outline-variant));
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+.md3-card--outlined {
+	background: var(--md-sys-color-surface);
+	border: 1px solid var(--md-sys-color-outline-variant);
+	box-shadow: none;
+}
+
+.md3-filter-surface {
+	background: var(--md-sys-color-surface-container);
+	border-radius: var(--md-sys-shape-corner-extra-large);
+	box-shadow: none;
+}
+
+.md3-text-field {
+	min-height: 3.5rem;
+	border: 1px solid var(--md-sys-color-outline);
+	border-radius: 0.25rem 0.25rem 0 0;
+	background: var(--md-sys-color-surface-container-high);
+	color: var(--md-sys-color-on-surface);
+	box-shadow: inset 0 -2px 0 var(--md-sys-color-outline);
+}
+
+.md3-text-field:hover {
+	border-color: var(--md-sys-color-on-surface);
+}
+
+.md3-text-field:focus {
+	border-color: var(--md-sys-color-primary);
+	box-shadow: inset 0 -2px 0 var(--md-sys-color-primary), var(--md-focus-ring);
+}
+
+.md3-navigation-menu {
+	min-width: 14rem;
+	padding: 0.5rem;
+	background: var(--md-sys-color-surface-container);
+	border: 0;
+	border-radius: var(--md-sys-shape-corner-large);
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+.md3-navigation-menu li > a,
+.md3-navigation-menu li > button {
+	min-height: 2.75rem;
+	border-radius: 999px;
+	color: var(--md-sys-color-on-surface-variant);
+	font-weight: 600;
+}
+
+.md3-navigation-menu li > a:hover,
+.md3-navigation-menu li > button:hover {
+	background: color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent);
+	color: var(--md-sys-color-on-surface);
+}
+
+.md3-navigation-menu li > a.bg-primary\/10 {
+	background: var(--md-sys-color-secondary-container);
+	color: var(--md-sys-color-on-secondary-container);
+}
+
+.md3-login-card {
+	background: var(--md-sys-color-surface-container-low);
+	border-color: var(--md-sys-color-outline-variant);
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+.md3-login-card .input {
+	min-height: 3.5rem;
+	border: 1px solid var(--md-sys-color-outline);
+	border-radius: 0.25rem 0.25rem 0 0;
+	background: var(--md-sys-color-surface-container-high);
+	box-shadow: inset 0 -2px 0 var(--md-sys-color-outline);
+}
+
+.md3-login-card .input:focus {
+	border-color: var(--md-sys-color-primary);
+	box-shadow: inset 0 -2px 0 var(--md-sys-color-primary), var(--md-focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.md3-button,
+	.md3-card {
+		transition: none;
+	}
+}
