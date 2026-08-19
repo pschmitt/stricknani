@@ -309,6 +309,7 @@ from stricknani.routes import (  # noqa: E402
     admin,
     auth,
     gauge,
+    legal,
     media,
     projects,
     search,
@@ -322,6 +323,7 @@ app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(search.router)
 app.include_router(gauge.router)
+app.include_router(legal.router)
 app.include_router(user.router)
 app.include_router(yarn.router)
 app.include_router(admin.router)

@@ -111,3 +111,26 @@ def test_material_dark_login_surface() -> None:
         finally:
             context.close()
             browser.close()
+
+
+def test_public_privacy_policy() -> None:
+    """Verify the policy is public, translated, and linked from login."""
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        context = browser.new_context(
+            locale="de-DE", viewport={"width": 1280, "height": 900}
+        )
+        page = context.new_page()
+
+        try:
+            page.goto(f"{BASE_URL}/privacy")
+            page.get_by_role("heading", name="Datenschutzerklärung").wait_for()
+            page.get_by_text("Android-App und Offline-Daten", exact=True).wait_for()
+
+            page.goto(f"{BASE_URL}/login")
+            page.locator('a[href="/privacy"]').first.wait_for()
+            assert page.locator('footer a[href="/privacy"]').is_visible()
+        finally:
+            context.close()
+            browser.close()

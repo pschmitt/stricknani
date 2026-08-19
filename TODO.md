@@ -93,7 +93,7 @@ Execution-oriented backlog for Stricknani.
 | T87 | P3 | todo | release/decision | feat | Decide whether Stricknani should publish to Google Play and, if yes, add the gated store-assets and publishing workflow |
 | T88 | P2 | done | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
-| T90 | P1 | todo | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
+| T90 | P1 | done | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
 
 
 ## Done
@@ -1224,7 +1224,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: privacy/legal
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Provide a clear, user-facing privacy policy covering the hosted web app, Android client,
@@ -1241,3 +1241,6 @@ Execution-oriented backlog for Stricknani.
   and related documentation.
 - **Testing**: assert the route is reachable without authentication, linked from public entry
   points, translated/fallback-safe, and covered by web/browser smoke tests.
+- **Completed**: Added the public `/privacy` page, linked it from the shared footer and login/
+  signup experience, documented hosted/self-hosted web behavior alongside the existing Android
+  policy, and added English/German rendering and public-link regression tests.
