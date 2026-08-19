@@ -146,6 +146,10 @@ class StricknaniScreenshotTest {
     private fun captureOfflineState() {
         composeRule.onNodeWithText("Home").performClick()
         waitForText("Home")
+        // Returning to Home starts its automatic refresh. Wait for that refresh to settle before
+        // the explicit offline gesture, otherwise RefreshController correctly ignores the pull as
+        // a duplicate and the offline snackbar never appears.
+        waitForText("Synced", timeoutMillis = 120_000)
         setAirplaneMode(enabled = true)
         try {
             // Use the same device-level gesture as the focused offline-refresh test. Compose's
