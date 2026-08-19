@@ -186,6 +186,9 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
             // Returning to the cached list and Home proves both the read path and pending-write
             // status survive without a network response.
             composeRule.onNodeWithText("Projects").performClick()
+            composeRule
+                .onNodeWithTag("e2e-projects-list")
+                .performScrollToNode(hasTextMatcher("Offline queued project"))
             waitForText("Offline queued project")
             composeRule.onNodeWithText("Home").performClick()
             waitForText("Changes pending")
