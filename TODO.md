@@ -1182,7 +1182,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: frontend/ux
 - **Priority**: P2
-- **Status**: wip
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Replace the current DaisyUI/Tailwind visual language with a Material Design 3 / Material 3
