@@ -44,6 +44,7 @@ RUN pip install uv
 COPY README.md ./
 COPY pyproject.toml ./
 COPY stricknani ./stricknani
+COPY demo_assets ./demo_assets
 
 # Overwrite with the prebuilt static CSS bundle from the cssbuild stage,
 # regardless of what (if anything) is present in the build context.
