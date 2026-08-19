@@ -1490,4 +1490,17 @@ Status: not started (2026-08-19).
 
 Status: not started (2026-08-19; user decided to pursue Google Play publishing).
 
+## SNA-43: Normalize navbar taps to each destination's root view
+
+- [ ] Make tapping a top-level navbar item navigate to that destination's root route, including
+      returning from nested settings categories or other child/detail screens.
+- [ ] Keep the action a no-op when the current route is already that destination's root view, with
+      no duplicate back-stack entries or unnecessary state loss.
+- [ ] Apply the same behavior consistently to every visible navbar destination, not only Settings,
+      while preserving saved state and deep-link behavior.
+- [ ] Add focused navigation tests for root, nested, and repeated navbar taps across all destinations.
+- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the behavior in English and German.
+
+Status: not started (2026-08-19).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
