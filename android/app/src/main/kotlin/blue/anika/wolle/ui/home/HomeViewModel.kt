@@ -13,6 +13,7 @@ import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
+import blue.anika.wolle.ui.common.RefreshTrigger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -96,13 +97,13 @@ constructor(
             )
 
     init {
-        refresh()
+        refresh(trigger = RefreshTrigger.Automatic)
     }
 
     fun previewUrl(path: String?): String? = mediaUrlResolver.resolve(path)
 
-    fun refresh() {
-        refreshController.refresh {
+    fun refresh(trigger: RefreshTrigger = RefreshTrigger.UserInitiated) {
+        refreshController.refresh(trigger = trigger) {
             categoryRepository.sync()
             val projectsChanged = projectRepository.sync()
             val yarnsChanged = yarnRepository.sync()

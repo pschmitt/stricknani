@@ -9,6 +9,7 @@ import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
+import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.isOfflineFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -74,7 +75,7 @@ constructor(
             )
 
     init {
-        refresh()
+        refresh(trigger = RefreshTrigger.Automatic)
     }
 
     fun previewUrl(entity: YarnEntity): String? = mediaUrlResolver.resolve(entity.previewUrl)
@@ -87,8 +88,8 @@ constructor(
         _favoritesOnly.value = favoritesOnly
     }
 
-    fun refresh() {
-        refreshController.refresh { yarnRepository.sync() }
+    fun refresh(trigger: RefreshTrigger = RefreshTrigger.UserInitiated) {
+        refreshController.refresh(trigger = trigger) { yarnRepository.sync() }
     }
 
     fun toggleFavorite(entity: YarnEntity) {

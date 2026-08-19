@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.common
 
+import blue.anika.wolle.R
 import java.net.UnknownHostException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,7 +25,13 @@ class RefreshStateTest {
         completion.complete(true)
         advanceUntilIdle()
 
-        assertEquals(RefreshState.Finished(changed = true), controller.state.value)
+        assertEquals(
+            RefreshState.Finished(
+                changed = true,
+                trigger = RefreshTrigger.UserInitiated,
+            ),
+            controller.state.value,
+        )
     }
 
     @Test
@@ -34,7 +41,61 @@ class RefreshStateTest {
         assertTrue(controller.refresh { false })
         advanceUntilIdle()
 
-        assertEquals(RefreshState.Finished(changed = false), controller.state.value)
+        assertEquals(
+            RefreshState.Finished(
+                changed = false,
+                trigger = RefreshTrigger.UserInitiated,
+            ),
+            controller.state.value,
+        )
+    }
+
+    @Test
+    fun `repeated automatic no-change refreshes are silent`() = runTest {
+        val controller = RefreshController(this)
+
+        repeat(2) {
+            assertTrue(
+                controller.refresh(trigger = RefreshTrigger.Automatic) {
+                    false
+                }
+            )
+            advanceUntilIdle()
+
+            assertEquals(
+                RefreshState.Finished(
+                    changed = false,
+                    trigger = RefreshTrigger.Automatic,
+                ),
+                controller.state.value,
+            )
+            assertEquals(null, refreshFeedbackResource(controller.state.value))
+            controller.clearFeedback()
+        }
+    }
+
+    @Test
+    fun `explicit no-change refresh remains visible`() = runTest {
+        val controller = RefreshController(this)
+
+        assertTrue(controller.refresh { false })
+        advanceUntilIdle()
+
+        assertEquals(R.string.refresh_no_changes, refreshFeedbackResource(controller.state.value))
+    }
+
+    @Test
+    fun `automatic refresh with changes remains visible`() = runTest {
+        val controller = RefreshController(this)
+
+        assertTrue(
+            controller.refresh(trigger = RefreshTrigger.Automatic) {
+                true
+            }
+        )
+        advanceUntilIdle()
+
+        assertEquals(R.string.refresh_success, refreshFeedbackResource(controller.state.value))
     }
 
     @Test
@@ -45,6 +106,7 @@ class RefreshStateTest {
         advanceUntilIdle()
 
         assertEquals(RefreshState.Offline, controller.state.value)
+        assertEquals(R.string.refresh_offline, refreshFeedbackResource(controller.state.value))
     }
 
     @Test
@@ -55,5 +117,6 @@ class RefreshStateTest {
         advanceUntilIdle()
 
         assertEquals(RefreshState.Error, controller.state.value)
+        assertEquals(R.string.refresh_error, refreshFeedbackResource(controller.state.value))
     }
 }

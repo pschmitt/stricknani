@@ -15,11 +15,20 @@ sealed interface RefreshState {
 
     data object Refreshing : RefreshState
 
-    data class Finished(val changed: Boolean) : RefreshState
+    data class Finished(
+        val changed: Boolean,
+        val trigger: RefreshTrigger = RefreshTrigger.UserInitiated,
+    ) : RefreshState
 
     data object Offline : RefreshState
 
     data object Error : RefreshState
+}
+
+/** Describes whether a refresh was started by navigation/startup or directly by the user. */
+enum class RefreshTrigger {
+    Automatic,
+    UserInitiated,
 }
 
 /**
@@ -33,13 +42,16 @@ class RefreshController(private val scope: CoroutineScope) {
     val state: StateFlow<RefreshState> = _state.asStateFlow()
 
     /** Returns false when another refresh is already running. */
-    fun refresh(block: suspend () -> Boolean): Boolean {
+    fun refresh(
+        trigger: RefreshTrigger = RefreshTrigger.UserInitiated,
+        block: suspend () -> Boolean,
+    ): Boolean {
         if (!refreshInProgress.compareAndSet(false, true)) return false
 
         _state.value = RefreshState.Refreshing
         scope.launch {
             try {
-                _state.value = RefreshState.Finished(changed = block())
+                _state.value = RefreshState.Finished(changed = block(), trigger = trigger)
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (failure: Exception) {

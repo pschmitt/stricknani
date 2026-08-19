@@ -17,6 +17,7 @@ import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.home.HomeSyncStatusCard
 import blue.anika.wolle.ui.theme.StricknaniTheme
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -147,5 +148,24 @@ class FocusedComponentSemanticsTest {
         assertTrue(german.getString(R.string.mutation_project_created_queued).contains("Projekt"))
         assertTrue(english.getString(R.string.mutation_favorite_offline).contains("offline"))
         assertTrue(german.getString(R.string.mutation_favorite_offline).contains("offline"))
+    }
+
+    @Test
+    fun refreshFeedbackStringsAreAvailableInEnglishAndGerman() {
+        val instrumentation =
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val englishConfiguration =
+            android.content.res.Configuration(context.resources.configuration)
+        englishConfiguration.setLocale(java.util.Locale.ENGLISH)
+        val english = context.createConfigurationContext(englishConfiguration)
+        val germanConfiguration = android.content.res.Configuration(context.resources.configuration)
+        germanConfiguration.setLocale(java.util.Locale.GERMAN)
+        val german = context.createConfigurationContext(germanConfiguration)
+
+        assertEquals("Already up to date", english.getString(R.string.refresh_no_changes))
+        assertEquals("Bereits aktuell", german.getString(R.string.refresh_no_changes))
+        assertEquals("Updated", english.getString(R.string.refresh_success))
+        assertEquals("Aktualisiert", german.getString(R.string.refresh_success))
     }
 }

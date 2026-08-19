@@ -13,6 +13,7 @@ import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
+import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.isOfflineFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -85,7 +86,7 @@ constructor(
             )
 
     init {
-        refresh()
+        refresh(trigger = RefreshTrigger.Automatic)
     }
 
     fun previewUrl(entity: ProjectEntity): String? = mediaUrlResolver.resolve(entity.previewUrl)
@@ -98,8 +99,8 @@ constructor(
         _selectedCategory.value = category
     }
 
-    fun refresh() {
-        refreshController.refresh {
+    fun refresh(trigger: RefreshTrigger = RefreshTrigger.UserInitiated) {
+        refreshController.refresh(trigger = trigger) {
             categoryRepository.sync()
             projectRepository.sync()
         }

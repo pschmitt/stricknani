@@ -7,6 +7,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.res.stringResource
 import blue.anika.wolle.R
 
+/** Returns the resource for feedback worth showing, or null for an automatic no-change refresh. */
+internal fun refreshFeedbackResource(state: RefreshState): Int? =
+    when (state) {
+        is RefreshState.Finished ->
+            when {
+                state.changed -> R.string.refresh_success
+                state.trigger == RefreshTrigger.UserInitiated -> R.string.refresh_no_changes
+                else -> null
+            }
+        RefreshState.Offline -> R.string.refresh_offline
+        RefreshState.Error -> R.string.refresh_error
+        RefreshState.Idle,
+        RefreshState.Refreshing -> null
+    }
+
 /** Shows the completed outcome; the pull-to-refresh indicator itself represents [Refreshing]. */
 @Composable
 fun RefreshFeedbackEffect(
@@ -14,22 +29,15 @@ fun RefreshFeedbackEffect(
     snackbarHostState: SnackbarHostState,
     onConsumed: () -> Unit,
 ) {
-    val message =
-        when (state) {
-            is RefreshState.Finished ->
-                stringResource(
-                    if (state.changed) R.string.refresh_success else R.string.refresh_no_changes
-                )
-            RefreshState.Offline -> stringResource(R.string.refresh_offline)
-            RefreshState.Error -> stringResource(R.string.refresh_error)
-            RefreshState.Idle,
-            RefreshState.Refreshing -> null
-        }
+    val messageResource = refreshFeedbackResource(state)
+    val message = messageResource?.let { stringResource(it) }
 
     LaunchedEffect(state) {
-        message?.let {
-            snackbarHostState.showSnackbar(it, duration = SnackbarDuration.Short)
-            onConsumed()
-        }
+        if (state is RefreshState.Idle || state is RefreshState.Refreshing) return@LaunchedEffect
+
+        message?.let { snackbarHostState.showSnackbar(it, duration = SnackbarDuration.Short) }
+        // Automatic no-change refreshes have no useful message, but still need to be consumed so
+        // the state does not remain stuck at Finished until the next explicit gesture.
+        onConsumed()
     }
 }
