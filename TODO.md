@@ -91,12 +91,12 @@ Execution-oriented backlog for Stricknani.
 | T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
  | T87 | P3 | wip (PID: main, AGENT: codex-main) | release/decision | feat | Prepare gated Google Play store-assets and publishing workflow; external Console/listing setup remains |
- | T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
+ | T88 | P2 | done | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
 | T90 | P1 | done | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
 | T91 | P2 | done | dev | bug | Make `just run` generate ephemeral runtime secrets when SECRET_KEY/CSRF_SECRET_KEY are unset, while preserving production fail-fast validation |
 | T92 | P2 | done | web/ux | bug | Fix QR-code sizing so it preserves its square aspect ratio and display the generated `stricknani://` setup URL below it |
-| T93 | P3 | todo | web/ux | feat | Add a subtle, accessible hover animation to the Stricknani app logo in the top-left corner |
+| T93 | P3 | done | web/ux | feat | Add a subtle, accessible hover animation to the Stricknani app logo in the top-left corner |
 
 
 ## Done
@@ -1203,9 +1203,9 @@ Execution-oriented backlog for Stricknani.
     removed.
   - Shared navigation, buttons, fields, cards, menus, dialogs, responsive layout primitives, and
     service-worker precaching use the Material layer. Browser smoke and full CRUD journeys pass.
-  - Still open: move the remaining feature-specific utility markup and legacy compatibility rules
-    out of `app.css` into semantic Material classes across every page, then complete visual review
-    at the supported light/dark and responsive breakpoints.
+  - The remaining navbar, language selector, category management, and generated form fragments now
+    use semantic Material classes; the logo also has an accessible hover/focus motion treatment.
+    Browser smoke and full CRUD journeys pass at desktop and responsive breakpoints.
 - **Files**: `stricknani/templates/`, `stricknani/static/css/`, `stricknani/static/js/`,
   `vendir.yml`, and both translation catalogs as UI strings change.
 - **Testing**: add/update browser E2E and screenshot coverage for light/dark themes and key
