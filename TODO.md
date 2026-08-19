@@ -81,8 +81,8 @@ Execution-oriented backlog for Stricknani.
 | T75 | P1 | done | api | feat | Add versioned JSON API (`/api/v1/`): projects/yarns/categories CRUD, favorites, image/attachment upload, `GET /api/v1/meta` (backend foundation for the Android app; mirrors `android/TODO.md` SNA-2) |
 | T76 | P1 | done | api | feat | Add `require_auth_or_api_token` dependency so `/media` serving accepts either the session cookie or a Bearer API token (backend foundation for the Android app; mirrors `android/TODO.md` SNA-4) |
 | T77 | P1 | done | api | feat | Add delta-sync endpoints (`/api/v1/sync/{projects,yarns,categories}`) sourcing deletions from `AuditLog` (backend foundation for the Android app; mirrors `android/TODO.md` SNA-3) |
-| T78 | P1 | todo | test/ci | feat | Add disposable browser E2E tests for critical Stricknani user journeys, following the NetBox/Syncwich CI pattern |
-| T79 | P2 | todo | ci | feat | Capture named Stricknani browser screenshots in CI E2E runs and upload them as reviewable artifacts, following the NetBox/Syncwich screenshot pattern |
+| T78 | P1 | done | test/ci | feat | Add disposable browser E2E tests for critical Stricknani user journeys, following the NetBox/Syncwich CI pattern |
+| T79 | P2 | done | ci | feat | Capture named Stricknani browser screenshots in CI E2E runs and upload them as reviewable artifacts, following the NetBox/Syncwich screenshot pattern |
 | T80 | P1 | todo | android/test/ci | feat | Add disposable Android instrumentation E2E tests against a seeded Stricknani fixture, with PR smoke and manual full journeys |
 | T81 | P1 | todo | android/test | feat | Add focused Android Compose/instrumentation coverage for route, accessibility, dialog, loading/error, and offline UI states |
 | T82 | P2 | todo | android/ci | feat | Add manual Android screenshot capture CI for phone and tablet layouts, light/dark themes, and reviewable artifacts |
@@ -1010,7 +1010,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: test/ci
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - The pytest suite exercises backend behavior but no real browser journey currently protects the primary web UI.
@@ -1027,7 +1027,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ci
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Make the disposable browser E2E workflow useful for visual review and failure diagnosis by retaining screenshots from meaningful application states, not only test logs.
