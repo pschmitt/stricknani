@@ -64,10 +64,12 @@ import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.ImageViewerDialog
+import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.NotesCard
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
+import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
@@ -266,11 +268,12 @@ private fun ProjectDetailContent(
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
-    val markdownImageTransformer =
-        remember(resolveMediaUrl) { MarkdownImageTransformer(resolveMediaUrl) }
-    // map (not mapNotNull) - keeps indices aligned with detail.images/viewerIndex even if a
-    // url somehow fails to resolve.
-    val imageUrls = remember(detail.images) { detail.images.map { resolveMediaUrl(it.url) ?: "" } }
+    val viewerImages = remember(detail, resolveMediaUrl) {
+        projectViewerImages(detail, resolveMediaUrl)
+    }
+    val openViewerImage: (String) -> Unit = { url ->
+        viewerIndex = viewerImages.indexOfFirst { image -> image.url == url }.takeIf { it >= 0 }
+    }
     val stitchSampleImages =
         remember(detail.images) { detail.images.filter { it.isStitchSample && it.stepId == null } }
 
@@ -291,17 +294,17 @@ private fun ProjectDetailContent(
         if (detail.images.isNotEmpty()) {
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    itemsIndexed(detail.images, key = { _, image -> image.id }) { index, _ ->
+                    itemsIndexed(detail.images, key = { _, image -> image.id }) { _, image ->
+                        val url = resolveMediaUrl(image.url)
                         AsyncImage(
                             // SNA-36: reuse the already-remembered imageUrls instead of
                             // recomputing resolveMediaUrl per item.
-                            model = imageUrls[index],
-                            contentDescription = null,
+                            model = url,
+                            contentDescription = image.altText,
                             contentScale = ContentScale.Crop,
-                            modifier =
-                                Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
-                                    viewerIndex = index
-                                },
+                            modifier = Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
+                                url?.let(openViewerImage)
+                            },
                         )
                     }
                 }
@@ -382,9 +385,10 @@ private fun ProjectDetailContent(
         detail.stitchSample?.let { value ->
             item {
                 DetailSectionCard(title = stringResource(R.string.common_field_stitch_sample)) {
-                    Markdown(
-                        content = normalizeMarkdownContent(value),
-                        imageTransformer = markdownImageTransformer,
+                    ProjectMarkdown(
+                        value = value,
+                        resolveMediaUrl = resolveMediaUrl,
+                        onImageClick = openViewerImage,
                     )
                     if (stitchSampleImages.isNotEmpty()) {
                         LazyRow(
@@ -404,7 +408,9 @@ private fun ProjectDetailContent(
                                         Modifier.size(160.dp)
                                             .clip(RoundedCornerShape(16.dp))
                                             .clickable {
-                                                if (imageIndex >= 0) viewerIndex = imageIndex
+                                        if (imageIndex >= 0) {
+                                            resolveMediaUrl(image.url)?.let(openViewerImage)
+                                        }
                                             },
                                 )
                             }
@@ -437,10 +443,10 @@ private fun ProjectDetailContent(
                 DetailSectionCard(
                     title = stringResource(R.string.project_detail_description_title)
                 ) {
-                    Markdown(
-                        content = normalizeMarkdownContent(value),
-                        typography = stricknaniMarkdownTypography(),
-                        imageTransformer = markdownImageTransformer,
+                    ProjectMarkdown(
+                        value = value,
+                        resolveMediaUrl = resolveMediaUrl,
+                        onImageClick = openViewerImage,
                     )
                 }
             }
@@ -460,10 +466,10 @@ private fun ProjectDetailContent(
                                 style = MaterialTheme.typography.titleSmall,
                             )
                             step.description?.let {
-                                Markdown(
-                                    content = normalizeMarkdownContent(it),
-                                    typography = stricknaniMarkdownTypography(),
-                                    imageTransformer = markdownImageTransformer,
+                                ProjectMarkdown(
+                                    value = it,
+                                    resolveMediaUrl = resolveMediaUrl,
+                                    onImageClick = openViewerImage,
                                     modifier = Modifier.padding(top = 4.dp),
                                 )
                             }
@@ -476,10 +482,10 @@ private fun ProjectDetailContent(
         detail.notes?.let { value ->
             item {
                 NotesCard(title = stringResource(R.string.project_detail_notes_title)) {
-                    Markdown(
-                        content = normalizeMarkdownContent(value),
-                        typography = stricknaniMarkdownTypography(),
-                        imageTransformer = markdownImageTransformer,
+                    ProjectMarkdown(
+                        value = value,
+                        resolveMediaUrl = resolveMediaUrl,
+                        onImageClick = openViewerImage,
                     )
                 }
             }
@@ -488,11 +494,91 @@ private fun ProjectDetailContent(
 
     viewerIndex?.let { index ->
         ImageViewerDialog(
-            imageUrls = imageUrls,
+            images = viewerImages,
             initialIndex = index,
             onDismiss = { viewerIndex = null },
         )
     }
+}
+
+@Composable
+private fun ProjectMarkdown(
+    value: String,
+    resolveMediaUrl: (String?) -> String?,
+    onImageClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val content = remember(value) { normalizeMarkdownContent(value) }
+    val references = remember(content) { extractMarkdownImageReferences(content) }
+    val imageTransformer =
+        remember(resolveMediaUrl, references, onImageClick) {
+            MarkdownImageTransformer(
+                resolveUrl = resolveMediaUrl,
+                onImageClick = onImageClick,
+                imageReferences = references,
+            )
+        }
+    Markdown(
+        content = content,
+        typography = stricknaniMarkdownTypography(),
+        imageTransformer = imageTransformer,
+        modifier = modifier,
+    )
+}
+
+private fun projectViewerImages(
+    detail: ProjectDto,
+    resolveMediaUrl: (String?) -> String?,
+): List<ImageViewerImage> {
+    val images = linkedMapOf<String, ImageViewerImage>()
+    val stepsById = detail.steps.associateBy { it.id }
+    detail.images.forEach { image ->
+        val sourceLabel =
+            when {
+                image.isTitleImage -> "Project title image"
+                image.isStitchSample && image.stepId == null -> "Stitch sample"
+                image.stepId != null ->
+                    stepsById[image.stepId]?.let { "Step ${it.stepNumber}: ${it.title}" }
+                        ?: "Project step image"
+                else -> "Project image"
+            }
+        resolveMediaUrl(image.url)?.let { url ->
+            images.putIfAbsent(
+                url,
+                ImageViewerImage(
+                    url = url,
+                    title = detail.name,
+                    sourceLabel = sourceLabel,
+                    altText = image.altText,
+                ),
+            )
+        }
+    }
+    val markdownContexts =
+        buildList {
+            detail.stitchSample?.let { add("Stitch sample" to it) }
+            detail.description?.let { add("Project description" to it) }
+            detail.steps.forEach { step ->
+                step.description?.let { add("Step ${step.stepNumber}: ${step.title}" to it) }
+            }
+            detail.notes?.let { add("Notes" to it) }
+        }
+    markdownContexts.forEach { (context, content) ->
+        extractMarkdownImageReferences(normalizeMarkdownContent(content)).forEach { reference ->
+            resolveMediaUrl(reference.source)?.let { url ->
+                images.putIfAbsent(
+                    url,
+                    ImageViewerImage(
+                        url = url,
+                        title = detail.name,
+                        sourceLabel = context,
+                        altText = reference.altText,
+                    ),
+                )
+            }
+        }
+    }
+    return images.values.toList()
 }
 
 /** A rounded, elevated grouping card - matches Settings' `SettingsGroupCard` visual language. */

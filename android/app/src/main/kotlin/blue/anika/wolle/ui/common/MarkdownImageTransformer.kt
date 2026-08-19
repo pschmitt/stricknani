@@ -1,8 +1,13 @@
 package blue.anika.wolle.ui.common
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
 import com.mikepenz.markdown.model.ImageData
 import com.mikepenz.markdown.model.ImageTransformer
@@ -15,14 +20,37 @@ import com.mikepenz.markdown.model.ImageTransformer
  * ImageLoader and disk cache as the rest of the app. Returning null is the renderer-supported safe
  * fallback for malformed, unsupported, or cross-origin destinations.
  */
-internal class MarkdownImageTransformer(private val resolveUrl: (String) -> String?) :
+internal class MarkdownImageTransformer(
+    private val resolveUrl: (String) -> String?,
+    private val onImageClick: (String) -> Unit = {},
+    private val imageReferences: List<MarkdownImageReference> = emptyList(),
+) :
     ImageTransformer {
     internal fun resolve(link: String): String? = resolveUrl(link)
+
+    internal fun referenceFor(link: String): MarkdownImageReference? =
+        imageReferences.firstOrNull { it.source == link }
 
     @Composable
     override fun transform(link: String): ImageData? {
         val resolved = resolve(link) ?: return null
-        return Coil3ImageTransformerImpl.transform(resolved)
+        val reference = referenceFor(link)
+        val imageData = Coil3ImageTransformerImpl.transform(resolved)
+        val modifier =
+            imageData.modifier
+                .then(Modifier.fillMaxWidth(reference?.size?.widthFraction ?: MarkdownImageSize.SM.widthFraction))
+                .then(Modifier.clickable { onImageClick(resolved) })
+                .then(
+                    Modifier.semantics {
+                        contentDescription =
+                            reference?.altText?.takeIf(String::isNotBlank)
+                                ?: "Open image"
+                    }
+                )
+        return imageData.copy(
+            modifier = modifier,
+            contentDescription = reference?.altText?.takeIf(String::isNotBlank),
+        )
     }
 
     @Composable

@@ -337,6 +337,10 @@
     <!-- Image viewer -->
     <string name="image_viewer_previous_image">Vorheriges Bild</string>
     <string name="image_viewer_next_image">Nächstes Bild</string>
+    <string name="image_viewer_context_label">Kontext</string>
+    <string name="image_viewer_description_label">Beschreibung</string>
+    <string name="image_viewer_dimensions_label">Abmessungen</string>
+    <string name="image_viewer_image_description">%1$s, %2$s, Bild %3$d von %4$d</string>
 
     <!-- Search field -->
     <string name="search_field_clear">Suche leeren</string>

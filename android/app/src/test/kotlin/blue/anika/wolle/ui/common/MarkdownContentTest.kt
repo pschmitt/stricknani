@@ -1,6 +1,7 @@
 package blue.anika.wolle.ui.common
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -39,5 +40,35 @@ class MarkdownContentTest {
 
         assertTrue(normalized == "Text")
         assertFalse(normalized.contains("<img"))
+    }
+
+    @Test
+    fun `normalizes short and long image size annotations into renderer metadata`() {
+        val normalized =
+            normalizeMarkdownContent(
+                "![Small](small.jpg){.sn-size-sm}\n![Large](large.jpg){.sn-size-large}"
+            )
+
+        assertFalse(normalized.contains("sn-size-"))
+        assertTrue(normalized.contains("![Small](small.jpg \"sn:size=sm\")"))
+        assertTrue(normalized.contains("![Large](large.jpg \"sn:size=lg\")"))
+
+        val references = extractMarkdownImageReferences(normalized)
+        assertEquals(MarkdownImageSize.SM, references[0].size)
+        assertEquals(MarkdownImageSize.LG, references[1].size)
+    }
+
+    @Test
+    fun `keeps image alt text and title while extracting references`() {
+        val normalized = normalizeMarkdownContent("![Swatch](media/swatch.png \"Wool\")")
+
+        assertEquals(
+            MarkdownImageReference(
+                source = "media/swatch.png",
+                altText = "Swatch",
+                title = "Wool",
+            ),
+            extractMarkdownImageReferences(normalized).single(),
+        )
     }
 }

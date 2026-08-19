@@ -62,9 +62,11 @@ import blue.anika.wolle.data.api.dto.primaryFirst
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.ImageViewerDialog
+import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.NotesCard
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
+import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
@@ -242,12 +244,11 @@ private fun YarnDetailContent(
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
-    val markdownImageTransformer =
-        remember(resolveMediaUrl) { MarkdownImageTransformer(resolveMediaUrl) }
-    // map (not mapNotNull) - keeps indices aligned with detail.photos/viewerIndex even if a
-    // url somehow fails to resolve.
+    val viewerImages = remember(detail, resolveMediaUrl) { yarnViewerImages(detail, resolveMediaUrl) }
+    val openViewerImage: (String) -> Unit = { url ->
+        viewerIndex = viewerImages.indexOfFirst { image -> image.url == url }.takeIf { it >= 0 }
+    }
     val photos = remember(detail.photos) { detail.photos.primaryFirst() }
-    val photoUrls = remember(photos) { photos.map { resolveMediaUrl(it.url) ?: "" } }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("e2e-yarn-detail"),
@@ -256,17 +257,17 @@ private fun YarnDetailContent(
         if (photos.isNotEmpty()) {
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    itemsIndexed(photos, key = { _, photo -> photo.id }) { index, photo ->
+                    itemsIndexed(photos, key = { _, photo -> photo.id }) { _, photo ->
+                        val url = resolveMediaUrl(photo.url)
                         AsyncImage(
                             // SNA-36: reuse the already-remembered photoUrls instead of
                             // recomputing resolveMediaUrl per item.
-                            model = photoUrls[index],
+                            model = url,
                             contentDescription = photo.altText,
                             contentScale = ContentScale.Crop,
-                            modifier =
-                                Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
-                                    viewerIndex = index
-                                },
+                            modifier = Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
+                                url?.let(openViewerImage)
+                            },
                         )
                     }
                 }
@@ -328,6 +329,18 @@ private fun YarnDetailContent(
             }
         }
 
+        detail.description?.let { value ->
+            item {
+                NotesCard(title = stringResource(R.string.project_detail_description_title)) {
+                    YarnMarkdown(
+                        value = value,
+                        resolveMediaUrl = resolveMediaUrl,
+                        onImageClick = openViewerImage,
+                    )
+                }
+            }
+        }
+
         if (linkedProjects.isNotEmpty()) {
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
@@ -379,10 +392,10 @@ private fun YarnDetailContent(
         detail.notes?.let { value ->
             item {
                 NotesCard(title = stringResource(R.string.project_detail_notes_title)) {
-                    Markdown(
-                        content = normalizeMarkdownContent(value),
-                        typography = stricknaniMarkdownTypography(),
-                        imageTransformer = markdownImageTransformer,
+                    YarnMarkdown(
+                        value = value,
+                        resolveMediaUrl = resolveMediaUrl,
+                        onImageClick = openViewerImage,
                     )
                 }
             }
@@ -391,11 +404,77 @@ private fun YarnDetailContent(
 
     viewerIndex?.let { index ->
         ImageViewerDialog(
-            imageUrls = photoUrls,
+            images = viewerImages,
             initialIndex = index,
             onDismiss = { viewerIndex = null },
         )
     }
+}
+
+@Composable
+private fun YarnMarkdown(
+    value: String,
+    resolveMediaUrl: (String?) -> String?,
+    onImageClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val content = remember(value) { normalizeMarkdownContent(value) }
+    val references = remember(content) { extractMarkdownImageReferences(content) }
+    val imageTransformer =
+        remember(resolveMediaUrl, references, onImageClick) {
+            MarkdownImageTransformer(
+                resolveUrl = resolveMediaUrl,
+                onImageClick = onImageClick,
+                imageReferences = references,
+            )
+        }
+    Markdown(
+        content = content,
+        typography = stricknaniMarkdownTypography(),
+        imageTransformer = imageTransformer,
+        modifier = modifier,
+    )
+}
+
+private fun yarnViewerImages(
+    detail: YarnDto,
+    resolveMediaUrl: (String?) -> String?,
+): List<ImageViewerImage> {
+    val images = linkedMapOf<String, ImageViewerImage>()
+    detail.photos.forEach { photo ->
+        resolveMediaUrl(photo.url)?.let { url ->
+            images.putIfAbsent(
+                url,
+                ImageViewerImage(
+                    url = url,
+                    title = detail.name,
+                    sourceLabel = if (photo.isPrimary) "Primary yarn photo" else "Yarn photo",
+                    altText = photo.altText,
+                ),
+            )
+        }
+    }
+    val markdownContents =
+        buildList {
+            detail.description?.let { add("Yarn description" to it) }
+            detail.notes?.let { add("Notes" to it) }
+        }
+    markdownContents.forEach { (context, content) ->
+        extractMarkdownImageReferences(normalizeMarkdownContent(content)).forEach { reference ->
+            resolveMediaUrl(reference.source)?.let { url ->
+                images.putIfAbsent(
+                    url,
+                    ImageViewerImage(
+                        url = url,
+                        title = detail.name,
+                        sourceLabel = context,
+                        altText = reference.altText,
+                    ),
+                )
+            }
+        }
+    }
+    return images.values.toList()
 }
 
 @Composable
