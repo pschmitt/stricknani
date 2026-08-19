@@ -1342,6 +1342,21 @@ body {
 	border-radius: var(--md-sys-shape-corner-large);
 }
 
+.md3-empty-state {
+	border-color: var(--md-sys-color-outline-variant);
+	box-shadow: var(--md-sys-elevation-level-0);
+}
+
+.md3-empty-icon {
+	background: var(--md-sys-color-primary-container);
+	color: var(--md-sys-color-on-primary-container);
+}
+
+.md3-dialog-surface {
+	border-radius: var(--md-sys-shape-corner-extra-large);
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.btn {
 		transition: none;
