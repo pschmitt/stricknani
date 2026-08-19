@@ -94,7 +94,10 @@ fun ProjectsListScreen(
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = viewModel::refresh,
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(innerPadding)
+                    .testTag("e2e-projects-refresh"),
         ) {
             Column(Modifier.fillMaxSize()) {
                 SearchField(

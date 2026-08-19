@@ -13,7 +13,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.swipeDown
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
@@ -127,13 +129,7 @@ class FocusedAppSemanticsTest {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         setAirplaneMode(device, enabled = true)
         try {
-            device.swipe(
-                device.displayWidth / 2,
-                device.displayHeight / 3,
-                device.displayWidth / 2,
-                device.displayHeight * 3 / 4,
-                20,
-            )
+            composeRule.onNodeWithTag("e2e-projects-refresh").performTouchInput { swipeDown() }
             waitForText("You’re offline - showing cached data.")
             composeRule.onNodeWithText("Heirloom Baby Blanket").assertIsDisplayed()
         } finally {
@@ -145,8 +141,7 @@ class FocusedAppSemanticsTest {
     fun projectAndYarnDeleteMenusRequireConfirmationWithoutMutatingData() {
         ensureConfigured()
 
-        composeRule.onNodeWithText("Projects").performClick()
-        waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
+        openProjects()
         composeRule.onNodeWithText("Heirloom Baby Blanket").performClick()
         waitForText("More actions")
         composeRule.onNodeWithContentDescription("More actions").performClick()
@@ -156,8 +151,7 @@ class FocusedAppSemanticsTest {
         composeRule.onNodeWithText("Cancel").performClick()
         composeRule.onNodeWithText("Heirloom Baby Blanket").assertIsDisplayed()
 
-        composeRule.onNodeWithText("Yarns").performClick()
-        waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
+        openYarns()
         composeRule.onNodeWithText("Riverbend Merino DK").performClick()
         waitForText("More actions")
         composeRule.onNodeWithContentDescription("More actions").performClick()
