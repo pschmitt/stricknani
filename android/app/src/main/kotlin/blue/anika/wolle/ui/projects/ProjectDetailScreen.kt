@@ -67,6 +67,7 @@ import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.shareUrl
+import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
 
@@ -352,7 +353,11 @@ private fun ProjectDetailContent(
                 DetailSectionCard(
                     title = stringResource(R.string.project_detail_description_title)
                 ) {
-                    Markdown(content = value, imageTransformer = markdownImageTransformer)
+                    Markdown(
+                        content = value,
+                        typography = stricknaniMarkdownTypography(),
+                        imageTransformer = markdownImageTransformer,
+                    )
                 }
             }
         }
@@ -373,6 +378,7 @@ private fun ProjectDetailContent(
                             step.description?.let {
                                 Markdown(
                                     content = it,
+                                    typography = stricknaniMarkdownTypography(),
                                     imageTransformer = markdownImageTransformer,
                                     modifier = Modifier.padding(top = 4.dp),
                                 )
@@ -386,7 +392,11 @@ private fun ProjectDetailContent(
         detail.notes?.let { value ->
             item {
                 DetailSectionCard(title = stringResource(R.string.project_detail_notes_title)) {
-                    Markdown(content = value, imageTransformer = markdownImageTransformer)
+                    Markdown(
+                        content = value,
+                        typography = stricknaniMarkdownTypography(),
+                        imageTransformer = markdownImageTransformer,
+                    )
                 }
             }
         }
