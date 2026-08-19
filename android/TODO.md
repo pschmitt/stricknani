@@ -1446,4 +1446,18 @@ unit tests, and `lintDebug` all passed).
 Status: **done** (2026-08-19) - verified with remote `just check` on `rofl-13.brkn.lol`:
 `ktfmtCheck`, `:app:testDebugUnitTest`, and `lintDebug` all passed after remote formatting.
 
+## SNA-40: Add snackbar feedback for mutation actions
+
+- [ ] Show translated success feedback for actions such as favorite/unfavorite, create, edit, and
+      delete across project and yarn screens.
+- [ ] Show clear queued/offline and error feedback when a mutation is stored locally or cannot be
+      applied, while preserving the existing pending-change indicator.
+- [ ] Use a shared snackbar/event path so feedback is consistent across screens and does not rely
+      on transient ViewModel state surviving navigation.
+- [ ] Add focused UI or ViewModel tests covering success, queued, and failure outcomes for the
+      mutation actions.
+- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the messages in English and German.
+
+Status: not started (2026-08-19).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
