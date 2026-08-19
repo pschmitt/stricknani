@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "status": "draft",
-  "privacy_policy_url": null,
+  "privacy_policy_url": "https://wolle.anika.blue/privacy",
   "content_rating": {
     "completed_in_play_console": false,
     "notes": "Complete the Google Play content-rating questionnaire before the first public listing."
