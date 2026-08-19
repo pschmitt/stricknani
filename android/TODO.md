@@ -1675,15 +1675,18 @@ fixed and covered by E2E geometry assertions.
 
 ## SNA-56: Let users reorder project and yarn detail cards
 
-- [ ] Support long-pressing a card title to enter a reorder mode and drag cards into a preferred
+- [x] Support long-pressing a card title to enter a reorder mode and drag cards into a preferred
       order on project and yarn detail views.
-- [ ] Persist the per-domain card order locally, apply it consistently to all corresponding detail
+- [x] Persist the per-domain card order locally, apply it consistently to all corresponding detail
       views, and keep a sensible default order for new users.
-- [ ] Add a dedicated Settings entry to review/reset the project and yarn card orders, with clear
+- [x] Add a dedicated Settings entry to review/reset the project and yarn card orders, with clear
       accessibility feedback and sensible behavior at large font scales.
-- [ ] Add focused state/UI coverage and run the remote Android quality checks.
+- [x] Add focused state/UI coverage and run the remote Android quality checks.
 
-Status: **wip** (2026-08-19; codex-main) - design and implementation are being started.
+Status: **done** (2026-08-19; `2946e71`) - persistent per-domain ordering, long-press drag
+reordering, Settings review/reset controls, and focused unit/Compose coverage landed; remote
+`just check rofl-13.brkn.lol`, `just e2e-build rofl-13.brkn.lol`, and the PX5 focused
+instrumentation run passed.
 
 ## SNA-57: Suppress pull-to-refresh animation on automatic navigation refreshes
 
