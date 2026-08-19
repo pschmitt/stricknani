@@ -109,12 +109,6 @@ fmt-template-js:
 fmt-css:
   biome format --write stricknani/static/css
 
-# Build the static Tailwind CSS bundle (scans templates + static/js for
-# utility classes). Replaces the old runtime/browser Tailwind JIT script.
-[group: 'build']
-build-css:
-  tailwindcss -i stricknani/static/css/tailwind.input.css -o stricknani/static/css/tailwind.css --minify
-
 # Trim trailing whitespace
 [group: 'fmt']
 trim:
@@ -186,7 +180,7 @@ vendor-tiptap:
   cd stricknani/static/vendor-tiptap && npm install && npm run build
 
 # Run all checks (lint + test)
-check: lint lint-nix build-css test i18n-check
+check: lint lint-nix test i18n-check
 
 # Lint Nix files
 [group: 'lint']

@@ -8,8 +8,6 @@ directories:
   - http: {}
     path: cropperjs
   - http: {}
-    path: daisyui
-  - http: {}
     path: htmx
   - http: {}
     path: sentry

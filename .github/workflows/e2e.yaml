@@ -59,20 +59,6 @@ jobs:
       - name: Install Chromium
         run: uv run playwright install --with-deps chromium
 
-      - name: Install pinned Tailwind CLI
-        env:
-          TAILWINDCSS_VERSION: 4.1.14
-          TAILWINDCSS_SHA256: bc34c301b080b6e6b98ed24118419833f966f6f347e556945d6557d36a44a56e
-        run: |
-          curl -fsSL -o "$RUNNER_TEMP/tailwindcss" \
-            "https://github.com/tailwindlabs/tailwindcss/releases/download/v${TAILWINDCSS_VERSION}/tailwindcss-linux-x64"
-          echo "${TAILWINDCSS_SHA256}  $RUNNER_TEMP/tailwindcss" | sha256sum --check
-          chmod +x "$RUNNER_TEMP/tailwindcss"
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-
-      - name: Build static CSS bundle
-        run: just build-css
-
       - name: Run browser ${{ env.E2E_SUITE }} suite
         run: just e2e-${{ env.E2E_SUITE }}
 

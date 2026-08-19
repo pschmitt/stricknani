@@ -12,6 +12,7 @@ import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -143,15 +144,13 @@ class StricknaniScreenshotTest {
         waitForText("Home")
         setAirplaneMode(enabled = true)
         try {
-            // Home is at the top after navigating from Settings. Pulling far enough to pass the
-            // Material 3 threshold exercises the real refresh/offline feedback path.
-            device.swipe(
-                device.displayWidth / 2,
-                device.displayHeight / 3,
-                device.displayWidth / 2,
-                device.displayHeight * 3 / 4,
-                20,
-            )
+            // Target the actual refresh container instead of relying on emulator coordinates;
+            // the latter can land on the bottom navigation bar on smaller screenshot devices.
+            composeRule
+                .onNodeWithTag("e2e-home-refresh")
+                .performTouchInput {
+                    swipe(center.copy(y = top + height * 0.25f), center.copy(y = top + height * 0.75f))
+                }
             waitForText("You’re offline - showing cached data.", timeoutMillis = 30_000)
             capture("offline")
         } finally {

@@ -30,15 +30,6 @@ directories:
         includePaths:
           - package/dist/cropper.min.js
 
-      # renovate: datasource=npm depName=daisyui
-      - path: daisyui
-        http:
-          url: https://registry.npmjs.org/daisyui/-/daisyui-5.5.18.tgz
-        newRootPath: package
-        includePaths:
-          - package/daisyui.css
-          - package/themes.css
-
       # renovate: datasource=npm depName=htmx.org
       - path: htmx
         http:
