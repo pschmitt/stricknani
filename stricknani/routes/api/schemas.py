@@ -95,6 +95,8 @@ class YarnWriteRequest(BaseModel):
     notes: str | None = None
     link: str | None = None
     is_ai_enhanced: bool = False
+    # SNA-33: same contract as `ProjectWriteRequest.expected_updated_at`.
+    expected_updated_at: datetime | None = None
 
 
 class StepResponse(BaseModel):
@@ -180,6 +182,10 @@ class ProjectWriteRequest(BaseModel):
     is_ai_enhanced: bool = False
     yarn_ids: list[int] = Field(default_factory=list)
     steps: list[StepWriteRequest] = Field(default_factory=list)
+    # SNA-33: the `updated_at` the client last saw for this project. When set,
+    # `update_project` rejects the write with 409 if the server's current value has
+    # since moved on - see that route's docstring for the conflict contract.
+    expected_updated_at: datetime | None = None
 
 
 class YarnPage(BaseModel):

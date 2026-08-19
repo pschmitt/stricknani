@@ -18,7 +18,9 @@ import java.time.ZoneOffset
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import retrofit2.HttpException
 
 private const val ENTITY_TYPE = "yarn"
 
@@ -86,15 +88,18 @@ constructor(
         return tempId
     }
 
+    /** See `ProjectRepository.updateProject`'s kdoc - same `expectedUpdatedAt` stamping (SNA-33). */
     suspend fun updateYarn(id: Int, request: YarnWriteRequest) {
         val existing = yarnDao.getById(id) ?: return
         yarnDao.upsertAll(listOf(request.applyTo(existing, json)))
+        val baseUpdatedAt = json.decodeFromString<YarnDto>(existing.detailJson).updatedAt
         pendingMutationDao.insert(
             PendingMutationEntity(
                 entityType = MutationEntityType.YARN,
                 operation = MutationOperation.UPDATE,
                 localId = id,
-                payloadJson = json.encodeToString(request),
+                payloadJson =
+                    json.encodeToString(request.copy(expectedUpdatedAt = baseUpdatedAt)),
                 createdAt = System.currentTimeMillis(),
             )
         )
@@ -121,15 +126,29 @@ constructor(
         return created.id
     }
 
-    /** Called only by `WriteReplayWorker`. */
+    /** Called only by `WriteReplayWorker` - a 409 (SNA-33 conflict) propagates to its caller. */
     suspend fun replayUpdate(id: Int, request: YarnWriteRequest) {
         val updated = yarnsApi.updateYarn(id, request)
         yarnDao.upsertAll(listOf(updated.toEntity(json)))
     }
 
-    /** Called only by `WriteReplayWorker`. */
+    /** See `ProjectRepository.adoptRemoteProject`'s kdoc - same SNA-33 conflict-adoption role. */
+    suspend fun adoptRemoteYarn(dto: YarnDto) {
+        yarnDao.upsertAll(listOf(dto.toEntity(json)))
+    }
+
+    /** See `ProjectRepository.dropDeletedProject`'s kdoc - same SNA-33 race-with-sync handling. */
+    suspend fun dropDeletedYarn(id: Int) {
+        yarnDao.deleteByIds(listOf(id))
+    }
+
+    /** See `ProjectRepository.replayDelete`'s kdoc - a 404 is success, not a failure (SNA-33). */
     suspend fun replayDelete(id: Int) {
-        yarnsApi.deleteYarn(id)
+        try {
+            yarnsApi.deleteYarn(id)
+        } catch (e: HttpException) {
+            if (e.code() != 404) throw e
+        }
     }
 }
 

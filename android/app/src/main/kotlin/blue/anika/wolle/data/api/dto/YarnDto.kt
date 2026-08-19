@@ -71,6 +71,8 @@ data class YarnWriteRequest(
     val notes: String? = null,
     val link: String? = null,
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean = false,
+    /** SNA-33: see `ProjectWriteRequest.expectedUpdatedAt`'s kdoc - same contract. */
+    @SerialName("expected_updated_at") val expectedUpdatedAt: String? = null,
 )
 
 /** `stricknani/routes/api/schemas.py`'s `YarnPage`. */

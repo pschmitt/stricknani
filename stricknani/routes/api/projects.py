@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 
 from fastapi import (
     APIRouter,
@@ -56,6 +57,17 @@ _DETAIL_OPTIONS = (
     selectinload(Project.attachments),
     selectinload(Project.yarns),
 )
+
+
+def _as_utc(dt: datetime) -> datetime:
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
+
+
+def _differs(expected: datetime, actual: datetime) -> bool:
+    """Compares two `updated_at` values, tolerant of naive-vs-UTC-aware mismatches
+    (SNA-33) - this codebase's `DateTime` columns store UTC but SQLite hands back
+    naive datetimes on read."""
+    return _as_utc(expected) != _as_utc(actual)
 
 
 async def _get_owned_project(
@@ -265,7 +277,29 @@ async def update_project(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_api_token),
 ) -> ProjectResponse:
+    """Update a project.
+
+    SNA-33: when `payload.expected_updated_at` is set and no longer matches the
+    project's current `updated_at`, it changed since the client last saw it (edited
+    elsewhere). Reject with 409 and the project's current server state in the body,
+    so the caller can adopt it immediately instead of silently overwriting a newer
+    edit (previously an unconditional last-write-wins - see android's
+    `WriteReplayWorker`). Callers that omit `expected_updated_at` (e.g. the web UI,
+    which always edits the live row it's looking at) keep the old
+    unconditional-write behavior.
+    """
     project = await _get_owned_project(db, project_id, current_user.id)
+
+    if payload.expected_updated_at is not None and _differs(
+        payload.expected_updated_at, project.updated_at
+    ):
+        favorite_ids = await _favorite_project_ids(db, current_user.id)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=_serialize_project(
+                project, is_favorite=project.id in favorite_ids
+            ).model_dump(mode="json"),
+        )
 
     normalized_category = await ensure_category(db, current_user.id, payload.category)
     normalized_tags = normalize_tags(",".join(payload.tags))

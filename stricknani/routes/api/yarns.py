@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import delete, insert, select
@@ -38,6 +39,15 @@ logger = logging.getLogger("stricknani.api.yarns")
 router: APIRouter = APIRouter(prefix="/yarns", tags=["api-yarns"])
 
 API_PAGE_SIZE = 50
+
+
+def _as_utc(dt: datetime) -> datetime:
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
+
+
+def _differs(expected: datetime, actual: datetime) -> bool:
+    """See `routes/api/projects.py`'s identical helper - same tz-tolerant comparison."""
+    return _as_utc(expected) != _as_utc(actual)
 
 
 async def _get_owned_yarn(
@@ -203,7 +213,21 @@ async def update_yarn(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_api_token),
 ) -> YarnResponse:
+    """Update a yarn. SNA-33: same conflict contract as `update_project` - see its
+    docstring."""
     yarn = await _get_owned_yarn(db, yarn_id, current_user.id)
+
+    if payload.expected_updated_at is not None and _differs(
+        payload.expected_updated_at, yarn.updated_at
+    ):
+        favorite_ids = await _favorite_yarn_ids(db, current_user.id)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=_serialize_yarn(
+                yarn, is_favorite=yarn.id in favorite_ids
+            ).model_dump(mode="json"),
+        )
+
     _apply_write_fields(yarn, payload)
 
     await create_audit_log(

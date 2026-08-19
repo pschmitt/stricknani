@@ -171,6 +171,33 @@ async def test_yarn_crud_and_favorite(api_client: ClientFixture) -> None:
     assert missing_response.status_code == 404
 
 
+async def test_yarn_update_conflict_when_expected_updated_at_stale(
+    api_client: ClientFixture,
+) -> None:
+    """SNA-33: see the project equivalent's docstring - same conflict contract."""
+    client, _session_factory, _user_id = api_client
+
+    create_response = await client.post("/api/v1/yarns", json={"name": "Original"})
+    yarn = create_response.json()
+    yarn_id = yarn["id"]
+    original_updated_at = yarn["updated_at"]
+
+    first_edit = await client.put(
+        f"/api/v1/yarns/{yarn_id}", json={"name": "Edited elsewhere"}
+    )
+    assert first_edit.status_code == 200
+
+    stale_edit = await client.put(
+        f"/api/v1/yarns/{yarn_id}",
+        json={"name": "Stale local edit", "expected_updated_at": original_updated_at},
+    )
+    assert stale_edit.status_code == 409
+    assert stale_edit.json()["detail"]["name"] == "Edited elsewhere"
+
+    get_response = await client.get(f"/api/v1/yarns/{yarn_id}")
+    assert get_response.json()["name"] == "Edited elsewhere"
+
+
 async def test_yarn_photo_upload_and_delete(api_client: ClientFixture) -> None:
     client, _session_factory, _user_id = api_client
 
@@ -262,6 +289,67 @@ async def test_project_crud_with_steps_and_yarn_links(
 
     missing = await client.get(f"/api/v1/projects/{project_id}")
     assert missing.status_code == 404
+
+
+async def test_project_update_conflict_when_expected_updated_at_stale(
+    api_client: ClientFixture,
+) -> None:
+    """SNA-33: a stale `expected_updated_at` is rejected with 409 and the current
+    server state, instead of silently overwriting whatever changed in between."""
+    client, _session_factory, _user_id = api_client
+
+    create_response = await client.post("/api/v1/projects", json={"name": "Original"})
+    project = create_response.json()
+    project_id = project["id"]
+    original_updated_at = project["updated_at"]
+
+    # A second edit lands first (e.g. from another device), moving updated_at forward.
+    first_edit = await client.put(
+        f"/api/v1/projects/{project_id}", json={"name": "Edited elsewhere"}
+    )
+    assert first_edit.status_code == 200
+
+    # A stale client, still holding the original updated_at, writes on top of it.
+    stale_edit = await client.put(
+        f"/api/v1/projects/{project_id}",
+        json={"name": "Stale local edit", "expected_updated_at": original_updated_at},
+    )
+    assert stale_edit.status_code == 409
+    conflict_body = stale_edit.json()["detail"]
+    assert conflict_body["name"] == "Edited elsewhere"
+
+    # The project's name is untouched by the rejected write.
+    get_response = await client.get(f"/api/v1/projects/{project_id}")
+    assert get_response.json()["name"] == "Edited elsewhere"
+
+    # A client that re-reads the current updated_at can then write successfully.
+    fresh_edit = await client.put(
+        f"/api/v1/projects/{project_id}",
+        json={
+            "name": "Fresh local edit",
+            "expected_updated_at": conflict_body["updated_at"],
+        },
+    )
+    assert fresh_edit.status_code == 200
+    assert fresh_edit.json()["name"] == "Fresh local edit"
+
+
+async def test_project_update_without_expected_updated_at_still_overwrites(
+    api_client: ClientFixture,
+) -> None:
+    """Omitting `expected_updated_at` (e.g. the web UI) keeps the old
+    unconditional-write behavior - SNA-33 only changes callers that opt in."""
+    client, _session_factory, _user_id = api_client
+
+    create_response = await client.post("/api/v1/projects", json={"name": "Original"})
+    project_id = create_response.json()["id"]
+
+    await client.put(f"/api/v1/projects/{project_id}", json={"name": "First edit"})
+    second_edit = await client.put(
+        f"/api/v1/projects/{project_id}", json={"name": "Second edit"}
+    )
+    assert second_edit.status_code == 200
+    assert second_edit.json()["name"] == "Second edit"
 
 
 async def test_project_title_image_step_image_and_attachment(

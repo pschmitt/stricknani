@@ -18,7 +18,9 @@ import java.time.ZoneOffset
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import retrofit2.HttpException
 
 private const val ENTITY_TYPE = "project"
 
@@ -97,16 +99,23 @@ constructor(
         return tempId
     }
 
-    /** Applies the edit to the local row immediately and queues an [MutationOperation.UPDATE]. */
+    /**
+     * Applies the edit to the local row immediately and queues an [MutationOperation.UPDATE],
+     * stamped with the `updatedAt` this edit was based on (SNA-33) - `WriteReplayWorker` sends it
+     * as `expected_updated_at` so the server can detect (and reject with 409) a write that's about
+     * to clobber a newer edit that landed elsewhere in the meantime.
+     */
     suspend fun updateProject(id: Int, request: ProjectWriteRequest) {
         val existing = projectDao.getById(id) ?: return
         projectDao.upsertAll(listOf(request.applyTo(existing, json)))
+        val baseUpdatedAt = json.decodeFromString<ProjectDto>(existing.detailJson).updatedAt
         pendingMutationDao.insert(
             PendingMutationEntity(
                 entityType = MutationEntityType.PROJECT,
                 operation = MutationOperation.UPDATE,
                 localId = id,
-                payloadJson = json.encodeToString(request),
+                payloadJson =
+                    json.encodeToString(request.copy(expectedUpdatedAt = baseUpdatedAt)),
                 createdAt = System.currentTimeMillis(),
             )
         )
@@ -134,15 +143,41 @@ constructor(
         return created.id
     }
 
-    /** Called only by `WriteReplayWorker`. */
+    /** Called only by `WriteReplayWorker` - a 409 (SNA-33 conflict) propagates to its caller. */
     suspend fun replayUpdate(id: Int, request: ProjectWriteRequest) {
         val updated = projectsApi.updateProject(id, request)
         projectDao.upsertAll(listOf(updated.toEntity(json)))
     }
 
-    /** Called only by `WriteReplayWorker`. */
+    /**
+     * Called only by `WriteReplayWorker` when a queued update conflicted (409) with a newer
+     * server-side edit (SNA-33) - adopts the server's current state, included in the 409 response
+     * body, so the local cache reflects reality instead of staying stuck on the pre-conflict value.
+     */
+    suspend fun adoptRemoteProject(dto: ProjectDto) {
+        projectDao.upsertAll(listOf(dto.toEntity(json)))
+    }
+
+    /**
+     * Called only by `WriteReplayWorker` when a queued update's target was deleted server-side in
+     * the meantime (404, SNA-33) - a regular `sync()` pass would normally have already removed the
+     * local row, but this replay can race ahead of the next sync, so drop it explicitly too.
+     */
+    suspend fun dropDeletedProject(id: Int) {
+        projectDao.deleteByIds(listOf(id))
+    }
+
+    /**
+     * Called only by `WriteReplayWorker`. Idempotent: a 404 means the project is already gone
+     * server-side (SNA-33) - exactly the caller's goal - so it's treated as success, not a failure
+     * worth retrying.
+     */
     suspend fun replayDelete(id: Int) {
-        projectsApi.deleteProject(id)
+        try {
+            projectsApi.deleteProject(id)
+        } catch (e: HttpException) {
+            if (e.code() != 404) throw e
+        }
     }
 }
 

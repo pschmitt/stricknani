@@ -8,7 +8,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PendingMutationDao {
-    @Query("SELECT * FROM pending_mutations ORDER BY id ASC")
+    /** Excludes mutations already resolved as a conflict (SNA-33) - see [markConflict]. */
+    @Query("SELECT * FROM pending_mutations WHERE isConflict = 0 ORDER BY id ASC")
     suspend fun getAll(): List<PendingMutationEntity>
 
     @Query("SELECT COUNT(*) FROM pending_mutations") fun observeCount(): Flow<Int>
@@ -22,6 +23,14 @@ interface PendingMutationDao {
 
     @Query("UPDATE pending_mutations SET lastErrorMessage = :message WHERE id = :id")
     suspend fun setError(id: Long, message: String?)
+
+    /**
+     * Marks a mutation as a definitively resolved conflict (SNA-33) - stops `WriteReplayWorker`
+     * from retrying it (see [getAll]'s filter) while keeping it visible as a "Sync issue" via
+     * [observeFailed] until the user next dismisses/overwrites it.
+     */
+    @Query("UPDATE pending_mutations SET lastErrorMessage = :message, isConflict = 1 WHERE id = :id")
+    suspend fun markConflict(id: Long, message: String)
 
     /**
      * After a queued create actually lands server-side, later queued mutations for the same

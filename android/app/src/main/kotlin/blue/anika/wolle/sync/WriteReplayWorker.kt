@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
+import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.entity.MutationEntityType
@@ -16,6 +18,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonObject
+import retrofit2.HttpException
 import timber.log.Timber
 
 /**
@@ -25,10 +30,13 @@ import timber.log.Timber
  * since an UPDATE/DELETE queued against a still-unsynced CREATE's temp id depends on that CREATE
  * having replayed first to learn the real server id.
  *
- * A replay failure (e.g. the row was deleted server-side in the meantime, or the device is still
- * offline) leaves the mutation queued with its error message recorded (`lastErrorMessage`, surfaced
- * as a conflict/pending-changes indicator by the UI) rather than silently dropping the local edit -
- * it retries on the next pass.
+ * A *transient* replay failure (still offline, a real server error) leaves the mutation queued with
+ * its error message recorded (`lastErrorMessage`, surfaced as a "Sync issue" by the UI) and retries
+ * on the next pass. A *conflict* (SNA-33: the target was edited or deleted elsewhere in the
+ * meantime, detected via the update endpoints' 409/404) is different - retrying it would just get
+ * the same rejection forever, so [ConflictException] short-circuits that: the local cache adopts
+ * whatever the server says is current, and the mutation is marked resolved (`markConflict`) rather
+ * than retried, while still surfacing what happened via the same `lastErrorMessage` mechanism.
  */
 @HiltWorker
 class WriteReplayWorker
@@ -50,6 +58,12 @@ constructor(
                 pendingMutationDao.delete(mutation.id)
             } catch (cancellation: CancellationException) {
                 throw cancellation
+            } catch (conflict: ConflictException) {
+                Timber.i(
+                    "Resolved conflict for mutation ${mutation.id} (${mutation.entityType}/${mutation.operation}): ${conflict.message}"
+                )
+                pendingMutationDao.markConflict(mutation.id, conflict.message!!)
+                // Not anyFailure: this mutation is done (resolved, not pending) - nothing to retry.
             } catch (failure: Exception) {
                 Timber.w(
                     failure,
@@ -82,7 +96,27 @@ constructor(
             }
             MutationOperation.UPDATE -> {
                 val request = json.decodeFromString<ProjectWriteRequest>(mutation.payloadJson!!)
-                projectRepository.replayUpdate(mutation.localId, request)
+                try {
+                    projectRepository.replayUpdate(mutation.localId, request)
+                } catch (e: HttpException) {
+                    when (e.code()) {
+                        404 -> {
+                            projectRepository.dropDeletedProject(mutation.localId)
+                            throw ConflictException(
+                                "This project was deleted on another device - your change wasn't applied."
+                            )
+                        }
+                        409 -> {
+                            decodeConflictBody<ProjectDto>(e)?.let {
+                                projectRepository.adoptRemoteProject(it)
+                            }
+                            throw ConflictException(
+                                "This project was edited elsewhere - your change was discarded and the latest version is now shown."
+                            )
+                        }
+                        else -> throw e
+                    }
+                }
             }
             MutationOperation.DELETE -> projectRepository.replayDelete(mutation.localId)
         }
@@ -101,9 +135,49 @@ constructor(
             }
             MutationOperation.UPDATE -> {
                 val request = json.decodeFromString<YarnWriteRequest>(mutation.payloadJson!!)
-                yarnRepository.replayUpdate(mutation.localId, request)
+                try {
+                    yarnRepository.replayUpdate(mutation.localId, request)
+                } catch (e: HttpException) {
+                    when (e.code()) {
+                        404 -> {
+                            yarnRepository.dropDeletedYarn(mutation.localId)
+                            throw ConflictException(
+                                "This yarn was deleted on another device - your change wasn't applied."
+                            )
+                        }
+                        409 -> {
+                            decodeConflictBody<YarnDto>(e)?.let { yarnRepository.adoptRemoteYarn(it) }
+                            throw ConflictException(
+                                "This yarn was edited elsewhere - your change was discarded and the latest version is now shown."
+                            )
+                        }
+                        else -> throw e
+                    }
+                }
             }
             MutationOperation.DELETE -> yarnRepository.replayDelete(mutation.localId)
         }
     }
+
+    private inline fun <reified T> decodeConflictBody(exception: HttpException): T? {
+        val body = exception.response()?.errorBody()?.string() ?: return null
+        return parseConflictDetail(json, body)
+    }
 }
+
+/**
+ * FastAPI wraps a 409's body as `{"detail": <the entity's current server state>}` (SNA-33) -
+ * decode that inner object, tolerating a missing/malformed body (network proxies, older server
+ * versions) by returning null rather than failing the whole conflict-resolution path. A top-level
+ * function (not a class member) so it's unit-testable against a raw JSON string, without needing to
+ * mock a Retrofit `HttpException`.
+ */
+internal inline fun <reified T> parseConflictDetail(json: Json, errorBody: String): T? =
+    runCatching {
+        val detail = json.parseToJsonElement(errorBody).jsonObject["detail"] ?: return null
+        json.decodeFromJsonElement<T>(detail)
+    }
+        .getOrNull()
+
+/** Thrown when a replay hits a resolved SNA-33 conflict - see [WriteReplayWorker]'s kdoc. */
+private class ConflictException(message: String) : Exception(message)
