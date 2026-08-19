@@ -90,7 +90,7 @@ Execution-oriented backlog for Stricknani.
 | T84 | P2 | done | ci/test | refactor | Enforce the documented 80% Python coverage threshold in CI instead of only uploading a report |
 | T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
- | T87 | P3 | wip (PID: main, AGENT: codex-main) | release/decision | feat | Prepare gated Google Play store-assets and publishing workflow; external Console/listing setup remains |
+ | T87 | P3 | done | release/decision | feat | Prepare gated Google Play store-assets and publishing workflow; upload the first internal release and reviewed assets |
  | T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Complete the web UI migration to a truly Material 3-native design |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
 | T90 | P1 | done | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
@@ -1168,24 +1168,25 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: release/decision
 - **Priority**: P3
-- **Status**: wip
+- **Status**: done
 - **Category**: feat
 - **Description**:
-  - Android release signing, GitHub Releases, and Obtainium are implemented; Google Play publishing remains deliberately undecided and is currently documented only in `android/TODO.md`.
+  - Android release signing, GitHub Releases, and Obtainium are implemented; Google Play publishing is approved for staged internal testing.
 - **Implementation**:
   - Decide whether the self-hosted audience warrants Play distribution. If approved, prepare store copy, privacy/data-safety information, content rating, signed AAB publication, and the gated screenshot/store-assets workflow from T82.
   - Keep publishing disabled by default and require an explicit repository-level gate and credentials check before any upload.
 - **Files**: `android/TODO.md`, `.github/workflows/`, `fastlane/`, `android/README.md`, and store metadata.
 - **Testing**: validate a signed AAB and store assets without publishing first; publish only after the explicit product decision and gate are enabled.
-- **Progress**: Added gated dry-run workflows, metadata/assets validation, release documentation, and
-  Play Console declaration scaffolding. Publishing remains disabled pending repository credentials,
-  listing setup, and Play Console declarations.
+- **Progress**: Configured the shared Play service-account secret and publication gate, committed 24
+  reviewed screenshots, uploaded version `0.1.0` (code `1`) to the internal track in workflow
+  `32291620107`, and uploaded the icon, feature graphic, and 24 screenshots in workflow
+  `32292338197`. Production promotion remains a deliberate Play Console action.
 
 ### T88: Migrate the web UI to Material 3 Expressive
 
 - **Area**: frontend/ux
 - **Priority**: P2
-- **Status**: done
+- **Status**: wip (PID: main, AGENT: codex-main)
 - **Category**: refactor
 - **Description**:
   - Replace the current DaisyUI/Tailwind visual language with a Material Design 3 / Material 3

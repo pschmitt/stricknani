@@ -1483,7 +1483,7 @@ cancel behavior, and item-preserving confirmation flows.
 
 ## SNA-42: Publish Android assets and releases to Google Play
 
-- [x] Added Fastlane-compatible en-US store copy and a draft declaration file covering the privacy
+- [x] Added Fastlane-compatible en-US store copy and a declaration file covering the privacy
       policy URL, content-rating completion, and data-safety completion. The checked-in Play icon
       (512×512) and feature graphic (1024×500) are validated without a network call.
 - [x] Extended the disposable phone/tablet screenshot matrix with an optional review-PR path;
@@ -1497,11 +1497,11 @@ cancel behavior, and item-preserving confirmation flows.
       the repository.
 - [x] Added `android/docs/play-store-release.md` with the staged internal-testing and rollback
       runbook.
-- [ ] Verify the listing and release flow in the Play Console before enabling production release.
+- [x] Verify the listing and release flow in the Play Console before enabling production release.
 
-Status: in progress (2026-08-19; repository scaffolding and the deployed public privacy-policy
-route are verified, but external Play Console listing, form completion, and service-account setup
-remain unverified).
+Status: **done** (2026-08-19; service-account access, internal release upload, and reviewed asset
+upload verified through workflows `32291620107` and `32292338197`; production promotion remains a
+manual Play Console decision).
 
 ## SNA-43: Normalize navbar taps to each destination's root view
 
