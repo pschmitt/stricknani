@@ -14,13 +14,14 @@ class ProjectsListViewModelTest {
 
     @Test
     fun `tags are unique and sorted independently of project order`() {
-        val tags = projectTags(projects.reversed()) { entity ->
-            when (entity.id) {
-                1 -> listOf("gift", "quick")
-                2 -> listOf("gift")
-                else -> listOf("lace")
+        val tags =
+            projectTags(projects.reversed()) { entity ->
+                when (entity.id) {
+                    1 -> listOf("gift", "quick")
+                    2 -> listOf("gift")
+                    else -> listOf("lace")
+                }
             }
-        }
 
         assertEquals(listOf("gift", "lace", "quick"), tags)
     }

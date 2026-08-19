@@ -235,14 +235,10 @@ private fun RenameCategoryDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(name) }) {
-                Text(stringResource(R.string.common_save))
-            }
+            TextButton(onClick = { onConfirm(name) }) { Text(stringResource(R.string.common_save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_cancel))
-            }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         },
     )
 }

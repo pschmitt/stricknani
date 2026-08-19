@@ -55,7 +55,8 @@ internal fun filterProjects(
         .asSequence()
         .filter { category == null || it.category == category }
         .filter {
-            tag == null || decodeTags(it).any { projectTag -> projectTag.equals(tag, ignoreCase = true) }
+            tag == null ||
+                decodeTags(it).any { projectTag -> projectTag.equals(tag, ignoreCase = true) }
         }
         .filter { query.isBlank() || it.name.contains(query, ignoreCase = true) }
         .toList()
