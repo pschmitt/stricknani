@@ -337,6 +337,10 @@ follow-up push.
       `SyncScheduler.replayThenSyncNow()`), replays strictly in insertion order, reconciles temp
       ids with server-assigned ids via `PendingMutationDao.reassignLocalId` once a queued create
       actually lands
+- [x] Updates made against a still-local negative temp id omit the optimistic-concurrency
+      timestamp (the server-created row necessarily has a different timestamp), while updates of
+      cached server rows retain their precondition; deterministic project/yarn payload tests cover
+      both branches
 - [x] A replay failure leaves the mutation queued with `lastErrorMessage` recorded and the worker
       returns `Result.retry()` when any mutation failed; the Home and Settings screens surface
       queued sync issues and offer retry/dismiss actions rather than hiding a stuck local edit

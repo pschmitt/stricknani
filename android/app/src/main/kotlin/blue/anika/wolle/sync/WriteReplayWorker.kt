@@ -85,6 +85,7 @@ constructor(
         when (mutation.entityType) {
             MutationEntityType.PROJECT -> replayProject(mutation)
             MutationEntityType.YARN -> replayYarn(mutation)
+            else -> error("Unknown mutation entity type: ${mutation.entityType}")
         }
     }
 
@@ -141,6 +142,7 @@ constructor(
                     json.decodeFromString<PendingAttachmentDelete>(mutation.payloadJson!!)
                 projectRepository.replayAttachmentDelete(mutation.localId, deletion.attachmentId)
             }
+            else -> error("Unknown project mutation operation: ${mutation.operation}")
         }
     }
 
@@ -184,6 +186,7 @@ constructor(
                 val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
                 yarnRepository.replayPhotoUpload(mutation.localId, upload)
             }
+            else -> error("Unknown yarn mutation operation: ${mutation.operation}")
         }
     }
 

@@ -108,13 +108,15 @@ constructor(
     suspend fun updateYarn(id: Int, request: YarnWriteRequest) {
         val existing = yarnDao.getById(id) ?: return
         yarnDao.upsertAll(listOf(request.applyTo(existing, json)))
-        val baseUpdatedAt = json.decodeFromString<YarnDto>(existing.detailJson).updatedAt
         pendingMutationDao.insert(
             PendingMutationEntity(
                 entityType = MutationEntityType.YARN,
                 operation = MutationOperation.UPDATE,
                 localId = id,
-                payloadJson = json.encodeToString(request.copy(expectedUpdatedAt = baseUpdatedAt)),
+                payloadJson =
+                    json.encodeToString(
+                        request.withExpectedUpdatedAt(id, existing.detailJson, json)
+                    ),
                 createdAt = System.currentTimeMillis(),
             )
         )
@@ -258,3 +260,18 @@ private fun YarnWriteRequest.applyTo(existing: YarnEntity, json: Json): YarnEnti
         )
     return updated.toEntity(json)
 }
+
+/** See [ProjectWriteRequest.withExpectedUpdatedAt] for why temporary ids omit the precondition. */
+internal fun YarnWriteRequest.withExpectedUpdatedAt(
+    localId: Int,
+    existingDetailJson: String,
+    json: Json,
+): YarnWriteRequest =
+    copy(
+        expectedUpdatedAt =
+            localId
+                .takeIf { it > 0 }
+                ?.let {
+                    json.decodeFromString<YarnDto>(existingDetailJson).updatedAt
+                }
+    )

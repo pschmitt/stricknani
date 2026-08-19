@@ -20,6 +20,8 @@ class ProjectAttachmentMutationTest {
                 path = "/data/data/blue.anika.wolle/files/pending-uploads/report-1.pdf",
                 fileName = "report 1.pdf",
                 contentType = "application/pdf",
+                altText = "Pattern notes",
+                stepIndex = 2,
             )
 
         val replayed = json.decodeFromString<PendingUpload>(json.encodeToString(pending))
