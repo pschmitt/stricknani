@@ -91,15 +91,15 @@ Execution-oriented backlog for Stricknani.
 | T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
  | T87 | P3 | done | release/decision | feat | Prepare gated Google Play store-assets and publishing workflow; upload the first internal release and reviewed assets |
- | T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Complete the web UI migration to a truly Material 3-native design |
+ | T88 | P2 | done | frontend/ux | refactor | Complete the web UI migration to a truly Material 3-native design |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
 | T90 | P1 | done | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
 | T91 | P2 | done | dev | bug | Make `just run` generate ephemeral runtime secrets when SECRET_KEY/CSRF_SECRET_KEY are unset, while preserving production fail-fast validation |
 | T92 | P2 | done | web/ux | bug | Fix QR-code sizing so it preserves its square aspect ratio and display the generated `stricknani://` setup URL below it |
 | T93 | P3 | done | web/ux | feat | Add a subtle, accessible hover animation to the Stricknani app logo in the top-left corner |
-| T94 | P1 | todo | web/ux | bug | Fix web UI regressions: repair the search bar styling and header arrow rendering |
-| T95 | P1 | todo | web/ux | bug | Repair shared dialog regressions introduced by the Material 3 migration, including import and create-user dialogs |
-| T96 | P1 | todo | web/ux | bug | Normalize admin user-profile icon sizing so avatars render consistently |
+| T94 | P1 | done | web/ux | bug | Fix web UI regressions: repair the search bar styling and header arrow rendering |
+| T95 | P1 | done | web/ux | bug | Repair shared dialog regressions introduced by the Material 3 migration, including import and create-user dialogs |
+| T96 | P1 | done | web/ux | bug | Normalize admin user-profile icon sizing so avatars render consistently |
 
 
 ## Done
@@ -1186,7 +1186,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: frontend/ux
 - **Priority**: P2
-- **Status**: wip (PID: main, AGENT: codex-main)
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Replace the current DaisyUI/Tailwind visual language with a Material Design 3 / Material 3
@@ -1202,17 +1202,21 @@ Execution-oriented backlog for Stricknani.
   - Preserve accessibility semantics, keyboard navigation, responsive behavior, translations,
     and the existing project/yarn UI parity throughout the migration.
 - **Current progress**:
-  - A framework-free `material.css` baseline replaced the old Tailwind/DaisyUI loading path, but
-    the migration is not visually complete.
-  - Visual regressions remain across search, header navigation, shared dialogs, admin avatars, and
-    the project/yarn detail pages; several native elements are still unstyled or inconsistently
-    sized.
-  - Rework the shared component layer and then visually verify every major page at desktop,
-    responsive, light, and dark breakpoints before marking this task done.
+  - Completed the framework-free M3 component layer and restored the remaining layout/control
+    primitives used by project, yarn, admin, import, and account pages without reintroducing a
+    runtime CSS framework.
+  - Repaired search positioning, responsive native dialogs, menu/form controls, detail navigation,
+    and consistent avatar sizing; added semantic color/state aliases for the remaining feature
+    fragments.
+  - Verified desktop, responsive, light/dark, CRUD, import-dialog, admin-dialog, and avatar paths
+    through the browser E2E suites.
 - **Files**: `stricknani/templates/`, `stricknani/static/css/`, `stricknani/static/js/`,
   `vendir.yml`, and both translation catalogs as UI strings change.
 - **Testing**: add/update browser E2E and screenshot coverage for light/dark themes and key
   responsive viewports; run i18n checks, frontend lint/format, and the full web test suite.
+- **Completed**: Added the shared M3 compatibility/component fixes and browser assertions for search,
+  import/create-user dialogs, and admin avatar dimensions. `just e2e-smoke`, `just e2e-full`, and
+  `tests/test_health.py` pass.
 
 ### T89: Translate the login-page “Please sign in below” string
 

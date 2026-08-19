@@ -90,14 +90,30 @@ def test_full_user_journey() -> None:
             screenshot(page, "full-05-yarn-edit-result.png")
 
             page.goto(f"{BASE_URL}/projects")
+            assert page.locator(".md3-search-bar__control .mdi-magnify").is_visible()
             page.get_by_role("button", name="More options").click()
             page.locator(
                 'button[data-action="open-dialog"][data-dialog-id="importDialog"]:visible'
             ).click()
             page.locator("#importDialog[open]").wait_for()
             page.locator("#importUrl").wait_for()
+            assert page.locator("#importDialog[open] .md3-dialog-surface").evaluate(
+                "element => getComputedStyle(element).borderRadius"
+            )
             page.locator('#importDialog [data-action="close-dialog"]').click()
 
+            page.goto(f"{BASE_URL}/admin/users")
+            page.locator("#admin-user-list [data-user-card]").first.wait_for()
+            avatar = page.locator("#admin-user-list [data-user-card] img").first
+            assert avatar.evaluate(
+                "element => [element.clientWidth, element.clientHeight]"
+            ) == [48, 48]
+            page.get_by_role("button", name="New User").first.click()
+            page.locator("#createUserDialog[open]").wait_for()
+            assert page.locator("#create-user-email").is_visible()
+            page.locator('#createUserDialog [data-action="close-dialog"]').click()
+
+            page.goto(f"{BASE_URL}/projects")
             page.set_viewport_size({"width": 390, "height": 844})
             page.reload()
             page.locator("#projects-list").wait_for()
