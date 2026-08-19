@@ -1162,7 +1162,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: release/decision
 - **Priority**: P3
-- **Status**: done
+- **Status**: wip
 - **Category**: feat
 - **Description**:
   - Android release signing, GitHub Releases, and Obtainium are implemented; Google Play publishing remains deliberately undecided and is currently documented only in `android/TODO.md`.
@@ -1179,7 +1179,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: frontend/ux
 - **Priority**: P2
-- **Status**: wip
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Replace the current DaisyUI/Tailwind visual language with a Material Design 3 / Material 3
