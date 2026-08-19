@@ -103,7 +103,10 @@ fun YarnsListScreen(
                 Spacer(Modifier.height(8.dp))
 
                 if (yarns.isEmpty()) {
-                    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize().testTag("e2e-yarns-list"),
+                    ) {
                         item {
                             EmptyState(
                                 icon = MdiIcons.Sheep,
@@ -116,6 +119,7 @@ fun YarnsListScreen(
                 } else {
                     LazyColumn(
                         state = listState,
+                        modifier = Modifier.testTag("e2e-yarns-list"),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {

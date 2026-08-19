@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -243,7 +244,10 @@ private fun YarnDetailContent(
     // url somehow fails to resolve.
     val photoUrls = remember(detail.photos) { detail.photos.map { resolveMediaUrl(it.url) ?: "" } }
 
-    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize().testTag("e2e-yarn-detail"),
+        contentPadding = PaddingValues(16.dp),
+    ) {
         if (detail.photos.isNotEmpty()) {
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

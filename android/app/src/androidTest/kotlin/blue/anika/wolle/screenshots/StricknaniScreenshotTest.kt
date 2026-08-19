@@ -5,9 +5,12 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -67,25 +70,39 @@ class StricknaniScreenshotTest {
         capture("home")
 
         composeRule.onNodeWithText("Projects").performClick()
+        waitForText("Search projects")
+        composeRule
+            .onNodeWithTag("e2e-projects-list")
+            .performScrollToNode(hasTextMatcher("Heirloom Baby Blanket"))
         waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
         capture("project-list")
 
         composeRule
             .onNodeWithText("Heirloom Baby Blanket", useUnmergedTree = true)
             .performClick()
+        composeRule
+            .onNodeWithTag("e2e-project-detail")
+            .performScrollToNode(hasTextMatcher("Description"))
         waitForText("Description", timeoutMillis = 120_000)
         capture("project")
 
-        composeRule.onNodeWithText("Back").performClick()
+        composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("Yarns").performClick()
+        waitForText("Search yarns")
+        composeRule
+            .onNodeWithTag("e2e-yarns-list")
+            .performScrollToNode(hasTextMatcher("Riverbend Merino DK"))
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
         capture("yarn-list")
 
         composeRule.onNodeWithText("Riverbend Merino DK").performClick()
+        composeRule
+            .onNodeWithTag("e2e-yarn-detail")
+            .performScrollToNode(hasTextMatcher("Brand"))
         waitForText("Brand", timeoutMillis = 120_000)
         capture("yarn")
 
-        composeRule.onNodeWithText("Back").performClick()
+        composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("Settings").performClick()
         waitForText("Settings")
         capture("settings")
