@@ -1565,7 +1565,7 @@ svg {
 	font-weight: 700;
 }
 
-.md3-feature-card__title a {
+.md3-feature-card__title :where(a) {
 	min-width: 0;
 	overflow: hidden;
 	color: var(--md-sys-color-on-surface);
@@ -1573,7 +1573,7 @@ svg {
 	white-space: nowrap;
 }
 
-.md3-feature-card__title a:hover {
+.md3-feature-card__title :where(a:hover) {
 	color: var(--md-sys-color-primary);
 }
 .md3-feature-card__heading {
