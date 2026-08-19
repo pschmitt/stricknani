@@ -59,7 +59,6 @@ class StricknaniScreenshotTest {
         // A final frame is useful when a later named state fails. Best effort is deliberate: a
         // broken emulator must not hide the instrumentation failure that produced the report.
         capture("final-state")
-        setAirplaneMode(enabled = false)
     }
 
     @Test
@@ -150,23 +149,19 @@ class StricknaniScreenshotTest {
         // the explicit offline gesture, otherwise RefreshController correctly ignores the pull as
         // a duplicate and the offline snackbar never appears.
         waitForText("Synced", timeoutMillis = 120_000)
-        setAirplaneMode(enabled = true)
-        try {
-            // The fixture is reached through adb reverse, which remains available during airplane
-            // mode. Tell the host-side screenshot harness to remove that reverse before pulling.
-            signalOfflineCapture()
-            device.swipe(
-                device.displayWidth / 2,
-                device.displayHeight / 3,
-                device.displayWidth / 2,
-                device.displayHeight * 3 / 4,
-                20,
-            )
-            waitForText("You’re offline - showing cached data.", timeoutMillis = 30_000)
-            capture("offline")
-        } finally {
-            setAirplaneMode(enabled = false)
-        }
+        // The fixture is reached through adb reverse. The host-side screenshot harness removes
+        // that reverse after this marker, making only the API endpoint unreachable while keeping
+        // the test activity alive on emulator images that recreate activities for airplane mode.
+        signalOfflineCapture()
+        device.swipe(
+            device.displayWidth / 2,
+            device.displayHeight / 3,
+            device.displayWidth / 2,
+            device.displayHeight * 3 / 4,
+            20,
+        )
+        waitForText("You’re offline - showing cached data.", timeoutMillis = 30_000)
+        capture("offline")
     }
 
     private fun waitForText(text: String, timeoutMillis: Long = 30_000) {
@@ -198,21 +193,6 @@ class StricknaniScreenshotTest {
         }
             .onFailure { error ->
                 System.err.println("Unable to capture screenshot $name: ${error.message}")
-            }
-    }
-
-    private fun setAirplaneMode(enabled: Boolean) {
-        runCatching {
-            val command =
-                if (enabled) "cmd connectivity airplane-mode enable"
-                else "cmd connectivity airplane-mode disable"
-            InstrumentationRegistry.getInstrumentation()
-                .uiAutomation
-                .executeShellCommand(command)
-                .use {}
-        }
-            .onFailure { error ->
-                System.err.println("Unable to set airplane mode to $enabled: ${error.message}")
             }
     }
 
