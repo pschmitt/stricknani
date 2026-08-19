@@ -44,6 +44,7 @@
     <!-- Bottom nav destination labels -->
     <string name="destination_label_home">Start</string>
     <string name="destination_label_projects">Projekte</string>
+    <string name="destination_label_categories">Kategorien</string>
     <string name="destination_label_yarns">Wolle</string>
     <string name="destination_label_search">Suche</string>
     <string name="destination_label_gauge">Maschenprobe</string>
@@ -86,6 +87,16 @@
     <string name="projects_list_empty_subtitle">Zum Aktualisieren ziehen oder Filter anpassen.</string>
     <string name="projects_list_add_category_dialog_title">Neue Kategorie</string>
     <string name="projects_list_add_category_name_placeholder">z. B. Pullover</string>
+
+    <!-- Kategorien -->
+    <string name="categories_title">Kategorien</string>
+    <string name="categories_empty_title">Noch keine Kategorien</string>
+    <string name="categories_empty_subtitle">Kategorien von deinem Stricknani-Server erscheinen hier.</string>
+    <string name="categories_offline_title">Kategorien offline nicht verfügbar</string>
+    <string name="categories_offline_subtitle">Verbinde dich mit deinem Server, um Kategorien zu laden.</string>
+    <string name="categories_error_title">Kategorien konnten nicht geladen werden</string>
+    <string name="categories_error_subtitle">Beim Laden der Kategorien ist ein Fehler aufgetreten. Versuche es erneut.</string>
+    <string name="categories_retry">Erneut versuchen</string>
 
     <!-- Yarns -->
     <string name="yarns_list_new_yarn_fab">Neue Wolle</string>

@@ -3,6 +3,7 @@ package blue.anika.wolle.ui.navigation
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
@@ -22,6 +23,8 @@ sealed interface Route {
     @Serializable data object Home : Route
 
     @Serializable data object Projects : Route
+
+    @Serializable data object Categories : Route
 
     @Serializable data object Yarns : Route
 
@@ -76,6 +79,12 @@ enum class TopLevelDestination(
         R.string.destination_label_projects,
         Icons.Filled.Folder,
         setOf(Route.Projects::class, Route.ProjectDetail::class, Route.ProjectEditor::class),
+    ),
+    CATEGORIES(
+        Route.Categories,
+        R.string.destination_label_categories,
+        Icons.Filled.Category,
+        setOf(Route.Categories::class),
     ),
     YARNS(
         Route.Yarns,

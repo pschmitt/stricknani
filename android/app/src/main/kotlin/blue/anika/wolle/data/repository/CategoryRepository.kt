@@ -25,16 +25,24 @@ constructor(
 ) {
     fun observeAll(): Flow<List<CategoryEntity>> = categoryDao.observeAll()
 
-    suspend fun sync() {
+    /**
+     * Refreshes the complete category cache and reports whether its contents changed.
+     *
+     * Categories have no server-side delta cursor, so this remains a full replacement while
+     * exposing the result needed by foreground refresh feedback.
+     */
+    suspend fun sync(): Boolean {
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)
         val response = syncApi.syncCategories(since = cursor)
         val updated = response.updated.map { CategoryEntity(id = it.id, name = it.name) }
         // SNA-36: replaceAll's delete+upsert invalidates Room's observeAll() flow (whole-table
         // invalidation, not per-row) even when nothing changed, forcing every screen showing
         // category chips to recompose on every sync tick - skip the write when nothing moved.
-        if (categoryDao.getAllOnce().toSet() != updated.toSet()) {
+        val changed = categoryDao.getAllOnce().toSet() != updated.toSet()
+        if (changed) {
             categoryDao.replaceAll(updated)
         }
         syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, response.serverTime))
+        return changed
     }
 }

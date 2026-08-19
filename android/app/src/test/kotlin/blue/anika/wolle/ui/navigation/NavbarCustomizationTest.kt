@@ -71,6 +71,7 @@ class NavbarCustomizationTest {
     fun `nested routes keep their top-level destination selected`() {
         assert(TopLevelDestination.PROJECTS.routeTypes.contains(Route.ProjectDetail::class))
         assert(TopLevelDestination.PROJECTS.routeTypes.contains(Route.ProjectEditor::class))
+        assert(TopLevelDestination.CATEGORIES.routeTypes.contains(Route.Categories::class))
         assert(TopLevelDestination.YARNS.routeTypes.contains(Route.YarnDetail::class))
         assert(TopLevelDestination.YARNS.routeTypes.contains(Route.YarnEditor::class))
         assert(TopLevelDestination.SETTINGS.routeTypes.contains(Route.SettingsCategoryRoute::class))

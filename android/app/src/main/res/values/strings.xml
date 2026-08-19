@@ -44,6 +44,7 @@
     <!-- Bottom nav destination labels -->
     <string name="destination_label_home">Home</string>
     <string name="destination_label_projects">Projects</string>
+    <string name="destination_label_categories">Categories</string>
     <string name="destination_label_yarns">Yarns</string>
     <string name="destination_label_search">Search</string>
     <string name="destination_label_gauge">Gauge</string>
@@ -86,6 +87,16 @@
     <string name="projects_list_empty_subtitle">Pull to refresh, or adjust your filters.</string>
     <string name="projects_list_add_category_dialog_title">New category</string>
     <string name="projects_list_add_category_name_placeholder">e.g. Sweaters</string>
+
+    <!-- Categories -->
+    <string name="categories_title">Categories</string>
+    <string name="categories_empty_title">No categories yet</string>
+    <string name="categories_empty_subtitle">Categories from your Stricknani server will appear here.</string>
+    <string name="categories_offline_title">Categories unavailable offline</string>
+    <string name="categories_offline_subtitle">Connect to your server to load categories.</string>
+    <string name="categories_error_title">Couldn’t load categories</string>
+    <string name="categories_error_subtitle">Something went wrong while loading categories. Try again.</string>
+    <string name="categories_retry">Retry</string>
 
     <!-- Yarns -->
     <string name="yarns_list_new_yarn_fab">New yarn</string>

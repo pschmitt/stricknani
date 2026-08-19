@@ -59,9 +59,13 @@ class FocusedAppSemanticsTest {
     fun navigationAndFilteredEmptyStatesRemainDiscoverable() {
         ensureConfigured()
 
-        listOf("Home", "Projects", "Yarns", "Search", "Gauge", "Settings").forEach {
+        listOf("Home", "Projects", "Categories", "Yarns", "Search", "Gauge", "Settings").forEach {
             composeRule.onNodeWithText(it).assertIsDisplayed()
         }
+
+        composeRule.onNodeWithText("Categories").performClick()
+        waitForText("Categories")
+        composeRule.onNodeWithTag("e2e-categories-screen").assertIsDisplayed()
 
         composeRule.onNodeWithText("Projects").performClick()
         waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)

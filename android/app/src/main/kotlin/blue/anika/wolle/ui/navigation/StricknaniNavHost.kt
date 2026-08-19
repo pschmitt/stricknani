@@ -26,6 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.MutationFeedbackEffect
+import blue.anika.wolle.ui.categories.CategoriesScreen
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
@@ -167,6 +168,7 @@ fun StricknaniNavHost(
                     onAddProjectClick = { navController.navigate(Route.ProjectEditor()) },
                 )
             }
+            composable<Route.Categories> { CategoriesScreen() }
             composable<Route.Yarns> {
                 YarnsListScreen(
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
