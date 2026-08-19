@@ -1661,15 +1661,17 @@ debug APK was installed/launched on PX5.
 
 ## SNA-55: Verify every web view on a disposable seeded instance
 
-- [ ] Start a proper disposable Stricknani test instance with deterministic seed data and exercise
+- [x] Start a proper disposable Stricknani test instance with deterministic seed data and exercise
       every authenticated and public web route.
-- [ ] Check desktop and mobile layouts for unstyled/legacy controls, broken dialogs, incorrect
+- [x] Check desktop and mobile layouts for unstyled/legacy controls, broken dialogs, incorrect
       responsive behavior, and Material 3 consistency; capture reviewable screenshots.
-- [ ] Fix all discovered web UI regressions and add route-level E2E assertions so they remain
+- [x] Fix all discovered web UI regressions and add route-level E2E assertions so they remain
       covered in CI.
-- [ ] Run the complete browser E2E suite and record the instance-backed verification result.
+- [x] Run the complete browser E2E suite and record the instance-backed verification result.
 
-Status: **wip** (2026-08-19; codex-main) - the dedicated web audit is in progress.
+Status: **done** (2026-08-19) - seeded disposable-instance full and smoke browser suites passed;
+Material layout regressions in forms, dialogs, search, detail sidebars, and header navigation were
+fixed and covered by E2E geometry assertions.
 
 ## SNA-56: Let users reorder project and yarn detail cards
 
