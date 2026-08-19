@@ -91,7 +91,7 @@ Execution-oriented backlog for Stricknani.
 | T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
 | T87 | P3 | todo | release/decision | feat | Decide whether Stricknani should publish to Google Play and, if yes, add the gated store-assets and publishing workflow |
-| T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
+| T88 | P2 | done | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
 
 
@@ -1174,7 +1174,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: frontend/ux
 - **Priority**: P2
-- **Status**: wip (PID: main, AGENT: codex-main)
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Replace the current DaisyUI/Tailwind visual language with a Material Design 3 / Material 3
@@ -1189,6 +1189,12 @@ Execution-oriented backlog for Stricknani.
     avoid introducing a client-side framework unless a concrete interaction requires it.
   - Preserve accessibility semantics, keyboard navigation, responsive behavior, translations,
     and the existing project/yarn UI parity throughout the migration.
+- **Completed**:
+  - Added shared M3 light/dark color, typography, shape, elevation, motion, focus, and tonal
+    surface tokens without adding an unvendored frontend dependency.
+  - Applied the shared system to the app bar, footer, buttons, controls, cards, dialogs, empty
+    states, list/detail/form shells, tabs, alerts, and responsive mobile FAB behavior.
+  - Added browser coverage for the dark system theme and responsive Material shell.
 - **Files**: `stricknani/templates/`, `stricknani/static/css/`, `stricknani/static/js/`,
   `vendir.yml`, and both translation catalogs as UI strings change.
 - **Testing**: add/update browser E2E and screenshot coverage for light/dark themes and key

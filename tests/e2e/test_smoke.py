@@ -84,3 +84,30 @@ def test_pr_smoke_journey() -> None:
         finally:
             context.close()
             browser.close()
+
+
+def test_material_dark_login_surface() -> None:
+    """Verify the shared Material theme responds to a dark system preference."""
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        context = browser.new_context(
+            color_scheme="dark",
+            locale="en-US",
+            viewport={"width": 390, "height": 844},
+        )
+        page = context.new_page()
+
+        try:
+            page.goto(f"{BASE_URL}/login")
+            page.locator("#login-form").wait_for()
+            assert page.locator("html").get_attribute("data-theme") == "dark"
+            assert page.locator(".md3-top-app-bar").is_visible()
+            assert page.locator(".md3-footer").is_visible()
+            screenshot(page, "smoke-dark-01-login.png")
+        except BaseException:
+            screenshot(page, "smoke-dark-failure.png")
+            raise
+        finally:
+            context.close()
+            browser.close()
