@@ -64,7 +64,9 @@ internal fun AccountSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMo
                     icon = Icons.Filled.Dns,
                 ) {
                     SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.account_settings_server_url_label)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.account_settings_server_url_label))
+                        },
                         supportingContent = {
                             Text(
                                 serverUrl.ifBlank {

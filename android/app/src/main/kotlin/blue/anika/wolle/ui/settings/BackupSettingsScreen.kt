@@ -129,7 +129,9 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                     icon = Icons.Filled.CloudUpload,
                 ) {
                     SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.backup_settings_export_label)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.backup_settings_export_label))
+                        },
                         supportingContent = {
                             Text(stringResource(R.string.backup_settings_export_description))
                         },
@@ -149,7 +151,9 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                         Text(stringResource(R.string.backup_settings_export_button))
                     }
                     SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.backup_settings_restore_label)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.backup_settings_restore_label))
+                        },
                         supportingContent = {
                             Text(stringResource(R.string.backup_settings_restore_description))
                         },
@@ -222,10 +226,13 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                         }
                     }
                     SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.backup_settings_password_label)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.backup_settings_password_label))
+                        },
                         supportingContent = {
                             Text(
-                                if (scheduledPasswordSet) stringResource(R.string.backup_settings_password_set)
+                                if (scheduledPasswordSet)
+                                    stringResource(R.string.backup_settings_password_set)
                                 else stringResource(R.string.backup_settings_password_not_set)
                             )
                         },

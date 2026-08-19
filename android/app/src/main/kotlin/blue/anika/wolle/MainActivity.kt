@@ -95,7 +95,11 @@ class MainActivity : ComponentActivity() {
             ?.setPrimaryClip(
                 ClipData.newPlainText(getString(R.string.main_activity_crash_report_label), report)
             )
-        Toast.makeText(this, getString(R.string.main_activity_crash_report_copied), Toast.LENGTH_SHORT)
+        Toast.makeText(
+                this,
+                getString(R.string.main_activity_crash_report_copied),
+                Toast.LENGTH_SHORT,
+            )
             .show()
     }
 

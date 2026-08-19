@@ -34,8 +34,9 @@ import blue.anika.wolle.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onCategoryClick: (SettingsCategory) -> Unit) {
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_root_title)) }) }) {
-        innerPadding ->
+    Scaffold(
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_root_title)) }) }
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding).testTag("settings-list"),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),

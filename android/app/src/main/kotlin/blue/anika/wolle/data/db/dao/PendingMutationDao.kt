@@ -29,7 +29,9 @@ interface PendingMutationDao {
      * from retrying it (see [getAll]'s filter) while keeping it visible as a "Sync issue" via
      * [observeFailed] until the user next dismisses/overwrites it.
      */
-    @Query("UPDATE pending_mutations SET lastErrorMessage = :message, isConflict = 1 WHERE id = :id")
+    @Query(
+        "UPDATE pending_mutations SET lastErrorMessage = :message, isConflict = 1 WHERE id = :id"
+    )
     suspend fun markConflict(id: Long, message: String)
 
     /**

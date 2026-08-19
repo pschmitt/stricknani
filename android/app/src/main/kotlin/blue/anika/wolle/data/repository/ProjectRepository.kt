@@ -114,8 +114,7 @@ constructor(
                 entityType = MutationEntityType.PROJECT,
                 operation = MutationOperation.UPDATE,
                 localId = id,
-                payloadJson =
-                    json.encodeToString(request.copy(expectedUpdatedAt = baseUpdatedAt)),
+                payloadJson = json.encodeToString(request.copy(expectedUpdatedAt = baseUpdatedAt)),
                 createdAt = System.currentTimeMillis(),
             )
         )

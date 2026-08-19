@@ -76,22 +76,30 @@ internal fun AboutSettingsScreen(
                     icon = Icons.Filled.Info,
                 ) {
                     SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.about_settings_app_version_label)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.about_settings_app_version_label))
+                        },
                         supportingContent = {
                             Text("${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
                         },
                     )
                     SettingsListItem(
                         modifier = Modifier.clickable(onClick = viewModel::onBuildRowTap),
-                        headlineContent = { Text(stringResource(R.string.about_settings_build_label)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.about_settings_build_label))
+                        },
                         supportingContent = { Text(BuildConfig.GIT_REVISION) },
                     )
                     SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.about_settings_server_version_label)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.about_settings_server_version_label))
+                        },
                         supportingContent = {
                             Text(
                                 serverMeta?.let { "${it.version} (${it.buildId})" }
-                                    ?: stringResource(R.string.about_settings_server_version_unavailable)
+                                    ?: stringResource(
+                                        R.string.about_settings_server_version_unavailable
+                                    )
                             )
                         },
                     )
@@ -110,8 +118,12 @@ internal fun AboutSettingsScreen(
                         },
                     )
                     SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.about_settings_license_label)) },
-                        supportingContent = { Text(stringResource(R.string.about_settings_license_value)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.about_settings_license_label))
+                        },
+                        supportingContent = {
+                            Text(stringResource(R.string.about_settings_license_value))
+                        },
                     )
                     TextButton(
                         onClick = { uriHandler.openUri(GITHUB_URL) },

@@ -146,7 +146,9 @@ constructor(
                             )
                         }
                         409 -> {
-                            decodeConflictBody<YarnDto>(e)?.let { yarnRepository.adoptRemoteYarn(it) }
+                            decodeConflictBody<YarnDto>(e)?.let {
+                                yarnRepository.adoptRemoteYarn(it)
+                            }
                             throw ConflictException(
                                 "This yarn was edited elsewhere - your change was discarded and the latest version is now shown."
                             )
@@ -166,18 +168,18 @@ constructor(
 }
 
 /**
- * FastAPI wraps a 409's body as `{"detail": <the entity's current server state>}` (SNA-33) -
- * decode that inner object, tolerating a missing/malformed body (network proxies, older server
- * versions) by returning null rather than failing the whole conflict-resolution path. A top-level
- * function (not a class member) so it's unit-testable against a raw JSON string, without needing to
- * mock a Retrofit `HttpException`.
+ * FastAPI wraps a 409's body as `{"detail": <the entity's current server state>}` (SNA-33) - decode
+ * that inner object, tolerating a missing/malformed body (network proxies, older server versions)
+ * by returning null rather than failing the whole conflict-resolution path. A top-level function
+ * (not a class member) so it's unit-testable against a raw JSON string, without needing to mock a
+ * Retrofit `HttpException`.
  */
 internal inline fun <reified T> parseConflictDetail(json: Json, errorBody: String): T? =
     runCatching {
         val detail = json.parseToJsonElement(errorBody).jsonObject["detail"] ?: return null
         json.decodeFromJsonElement<T>(detail)
     }
-        .getOrNull()
+    .getOrNull()
 
 /** Thrown when a replay hits a resolved SNA-33 conflict - see [WriteReplayWorker]'s kdoc. */
 private class ConflictException(message: String) : Exception(message)

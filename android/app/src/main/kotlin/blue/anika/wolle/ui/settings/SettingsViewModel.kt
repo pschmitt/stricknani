@@ -11,13 +11,13 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import blue.anika.wolle.R
 import blue.anika.wolle.data.api.MetaApi
 import blue.anika.wolle.data.api.dto.MetaDto
 import blue.anika.wolle.data.backup.BackupFrequency
 import blue.anika.wolle.data.backup.BackupManager
 import blue.anika.wolle.data.backup.BackupPasswordRequiredException
 import blue.anika.wolle.data.backup.BackupScheduler
-import blue.anika.wolle.R
 import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.settings.AppLanguage
@@ -111,7 +111,8 @@ constructor(
         _appLanguage.value = language
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.getSystemService(LocaleManager::class.java)?.applicationLocales =
-                language.tag?.let { LocaleList.forLanguageTags(it) } ?: LocaleList.getEmptyLocaleList()
+                language.tag?.let { LocaleList.forLanguageTags(it) }
+                    ?: LocaleList.getEmptyLocaleList()
         } else {
             AppCompatDelegate.setApplicationLocales(
                 language.tag?.let { LocaleListCompat.forLanguageTags(it) }
@@ -282,7 +283,9 @@ constructor(
                         context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
                             ?: error(context.getString(R.string.backup_error_open_file_write))
                     }
-                    BackupOperationState.Success(context.getString(R.string.backup_success_exported))
+                    BackupOperationState.Success(
+                        context.getString(R.string.backup_success_exported)
+                    )
                 } catch (e: Exception) {
                     BackupOperationState.Error(
                         e.message ?: context.getString(R.string.backup_error_export_failed)
@@ -304,7 +307,9 @@ constructor(
                     backupManager.import(bytes, password?.takeIf { it.isNotBlank() })
                     pendingRestoreUri = null
                     syncScheduler.syncNow()
-                    BackupOperationState.Success(context.getString(R.string.backup_success_restored))
+                    BackupOperationState.Success(
+                        context.getString(R.string.backup_success_restored)
+                    )
                 } catch (e: BackupPasswordRequiredException) {
                     pendingRestoreUri = uri
                     BackupOperationState.PasswordRequired

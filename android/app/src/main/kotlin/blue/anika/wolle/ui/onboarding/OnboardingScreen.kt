@@ -188,7 +188,8 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                     )
                 }
                 Text(
-                    if (mode == OnboardingMode.PASSWORD) stringResource(R.string.onboarding_mode_password)
+                    if (mode == OnboardingMode.PASSWORD)
+                        stringResource(R.string.onboarding_mode_password)
                     else stringResource(R.string.onboarding_connect_button)
                 )
             }

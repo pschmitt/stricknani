@@ -103,7 +103,9 @@ fun YarnDetailScreen(
                             Icon(
                                 Icons.Filled.MoreVert,
                                 contentDescription =
-                                    stringResource(R.string.project_detail_more_actions_description),
+                                    stringResource(
+                                        R.string.project_detail_more_actions_description
+                                    ),
                             )
                         }
                         DropdownMenu(
@@ -224,15 +226,22 @@ private fun YarnDetailContent(
         }
 
         detail.brand?.let { value ->
-            item { DetailRow(label = stringResource(R.string.yarn_detail_field_brand), value = value) }
+            item {
+                DetailRow(label = stringResource(R.string.yarn_detail_field_brand), value = value)
+            }
         }
         detail.colorway?.let { value ->
             item {
-                DetailRow(label = stringResource(R.string.yarn_detail_field_colorway), value = value)
+                DetailRow(
+                    label = stringResource(R.string.yarn_detail_field_colorway),
+                    value = value,
+                )
             }
         }
         detail.dyeLot?.let { value ->
-            item { DetailRow(label = stringResource(R.string.yarn_detail_field_dye_lot), value = value) }
+            item {
+                DetailRow(label = stringResource(R.string.yarn_detail_field_dye_lot), value = value)
+            }
         }
         detail.fiberContent?.let { value ->
             item {

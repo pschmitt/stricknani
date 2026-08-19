@@ -59,10 +59,9 @@ constructor(
     // SNA-36: see `ProjectDetailViewModel`'s identical fix - keeps the JSON detail decode gated on
     // this yarn's own row actually changing, not every unrelated project write.
     private val detailFlow: Flow<Pair<YarnEntity, YarnDto>?> =
-        yarnRepository
-            .observeById(yarnId)
-            .distinctUntilChanged()
-            .map { entity -> entity?.let { it to yarnRepository.decodeDetail(it) } }
+        yarnRepository.observeById(yarnId).distinctUntilChanged().map { entity ->
+            entity?.let { it to yarnRepository.decodeDetail(it) }
+        }
 
     val uiState: StateFlow<YarnDetailUiState> =
         combine(detailFlow, projectRepository.observeAll()) { detailPair, projects ->

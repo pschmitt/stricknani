@@ -88,7 +88,8 @@ fun HomeScreen(
                     IconButton(onClick = onGaugeClick) {
                         Icon(
                             Icons.Filled.Calculate,
-                            contentDescription = stringResource(R.string.home_gauge_calculator_description),
+                            contentDescription =
+                                stringResource(R.string.home_gauge_calculator_description),
                         )
                     }
                 },

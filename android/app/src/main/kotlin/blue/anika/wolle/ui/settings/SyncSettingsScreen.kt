@@ -57,11 +57,15 @@ internal fun SyncSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel
                     icon = Icons.Filled.Sync,
                 ) {
                     SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_sync_last_synced_label)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.settings_sync_last_synced_label))
+                        },
                         supportingContent = { Text(formatLastSynced(lastSyncedMillis)) },
                     )
                     SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_sync_policy_label)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.settings_sync_policy_label))
+                        },
                         supportingContent = {
                             Text(stringResource(R.string.settings_sync_policy_description))
                         },

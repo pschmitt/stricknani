@@ -177,7 +177,9 @@ fun YarnEditorScreen(
                     onValueChange = { value ->
                         viewModel.updateForm { it.copy(recommendedNeedles = value) }
                     },
-                    label = { Text(stringResource(R.string.yarn_detail_field_recommended_needles)) },
+                    label = {
+                        Text(stringResource(R.string.yarn_detail_field_recommended_needles))
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )

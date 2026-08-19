@@ -46,7 +46,9 @@ constructor(
     fun connect(serverUrl: String, apiToken: String) {
         if (serverUrl.isBlank() || apiToken.isBlank()) {
             _uiState.value =
-                OnboardingUiState.Error(context.getString(R.string.onboarding_error_missing_url_token))
+                OnboardingUiState.Error(
+                    context.getString(R.string.onboarding_error_missing_url_token)
+                )
             return
         }
         _uiState.value = OnboardingUiState.Validating

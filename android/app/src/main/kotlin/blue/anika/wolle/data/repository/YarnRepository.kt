@@ -88,7 +88,9 @@ constructor(
         return tempId
     }
 
-    /** See `ProjectRepository.updateProject`'s kdoc - same `expectedUpdatedAt` stamping (SNA-33). */
+    /**
+     * See `ProjectRepository.updateProject`'s kdoc - same `expectedUpdatedAt` stamping (SNA-33).
+     */
     suspend fun updateYarn(id: Int, request: YarnWriteRequest) {
         val existing = yarnDao.getById(id) ?: return
         yarnDao.upsertAll(listOf(request.applyTo(existing, json)))
@@ -98,8 +100,7 @@ constructor(
                 entityType = MutationEntityType.YARN,
                 operation = MutationOperation.UPDATE,
                 localId = id,
-                payloadJson =
-                    json.encodeToString(request.copy(expectedUpdatedAt = baseUpdatedAt)),
+                payloadJson = json.encodeToString(request.copy(expectedUpdatedAt = baseUpdatedAt)),
                 createdAt = System.currentTimeMillis(),
             )
         )

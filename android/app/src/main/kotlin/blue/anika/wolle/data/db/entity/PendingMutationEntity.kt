@@ -36,8 +36,9 @@ data class PendingMutationEntity(
      * SNA-33: set when a replay came back as a definitive, already-resolved conflict (the server
      * rejected it with 409 because a newer edit landed first, or the target was deleted upstream)
      * rather than a transient failure worth retrying. `WriteReplayWorker` excludes these rows from
-     * future replay passes - they're kept (not deleted outright) so `lastErrorMessage` stays visible
-     * as a "Sync issue" via `PendingMutationDao.observeFailed()`/`HomeViewModel.hasSyncFailures`.
+     * future replay passes - they're kept (not deleted outright) so `lastErrorMessage` stays
+     * visible as a "Sync issue" via
+     * `PendingMutationDao.observeFailed()`/`HomeViewModel.hasSyncFailures`.
      */
     val isConflict: Boolean = false,
 )

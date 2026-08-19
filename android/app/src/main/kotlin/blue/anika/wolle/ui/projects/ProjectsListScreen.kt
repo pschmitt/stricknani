@@ -139,7 +139,9 @@ fun ProjectsListScreen(
                                 Icon(
                                     Icons.Filled.Add,
                                     contentDescription =
-                                        stringResource(R.string.projects_list_add_category_description),
+                                        stringResource(
+                                            R.string.projects_list_add_category_description
+                                        ),
                                 )
                             },
                         )

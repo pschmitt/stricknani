@@ -107,7 +107,9 @@ fun ProjectDetailScreen(
                             Icon(
                                 Icons.Filled.MoreVert,
                                 contentDescription =
-                                    stringResource(R.string.project_detail_more_actions_description),
+                                    stringResource(
+                                        R.string.project_detail_more_actions_description
+                                    ),
                             )
                         }
                         DropdownMenu(
@@ -244,7 +246,10 @@ private fun ProjectDetailContent(
             item {
                 DetailSectionCard {
                     detail.category?.let {
-                        DetailRow(label = stringResource(R.string.common_field_category), value = it)
+                        DetailRow(
+                            label = stringResource(R.string.common_field_category),
+                            value = it,
+                        )
                     }
                     detail.needles?.let {
                         DetailRow(label = stringResource(R.string.common_field_needles), value = it)
@@ -256,7 +261,10 @@ private fun ProjectDetailContent(
                         )
                     }
                     detail.yarn?.let {
-                        DetailRow(label = stringResource(R.string.project_detail_field_yarn), value = it)
+                        DetailRow(
+                            label = stringResource(R.string.project_detail_field_yarn),
+                            value = it,
+                        )
                     }
                     detail.otherMaterials?.let {
                         DetailRow(
@@ -280,7 +288,9 @@ private fun ProjectDetailContent(
 
         if (linkedYarns.isNotEmpty()) {
             item {
-                DetailSectionCard(title = stringResource(R.string.project_detail_linked_yarns_title)) {
+                DetailSectionCard(
+                    title = stringResource(R.string.project_detail_linked_yarns_title)
+                ) {
                     linkedYarns.forEachIndexed { index, yarn ->
                         if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
                         LinkedEntityRow(
@@ -296,7 +306,9 @@ private fun ProjectDetailContent(
 
         detail.description?.let { value ->
             item {
-                DetailSectionCard(title = stringResource(R.string.project_detail_description_title)) {
+                DetailSectionCard(
+                    title = stringResource(R.string.project_detail_description_title)
+                ) {
                     Markdown(content = value, imageTransformer = Coil3ImageTransformerImpl)
                 }
             }

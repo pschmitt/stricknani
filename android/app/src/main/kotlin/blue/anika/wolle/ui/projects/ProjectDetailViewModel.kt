@@ -62,10 +62,9 @@ constructor(
     // unrelated yarn change too; without this, viewing a project's detail screen would re-decode
     // its JSON on every background sync tick and every yarn edit anywhere else in the app.
     private val detailFlow: Flow<Pair<ProjectEntity, ProjectDto>?> =
-        projectRepository
-            .observeById(projectId)
-            .distinctUntilChanged()
-            .map { entity -> entity?.let { it to projectRepository.decodeDetail(it) } }
+        projectRepository.observeById(projectId).distinctUntilChanged().map { entity ->
+            entity?.let { it to projectRepository.decodeDetail(it) }
+        }
 
     val uiState: StateFlow<ProjectDetailUiState> =
         combine(detailFlow, yarnRepository.observeAll()) { detailPair, yarns ->
