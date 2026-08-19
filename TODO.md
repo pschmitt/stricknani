@@ -1131,7 +1131,7 @@ Execution-oriented backlog for Stricknani.
   - Add `--cov-fail-under=80` to the canonical test command or configure the threshold in `pyproject.toml` so local and CI checks agree.
   - Keep the coverage artifact and make failures identify the measured total and the missing threshold.
 - **Files**: `pyproject.toml`, `justfile`, `.github/workflows/test.yaml`, and `docs/spec-and-implementation.md` if the chosen threshold or scope changes.
-- **Testing**: verify CI fails below the threshold and passes with the current suite after accounting for intentionally excluded modules.
+- **Testing**: verify CI fails below the threshold and passes with the current suite after accounting for intentionally excluded modules. The primary Python 3.14 job enforces the 80% gate; the separate Nix job runs the full suite as a test-only parity lane because its Python 3.13 coverage run reports different line data for the same passing tests.
 
 ### T85: Pin CI runtimes and E2E browser dependencies
 

@@ -54,6 +54,9 @@ jobs:
 
       # Runs the suite inside the Nix devShell so the shellHook's
       # libstdc++ LD_LIBRARY_PATH export is exercised (prebuilt binary
-      # wheels such as numpy/greenlet fail to load without it).
+      # wheels such as numpy/greenlet fail to load without it). Keep this as
+      # a test-only parity lane: the primary Python 3.14 job above owns the
+      # coverage gate, while coverage.py reports different line data under
+      # the Nix Python runtime for the same passing test set.
       - name: Run tests in Nix devShell
-        run: nix develop --command bash -c 'just ci-setup-py && just test'
+        run: nix develop --command bash -c 'just ci-setup-py && uv run pytest -v'
