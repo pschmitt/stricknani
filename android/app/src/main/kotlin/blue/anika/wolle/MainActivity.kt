@@ -20,6 +20,7 @@ import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.ui.common.CrashReportDialog
+import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.navigation.DeepLinkParser
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.navigation.StricknaniNavHost
@@ -41,6 +42,7 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var appPreferencesRepository: AppPreferencesRepository
+    @Inject lateinit var mutationFeedback: MutationFeedback
 
     private var pendingDeepLink by mutableStateOf<Route?>(null)
     private var pendingCrashReport by mutableStateOf<String?>(null)
@@ -71,6 +73,7 @@ class MainActivity : ComponentActivity() {
                     // isConfigured flips anyway (see its kdoc).
                     pendingDeepLinkRoute = pendingDeepLink.takeIf { isConfigured },
                     onDeepLinkConsumed = { pendingDeepLink = null },
+                    mutationFeedback = mutationFeedback,
                 )
                 pendingCrashReport?.let { report ->
                     CrashReportDialog(

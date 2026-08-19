@@ -1,16 +1,16 @@
 package blue.anika.wolle.ui.yarns
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
+import blue.anika.wolle.ui.common.isOfflineFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +31,7 @@ class YarnsListViewModel
 constructor(
     private val yarnRepository: YarnRepository,
     private val mediaUrlResolver: MediaUrlResolver,
-    @ApplicationContext private val context: Context,
+    private val mutationFeedback: MutationFeedback,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -50,9 +50,6 @@ constructor(
         refreshState
             .map { it is RefreshState.Refreshing }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     val yarns: StateFlow<List<YarnEntity>> =
         combine(yarnRepository.observeAll(), debouncedSearchQuery, favoritesOnly) {
@@ -95,17 +92,21 @@ constructor(
     }
 
     fun toggleFavorite(entity: YarnEntity) {
+        val wasFavorite = entity.isFavorite
         viewModelScope.launch {
             try {
-                yarnRepository.toggleFavorite(entity, wasFavorite = entity.isFavorite)
+                yarnRepository.toggleFavorite(entity, wasFavorite = wasFavorite)
+                mutationFeedback.show(
+                    if (wasFavorite) R.string.mutation_favorite_removed
+                    else R.string.mutation_favorite_added
+                )
             } catch (e: Exception) {
-                _errorMessage.value = context.getString(R.string.error_favorite_failed)
+                mutationFeedback.show(
+                    if (e.isOfflineFailure()) R.string.mutation_favorite_offline
+                    else R.string.error_favorite_failed
+                )
             }
         }
-    }
-
-    fun dismissError() {
-        _errorMessage.value = null
     }
 
     fun dismissRefreshFeedback() = refreshController.clearFeedback()

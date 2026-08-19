@@ -1448,31 +1448,35 @@ Status: **done** (2026-08-19) - verified with remote `just check` on `rofl-13.br
 
 ## SNA-40: Add snackbar feedback for mutation actions
 
-- [ ] Show translated success feedback for actions such as favorite/unfavorite, create, edit, and
+- [x] Show translated success feedback for actions such as favorite/unfavorite, create, edit, and
       delete across project and yarn screens.
-- [ ] Show clear queued/offline and error feedback when a mutation is stored locally or cannot be
+- [x] Show clear queued/offline and error feedback when a mutation is stored locally or cannot be
       applied, while preserving the existing pending-change indicator.
-- [ ] Use a shared snackbar/event path so feedback is consistent across screens and does not rely
+- [x] Use a shared snackbar/event path so feedback is consistent across screens and does not rely
       on transient ViewModel state surviving navigation.
-- [ ] Add focused UI or ViewModel tests covering success, queued, and failure outcomes for the
+- [x] Add focused UI or ViewModel tests covering success, queued, and failure outcomes for the
       mutation actions.
-- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the messages in English and German.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the messages in English and German.
 
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19; codex/android-sna40-sna41) - verified with remote `just check` and
+`just e2e-build` on `rofl-13.brkn.lol`; focused tests cover the shared event bus, queued/offline/error
+outcomes, confirmation callbacks, and English/German resources.
 
 ## SNA-41: Confirm destructive deletes and style trash actions
 
-- [ ] Require an explicit confirmation dialog before deleting projects, yarns, and every other
+- [x] Require an explicit confirmation dialog before deleting projects, yarns, and every other
       deletable entity exposed by the Android UI.
-- [ ] Make the confirmation identify the item being deleted and offer a safe cancel action before
+- [x] Make the confirmation identify the item being deleted and offer a safe cancel action before
       any offline mutation is queued or sent to the server.
-- [ ] Render the trash/delete icon in each overflow menu with the theme's red destructive color,
+- [x] Render the trash/delete icon in each overflow menu with the theme's red destructive color,
       while preserving its accessible label and touch target.
-- [ ] Add focused tests covering cancel, confirm, and red destructive-icon semantics for project
+- [x] Add focused tests covering cancel, confirm, and red destructive-icon semantics for project
       and yarn deletion flows.
-- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the behavior in English and German.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the behavior in English and German.
 
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19; codex/android-sna40-sna41) - verified with remote `just check` and
+`just e2e-build` on `rofl-13.brkn.lol`; focused journeys cover both project and yarn overflow menus,
+cancel behavior, and item-preserving confirmation flows.
 
 ## SNA-42: Publish Android assets and releases to Google Play
 

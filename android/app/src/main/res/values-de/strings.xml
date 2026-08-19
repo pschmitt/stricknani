@@ -77,7 +77,7 @@
     <string name="project_editor_name_label">Name</string>
     <string name="project_editor_tags_label">Tags (kommagetrennt)</string>
     <string name="project_editor_link_label">Link</string>
-    <string name="project_editor_delete_dialog_title">Projekt löschen?</string>
+    <string name="project_editor_delete_dialog_title">Projekt „%1$s“ löschen?</string>
     <string name="project_editor_delete_dialog_text">Dies kann nicht rückgängig gemacht werden.</string>
     <string name="projects_list_search_placeholder">Projekte durchsuchen</string>
     <string name="projects_list_category_all">Alle</string>
@@ -105,7 +105,7 @@
     <string name="yarn_editor_delete_description">Wolle löschen</string>
     <string name="yarn_editor_weight_grams_label">Gewicht (g)</string>
     <string name="yarn_editor_length_meters_label">Lauflänge (m)</string>
-    <string name="yarn_editor_delete_dialog_title">Wolle löschen?</string>
+    <string name="yarn_editor_delete_dialog_title">Wolle „%1$s“ löschen?</string>
 
     <!-- Settings categories (hub screen) -->
     <string name="settings_category_account_title">Konto</string>
@@ -250,6 +250,18 @@
     <string name="error_delete_failed">Löschen fehlgeschlagen - versuche es erneut.</string>
     <string name="error_name_required">Name ist erforderlich</string>
     <string name="error_create_category_failed">Kategorie \'%1$s\' konnte nicht erstellt werden.</string>
+
+    <!-- Mutation feedback -->
+    <string name="mutation_favorite_added">Zu Favoriten hinzugefügt.</string>
+    <string name="mutation_favorite_removed">Aus Favoriten entfernt.</string>
+    <string name="mutation_favorite_offline">Du bist offline - der Favorit konnte nicht aktualisiert werden.</string>
+    <string name="mutation_category_created">Kategorie „%1$s“ erstellt.</string>
+    <string name="mutation_project_created_queued">Projekt lokal erstellt und zur Synchronisierung vorgemerkt.</string>
+    <string name="mutation_project_updated_queued">Projekt lokal aktualisiert und zur Synchronisierung vorgemerkt.</string>
+    <string name="mutation_project_deleted_queued">Projekt lokal gelöscht und zur Synchronisierung vorgemerkt.</string>
+    <string name="mutation_yarn_created_queued">Wolle lokal erstellt und zur Synchronisierung vorgemerkt.</string>
+    <string name="mutation_yarn_updated_queued">Wolle lokal aktualisiert und zur Synchronisierung vorgemerkt.</string>
+    <string name="mutation_yarn_deleted_queued">Wolle lokal gelöscht und zur Synchronisierung vorgemerkt.</string>
 
     <!-- Onboarding errors -->
     <string name="onboarding_error_missing_url_token">Gib sowohl die Server-URL als auch das API-Token ein</string>

@@ -5,17 +5,19 @@ import android.os.Build
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import blue.anika.wolle.MainActivity
+import blue.anika.wolle.ui.common.DESTRUCTIVE_DELETE_DIALOG_TAG
+import blue.anika.wolle.ui.common.DESTRUCTIVE_DELETE_ICON_TAG
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
@@ -45,12 +47,8 @@ class FocusedAppSemanticsTest {
         composeRule.onNodeWithText("Connect").performClick()
         waitForText("Enter both the server URL and the API token")
 
-        composeRule
-            .onNodeWithTag("e2e-onboarding-server-url")
-            .performTextInput("not-a-server-url")
-        composeRule
-            .onNodeWithTag("e2e-onboarding-api-token")
-            .performTextInput("focused-test-token")
+        composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput("not-a-server-url")
+        composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput("focused-test-token")
         composeRule.onNodeWithContentDescription("Show token").performClick()
         composeRule.onNodeWithContentDescription("Hide token").assertIsDisplayed()
         composeRule.onNodeWithText("Connect").performClick()
@@ -83,9 +81,7 @@ class FocusedAppSemanticsTest {
 
         composeRule.onNodeWithText("Search").performClick()
         waitForText("Search your stash")
-        composeRule
-            .onNodeWithContentDescription("Search projects and yarns")
-            .performClick()
+        composeRule.onNodeWithContentDescription("Search projects and yarns").performClick()
         composeRule
             .onNodeWithContentDescription("Search projects and yarns")
             .performTextInput("focused-no-search-match")
@@ -145,6 +141,33 @@ class FocusedAppSemanticsTest {
         }
     }
 
+    @Test
+    fun projectAndYarnDeleteMenusRequireConfirmationWithoutMutatingData() {
+        ensureConfigured()
+
+        composeRule.onNodeWithText("Projects").performClick()
+        waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
+        composeRule.onNodeWithText("Heirloom Baby Blanket").performClick()
+        waitForText("More actions")
+        composeRule.onNodeWithContentDescription("More actions").performClick()
+        composeRule.onNodeWithTag(DESTRUCTIVE_DELETE_ICON_TAG).assertIsDisplayed()
+        composeRule.onNodeWithText("Delete").performClick()
+        composeRule.onNodeWithTag(DESTRUCTIVE_DELETE_DIALOG_TAG).assertIsDisplayed()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithText("Heirloom Baby Blanket").assertIsDisplayed()
+
+        composeRule.onNodeWithText("Yarns").performClick()
+        waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
+        composeRule.onNodeWithText("Riverbend Merino DK").performClick()
+        waitForText("More actions")
+        composeRule.onNodeWithContentDescription("More actions").performClick()
+        composeRule.onNodeWithTag(DESTRUCTIVE_DELETE_ICON_TAG).assertIsDisplayed()
+        composeRule.onNodeWithText("Delete").performClick()
+        composeRule.onNodeWithTag(DESTRUCTIVE_DELETE_DIALOG_TAG).assertIsDisplayed()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithText("Riverbend Merino DK").assertIsDisplayed()
+    }
+
     private fun ensureOnboarding() {
         waitForEither("Connect to Stricknani", "Settings")
         if (!hasText("Connect to Stricknani")) {
@@ -170,12 +193,8 @@ class FocusedAppSemanticsTest {
                 "configured focused journeys require e2e_base_url and e2e_token",
                 !baseUrl.isNullOrBlank() && !token.isNullOrBlank(),
             )
-            composeRule
-                .onNodeWithTag("e2e-onboarding-server-url")
-                .performTextInput(baseUrl!!)
-            composeRule
-                .onNodeWithTag("e2e-onboarding-api-token")
-                .performTextInput(token!!)
+            composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl!!)
+            composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token!!)
             grantNotificationPermission()
             composeRule.onNodeWithText("Connect").performClick()
         }
@@ -184,11 +203,10 @@ class FocusedAppSemanticsTest {
 
     private fun grantNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            InstrumentationRegistry
-                .getInstrumentation()
+            InstrumentationRegistry.getInstrumentation()
                 .uiAutomation
                 .executeShellCommand(
-                    "pm grant blue.anika.wolle.debug ${Manifest.permission.POST_NOTIFICATIONS}",
+                    "pm grant blue.anika.wolle.debug ${Manifest.permission.POST_NOTIFICATIONS}"
                 )
                 .close()
         }
@@ -226,8 +244,7 @@ class FocusedAppSemanticsTest {
             if (enabled) "cmd connectivity airplane-mode enable"
             else "cmd connectivity airplane-mode disable"
         runCatching {
-            InstrumentationRegistry
-                .getInstrumentation()
+            InstrumentationRegistry.getInstrumentation()
                 .uiAutomation
                 .executeShellCommand(command)
                 .close()

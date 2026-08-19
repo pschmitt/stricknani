@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.projects
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,11 +10,13 @@ import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
+import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,13 +51,14 @@ constructor(
     private val projectRepository: ProjectRepository,
     private val yarnRepository: YarnRepository,
     private val mediaUrlResolver: MediaUrlResolver,
-    @ApplicationContext private val context: Context,
+    private val syncScheduler: SyncScheduler,
+    private val mutationFeedback: MutationFeedback,
 ) : ViewModel() {
 
     private val projectId = savedStateHandle.toRoute<Route.ProjectDetail>().projectId
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    private val _deleted = MutableStateFlow(false)
+    val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
 
     private val refreshController = RefreshController(viewModelScope)
     val refreshState: StateFlow<RefreshState> = refreshController.state
@@ -114,20 +116,35 @@ constructor(
     fun toggleFavorite() {
         val state = uiState.value
         if (state !is ProjectDetailUiState.Loaded) return
+        val wasFavorite = state.entity.isFavorite
         viewModelScope.launch {
             try {
-                projectRepository.toggleFavorite(
-                    state.entity,
-                    wasFavorite = state.entity.isFavorite,
+                projectRepository.toggleFavorite(state.entity, wasFavorite = wasFavorite)
+                mutationFeedback.show(
+                    if (wasFavorite) R.string.mutation_favorite_removed
+                    else R.string.mutation_favorite_added
                 )
             } catch (e: Exception) {
-                _errorMessage.value = context.getString(R.string.error_favorite_failed)
+                mutationFeedback.show(
+                    if (e.isOfflineFailure()) R.string.mutation_favorite_offline
+                    else R.string.error_favorite_failed
+                )
             }
         }
     }
 
-    fun dismissError() {
-        _errorMessage.value = null
+    fun delete() {
+        if (uiState.value !is ProjectDetailUiState.Loaded) return
+        viewModelScope.launch {
+            try {
+                projectRepository.deleteProject(projectId)
+                syncScheduler.replayThenSyncNow()
+                mutationFeedback.show(R.string.mutation_project_deleted_queued)
+                _deleted.value = true
+            } catch (e: Exception) {
+                mutationFeedback.show(R.string.error_delete_failed)
+            }
+        }
     }
 
     fun dismissRefreshFeedback() = refreshController.clearFeedback()

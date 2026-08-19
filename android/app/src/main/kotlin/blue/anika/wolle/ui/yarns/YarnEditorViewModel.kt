@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.yarns
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,9 +8,9 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +41,7 @@ constructor(
     savedStateHandle: SavedStateHandle,
     private val yarnRepository: YarnRepository,
     private val syncScheduler: SyncScheduler,
-    @ApplicationContext private val context: Context,
+    private val mutationFeedback: MutationFeedback,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.YarnEditor>()
@@ -59,9 +58,6 @@ constructor(
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     init {
         val id = route.yarnId
@@ -98,7 +94,7 @@ constructor(
     fun save() {
         val current = _form.value
         if (current.name.isBlank()) {
-            _errorMessage.value = context.getString(R.string.error_name_required)
+            mutationFeedback.show(R.string.error_name_required)
             return
         }
         viewModelScope.launch {
@@ -124,9 +120,13 @@ constructor(
                 if (id != null) yarnRepository.updateYarn(id, request)
                 else yarnRepository.createYarn(request)
                 syncScheduler.replayThenSyncNow()
+                mutationFeedback.show(
+                    if (id == null) R.string.mutation_yarn_created_queued
+                    else R.string.mutation_yarn_updated_queued
+                )
                 _saved.value = true
             } catch (e: Exception) {
-                _errorMessage.value = context.getString(R.string.error_save_failed)
+                mutationFeedback.show(R.string.error_save_failed)
             } finally {
                 _isSaving.value = false
             }
@@ -140,16 +140,13 @@ constructor(
             try {
                 yarnRepository.deleteYarn(id)
                 syncScheduler.replayThenSyncNow()
+                mutationFeedback.show(R.string.mutation_yarn_deleted_queued)
                 _deleted.value = true
             } catch (e: Exception) {
-                _errorMessage.value = context.getString(R.string.error_delete_failed)
+                mutationFeedback.show(R.string.error_delete_failed)
             } finally {
                 _isSaving.value = false
             }
         }
-    }
-
-    fun dismissError() {
-        _errorMessage.value = null
     }
 }

@@ -6,6 +6,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,6 +23,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.MutationFeedbackEffect
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
@@ -57,8 +61,12 @@ fun StricknaniNavHost(
     navBarViewModel: NavBarViewModel = hiltViewModel(),
     pendingDeepLinkRoute: Route? = null,
     onDeepLinkConsumed: () -> Unit = {},
+    mutationFeedback: MutationFeedback,
 ) {
     val navController = rememberNavController()
+    val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
+
+    MutationFeedbackEffect(mutationFeedback, snackbarHostState)
 
     LaunchedEffect(pendingDeepLinkRoute) {
         pendingDeepLinkRoute?.let { route ->
@@ -69,6 +77,7 @@ fun StricknaniNavHost(
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         // Each destination owns its content scaffold and applies the status-bar inset alongside
         // its own top app bar (or, for Onboarding, its own padding). Applying the outer scaffold's
         // default system-bar insets here would offset that whole destination a second time -
@@ -162,6 +171,11 @@ fun StricknaniNavHost(
                     onBack = { navController.navigateUp() },
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                     onEditClick = { id -> navController.navigate(Route.ProjectEditor(id)) },
+                    onDeleted = {
+                        navController.navigate(Route.Projects) {
+                            popUpTo(Route.Projects) { inclusive = true }
+                        }
+                    },
                 )
             }
             composable<Route.YarnDetail> {
@@ -169,6 +183,11 @@ fun StricknaniNavHost(
                     onBack = { navController.navigateUp() },
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     onEditClick = { id -> navController.navigate(Route.YarnEditor(id)) },
+                    onDeleted = {
+                        navController.navigate(Route.Yarns) {
+                            popUpTo(Route.Yarns) { inclusive = true }
+                        }
+                    },
                 )
             }
             composable<Route.ProjectEditor> {

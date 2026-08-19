@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.projects
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,9 +12,9 @@ import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -48,7 +47,7 @@ constructor(
     categoryRepository: CategoryRepository,
     yarnRepository: YarnRepository,
     private val syncScheduler: SyncScheduler,
-    @ApplicationContext private val context: Context,
+    private val mutationFeedback: MutationFeedback,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.ProjectEditor>()
@@ -65,9 +64,6 @@ constructor(
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     val categories: StateFlow<List<CategoryEntity>> =
         categoryRepository
@@ -131,7 +127,7 @@ constructor(
     fun save() {
         val current = _form.value
         if (current.name.isBlank()) {
-            _errorMessage.value = context.getString(R.string.error_name_required)
+            mutationFeedback.show(R.string.error_name_required)
             return
         }
         viewModelScope.launch {
@@ -155,9 +151,13 @@ constructor(
                 if (id != null) projectRepository.updateProject(id, request)
                 else projectRepository.createProject(request)
                 syncScheduler.replayThenSyncNow()
+                mutationFeedback.show(
+                    if (id == null) R.string.mutation_project_created_queued
+                    else R.string.mutation_project_updated_queued
+                )
                 _saved.value = true
             } catch (e: Exception) {
-                _errorMessage.value = context.getString(R.string.error_save_failed)
+                mutationFeedback.show(R.string.error_save_failed)
             } finally {
                 _isSaving.value = false
             }
@@ -171,17 +171,14 @@ constructor(
             try {
                 projectRepository.deleteProject(id)
                 syncScheduler.replayThenSyncNow()
+                mutationFeedback.show(R.string.mutation_project_deleted_queued)
                 _deleted.value = true
             } catch (e: Exception) {
-                _errorMessage.value = context.getString(R.string.error_delete_failed)
+                mutationFeedback.show(R.string.error_delete_failed)
             } finally {
                 _isSaving.value = false
             }
         }
-    }
-
-    fun dismissError() {
-        _errorMessage.value = null
     }
 
     private companion object {

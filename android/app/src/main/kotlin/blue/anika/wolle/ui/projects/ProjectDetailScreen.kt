@@ -60,6 +60,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ProjectDto
+import blue.anika.wolle.ui.common.DestructiveDeleteDialog
+import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
@@ -74,20 +76,17 @@ fun ProjectDetailScreen(
     onBack: () -> Unit,
     onYarnClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
+    onDeleted: () -> Unit,
     viewModel: ProjectDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.dismissError()
-        }
-    }
+    val deleted by viewModel.deleted.collectAsStateWithLifecycle()
+    LaunchedEffect(deleted) { if (deleted) onDeleted() }
 
     RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
@@ -166,6 +165,16 @@ fun ProjectDetailScreen(
                                     viewModel.shareUrl()?.let { url -> context.shareUrl(url) }
                                 },
                             )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.common_delete)) },
+                                leadingIcon = {
+                                    DestructiveDeleteIcon(contentDescription = null)
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    showDeleteDialog = true
+                                },
+                            )
                         }
                     }
                 },
@@ -212,6 +221,18 @@ fun ProjectDetailScreen(
                     )
             }
         }
+    }
+
+    if (showDeleteDialog && state is ProjectDetailUiState.Loaded) {
+        DestructiveDeleteDialog(
+            title = stringResource(R.string.project_editor_delete_dialog_title, state.entity.name),
+            text = stringResource(R.string.project_editor_delete_dialog_text),
+            onConfirm = {
+                showDeleteDialog = false
+                viewModel.delete()
+            },
+            onDismiss = { showDeleteDialog = false },
+        )
     }
 }
 
