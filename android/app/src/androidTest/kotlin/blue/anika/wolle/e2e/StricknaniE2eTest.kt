@@ -3,6 +3,7 @@ package blue.anika.wolle.e2e
 import android.Manifest
 import android.os.Build
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -30,11 +31,22 @@ abstract class StricknaniE2eTest {
         get() = requiredArgument("e2e_token")
 
     protected fun connectToFixture() {
-        composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
-        composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
-        grantNotificationPermission()
-        composeRule.onNodeWithText("Connect").performClick()
-        waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
+        // Instrumentation methods share the installed app's DataStore and Room database. The
+        // first method sees onboarding, while later methods start on the already-configured Home
+        // graph. Wait for either state and only submit credentials when onboarding is visible.
+        composeRule.waitUntil(120_000) {
+            hasTag("e2e-onboarding-server-url") || hasText("Projects")
+        }
+        if (hasTag("e2e-onboarding-server-url")) {
+            composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
+            composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
+            grantNotificationPermission()
+            composeRule.onNodeWithText("Connect").performClick()
+        }
+        // Home does not render arbitrary yarns; the full journeys navigate to Projects/Yarns
+        // before asserting fixture rows. The bottom-navigation label is the stable configured
+        // state marker.
+        waitForText("Projects", timeoutMillis = 120_000)
     }
 
     private fun grantNotificationPermission() {
@@ -51,12 +63,18 @@ abstract class StricknaniE2eTest {
 
     protected fun waitForText(text: String, timeoutMillis: Long = 30_000) {
         composeRule.waitUntil(timeoutMillis) {
-            composeRule
-                .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            hasText(text)
         }
     }
+
+    private fun hasTag(tag: String): Boolean =
+        composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+
+    private fun hasText(text: String): Boolean =
+        composeRule
+            .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
 
     protected fun openProjects() {
         composeRule.onNodeWithText("Projects").performClick()

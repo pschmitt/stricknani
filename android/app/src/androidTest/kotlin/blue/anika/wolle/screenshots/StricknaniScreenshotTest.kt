@@ -4,6 +4,7 @@ import android.Manifest
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -93,11 +94,19 @@ class StricknaniScreenshotTest {
     }
 
     private fun connectToFixture() {
-        composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
-        composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
-        grantNotificationPermission()
-        composeRule.onNodeWithText("Connect").performClick()
-        waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
+        // A test method can start with the persisted configured state from an earlier method.
+        // Home itself only shows favorites/recent projects, so use the Projects nav label as the
+        // configured-state marker and assert fixture rows only after navigating to their lists.
+        composeRule.waitUntil(120_000) {
+            hasTag("e2e-onboarding-server-url") || hasText("Projects")
+        }
+        if (hasTag("e2e-onboarding-server-url")) {
+            composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
+            composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
+            grantNotificationPermission()
+            composeRule.onNodeWithText("Connect").performClick()
+        }
+        waitForText("Projects", timeoutMillis = 120_000)
     }
 
     private fun grantNotificationPermission() {
@@ -114,7 +123,7 @@ class StricknaniScreenshotTest {
 
     private fun captureOfflineState() {
         composeRule.onNodeWithText("Home").performClick()
-        waitForText("Riverbend Merino DK")
+        waitForText("Home")
         setAirplaneMode(enabled = true)
         try {
             // Home is at the top after navigating from Settings. Pulling far enough to pass the
@@ -135,12 +144,18 @@ class StricknaniScreenshotTest {
 
     private fun waitForText(text: String, timeoutMillis: Long = 30_000) {
         composeRule.waitUntil(timeoutMillis) {
-            composeRule
-                .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            hasText(text)
         }
     }
+
+    private fun hasTag(tag: String): Boolean =
+        composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+
+    private fun hasText(text: String): Boolean =
+        composeRule
+            .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
 
     private fun capture(name: String) {
         runCatching {
