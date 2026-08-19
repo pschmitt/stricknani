@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 sealed interface RefreshState {
     data object Idle : RefreshState
 
-    data object Refreshing : RefreshState
+    data class Refreshing(val trigger: RefreshTrigger) : RefreshState
 
     data class Finished(
         val changed: Boolean,
@@ -48,7 +48,7 @@ class RefreshController(private val scope: CoroutineScope) {
     ): Boolean {
         if (!refreshInProgress.compareAndSet(false, true)) return false
 
-        _state.value = RefreshState.Refreshing
+        _state.value = RefreshState.Refreshing(trigger)
         scope.launch {
             try {
                 _state.value = RefreshState.Finished(changed = block(), trigger = trigger)
@@ -70,6 +70,10 @@ class RefreshController(private val scope: CoroutineScope) {
         }
     }
 }
+
+/** Whether the pull-to-refresh indicator should be visible for this refresh state. */
+fun RefreshState.isUserInitiatedRefresh(): Boolean =
+    this is RefreshState.Refreshing && trigger == RefreshTrigger.UserInitiated
 
 private fun Throwable.causedByIoFailure(): Boolean {
     var current: Throwable? = this

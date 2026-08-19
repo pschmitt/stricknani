@@ -189,6 +189,8 @@
     <string name="settings_category_appearance_subtitle">Theme</string>
     <string name="settings_category_navigation_title">Navigation</string>
     <string name="settings_category_navigation_subtitle">Choose destinations and their order</string>
+    <string name="settings_category_categories_title">Categories</string>
+    <string name="settings_category_categories_subtitle">Manage project and yarn categories</string>
     <string name="settings_category_sync_title">Sync</string>
     <string name="settings_category_sync_subtitle">Background refresh status</string>
     <string name="settings_category_backup_title">Backup</string>

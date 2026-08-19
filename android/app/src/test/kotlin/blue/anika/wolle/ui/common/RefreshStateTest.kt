@@ -20,7 +20,10 @@ class RefreshStateTest {
 
         assertTrue(controller.refresh { completion.await() })
         assertFalse(controller.refresh { true })
-        assertEquals(RefreshState.Refreshing, controller.state.value)
+        assertEquals(
+            RefreshState.Refreshing(RefreshTrigger.UserInitiated),
+            controller.state.value,
+        )
 
         completion.complete(true)
         advanceUntilIdle()
@@ -78,6 +81,14 @@ class RefreshStateTest {
         advanceUntilIdle()
 
         assertEquals(R.string.refresh_no_changes, refreshFeedbackResource(controller.state.value))
+    }
+
+    @Test
+    fun `automatic refresh does not expose pull-to-refresh indicator`() = runTest {
+        val controller = RefreshController(this)
+
+        assertTrue(controller.refresh(trigger = RefreshTrigger.Automatic) { false })
+        assertFalse(controller.state.value.isUserInitiatedRefresh())
     }
 
     @Test

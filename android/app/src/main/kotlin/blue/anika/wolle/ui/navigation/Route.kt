@@ -57,8 +57,10 @@ sealed interface Route {
 
 /**
  * The customizable bottom-navigation destinations, in default display order (see android/TODO.md
- * SNA-5/SNA-9/SNA-16). [GAUGE] (SNA-11's calculator, previously only reachable via `HomeScreen`'s
- * top bar icon) was added as a navbar option per user feedback (2026-08-18) -
+ * SNA-5/SNA-9/SNA-16). Categories remains available as an optional destination, but is hidden by
+ * default because it is also available from Settings. [GAUGE] (SNA-11's calculator, previously
+ * only reachable via `HomeScreen`'s top bar icon) was added as a navbar option per user feedback
+ * (2026-08-18) -
  * `NavbarCustomization.sanitize`'s "missing destination" handling appends it as visible for anyone
  * with an already-saved navbar preference, same as any other newly added destination.
  */
@@ -67,6 +69,7 @@ enum class TopLevelDestination(
     @StringRes val labelRes: Int,
     val icon: ImageVector,
     val routeTypes: Set<KClass<out Route>>,
+    val defaultVisible: Boolean = true,
 ) {
     HOME(
         Route.Home,
@@ -85,6 +88,7 @@ enum class TopLevelDestination(
         R.string.destination_label_categories,
         Icons.Filled.Category,
         setOf(Route.Categories::class),
+        defaultVisible = false,
     ),
     YARNS(
         Route.Yarns,

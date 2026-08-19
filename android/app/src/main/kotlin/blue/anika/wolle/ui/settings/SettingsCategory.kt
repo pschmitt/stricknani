@@ -3,6 +3,7 @@ package blue.anika.wolle.ui.settings
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
@@ -37,6 +38,11 @@ enum class SettingsCategory(
         R.string.settings_category_navigation_title,
         R.string.settings_category_navigation_subtitle,
         Icons.Filled.ViewCarousel,
+    ),
+    Categories(
+        R.string.settings_category_categories_title,
+        R.string.settings_category_categories_subtitle,
+        Icons.Filled.Category,
     ),
     Sync(
         R.string.settings_category_sync_title,

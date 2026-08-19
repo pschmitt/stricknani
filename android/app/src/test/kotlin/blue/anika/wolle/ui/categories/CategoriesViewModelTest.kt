@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.categories
 
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.ui.common.RefreshState
+import blue.anika.wolle.ui.common.RefreshTrigger
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -15,7 +16,7 @@ class CategoriesViewModelTest {
             categoriesContentState(
                 emptyList(),
                 initialSyncComplete = false,
-                RefreshState.Refreshing,
+                RefreshState.Refreshing(RefreshTrigger.Automatic),
             ),
         )
     }
@@ -50,7 +51,11 @@ class CategoriesViewModelTest {
 
         assertEquals(
             expected,
-            categoriesContentState(listOf(category), false, RefreshState.Refreshing),
+            categoriesContentState(
+                listOf(category),
+                false,
+                RefreshState.Refreshing(RefreshTrigger.Automatic),
+            ),
         )
         assertEquals(expected, categoriesContentState(listOf(category), true, RefreshState.Offline))
         assertEquals(expected, categoriesContentState(listOf(category), true, RefreshState.Error))

@@ -19,7 +19,7 @@ internal fun refreshFeedbackResource(state: RefreshState): Int? =
         RefreshState.Offline -> R.string.refresh_offline
         RefreshState.Error -> R.string.refresh_error
         RefreshState.Idle,
-        RefreshState.Refreshing -> null
+        is RefreshState.Refreshing -> null
     }
 
 /** Shows the completed outcome; the pull-to-refresh indicator itself represents [Refreshing]. */

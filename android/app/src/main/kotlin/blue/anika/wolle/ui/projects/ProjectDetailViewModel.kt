@@ -13,6 +13,7 @@ import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
+import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.navigation.Route
@@ -64,7 +65,7 @@ constructor(
     val refreshState: StateFlow<RefreshState> = refreshController.state
     val isRefreshing: StateFlow<Boolean> =
         refreshState
-            .map { it is RefreshState.Refreshing }
+            .map { it.isUserInitiatedRefresh() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
 
     // SNA-36: decoding the full detail JSON (steps/images/attachments) is real work, so it's kept

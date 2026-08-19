@@ -65,6 +65,16 @@ wait_for_health() {
   return 1
 }
 
+configure_runtime_library_path() {
+  # The local Nix/uv Python environment may load binary wheels (for example NumPy) that need the
+  # host's libstdc++. Keep CI's existing loader path intact and only add the common local path when
+  # it exists.
+  if [[ -d /usr/lib64 ]]
+  then
+    export LD_LIBRARY_PATH="/usr/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+  fi
+}
+
 main() {
   local suite="${1:-smoke}"
   local test_file
@@ -109,6 +119,8 @@ main() {
   export FEATURE_WAYBACK_ENABLED=false
   export FEATURE_AI_IMPORT_ENABLED=false
   export DEFAULT_LANGUAGE=en
+
+  configure_runtime_library_path
 
   uv run uvicorn stricknani.main:app \
     --host "${BIND_HOST}" \

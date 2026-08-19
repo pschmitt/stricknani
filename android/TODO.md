@@ -1683,4 +1683,28 @@ Status: **wip** (2026-08-19; codex-main) - the dedicated web audit is in progres
 
 Status: **wip** (2026-08-19; codex-main) - design and implementation are being started.
 
+## SNA-57: Suppress pull-to-refresh animation on automatic navigation refreshes
+
+- [x] Keep pull-to-refresh indicators reserved for an explicit user gesture, not automatic refreshes
+      triggered when switching navbar destinations.
+- [x] Preserve useful loading/progress feedback for explicit refreshes and initial empty-screen
+      loads, without showing a stale spinner on every destination change.
+- [x] Add focused refresh-controller/UI coverage and run the remote Android quality checks.
+
+Status: **done** (2026-08-19) - automatic refreshes retain background sync and initial empty-state
+loading, while the pull-to-refresh indicator is now limited to explicit user gestures; focused
+tests and remote Android checks passed.
+
+## SNA-58: Move categories into Settings by default
+
+- [x] Make Categories a Settings hub entry with a back-navigation affordance, while retaining its
+      existing offline-first list and management actions.
+- [x] Keep Categories out of the default bottom navigation, while allowing users to opt it back
+      into the bar through the existing Navigation settings.
+- [x] Add focused navigation/default-preference coverage and run the remote Android quality checks.
+
+Status: **done** (2026-08-19) - Categories is available from the Settings hub with back
+navigation, hidden from the default navbar but still opt-in through Navigation settings; focused
+preference coverage and remote Android checks passed.
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

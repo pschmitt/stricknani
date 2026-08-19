@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Edit
@@ -53,7 +54,10 @@ import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
+fun CategoriesScreen(
+    onBack: (() -> Unit)? = null,
+    viewModel: CategoriesViewModel = hiltViewModel(),
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -68,7 +72,21 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.categories_title)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.categories_title)) },
+                navigationIcon = {
+                    onBack?.let { back ->
+                        IconButton(onClick = back) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.settings_nav_back),
+                            )
+                        }
+                    }
+                },
+            )
+        },
     ) { innerPadding ->
         PullToRefreshBox(
             isRefreshing = uiState.isRefreshing,

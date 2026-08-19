@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.settings
 
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
+import blue.anika.wolle.ui.categories.CategoriesScreen
 
 /**
  * Dispatches to the dedicated screen for one [SettingsCategory] (SNA-21). One shared
@@ -20,6 +21,7 @@ fun SettingsCategoryScreen(
             AppearanceSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.Navigation ->
             NavigationSettingsScreen(onBack = onBack, viewModel = viewModel)
+        SettingsCategory.Categories -> CategoriesScreen(onBack = onBack)
         SettingsCategory.Sync -> SyncSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.Backup -> BackupSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.About ->

@@ -14,6 +14,7 @@ import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
+import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.isOfflineFailure
@@ -93,7 +94,7 @@ constructor(
     val refreshState: StateFlow<RefreshState> = refreshController.state
     val isRefreshing: StateFlow<Boolean> =
         refreshState
-            .map { it is RefreshState.Refreshing }
+            .map { it.isUserInitiatedRefresh() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
 
     val categories: StateFlow<List<CategoryEntity>> =

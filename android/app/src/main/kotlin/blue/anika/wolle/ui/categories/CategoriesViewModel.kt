@@ -11,6 +11,7 @@ import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
+import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -95,7 +96,7 @@ constructor(
                             initialSyncComplete = hasCompletedInitialSync,
                             refreshState = refresh,
                         ),
-                    isRefreshing = refresh is RefreshState.Refreshing,
+                    isRefreshing = refresh.isUserInitiatedRefresh(),
                 )
             }
             .stateIn(

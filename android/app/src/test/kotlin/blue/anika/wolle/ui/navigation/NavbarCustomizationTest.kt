@@ -7,14 +7,21 @@ import org.junit.Test
 class NavbarCustomizationTest {
 
     @Test
-    fun `null input falls back to every destination visible in declared order`() {
+    fun `null input falls back to destinations with their declared defaults`() {
         val sanitized = NavbarCustomization.sanitize(null)
 
         assertEquals(
             TopLevelDestination.entries.toList(),
             NavbarCustomization.toDestinations(sanitized),
         )
-        assertEquals(sanitized.size, sanitized.count { it.visible })
+        assertEquals(
+            TopLevelDestination.entries.filter { it.defaultVisible },
+            NavbarCustomization.visibleDestinations(sanitized),
+        )
+        assertEquals(
+            false,
+            sanitized.first { it.id == TopLevelDestination.CATEGORIES.name }.visible,
+        )
     }
 
     @Test
@@ -42,14 +49,17 @@ class NavbarCustomizationTest {
     }
 
     @Test
-    fun `missing destinations are appended as visible`() {
+    fun `missing destinations are appended with their declared defaults`() {
         val sanitized =
             NavbarCustomization.sanitize(
                 listOf(NavbarItemPreference(TopLevelDestination.HOME.name))
             )
 
         assertEquals(TopLevelDestination.entries.size, sanitized.size)
-        assertEquals(true, sanitized.all { it.visible })
+        assertEquals(
+            TopLevelDestination.entries.filter { it.defaultVisible },
+            NavbarCustomization.visibleDestinations(sanitized),
+        )
     }
 
     @Test

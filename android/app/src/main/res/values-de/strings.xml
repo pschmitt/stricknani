@@ -189,6 +189,8 @@
     <string name="settings_category_appearance_subtitle">Design</string>
     <string name="settings_category_navigation_title">Navigation</string>
     <string name="settings_category_navigation_subtitle">Ziele und ihre Reihenfolge wählen</string>
+    <string name="settings_category_categories_title">Kategorien</string>
+    <string name="settings_category_categories_subtitle">Projekt- und Wollkategorien verwalten</string>
     <string name="settings_category_sync_title">Synchronisierung</string>
     <string name="settings_category_sync_subtitle">Status der Hintergrundaktualisierung</string>
     <string name="settings_category_backup_title">Backup</string>
