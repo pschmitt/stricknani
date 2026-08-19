@@ -110,12 +110,7 @@ abstract class StricknaniE2eTest {
     protected fun enterSearchTerm(term: String) {
         composeRule.onNodeWithText("Search").performClick()
         waitForText("Search projects and yarns")
-        composeRule
-            .onNodeWithText("Search projects and yarns", useUnmergedTree = true)
-            .performClick()
-        composeRule
-            .onNodeWithText("Search projects and yarns", useUnmergedTree = true)
-            .performTextInput(term)
+        composeRule.onNodeWithTag("e2e-search-field").performTextInput(term)
         waitForText("Riverbend Merino DK")
     }
 
