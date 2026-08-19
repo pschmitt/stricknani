@@ -15,7 +15,40 @@ interface PendingMutationDao {
     @Query("SELECT * FROM pending_mutations WHERE id = :id")
     suspend fun getById(id: Long): PendingMutationEntity?
 
-    @Query("SELECT COUNT(*) FROM pending_mutations") fun observeCount(): Flow<Int>
+    /**
+     * Returns the first replayable mutation of one kind for an entity. Repositories use this to
+     * coalesce repeated local edits without changing the mutation's insertion position.
+     */
+    @Query(
+        """
+        SELECT * FROM pending_mutations
+        WHERE entityType = :entityType
+          AND operation = :operation
+          AND localId = :localId
+          AND isConflict = 0
+        ORDER BY id ASC
+        LIMIT 1
+        """
+    )
+    suspend fun getReplayable(
+        entityType: String,
+        operation: String,
+        localId: Int,
+    ): PendingMutationEntity?
+
+    /** IDs with a non-resolved local mutation that must not be overwritten by delta sync. */
+    @Query(
+        """
+        SELECT DISTINCT localId FROM pending_mutations
+        WHERE entityType = :entityType
+          AND isConflict = 0
+          AND localId IN (:localIds)
+        """
+    )
+    suspend fun getReplayableLocalIds(entityType: String, localIds: List<Int>): List<Int>
+
+    @Query("SELECT COUNT(*) FROM pending_mutations WHERE isConflict = 0")
+    fun observeCount(): Flow<Int>
 
     @Query("SELECT * FROM pending_mutations WHERE lastErrorMessage IS NOT NULL ORDER BY id ASC")
     fun observeFailed(): Flow<List<PendingMutationEntity>>
@@ -26,6 +59,29 @@ interface PendingMutationDao {
 
     @Query("UPDATE pending_mutations SET lastErrorMessage = :message WHERE id = :id")
     suspend fun setError(id: Long, message: String?)
+
+    /** Replaces a coalesced edit and clears an old transient failure for that edit. */
+    @Query(
+        """
+        UPDATE pending_mutations
+        SET payloadJson = :payloadJson, lastErrorMessage = NULL
+        WHERE id = :id
+        """
+    )
+    suspend fun replacePayload(id: Long, payloadJson: String)
+
+    /** A newer local edit supersedes an already-resolved conflict for the same entity. */
+    @Query(
+        """
+        DELETE FROM pending_mutations
+        WHERE entityType = :entityType AND localId = :localId AND isConflict = 1
+        """
+    )
+    suspend fun deleteResolvedConflicts(entityType: String, localId: Int)
+
+    /** Dismisses a conflict after its server version has already been adopted into the cache. */
+    @Query("DELETE FROM pending_mutations WHERE id = :id AND isConflict = 1")
+    suspend fun dismissConflict(id: Long)
 
     /**
      * Marks a mutation as a definitively resolved conflict (SNA-33) - stops `WriteReplayWorker`
@@ -43,7 +99,10 @@ interface PendingMutationDao {
      * repoint them at the real server id so they replay against the right resource.
      */
     @Query(
-        "UPDATE pending_mutations SET localId = :newLocalId WHERE entityType = :entityType AND localId = :oldLocalId"
+        """
+        UPDATE pending_mutations SET localId = :newLocalId
+        WHERE entityType = :entityType AND localId = :oldLocalId
+        """
     )
     suspend fun reassignLocalId(entityType: String, oldLocalId: Int, newLocalId: Int)
 }

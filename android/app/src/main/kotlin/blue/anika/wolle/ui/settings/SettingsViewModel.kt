@@ -54,7 +54,7 @@ constructor(
     private val appPreferencesRepository: AppPreferencesRepository,
     private val database: AppDatabase,
     syncStateDao: SyncStateDao,
-    pendingMutationDao: PendingMutationDao,
+    private val pendingMutationDao: PendingMutationDao,
     private val metaApi: MetaApi,
     private val backupManager: BackupManager,
     private val backupScheduler: BackupScheduler,
@@ -105,6 +105,11 @@ constructor(
     }
 
     fun retryFailedMutations() = syncScheduler.replayThenSyncNow()
+
+    /** Removes a conflict notice after the replay worker has already adopted the server version. */
+    fun dismissSyncIssue(id: Long) {
+        viewModelScope.launch { pendingMutationDao.dismissConflict(id) }
+    }
 
     // --- SNA-37: in-app language picker -----------------------------------------------------
 

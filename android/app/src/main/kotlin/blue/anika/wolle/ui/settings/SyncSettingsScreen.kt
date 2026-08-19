@@ -86,6 +86,7 @@ internal fun SyncSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel
                     SyncIssuesSettingsCard(
                         issues = failedMutations,
                         onRetry = viewModel::retryFailedMutations,
+                        onDismiss = viewModel::dismissSyncIssue,
                     )
                 }
             }
@@ -97,6 +98,7 @@ internal fun SyncSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel
 private fun SyncIssuesSettingsCard(
     issues: List<PendingMutationEntity>,
     onRetry: () -> Unit,
+    onDismiss: (Long) -> Unit,
 ) {
     SettingsGroupCard(
         title = stringResource(R.string.sync_issue_settings_title),
@@ -120,6 +122,14 @@ private fun SyncIssuesSettingsCard(
                             stringResource(presentation.detailResId)
                     )
                 },
+                trailingContent =
+                    if (issue.isConflict) {
+                        {
+                            TextButton(onClick = { onDismiss(issue.id) }) {
+                                Text(stringResource(R.string.sync_issue_dismiss))
+                            }
+                        }
+                    } else null,
             )
         }
         if (issues.hasRetryableSyncIssues()) {

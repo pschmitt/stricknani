@@ -210,6 +210,7 @@
     <string name="sync_issue_banner_title">Sync needs attention</string>
     <string name="sync_issue_view_details">View details</string>
     <string name="sync_issue_retry">Retry</string>
+    <string name="sync_issue_dismiss">Dismiss</string>
     <string name="sync_issue_retry_title">Retry failed changes</string>
     <string name="sync_issue_retry_description">Try sending queued changes again now.</string>
     <string name="sync_issue_project_create">Create project</string>

@@ -210,6 +210,7 @@
     <string name="sync_issue_banner_title">Synchronisierung benötigt Aufmerksamkeit</string>
     <string name="sync_issue_view_details">Details anzeigen</string>
     <string name="sync_issue_retry">Erneut versuchen</string>
+    <string name="sync_issue_dismiss">Ausblenden</string>
     <string name="sync_issue_retry_title">Fehlgeschlagene Änderungen erneut versuchen</string>
     <string name="sync_issue_retry_description">Ausstehende Änderungen jetzt erneut senden.</string>
     <string name="sync_issue_project_create">Projekt erstellen</string>

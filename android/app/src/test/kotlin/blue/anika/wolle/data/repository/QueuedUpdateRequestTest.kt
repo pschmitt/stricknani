@@ -6,6 +6,7 @@ import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -56,6 +57,38 @@ class QueuedUpdateRequestTest {
 
         assertFalse(json.encodeToString(queued).contains("expected_updated_at"))
         assertNull(queued.expectedUpdatedAt)
+    }
+
+    @Test
+    fun `coalesced project edits retain the first server timestamp`() {
+        val first = ProjectWriteRequest(name = "First", expectedUpdatedAt = "server-v1")
+        val second = ProjectWriteRequest(name = "Second", expectedUpdatedAt = "client-v2")
+
+        val coalesced =
+            second.coalesceExpectedUpdatedAt(json.encodeToString(first), json)
+
+        assertEquals("Second", coalesced.name)
+        assertEquals("server-v1", coalesced.expectedUpdatedAt)
+    }
+
+    @Test
+    fun `coalesced yarn edits retain the first server timestamp`() {
+        val first = YarnWriteRequest(name = "First", expectedUpdatedAt = "server-v1")
+        val second = YarnWriteRequest(name = "Second", expectedUpdatedAt = "client-v2")
+
+        val coalesced = second.coalesceExpectedUpdatedAt(json.encodeToString(first), json)
+
+        assertEquals("Second", coalesced.name)
+        assertEquals("server-v1", coalesced.expectedUpdatedAt)
+    }
+
+    @Test
+    fun `coalescing malformed previous payload keeps the new timestamp`() {
+        val request = ProjectWriteRequest(name = "Latest", expectedUpdatedAt = "server-v1")
+
+        val coalesced = request.coalesceExpectedUpdatedAt("not-json", json)
+
+        assertEquals("server-v1", coalesced.expectedUpdatedAt)
     }
 
     private fun projectDetail(id: Int, updatedAt: String) =

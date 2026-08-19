@@ -76,6 +76,11 @@ constructor(
                 )
                 pendingMutationDao.setError(mutation.id, failure.message ?: "Sync failed")
                 anyFailure = true
+                // Later mutations may depend on this one (most notably an UPDATE/DELETE or media
+                // upload following an offline CREATE). Keep insertion order meaningful by leaving
+                // the remainder untouched for the next retry rather than sending them with a
+                // stale temporary id.
+                break
             }
         }
         return if (anyFailure) Result.retry() else Result.success()
@@ -93,12 +98,7 @@ constructor(
         when (mutation.operation) {
             MutationOperation.CREATE -> {
                 val request = json.decodeFromString<ProjectWriteRequest>(mutation.payloadJson!!)
-                val realId = projectRepository.replayCreate(mutation.localId, request)
-                pendingMutationDao.reassignLocalId(
-                    MutationEntityType.PROJECT,
-                    mutation.localId,
-                    realId,
-                )
+                projectRepository.replayCreate(mutation.localId, request)
             }
             MutationOperation.UPDATE -> {
                 val request = json.decodeFromString<ProjectWriteRequest>(mutation.payloadJson!!)
@@ -150,12 +150,7 @@ constructor(
         when (mutation.operation) {
             MutationOperation.CREATE -> {
                 val request = json.decodeFromString<YarnWriteRequest>(mutation.payloadJson!!)
-                val realId = yarnRepository.replayCreate(mutation.localId, request)
-                pendingMutationDao.reassignLocalId(
-                    MutationEntityType.YARN,
-                    mutation.localId,
-                    realId,
-                )
+                yarnRepository.replayCreate(mutation.localId, request)
             }
             MutationOperation.UPDATE -> {
                 val request = json.decodeFromString<YarnWriteRequest>(mutation.payloadJson!!)

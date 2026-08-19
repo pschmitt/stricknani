@@ -1,10 +1,12 @@
 package blue.anika.wolle.data.repository
 
+import androidx.room.withTransaction
 import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepDto
+import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.ProjectDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
@@ -37,6 +39,7 @@ data class ProjectRefreshResult(val detail: ProjectDto, val changed: Boolean)
 class ProjectRepository
 @Inject
 constructor(
+    private val database: AppDatabase,
     private val projectDao: ProjectDao,
     private val syncStateDao: SyncStateDao,
     private val syncApi: SyncApi,
@@ -86,11 +89,23 @@ constructor(
     suspend fun sync(): Boolean {
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)
         val response = syncApi.syncProjects(since = cursor)
-        if (response.updated.isNotEmpty()) {
-            projectDao.upsertAll(response.updated.map { it.toEntity(json) })
-        }
-        if (response.deletedIds.isNotEmpty()) {
-            projectDao.deleteByIds(response.deletedIds)
+        val pendingUpdatedIds =
+            response.updated
+                .map { it.id }
+                .takeIf { it.isNotEmpty() }
+                ?.let { pendingMutationDao.getReplayableLocalIds(ENTITY_TYPE, it).toSet() }
+                ?: emptySet()
+        val pendingDeletedIds =
+            response.deletedIds
+                .takeIf { it.isNotEmpty() }
+                ?.let { pendingMutationDao.getReplayableLocalIds(ENTITY_TYPE, it).toSet() }
+                ?: emptySet()
+        response.updated
+            .filterNot { it.id in pendingUpdatedIds }
+            .takeIf { it.isNotEmpty() }
+            ?.let { projectDao.upsertAll(it.map { project -> project.toEntity(json) }) }
+        response.deletedIds.filterNot { it in pendingDeletedIds }.takeIf { it.isNotEmpty() }?.let {
+            projectDao.deleteByIds(it)
         }
         syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, response.serverTime))
         return response.updated.isNotEmpty() || response.deletedIds.isNotEmpty()
@@ -103,18 +118,20 @@ constructor(
      * connectivity - the row shows up in every screen right away.
      */
     suspend fun createProject(request: ProjectWriteRequest): Int {
-        val tempId = minOf(projectDao.minId() ?: 0, 0) - 1
-        projectDao.upsertAll(listOf(request.toPlaceholderEntity(tempId, json)))
-        pendingMutationDao.insert(
-            PendingMutationEntity(
-                entityType = MutationEntityType.PROJECT,
-                operation = MutationOperation.CREATE,
-                localId = tempId,
-                payloadJson = json.encodeToString(request),
-                createdAt = System.currentTimeMillis(),
+        return database.withTransaction {
+            val tempId = minOf(projectDao.minId() ?: 0, 0) - 1
+            projectDao.upsertAll(listOf(request.toPlaceholderEntity(tempId, json)))
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.PROJECT,
+                    operation = MutationOperation.CREATE,
+                    localId = tempId,
+                    payloadJson = json.encodeToString(request),
+                    createdAt = System.currentTimeMillis(),
+                )
             )
-        )
-        return tempId
+            tempId
+        }
     }
 
     /**
@@ -124,72 +141,97 @@ constructor(
      * to clobber a newer edit that landed elsewhere in the meantime.
      */
     suspend fun updateProject(id: Int, request: ProjectWriteRequest) {
-        val existing = projectDao.getById(id) ?: return
-        projectDao.upsertAll(listOf(request.applyTo(existing, json)))
-        pendingMutationDao.insert(
-            PendingMutationEntity(
-                entityType = MutationEntityType.PROJECT,
-                operation = MutationOperation.UPDATE,
-                localId = id,
-                payloadJson =
-                    json.encodeToString(
-                        request.withExpectedUpdatedAt(id, existing.detailJson, json)
-                    ),
-                createdAt = System.currentTimeMillis(),
-            )
-        )
+        database.withTransaction {
+            val existing = projectDao.getById(id) ?: return@withTransaction
+            projectDao.upsertAll(listOf(request.applyTo(existing, json)))
+            pendingMutationDao.deleteResolvedConflicts(MutationEntityType.PROJECT, id)
+            val queued =
+                pendingMutationDao.getReplayable(
+                    MutationEntityType.PROJECT,
+                    MutationOperation.UPDATE,
+                    id,
+                )
+            val payload =
+                json.encodeToString(
+                    request
+                        .withExpectedUpdatedAt(id, existing.detailJson, json)
+                        .coalesceExpectedUpdatedAt(queued?.payloadJson, json)
+                )
+            if (queued == null) {
+                pendingMutationDao.insert(
+                    PendingMutationEntity(
+                        entityType = MutationEntityType.PROJECT,
+                        operation = MutationOperation.UPDATE,
+                        localId = id,
+                        payloadJson = payload,
+                        createdAt = System.currentTimeMillis(),
+                    )
+                )
+            } else {
+                pendingMutationDao.replacePayload(queued.id, payload)
+            }
+        }
     }
 
     /** Removes the local row immediately and queues a [MutationOperation.DELETE]. */
     suspend fun deleteProject(id: Int) {
-        projectDao.deleteByIds(listOf(id))
-        pendingMutationDao.insert(
-            PendingMutationEntity(
-                entityType = MutationEntityType.PROJECT,
-                operation = MutationOperation.DELETE,
-                localId = id,
-                payloadJson = null,
-                createdAt = System.currentTimeMillis(),
+        database.withTransaction {
+            projectDao.deleteByIds(listOf(id))
+            pendingMutationDao.deleteResolvedConflicts(MutationEntityType.PROJECT, id)
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.PROJECT,
+                    operation = MutationOperation.DELETE,
+                    localId = id,
+                    payloadJson = null,
+                    createdAt = System.currentTimeMillis(),
+                )
             )
-        )
+        }
     }
 
     suspend fun queueTitleImageUpload(projectId: Int, upload: PendingUpload) {
-        pendingMutationDao.insert(
-            PendingMutationEntity(
-                entityType = MutationEntityType.PROJECT,
-                operation = MutationOperation.PROJECT_TITLE_IMAGE_UPLOAD,
-                localId = projectId,
-                payloadJson = json.encodeToString(upload),
-                createdAt = System.currentTimeMillis(),
+        database.withTransaction {
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.PROJECT,
+                    operation = MutationOperation.PROJECT_TITLE_IMAGE_UPLOAD,
+                    localId = projectId,
+                    payloadJson = json.encodeToString(upload),
+                    createdAt = System.currentTimeMillis(),
+                )
             )
-        )
+        }
     }
 
     suspend fun queueStepImageUpload(projectId: Int, upload: PendingUpload) {
         require(upload.stepIndex != null) { "A step image needs its step index" }
-        pendingMutationDao.insert(
-            PendingMutationEntity(
-                entityType = MutationEntityType.PROJECT,
-                operation = MutationOperation.PROJECT_STEP_IMAGE_UPLOAD,
-                localId = projectId,
-                payloadJson = json.encodeToString(upload),
-                createdAt = System.currentTimeMillis(),
+        database.withTransaction {
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.PROJECT,
+                    operation = MutationOperation.PROJECT_STEP_IMAGE_UPLOAD,
+                    localId = projectId,
+                    payloadJson = json.encodeToString(upload),
+                    createdAt = System.currentTimeMillis(),
+                )
             )
-        )
+        }
     }
 
     /** Queues a project attachment upload; the copied file survives picker/activity teardown. */
     suspend fun queueAttachmentUpload(projectId: Int, upload: PendingUpload) {
-        pendingMutationDao.insert(
-            PendingMutationEntity(
-                entityType = MutationEntityType.PROJECT,
-                operation = MutationOperation.PROJECT_ATTACHMENT_UPLOAD,
-                localId = projectId,
-                payloadJson = json.encodeToString(upload),
-                createdAt = System.currentTimeMillis(),
+        database.withTransaction {
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.PROJECT,
+                    operation = MutationOperation.PROJECT_ATTACHMENT_UPLOAD,
+                    localId = projectId,
+                    payloadJson = json.encodeToString(upload),
+                    createdAt = System.currentTimeMillis(),
+                )
             )
-        )
+        }
     }
 
     /**
@@ -198,27 +240,33 @@ constructor(
      * by the existing temp-id reassignment when a queued project create is replayed.
      */
     suspend fun queueAttachmentDelete(projectId: Int, attachmentId: Int) {
-        projectDao.getById(projectId)?.let { existing ->
-            val current = json.decodeFromString<ProjectDto>(existing.detailJson)
-            val updated = removeProjectAttachment(current, attachmentId)
-            if (updated != current) projectDao.upsertAll(listOf(updated.toEntity(json)))
-        }
-        pendingMutationDao.insert(
-            PendingMutationEntity(
-                entityType = MutationEntityType.PROJECT,
-                operation = MutationOperation.PROJECT_ATTACHMENT_DELETE,
-                localId = projectId,
-                payloadJson = json.encodeToString(PendingAttachmentDelete(attachmentId)),
-                createdAt = System.currentTimeMillis(),
+        database.withTransaction {
+            projectDao.getById(projectId)?.let { existing ->
+                val current = json.decodeFromString<ProjectDto>(existing.detailJson)
+                val updated = removeProjectAttachment(current, attachmentId)
+                if (updated != current) projectDao.upsertAll(listOf(updated.toEntity(json)))
+            }
+            pendingMutationDao.deleteResolvedConflicts(MutationEntityType.PROJECT, projectId)
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.PROJECT,
+                    operation = MutationOperation.PROJECT_ATTACHMENT_DELETE,
+                    localId = projectId,
+                    payloadJson = json.encodeToString(PendingAttachmentDelete(attachmentId)),
+                    createdAt = System.currentTimeMillis(),
+                )
             )
-        )
+        }
     }
 
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */
     suspend fun replayCreate(tempId: Int, request: ProjectWriteRequest): Int {
         val created = projectsApi.createProject(request)
-        projectDao.deleteByIds(listOf(tempId))
-        projectDao.upsertAll(listOf(created.toEntity(json)))
+        database.withTransaction {
+            projectDao.deleteByIds(listOf(tempId))
+            projectDao.upsertAll(listOf(created.toEntity(json)))
+            pendingMutationDao.reassignLocalId(MutationEntityType.PROJECT, tempId, created.id)
+        }
         return created.id
     }
 
@@ -402,6 +450,23 @@ internal fun ProjectWriteRequest.withExpectedUpdatedAt(
             localId
                 .takeIf { it > 0 }
                 ?.let { json.decodeFromString<ProjectDto>(existingDetailJson).updatedAt }
+    )
+
+/** Keeps the original server snapshot when several local edits are coalesced before replay. */
+internal fun ProjectWriteRequest.coalesceExpectedUpdatedAt(
+    previousPayloadJson: String?,
+    json: Json,
+): ProjectWriteRequest =
+    copy(
+        expectedUpdatedAt =
+            previousPayloadJson
+                ?.let { payload ->
+                    runCatching {
+                            json.decodeFromString<ProjectWriteRequest>(payload).expectedUpdatedAt
+                        }
+                        .getOrNull()
+                }
+                ?: expectedUpdatedAt
     )
 
 private fun stepsFromRequest(
