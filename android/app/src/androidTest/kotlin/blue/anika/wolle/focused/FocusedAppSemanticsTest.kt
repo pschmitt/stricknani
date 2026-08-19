@@ -129,7 +129,9 @@ class FocusedAppSemanticsTest {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         setAirplaneMode(device, enabled = true)
         try {
-            composeRule.onNodeWithTag("e2e-projects-list").performTouchInput { swipeDown() }
+            composeRule.onNodeWithTag("e2e-projects-list").performTouchInput {
+                swipeDown(startY = top + 24f, endY = bottom - 24f, durationMillis = 1_000)
+            }
             waitForText("You’re offline - showing cached data.")
             composeRule.onNodeWithText("Heirloom Baby Blanket").assertIsDisplayed()
         } finally {
@@ -142,7 +144,7 @@ class FocusedAppSemanticsTest {
         ensureConfigured()
 
         openProjects()
-        composeRule.onNodeWithText("Heirloom Baby Blanket").performClick()
+        composeRule.onNodeWithTag("e2e-project-card-Heirloom Baby Blanket").performClick()
         waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
         composeRule
             .onNodeWithTag("e2e-project-detail")
@@ -157,7 +159,7 @@ class FocusedAppSemanticsTest {
         composeRule.onNodeWithText("Heirloom Baby Blanket").assertIsDisplayed()
 
         openYarns()
-        composeRule.onNodeWithText("Riverbend Merino DK").performClick()
+        composeRule.onNodeWithTag("e2e-yarn-card-Riverbend Merino DK").performClick()
         waitForText("More actions", timeoutMillis = 120_000)
         composeRule.onNodeWithContentDescription("More actions").performClick()
         composeRule.onNodeWithTag(DESTRUCTIVE_DELETE_ICON_TAG).assertIsDisplayed()

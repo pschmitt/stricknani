@@ -200,7 +200,10 @@ private fun ProjectListCard(
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
 ) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().testTag("e2e-project-card-${project.name}"),
+    ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp))) {
                 if (previewUrl != null) {
