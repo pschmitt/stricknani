@@ -1,7 +1,9 @@
 async function deleteProject(id) {
 	if (!id) return;
 
-	const btn = document.querySelector("#deleteProjectDialog .md3-button--destructive");
+	const btn = document.querySelector(
+		"#deleteProjectDialog .md3-button--destructive",
+	);
 	if (btn) {
 		btn.disabled = true;
 		const originalHtml = btn.innerHTML;

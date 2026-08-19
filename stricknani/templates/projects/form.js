@@ -504,9 +504,9 @@ function initTagEditor() {
 			tags.forEach((tag) => {
 				const chip = document.createElement("button");
 				chip.type = "button";
-					chip.className = "md3-tag-chip";
+				chip.className = "md3-tag-chip";
 				chip.setAttribute("data-tag", tag);
-					chip.innerHTML = `#${tag}<span class="mdi mdi-close md3-tag-chip__remove"></span>`;
+				chip.innerHTML = `#${tag}<span class="mdi mdi-close md3-tag-chip__remove"></span>`;
 				chip.addEventListener("click", () => removeTag(tag));
 				view.chips.appendChild(chip);
 			});
@@ -773,10 +773,10 @@ function initYarnSelector() {
 		// Render existing yarns
 		selectedYarns.forEach((yarn, id) => {
 			const chip = document.createElement("div");
-				chip.className = "md3-yarn-selection";
+			chip.className = "md3-yarn-selection";
 
 			const imageHtml = yarn.imageUrl
-					? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="md3-yarn-selection__media" data-img-fallback="1">`
+				? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="md3-yarn-selection__media" data-img-fallback="1">`
 				: "";
 
 			chip.innerHTML = `
@@ -802,10 +802,10 @@ function initYarnSelector() {
 		pendingYarns.forEach((yarn) => {
 			const name = yarn.name;
 			const chip = document.createElement("div");
-				chip.className = "md3-yarn-selection md3-yarn-selection--pending";
+			chip.className = "md3-yarn-selection md3-yarn-selection--pending";
 
 			const imageHtml = yarn.imageUrl
-					? `<img src="${yarn.imageUrl}" alt="${name}" class="md3-yarn-selection__media" data-img-fallback="1">`
+				? `<img src="${yarn.imageUrl}" alt="${name}" class="md3-yarn-selection__media" data-img-fallback="1">`
 				: "";
 
 			chip.innerHTML = `
@@ -1036,7 +1036,8 @@ function createImagePreviewHTML(imageData, options = {}) {
 	const pswpHeight = imageData.height || 1200;
 	const altText = imageData.alt_text || "";
 	const thumbUrl = imageData.thumbnail_url || imageData.url;
-	const imageVariant = imageClass === "h-20" ? " md3-photo-tile__image--compact" : "";
+	const imageVariant =
+		imageClass === "h-20" ? " md3-photo-tile__image--compact" : "";
 
 	return `
 		<div class="md3-photo-tile" data-image-id="${imageData.id}">
@@ -1526,10 +1527,9 @@ async function deleteAttachment(idOrToken) {
 
 		contentHtml = '<div class="md3-attachment-preview">';
 
-		contentHtml +=
-			'<div class="md3-attachment-preview__media">';
+		contentHtml += '<div class="md3-attachment-preview__media">';
 		if (thumbnailUrl) {
-		contentHtml += `<img src="${thumbnailUrl}" alt="" class="md3-attachment-preview__image">`;
+			contentHtml += `<img src="${thumbnailUrl}" alt="" class="md3-attachment-preview__image">`;
 		} else {
 			let iconClass = "mdi-file-outline";
 			if (kind === "pdf") {
@@ -1537,7 +1537,7 @@ async function deleteAttachment(idOrToken) {
 			} else if (kind === "image") {
 				iconClass = "mdi-file-image-outline";
 			}
-		contentHtml += `<span class="mdi ${iconClass} md3-attachment-preview__icon"></span>`;
+			contentHtml += `<span class="mdi ${iconClass} md3-attachment-preview__icon"></span>`;
 		}
 		contentHtml += "</div>";
 
