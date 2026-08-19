@@ -2,6 +2,7 @@ package blue.anika.wolle.focused
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -15,6 +16,7 @@ import blue.anika.wolle.ui.common.DESTRUCTIVE_DELETE_DIALOG_TAG
 import blue.anika.wolle.ui.common.DESTRUCTIVE_DELETE_ICON_TAG
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
+import blue.anika.wolle.ui.common.NotesCard
 import blue.anika.wolle.ui.home.HomeSyncStatusCard
 import blue.anika.wolle.ui.theme.StricknaniTheme
 import org.junit.Assert.assertEquals
@@ -167,5 +169,25 @@ class FocusedComponentSemanticsTest {
         assertEquals("Bereits aktuell", german.getString(R.string.refresh_no_changes))
         assertEquals("Updated", english.getString(R.string.refresh_success))
         assertEquals("Aktualisiert", german.getString(R.string.refresh_success))
+    }
+
+    @Test
+    fun notesCardKeepsItsTitleAndContentAccessibleInBothThemes() {
+        composeRule.setContent {
+            StricknaniTheme(darkTheme = false) {
+                NotesCard(title = "Notes") { Text("Add a sewn label after blocking.") }
+            }
+        }
+        composeRule.onNodeWithTag("notes-card").assertIsDisplayed()
+        composeRule.onNodeWithText("Notes").assertIsDisplayed()
+        composeRule.onNodeWithText("Add a sewn label after blocking.").assertIsDisplayed()
+
+        composeRule.setContent {
+            StricknaniTheme(darkTheme = true) {
+                NotesCard(title = "Notes") { Text("Add a sewn label after blocking.") }
+            }
+        }
+        composeRule.onNodeWithTag("notes-card").assertIsDisplayed()
+        composeRule.onNodeWithText("Add a sewn label after blocking.").assertIsDisplayed()
     }
 }

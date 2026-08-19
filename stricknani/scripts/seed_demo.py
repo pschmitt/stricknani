@@ -22,6 +22,7 @@ from stricknani.models import (
     YarnImage,
 )
 from stricknani.utils.auth import create_user, get_user_by_email
+from stricknani.utils.files import get_file_url
 
 _THUMBNAILS_AVAILABLE: bool | None = None
 DEMO_IMAGE_CAPTIONS = {
@@ -653,6 +654,21 @@ async def seed_demo_data(reset: bool = False) -> None:
 
             if project is None:
                 continue
+
+            # Keep one populated rich-text sample in the disposable fixture. It mirrors
+            # imported records such as project 3: HTML wrappers, a non-breaking-space
+            # entity, and an authenticated media image. The Android renderer uses this
+            # to exercise the real image/entity path.
+            if (
+                project.name == "Heirloom Baby Blanket"
+                and not project.stitch_sample
+                and title_images
+            ):
+                project.stitch_sample = (
+                    "<p>Gauge:&nbsp;20 stitches&nbsp;×&nbsp;28 rows.</p>"
+                    f'<p><img src="{get_file_url(title_images[0], project.id)}" '
+                    'alt="Heirloom stitch sample"></p>'
+                )
 
             if linked_yarns:
                 await db.refresh(project, ["yarns"])

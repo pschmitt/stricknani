@@ -65,7 +65,9 @@ import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.NotesCard
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
+import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
 import coil3.compose.AsyncImage
@@ -250,12 +252,15 @@ private fun ProjectDetailContent(
     // map (not mapNotNull) - keeps indices aligned with detail.images/viewerIndex even if a
     // url somehow fails to resolve.
     val imageUrls = remember(detail.images) { detail.images.map { resolveMediaUrl(it.url) ?: "" } }
+    val stitchSampleImages =
+        remember(detail.images) {
+            detail.images.filter { it.isStitchSample && it.stepId == null }
+        }
 
     val hasDetails =
         listOf(
                 detail.category,
                 detail.needles,
-                detail.stitchSample,
                 detail.yarn,
                 detail.otherMaterials,
             )
@@ -298,12 +303,6 @@ private fun ProjectDetailContent(
                     detail.needles?.let {
                         DetailRow(label = stringResource(R.string.common_field_needles), value = it)
                     }
-                    detail.stitchSample?.let {
-                        DetailRow(
-                            label = stringResource(R.string.common_field_stitch_sample),
-                            value = it,
-                        )
-                    }
                     detail.yarn?.let {
                         DetailRow(
                             label = stringResource(R.string.project_detail_field_yarn),
@@ -323,6 +322,43 @@ private fun ProjectDetailContent(
                         ) {
                             detail.tags.forEach { tag ->
                                 AssistChip(onClick = {}, label = { Text(tag) })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        detail.stitchSample?.let { value ->
+            item {
+                DetailSectionCard(
+                    title = stringResource(R.string.common_field_stitch_sample),
+                ) {
+                    Markdown(
+                        content = normalizeMarkdownContent(value),
+                        imageTransformer = markdownImageTransformer,
+                    )
+                    if (stitchSampleImages.isNotEmpty()) {
+                        LazyRow(
+                            modifier = Modifier.padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            itemsIndexed(
+                                stitchSampleImages,
+                                key = { _, image -> image.id },
+                            ) { _, image ->
+                                val imageIndex = detail.images.indexOfFirst { it.id == image.id }
+                                AsyncImage(
+                                    model = resolveMediaUrl(image.url),
+                                    contentDescription = image.altText,
+                                    contentScale = ContentScale.Crop,
+                                    modifier =
+                                        Modifier.size(160.dp)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .clickable {
+                                                if (imageIndex >= 0) viewerIndex = imageIndex
+                                            },
+                                )
                             }
                         }
                     }
@@ -354,7 +390,7 @@ private fun ProjectDetailContent(
                     title = stringResource(R.string.project_detail_description_title)
                 ) {
                     Markdown(
-                        content = value,
+                        content = normalizeMarkdownContent(value),
                         typography = stricknaniMarkdownTypography(),
                         imageTransformer = markdownImageTransformer,
                     )
@@ -377,7 +413,7 @@ private fun ProjectDetailContent(
                             )
                             step.description?.let {
                                 Markdown(
-                                    content = it,
+                                    content = normalizeMarkdownContent(it),
                                     typography = stricknaniMarkdownTypography(),
                                     imageTransformer = markdownImageTransformer,
                                     modifier = Modifier.padding(top = 4.dp),
@@ -391,9 +427,9 @@ private fun ProjectDetailContent(
 
         detail.notes?.let { value ->
             item {
-                DetailSectionCard(title = stringResource(R.string.project_detail_notes_title)) {
+                NotesCard(title = stringResource(R.string.project_detail_notes_title)) {
                     Markdown(
-                        content = value,
+                        content = normalizeMarkdownContent(value),
                         typography = stricknaniMarkdownTypography(),
                         imageTransformer = markdownImageTransformer,
                     )

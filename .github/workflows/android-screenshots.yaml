@@ -159,7 +159,14 @@ jobs:
           shopt -s nullglob
           for image in screenshot-captures/*.png
           do
-            [[ "$(basename "$image")" == *-final-state.png ]] && continue
+            basename="$(basename "$image")"
+            # These two extra review-only states exercise the rich Stitch sample and Notes card.
+            # Keep them in diagnostics without exceeding Play's eight-image bucket limit.
+            case "$basename" in
+              *-final-state.png|*-project-stitch-sample.png|*-project-notes.png)
+                continue
+                ;;
+            esac
             cp "$image" "play-store-screenshots/$BUCKET/"
           done
 

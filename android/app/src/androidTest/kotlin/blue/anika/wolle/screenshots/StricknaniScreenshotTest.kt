@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -86,6 +87,18 @@ class StricknaniScreenshotTest {
             .performScrollToNode(hasTextMatcher("Description"))
         waitForText("Description", timeoutMillis = 120_000)
         capture("project")
+
+        composeRule
+            .onNodeWithTag("e2e-project-detail")
+            .performScrollToNode(hasTextMatcher("Stitch sample"))
+        waitForText("Stitch sample", timeoutMillis = 120_000)
+        capture("project-stitch-sample")
+
+        composeRule
+            .onNodeWithTag("e2e-project-detail")
+            .performScrollToNode(hasTextMatcher("Notes"))
+        waitForText("Notes", timeoutMillis = 120_000)
+        capture("project-notes")
 
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("Yarns").performClick()

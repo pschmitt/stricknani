@@ -62,7 +62,9 @@ import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
+import blue.anika.wolle.ui.common.NotesCard
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
+import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
 import coil3.compose.AsyncImage
@@ -375,17 +377,13 @@ private fun YarnDetailContent(
 
         detail.notes?.let { value ->
             item {
-                HorizontalDivider(Modifier.padding(vertical = 16.dp))
-                Text(
-                    stringResource(R.string.project_detail_notes_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Markdown(
-                    content = value,
-                    typography = stricknaniMarkdownTypography(),
-                    imageTransformer = markdownImageTransformer,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
+                NotesCard(title = stringResource(R.string.project_detail_notes_title)) {
+                    Markdown(
+                        content = normalizeMarkdownContent(value),
+                        typography = stricknaniMarkdownTypography(),
+                        imageTransformer = markdownImageTransformer,
+                    )
+                }
             }
         }
     }

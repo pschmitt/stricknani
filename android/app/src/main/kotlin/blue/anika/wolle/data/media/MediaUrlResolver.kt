@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.media
 
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.data.util.decodeHtmlEntities
 import javax.inject.Inject
 import javax.inject.Singleton
 import okhttp3.HttpUrl
@@ -71,13 +72,5 @@ private fun HttpUrl.isHttpOrHttps(): Boolean = scheme == "http" || scheme == "ht
 
 private fun HttpUrl.sameOriginAs(other: HttpUrl): Boolean =
     scheme == other.scheme && host == other.host && port == other.port
-
-private fun decodeHtmlEntities(value: String): String =
-    value
-        .replace("&amp;", "&", ignoreCase = true)
-        .replace("&quot;", "\"", ignoreCase = true)
-        .replace("&#39;", "'", ignoreCase = true)
-        .replace("&lt;", "<", ignoreCase = true)
-        .replace("&gt;", ">", ignoreCase = true)
 
 private val URI_SCHEME = Regex("^[A-Za-z][A-Za-z0-9+.-]*:")
