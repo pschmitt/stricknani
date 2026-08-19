@@ -93,6 +93,7 @@ jobs:
           cores: 4
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           script: |
+            cd android
             curl -fsSL https://raw.githubusercontent.com/pschmitt/android-app-ci/main/scripts/wait-for-android-emulator.sh | bash
             adb reverse tcp:7674 tcp:7674
             adb shell cmd uimode night "$NIGHT_MODE"
@@ -120,7 +121,6 @@ jobs:
         env:
           DEVICE: ${{ matrix.device }}
           NIGHT_MODE: ${{ matrix.night_mode }}
-        working-directory: android
 
       - name: Collect screenshots and emulator diagnostics
         if: ${{ always() }}

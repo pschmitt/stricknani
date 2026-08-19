@@ -88,6 +88,7 @@ jobs:
           cores: 4
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           script: |
+            cd android
             curl -fsSL https://raw.githubusercontent.com/pschmitt/android-app-ci/main/scripts/wait-for-android-emulator.sh | bash
             adb reverse tcp:7674 tcp:7674
             adb install -r android/app/build/outputs/apk/debug/app-x86_64-debug.apk
@@ -115,7 +116,6 @@ jobs:
                 -Pandroid.testInstrumentationRunnerArguments.e2e_base_url=http://127.0.0.1:7674 \
                 -Pandroid.testInstrumentationRunnerArguments.e2e_token="$E2E_TOKEN"
             fi
-        working-directory: android
 
       - name: Capture emulator diagnostics
         if: ${{ always() }}
