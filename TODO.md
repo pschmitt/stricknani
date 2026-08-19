@@ -122,7 +122,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: bug
 - **Description**:
   - When instructions are collapsed in the UI, they are not included in the print output
@@ -155,7 +155,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: test
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Add thorough test coverage for all printing-related features
@@ -196,7 +196,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Conditionally render the "yarns used" widget only when there are actually yarns linked to the project
@@ -221,7 +221,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Step images in PhotoSwipe UI are missing preview thumbnails and OCR button
@@ -302,7 +302,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: demo
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: bug
 - **Description**:
   - Demo user's profile picture is missing, resulting in 404 error
@@ -338,7 +338,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Redesign the technical specifications section to be more space-efficient when printing
@@ -377,7 +377,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: cli
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Refactor the `stricknani-cli project export` command to improve usability
@@ -439,7 +439,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: frontend
 - **Priority**: P3
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Add web app manifest with PWA configuration
@@ -620,7 +620,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: frontend
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Currently cannot run biome/ruff/eslint on files like `form.js` that contain Jinja2 template syntax
@@ -735,7 +735,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Optimize the print layout to eliminate wasted space and focus on essential content
@@ -763,7 +763,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P3
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Reduce the size of the "instructions" header to match the styling of other section headers
@@ -779,7 +779,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: frontend
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Reduce the amount of Jinja2 templating in JavaScript and CSS files
@@ -817,7 +817,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: security
 - **Priority**: P0
-- **Status**: todo
+- **Status**: done
 - **Category**: bug
 - **Description**:
   - `SECRET_KEY` falls back to a hardcoded `"dev-secret-key-change-in-production"` (`config.py:21`); session tokens are HS256 JWTs signed with it, so an operator who forgets to set it exposes a publicly-known signing key → forge any session incl. admin.
@@ -842,7 +842,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: security
 - **Priority**: P0
-- **Status**: todo
+- **Status**: done
 - **Category**: bug
 - **Description**:
   - `save_uploaded_file` does `await upload_file.read()` (whole file into memory, no cap); `Image.MAX_IMAGE_PIXELS` is never set. A large upload exhausts RAM; a crafted small "gigapixel" image is a decompression bomb opened by Pillow in `create_thumbnail`/`get_image_dimensions`/OCR.
@@ -856,7 +856,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: data-model
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - `Image.project_id`/`step_id`, `Step.project_id`, `Attachment.project_id`, `Category.user_id` have no `index=True`, so every `selectinload` (`WHERE project_id IN (...)`) full-scans. On the hottest list/detail paths.
@@ -867,7 +867,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: perf
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - `/static` and `/media` are plain `StaticFiles` with no `Cache-Control max-age`, so the browser revalidates every asset (incl. a 400 KB font, 260 KB Tailwind JS, every thumbnail) on every navigation — a serial RTT each, worst on mobile.
@@ -878,7 +878,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: security
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - No CSP, `X-Content-Type-Options: nosniff`, `X-Frame-Options`, `Referrer-Policy`, or HSTS; `ALLOWED_HOSTS` is defined but `TrustedHostMiddleware` is never registered.
@@ -889,7 +889,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: security
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - `/media` is an unauthenticated raw static mount → IDOR on private photos/PDF attachments/import-traces, and stored-XSS via a preserved `.svg`/`.html` upload extension served without `nosniff`.
@@ -900,7 +900,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: test
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: bug
 - **Description**:
   - `tests/conftest.py:67` sets `config.TESTING = True` and never resets it; `test_login_cookie_not_secure_by_default` fails when run in isolation (order-dependent). The flag also short-circuits CSRF validation, so the entire CSRF path is untested.
@@ -911,7 +911,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: api
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: bug
 - **Description**:
   - `/gauge/calculate` divides by `pattern_gauge_stitches`/`rows` with no `gt=0` and does `int(pattern_row_count)` on a raw string; only client-side `min=1`. Crafted POST → `ZeroDivisionError`/`ValueError` → 500.
@@ -922,7 +922,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: a11y
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: bug
 - **Description**:
   - SPEC §11 makes alt text mandatory. `image_upload.html:74` renders `alt="{{ image.alt_text or '' }}"` and JS previews render `<img>` with no alt (`projects/form.js:1637,2182`, `yarn/form.js:161,767`).
@@ -933,7 +933,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: a11y
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Icon-only buttons lack accessible names (delete-image `image_upload.html:85`, mobile language `unified_navbar.html:296`, theme toggle `:285`); no skip-link and `<main>` has no id.
@@ -944,7 +944,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: perf
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - `list_projects`/`list_yarns` select all of a user's rows with full eager loads and render all cards; also re-sort in Python after a SQL `ORDER BY`, defeating both the sort and pagination.
@@ -955,7 +955,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: perf
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Project detail render calls `get_image_dimensions` per image, `PIL.Image.open`-ing every full-res file serially and uncached; also displays full-size originals in thumbnail-sized grid cells.
@@ -966,7 +966,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: test
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - The suite is offline only by convention; a future test that forgets to mock `fetch_url`/AI/wayback would silently hit the network and flake CI.
@@ -977,7 +977,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: build
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - `.mo` files are gitignored and compiled lazily at first request into the package dir (fails on read-only rootfs → silent English; non-atomic write races). Neither Docker nor nix compiles them.
@@ -988,7 +988,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ci
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - CI runs bare uv (not `nix develop`), so the devShell libstdc++ fix is never exercised; `lint-template-js`/`-format` run in `just check` but no workflow; no coverage measurement.
@@ -999,7 +999,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: security
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - No rate limiting/lockout on login/signup; no password policy (1-char accepted); sessions are non-revocable 1-week JWTs (logout only clears the cookie).
