@@ -30,15 +30,14 @@ class ApiProjectImporter @Inject constructor(private val api: ProjectImportApi) 
 private fun ProjectImportResponseDto.toPreview(sourceUrl: String): ImportedProjectPreview {
     val importedName = name.orEmpty().trim().ifBlank { title.orEmpty().trim() }
     val projectName = importedName.ifBlank { "Imported project" }
-    val importedSteps =
-        steps.mapIndexed { index, step ->
-            StepWriteRequest(
-                title = step.title.orEmpty().trim().ifBlank { "Step ${index + 1}" },
-                description = step.description?.trim()?.ifBlank { null },
-                stepNumber = step.stepNumber ?: index + 1,
-                imageUrls = step.images,
-            )
-        }
+    val importedSteps = steps.mapIndexed { index, step ->
+        StepWriteRequest(
+            title = step.title.orEmpty().trim().ifBlank { "Step ${index + 1}" },
+            description = step.description?.trim()?.ifBlank { null },
+            stepNumber = step.stepNumber ?: index + 1,
+            imageUrls = step.images,
+        )
+    }
 
     return ImportedProjectPreview(
         sourceUrl = sourceUrl,

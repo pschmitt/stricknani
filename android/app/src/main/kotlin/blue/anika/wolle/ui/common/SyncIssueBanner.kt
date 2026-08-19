@@ -42,8 +42,7 @@ fun SyncIssueBanner(
     val presentation = firstIssue.syncIssuePresentation()
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors =
-            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -72,9 +71,9 @@ fun SyncIssueBanner(
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Text(
-                    stringResource(
-                        presentation.operationLabelResId
-                    ) + ": " + stringResource(presentation.headlineResId),
+                    stringResource(presentation.operationLabelResId) +
+                        ": " +
+                        stringResource(presentation.headlineResId),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )

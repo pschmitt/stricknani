@@ -126,7 +126,8 @@ fun YarnEditorScreen(
                             Text(
                                 photo.fileName,
                                 modifier = Modifier.weight(1f),
-                                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                                style =
+                                    androidx.compose.material3.MaterialTheme.typography.bodySmall,
                             )
                             IconButton(onClick = { viewModel.removePhoto(index) }) {
                                 Icon(

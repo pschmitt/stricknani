@@ -55,11 +55,7 @@ class RefreshStateTest {
         val controller = RefreshController(this)
 
         repeat(2) {
-            assertTrue(
-                controller.refresh(trigger = RefreshTrigger.Automatic) {
-                    false
-                }
-            )
+            assertTrue(controller.refresh(trigger = RefreshTrigger.Automatic) { false })
             advanceUntilIdle()
 
             assertEquals(
@@ -88,11 +84,7 @@ class RefreshStateTest {
     fun `automatic refresh with changes remains visible`() = runTest {
         val controller = RefreshController(this)
 
-        assertTrue(
-            controller.refresh(trigger = RefreshTrigger.Automatic) {
-                true
-            }
-        )
+        assertTrue(controller.refresh(trigger = RefreshTrigger.Automatic) { true })
         advanceUntilIdle()
 
         assertEquals(R.string.refresh_success, refreshFeedbackResource(controller.state.value))

@@ -2,17 +2,17 @@ package blue.anika.wolle.e2e
 
 import android.Manifest
 import android.os.Build
-import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.hasText as hasTextMatcher
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.hasText as hasTextMatcher
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
@@ -53,20 +53,17 @@ abstract class StricknaniE2eTest {
 
     private fun grantNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            InstrumentationRegistry
-                .getInstrumentation()
+            InstrumentationRegistry.getInstrumentation()
                 .uiAutomation
                 .executeShellCommand(
-                    "pm grant blue.anika.wolle.debug ${Manifest.permission.POST_NOTIFICATIONS}",
+                    "pm grant blue.anika.wolle.debug ${Manifest.permission.POST_NOTIFICATIONS}"
                 )
                 .close()
         }
     }
 
     protected fun waitForText(text: String, timeoutMillis: Long = 30_000) {
-        composeRule.waitUntil(timeoutMillis) {
-            hasText(text)
-        }
+        composeRule.waitUntil(timeoutMillis) { hasText(text) }
     }
 
     private fun hasTag(tag: String): Boolean =
@@ -115,11 +112,9 @@ abstract class StricknaniE2eTest {
     }
 
     private fun requiredArgument(name: String): String =
-        androidx.test.platform.app.InstrumentationRegistry
-            .getArguments()
+        androidx.test.platform.app.InstrumentationRegistry.getArguments()
             .getString(name)
-            ?.takeIf(String::isNotBlank)
-            ?: error("$name instrumentation argument is required")
+            ?.takeIf(String::isNotBlank) ?: error("$name instrumentation argument is required")
 }
 
 @RunWith(AndroidJUnit4::class)
@@ -192,8 +187,7 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
         val command =
             if (enabled) "cmd connectivity airplane-mode enable"
             else "cmd connectivity airplane-mode disable"
-        InstrumentationRegistry
-            .getInstrumentation()
+        InstrumentationRegistry.getInstrumentation()
             .uiAutomation
             .executeShellCommand(command)
             .closeQuietly()

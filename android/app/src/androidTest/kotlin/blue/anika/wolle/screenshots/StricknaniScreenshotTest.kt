@@ -3,18 +3,18 @@ package blue.anika.wolle.screenshots
 import android.Manifest
 import android.graphics.Bitmap
 import android.os.Build
-import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.hasText as hasTextMatcher
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
@@ -29,8 +29,8 @@ import org.junit.runner.RunWith
 /**
  * Review-only screenshot coverage for the manual Android screenshot workflow.
  *
- * This intentionally lives outside the disposable E2E package: the screenshots are a stable,
- * named visual inventory, while the E2E tests are responsible for journey assertions. The fixture
+ * This intentionally lives outside the disposable E2E package: the screenshots are a stable, named
+ * visual inventory, while the E2E tests are responsible for journey assertions. The fixture
  * contract is the same as [blue.anika.wolle.e2e.StricknaniE2eTest].
  */
 @RunWith(AndroidJUnit4::class)
@@ -79,9 +79,7 @@ class StricknaniScreenshotTest {
         waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
         capture("project-list")
 
-        composeRule
-            .onNodeWithText("Heirloom Baby Blanket", useUnmergedTree = true)
-            .performClick()
+        composeRule.onNodeWithText("Heirloom Baby Blanket", useUnmergedTree = true).performClick()
         composeRule
             .onNodeWithTag("e2e-project-detail")
             .performScrollToNode(hasTextMatcher("Description"))
@@ -94,9 +92,7 @@ class StricknaniScreenshotTest {
         waitForText("Stitch sample", timeoutMillis = 120_000)
         capture("project-stitch-sample")
 
-        composeRule
-            .onNodeWithTag("e2e-project-detail")
-            .performScrollToNode(hasTextMatcher("Notes"))
+        composeRule.onNodeWithTag("e2e-project-detail").performScrollToNode(hasTextMatcher("Notes"))
         waitForText("Notes", timeoutMillis = 120_000)
         capture("project-notes")
 
@@ -110,9 +106,7 @@ class StricknaniScreenshotTest {
         capture("yarn-list")
 
         composeRule.onNodeWithText("Riverbend Merino DK").performClick()
-        composeRule
-            .onNodeWithTag("e2e-yarn-detail")
-            .performScrollToNode(hasTextMatcher("Brand"))
+        composeRule.onNodeWithTag("e2e-yarn-detail").performScrollToNode(hasTextMatcher("Brand"))
         waitForText("Brand", timeoutMillis = 120_000)
         capture("yarn")
 
@@ -142,11 +136,10 @@ class StricknaniScreenshotTest {
 
     private fun grantNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            InstrumentationRegistry
-                .getInstrumentation()
+            InstrumentationRegistry.getInstrumentation()
                 .uiAutomation
                 .executeShellCommand(
-                    "pm grant blue.anika.wolle.debug ${Manifest.permission.POST_NOTIFICATIONS}",
+                    "pm grant blue.anika.wolle.debug ${Manifest.permission.POST_NOTIFICATIONS}"
                 )
                 .close()
         }
@@ -159,11 +152,9 @@ class StricknaniScreenshotTest {
         try {
             // Target the actual refresh container instead of relying on emulator coordinates;
             // the latter can land on the bottom navigation bar on smaller screenshot devices.
-            composeRule
-                .onNodeWithTag("e2e-home-refresh")
-                .performTouchInput {
-                    swipe(center.copy(y = top + height * 0.25f), center.copy(y = top + height * 0.75f))
-                }
+            composeRule.onNodeWithTag("e2e-home-refresh").performTouchInput {
+                swipe(center.copy(y = top + height * 0.25f), center.copy(y = top + height * 0.75f))
+            }
             waitForText("You’re offline - showing cached data.", timeoutMillis = 30_000)
             capture("offline")
         } finally {
@@ -172,9 +163,7 @@ class StricknaniScreenshotTest {
     }
 
     private fun waitForText(text: String, timeoutMillis: Long = 30_000) {
-        composeRule.waitUntil(timeoutMillis) {
-            hasText(text)
-        }
+        composeRule.waitUntil(timeoutMillis) { hasText(text) }
     }
 
     private fun hasTag(tag: String): Boolean =
@@ -188,18 +177,18 @@ class StricknaniScreenshotTest {
 
     private fun capture(name: String) {
         runCatching {
-                val instrumentation = InstrumentationRegistry.getInstrumentation()
-                val screenshot = instrumentation.uiAutomation.takeScreenshot()
-                val directory =
-                    instrumentation.targetContext
-                        .getExternalFilesDir("screenshot-captures")
-                        ?.apply(File::mkdirs) ?: return
-                val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
-                File(directory, "$screenshotPrefix-$safeName.png").outputStream().use { output ->
-                    screenshot.compress(Bitmap.CompressFormat.PNG, 100, output)
-                }
-                screenshot.recycle()
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val screenshot = instrumentation.uiAutomation.takeScreenshot()
+            val directory =
+                instrumentation.targetContext
+                    .getExternalFilesDir("screenshot-captures")
+                    ?.apply(File::mkdirs) ?: return
+            val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
+            File(directory, "$screenshotPrefix-$safeName.png").outputStream().use { output ->
+                screenshot.compress(Bitmap.CompressFormat.PNG, 100, output)
             }
+            screenshot.recycle()
+        }
             .onFailure { error ->
                 System.err.println("Unable to capture screenshot $name: ${error.message}")
             }
@@ -207,11 +196,14 @@ class StricknaniScreenshotTest {
 
     private fun setAirplaneMode(enabled: Boolean) {
         runCatching {
-                val command =
-                    if (enabled) "cmd connectivity airplane-mode enable"
-                    else "cmd connectivity airplane-mode disable"
-                InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command).use {}
-            }
+            val command =
+                if (enabled) "cmd connectivity airplane-mode enable"
+                else "cmd connectivity airplane-mode disable"
+            InstrumentationRegistry.getInstrumentation()
+                .uiAutomation
+                .executeShellCommand(command)
+                .use {}
+        }
             .onFailure { error ->
                 System.err.println("Unable to set airplane mode to $enabled: ${error.message}")
             }

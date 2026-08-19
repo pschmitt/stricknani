@@ -13,9 +13,9 @@ import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
-import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
+import blue.anika.wolle.data.util.DateTimeUtils
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import javax.inject.Inject
@@ -235,8 +235,9 @@ constructor(
     /** Resolves the current server step by its editor position, then uploads its image. */
     suspend fun replayStepImageUpload(id: Int, upload: PendingUpload) {
         val stepIndex = requireNotNull(upload.stepIndex) { "A step image needs its step index" }
-        val step = projectsApi.getProject(id).steps.getOrNull(stepIndex)
-            ?: error("Project step $stepIndex no longer exists")
+        val step =
+            projectsApi.getProject(id).steps.getOrNull(stepIndex)
+                ?: error("Project step $stepIndex no longer exists")
         projectsApi.uploadStepImage(
             projectId = id,
             stepId = step.id,
@@ -323,13 +324,12 @@ private fun ProjectWriteRequest.applyTo(existing: ProjectEntity, json: Json): Pr
 private fun stepsFromRequest(
     existing: List<StepDto>,
     requested: List<blue.anika.wolle.data.api.dto.StepWriteRequest>,
-): List<StepDto> =
-    requested.mapIndexed { index, step ->
-        val existingStep = step.id?.let { id -> existing.firstOrNull { it.id == id } }
-        StepDto(
-            id = existingStep?.id ?: step.id ?: -(index + 1),
-            title = step.title,
-            description = step.description,
-            stepNumber = step.stepNumber.takeIf { it > 0 } ?: index + 1,
-        )
-    }
+): List<StepDto> = requested.mapIndexed { index, step ->
+    val existingStep = step.id?.let { id -> existing.firstOrNull { it.id == id } }
+    StepDto(
+        id = existingStep?.id ?: step.id ?: -(index + 1),
+        title = step.title,
+        description = step.description,
+        stepNumber = step.stepNumber.takeIf { it > 0 } ?: index + 1,
+    )
+}

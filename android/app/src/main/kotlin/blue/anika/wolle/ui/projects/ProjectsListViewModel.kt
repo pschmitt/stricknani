@@ -9,8 +9,8 @@ import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
-import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.ProjectImporter
+import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController

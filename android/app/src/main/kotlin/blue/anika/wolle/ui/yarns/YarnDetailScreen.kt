@@ -165,9 +165,7 @@ fun YarnDetailScreen(
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.common_delete)) },
-                                leadingIcon = {
-                                    DestructiveDeleteIcon(contentDescription = null)
-                                },
+                                leadingIcon = { DestructiveDeleteIcon(contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
                                     showDeleteDialog = true
@@ -243,7 +241,8 @@ private fun YarnDetailContent(
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
-    val markdownImageTransformer = remember(resolveMediaUrl) { MarkdownImageTransformer(resolveMediaUrl) }
+    val markdownImageTransformer =
+        remember(resolveMediaUrl) { MarkdownImageTransformer(resolveMediaUrl) }
     // map (not mapNotNull) - keeps indices aligned with detail.photos/viewerIndex even if a
     // url somehow fails to resolve.
     val photoUrls = remember(detail.photos) { detail.photos.map { resolveMediaUrl(it.url) ?: "" } }

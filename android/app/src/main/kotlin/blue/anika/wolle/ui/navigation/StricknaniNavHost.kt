@@ -24,9 +24,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import blue.anika.wolle.ui.categories.CategoriesScreen
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.MutationFeedbackEffect
-import blue.anika.wolle.ui.categories.CategoriesScreen
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
@@ -47,9 +47,9 @@ internal fun shouldNavigateToTopLevelRoot(isAlreadyAtRoot: Boolean): Boolean = !
 internal fun shouldOpenFreshTopLevelRoot(didPopToRoot: Boolean): Boolean = !didPopToRoot
 
 /**
- * Returns to a bottom-navigation destination's root without adding duplicate roots. If the root
- * is already in the back stack, popping is enough. If a detail route was reached directly (for
- * example from Home) and no root exists yet, clear that nested stack before opening a fresh root.
+ * Returns to a bottom-navigation destination's root without adding duplicate roots. If the root is
+ * already in the back stack, popping is enough. If a detail route was reached directly (for example
+ * from Home) and no root exists yet, clear that nested stack before opening a fresh root.
  */
 internal fun navigateToTopLevelRoot(
     navController: NavHostController,

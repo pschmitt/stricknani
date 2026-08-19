@@ -39,7 +39,8 @@ class SyncIssuePresentationTest {
     fun `a mixed issue list remains retryable while preserving conflicts`() {
         val issues =
             listOf(
-                mutation(MutationEntityType.PROJECT, MutationOperation.UPDATE).copy(isConflict = true),
+                mutation(MutationEntityType.PROJECT, MutationOperation.UPDATE)
+                    .copy(isConflict = true),
                 mutation(MutationEntityType.YARN, MutationOperation.CREATE),
             )
 

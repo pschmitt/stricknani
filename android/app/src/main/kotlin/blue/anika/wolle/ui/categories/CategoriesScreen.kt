@@ -62,9 +62,7 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
             isRefreshing = uiState.isRefreshing,
             onRefresh = viewModel::refresh,
             modifier =
-                Modifier.fillMaxSize()
-                    .padding(innerPadding)
-                    .testTag("e2e-categories-screen"),
+                Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-categories-screen"),
         ) {
             CategoriesContent(content = uiState.content, onRetry = viewModel::refresh)
         }
@@ -183,8 +181,6 @@ private fun CategoriesStatus(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp),
         )
-        Button(onClick = onRetry, modifier = Modifier.padding(top = 20.dp)) {
-            Text(retryLabel)
-        }
+        Button(onClick = onRetry, modifier = Modifier.padding(top = 20.dp)) { Text(retryLabel) }
     }
 }

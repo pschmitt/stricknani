@@ -60,20 +60,16 @@ class ProjectImportController(
         }
 
         _state.value = ProjectImportState.Importing(normalizedUrl)
-        activeJob =
-            scope.launch {
-                try {
-                    _state.value =
-                        ProjectImportState.AwaitingConfirmation(
-                            importer.importFromUrl(normalizedUrl)
-                        )
-                } catch (cancellation: CancellationException) {
-                    throw cancellation
-                } catch (failure: Throwable) {
-                    _state.value =
-                        ProjectImportState.Failed(normalizedUrl, classifyFailure(failure))
-                }
+        activeJob = scope.launch {
+            try {
+                _state.value =
+                    ProjectImportState.AwaitingConfirmation(importer.importFromUrl(normalizedUrl))
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Throwable) {
+                _state.value = ProjectImportState.Failed(normalizedUrl, classifyFailure(failure))
             }
+        }
     }
 
     fun retry() {
@@ -85,21 +81,20 @@ class ProjectImportController(
         val confirmation = _state.value as? ProjectImportState.AwaitingConfirmation ?: return
         activeJob?.cancel()
         _state.value = ProjectImportState.Saving
-        activeJob =
-            scope.launch {
-                try {
-                    val projectId = save(confirmation.preview)
-                    _state.value = ProjectImportState.Completed(projectId, confirmation.preview)
-                } catch (cancellation: CancellationException) {
-                    throw cancellation
-                } catch (failure: Throwable) {
-                    _state.value =
-                        ProjectImportState.Failed(
-                            confirmation.preview.sourceUrl,
-                            classifyFailure(failure),
-                        )
-                }
+        activeJob = scope.launch {
+            try {
+                val projectId = save(confirmation.preview)
+                _state.value = ProjectImportState.Completed(projectId, confirmation.preview)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Throwable) {
+                _state.value =
+                    ProjectImportState.Failed(
+                        confirmation.preview.sourceUrl,
+                        classifyFailure(failure),
+                    )
             }
+        }
     }
 
     /** Dismisses an import, including an in-flight request, without saving a partial result. */
@@ -110,22 +105,21 @@ class ProjectImportController(
     }
 
     fun dismiss() {
-        if (_state.value !is ProjectImportState.Importing &&
-            _state.value !is ProjectImportState.Saving
+        if (
+            _state.value !is ProjectImportState.Importing &&
+                _state.value !is ProjectImportState.Saving
         ) {
             cancel()
         }
     }
 
     private companion object {
-        fun isHttpUrl(value: String): Boolean =
-            runCatching {
-                    URI(value).let { uri ->
-                        (uri.scheme == "http" || uri.scheme == "https") &&
-                            !uri.host.isNullOrBlank()
-                    }
-                }
-                .getOrDefault(false)
+        fun isHttpUrl(value: String): Boolean = runCatching {
+            URI(value).let { uri ->
+                (uri.scheme == "http" || uri.scheme == "https") && !uri.host.isNullOrBlank()
+            }
+        }
+            .getOrDefault(false)
 
         fun classifyFailure(failure: Throwable): ProjectImportFailure =
             when {

@@ -37,8 +37,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -283,7 +283,8 @@ fun ProjectEditorScreen(
                         IconButton(onClick = { viewModel.removeStep(index) }) {
                             Icon(
                                 Icons.Filled.Delete,
-                                contentDescription = stringResource(R.string.project_editor_remove_step),
+                                contentDescription =
+                                    stringResource(R.string.project_editor_remove_step),
                             )
                         }
                     }
@@ -312,7 +313,7 @@ fun ProjectEditorScreen(
                         onClick = {
                             pickingStepIndex = index
                             stepImagePicker.launch("image/*")
-                        },
+                        }
                     ) {
                         Text(stringResource(R.string.project_editor_add_step_image))
                     }

@@ -13,8 +13,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.MdiIcons
-import kotlinx.serialization.Serializable
 import kotlin.reflect.KClass
+import kotlinx.serialization.Serializable
 
 /** Type-safe Navigation Compose destinations (see MainActivity/StricknaniNavHost). */
 sealed interface Route {

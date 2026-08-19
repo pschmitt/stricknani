@@ -1,10 +1,10 @@
 package blue.anika.wolle.ui.yarns
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import android.net.Uri
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import blue.anika.wolle.data.repository.YarnRepository
@@ -108,7 +108,9 @@ constructor(
 
     fun removePhoto(index: Int) {
         val upload = _form.value.photos.getOrNull(index) ?: return
-        updateForm { it.copy(photos = it.photos.filterIndexed { position, _ -> position != index }) }
+        updateForm {
+            it.copy(photos = it.photos.filterIndexed { position, _ -> position != index })
+        }
         viewModelScope.launch { pendingUploadStore.delete(upload) }
     }
 

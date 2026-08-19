@@ -19,10 +19,10 @@ private val HTML_TAG = Regex("<[^>]+>")
 /**
  * Make content stored by the web editor safe and useful for the native Markdown renderer.
  *
- * Current records are Markdown, but older imports and editor versions can leave HTML wrappers,
- * HTML image elements, or entities such as &nbsp; in the database. The Markdown library does
- * not reliably turn those HTML image nodes into Compose content, so convert the small supported
- * subset before handing it to the renderer. Image destinations remain subject to
+ * Current records are Markdown, but older imports and editor versions can leave HTML wrappers, HTML
+ * image elements, or entities such as &nbsp; in the database. The Markdown library does not
+ * reliably turn those HTML image nodes into Compose content, so convert the small supported subset
+ * before handing it to the renderer. Image destinations remain subject to
  * MarkdownImageTransformer's same-origin resolver.
  */
 internal fun normalizeMarkdownContent(content: String): String {
@@ -32,8 +32,7 @@ internal fun normalizeMarkdownContent(content: String): String {
             val attributes = parseHtmlAttributes(match.groups[1]?.value.orEmpty())
             val source = attributes["src"] ?: return@replace ""
             val alt = escapeMarkdownText(attributes["alt"].orEmpty())
-            val title =
-                attributes["title"]?.let { " \"${escapeMarkdownText(it)}\"" }.orEmpty()
+            val title = attributes["title"]?.let { " \"${escapeMarkdownText(it)}\"" }.orEmpty()
             "![$alt]($source$title)"
         }
     normalized = HTML_BREAK.replace(normalized, "\n")
@@ -54,18 +53,17 @@ internal fun normalizeMarkdownContent(content: String): String {
         .trim()
 }
 
-private fun parseHtmlAttributes(rawAttributes: String): Map<String, String> =
-    buildMap {
-        HTML_ATTRIBUTE.findAll(rawAttributes).forEach { match ->
-            val name = match.groups[1]?.value?.lowercase() ?: return@forEach
-            val value =
-                match.groups[2]?.value
-                    ?: match.groups[3]?.value
-                    ?: match.groups[4]?.value
-                    ?: return@forEach
-            put(name, decodeHtmlEntities(value))
-        }
+private fun parseHtmlAttributes(rawAttributes: String): Map<String, String> = buildMap {
+    HTML_ATTRIBUTE.findAll(rawAttributes).forEach { match ->
+        val name = match.groups[1]?.value?.lowercase() ?: return@forEach
+        val value =
+            match.groups[2]?.value
+                ?: match.groups[3]?.value
+                ?: match.groups[4]?.value
+                ?: return@forEach
+        put(name, decodeHtmlEntities(value))
     }
+}
 
 private fun escapeMarkdownText(value: String): String =
     value.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")

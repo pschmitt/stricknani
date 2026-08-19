@@ -112,9 +112,7 @@ private fun SyncIssuesSettingsCard(
                         tint = MaterialTheme.colorScheme.error,
                     )
                 },
-                headlineContent = {
-                    Text(stringResource(presentation.operationLabelResId))
-                },
+                headlineContent = { Text(stringResource(presentation.operationLabelResId)) },
                 supportingContent = {
                     Text(
                         stringResource(presentation.headlineResId) +
@@ -127,9 +125,7 @@ private fun SyncIssuesSettingsCard(
         if (issues.hasRetryableSyncIssues()) {
             SettingsListItem(
                 headlineContent = { Text(stringResource(R.string.sync_issue_retry_title)) },
-                supportingContent = {
-                    Text(stringResource(R.string.sync_issue_retry_description))
-                },
+                supportingContent = { Text(stringResource(R.string.sync_issue_retry_description)) },
                 trailingContent = {
                     TextButton(onClick = onRetry) {
                         Icon(

@@ -15,9 +15,9 @@ data class ProjectImportStepDto(
 /**
  * JSON returned by `POST /projects/import` for a URL import.
  *
- * Unknown fields are intentionally ignored by the app's shared JSON configuration: the web
- * importer grows independently (AI metadata, trace ids, and image hints) and the offline project
- * cache only needs the fields represented here.
+ * Unknown fields are intentionally ignored by the app's shared JSON configuration: the web importer
+ * grows independently (AI metadata, trace ids, and image hints) and the offline project cache only
+ * needs the fields represented here.
  */
 @Serializable
 data class ProjectImportResponseDto(

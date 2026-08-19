@@ -17,9 +17,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 
 /** Persists picker selections until the outbox has uploaded them successfully. */
 @Singleton
-class PendingUploadStore
-@Inject
-constructor(@ApplicationContext private val context: Context) {
+class PendingUploadStore @Inject constructor(@ApplicationContext private val context: Context) {
 
     suspend fun copy(uri: Uri, altText: String = "", stepIndex: Int? = null): PendingUpload =
         withContext(Dispatchers.IO) {
@@ -54,7 +52,13 @@ constructor(@ApplicationContext private val context: Context) {
 
     private fun queryFileName(uri: Uri): String? {
         val cursor: Cursor? =
-            context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+            context.contentResolver.query(
+                uri,
+                arrayOf(OpenableColumns.DISPLAY_NAME),
+                null,
+                null,
+                null,
+            )
         return cursor?.use { if (it.moveToFirst()) it.getString(0) else null }
     }
 

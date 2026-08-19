@@ -15,7 +15,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
  */
 @Singleton
 class MediaUrlResolver @Inject constructor(private val settingsRepository: SettingsRepository) {
-    fun resolve(path: String?): String? = resolveMediaUrl(settingsRepository.credentials.value.serverUrl, path)
+    fun resolve(path: String?): String? =
+        resolveMediaUrl(settingsRepository.credentials.value.serverUrl, path)
 }
 
 private const val MAX_MEDIA_URL_LENGTH = 2_048
@@ -37,9 +38,7 @@ fun resolveMediaUrl(serverUrl: String, path: String?): String? {
     val absolute = candidate.toHttpUrlOrNull()
     if (absolute != null && absolute.isHttpOrHttps()) {
         return absolute
-            .takeIf {
-                it.username.isEmpty() && it.password.isEmpty() && it.sameOriginAs(base)
-            }
+            .takeIf { it.username.isEmpty() && it.password.isEmpty() && it.sameOriginAs(base) }
             ?.toString()
     }
     if (URI_SCHEME.containsMatchIn(candidate)) return null

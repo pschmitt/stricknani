@@ -250,8 +250,7 @@ private fun ManualOnboardingFields(
                 )
             }
         },
-        modifier =
-            Modifier.fillMaxWidth().padding(top = 12.dp).testTag("e2e-onboarding-api-token"),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("e2e-onboarding-api-token"),
     )
 
     Text(

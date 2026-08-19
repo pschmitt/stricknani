@@ -22,16 +22,12 @@ class CategoriesScreenTest {
     @Test
     fun loadingAndEmptyStatesAreRendered() {
         composeRule.setContent {
-            StricknaniTheme {
-                CategoriesContent(CategoriesContentState.Loading, onRetry = {})
-            }
+            StricknaniTheme { CategoriesContent(CategoriesContentState.Loading, onRetry = {}) }
         }
         composeRule.onNodeWithTag("categories-loading").assertIsDisplayed()
 
         composeRule.setContent {
-            StricknaniTheme {
-                CategoriesContent(CategoriesContentState.Empty, onRetry = {})
-            }
+            StricknaniTheme { CategoriesContent(CategoriesContentState.Empty, onRetry = {}) }
         }
         composeRule.onNodeWithTag("categories-empty").assertIsDisplayed()
         composeRule.onNodeWithText("No categories yet").assertIsDisplayed()
@@ -64,9 +60,7 @@ class CategoriesScreenTest {
         composeRule.setContent {
             StricknaniTheme {
                 CategoriesContent(
-                    CategoriesContentState.Data(
-                        listOf(CategoryEntity(id = 1, name = "Sweaters"))
-                    ),
+                    CategoriesContentState.Data(listOf(CategoryEntity(id = 1, name = "Sweaters"))),
                     onRetry = {},
                 )
             }

@@ -12,7 +12,11 @@ class CategoriesViewModelTest {
     fun `empty cache shows loading during the first refresh`() {
         assertEquals(
             CategoriesContentState.Loading,
-            categoriesContentState(emptyList(), initialSyncComplete = false, RefreshState.Refreshing),
+            categoriesContentState(
+                emptyList(),
+                initialSyncComplete = false,
+                RefreshState.Refreshing,
+            ),
         )
     }
 
@@ -32,7 +36,11 @@ class CategoriesViewModelTest {
     fun `successful empty sync shows the empty state`() {
         assertEquals(
             CategoriesContentState.Empty,
-            categoriesContentState(emptyList(), initialSyncComplete = true, RefreshState.Finished(false)),
+            categoriesContentState(
+                emptyList(),
+                initialSyncComplete = true,
+                RefreshState.Finished(false),
+            ),
         )
     }
 
@@ -40,7 +48,10 @@ class CategoriesViewModelTest {
     fun `cached categories remain visible while refreshing or after failure`() {
         val expected = CategoriesContentState.Data(listOf(category))
 
-        assertEquals(expected, categoriesContentState(listOf(category), false, RefreshState.Refreshing))
+        assertEquals(
+            expected,
+            categoriesContentState(listOf(category), false, RefreshState.Refreshing),
+        )
         assertEquals(expected, categoriesContentState(listOf(category), true, RefreshState.Offline))
         assertEquals(expected, categoriesContentState(listOf(category), true, RefreshState.Error))
     }

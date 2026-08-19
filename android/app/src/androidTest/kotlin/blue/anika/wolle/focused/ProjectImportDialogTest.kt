@@ -39,7 +39,9 @@ class ProjectImportDialogTest {
             }
         }
 
-        composeRule.onNodeWithTag("project-import-url").performTextInput("https://example.com/pattern")
+        composeRule
+            .onNodeWithTag("project-import-url")
+            .performTextInput("https://example.com/pattern")
         composeRule.onNodeWithText("Import").performClick()
         assertEquals("https://example.com/pattern", startedUrl)
 

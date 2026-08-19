@@ -1,13 +1,13 @@
 package blue.anika.wolle.ui.projects
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import android.net.Uri
 import blue.anika.wolle.R
-import blue.anika.wolle.data.api.dto.StepWriteRequest
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
+import blue.anika.wolle.data.api.dto.StepWriteRequest
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.repository.CategoryRepository
@@ -148,7 +148,12 @@ constructor(
 
     fun updateStep(index: Int, transform: (ProjectEditorStep) -> ProjectEditorStep) {
         updateForm { form ->
-            form.copy(steps = form.steps.mapIndexed { position, step -> if (position == index) transform(step) else step })
+            form.copy(
+                steps =
+                    form.steps.mapIndexed { position, step ->
+                        if (position == index) transform(step) else step
+                    }
+            )
         }
     }
 
@@ -167,23 +172,25 @@ constructor(
     fun addTitleImage(uri: Uri) {
         viewModelScope.launch {
             runCatching { pendingUploadStore.copy(uri) }
-                .onSuccess { upload -> updateForm { it.copy(titleImages = it.titleImages + upload) } }
+                .onSuccess { upload ->
+                    updateForm { it.copy(titleImages = it.titleImages + upload) }
+                }
                 .onFailure { mutationFeedback.show(R.string.editor_image_select_failed) }
         }
     }
 
     fun removeTitleImage(index: Int) {
         val upload = _form.value.titleImages.getOrNull(index) ?: return
-        updateForm { it.copy(titleImages = it.titleImages.filterIndexed { position, _ -> position != index }) }
+        updateForm {
+            it.copy(titleImages = it.titleImages.filterIndexed { position, _ -> position != index })
+        }
         viewModelScope.launch { pendingUploadStore.delete(upload) }
     }
 
     fun addStepImage(index: Int, uri: Uri) {
         viewModelScope.launch {
             runCatching { pendingUploadStore.copy(uri, stepIndex = index) }
-                .onSuccess { upload ->
-                    updateStep(index) { it.copy(images = it.images + upload) }
-                }
+                .onSuccess { upload -> updateStep(index) { it.copy(images = it.images + upload) } }
                 .onFailure { mutationFeedback.show(R.string.editor_image_select_failed) }
         }
     }

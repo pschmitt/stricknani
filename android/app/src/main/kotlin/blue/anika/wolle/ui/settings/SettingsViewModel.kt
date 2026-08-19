@@ -19,8 +19,8 @@ import blue.anika.wolle.data.backup.BackupManager
 import blue.anika.wolle.data.backup.BackupPasswordRequiredException
 import blue.anika.wolle.data.backup.BackupScheduler
 import blue.anika.wolle.data.db.AppDatabase
-import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.dao.PendingMutationDao
+import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.AppPreferencesRepository
@@ -87,7 +87,11 @@ constructor(
     val failedMutations: StateFlow<List<PendingMutationEntity>> =
         pendingMutationDao
             .observeFailed()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     private val _serverMeta = MutableStateFlow<MetaDto?>(null)
     val serverMeta: StateFlow<MetaDto?> = _serverMeta.asStateFlow()

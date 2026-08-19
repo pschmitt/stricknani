@@ -51,7 +51,12 @@ class MediaUrlResolverTest {
         assertNull(resolveMediaUrl("https://stricknani.example", "javascript:alert(1)"))
         assertNull(resolveMediaUrl("https://stricknani.example", "https://other.example/photo.jpg"))
         assertNull(resolveMediaUrl("https://stricknani.example", "//other.example/photo.jpg"))
-        assertNull(resolveMediaUrl("https://stricknani.example", "https://user:pass@evil.example/photo.jpg"))
+        assertNull(
+            resolveMediaUrl(
+                "https://stricknani.example",
+                "https://user:pass@evil.example/photo.jpg",
+            )
+        )
         assertNull(resolveMediaUrl("https://stricknani.example", "https://"))
     }
 }

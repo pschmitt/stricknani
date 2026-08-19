@@ -11,7 +11,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
@@ -37,8 +36,8 @@ data class CategoriesUiState(
  * Selects the visible state for a cache-first categories screen.
  *
  * Existing cached rows stay visible while a refresh runs or fails. Loading/error states are only
- * used when there is no cache to show, so losing connectivity never turns a populated screen into
- * a blank one.
+ * used when there is no cache to show, so losing connectivity never turns a populated screen into a
+ * blank one.
  */
 internal fun categoriesContentState(
     categories: List<CategoryEntity>,
@@ -57,16 +56,19 @@ internal fun categoriesContentState(
     }
 
 @HiltViewModel
-class CategoriesViewModel
-@Inject
-constructor(private val categoryRepository: CategoryRepository) : ViewModel() {
+class CategoriesViewModel @Inject constructor(private val categoryRepository: CategoryRepository) :
+    ViewModel() {
     private val initialSyncComplete = MutableStateFlow(false)
     private val refreshController = RefreshController(viewModelScope)
 
     private val categories: StateFlow<List<CategoryEntity>> =
         categoryRepository
             .observeAll()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
 
     val refreshState: StateFlow<RefreshState> = refreshController.state
 

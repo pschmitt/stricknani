@@ -4,16 +4,16 @@ import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.YarnPageDto
 import blue.anika.wolle.data.api.dto.YarnPhotoDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
+import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
-import retrofit2.http.Part
 import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
-import okhttp3.MultipartBody
 
 /**
  * `stricknani/routes/api/yarns.py`. Read (list/detail), favorite toggle (see `ProjectsApi`'s kdoc

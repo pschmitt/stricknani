@@ -170,9 +170,7 @@ fun ProjectDetailScreen(
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.common_delete)) },
-                                leadingIcon = {
-                                    DestructiveDeleteIcon(contentDescription = null)
-                                },
+                                leadingIcon = { DestructiveDeleteIcon(contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
                                     showDeleteDialog = true
@@ -248,14 +246,13 @@ private fun ProjectDetailContent(
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
-    val markdownImageTransformer = remember(resolveMediaUrl) { MarkdownImageTransformer(resolveMediaUrl) }
+    val markdownImageTransformer =
+        remember(resolveMediaUrl) { MarkdownImageTransformer(resolveMediaUrl) }
     // map (not mapNotNull) - keeps indices aligned with detail.images/viewerIndex even if a
     // url somehow fails to resolve.
     val imageUrls = remember(detail.images) { detail.images.map { resolveMediaUrl(it.url) ?: "" } }
     val stitchSampleImages =
-        remember(detail.images) {
-            detail.images.filter { it.isStitchSample && it.stepId == null }
-        }
+        remember(detail.images) { detail.images.filter { it.isStitchSample && it.stepId == null } }
 
     val hasDetails =
         listOf(
@@ -331,9 +328,7 @@ private fun ProjectDetailContent(
 
         detail.stitchSample?.let { value ->
             item {
-                DetailSectionCard(
-                    title = stringResource(R.string.common_field_stitch_sample),
-                ) {
+                DetailSectionCard(title = stringResource(R.string.common_field_stitch_sample)) {
                     Markdown(
                         content = normalizeMarkdownContent(value),
                         imageTransformer = markdownImageTransformer,

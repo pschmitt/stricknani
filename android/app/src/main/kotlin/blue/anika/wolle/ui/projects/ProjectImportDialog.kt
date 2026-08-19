@@ -55,7 +55,8 @@ fun ProjectImportDialog(
                         stringResource(R.string.project_import_confirmation_title)
                     is ProjectImportState.Completed ->
                         stringResource(R.string.project_import_success_title)
-                    is ProjectImportState.Failed -> stringResource(R.string.project_import_error_title)
+                    is ProjectImportState.Failed ->
+                        stringResource(R.string.project_import_error_title)
                     ProjectImportState.Idle -> stringResource(R.string.project_import_dialog_title)
                 }
             )
@@ -71,9 +72,7 @@ fun ProjectImportDialog(
                             value = url,
                             onValueChange = { url = it },
                             modifier = Modifier.testTag("project-import-url"),
-                            label = {
-                                Text(stringResource(R.string.project_import_url_label))
-                            },
+                            label = { Text(stringResource(R.string.project_import_url_label)) },
                             placeholder = {
                                 Text(stringResource(R.string.project_import_url_placeholder))
                             },
@@ -190,9 +189,7 @@ fun ProjectImportDialog(
                 ProjectImportState.Idle,
                 is ProjectImportState.AwaitingConfirmation,
                 is ProjectImportState.Failed ->
-                    TextButton(onClick = onCancel) {
-                        Text(stringResource(R.string.common_cancel))
-                    }
+                    TextButton(onClick = onCancel) { Text(stringResource(R.string.common_cancel)) }
                 is ProjectImportState.Importing ->
                     TextButton(
                         modifier = Modifier.testTag("project-import-cancel"),
@@ -205,7 +202,6 @@ fun ProjectImportDialog(
             }
         },
     )
-
 }
 
 @Composable
