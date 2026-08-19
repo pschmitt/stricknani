@@ -1474,4 +1474,20 @@ Status: not started (2026-08-19).
 
 Status: not started (2026-08-19).
 
+## SNA-42: Publish Android assets and releases to Google Play
+
+- [ ] Prepare and validate the Play Store listing assets (icon, feature graphic, phone/tablet
+      screenshots, store copy, content rating, and data-safety/privacy declarations) following the
+      release patterns used by NyetBox and Syncwich.
+- [ ] Add a gated Play Console upload workflow that builds the signed AAB, uploads assets and the
+      chosen release track, and keeps publishing disabled unless the repository gate and required
+      credentials are present.
+- [ ] Reuse the existing release-signing and versioning setup without exposing keystore material,
+      and support dry-run/metadata validation before any production rollout.
+- [ ] Add CI checks for asset dimensions/content, AAB generation, Play upload authentication, and
+      a documented staged-release/rollback path.
+- [ ] Verify the listing and release flow in the Play Console before enabling production release.
+
+Status: not started (2026-08-19; user decided to pursue Google Play publishing).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
