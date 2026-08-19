@@ -1516,4 +1516,16 @@ Status: not started (2026-08-19).
 
 Status: not started (2026-08-19).
 
+## SNA-45: Scale down Markdown heading styles
+
+- [ ] Render Markdown headings at a compact scale that fits the Android card hierarchy; an `h1`
+      must not visually overpower card titles and surrounding content.
+- [ ] Keep heading levels distinct and readable across notes, stitch samples, descriptions, and
+      steps, including light/dark themes and accessibility font scaling.
+- [ ] Add focused rendering tests or screenshot coverage for heading sizes in the affected content
+      surfaces.
+- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android screen.
+
+Status: not started (2026-08-19).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

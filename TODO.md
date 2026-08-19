@@ -91,7 +91,7 @@ Execution-oriented backlog for Stricknani.
 | T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
 | T87 | P3 | todo | release/decision | feat | Decide whether Stricknani should publish to Google Play and, if yes, add the gated store-assets and publishing workflow |
-| T88 | P2 | done | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
+| T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
 | T90 | P1 | done | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
 
@@ -125,7 +125,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P1
-- **Status**: done
+- **Status**: wip (PID: main, AGENT: codex-main)
 - **Category**: bug
 - **Description**:
   - When instructions are collapsed in the UI, they are not included in the print output
@@ -1176,7 +1176,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: frontend/ux
 - **Priority**: P2
-- **Status**: done
+- **Status**: wip
 - **Category**: refactor
 - **Description**:
   - Replace the current DaisyUI/Tailwind visual language with a Material Design 3 / Material 3
