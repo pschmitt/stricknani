@@ -83,7 +83,7 @@ Execution-oriented backlog for Stricknani.
 | T77 | P1 | done | api | feat | Add delta-sync endpoints (`/api/v1/sync/{projects,yarns,categories}`) sourcing deletions from `AuditLog` (backend foundation for the Android app; mirrors `android/TODO.md` SNA-3) |
 | T78 | P1 | done | test/ci | feat | Add disposable browser E2E tests for critical Stricknani user journeys, following the NetBox/Syncwich CI pattern |
 | T79 | P2 | done | ci | feat | Capture named Stricknani browser screenshots in CI E2E runs and upload them as reviewable artifacts, following the NetBox/Syncwich screenshot pattern |
-| T80 | P1 | wip (PID: main, AGENT: codex-main) | android/test/ci | feat | Add disposable Android instrumentation E2E tests against a seeded Stricknani fixture, with PR smoke and manual full journeys |
+| T80 | P1 | done | android/test/ci | feat | Add disposable Android instrumentation E2E tests against a seeded Stricknani fixture, with PR smoke and manual full journeys |
 | T81 | P1 | done | android/test | feat | Add focused Android Compose/instrumentation coverage for route, accessibility, dialog, loading/error, and offline UI states |
 | T82 | P2 | done | android/ci | feat | Add manual Android screenshot capture CI for phone and tablet layouts, light/dark themes, and reviewable artifacts |
 | T83 | P2 | done | test/ci | refactor | Split browser E2E into a fast pull-request smoke suite and a longer manual cache/offline journey |
@@ -1047,7 +1047,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: android/test/ci
 - **Priority**: P1
-- **Status**: wip
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - The Android app has instrumentation-test dependencies but no `androidTest` sources or emulator journey; CI currently runs only JVM tests and APK assembly.
@@ -1060,6 +1060,7 @@ Execution-oriented backlog for Stricknani.
   - [x] Extend the manual full lane with an explicit network-offline cached browse and queued-edit assertion.
 - **Files**: `android/app/src/androidTest/`, `.github/workflows/android-e2e.yaml`, `ci/stricknani/`, `android/justfile`, and Android E2E documentation.
 - **Testing**: remote `just e2e-build rofl-13.brkn.lol` and `just check rofl-13.brkn.lol` pass; GitHub Actions must still run both lanes against the disposable fixture and confirm no production endpoint is contacted.
+- **Completed**: Full hosted lane `32252063146` passed on 2026-08-19, including both cached-browsing journeys against the disposable seeded fixture.
 
 ### T81: Add focused Android Compose/instrumentation coverage
 
