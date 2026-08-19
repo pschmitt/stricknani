@@ -13,8 +13,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
@@ -150,11 +148,16 @@ class StricknaniScreenshotTest {
         waitForText("Home")
         setAirplaneMode(enabled = true)
         try {
-            // Target the actual refresh container instead of relying on emulator coordinates;
-            // the latter can land on the bottom navigation bar on smaller screenshot devices.
-            composeRule.onNodeWithTag("e2e-home-refresh").performTouchInput {
-                swipe(center.copy(y = top + height * 0.25f), center.copy(y = top + height * 0.75f))
-            }
+            // Use the same device-level gesture as the focused offline-refresh test. Compose's
+            // node-local gesture can be consumed by the nested list before PullToRefreshBox sees it
+            // on the smaller screenshot profiles.
+            device.swipe(
+                device.displayWidth / 2,
+                device.displayHeight / 3,
+                device.displayWidth / 2,
+                device.displayHeight * 3 / 4,
+                20,
+            )
             waitForText("You’re offline - showing cached data.", timeoutMillis = 30_000)
             capture("offline")
         } finally {
