@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "status": "draft",
+  "privacy_policy_url": null,
+  "content_rating": {
+    "completed_in_play_console": false,
+    "notes": "Complete the Google Play content-rating questionnaire before the first public listing."
+  },
+  "data_safety": {
+    "completed_in_play_console": false,
+    "collects_data_for_developer": null,
+    "shares_data_with_third_parties": null,
+    "notes": "Confirm the declaration against the deployed server, Android client, and final privacy policy."
+  }
+}

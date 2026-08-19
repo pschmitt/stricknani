@@ -70,6 +70,18 @@ check host=remote_host: (gradle host "ktfmtCheck :app:testDebugUnitTest lintDebu
 # its API-34 emulator.
 e2e-build host=remote_host: (gradle host "assembleDebug assembleDebugAndroidTest")
 
+# Validate Play Store listing text, declarations, and committed icon/feature-graphic assets without
+# contacting Google Play. Screenshot buckets are populated by the manual Android screenshots
+# workflow and reviewed before the explicit upload recipe is ever used.
+play-store-validate:
+    python3 scripts/validate-play-store-metadata.py --root ..
+
+# Upload reviewed Play Store assets only when the caller supplies the exact confirmation string and
+# has already authenticated gpc. The script itself performs the final validation and refuses to
+# upload when the listing declarations are still draft.
+play-store-assets-upload:
+    PLAY_PACKAGE={{play_package}} scripts/upload-play-store-assets.sh --upload
+
 # --- Shared recipes (pschmitt/android-app-ci) -------------------------------
 
 # Advance the .just/android-app-ci submodule to the tip of its tracked branch (main) and stage the

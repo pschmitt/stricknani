@@ -25,10 +25,14 @@ status (`SNA-N` entries).
 
 ## Installation
 
-Stricknani isn't published on Google Play, Amazon Appstore, F-Droid, or IzzyOnDroid. Instead,
-install and auto-update it via [Obtainium](https://obtainium.imranr.dev/) pointed at this
-repository, or grab an APK directly from the
-[Releases page](https://github.com/pschmitt/stricknani/releases).
+Stricknani is not published on Google Play yet. Until the Play Console listing is completed, install
+and auto-update it via [Obtainium](https://obtainium.imranr.dev/) pointed at this repository, or
+grab an APK directly from the [Releases page](https://github.com/pschmitt/stricknani/releases).
+
+The repository contains a manual, gated Play Store release and asset workflow. Its default mode only
+validates the listing and builds a signed AAB; it cannot upload anything. See
+[the Play Store release runbook](docs/play-store-release.md) for the one-time Console setup,
+metadata checklist, staged internal-testing flow, and rollback procedure.
 
 [<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="60">][obtainium-link]
 

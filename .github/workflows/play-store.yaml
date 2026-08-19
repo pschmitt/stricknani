@@ -1,0 +1,204 @@
+name: Play Store Release
+
+# This workflow is deliberately manual while the Play Console listing is being prepared. A
+# normal dispatch builds and validates a signed AAB only. Uploading requires all of:
+#   1. the dispatch input `publish: true`,
+#   2. the repository variable PLAY_PUBLISH_ENABLED=true, and
+#   3. the PLAY_SERVICE_ACCOUNT_JSON secret.
+# The default path therefore cannot publish a release, even when signing credentials exist.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "Positive, never-used Google Play version code"
+        required: true
+        type: string
+      version_name:
+        description: "Human-readable Android version name, e.g. 0.1.0"
+        required: true
+        type: string
+      track:
+        description: "Play track (internal is the safe first destination)"
+        required: true
+        default: internal
+        type: string
+      production_confirmation:
+        description: "Required only for a production track: type I_UNDERSTAND_PRODUCTION_UPLOAD"
+        required: false
+        default: ""
+        type: string
+      publish:
+        description: "Upload the signed AAB (also requires PLAY_PUBLISH_ENABLED=true)"
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: play-store-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate listing and release parameters
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate version and track
+        env:
+          VERSION_CODE: ${{ inputs.version_code }}
+          VERSION_NAME: ${{ inputs.version_name }}
+          TRACK: ${{ inputs.track }}
+          PRODUCTION_CONFIRMATION: ${{ inputs.production_confirmation }}
+        run: |
+          [[ "$VERSION_CODE" =~ ^[1-9][0-9]*$ ]] || {
+            echo "version_code must be a positive integer" >&2
+            exit 1
+          }
+          (( VERSION_CODE <= 2100000000 )) || {
+            echo "version_code exceeds Google Play's maximum" >&2
+            exit 1
+          }
+          [[ "$VERSION_NAME" =~ ^[0-9A-Za-z][0-9A-Za-z.+_-]*$ ]] || {
+            echo "version_name contains unsupported characters" >&2
+            exit 1
+          }
+          [[ "$TRACK" =~ ^(internal|alpha|beta|production)$ ]] || {
+            echo "track must be internal, alpha, beta, or production" >&2
+            exit 1
+          }
+          if [[ "$TRACK" == production && "$PRODUCTION_CONFIRMATION" != I_UNDERSTAND_PRODUCTION_UPLOAD ]]
+          then
+            echo "production requires the exact production_confirmation value" >&2
+            exit 1
+          fi
+
+      - name: Validate Play Store metadata and committed assets
+        env:
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          args=(--root .)
+          if [[ "$PUBLISH" == true ]]
+          then
+            args+=(--require-ready)
+          fi
+          python3 android/scripts/validate-play-store-metadata.py "${args[@]}"
+
+  bundle:
+    name: Build signed Android App Bundle
+    needs: validate
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+
+      - name: Decode existing CI signing keystore
+        id: ci_keystore
+        uses: pschmitt/android-app-ci/.github/actions/decode-ci-keystore@main
+        with:
+          keystore-base64: ${{ secrets.CI_KEYSTORE_BASE64 }}
+          file-name: stricknani-ci.jks
+
+      - name: Compute build metadata
+        id: metadata
+        run: |
+          echo "revision=$(git describe --always --abbrev=12 --dirty --exclude=latest)" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Run Android unit tests
+        working-directory: android
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Build signed release bundle
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ inputs.version_code }}
+          VERSION_NAME: ${{ inputs.version_name }}
+          CI_KEYSTORE_PATH: ${{ steps.ci_keystore.outputs.path }}
+          CI_KEYSTORE_PASSWORD: ${{ secrets.CI_KEYSTORE_PASSWORD }}
+          CI_KEY_ALIAS: ${{ secrets.CI_KEY_ALIAS }}
+          CI_KEY_PASSWORD: ${{ secrets.CI_KEY_PASSWORD }}
+          GIT_REVISION: ${{ steps.metadata.outputs.revision }}
+          BUILD_DATE: ${{ steps.metadata.outputs.date }}
+        run: |
+          ./gradlew \
+            :app:bundleRelease \
+            -PversionCode="$VERSION_CODE" \
+            -PversionName="$VERSION_NAME" \
+            --stacktrace --build-cache
+
+      - name: Verify AAB archive
+        env:
+          BUNDLE: android/app/build/outputs/bundle/release/app-release.aab
+        run: |
+          test -s "$BUNDLE" || {
+            echo "Signed AAB was not produced: $BUNDLE" >&2
+            exit 1
+          }
+          unzip -t "$BUNDLE" >/dev/null
+          unzip -l "$BUNDLE" | grep -F 'base/manifest/AndroidManifest.xml' >/dev/null || {
+            echo "AAB does not contain the base module manifest" >&2
+            exit 1
+          }
+
+      - name: Upload signed AAB for review or gated publication
+        uses: actions/upload-artifact@v7
+        with:
+          name: stricknani-${{ github.run_id }}-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+  publish-gate:
+    name: Require explicit Play publication gate
+    needs: [validate, bundle]
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check repository publication gate
+        run: |
+          if [[ "${{ vars.PLAY_PUBLISH_ENABLED }}" != true ]]
+          then
+            echo "Publishing was requested, but PLAY_PUBLISH_ENABLED is not true." >&2
+            echo "Leave it unset until the Play listing and service account are ready." >&2
+            exit 1
+          fi
+          echo "Explicit Play publication gate is enabled for this dispatch."
+
+  publish:
+    name: Upload AAB to Play ${{ inputs.track }} track
+    needs: [validate, bundle, publish-gate]
+    if: ${{ inputs.publish && vars.PLAY_PUBLISH_ENABLED == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download signed AAB
+        uses: actions/download-artifact@v8
+        with:
+          name: stricknani-${{ github.run_id }}-aab
+          path: play-artifact
+
+      - name: Check Play service-account credential
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          test -n "$PLAY_SERVICE_ACCOUNT_JSON" || {
+            echo "PLAY_SERVICE_ACCOUNT_JSON is required when publication is enabled." >&2
+            exit 1
+          }
+
+      - name: Upload AAB
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: blue.anika.wolle
+          releaseFiles: play-artifact/app-release.aab
+          tracks: ${{ inputs.track }}
+          status: completed

@@ -515,17 +515,16 @@ change, not that the new screen looks/behaves correctly once opened.
       Mi Pad 4 mostly works but needs occasional wireless-adb reconnects; Pixel 5 has been
       unreachable over wireless adb for this entire session - a Home Assistant/Tasker webhook gap
       outside this app's control, not a deploy-recipe defect).
-- [ ] Play Store publishing workflow: explicitly optional in the ticket, and left undone - it
-      needs a real Play Console account/listing (screenshots, store copy, content rating,
-      data-safety form) and a decision about whether Stricknani should even be on Play Store at
-      all (self-hosted homelab audience, Obtainium/GitHub Releases already covers it) - a product
-      decision for the user, not something to default into.
+- [x] The user decided to pursue Play Store publishing; repository scaffolding and a dry-run-safe,
+      explicitly gated workflow now live in SNA-42. The external Play Console account/listing,
+      screenshots, privacy URL, content-rating/data-safety forms, and service-account credential
+      remain intentionally unverified until that setup is completed.
 
 Status: **mostly done** (2026-08-18) - the release workflow's first-ever run (triggered by its own
 landing commit, since it has no `paths:` filter) succeeded outright: all 9 CI checks green
 including `Release`, and `gh release view latest` confirms a real signed prerelease with all 8 APKs
-(4 ABIs x debug/release) plus `SHA256SUMS`. Play Store publishing deliberately left as a follow-up
-decision (see above).
+(4 ABIs x debug/release) plus `SHA256SUMS`. Play Store publication remains a separate SNA-42
+follow-up and is disabled by default.
 
 ## Stretch / later
 
@@ -1480,19 +1479,24 @@ cancel behavior, and item-preserving confirmation flows.
 
 ## SNA-42: Publish Android assets and releases to Google Play
 
-- [ ] Prepare and validate the Play Store listing assets (icon, feature graphic, phone/tablet
-      screenshots, store copy, content rating, and data-safety/privacy declarations) following the
-      release patterns used by NyetBox and Syncwich.
-- [ ] Add a gated Play Console upload workflow that builds the signed AAB, uploads assets and the
-      chosen release track, and keeps publishing disabled unless the repository gate and required
-      credentials are present.
-- [ ] Reuse the existing release-signing and versioning setup without exposing keystore material,
-      and support dry-run/metadata validation before any production rollout.
-- [ ] Add CI checks for asset dimensions/content, AAB generation, Play upload authentication, and
-      a documented staged-release/rollback path.
+- [x] Added Fastlane-compatible en-US store copy and a draft declaration file covering the privacy
+      policy URL, content-rating completion, and data-safety completion. The checked-in Play icon
+      (512×512) and feature graphic (1024×500) are validated without a network call.
+- [x] Extended the disposable phone/tablet screenshot matrix with an optional review-PR path;
+      successful light-theme captures are consolidated into the three Play screenshot buckets and
+      dark-theme captures remain available as review diagnostics.
+- [x] Added manual `.github/workflows/play-store.yaml` and `play-store-assets.yaml` workflows. A
+      default dispatch only validates/builds; publication requires the explicit input,
+      `PLAY_PUBLISH_ENABLED=true`, and the relevant service-account credential.
+- [x] Reused the existing CI signing keystore/version properties and added a dry-run-safe asset
+      uploader plus structural metadata/PNG/AAB/authentication checks without writing any secret to
+      the repository.
+- [x] Added `android/docs/play-store-release.md` with the staged internal-testing and rollback
+      runbook.
 - [ ] Verify the listing and release flow in the Play Console before enabling production release.
 
-Status: not started (2026-08-19; user decided to pursue Google Play publishing).
+Status: in progress (2026-08-19; repository scaffolding is complete, but external Play Console
+listing, privacy URL, declarations, and service-account setup are not verified).
 
 ## SNA-43: Normalize navbar taps to each destination's root view
 

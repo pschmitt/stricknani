@@ -90,8 +90,8 @@ Execution-oriented backlog for Stricknani.
 | T84 | P2 | done | ci/test | refactor | Enforce the documented 80% Python coverage threshold in CI instead of only uploading a report |
 | T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
-| T87 | P3 | todo | release/decision | feat | Decide whether Stricknani should publish to Google Play and, if yes, add the gated store-assets and publishing workflow |
-| T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
+ | T87 | P3 | wip (PID: main, AGENT: codex-main) | release/decision | feat | Prepare gated Google Play store-assets and publishing workflow; external Console/listing setup remains |
+ | T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
 | T90 | P1 | done | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
 
@@ -1162,7 +1162,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: release/decision
 - **Priority**: P3
-- **Status**: todo
+- **Status**: wip
 - **Category**: feat
 - **Description**:
   - Android release signing, GitHub Releases, and Obtainium are implemented; Google Play publishing remains deliberately undecided and is currently documented only in `android/TODO.md`.
@@ -1171,6 +1171,9 @@ Execution-oriented backlog for Stricknani.
   - Keep publishing disabled by default and require an explicit repository-level gate and credentials check before any upload.
 - **Files**: `android/TODO.md`, `.github/workflows/`, `fastlane/`, `android/README.md`, and store metadata.
 - **Testing**: validate a signed AAB and store assets without publishing first; publish only after the explicit product decision and gate are enabled.
+- **Progress**: Added gated dry-run workflows, metadata/assets validation, release documentation, and
+  Play Console declaration scaffolding. Publishing remains disabled pending repository credentials,
+  listing setup, and Play Console declarations.
 
 ### T88: Migrate the web UI to Material 3 Expressive
 

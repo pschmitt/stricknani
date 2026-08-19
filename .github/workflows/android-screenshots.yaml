@@ -1,9 +1,17 @@
 name: Android screenshots
 
-# This lane is manual and review-only. It never commits images, opens a PR, uploads to a store,
-# or talks to a production Stricknani instance. The fixture and artifact are disposable.
+# This lane is manual and review-only. It never uploads to a store. With open_pr=true, successful
+# disposable captures are placed in a review PR using the shared screenshot-PR tail; merging that
+# PR still does not upload anything until the separate, explicitly gated Play Store Assets workflow
+# is dispatched. The fixture and artifact are disposable.
 on:
   workflow_dispatch:
+    inputs:
+      open_pr:
+        description: Open or update a review PR with the captured Play Store screenshot buckets
+        required: true
+        default: false
+        type: boolean
 
 concurrency:
   group: android-screenshots-${{ github.ref }}
@@ -23,26 +31,32 @@ jobs:
         include:
           - device: phone
             profile: pixel_2
+            bucket: phoneScreenshots
             theme: light
             night_mode: no
           - device: tablet-7
             profile: Nexus 7
+            bucket: sevenInchScreenshots
             theme: light
             night_mode: no
           - device: tablet-10
             profile: Nexus 10
+            bucket: tenInchScreenshots
             theme: light
             night_mode: no
           - device: phone
             profile: pixel_2
+            bucket: phoneScreenshots
             theme: dark
             night_mode: yes
           - device: tablet-7
             profile: Nexus 7
+            bucket: sevenInchScreenshots
             theme: dark
             night_mode: yes
           - device: tablet-10
             profile: Nexus 10
+            bucket: tenInchScreenshots
             theme: dark
             night_mode: yes
     env:
@@ -123,7 +137,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
         with:
-          name: stricknani-${{ matrix.device }}-${{ env.SCREENSHOT_THEME }}-screenshots-${{ github.run_id }}
+          name: stricknani-${{ matrix.device }}-${{ env.SCREENSHOT_THEME }}-diagnostics-${{ github.run_id }}
           if-no-files-found: warn
           path: |
             screenshot-captures/
@@ -132,6 +146,30 @@ jobs:
             screenshot-host-diagnostics.txt
             android/app/build/reports/androidTests/connected/
             android/app/build/outputs/androidTest-results/connected/
+
+      # Keep the review-PR contract separate from diagnostics: the shared tail expects one clean
+      # artifact per device bucket. The final-state frame is failure evidence, not a store asset,
+      # and is deliberately excluded (Play permits at most eight screenshots per bucket).
+      - name: Prepare Play Store screenshot bucket
+        if: ${{ success() }}
+        env:
+          BUCKET: ${{ matrix.bucket }}
+        run: |
+          mkdir -p "play-store-screenshots/$BUCKET"
+          shopt -s nullglob
+          for image in screenshot-captures/*.png
+          do
+            [[ "$(basename "$image")" == *-final-state.png ]] && continue
+            cp "$image" "play-store-screenshots/$BUCKET/"
+          done
+
+      - name: Upload Play Store screenshot bucket
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: stricknani-${{ matrix.bucket }}-${{ env.SCREENSHOT_THEME }}-play-screenshots-${{ github.run_id }}
+          if-no-files-found: error
+          path: play-store-screenshots/${{ matrix.bucket }}/
 
       - name: Capture fixture logs on failure
         if: ${{ failure() }}
@@ -148,3 +186,90 @@ jobs:
       - name: Tear down disposable Stricknani fixture
         if: ${{ always() }}
         run: docker compose -f "$COMPOSE_FILE" down --volumes --remove-orphans
+
+  aggregate-play-store-screenshots:
+    needs: capture
+    if: ${{ !cancelled() && !failure() && inputs.open_pr }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download light and dark screenshot buckets
+        uses: actions/download-artifact@v8
+        with:
+          pattern: stricknani-*-play-screenshots-${{ github.run_id }}
+          path: play-store-inputs
+          merge-multiple: true
+
+      - name: Arrange screenshots in Fastlane metadata buckets
+        run: |
+          mkdir -p \
+            fastlane/metadata/android/en-US/images/phoneScreenshots \
+            fastlane/metadata/android/en-US/images/sevenInchScreenshots \
+            fastlane/metadata/android/en-US/images/tenInchScreenshots
+          while IFS= read -r -d '' image
+          do
+            basename="$(basename "$image")"
+            # Keep the light set for Play: the workflow still captures dark mode for visual review,
+            # but Play permits at most eight screenshots per device bucket and this journey has
+            # eight named states. The dark captures remain in the per-job diagnostic artifacts.
+            case "$basename" in
+              *_dark-*)
+                continue
+                ;;
+            esac
+            case "$basename" in
+              phone_*)
+                bucket=phoneScreenshots
+                ;;
+              tablet-7_*)
+                bucket=sevenInchScreenshots
+                ;;
+              tablet-10_*)
+                bucket=tenInchScreenshots
+                ;;
+              *)
+                echo "Unexpected screenshot filename: $basename" >&2
+                exit 1
+                ;;
+            esac
+            cp "$image" "fastlane/metadata/android/en-US/images/$bucket/$basename"
+          done < <(find play-store-inputs -type f -name '*.png' -print0)
+          python3 android/scripts/validate-play-store-metadata.py \
+            --root . \
+            --require-screenshots
+
+      - name: Upload consolidated phone screenshot bucket
+        uses: actions/upload-artifact@v7
+        with:
+          name: stricknani-phone-screenshots-${{ github.run_id }}
+          if-no-files-found: error
+          path: fastlane/metadata/android/en-US/images/phoneScreenshots/
+
+      - name: Upload consolidated 7-inch screenshot bucket
+        uses: actions/upload-artifact@v7
+        with:
+          name: stricknani-sevenInch-screenshots-${{ github.run_id }}
+          if-no-files-found: error
+          path: fastlane/metadata/android/en-US/images/sevenInchScreenshots/
+
+      - name: Upload consolidated 10-inch screenshot bucket
+        uses: actions/upload-artifact@v7
+        with:
+          name: stricknani-tenInch-screenshots-${{ github.run_id }}
+          if-no-files-found: error
+          path: fastlane/metadata/android/en-US/images/tenInchScreenshots/
+
+  open-pr:
+    needs: aggregate-play-store-screenshots
+    if: ${{ !cancelled() && !failure() && inputs.open_pr }}
+    uses: pschmitt/android-app-ci/.github/workflows/screenshots-open-pr.yaml@main
+    with:
+      artifact-label: stricknani
+      commit-message: "chore: update Play Store screenshots (phone, 7in, 10in tablet)"
+      pr-body-intro: "Merging this PR only stores reviewed assets in git; Play Console upload remains a separate gated workflow."
+    secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write
