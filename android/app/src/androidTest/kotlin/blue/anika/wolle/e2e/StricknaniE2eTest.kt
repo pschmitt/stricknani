@@ -27,12 +27,10 @@ abstract class StricknaniE2eTest {
         get() = requiredArgument("e2e_token")
 
     protected fun connectToFixture() {
-        composeRule
-            .onNodeWithText("Server URL", useUnmergedTree = true)
-            .performTextInput(baseUrl)
-        composeRule
-            .onNodeWithText("API token", useUnmergedTree = true)
-            .performTextInput(token)
+        composeRule.onNodeWithText("Server URL", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithText("Server URL", useUnmergedTree = true).performTextInput(baseUrl)
+        composeRule.onNodeWithText("API token", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithText("API token", useUnmergedTree = true).performTextInput(token)
         composeRule.onNodeWithText("Connect").performClick()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
     }
@@ -64,6 +62,9 @@ abstract class StricknaniE2eTest {
     protected fun enterSearchTerm(term: String) {
         composeRule.onNodeWithText("Search").performClick()
         waitForText("Search projects and yarns")
+        composeRule
+            .onNodeWithText("Search projects and yarns", useUnmergedTree = true)
+            .performClick()
         composeRule
             .onNodeWithText("Search projects and yarns", useUnmergedTree = true)
             .performTextInput(term)

@@ -42,9 +42,11 @@ class FocusedAppSemanticsTest {
         composeRule.onNodeWithText("Connect").performClick()
         waitForText("Enter both the server URL and the API token")
 
+        composeRule.onNodeWithText("Server URL", useUnmergedTree = true).performClick()
         composeRule
             .onNodeWithText("Server URL", useUnmergedTree = true)
             .performTextInput("not-a-server-url")
+        composeRule.onNodeWithText("API token", useUnmergedTree = true).performClick()
         composeRule
             .onNodeWithText("API token", useUnmergedTree = true)
             .performTextInput("focused-test-token")
@@ -64,6 +66,7 @@ class FocusedAppSemanticsTest {
 
         composeRule.onNodeWithText("Projects").performClick()
         waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
+        composeRule.onNodeWithContentDescription("Search projects").performClick()
         composeRule
             .onNodeWithContentDescription("Search projects")
             .performTextInput("focused-no-project-match")
@@ -71,6 +74,7 @@ class FocusedAppSemanticsTest {
 
         composeRule.onNodeWithText("Yarns").performClick()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
+        composeRule.onNodeWithContentDescription("Search yarns").performClick()
         composeRule
             .onNodeWithContentDescription("Search yarns")
             .performTextInput("focused-no-yarn-match")
@@ -78,6 +82,9 @@ class FocusedAppSemanticsTest {
 
         composeRule.onNodeWithText("Search").performClick()
         waitForText("Search your stash")
+        composeRule
+            .onNodeWithContentDescription("Search projects and yarns")
+            .performClick()
         composeRule
             .onNodeWithContentDescription("Search projects and yarns")
             .performTextInput("focused-no-search-match")
@@ -162,9 +169,11 @@ class FocusedAppSemanticsTest {
                 "configured focused journeys require e2e_base_url and e2e_token",
                 !baseUrl.isNullOrBlank() && !token.isNullOrBlank(),
             )
+            composeRule.onNodeWithText("Server URL", useUnmergedTree = true).performClick()
             composeRule
                 .onNodeWithText("Server URL", useUnmergedTree = true)
                 .performTextInput(baseUrl!!)
+            composeRule.onNodeWithText("API token", useUnmergedTree = true).performClick()
             composeRule
                 .onNodeWithText("API token", useUnmergedTree = true)
                 .performTextInput(token!!)

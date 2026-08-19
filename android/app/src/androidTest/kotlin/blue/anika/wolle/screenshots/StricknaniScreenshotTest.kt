@@ -90,12 +90,10 @@ class StricknaniScreenshotTest {
     }
 
     private fun connectToFixture() {
-        composeRule
-            .onNodeWithText("Server URL", useUnmergedTree = true)
-            .performTextInput(baseUrl)
-        composeRule
-            .onNodeWithText("API token", useUnmergedTree = true)
-            .performTextInput(token)
+        composeRule.onNodeWithText("Server URL", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithText("Server URL", useUnmergedTree = true).performTextInput(baseUrl)
+        composeRule.onNodeWithText("API token", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithText("API token", useUnmergedTree = true).performTextInput(token)
         composeRule.onNodeWithText("Connect").performClick()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
     }
