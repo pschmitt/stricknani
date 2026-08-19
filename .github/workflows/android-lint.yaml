@@ -1,12 +1,9 @@
 name: Android Lint
 
-# Hand-written rather than delegating to pschmitt/android-app-ci's reusable lint.yaml: that
-# workflow assumes the Gradle project sits at the repo root, which isn't true here (it's at
-# android/, alongside the unrelated Python web app at the repo root) - see android/AGENTS.md's
-# Builds section. Reuses only the shared setup-jdk-gradle composite action (cwd-agnostic) and runs
-# ./gradlew with working-directory: android itself. No auto-fix-commit/auto-PR yet (SNA-12) - see
-# the reusable workflow in .just/android-app-ci for what that looks like once ported; this only
-# uploads the ktfmt-diff-patch artifact on failure, matching that workflow's mechanism.
+# The shared lint workflow owns ktfmt, the diff-patch diagnostic, Android Lint, and the report
+# artifact. `project-directory` is required because Android lives below this repository's unrelated
+# Python web application. Auto-fix PRs remain disabled here; this repository has not opted into
+# workflow-authored formatting commits.
 on:
   push:
     branches:
@@ -21,49 +18,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  ktfmt:
-    name: ktfmt
-    runs-on: ubuntu-24.04
+  lint:
+    uses: pschmitt/android-app-ci/.github/workflows/lint.yaml@main
+    with:
+      project-directory: android
+      lint-baseline-path: ''
+      enable-auto-fix: false
+    secrets: inherit
     permissions:
       contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
-      - name: Check with ktfmt
-        id: ktfmt_check
-        working-directory: android
-        run: ./gradlew ktfmtCheck
-      - name: Produce ktfmt diff patch
-        if: ${{ failure() && steps.ktfmt_check.outcome == 'failure' }}
-        working-directory: android
-        run: |
-          ./gradlew ktfmtFormat
-          git diff > /tmp/ktfmt.patch
-      - name: Upload ktfmt diff patch
-        if: ${{ failure() && steps.ktfmt_check.outcome == 'failure' }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: ktfmt-diff-patch
-          path: /tmp/ktfmt.patch
-          if-no-files-found: error
-
-  android-lint:
-    name: Android Lint
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
-      - name: Run Android Lint
-        working-directory: android
-        run: ./gradlew lintDebug
-      - name: Upload Android Lint report
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: android-lint-report
-          path: android/app/build/reports/lint-results-debug.html
-          if-no-files-found: warn

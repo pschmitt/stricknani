@@ -63,13 +63,13 @@ directory, not mixed into the root one.
   not treat a clean local `ktfmtCheck`/`ktfmtFormat` run as proof of formatting correctness; push
   and let CI's `Android Lint` workflow be the actual check, and if it fails, fetch that run's
   `ktfmt-diff-patch` artifact and apply it rather than re-attempting a local check.
-- CI workflows here are hand-written (`android/.github` doesn't exist - see repo-root
-  `.github/workflows/android-*.yaml`), not the fleet's reusable `lint.yaml`/`build.yaml` called
-  directly: those reusable workflows assume the Gradle project sits at the repo root, which isn't
-  true in a monorepo. The workflows here reuse only the shared
-  `pschmitt/android-app-ci/.github/actions/setup-jdk-gradle` composite action (which is
-  cwd-agnostic) and run `./gradlew` with `working-directory: android` themselves, path-filtered to
-  `android/**` so Python-only changes don't trigger an Android CI run and vice versa.
+- CI workflows here are thin callers (`android/.github` doesn't exist - see repo-root
+  `.github/workflows/android-*.yaml`). The build, lint, signed release, and Play bundle lanes call
+  the fleet's reusable `pschmitt/android-app-ci` workflows with `project-directory: android`,
+  while E2E and screenshot capture retain their fixture-specific emulator/test orchestration. The
+  shared screenshot-PR tail, JDK/Gradle setup, keystore decoding, KVM setup, and emulator wait
+  helper are reused directly. All callers remain path-filtered to `android/**` (plus their fixture
+  inputs where applicable) so Python-only changes don't trigger an Android CI run and vice versa.
 
 ## Physical test devices
 

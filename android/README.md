@@ -81,6 +81,14 @@ builds remotely and copies the debug APK to `./dist`. The debug application id i
 `just deploy-all [variant]` builds, fetches, and installs on the fleet's shared physical test
 devices (Zenfone 10, Mi Pad 4, Pixel 5) - see [AGENTS.md](AGENTS.md).
 
+Hosted Android CI uses thin wrappers around the shared
+[`pschmitt/android-app-ci`](https://github.com/pschmitt/android-app-ci) workflows for build, lint,
+signed release, and Play bundle publication. Since this is a monorepo, those callers pass
+`project-directory: android`; APK/AAB/report paths remain relative to that directory. E2E and
+screenshot capture stay local because their disposable Stricknani fixture and emulator journeys
+are app-specific. See [the Android CI notes](docs/android-ci.md) for the lane boundaries and
+artifact contracts.
+
 See [AGENTS.md](AGENTS.md) for the full dev environment, build, and contribution conventions, and
 the fleet-wide shared doc it references (`.just/android-app-ci/AGENTS-shared.md`).
 
