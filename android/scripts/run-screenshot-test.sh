@@ -27,7 +27,7 @@ watch_for_capture_markers() {
     for name in "${capture_names[@]}"
     do
       local marker="${capture_marker_prefix}${name}"
-      local output="$GITHUB_WORKSPACE/screenshot-captures/${DEVICE}_${SCREENSHOT_THEME}_${name}.png"
+      local output="$GITHUB_WORKSPACE/screenshot-captures/${DEVICE}_${SCREENSHOT_THEME}-${name}.png"
 
       if adb shell test -f "$marker" >/dev/null 2>&1
       then
@@ -93,7 +93,7 @@ adb pull /sdcard/Android/data/blue.anika.wolle.debug/files/screenshot-captures/.
   "$GITHUB_WORKSPACE/screenshot-captures/" || true
 if ! compgen -G "$GITHUB_WORKSPACE/screenshot-captures/*.png" >/dev/null
 then
-  adb exec-out screencap -p > "$GITHUB_WORKSPACE/screenshot-captures/${DEVICE}_${SCREENSHOT_THEME}_offline.png" || true
+  adb exec-out screencap -p > "$GITHUB_WORKSPACE/screenshot-captures/${DEVICE}_${SCREENSHOT_THEME}-offline.png" || true
 fi
 timeout 60s adb logcat -d > "$GITHUB_WORKSPACE/screenshot-logcat.txt" || true
 timeout 20s adb exec-out screencap -p > "$GITHUB_WORKSPACE/screenshot-final-frame.png" || true
