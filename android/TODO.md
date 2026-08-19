@@ -1460,4 +1460,18 @@ Status: **done** (2026-08-19) - verified with remote `just check` on `rofl-13.br
 
 Status: not started (2026-08-19).
 
+## SNA-41: Confirm destructive deletes and style trash actions
+
+- [ ] Require an explicit confirmation dialog before deleting projects, yarns, and every other
+      deletable entity exposed by the Android UI.
+- [ ] Make the confirmation identify the item being deleted and offer a safe cancel action before
+      any offline mutation is queued or sent to the server.
+- [ ] Render the trash/delete icon in each overflow menu with the theme's red destructive color,
+      while preserving its accessible label and touch target.
+- [ ] Add focused tests covering cancel, confirm, and red destructive-icon semantics for project
+      and yarn deletion flows.
+- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the behavior in English and German.
+
+Status: not started (2026-08-19).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
