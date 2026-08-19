@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -108,9 +107,7 @@ fun ProjectDetailScreen(
                         ) {
                             DropdownMenuItem(
                                 text = {
-                                    Text(
-                                        if (state.entity.isFavorite) "Unfavorite" else "Favorite"
-                                    )
+                                    Text(if (state.entity.isFavorite) "Unfavorite" else "Favorite")
                                 },
                                 leadingIcon = {
                                     Icon(
@@ -321,7 +318,8 @@ internal fun DetailSectionCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        colors =
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
@@ -340,7 +338,9 @@ internal fun DetailSectionCard(
     }
 }
 
-/** A tappable row with a thumbnail-or-fallback-icon leading avatar, used for linked-entity lists. */
+/**
+ * A tappable row with a thumbnail-or-fallback-icon leading avatar, used for linked-entity lists.
+ */
 @Composable
 internal fun LinkedEntityRow(
     name: String,

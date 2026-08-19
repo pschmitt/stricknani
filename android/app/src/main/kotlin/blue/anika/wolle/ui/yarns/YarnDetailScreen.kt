@@ -103,9 +103,7 @@ fun YarnDetailScreen(
                         ) {
                             DropdownMenuItem(
                                 text = {
-                                    Text(
-                                        if (state.entity.isFavorite) "Unfavorite" else "Favorite"
-                                    )
+                                    Text(if (state.entity.isFavorite) "Unfavorite" else "Favorite")
                                 },
                                 leadingIcon = {
                                     Icon(

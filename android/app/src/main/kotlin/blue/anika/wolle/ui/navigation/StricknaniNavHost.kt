@@ -156,9 +156,7 @@ fun StricknaniNavHost(
                     onShowLibraries = { navController.navigate(Route.Libraries) },
                 )
             }
-            composable<Route.Libraries> {
-                LibrariesScreen(onBack = { navController.navigateUp() })
-            }
+            composable<Route.Libraries> { LibrariesScreen(onBack = { navController.navigateUp() }) }
             composable<Route.ProjectDetail> {
                 ProjectDetailScreen(
                     onBack = { navController.navigateUp() },

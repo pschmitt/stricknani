@@ -95,7 +95,10 @@ constructor(
         )
 
     private val _developerModeToast =
-        MutableSharedFlow<String>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+        MutableSharedFlow<String>(
+            extraBufferCapacity = 1,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
     val developerModeToast = _developerModeToast.asSharedFlow()
 
     private val developerModeTapState = DeveloperModeTapState()
@@ -115,7 +118,9 @@ constructor(
             DeveloperModeTapAction.AlreadyDeveloper ->
                 _developerModeToast.tryEmit("You are already a developer")
             is DeveloperModeTapAction.Progress ->
-                _developerModeToast.tryEmit("${action.remainingTaps} more taps to become a developer")
+                _developerModeToast.tryEmit(
+                    "${action.remainingTaps} more taps to become a developer"
+                )
             DeveloperModeTapAction.Unlock -> {
                 developerModeUnlockInProgress = true
                 viewModelScope.launch {
