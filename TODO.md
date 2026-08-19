@@ -92,7 +92,7 @@ Execution-oriented backlog for Stricknani.
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
 | T87 | P3 | todo | release/decision | feat | Decide whether Stricknani should publish to Google Play and, if yes, add the gated store-assets and publishing workflow |
 | T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
-| T89 | P2 | todo | web/i18n | bug | Translate the login-page “Please sign in below” string |
+| T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
 
 
 ## Done
@@ -1198,7 +1198,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: web/i18n
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: bug
 - **Description**:
   - The login page renders “Please sign in below” without passing it through the translation
@@ -1209,3 +1209,6 @@ Execution-oriented backlog for Stricknani.
 - **Files**: login template and both locale catalogs.
 - **Testing**: run the i18n update/compile/check commands and assert the rendered login page uses the
   translated string.
+- **Completed**: The template and German catalog already contained the translation; added a
+  request-scoped regression test proving the rendered login page uses it and does not leak the
+  English source string.
