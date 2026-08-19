@@ -499,10 +499,15 @@ async def test_import_requires_auth(test_client: "TestClientFixture") -> None:
 
     # Temporarily clear auth override to test auth requirement
     from stricknani.main import app
-    from stricknani.routes.auth import get_current_user, require_auth
+    from stricknani.routes.auth import (
+        get_current_user,
+        require_auth,
+        require_auth_or_api_token,
+    )
 
     original_overrides = app.dependency_overrides.copy()
     app.dependency_overrides.pop(require_auth, None)
+    app.dependency_overrides.pop(require_auth_or_api_token, None)
     app.dependency_overrides.pop(get_current_user, None)
 
     response = await client.post(

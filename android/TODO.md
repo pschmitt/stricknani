@@ -1608,15 +1608,15 @@ landed; combined remote `just check rofl-13.brkn.lol` passed.
 
 ## SNA-51: Import projects from Android
 
-- [ ] Add an explicit project-import flow in the Android app, including a discoverable entry point
+- [x] Add an explicit project-import flow in the Android app, including a discoverable entry point
       and progress/success/error feedback.
-- [ ] Reuse the backend's supported project import behavior and preserve offline-first semantics
+- [x] Reuse the backend's supported project import behavior and preserve offline-first semantics
       for the resulting project data and images where applicable.
-- [ ] Add confirmation and failure handling so a partially completed import is not silently lost.
-- [ ] Add focused tests for starting, completing, cancelling, and failing an import.
+- [x] Add confirmation and failure handling so a partially completed import is not silently lost.
+- [x] Add focused tests for starting, completing, cancelling, and failing an import.
 
-Status: not started (2026-08-19).
-
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19) - URL import UI/state machine, Bearer-authenticated backend
+boundary, offline outbox persistence, and project/step image persistence landed; remote
+`just check rofl-13.brkn.lol` passed.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
