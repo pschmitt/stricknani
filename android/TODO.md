@@ -1527,77 +1527,84 @@ Status: **done** (2026-08-19; remotely verified with `ktfmtCheck`, 45 unit tests
 
 ## SNA-45: Scale down Markdown heading styles
 
-- [ ] Render Markdown headings at a compact scale that fits the Android card hierarchy; an `h1`
+- [x] Render Markdown headings at a compact scale that fits the Android card hierarchy; an `h1`
       must not visually overpower card titles and surrounding content.
-- [ ] Keep heading levels distinct and readable across notes, stitch samples, descriptions, and
+- [x] Keep heading levels distinct and readable across notes, stitch samples, descriptions, and
       steps, including light/dark themes and accessibility font scaling.
-- [ ] Add focused rendering tests or screenshot coverage for heading sizes in the affected content
+- [x] Add focused rendering tests or screenshot coverage for heading sizes in the affected content
       surfaces.
-- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android screen.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android screen.
 
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19) - compact heading typography and focused tests landed; combined remote
+`just check rofl-13.brkn.lol` passed after integration.
 
 ## SNA-46: Use the shared android-app-ci actions
 
-- [ ] Audit Android build, lint, E2E, screenshot, signing, and release workflows against the
+- [x] Audit Android build, lint, E2E, screenshot, signing, and release workflows against the
       reusable actions exposed by `pschmitt/android-app-ci`.
-- [ ] Replace duplicated setup/remote-Gradle/diagnostic shell glue with the shared actions where
+- [x] Replace duplicated setup/remote-Gradle/diagnostic shell glue with the shared actions where
       their contracts fit, while keeping Stricknani-specific fixture and test steps explicit.
-- [ ] If the shared actions do not support the required source paths or artifacts, add the smallest
+- [x] If the shared actions do not support the required source paths or artifacts, add the smallest
       compatible upstream fixes and pin/document the consumed action interfaces.
-- [ ] Keep local `just` targets as developer-facing wrappers, but make hosted CI exercise the shared
+- [x] Keep local `just` targets as developer-facing wrappers, but make hosted CI exercise the shared
       action path and verify Android Lint, E2E, screenshots, signing, and release artifacts.
-- [ ] Run the affected workflows and `just check` remotely on `rofl-13.brkn.lol` after migration.
+- [x] Run the affected workflows and `just check` remotely on `rofl-13.brkn.lol` after migration.
 
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19) - workflow migration landed with upstream nested-project/artifact
+support in `pschmitt/android-app-ci`; remote Android check passed.
 
 ## SNA-47: Reduce redundant "Already up to date" notifications
 
-- [ ] Identify which sync/status events currently emit the "Already up to date" notification,
+- [x] Identify which sync/status events currently emit the "Already up to date" notification,
       especially repeated navbar taps and destination-root navigation.
-- [ ] Suppress duplicate or non-actionable notifications while retaining useful feedback for an
+- [x] Suppress duplicate or non-actionable notifications while retaining useful feedback for an
       explicit user refresh or a completed sync with changed data.
-- [ ] Add focused tests covering repeated navigation, explicit refresh, and changed/no-change sync
+- [x] Add focused tests covering repeated navigation, explicit refresh, and changed/no-change sync
       feedback in English and German.
-- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the resulting notification volume
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the resulting notification volume
       on a real Android device.
 
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19) - automatic no-change refreshes are silent while explicit refresh
+feedback remains; combined remote `just check rofl-13.brkn.lol` passed.
 
 ## SNA-48: Add a warm yellow tone to the Notes card
 
-- [ ] Apply a subtle yellow-toned Material 3 surface/container to Notes cards across the affected
+- [x] Apply a subtle yellow-toned Material 3 surface/container to Notes cards across the affected
       project and yarn content screens.
-- [ ] Keep text, icons, contrast, dark-theme behavior, and accessibility readable at all supported
+- [x] Keep text, icons, contrast, dark-theme behavior, and accessibility readable at all supported
       font scales.
-- [ ] Add focused UI or screenshot coverage for the Notes card in light and dark themes.
-- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android
+- [x] Add focused UI or screenshot coverage for the Notes card in light and dark themes.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android
       device.
 
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19) - shared accessible NotesCard styling, theme coverage, and screenshot
+states landed; combined remote `just check rofl-13.brkn.lol` passed.
 
 ## SNA-49: Fix Stitch sample image and HTML entity rendering
 
-- [ ] Reproduce the Stitch sample rendering issue against project 3 on `wolle.anika.blue`, including
+- [x] Reproduce the Stitch sample rendering issue against project 3 on `wolle.anika.blue`, including
       missing images and literal `&nbsp;` text.
-- [ ] Normalize or sanitize the sample's HTML/Markdown before rendering so entities display as
+- [x] Normalize or sanitize the sample's HTML/Markdown before rendering so entities display as
       whitespace and authorized image URLs resolve through the configured server and image cache.
-- [ ] Preserve safe handling for malformed content, missing images, and offline cached samples.
-- [ ] Add focused rendering/URL-resolution tests and screenshot coverage for a populated Stitch
+- [x] Preserve safe handling for malformed content, missing images, and offline cached samples.
+- [x] Add focused rendering/URL-resolution tests and screenshot coverage for a populated Stitch
       sample in English and German.
-- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android device.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android device.
 
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19) - HTML entity decoding, HTML-image normalization, authenticated
+media resolution, fixture data, and screenshot coverage landed; combined remote `just check
+rofl-13.brkn.lol` passed.
 
 ## SNA-50: Add an Android categories view
 
-- [ ] Add a categories destination reachable from the app's navigation, showing the user's
+- [x] Add a categories destination reachable from the app's navigation, showing the user's
       categories with loading, empty, offline, and error states.
-- [ ] Load categories through the existing offline-first repository/sync flow and keep the view
+- [x] Load categories through the existing offline-first repository/sync flow and keep the view
       consistent with the project and yarn list screens.
-- [ ] Add focused Compose/navigation coverage for the destination and its states.
+- [x] Add focused Compose/navigation coverage for the destination and its states.
 
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19) - offline-first categories destination and state/navigation tests
+landed; combined remote `just check rofl-13.brkn.lol` passed.
 
 ## SNA-51: Import projects from Android
 
