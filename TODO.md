@@ -1195,10 +1195,14 @@ Execution-oriented backlog for Stricknani.
   - Preserve accessibility semantics, keyboard navigation, responsive behavior, translations,
     and the existing project/yarn UI parity throughout the migration.
 - **Current progress**:
-  - The first pass added M3 tokens and explicit component roles, but it still relied on Tailwind
-    utilities and DaisyUI selectors and therefore does not satisfy the replacement goal.
-  - The remaining migration removes those rendered CSS dependencies and moves shared layout and
-    widgets to self-contained Material 3 classes.
+  - The shared shell now loads a framework-free `material.css`; rendered pages no longer load
+    Tailwind or DaisyUI, and the vendored DaisyUI package plus Tailwind build/watch pipeline were
+    removed.
+  - Shared navigation, buttons, fields, cards, menus, dialogs, responsive layout primitives, and
+    service-worker precaching use the Material layer. Browser smoke and full CRUD journeys pass.
+  - Still open: move the remaining feature-specific utility markup and legacy compatibility rules
+    out of `app.css` into semantic Material classes across every page, then complete visual review
+    at the supported light/dark and responsive breakpoints.
 - **Files**: `stricknani/templates/`, `stricknani/static/css/`, `stricknani/static/js/`,
   `vendir.yml`, and both translation catalogs as UI strings change.
 - **Testing**: add/update browser E2E and screenshot coverage for light/dark themes and key

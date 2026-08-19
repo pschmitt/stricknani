@@ -6,8 +6,6 @@ prerequisite for a strict CSP (no inline/eval-ish runtime script needed for
 styling).
 """
 
-import shutil
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +14,6 @@ import pytest
 STATIC_CSS_DIR = (
     Path(__file__).resolve().parent.parent / "stricknani" / "static" / "css"
 )
-TAILWIND_INPUT = STATIC_CSS_DIR / "tailwind.input.css"
 
 
 @pytest.mark.asyncio
@@ -70,45 +67,3 @@ async def test_links_material_theme_and_shared_components(test_client: Any) -> N
     assert ".md3-text-field" in css
     assert ".md3-dialog" in css
     assert ".md3-navigation-menu" in css
-
-
-@pytest.mark.skipif(
-    shutil.which("tailwindcss") is None,
-    reason="tailwindcss CLI not on PATH (expected inside the nix devShell)",
-)
-def test_tailwind_css_bundle_builds_and_contains_expected_utilities(
-    tmp_path: Path,
-) -> None:
-    """`just build-css` must produce a non-trivial CSS bundle with the
-    utility classes actually used by the templates (e.g. daisyUI-backed
-    color tokens and dark-mode variants)."""
-    output = tmp_path / "tailwind.css"
-    subprocess.run(
-        [
-            "tailwindcss",
-            "-i",
-            str(TAILWIND_INPUT),
-            "-o",
-            str(output),
-            "--minify",
-        ],
-        check=True,
-        capture_output=True,
-    )
-
-    css = output.read_text()
-
-    # Non-trivial size: a bare `@import "tailwindcss";` with no matched
-    # classes would produce only a few hundred bytes of resets/preflight.
-    assert len(css) > 20_000
-
-    for expected in (
-        ".flex{",
-        ".bg-base-300",
-        ".text-base-content",
-        ".rounded-box",
-        "dark\\:bg-base-300",
-    ):
-        assert expected in css, (
-            f"expected utility {expected!r} missing from build output"
-        )

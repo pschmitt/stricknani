@@ -90,7 +90,7 @@
                 }
             }
             document.documentElement.setAttribute('data-theme', theme);
-            // Also set dark class for Tailwind dark mode
+            // Keep the legacy class for feature styles while Material uses data-theme.
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
             }

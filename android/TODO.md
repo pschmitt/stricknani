@@ -1551,4 +1551,29 @@ Status: not started (2026-08-19).
 
 Status: not started (2026-08-19).
 
+## SNA-47: Reduce redundant "Already up to date" notifications
+
+- [ ] Identify which sync/status events currently emit the "Already up to date" notification,
+      especially repeated navbar taps and destination-root navigation.
+- [ ] Suppress duplicate or non-actionable notifications while retaining useful feedback for an
+      explicit user refresh or a completed sync with changed data.
+- [ ] Add focused tests covering repeated navigation, explicit refresh, and changed/no-change sync
+      feedback in English and German.
+- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the resulting notification volume
+      on a real Android device.
+
+Status: not started (2026-08-19).
+
+## SNA-48: Add a warm yellow tone to the Notes card
+
+- [ ] Apply a subtle yellow-toned Material 3 surface/container to Notes cards across the affected
+      project and yarn content screens.
+- [ ] Keep text, icons, contrast, dark-theme behavior, and accessibility readable at all supported
+      font scales.
+- [ ] Add focused UI or screenshot coverage for the Notes card in light and dark themes.
+- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android
+      device.
+
+Status: not started (2026-08-19).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
