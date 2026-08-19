@@ -53,6 +53,10 @@ def test_full_user_journey() -> None:
             page.locator('button[form="projectForm"][type="submit"]').first.click()
             wait_for_path(page, r"/projects/\d+\?toast=project_created")
             page.get_by_text("CI E2E Project", exact=True).first.wait_for()
+            project_main = page.locator("#main-column").bounding_box()
+            project_sidebar = page.locator("#sidebar-column").bounding_box()
+            assert project_main is not None and project_sidebar is not None
+            assert project_sidebar["x"] > project_main["x"]
             screenshot(page, "full-02-project-detail.png")
 
             project_edit_href = page.locator(
@@ -69,12 +73,19 @@ def test_full_user_journey() -> None:
 
             page.goto(f"{BASE_URL}/yarn")
             page.locator('a[href="/yarn/new"]').first.click()
+            yarn_name_box = page.locator("#yarnForm #name").bounding_box()
+            assert yarn_name_box is not None
+            assert yarn_name_box["width"] > 500
             page.locator("#yarnForm #name").fill("CI E2E Yarn")
             page.locator('#yarnForm input[name="brand"]').last.fill("CI Brand")
             page.locator('#yarnForm input[name="colorway"]').last.fill("CI Blue")
             page.locator('button[form="yarnForm"][type="submit"]').first.click()
             wait_for_path(page, r"/yarn/\d+\?toast=yarn_created")
             page.get_by_text("CI E2E Yarn", exact=True).first.wait_for()
+            yarn_main = page.locator("#main-column").bounding_box()
+            yarn_sidebar = page.locator("#sidebar-column").bounding_box()
+            assert yarn_main is not None and yarn_sidebar is not None
+            assert yarn_sidebar["x"] > yarn_main["x"]
             screenshot(page, "full-04-yarn-detail.png")
 
             yarn_edit_href = page.locator(
@@ -97,6 +108,9 @@ def test_full_user_journey() -> None:
             ).click()
             page.locator("#importDialog[open]").wait_for()
             page.locator("#importUrl").wait_for()
+            import_url_box = page.locator("#importUrl").bounding_box()
+            assert import_url_box is not None
+            assert import_url_box["width"] > 400
             assert page.locator("#importDialog[open] .md3-dialog-surface").evaluate(
                 "element => getComputedStyle(element).borderRadius"
             )
@@ -111,6 +125,9 @@ def test_full_user_journey() -> None:
             page.get_by_role("button", name="New User").first.click()
             page.locator("#createUserDialog[open]").wait_for()
             assert page.locator("#create-user-email").is_visible()
+            create_user_email_box = page.locator("#create-user-email").bounding_box()
+            assert create_user_email_box is not None
+            assert create_user_email_box["width"] > 400
             page.locator('#createUserDialog [data-action="close-dialog"]').click()
 
             page.goto(f"{BASE_URL}/projects")
