@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Matches the web app's manifest.webmanifest theme_color and branding/icon.svg (SNA-19). -->
-    <color name="icon_background">#2563EB</color>
+    <color name="icon_background">#2F6FED</color>
 </resources>

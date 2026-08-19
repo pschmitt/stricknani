@@ -1,20 +1,34 @@
 <!--
-  Stricknani brand mark (SNA-19) - single source of truth shared by the web app's favicon/PWA
-  icons (stricknani/static/favicon.svg, stricknani/static/icons/icon-*.png) and the Android
-  adaptive launcher icon (android/app/src/main/res/drawable/ic_launcher_*.xml). If this design
-  changes, regenerate both derivatives from this file so the two surfaces don't drift apart.
+  Stricknani brand mark (SNA-19, redesigned SNA-30-era "Tiny Flicks" pass) - single source of
+  truth shared by the web app's favicon/PWA icons (stricknani/static/favicon.svg,
+  stricknani/static/icons/icon-*.png) and the Android adaptive launcher icon
+  (android/app/src/main/res/drawable/ic_launcher_*.xml). If this design changes, regenerate both
+  derivatives from this file so the two surfaces don't drift apart.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="yarn" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2563eb" />
-      <stop offset="100%" stop-color="#7c3aed" />
-    </linearGradient>
+    <clipPath id="ball"><path d="M32 8C42 7 50 10 55 18C60 26 59 36 54 44C49 52 40 58 30 58C19 58 9 51 7 41C5 31 8 20 16 13C21 9 27 8 32 8Z"/></clipPath>
   </defs>
-  <circle cx="32" cy="32" r="28" fill="url(#yarn)" />
-  <path d="M18 22c6 2 18 8 24 20" stroke="#f9fafb" stroke-width="4" fill="none" stroke-linecap="round" />
-  <path d="M46 18c-4 2-16 6-24 20" stroke="#e0f2fe" stroke-width="4" fill="none" stroke-linecap="round" />
-  <path d="M14 36c8 2 20 6 30 18" stroke="#bfdbfe" stroke-width="3" fill="none" stroke-linecap="round" />
-  <path d="M50 34l6 14" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />
-  <path d="M54 30l6 14" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />
+  <path d="M32 8C42 7 50 10 55 18C60 26 59 36 54 44C49 52 40 58 30 58C19 58 9 51 7 41C5 31 8 20 16 13C21 9 27 8 32 8Z" fill="#2f6fed" stroke="#16233f" stroke-width="3" stroke-linejoin="round"/>
+  <g clip-path="url(#ball)">
+    <path d="M50 21a26 26 0 0 1 0 30" fill="none" stroke="#1e49b8" stroke-width="14" stroke-linecap="round" opacity="0.5"/>
+    <ellipse cx="23" cy="20" rx="10" ry="7" fill="#eaf3ff" opacity="0.45" transform="rotate(-25 23 20)"/>
+    <path d="M10 25c8 3 24 9 32 26" stroke="#7fb2ff" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.85"/>
+    <path d="M14 41c9 2 24 5 34 16" stroke="#eaf3ff" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="0.75"/>
+    <path d="M40 13c-5 3-18 8-26 22" stroke="#1e49b8" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+  </g>
+  <ellipse cx="24" cy="32" rx="3.2" ry="4" fill="#16233f"/>
+  <ellipse cx="40" cy="32" rx="3.2" ry="4" fill="#16233f"/>
+  <circle cx="25.1" cy="30.2" r="1.1" fill="#fff"/>
+  <circle cx="41.1" cy="30.2" r="1.1" fill="#fff"/>
+  <path d="M25 41c3 3 9 3 12 0" stroke="#16233f" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M32 8C42 7 50 10 55 18C60 26 59 36 54 44C49 52 40 58 30 58C19 58 9 51 7 41C5 31 8 20 16 13C21 9 27 8 32 8Z" fill="none" stroke="#16233f" stroke-width="3" stroke-linejoin="round"/>
+  <g stroke-linecap="round" fill="none">
+    <path d="M58 33C59.2 32.1 58.6 30.6 59.5 29.7" stroke="#7fb2ff" stroke-width="1.8"/>
+    <path d="M45 55C46.2 56.5 45.6 57.4 46.8 57.7" stroke="#eaf3ff" stroke-width="1.8"/>
+    <path d="M19 55C17.8 56.5 18.4 57.4 16.9 57.7" stroke="#7fb2ff" stroke-width="1.8"/>
+    <path d="M6 33C4.8 32.1 5.4 30.6 4.2 29.7" stroke="#eaf3ff" stroke-width="1.8"/>
+    <path d="M19 11C17.8 9.8 18.4 8.6 16.9 8" stroke="#7fb2ff" stroke-width="1.6"/>
+    <path d="M45 11C46.2 9.8 45.6 8.6 47.1 8" stroke="#eaf3ff" stroke-width="1.6"/>
+  </g>
 </svg>
