@@ -313,6 +313,11 @@
     <string name="refresh_offline">You’re offline - showing cached data.</string>
     <string name="refresh_error">Couldn’t refresh - showing cached data.</string>
 
+    <!-- Background sync notification -->
+    <string name="sync_notification_channel_name">Sync updates</string>
+    <string name="sync_notification_channel_description">New changes found during a background sync</string>
+    <string name="sync_notification_content">New changes synced from your server</string>
+
     <!-- Crash report dialog -->
     <string name="crash_report_dialog_title">The app recovered from a crash</string>
     <string name="crash_report_dialog_description">A diagnostic report was saved from the previous run. It contains no API token.</string>

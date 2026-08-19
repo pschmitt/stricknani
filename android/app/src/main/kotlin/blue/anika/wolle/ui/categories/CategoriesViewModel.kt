@@ -10,6 +10,7 @@ import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
+import blue.anika.wolle.ui.common.RefreshTrigger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -104,11 +105,11 @@ constructor(
             )
 
     init {
-        refresh()
+        refresh(trigger = RefreshTrigger.Automatic)
     }
 
-    fun refresh() {
-        refreshController.refresh {
+    fun refresh(trigger: RefreshTrigger = RefreshTrigger.UserInitiated) {
+        refreshController.refresh(trigger = trigger) {
             val changed = categoryRepository.sync()
             initialSyncComplete.value = true
             changed

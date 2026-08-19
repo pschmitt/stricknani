@@ -592,23 +592,27 @@ list - the full round trip (password → minted token → persisted connection �
       no real delta (`CategoryRepository.sync()` always replaces the whole list; "changed" there
       is meaningless noise, not a signal). `ProjectRepository.sync()`/`YarnRepository.sync()` now
       return `Boolean` (did this pull anything) instead of `Unit`
-- [x] `POST_NOTIFICATIONS` requested once from `HomeScreen` (`RequestNotificationPermissionEffect`,
-      `ui/common/`) rather than at cold start - the prompt appears once the user has actually
-      reached the app's main shell (post-onboarding), not before they've seen any value in it
+- [x] `POST_NOTIFICATIONS` requested once from the configured app shell
+      (`RequestNotificationPermissionEffect`, `ui/common/`) rather than at cold start - the prompt
+      appears once the user has actually reached the main shell (post-onboarding), not before
+      they've seen any value in it
+- [x] Persist the permission-request decision, cover the permission/notification gates
+      deterministically, and update pre-existing periodic WorkManager requests so the notification
+      flag is not stranded behind `ExistingPeriodicWorkPolicy.KEEP`
+- [x] Treat every destination's startup refresh as automatic, including Categories, so repeated
+      navbar navigation stays silent when no data changed
 
-Status: **mostly done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol
-":app:assembleDebug" ":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean -
+Status: **mostly done** (2026-08-19) - verified via `just check rofl-13.brkn.lol`
+(`BUILD SUCCESSFUL`, unit tests and lint clean -
 including the `POST_NOTIFICATIONS`-gated `NotificationManagerCompat.notify()` call, which lint
 would otherwise flag as a missing-permission call), then `just deploy-all debug` + relaunch on
 Zenfone 10, Mi Pad 4, and Pixel 5 (`ResumedActivity`, no crash in logcat on any of the three).
 **Not verified**: an actual notification firing on-device - that needs a periodic `SyncWorker` run
 that both finds real changes and has connectivity to a real Stricknani server, none of which is
-reachable this session (same recurring gap as every sync-touching ticket since SNA-6/7). No unit
-tests added for `SyncNotifier` itself (Android `NotificationManager`/permission-check-bound, same
-"not enough isolable pure logic" reasoning as SNA-6/7/8/10/18) - the pure boolean-return change to
-`ProjectRepository.sync()`/`YarnRepository.sync()` doesn't have new pure logic worth isolating
-either (it's a one-line derivation already exercised implicitly by the repositories' existing
-behavior).
+reachable this session (same recurring gap as every sync-touching ticket since SNA-6/7). The
+deterministic policy tests cover the worker's periodic/change gate and the API-level,
+permission-requested, and app-notification-enabled cases; Android framework delivery itself still
+needs that live device/server run.
 
 ## SNA-15: Backup/restore support
 

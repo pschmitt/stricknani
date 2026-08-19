@@ -21,6 +21,7 @@ import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.ui.common.CrashReportDialog
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
 import blue.anika.wolle.ui.navigation.DeepLinkParser
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.navigation.StricknaniNavHost
@@ -75,6 +76,9 @@ class MainActivity : ComponentActivity() {
                     onDeepLinkConsumed = { pendingDeepLink = null },
                     mutationFeedback = mutationFeedback,
                 )
+                if (isConfigured) {
+                    RequestNotificationPermissionEffect(appPreferencesRepository)
+                }
                 pendingCrashReport?.let { report ->
                     CrashReportDialog(
                         report = report,

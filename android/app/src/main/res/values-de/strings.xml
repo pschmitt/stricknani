@@ -313,6 +313,11 @@
     <string name="refresh_offline">Du bist offline - zwischengespeicherte Daten werden angezeigt.</string>
     <string name="refresh_error">Aktualisierung fehlgeschlagen - zwischengespeicherte Daten werden angezeigt.</string>
 
+    <!-- Background sync notification -->
+    <string name="sync_notification_channel_name">Synchronisierungsupdates</string>
+    <string name="sync_notification_channel_description">Neue Änderungen bei einer Hintergrundsynchronisierung gefunden</string>
+    <string name="sync_notification_content">Neue Änderungen vom Server synchronisiert</string>
+
     <!-- Crash report dialog -->
     <string name="crash_report_dialog_title">Die App hat sich von einem Absturz erholt</string>
     <string name="crash_report_dialog_description">Ein Diagnosebericht wurde vom letzten Durchlauf gespeichert. Er enthält kein API-Token.</string>

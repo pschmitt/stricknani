@@ -52,7 +52,12 @@ constructor(
             return if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.failure()
         }
 
-        if (hasChanges && inputData.getBoolean(KEY_NOTIFY_ON_CHANGE, false)) {
+        if (
+            shouldNotifySyncCompletion(
+                notifyOnChange = inputData.getBoolean(KEY_NOTIFY_ON_CHANGE, false),
+                hasChanges = hasChanges,
+            )
+        ) {
             syncNotifier.notifySyncFoundChanges()
         }
         return Result.success()
@@ -74,3 +79,6 @@ constructor(
         private const val MAX_RETRY_ATTEMPTS = 3
     }
 }
+
+internal fun shouldNotifySyncCompletion(notifyOnChange: Boolean, hasChanges: Boolean): Boolean =
+    notifyOnChange && hasChanges

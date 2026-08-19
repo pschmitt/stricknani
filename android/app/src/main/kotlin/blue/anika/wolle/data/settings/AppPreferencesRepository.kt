@@ -84,6 +84,14 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_DEVELOPER_MODE] = enabled }
     }
 
+    /** SNA-14: prevents re-prompting for notification permission after the user has answered once. */
+    val notificationPermissionRequested =
+        dataStore.data.map { prefs -> prefs[KEY_NOTIFICATION_PERMISSION_REQUESTED] ?: false }
+
+    suspend fun markNotificationPermissionRequested() {
+        dataStore.edit { prefs -> prefs[KEY_NOTIFICATION_PERMISSION_REQUESTED] = true }
+    }
+
     private companion object {
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_NAVBAR_ITEMS = stringPreferencesKey("navbar_items")
@@ -91,5 +99,7 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         val KEY_BACKUP_ENABLED = booleanPreferencesKey("scheduled_backup_enabled")
         val KEY_BACKUP_FREQUENCY = stringPreferencesKey("scheduled_backup_frequency")
         val KEY_DEVELOPER_MODE = booleanPreferencesKey("developer_mode")
+        val KEY_NOTIFICATION_PERMISSION_REQUESTED =
+            booleanPreferencesKey("notification_permission_requested")
     }
 }

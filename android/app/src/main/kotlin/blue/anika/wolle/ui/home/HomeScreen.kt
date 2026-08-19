@@ -50,7 +50,6 @@ import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
-import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
 import blue.anika.wolle.ui.common.SyncIssueBanner
 import coil3.compose.AsyncImage
 
@@ -73,8 +72,6 @@ fun HomeScreen(
     val hasSyncFailures by viewModel.hasSyncFailures.collectAsStateWithLifecycle()
     val failedMutations by viewModel.failedMutations.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    RequestNotificationPermissionEffect()
 
     RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
