@@ -10,7 +10,11 @@ from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.main import app
 from stricknani.models import Base, Project, ProjectCategory, Step, User
-from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.routes.auth import (
+    get_current_user,
+    require_auth,
+    require_auth_or_api_token,
+)
 from stricknani.utils.auth import get_password_hash
 from stricknani.utils.rate_limit import reset_rate_limits
 
@@ -144,6 +148,7 @@ async def test_client(
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[require_auth] = override_auth
+    app.dependency_overrides[require_auth_or_api_token] = override_auth
     app.dependency_overrides[get_current_user] = override_auth
 
     transport = ASGITransport(app=app)

@@ -42,7 +42,11 @@ from stricknani.models import (
 from stricknani.models import (
     Yarn as YarnModel,
 )
-from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.routes.auth import (
+    get_current_user,
+    require_auth,
+    require_auth_or_api_token,
+)
 from stricknani.services.audit import (
     build_field_changes,
     create_audit_log,
@@ -463,7 +467,7 @@ async def import_pattern(
     use_ai: Annotated[bool, Form()] = False,
     project_id: Annotated[int | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
+    current_user: User = Depends(require_auth_or_api_token),
 ) -> JSONResponse:
     """Import pattern data from URL, file, or text.
 

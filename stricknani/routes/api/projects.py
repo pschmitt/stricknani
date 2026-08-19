@@ -36,6 +36,10 @@ from stricknani.services.audit import create_audit_log
 from stricknani.services.projects.attachments import store_project_attachment
 from stricknani.services.projects.categories import ensure_category
 from stricknani.services.projects.images import upload_step_image, upload_title_image
+from stricknani.services.projects.import_images import (
+    import_project_images_from_urls,
+    import_step_images_from_urls,
+)
 from stricknani.services.projects.tags import (
     deserialize_tags,
     normalize_tags,
@@ -242,14 +246,25 @@ async def create_project(
     db.add(project)
     await db.flush()
 
+    created_steps: list[Step] = []
     for step_payload in payload.steps:
-        db.add(
-            Step(
-                title=step_payload.title,
-                description=step_payload.description,
-                step_number=step_payload.step_number,
-                project_id=project.id,
-            )
+        step = Step(
+            title=step_payload.title,
+            description=step_payload.description,
+            step_number=step_payload.step_number,
+            project_id=project.id,
+        )
+        db.add(step)
+        created_steps.append(step)
+
+    await db.flush()
+    imported_images = await import_project_images_from_urls(
+        db, project, payload.image_urls
+    )
+    imported_step_images = 0
+    for step_payload, step in zip(payload.steps, created_steps, strict=True):
+        imported_step_images += await import_step_images_from_urls(
+            db, step, step_payload.image_urls
         )
 
     await create_audit_log(
@@ -263,6 +278,7 @@ async def create_project(
             "category": project.category,
             "yarn_count": len(project.yarns),
             "step_count": len(payload.steps),
+            "image_count": imported_images + imported_step_images,
         },
     )
     await db.commit()

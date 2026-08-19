@@ -112,6 +112,9 @@ class StepWriteRequest(BaseModel):
     title: str
     description: str | None = None
     step_number: int = 0
+    # URLs supplied by the project importer. They are downloaded and attached
+    # only when creating an imported project; normal edits leave this empty.
+    image_urls: list[str] = Field(default_factory=list)
 
 
 class ImageResponse(BaseModel):
@@ -182,6 +185,9 @@ class ProjectWriteRequest(BaseModel):
     is_ai_enhanced: bool = False
     yarn_ids: list[int] = Field(default_factory=list)
     steps: list[StepWriteRequest] = Field(default_factory=list)
+    # URLs supplied by the project importer. The API create route persists
+    # these as project images so Android imports retain their artwork.
+    image_urls: list[str] = Field(default_factory=list)
     # SNA-33: the `updated_at` the client last saw for this project. When set,
     # `update_project` rejects the write with 409 if the server's current value has
     # since moved on - see that route's docstring for the conflict contract.

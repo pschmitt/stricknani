@@ -3,6 +3,7 @@
 import io
 from collections.abc import AsyncGenerator
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -89,6 +90,27 @@ async def test_meta_does_not_require_auth() -> None:
     body = response.json()
     assert "version" in body
     assert "build_id" in body
+
+
+@pytest.mark.asyncio
+async def test_project_import_accepts_api_token(api_client: ClientFixture) -> None:
+    """The Android importer uses the same Bearer token as the JSON API."""
+    client, _session_factory, _user_id = api_client
+    page = MagicMock()
+    page.text = (
+        "<html><head><title>Imported scarf</title></head>"
+        "<body>Cast on 20 stitches.</body></html>"
+    )
+    page.status_code = 200
+
+    with patch("stricknani.importing.fetch.fetch_url", return_value=page):
+        response = await client.post(
+            "/projects/import",
+            data={"type": "url", "url": "https://example.com/scarf"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["link"] == "https://example.com/scarf"
 
 
 async def test_api_requires_bearer_token() -> None:

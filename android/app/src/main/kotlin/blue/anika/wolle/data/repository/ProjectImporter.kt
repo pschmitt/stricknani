@@ -36,6 +36,7 @@ private fun ProjectImportResponseDto.toPreview(sourceUrl: String): ImportedProje
                 title = step.title.orEmpty().trim().ifBlank { "Step ${index + 1}" },
                 description = step.description?.trim()?.ifBlank { null },
                 stepNumber = step.stepNumber ?: index + 1,
+                imageUrls = step.images,
             )
         }
 
@@ -54,6 +55,7 @@ private fun ProjectImportResponseDto.toPreview(sourceUrl: String): ImportedProje
                 link = link.orEmpty().trim().ifBlank { sourceUrl },
                 isAiEnhanced = isAiEnhanced,
                 steps = importedSteps,
+                imageUrls = imageUrls,
             ),
         imageUrls = imageUrls,
         aiFallback = aiFallback,
