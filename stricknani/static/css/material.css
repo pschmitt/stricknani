@@ -936,7 +936,8 @@ svg {
 	transition: opacity var(--md-motion-short);
 }
 .md3-account-summary__avatar-button:hover .md3-account-summary__avatar-overlay,
-.md3-account-summary__avatar-button:focus-visible .md3-account-summary__avatar-overlay {
+.md3-account-summary__avatar-button:focus-visible
+	.md3-account-summary__avatar-overlay {
 	opacity: 1;
 }
 .md3-account-summary__identity {
@@ -1063,7 +1064,11 @@ svg {
 }
 .md3-language-selector--public {
 	border: 1px solid var(--md-sys-color-outline-variant);
-	background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 50%, transparent);
+	background: color-mix(
+		in srgb,
+		var(--md-sys-color-surface-container-high) 50%,
+		transparent
+	);
 }
 .md3-language-selector__form {
 	min-width: 0;
@@ -2194,14 +2199,23 @@ svg {
 	align-items: center;
 	gap: 0.75rem;
 	padding: 0.625rem 0.875rem;
-	border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 20%, transparent);
+	border: 1px solid
+		color-mix(in srgb, var(--md-sys-color-primary) 20%, transparent);
 	border-radius: var(--md-sys-shape-large);
 	background: color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent);
 	color: var(--md-sys-color-primary);
 }
 .md3-yarn-selection--pending {
-	border-color: color-mix(in srgb, var(--md-sys-color-secondary) 20%, transparent);
-	background: color-mix(in srgb, var(--md-sys-color-secondary) 10%, transparent);
+	border-color: color-mix(
+		in srgb,
+		var(--md-sys-color-secondary) 20%,
+		transparent
+	);
+	background: color-mix(
+		in srgb,
+		var(--md-sys-color-secondary) 10%,
+		transparent
+	);
 	color: var(--md-sys-color-secondary);
 }
 .md3-yarn-selection__media,
