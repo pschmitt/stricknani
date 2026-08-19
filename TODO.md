@@ -98,7 +98,7 @@ Execution-oriented backlog for Stricknani.
 | T92 | P2 | done | web/ux | bug | Fix QR-code sizing so it preserves its square aspect ratio and display the generated `stricknani://` setup URL below it |
 | T93 | P3 | done | web/ux | feat | Add a subtle, accessible hover animation to the Stricknani app logo in the top-left corner |
 | T94 | P1 | todo | web/ux | bug | Fix web UI regressions: repair the search bar styling and header arrow rendering |
-| T95 | P1 | todo | web/ux | bug | Repair the import dialog regressions introduced by the Material 3 migration and visually audit shared dialogs |
+| T95 | P1 | todo | web/ux | bug | Repair shared dialog regressions introduced by the Material 3 migration, including import and create-user dialogs |
 | T96 | P1 | todo | web/ux | bug | Normalize admin user-profile icon sizing so avatars render consistently |
 
 
