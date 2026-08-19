@@ -48,8 +48,3 @@ jobs:
       trigger-screenshots: true
       verify-git-revision: true
     secrets: inherit
-    permissions:
-      contents: write
-      actions: write
-      id-token: write
-      attestations: write
