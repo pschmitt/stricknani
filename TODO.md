@@ -94,7 +94,7 @@ Execution-oriented backlog for Stricknani.
  | T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
 | T90 | P1 | done | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
-| T91 | P2 | todo | dev | bug | Make `just run` generate ephemeral runtime secrets when SECRET_KEY/CSRF_SECRET_KEY are unset, while preserving production fail-fast validation |
+| T91 | P2 | done | dev | bug | Make `just run` generate ephemeral runtime secrets when SECRET_KEY/CSRF_SECRET_KEY are unset, while preserving production fail-fast validation |
 | T92 | P2 | todo | web/ux | bug | Fix QR-code sizing so it preserves its square aspect ratio and display the generated `stricknani://` setup URL below it |
 
 
