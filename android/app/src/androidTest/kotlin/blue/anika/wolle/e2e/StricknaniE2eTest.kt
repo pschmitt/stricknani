@@ -1,5 +1,7 @@
 package blue.anika.wolle.e2e
 
+import android.Manifest
+import android.os.Build
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -10,9 +12,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import blue.anika.wolle.MainActivity
 import java.io.Closeable
 import org.junit.Rule
@@ -32,14 +32,21 @@ abstract class StricknaniE2eTest {
     protected fun connectToFixture() {
         composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
         composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
+        grantNotificationPermission()
         composeRule.onNodeWithText("Connect").performClick()
-        dismissNotificationPermissionDialog()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
     }
 
-    private fun dismissNotificationPermissionDialog() {
-        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        device.wait(Until.findObject(By.text("Allow")), 10_000)?.click()
+    private fun grantNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            InstrumentationRegistry
+                .getInstrumentation()
+                .uiAutomation
+                .executeShellCommand(
+                    "pm grant blue.anika.wolle.debug ${Manifest.permission.POST_NOTIFICATIONS}",
+                )
+                .close()
+        }
     }
 
     protected fun waitForText(text: String, timeoutMillis: Long = 30_000) {

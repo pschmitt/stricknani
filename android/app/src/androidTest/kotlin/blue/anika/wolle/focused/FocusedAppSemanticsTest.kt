@@ -1,5 +1,7 @@
 package blue.anika.wolle.focused
 
+import android.Manifest
+import android.os.Build
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -12,9 +14,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import blue.anika.wolle.MainActivity
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -176,11 +176,22 @@ class FocusedAppSemanticsTest {
             composeRule
                 .onNodeWithTag("e2e-onboarding-api-token")
                 .performTextInput(token!!)
+            grantNotificationPermission()
             composeRule.onNodeWithText("Connect").performClick()
-            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-            device.wait(Until.findObject(By.text("Allow")), 10_000)?.click()
         }
         waitForText("Home", timeoutMillis = 120_000)
+    }
+
+    private fun grantNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            InstrumentationRegistry
+                .getInstrumentation()
+                .uiAutomation
+                .executeShellCommand(
+                    "pm grant blue.anika.wolle.debug ${Manifest.permission.POST_NOTIFICATIONS}",
+                )
+                .close()
+        }
     }
 
     private fun waitForEither(first: String, second: String, timeoutMillis: Long = 30_000) {

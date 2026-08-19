@@ -1,6 +1,8 @@
 package blue.anika.wolle.screenshots
 
+import android.Manifest
 import android.graphics.Bitmap
+import android.os.Build
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -9,9 +11,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import blue.anika.wolle.MainActivity
 import java.io.File
 import org.junit.After
@@ -95,9 +95,21 @@ class StricknaniScreenshotTest {
     private fun connectToFixture() {
         composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
         composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
+        grantNotificationPermission()
         composeRule.onNodeWithText("Connect").performClick()
-        device.wait(Until.findObject(By.text("Allow")), 10_000)?.click()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
+    }
+
+    private fun grantNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            InstrumentationRegistry
+                .getInstrumentation()
+                .uiAutomation
+                .executeShellCommand(
+                    "pm grant blue.anika.wolle.debug ${Manifest.permission.POST_NOTIFICATIONS}",
+                )
+                .close()
+        }
     }
 
     private fun captureOfflineState() {
