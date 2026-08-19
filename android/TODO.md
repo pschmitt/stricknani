@@ -1478,8 +1478,9 @@ cancel behavior, and item-preserving confirmation flows.
       runbook.
 - [ ] Verify the listing and release flow in the Play Console before enabling production release.
 
-Status: in progress (2026-08-19; repository scaffolding is complete, but external Play Console
-listing, privacy URL, declarations, and service-account setup are not verified).
+Status: in progress (2026-08-19; repository scaffolding and the deployed public privacy-policy
+route are verified, but external Play Console listing, form completion, and service-account setup
+remain unverified).
 
 ## SNA-43: Normalize navbar taps to each destination's root view
 

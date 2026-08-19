@@ -38,8 +38,10 @@ Before enabling an upload, an operator must complete these external steps:
    reuses the existing `CI_KEYSTORE_BASE64`, `CI_KEYSTORE_PASSWORD`, `CI_KEY_ALIAS`, and
    `CI_KEY_PASSWORD` secrets; do not generate or replace that key.
 4. Publish the privacy policy at a stable HTTPS URL and put that URL into
-   `android/play-store/declarations.json`. The policy must describe both the Android client and
-   self-hosted server behavior; a local Markdown file is not sufficient for the Play listing.
+   `android/play-store/declarations.json`. This repository now points at
+   `https://wolle.anika.blue/privacy`, and the deployed route has been verified live. The policy
+   must describe both the Android client and self-hosted server behavior; a local Markdown file is
+   not sufficient for the Play listing.
 5. Complete Play Console's content-rating questionnaire and data-safety form, then update the
    declaration file's `status` and completion flags only after those forms are actually complete.
 6. Set the repository variable `PLAY_PUBLISH_ENABLED` to the exact value `true` only after the
@@ -77,7 +79,7 @@ known-good artifact/release in Play Console; never reuse its version code for a 
 
 ## Current blocker
 
-The repository-side scaffolding is ready, but the external Play application/listing, public privacy
-policy URL, completed content-rating/data-safety forms, and Play service-account secret are not
-verified in this worktree. Therefore `PLAY_PUBLISH_ENABLED` must remain unset and no release or
-asset upload should be attempted yet.
+The repository-side scaffolding and public privacy-policy URL are ready. The external Play
+application/listing, completed content-rating/data-safety forms, and Play service-account secret
+remain unverified. Therefore `PLAY_PUBLISH_ENABLED` must remain unset and no release or asset
+upload should be attempted yet.
