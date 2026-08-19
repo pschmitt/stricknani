@@ -96,6 +96,7 @@ Execution-oriented backlog for Stricknani.
 | T90 | P1 | done | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
 | T91 | P2 | done | dev | bug | Make `just run` generate ephemeral runtime secrets when SECRET_KEY/CSRF_SECRET_KEY are unset, while preserving production fail-fast validation |
 | T92 | P2 | done | web/ux | bug | Fix QR-code sizing so it preserves its square aspect ratio and display the generated `stricknani://` setup URL below it |
+| T93 | P3 | todo | web/ux | feat | Add a subtle, accessible hover animation to the Stricknani app logo in the top-left corner |
 
 
 ## Done
