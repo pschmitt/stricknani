@@ -8,152 +8,134 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex min-h-0 flex-1 items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 ring-1 ring-primary/20">
+<div class="md3-auth-page">
+    <div class="md3-auth-shell">
+        <header class="md3-auth-header">
+            <div class="md3-auth-brand-mark">
                 <img src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}"
-                    alt="" class="h-12 w-12" />
+                    alt="" />
             </div>
-            <h1 class="text-3xl font-black tracking-tight text-base-content">{{ _('Welcome to Stricknani') }}</h1>
-            <p class="text-base-content/60 mt-2">{{ _('Please sign in below') }}</p>
-        </div>
+            <h1 class="md3-auth-title">{{ _('Welcome to Stricknani') }}</h1>
+            <p class="md3-auth-subtitle">{{ _('Please sign in below') }}</p>
+        </header>
 
-        <div class="md3-card md3-card--elevated md3-login-card card bg-base-100 shadow-2xl border border-base-300">
-            <div class="card-body p-8">
+        <section class="md3-card md3-card--elevated md3-auth-card" aria-label="{{ _('Sign in') }}">
+            <div class="md3-auth-card__body">
                 {% if login_error %}
-                <div class="alert alert-error mb-6 shadow-sm">
-                    <span class="mdi mdi-alert-decagram text-xl"></span>
-                    <div class="text-xs">
-                        <p class="font-bold mb-1">{{ _('Login failed') }}</p>
+                <div class="md3-auth-error" role="alert" id="login-error">
+                    <span class="mdi mdi-alert-decagram md3-auth-error__icon" aria-hidden="true"></span>
+                    <div>
+                        <p class="md3-auth-error__title">{{ _('Login failed') }}</p>
                         <p>{{ _('Please check your credentials and try again.') }}</p>
                     </div>
                 </div>
                 {% endif %}
 
                 <!-- Login Form -->
-                <div id="login-form" class="space-y-6">
-                    <form action="/auth/login" method="post" class="space-y-5">
+                <div id="login-form" class="md3-auth-form-panel">
+                    <form action="/auth/login" method="post" class="md3-auth-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <div class="form-control">
-                            <label for="login-email" class="label py-1">
-                                <span class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60">{{ _('Email Address') }}</span>
+                        <div class="md3-form-field">
+                            <label for="login-email" class="md3-form-field__label">
+                                {{ _('Email Address') }}
                             </label>
-                            <div class="relative group">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-primary transition-colors">
-                                    <span class="mdi mdi-email-outline text-lg"></span>
-                                </span>
+                            <div class="md3-form-field__control">
+                                <span class="mdi mdi-email-outline md3-form-field__icon" aria-hidden="true"></span>
                                 <input type="email" id="login-email" name="email" required autocomplete="username"
                                     aria-invalid="{{ 'true' if login_error else 'false' }}"
-                                    class="md3-text-field input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-primary/20 transition-all {{ 'input-error' if login_error else '' }}"
+                                    {% if login_error %}aria-describedby="login-error"{% endif %}
+                                    class="md3-text-field md3-text-field--with-leading-icon{% if login_error %} md3-text-field--error{% endif %}"
                                     placeholder="name@example.com" value="{{ login_email|default('') }}">
                             </div>
                         </div>
 
-                        <div class="form-control">
-                            <div class="flex justify-between items-center mb-1">
-                                <label for="login-password" class="label py-0">
-                                    <span class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60">{{ _('Password') }}</span>
-                                </label>
-                            </div>
-                            <div class="relative group">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-primary transition-colors">
-                                    <span class="mdi mdi-lock-outline text-lg"></span>
-                                </span>
+                        <div class="md3-form-field">
+                            <label for="login-password" class="md3-form-field__label">{{ _('Password') }}</label>
+                            <div class="md3-form-field__control">
+                                <span class="mdi mdi-lock-outline md3-form-field__icon" aria-hidden="true"></span>
                                 <input type="password" id="login-password" name="password" required
                                     autocomplete="current-password" aria-invalid="{{ 'true' if login_error else 'false' }}"
-                                    class="md3-text-field input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-primary/20 transition-all {{ 'input-error' if login_error else '' }}"
+                                    {% if login_error %}aria-describedby="login-error"{% endif %}
+                                    class="md3-text-field md3-text-field--with-leading-icon{% if login_error %} md3-text-field--error{% endif %}"
                                     placeholder="••••••••">
                             </div>
                         </div>
 
-                        <div class="pt-2">
-                            {{ buttons.primary(_('Sign In'), type='submit', icon='mdi-login', class='w-full btn-lg font-bold shadow-lg shadow-primary/20') }}
+                        <div class="md3-auth-form__actions">
+                            {{ buttons.primary(_('Sign In'), type='submit', icon='mdi-login', class='md3-auth-submit') }}
                         </div>
                     </form>
 
                     {% if signup_enabled %}
-                    <div class="relative flex py-2 items-center">
-                        <div class="flex-grow border-t border-base-300"></div>
-                        <span class="flex-shrink mx-4 text-xs font-bold uppercase tracking-widest opacity-30">{{ _('OR') }}</span>
-                        <div class="flex-grow border-t border-base-300"></div>
+                    <div class="md3-auth-divider" role="separator">
+                        <span>{{ _('OR') }}</span>
                     </div>
 
-	                    <div class="text-center">
-	                        <button type="button" class="md3-button md3-button--text btn btn-ghost btn-block gap-2 opacity-70 hover:opacity-100"
-	                            data-call="toggleAuthForms" data-call-args='["signup-form","login-form"]'>
-	                            <span class="mdi mdi-account-plus"></span>
-	                            {{ _("Create an account") }}
-	                        </button>
-	                    </div>
+                    <div class="md3-auth-switch">
+                        <button type="button" class="md3-button md3-button--text md3-auth-switch__button"
+                            data-call="toggleAuthForms" data-call-args='["signup-form","login-form"]'>
+                            <span class="mdi mdi-account-plus" aria-hidden="true"></span>
+                            {{ _("Create an account") }}
+                        </button>
+                    </div>
                     {% endif %}
                 </div>
 
                 {% if signup_enabled %}
                 <!-- Signup Form -->
-                <div id="signup-form" class="space-y-6 hidden">
-                    <div class="text-center mb-2">
-                        <h3 class="text-xl font-bold">{{ _('Create Account') }}</h3>
-                        <p class="text-xs opacity-60 mt-1">{{ _('Join our knitting community') }}</p>
+                <div id="signup-form" class="md3-auth-form-panel hidden">
+                    <div class="md3-auth-form-heading">
+                        <h2>{{ _('Create Account') }}</h2>
+                        <p>{{ _('Join our knitting community') }}</p>
                     </div>
 
-                    <form action="/auth/signup" method="post" class="space-y-5">
+                    <form action="/auth/signup" method="post" class="md3-auth-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <div class="form-control">
-                            <label for="signup-email" class="label py-1">
-                                <span class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60">{{ _('Email Address') }}</span>
+                        <div class="md3-form-field">
+                            <label for="signup-email" class="md3-form-field__label">
+                                {{ _('Email Address') }}
                             </label>
-                            <div class="relative group">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-success transition-colors">
-                                    <span class="mdi mdi-email-outline text-lg"></span>
-                                </span>
-                                <input type="email" id="signup-email" name="email" required class="md3-text-field input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-success/20 transition-all"
+                            <div class="md3-form-field__control">
+                                <span class="mdi mdi-email-outline md3-form-field__icon" aria-hidden="true"></span>
+                                <input type="email" id="signup-email" name="email" required class="md3-text-field md3-text-field--with-leading-icon"
                                     placeholder="name@example.com">
                             </div>
                         </div>
 
-                        <div class="form-control">
-                            <label for="signup-password" class="label py-1">
-                                <span class="label-text font-bold uppercase tracking-wider text-[10px] opacity-60">{{ _('Password') }}</span>
-                            </label>
-                            <div class="relative group">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-base-content/40 group-focus-within:text-success transition-colors">
-                                    <span class="mdi mdi-lock-outline text-lg"></span>
-                                </span>
+                        <div class="md3-form-field">
+                            <label for="signup-password" class="md3-form-field__label">{{ _('Password') }}</label>
+                            <div class="md3-form-field__control">
+                                <span class="mdi mdi-lock-outline md3-form-field__icon" aria-hidden="true"></span>
                                 <input type="password" id="signup-password" name="password" required minlength="8"
-                                    class="md3-text-field input bg-base-200 border-none w-full pl-10 focus:ring-2 focus:ring-success/20 transition-all" placeholder="••••••••">
+                                    class="md3-text-field md3-text-field--with-leading-icon" placeholder="••••••••">
                             </div>
-                            <label class="label py-1">
-                                <span class="label-text-alt opacity-50">{{ _('At least 8 characters') }}</span>
-                            </label>
+                            <p class="md3-form-field__hint">{{ _('At least 8 characters') }}</p>
                         </div>
 
-                        <div class="pt-2">
-                            {{ buttons.success(_('Create Account'), type='submit', icon='mdi-account-check', class='w-full btn-lg font-bold shadow-lg shadow-success/20') }}
+                        <div class="md3-auth-form__actions">
+                            {{ buttons.primary(_('Create Account'), type='submit', icon='mdi-account-check', class='md3-auth-submit md3-auth-submit--success') }}
                         </div>
                     </form>
 
-                    <div class="relative flex py-2 items-center">
-                        <div class="flex-grow border-t border-base-300"></div>
-                        <span class="flex-shrink mx-4 text-xs font-bold uppercase tracking-widest opacity-30">{{ _('OR') }}</span>
-                        <div class="flex-grow border-t border-base-300"></div>
+                    <div class="md3-auth-divider" role="separator">
+                        <span>{{ _('OR') }}</span>
                     </div>
 
-	                    <div class="text-center">
-	                        <button type="button" class="md3-button md3-button--text btn btn-ghost btn-block gap-2 opacity-70 hover:opacity-100"
-	                            data-call="toggleAuthForms" data-call-args='["login-form","signup-form"]'>
-	                            <span class="mdi mdi-login"></span>
-	                            {{ _('Already have an account? Sign in') }}
-	                        </button>
-	                    </div>
+                    <div class="md3-auth-switch">
+                        <button type="button" class="md3-button md3-button--text md3-auth-switch__button"
+                            data-call="toggleAuthForms" data-call-args='["login-form","signup-form"]'>
+                            <span class="mdi mdi-login" aria-hidden="true"></span>
+                            {{ _('Already have an account? Sign in') }}
+                        </button>
+                    </div>
                 </div>
                 {% endif %}
             </div>
-        </div>
+        </section>
 
-        <p class="mt-4 text-center text-xs text-base-content/60">
+        <p class="md3-auth-privacy">
             {{ _('Learn how Stricknani handles your data in the') }}
-            <a href="/privacy" class="link link-primary">{{ _('Privacy Policy') }}</a>.
+            <a href="/privacy">{{ _('Privacy Policy') }}</a>.
         </p>
     </div>
 </div>
