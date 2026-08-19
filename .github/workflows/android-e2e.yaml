@@ -94,7 +94,7 @@ jobs:
             adb install -r android/app/build/outputs/apk/debug/app-x86_64-debug.apk
             adb shell pm clear blue.anika.wolle.debug || true
             adb shell pm grant blue.anika.wolle.debug android.permission.POST_NOTIFICATIONS || true
-            if [[ "$E2E_LANE" == "focused" ]]
+            if [ "$E2E_LANE" = "focused" ]
             then
               for test_class in \
                 blue.anika.wolle.focused.FocusedAppSemanticsTest \
@@ -107,7 +107,7 @@ jobs:
               done
             else
               test_class="blue.anika.wolle.e2e.StricknaniSmokeTest"
-              if [[ "$E2E_LANE" == "full" ]]
+              if [ "$E2E_LANE" = "full" ]
               then
                 test_class="blue.anika.wolle.e2e.StricknaniFullE2eTest"
               fi
