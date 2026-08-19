@@ -7,7 +7,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
@@ -83,7 +83,7 @@ abstract class StricknaniE2eTest {
         waitForText("Search projects")
         composeRule
             .onNodeWithTag("e2e-projects-list")
-            .performScrollToNode(hasText("Heirloom Baby Blanket"))
+            .performScrollToNode(hasTextMatcher("Heirloom Baby Blanket"))
         waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
     }
 
