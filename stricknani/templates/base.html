@@ -126,7 +126,7 @@
     {# Default navbar - pages can override this block #}
     {% endblock %}
 
-    <main id="main-content" class="flex-grow w-full" {% block main_attrs %}{% endblock %}>
+    <main id="main-content" class="flex min-h-0 flex-grow w-full flex-col" {% block main_attrs %}{% endblock %}>
         {% block content %}{% endblock %}
     </main>
 

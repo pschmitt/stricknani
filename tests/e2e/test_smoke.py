@@ -44,6 +44,10 @@ def test_core_user_journey() -> None:
         try:
             page.goto(f"{BASE_URL}/login")
             page.locator("#login-form").wait_for()
+            page.locator("footer").wait_for()
+            assert page.evaluate(
+                "document.documentElement.scrollHeight <= window.innerHeight"
+            )
             page.locator("#login-email").fill(EMAIL)
             page.locator("#login-password").fill(PASSWORD)
             page.locator('form[action="/auth/login"] button[type="submit"]').click()
@@ -67,8 +71,8 @@ def test_core_user_journey() -> None:
             page.goto(f"{BASE_URL}/yarn")
             page.locator('a[href="/yarn/new"]').first.click()
             page.locator("#yarnForm #name").fill("CI E2E Yarn")
-            page.locator('#yarnForm input[name="brand"]').first.fill("CI Brand")
-            page.locator('#yarnForm input[name="colorway"]').first.fill("CI Blue")
+            page.locator('#yarnForm input[name="brand"]').last.fill("CI Brand")
+            page.locator('#yarnForm input[name="colorway"]').last.fill("CI Blue")
             page.locator('button[form="yarnForm"][type="submit"]').first.click()
             wait_for_path(page, r"/yarn/\d+\?toast=yarn_created")
             page.get_by_text("CI E2E Yarn", exact=True).first.wait_for()
