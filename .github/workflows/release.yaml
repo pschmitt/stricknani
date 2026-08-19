@@ -1,14 +1,28 @@
 name: Release
 
-# The shared release workflow owns signing, Gradle builds, APK verification, checksums, release
-# publication, and the tagged-release screenshot dispatch. This caller only supplies Stricknani's
-# triggers and monorepo-specific paths.
+# Hand-written rather than delegating to pschmitt/android-app-ci's reusable release.yaml: that
+# workflow assumes the Gradle project sits at the repo root, which isn't true here (it's at
+# android/, alongside the unrelated Python web app at the repo root) - same reason as
+# android-build.yaml/android-lint.yaml (see their header comments). This mirrors that reusable
+# workflow's logic closely (SNA-12), just with every Gradle/path reference scoped under android/.
+#
+# One pipeline, two release flavors depending on what got pushed:
+# - a push to main moves the rolling "latest" prerelease tag and republishes it (debug + release
+#   APKs, always prerelease, never the repo's "Latest release" badge)
+# - a push of a semantic-version tag ("vX.Y.Z" or "X.Y.Z") publishes a real, permanent release at
+#   that tag (release APKs only, becomes the repo's "Latest release")
+#
+# Needs these repo secrets to produce a *signed* release: CI_KEYSTORE_BASE64, CI_KEYSTORE_PASSWORD,
+# CI_KEY_ALIAS, CI_KEY_PASSWORD - see the "Stricknani Android CI Signing Keystore" rbw entry
+# (android/justfile's `build variant=release` uses the same keystore for local release builds).
 
 on:
   push:
-    # Deliberately no `paths:` filter here: GitHub combines `paths` with `tags` via AND, and path
-    # filtering is unreliable for a brand-new tag ref. A skipped real release tag is worse than an
-    # occasional backend-triggered rolling build.
+    # Deliberately no `paths:` filter here, unlike android-build.yaml/android-lint.yaml: GitHub
+    # combines `paths` with `tags` via AND, and path-diff filtering is unreliable for a brand-new
+    # tag ref (no meaningful "previous" commit to diff against) - a silently-skipped release on a
+    # real version tag push would be a much worse bug than an occasional unneeded "latest" rebuild
+    # triggered by a backend-only commit to main.
     branches:
       - main
     tags:
@@ -20,31 +34,281 @@ concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+  actions: write
+  id-token: write
+  attestations: write
+
 jobs:
   release:
-    uses: pschmitt/android-app-ci/.github/workflows/release.yaml@main
-    with:
-      app-display-name: Stricknani
-      application-id: blue.anika.wolle
-      artifact-label: stricknani
-      project-directory: android
-      keystore-file-name: stricknani-ci.jks
-      gradle-debug-task: :app:assembleDebug
-      gradle-release-task: :app:assembleRelease
-      unit-test-task: :app:testDebugUnitTest
-      release-log-path: android
-      release-apk-paths: |
-        app/build/outputs/apk/release/app-arm64-v8a-release.apk
-        app/build/outputs/apk/release/app-armeabi-v7a-release.apk
-        app/build/outputs/apk/release/app-x86_64-release.apk
-        app/build/outputs/apk/release/app-x86-release.apk
-      debug-apk-paths: |
-        app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
-        app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk
-        app/build/outputs/apk/debug/app-x86_64-debug.apk
-        app/build/outputs/apk/debug/app-x86-debug.apk
-      compute-version-name: true
-      screenshots-workflow: android-screenshots.yaml
-      trigger-screenshots: true
-      verify-git-revision: true
-    secrets: inherit
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+
+      - name: Decode CI signing keystore
+        id: ci_keystore
+        uses: pschmitt/android-app-ci/.github/actions/decode-ci-keystore@main
+        with:
+          keystore-base64: ${{ secrets.CI_KEYSTORE_BASE64 }}
+          file-name: stricknani-ci.jks
+
+      - name: Determine release parameters
+        # A pushed semantic-version tag gets its own permanent release; anything else (a main push,
+        # or a manual dispatch off main) republishes the rolling "latest" prerelease instead.
+        id: params
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            {
+              echo "tag_name=${{ github.ref_name }}"
+              echo "release_name=${{ github.ref_name }}"
+              echo "include_debug=false"
+              echo "move_tag=false"
+              echo "vacuum_stale_assets=false"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "tag_name=latest"
+              echo "release_name=Latest build"
+              echo "include_debug=true"
+              echo "move_tag=true"
+              echo "vacuum_stale_assets=true"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute git revision
+        id: git_revision
+        run: echo "value=$(git describe --always --abbrev=12 --dirty --exclude=latest)" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve Android version name
+        id: version
+        env:
+          REVISION: ${{ steps.git_revision.outputs.value }}
+        run: |
+          if [[ "$REVISION" =~ ^v?([0-9]+\.[0-9]+\.[0-9]+)([-+].*)?$ ]]; then
+            version_name="${BASH_REMATCH[1]}"
+          else
+            version_name="0.1.0"
+          fi
+          echo "name=$version_name" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release summary
+        if: steps.params.outputs.tag_name != 'latest'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          previous_tag=""
+          while IFS= read -r candidate
+          do
+            if [[ "$candidate" != latest && "$candidate" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]
+            then
+              previous_tag="$candidate"
+              break
+            fi
+          done < <(git tag --merged "${GITHUB_SHA}^" --sort=-version:refname)
+          if [[ -n "$previous_tag" ]]
+          then
+            release_range="$previous_tag..$GITHUB_SHA"
+          else
+            release_range="$GITHUB_SHA"
+          fi
+
+          generated_notes="$(mktemp)"
+          trap 'rm -f "$generated_notes"' EXIT
+          api_args=(
+            --method POST
+            "repos/$GITHUB_REPOSITORY/releases/generate-notes"
+            -f "tag_name=${{ steps.params.outputs.tag_name }}"
+            -f "target_commitish=$GITHUB_SHA"
+          )
+          if [[ -n "$previous_tag" ]]
+          then
+            api_args+=(-f "previous_tag_name=$previous_tag")
+          fi
+
+          if ! gh api "${api_args[@]}" --jq '.body' > "$generated_notes"
+          then
+            : > "$generated_notes"
+          fi
+
+          {
+            echo "# Stricknani ${{ steps.params.outputs.release_name }}"
+            echo
+            if [[ -n "$previous_tag" ]]
+            then
+              echo "Changes since [$previous_tag](https://github.com/$GITHUB_REPOSITORY/releases/tag/$previous_tag):"
+            else
+              echo "Changes included in this release:"
+            fi
+            echo
+            echo "## Summary"
+            echo
+            git log --no-merges --format='- %s (%h)' "$release_range" -- android
+            echo
+            if [[ -s "$generated_notes" ]]
+            then
+              echo "## GitHub details"
+              echo
+              cat "$generated_notes"
+              echo
+            fi
+            echo "## Installation"
+            echo
+            echo "Signed with the same CI key as every other build here, so upgrades work cleanly over"
+            echo "an existing \`blue.anika.wolle\` install."
+            echo
+            printf '%s\n' "\`SHA256SUMS\` covers every APK. Each APK embeds commit \`$GITHUB_SHA\`, visible in"
+            echo "Settings > About."
+          } > release-notes.md
+
+      - name: Run unit tests
+        working-directory: android
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Build APKs
+        # CI_KEYSTORE_PATH etc. are only exported when signing is enabled: build.gradle.kts's
+        # signingConfig guards on `System.getenv("CI_KEYSTORE_PATH")?.let { ... }`, which only skips
+        # a null env var - an empty string still trips `file("")` inside Gradle.
+        working-directory: android
+        env:
+          GIT_REVISION: ${{ steps.git_revision.outputs.value }}
+          CI_KEYSTORE_PATH: ${{ steps.ci_keystore.outputs.path }}
+          CI_KEYSTORE_PASSWORD: ${{ secrets.CI_KEYSTORE_PASSWORD }}
+          CI_KEY_ALIAS: ${{ secrets.CI_KEY_ALIAS }}
+          CI_KEY_PASSWORD: ${{ secrets.CI_KEY_PASSWORD }}
+        run: |
+          ./gradlew \
+            ${{ steps.params.outputs.include_debug == 'true' && ':app:assembleDebug' || '' }} \
+            :app:assembleRelease \
+            -PversionName=${{ steps.version.outputs.name }} \
+            --stacktrace --build-cache
+
+      - name: Verify embedded Android version name
+        env:
+          EXPECTED_VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          aapt2_path="$(ls -1d "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -n1)"
+          while IFS= read -r apk; do
+            [ -n "$apk" ] || continue
+            actual_version="$($aapt2_path dump badging "$apk" | sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p")"
+            if [[ "$actual_version" != "$EXPECTED_VERSION" ]]; then
+              echo "::error::$apk: expected Android version $EXPECTED_VERSION, got $actual_version" >&2
+              exit 1
+            fi
+          done <<< "$(printf 'android/app/build/outputs/apk/release/app-arm64-v8a-release.apk\nandroid/app/build/outputs/apk/release/app-armeabi-v7a-release.apk\nandroid/app/build/outputs/apk/release/app-x86_64-release.apk\nandroid/app/build/outputs/apk/release/app-x86-release.apk')"
+
+      - name: Verify embedded git revision
+        # Confirms GIT_REVISION actually made it into every release artifact instead of silently
+        # falling back to "unknown".
+        env:
+          REVISION: ${{ steps.git_revision.outputs.value }}
+        run: |
+          while IFS= read -r apk; do
+            [ -n "$apk" ] || continue
+            if ! unzip -p "$apk" 'classes*.dex' | strings | grep -Fx "$REVISION" >/dev/null; then
+              echo "::error::$apk does not contain expected revision: $REVISION" >&2
+              exit 1
+            fi
+          done <<< "$(printf 'android/app/build/outputs/apk/release/app-arm64-v8a-release.apk\nandroid/app/build/outputs/apk/release/app-armeabi-v7a-release.apk\nandroid/app/build/outputs/apk/release/app-x86_64-release.apk\nandroid/app/build/outputs/apk/release/app-x86-release.apk')"
+
+      - name: Collect and rename APKs
+        id: apks
+        run: |
+          label="stricknani-${{ steps.params.outputs.tag_name }}"
+          dir="/tmp/$label"
+          mkdir -p "$dir"
+
+          apks=(
+            android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
+            android/app/build/outputs/apk/release/app-armeabi-v7a-release.apk
+            android/app/build/outputs/apk/release/app-x86_64-release.apk
+            android/app/build/outputs/apk/release/app-x86-release.apk
+          )
+          if [ "${{ steps.params.outputs.include_debug }}" = "true" ]; then
+            apks+=(
+              android/app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
+              android/app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk
+              android/app/build/outputs/apk/debug/app-x86_64-debug.apk
+              android/app/build/outputs/apk/debug/app-x86-debug.apk
+            )
+          fi
+
+          for apk in "${apks[@]}"; do
+            cp "$apk" "$dir/$label-$(basename "$apk")"
+          done
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
+      - name: Generate checksums
+        working-directory: ${{ steps.apks.outputs.dir }}
+        run: sha256sum -- *.apk > SHA256SUMS
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-checksums: ${{ steps.apks.outputs.dir }}/SHA256SUMS
+
+      - name: Move tag
+        if: steps.params.outputs.move_tag == 'true'
+        run: |
+          git tag -f ${{ steps.params.outputs.tag_name }}
+          git push origin ${{ steps.params.outputs.tag_name }} --force
+
+      - name: Record build time
+        if: steps.params.outputs.tag_name == 'latest'
+        id: date
+        run: echo "date=$(date -u +'%Y-%m-%d %H:%M UTC')" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release (latest)
+        if: steps.params.outputs.tag_name == 'latest'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: latest
+          name: "Latest build"
+          body: |
+            Automated build of the latest main (${{ github.sha }}), built ${{ steps.date.outputs.date }}. Not a stable release.
+
+            Two variants are provided, both signed with the same CI key so upgrades between them work:
+            - `*-debug.apk` — debuggable, uses the `blue.anika.wolle.debug` applicationId so it installs side by side with a release install for testing.
+            - `*-release.apk` — minified/optimized like a real release build, uses the same `blue.anika.wolle` applicationId as every tagged release, so it upgrades cleanly over (or is upgraded by) any of them.
+
+            `SHA256SUMS` covers every APK above. Each APK also embeds this exact commit
+            (`${{ github.sha }}`) as `BuildConfig.GIT_REVISION`, checkable via Settings in the app.
+          files: ${{ steps.apks.outputs.dir }}/*
+          prerelease: true
+          make_latest: false
+
+      - name: Publish release (tag)
+        if: steps.params.outputs.tag_name != 'latest'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.params.outputs.tag_name }}
+          name: ${{ steps.params.outputs.release_name }}
+          body_path: release-notes.md
+          files: ${{ steps.apks.outputs.dir }}/*
+          prerelease: false
+          make_latest: true
+
+      - name: Vacuum stale release assets
+        if: steps.params.outputs.vacuum_stale_assets == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mapfile -t expected < <(basename -a "${{ steps.apks.outputs.dir }}"/*)
+          gh release view ${{ steps.params.outputs.tag_name }} --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' |
+            while IFS= read -r name; do
+              keep=0
+              for f in "${expected[@]}"; do
+                [ "$name" = "$f" ] && keep=1 && break
+              done
+              if [ "$keep" -eq 0 ]; then
+                echo "Deleting stale asset: $name"
+                gh release delete-asset ${{ steps.params.outputs.tag_name }} "$name" --repo "$GITHUB_REPOSITORY" -y
+              fi
+            done
