@@ -1578,6 +1578,27 @@ Status: not started (2026-08-19).
 
 ## SNA-49: Fix Stitch sample image and HTML entity rendering
 
+## SNA-50: Add an Android categories view
+
+- [ ] Add a categories destination reachable from the app's navigation, showing the user's
+      categories with loading, empty, offline, and error states.
+- [ ] Load categories through the existing offline-first repository/sync flow and keep the view
+      consistent with the project and yarn list screens.
+- [ ] Add focused Compose/navigation coverage for the destination and its states.
+
+Status: not started.
+
+## SNA-51: Import projects from Android
+
+- [ ] Add an explicit project-import flow in the Android app, including a discoverable entry point
+      and progress/success/error feedback.
+- [ ] Reuse the backend's supported project import behavior and preserve offline-first semantics
+      for the resulting project data and images where applicable.
+- [ ] Add confirmation and failure handling so a partially completed import is not silently lost.
+- [ ] Add focused tests for starting, completing, cancelling, and failing an import.
+
+Status: not started.
+
 - [ ] Reproduce the Stitch sample rendering issue against project 3 on `wolle.anika.blue`, including
       missing images and literal `&nbsp;` text.
 - [ ] Normalize or sanitize the sample's HTML/Markdown before rendering so entities display as
