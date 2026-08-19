@@ -80,7 +80,157 @@ async def test_sync_projects_initial_full_sync(api_client: ClientFixture) -> Non
     assert len(body["updated"]) == 2
     assert body["deleted_ids"] == []
     assert body["full_resync_required"] is False
+    assert body["has_more"] is False
+    assert body["next_cursor"] is None
     assert "server_time" in body
+
+
+async def test_sync_projects_paginates_with_an_opaque_cursor(
+    api_client: ClientFixture,
+) -> None:
+    client, _session_factory, _user_id = api_client
+
+    project_ids = []
+    for name in ("Project A", "Project B", "Project C", "Project D", "Project E"):
+        response = await client.post("/api/v1/projects", json={"name": name})
+        project_ids.append(response.json()["id"])
+
+    seen_ids: list[int] = []
+    cursor: str | None = None
+    pages = 0
+    snapshot: str | None = None
+    while True:
+        params: dict[str, str | int] = {"limit": 2}
+        if cursor is not None:
+            params["cursor"] = cursor
+        response = await client.get("/api/v1/sync/projects", params=params)
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["updated"]) + len(body["deleted_ids"]) <= 2
+        if snapshot is None:
+            snapshot = body["server_time"]
+        else:
+            assert body["server_time"] == snapshot
+        seen_ids.extend(project["id"] for project in body["updated"])
+        pages += 1
+        if not body["has_more"]:
+            assert body["next_cursor"] is None
+            break
+        assert body["next_cursor"]
+        cursor = body["next_cursor"]
+        assert pages < 10
+
+    assert pages == 3
+    assert set(seen_ids) == set(project_ids)
+    assert len(seen_ids) == len(set(seen_ids))
+
+
+async def test_sync_projects_pagination_merges_updates_and_deletions(
+    api_client: ClientFixture,
+) -> None:
+    client, _session_factory, _user_id = api_client
+
+    old_response = await client.post("/api/v1/projects", json={"name": "Old Project"})
+    deleted_id = old_response.json()["id"]
+    baseline = (await client.get("/api/v1/sync/projects")).json()["server_time"]
+
+    updated_ids = []
+    for name in ("New Project A", "New Project B", "New Project C"):
+        response = await client.post("/api/v1/projects", json={"name": name})
+        updated_ids.append(response.json()["id"])
+    await client.delete(f"/api/v1/projects/{deleted_id}")
+
+    seen_updated: list[int] = []
+    seen_deleted: list[int] = []
+    cursor: str | None = None
+    snapshot: str | None = None
+    while True:
+        params: dict[str, str | int] = {"since": baseline, "limit": 2}
+        if cursor is not None:
+            params = {"cursor": cursor, "limit": 2}
+        body = (await client.get("/api/v1/sync/projects", params=params)).json()
+        assert len(body["updated"]) + len(body["deleted_ids"]) <= 2
+        if snapshot is None:
+            snapshot = body["server_time"]
+        else:
+            assert body["server_time"] == snapshot
+        seen_updated.extend(project["id"] for project in body["updated"])
+        seen_deleted.extend(body["deleted_ids"])
+        if not body["has_more"]:
+            break
+        cursor = body["next_cursor"]
+
+    assert set(seen_updated) == set(updated_ids)
+    assert seen_deleted == [deleted_id]
+    assert len(seen_updated) == len(set(seen_updated))
+    assert len(seen_deleted) == len(set(seen_deleted))
+
+
+async def test_sync_yarns_paginates_with_a_cursor(api_client: ClientFixture) -> None:
+    client, _session_factory, _user_id = api_client
+
+    yarn_ids = []
+    for name in ("Yarn A", "Yarn B", "Yarn C"):
+        response = await client.post("/api/v1/yarns", json={"name": name})
+        yarn_ids.append(response.json()["id"])
+
+    first = (await client.get("/api/v1/sync/yarns", params={"limit": 1})).json()
+    assert len(first["updated"]) == 1
+    assert first["deleted_ids"] == []
+    assert first["has_more"] is True
+
+    second = (
+        await client.get("/api/v1/sync/yarns", params={"cursor": first["next_cursor"]})
+    ).json()
+    third = (
+        await client.get("/api/v1/sync/yarns", params={"cursor": second["next_cursor"]})
+    ).json()
+    assert second["has_more"] is True
+    assert third["has_more"] is False
+    assert third["next_cursor"] is None
+    seen_ids = [
+        first["updated"][0]["id"],
+        second["updated"][0]["id"],
+        third["updated"][0]["id"],
+    ]
+    assert set(seen_ids) == set(yarn_ids)
+    assert len(seen_ids) == len(set(seen_ids))
+
+
+async def test_sync_cursor_is_bound_to_endpoint_and_cannot_mix_with_since(
+    api_client: ClientFixture,
+) -> None:
+    client, _session_factory, _user_id = api_client
+
+    await client.post("/api/v1/projects", json={"name": "Project A"})
+    await client.post("/api/v1/projects", json={"name": "Project B"})
+    first = (await client.get("/api/v1/sync/projects", params={"limit": 1})).json()
+    cursor = first["next_cursor"]
+    assert cursor
+
+    mixed = await client.get(
+        "/api/v1/sync/projects",
+        params={"cursor": cursor, "since": first["server_time"]},
+    )
+    assert mixed.status_code == 400
+
+    wrong_endpoint = await client.get("/api/v1/sync/yarns", params={"cursor": cursor})
+    assert wrong_endpoint.status_code == 400
+
+    malformed = await client.get(
+        "/api/v1/sync/projects", params={"cursor": "not-a-cursor"}
+    )
+    assert malformed.status_code == 400
+
+
+async def test_sync_limit_is_bounded(api_client: ClientFixture) -> None:
+    client, _session_factory, _user_id = api_client
+
+    too_large = await client.get("/api/v1/sync/projects", params={"limit": 51})
+    assert too_large.status_code == 422
+
+    zero = await client.get("/api/v1/sync/projects", params={"limit": 0})
+    assert zero.status_code == 422
 
 
 async def test_sync_projects_delta_only_returns_recently_updated(

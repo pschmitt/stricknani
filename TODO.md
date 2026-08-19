@@ -80,7 +80,7 @@ Execution-oriented backlog for Stricknani.
 | T74 | P1 | done | api | feat | Add `ApiToken` model + `/user/api-tokens` settings UI, `require_api_token` Bearer-auth dependency, and CSRF exemption for Bearer requests (backend foundation for the Android app; mirrors `android/TODO.md` SNA-1) |
 | T75 | P1 | done | api | feat | Add versioned JSON API (`/api/v1/`): projects/yarns/categories CRUD, favorites, image/attachment upload, `GET /api/v1/meta` (backend foundation for the Android app; mirrors `android/TODO.md` SNA-2) |
 | T76 | P1 | done | api | feat | Add `require_auth_or_api_token` dependency so `/media` serving accepts either the session cookie or a Bearer API token (backend foundation for the Android app; mirrors `android/TODO.md` SNA-4) |
-| T77 | P1 | done | api | feat | Add delta-sync endpoints (`/api/v1/sync/{projects,yarns,categories}`) sourcing deletions from `AuditLog` (backend foundation for the Android app; mirrors `android/TODO.md` SNA-3) |
+| T77 | P1 | done | api | feat | Add delta-sync endpoints (`/api/v1/sync/{projects,yarns,categories}`) sourcing deletions from `AuditLog`, with opt-in bounded pagination (`limit`/opaque `cursor`) for projects and yarns (backend foundation for the Android app; mirrors `android/TODO.md` SNA-3) |
 | T78 | P1 | done | test/ci | feat | Add disposable browser E2E tests for critical Stricknani user journeys, following the NetBox/Syncwich CI pattern |
 | T79 | P2 | done | ci | feat | Capture named Stricknani browser screenshots in CI E2E runs and upload them as reviewable artifacts, following the NetBox/Syncwich screenshot pattern |
 | T80 | P1 | done | android/test/ci | feat | Add disposable Android instrumentation E2E tests against a seeded Stricknani fixture, with PR smoke and manual full journeys |

@@ -418,6 +418,21 @@ stricknani/
 
 - `POST /gauge/calculate` - Calculate adjusted stitches and rows
 
+### Android JSON API delta sync
+
+- `GET /api/v1/sync/projects` and `GET /api/v1/sync/yarns` accept the existing
+  `since=<iso8601>` cursor and return updated full-detail entities plus
+  deletion tombstones in `deleted_ids`.
+- For large initial or long-offline syncs, clients may add `limit=1..50`.
+  The response then contains at most that many combined updated entities and
+  deletion ids, with `has_more` and an opaque `next_cursor` when more data is
+  available. Send that value as `cursor` for the next page; do not send
+  `since` alongside it. The cursor keeps a fixed server snapshot and is bound
+  to the entity type and authenticated user.
+- Omitting `limit` preserves the original complete-response behavior for
+  clients that do not yet implement pagination. Categories remain a small
+  full-list sync because they have no audited `updated_at`/deletion feed.
+
 ## Usage
 
 ### Development

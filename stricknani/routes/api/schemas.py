@@ -220,21 +220,47 @@ class ProjectPage(BaseModel):
 
 
 class ProjectSyncResponse(BaseModel):
-    """Delta-sync result for projects (see `routes/api/sync.py`)."""
+    """Delta-sync result for projects (see `routes/api/sync.py`).
+
+    ``has_more`` and ``next_cursor`` are optional additions for clients that
+    opt into bounded sync pages.  Their defaults preserve the original
+    response shape for clients that still send only ``since``.
+    """
 
     updated: list[ProjectResponse]
     deleted_ids: list[int]
     server_time: datetime
     full_resync_required: bool = False
+    has_more: bool = Field(
+        default=False,
+        description="Whether another bounded page is available.",
+    )
+    next_cursor: str | None = Field(
+        default=None,
+        description="Opaque cursor for the next bounded page, if available.",
+    )
 
 
 class YarnSyncResponse(BaseModel):
-    """Delta-sync result for yarns (see `routes/api/sync.py`)."""
+    """Delta-sync result for yarns (see `routes/api/sync.py`).
+
+    ``has_more`` and ``next_cursor`` are optional additions for clients that
+    opt into bounded sync pages.  Their defaults preserve the original
+    response shape for clients that still send only ``since``.
+    """
 
     updated: list[YarnResponse]
     deleted_ids: list[int]
     server_time: datetime
     full_resync_required: bool = False
+    has_more: bool = Field(
+        default=False,
+        description="Whether another bounded page is available.",
+    )
+    next_cursor: str | None = Field(
+        default=None,
+        description="Opaque cursor for the next bounded page, if available.",
+    )
 
 
 class CategorySyncResponse(BaseModel):
