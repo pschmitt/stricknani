@@ -27,6 +27,51 @@ def wait_for_path(page: Page, pattern: str) -> None:
     page.wait_for_url(re.compile(rf"{re.escape(BASE_URL)}{pattern}"))
 
 
+def assert_material_view(page: Page, route_name: str) -> None:
+    """Catch the legacy utility classes that the Material 3 migration replaced."""
+
+    page.locator("#main-content").wait_for()
+    assert page.locator('link[href*="/static/css/material.css"]').count() == 1, (
+        route_name
+    )
+    assert page.locator('#main-content [class~="btn"]').count() == 0, route_name
+    assert page.locator('#main-content [class~="badge"]').count() == 0, route_name
+    assert page.locator('#main-content [class~="collapse"]').count() == 0, route_name
+
+
+def exercise_view_matrix(page: Page, project_id: int, yarn_id: int) -> None:
+    """Render every server-backed HTML view in desktop and mobile layouts."""
+
+    routes = {
+        "home": "/",
+        "projects": "/projects",
+        "project-categories": "/projects/categories",
+        "project-new": "/projects/new",
+        "project-detail": f"/projects/{project_id}",
+        "project-edit": f"/projects/{project_id}/edit",
+        "yarns": "/yarn",
+        "yarn-new": "/yarn/new",
+        "yarn-detail": f"/yarn/{yarn_id}",
+        "yarn-edit": f"/yarn/{yarn_id}/edit",
+        "gauge": "/gauge/",
+        "api-tokens": "/user/api-tokens",
+        "admin-users": "/admin/users",
+        "privacy": "/privacy",
+        "offline": "/offline",
+    }
+
+    for viewport_name, width, height in (
+        ("desktop", 1440, 1000),
+        ("mobile", 390, 844),
+    ):
+        page.set_viewport_size({"width": width, "height": height})
+        for route_name, route in routes.items():
+            response = page.goto(f"{BASE_URL}{route}")
+            assert response is not None and response.status < 400, route
+            assert_material_view(page, route_name)
+            screenshot(page, f"full-matrix-{viewport_name}-{route_name}.png")
+
+
 def test_full_user_journey() -> None:
     """Exercise the disposable fixture's project and yarn CRUD journeys."""
 
@@ -99,6 +144,16 @@ def test_full_user_journey() -> None:
             wait_for_path(page, r"/yarn/\d+\?toast=yarn_updated")
             page.get_by_text("CI E2E Yarn Updated", exact=True).first.wait_for()
             screenshot(page, "full-05-yarn-edit-result.png")
+
+            project_id_match = re.search(r"/projects/(\d+)", project_edit_href)
+            yarn_id_match = re.search(r"/yarn/(\d+)", yarn_edit_href)
+            assert project_id_match is not None and yarn_id_match is not None
+            exercise_view_matrix(
+                page,
+                project_id=int(project_id_match.group(1)),
+                yarn_id=int(yarn_id_match.group(1)),
+            )
+            page.set_viewport_size({"width": 1440, "height": 1000})
 
             page.goto(f"{BASE_URL}/projects")
             assert page.locator(".md3-search-bar__control .mdi-magnify").is_visible()
