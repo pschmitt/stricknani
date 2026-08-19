@@ -12,11 +12,14 @@ import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -49,14 +52,23 @@ constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    // SNA-36: decoding the full detail JSON (steps/images/attachments) is real work, so it's kept
+    // in its own upstream step gated by distinctUntilChanged - Room re-emits observeById on *any*
+    // write to the projects table (not just this row), and combine's downstream re-runs on every
+    // unrelated yarn change too; without this, viewing a project's detail screen would re-decode
+    // its JSON on every background sync tick and every yarn edit anywhere else in the app.
+    private val detailFlow: Flow<Pair<ProjectEntity, ProjectDto>?> =
+        projectRepository
+            .observeById(projectId)
+            .distinctUntilChanged()
+            .map { entity -> entity?.let { it to projectRepository.decodeDetail(it) } }
+
     val uiState: StateFlow<ProjectDetailUiState> =
-        combine(projectRepository.observeById(projectId), yarnRepository.observeAll()) {
-                entity,
-                yarns ->
-                if (entity == null) {
+        combine(detailFlow, yarnRepository.observeAll()) { detailPair, yarns ->
+                if (detailPair == null) {
                     ProjectDetailUiState.NotFound
                 } else {
-                    val detail = projectRepository.decodeDetail(entity)
+                    val (entity, detail) = detailPair
                     val linked =
                         yarns
                             .filter { it.id in detail.yarnIds }

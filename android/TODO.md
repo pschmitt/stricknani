@@ -41,7 +41,6 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Next
 
-- SNA-36: Performance pass - scrolling smoothness and sync throughput
 - SNA-37: German (DE) translations for the Android app's UI strings, plus an in-app language
   setting (default: device locale, fallback English) rather than relying on system locale alone
 
@@ -1312,5 +1311,47 @@ github:pschmitt/stricknani/<rev>#stricknani` on the host) but `switch-to-configu
 restart the running `stricknani.service` process despite its unit file changing - had to
 `systemctl restart` by hand to pick it up. Worth a closer look in `nixos-config.git` at some point,
 but out of scope for this ticket.
+
+## SNA-36: Performance pass - scrolling smoothness and sync throughput
+
+- [x] Ran a research agent over the sync stack and every list/detail screen first rather than
+      guessing - found several concrete, verifiable issues rather than applying generic advice:
+- [x] **Detail-screen recompose storm** (highest impact): `ProjectDetailViewModel`/
+      `YarnDetailViewModel` each `combine()`d their own entity with the *other* repository's full
+      `observeAll()` (for the linked-yarns/linked-projects list), which meant any unrelated yarn
+      edit anywhere in the app re-ran `decodeDetail` (a full JSON parse of steps/images/
+      attachments) for whatever project detail screen happened to be open - and vice versa. Split
+      the JSON decode into its own upstream step gated by `distinctUntilChanged()` on the entity
+      itself, so only this row's own actual change triggers a re-decode; the `combine()` downstream
+      still re-runs on an unrelated yarn/project change, but now only redoes the cheap filter/map,
+      not the JSON parse.
+- [x] **Unthrottled full-list search**: `SearchViewModel`/`ProjectsListViewModel`/
+      `YarnsListViewModel` each re-filtered their entire cached list on every keystroke with no
+      debounce. Added a separate `debounce(250ms).distinctUntilChanged()` copy of the query flow
+      feeding the filter, while the text field itself still updates instantly (no typing lag) -
+      `@OptIn(FlowPreview::class)` since `debounce` is still a preview API in this Kotlin
+      coroutines version.
+- [x] **Category sync always rewrites the table**: `CategoryRepository.sync()` called
+      `replaceAll()` (delete + reinsert) unconditionally every sync pass, which invalidates Room's
+      whole-table `observeAll()` Flow (Room's invalidation tracking is per-table, not per-row) even
+      when nothing changed - forcing `ProjectsListScreen`'s category filter chips to recompose on
+      every background sync tick. Added `CategoryDao.getAllOnce()` and skip the write when the
+      fetched set already matches the cache.
+- [x] **Small wins**: memoized `ProjectDetailScreen`'s per-recomposition `steps.sortedBy{}` with
+      `remember(detail.steps)`; both detail screens' image/photo carousels now reuse the
+      already-`remember`ed `imageUrls`/`photoUrls` list instead of calling `resolveMediaUrl` a
+      second time per item.
+- [ ] **Deliberately not done this pass** (noted by the audit, real but larger/riskier): delta-sync
+      has no server-side pagination at all - a first sync or a long-offline device pulls every row
+      (each with its full detail JSON) in one unbounded response. Needs a backend API change
+      (limit/cursor), not just an app-side fix - worth its own ticket rather than folding into a
+      "quick performance pass".
+
+Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`, no warnings), then confirmed for real on the
+Zenfone 10: search still filters correctly (typed "Crash", got the 3 matching test yarns after the
+debounce settles), and a project detail screen with linked yarns + 10 steps still renders correctly
+with steps in the right order and thumbnails intact - the memoization/gating changes are purely
+about *when* work re-runs, not *what* gets computed, so no behavior changed, only frequency.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

@@ -12,11 +12,14 @@ import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -49,14 +52,20 @@ constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    // SNA-36: see `ProjectDetailViewModel`'s identical fix - keeps the JSON detail decode gated on
+    // this yarn's own row actually changing, not every unrelated project write.
+    private val detailFlow: Flow<Pair<YarnEntity, YarnDto>?> =
+        yarnRepository
+            .observeById(yarnId)
+            .distinctUntilChanged()
+            .map { entity -> entity?.let { it to yarnRepository.decodeDetail(it) } }
+
     val uiState: StateFlow<YarnDetailUiState> =
-        combine(yarnRepository.observeById(yarnId), projectRepository.observeAll()) {
-                entity,
-                projects ->
-                if (entity == null) {
+        combine(detailFlow, projectRepository.observeAll()) { detailPair, projects ->
+                if (detailPair == null) {
                     YarnDetailUiState.NotFound
                 } else {
-                    val detail = yarnRepository.decodeDetail(entity)
+                    val (entity, detail) = detailPair
                     val linked =
                         projects
                             .filter { it.id in detail.projectIds }

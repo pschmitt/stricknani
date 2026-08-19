@@ -10,15 +10,19 @@ import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.FlowPreview
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class ProjectsListViewModel
 @Inject
@@ -31,6 +35,11 @@ constructor(
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    // SNA-36: debounce the copy driving the filter, not the text field itself - see
+    // SearchViewModel's identical fix for why.
+    private val debouncedSearchQuery =
+        searchQuery.debounce(SEARCH_DEBOUNCE_MILLIS).distinctUntilChanged()
 
     private val _selectedCategory = MutableStateFlow<String?>(null)
     val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
@@ -51,7 +60,7 @@ constructor(
             )
 
     val projects: StateFlow<List<ProjectEntity>> =
-        combine(projectRepository.observeAll(), searchQuery, selectedCategory) {
+        combine(projectRepository.observeAll(), debouncedSearchQuery, selectedCategory) {
                 entities,
                 query,
                 category ->
@@ -123,5 +132,6 @@ constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val SEARCH_DEBOUNCE_MILLIS = 250L
     }
 }

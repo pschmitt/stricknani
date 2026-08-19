@@ -9,11 +9,14 @@ import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 
 sealed interface SearchResult {
@@ -26,6 +29,7 @@ sealed interface SearchResult {
  * Searches only what's already synced into Room - no network call, so it works fully offline,
  * unlike a server-side search endpoint would.
  */
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class SearchViewModel
 @Inject
@@ -38,8 +42,13 @@ constructor(
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
+    // SNA-36: the text field itself (`query` above) updates every keystroke for instant visual
+    // feedback, but debouncing the copy driving the actual full-list filter avoids re-scanning
+    // every project/yarn on each character typed - only the settled-on query triggers a filter.
+    private val debouncedQuery = query.debounce(SEARCH_DEBOUNCE_MILLIS).distinctUntilChanged()
+
     val results: StateFlow<List<SearchResult>> =
-        combine(projectRepository.observeAll(), yarnRepository.observeAll(), query) {
+        combine(projectRepository.observeAll(), yarnRepository.observeAll(), debouncedQuery) {
                 projects,
                 yarns,
                 query ->
@@ -73,5 +82,6 @@ constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val SEARCH_DEBOUNCE_MILLIS = 250L
     }
 }

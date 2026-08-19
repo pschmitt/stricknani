@@ -190,7 +190,9 @@ private fun YarnDetailContent(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(detail.photos, key = { _, photo -> photo.id }) { index, photo ->
                         AsyncImage(
-                            model = resolveMediaUrl(photo.url),
+                            // SNA-36: reuse the already-remembered photoUrls instead of
+                            // recomputing resolveMediaUrl per item.
+                            model = photoUrls[index],
                             contentDescription = photo.altText,
                             contentScale = ContentScale.Crop,
                             modifier =

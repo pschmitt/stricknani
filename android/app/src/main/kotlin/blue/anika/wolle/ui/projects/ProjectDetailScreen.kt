@@ -206,9 +206,11 @@ private fun ProjectDetailContent(
         if (detail.images.isNotEmpty()) {
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    itemsIndexed(detail.images, key = { _, image -> image.id }) { index, image ->
+                    itemsIndexed(detail.images, key = { _, image -> image.id }) { index, _ ->
                         AsyncImage(
-                            model = resolveMediaUrl(image.url),
+                            // SNA-36: reuse the already-remembered imageUrls instead of
+                            // recomputing resolveMediaUrl per item.
+                            model = imageUrls[index],
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier =
@@ -270,7 +272,9 @@ private fun ProjectDetailContent(
         if (detail.steps.isNotEmpty()) {
             item {
                 DetailSectionCard(title = "Steps") {
-                    val sortedSteps = detail.steps.sortedBy { it.stepNumber }
+                    // SNA-36: avoid re-sorting on every recomposition of this item scope.
+                    val sortedSteps =
+                        remember(detail.steps) { detail.steps.sortedBy { it.stepNumber } }
                     sortedSteps.forEachIndexed { index, step ->
                         if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp))
                         Column {
