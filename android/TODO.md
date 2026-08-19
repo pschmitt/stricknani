@@ -1578,6 +1578,17 @@ Status: not started (2026-08-19).
 
 ## SNA-49: Fix Stitch sample image and HTML entity rendering
 
+- [ ] Reproduce the Stitch sample rendering issue against project 3 on `wolle.anika.blue`, including
+      missing images and literal `&nbsp;` text.
+- [ ] Normalize or sanitize the sample's HTML/Markdown before rendering so entities display as
+      whitespace and authorized image URLs resolve through the configured server and image cache.
+- [ ] Preserve safe handling for malformed content, missing images, and offline cached samples.
+- [ ] Add focused rendering/URL-resolution tests and screenshot coverage for a populated Stitch
+      sample in English and German.
+- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android device.
+
+Status: not started (2026-08-19).
+
 ## SNA-50: Add an Android categories view
 
 - [ ] Add a categories destination reachable from the app's navigation, showing the user's
@@ -1586,7 +1597,7 @@ Status: not started (2026-08-19).
       consistent with the project and yarn list screens.
 - [ ] Add focused Compose/navigation coverage for the destination and its states.
 
-Status: not started.
+Status: not started (2026-08-19).
 
 ## SNA-51: Import projects from Android
 
@@ -1597,16 +1608,7 @@ Status: not started.
 - [ ] Add confirmation and failure handling so a partially completed import is not silently lost.
 - [ ] Add focused tests for starting, completing, cancelling, and failing an import.
 
-Status: not started.
-
-- [ ] Reproduce the Stitch sample rendering issue against project 3 on `wolle.anika.blue`, including
-      missing images and literal `&nbsp;` text.
-- [ ] Normalize or sanitize the sample's HTML/Markdown before rendering so entities display as
-      whitespace and authorized image URLs resolve through the configured server and image cache.
-- [ ] Preserve safe handling for malformed content, missing images, and offline cached samples.
-- [ ] Add focused rendering/URL-resolution tests and screenshot coverage for a populated Stitch
-      sample in English and German.
-- [ ] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android device.
+Status: not started (2026-08-19).
 
 Status: not started (2026-08-19).
 
