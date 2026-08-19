@@ -659,14 +659,15 @@ async def seed_demo_data(reset: bool = False) -> None:
             # imported records such as project 3: HTML wrappers, a non-breaking-space
             # entity, and an authenticated media image. The Android renderer uses this
             # to exercise the real image/entity path.
+            title_image = title_images[0] if title_images else None
             if (
                 project.name == "Heirloom Baby Blanket"
                 and not project.stitch_sample
-                and title_images
+                and isinstance(title_image, str)
             ):
                 project.stitch_sample = (
                     "<p>Gauge:&nbsp;20 stitches&nbsp;×&nbsp;28 rows.</p>"
-                    f'<p><img src="{get_file_url(title_images[0], project.id)}" '
+                    f'<p><img src="{get_file_url(title_image, project.id)}" '
                     'alt="Heirloom stitch sample"></p>'
                 )
 
