@@ -1,7 +1,6 @@
 package blue.anika.wolle.screenshots
 
 import android.Manifest
-import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -17,7 +16,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import blue.anika.wolle.MainActivity
-import java.io.File
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -36,8 +34,6 @@ class StricknaniScreenshotTest {
     @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
 
     private lateinit var device: UiDevice
-    private lateinit var screenshotPrefix: String
-
     private val arguments
         get() = InstrumentationRegistry.getArguments()
 
@@ -50,8 +46,6 @@ class StricknaniScreenshotTest {
     @Before
     fun setUp() {
         device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        screenshotPrefix =
-            "${requiredArgument("screenshot_device")}_${requiredArgument("screenshot_theme")}"
     }
 
     @After
@@ -180,22 +174,15 @@ class StricknaniScreenshotTest {
             .isNotEmpty()
 
     private fun capture(name: String) {
-        runCatching {
-            val instrumentation = InstrumentationRegistry.getInstrumentation()
-            val screenshot = instrumentation.uiAutomation.takeScreenshot()
-            val directory =
-                instrumentation.targetContext
-                    .getExternalFilesDir("screenshot-captures")
-                    ?.apply(File::mkdirs) ?: return
-            val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
-            File(directory, "$screenshotPrefix-$safeName.png").outputStream().use { output ->
-                screenshot.compress(Bitmap.CompressFormat.PNG, 100, output)
-            }
-            screenshot.recycle()
-        }
-            .onFailure { error ->
-                System.err.println("Unable to capture screenshot $name: ${error.message}")
-            }
+        val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        InstrumentationRegistry.getInstrumentation()
+            .uiAutomation
+            .executeShellCommand("touch $CAPTURE_MARKER_PREFIX$safeName")
+            .use {}
+        // The host-side harness captures the current emulator frame with adb. Keeping the bitmap
+        // out of the instrumentation process avoids Binder-size and app-specific storage limits
+        // on tablet profiles.
+        Thread.sleep(1_000)
     }
 
     private fun signalOfflineCapture() {
@@ -210,6 +197,7 @@ class StricknaniScreenshotTest {
             ?: error("$name instrumentation argument is required")
 
     private companion object {
+        const val CAPTURE_MARKER_PREFIX = "/data/local/tmp/stricknani-screenshot-capture-"
         const val OFFLINE_CAPTURE_MARKER = "/data/local/tmp/stricknani-screenshot-offline"
     }
 }
