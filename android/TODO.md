@@ -41,9 +41,6 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Next
 
-- SNA-33: Harden offline sync - deletes/edits from both sides (device and server) need to resolve
-  without data loss; needs an explicit conflict-handling strategy, not just last-write-wins by
-  accident
 - SNA-36: Performance pass - scrolling smoothness and sync throughput
 - SNA-37: German (DE) translations for the Android app's UI strings, plus an in-app language
   setting (default: device locale, fallback English) rather than relying on system locale alone
@@ -1271,5 +1268,49 @@ the "Crash Repro Project" test project (3 linked yarns + 10 steps): each section
 own rounded card, linked yarns show the clothes-hanger fallback icon (none of the test yarns have a
 photo), and tapping through to a linked yarn still navigates correctly and its own "Used in" card
 (unchanged) still finds its way back.
+
+## SNA-33: Harden offline sync - conflict handling for deletes/edits from both sides
+
+- [x] Audited the existing sync stack first (SNA-8's write queue, `ProjectRepository`/
+      `YarnRepository`, `WriteReplayWorker`) and found it was accidental last-write-wins with one
+      real bug: a queued local edit whose target was deleted server-side in the meantime got
+      retried forever against a 404, with no way to clear it. No version/timestamp check existed
+      anywhere, backend or client.
+- [x] **Backend**: `ProjectWriteRequest`/`YarnWriteRequest` gained an optional
+      `expected_updated_at`. `update_project`/`update_yarn` reject with 409 (the entity's current
+      server state in the body) when it's set and no longer matches - optimistic concurrency,
+      opt-in so callers that omit it (the web UI, which always edits the live row it's looking at)
+      keep the old unconditional-write behavior. Comparison is tz-tolerant (`_differs`/`_as_utc`)
+      since SQLite hands back naive datetimes for what are logically UTC-stored values. 5 new
+      backend tests cover the conflict, the non-conflicting case, and the yarn equivalent.
+- [x] **Android**: `updateProject`/`updateYarn` stamp the queued mutation's payload with the
+      `updatedAt` last seen locally. `WriteReplayWorker` now catches the update replay's
+      `HttpException` specifically: **409** decodes the server's current state from the error
+      body and adopts it into Room (`adoptRemoteProject`/`adoptRemoteYarn`) - the server's edit
+      wins, the stale local one is discarded; **404** means the target was deleted elsewhere -
+      drops the local row if it's somehow still cached and doesn't try to reapply the edit. Both
+      cases call the new `PendingMutationDao.markConflict` (a new `isConflict` column, Room bumped
+      to v3) instead of retrying forever - `getAll()` now excludes conflict-resolved rows from
+      future replay passes, while `lastErrorMessage` stays populated so the existing "Sync issue"
+      Home card still surfaces what happened. A plain 404 on a **delete** replay is treated as
+      success (idempotent - the row's already gone, which was the goal). `WriteReplayWorkerTest.kt`
+      covers the JSON-envelope-unwrapping logic in isolation (extracted as a top-level
+      `parseConflictDetail` function specifically so it doesn't need a mocked `HttpException`).
+
+Status: **done** (2026-08-19) - verified via `nix develop -c uv run pytest -q` (269 passed) and
+`just gradle rofl-13.brkn.lol ":app:assembleDebug" ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`),
+then confirmed for real end-to-end on the Zenfone 10 against production: created a test project,
+synced it to the device, disabled the device's Wi-Fi, edited the project locally (queuing a
+conflicting mutation), edited the *same* project via `curl` directly against the API while the
+device was still offline, then re-enabled Wi-Fi. `WriteReplayWorker` logged `Resolved conflict for
+mutation 2 (project/update): This project was edited elsewhere...` within seconds of reconnecting;
+the device's copy switched to the server's edit ("Server Wins This Time"), and Home showed "Sync
+issue - 1 change couldn't reach the server yet" rather than silently overwriting the newer edit or
+retrying forever. Also hit and fixed a real deploy-tooling gap along the way: `just deploy rofl-10`
+had rebuilt the correct `stricknani` derivation (confirmed via a direct `nix build
+github:pschmitt/stricknani/<rev>#stricknani` on the host) but `switch-to-configuration` didn't
+restart the running `stricknani.service` process despite its unit file changing - had to
+`systemctl restart` by hand to pick it up. Worth a closer look in `nixos-config.git` at some point,
+but out of scope for this ticket.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
