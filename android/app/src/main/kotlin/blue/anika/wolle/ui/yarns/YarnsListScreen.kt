@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
@@ -50,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
 
@@ -109,7 +109,7 @@ fun YarnsListScreen(
 
                 if (yarns.isEmpty()) {
                     EmptyState(
-                        icon = Icons.Filled.Checkroom,
+                        icon = MdiIcons.Sheep,
                         title = stringResource(R.string.yarns_list_empty_title),
                         subtitle = stringResource(R.string.projects_list_empty_subtitle),
                     )
@@ -156,7 +156,7 @@ private fun YarnListCard(
                         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Filled.Checkroom, contentDescription = null)
+                        Icon(MdiIcons.Sheep, contentDescription = null)
                     }
                 }
             }

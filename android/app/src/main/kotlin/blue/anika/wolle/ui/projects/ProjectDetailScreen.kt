@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -59,6 +58,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.ui.common.ImageViewerDialog
+import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.shareUrl
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
@@ -296,7 +296,7 @@ private fun ProjectDetailContent(
                         LinkedEntityRow(
                             name = yarn.name,
                             previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
-                            fallbackIcon = Icons.Filled.Checkroom,
+                            fallbackIcon = MdiIcons.Sheep,
                             onClick = { onYarnClick(yarn.id) },
                         )
                     }

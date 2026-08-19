@@ -1420,4 +1420,16 @@ server yet."); Settings → Appearance → Language → Deutsch flips every scre
 override) after switching back to "Follow system" - reset to "Follow system" before finishing so
 the test device is left in its default state.
 
+## SNA-39: Replace the yarn icon with `mdi:sheep`
+
+- [x] Replace the Android yarn icon wherever it is used in navigation, lists, details, and
+      supporting UI with the Material Design Icons sheep icon. Added a local Compose `ImageVector`
+      from the MDI 7.4.47 `mdi:sheep` path and replaced all five yarn-specific `Checkroom` call
+      sites: navigation, home favorites, search results, linked project yarns, and the yarn list.
+- [x] Preserve existing accessibility labels and `Icon` tint behavior so the sheep icon follows the
+      current Material theme in light and dark modes.
+
+Status: **done** (2026-08-19; remotely verified with `just check` on `rofl-13.brkn.lol`: ktfmt,
+unit tests, and `lintDebug` all passed).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

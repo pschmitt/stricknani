@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
 import coil3.compose.AsyncImage
 
@@ -145,7 +145,7 @@ fun HomeScreen(
                                 HomeCard(
                                     title = yarn.name,
                                     previewUrl = viewModel.previewUrl(yarn.previewUrl),
-                                    fallbackIcon = Icons.Filled.Checkroom,
+                                    fallbackIcon = MdiIcons.Sheep,
                                     onClick = { onYarnClick(yarn.id) },
                                 )
                             }

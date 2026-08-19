@@ -3,7 +3,6 @@ package blue.anika.wolle.ui.navigation
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
@@ -12,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.common.MdiIcons
 import kotlinx.serialization.Serializable
 
 /** Type-safe Navigation Compose destinations (see MainActivity/StricknaniNavHost). */
@@ -65,7 +65,7 @@ enum class TopLevelDestination(
 ) {
     HOME(Route.Home, R.string.destination_label_home, Icons.Filled.Home),
     PROJECTS(Route.Projects, R.string.destination_label_projects, Icons.Filled.Folder),
-    YARNS(Route.Yarns, R.string.destination_label_yarns, Icons.Filled.Checkroom),
+    YARNS(Route.Yarns, R.string.destination_label_yarns, MdiIcons.Sheep),
     SEARCH(Route.Search, R.string.destination_label_search, Icons.Filled.Search),
     GAUGE(Route.Gauge, R.string.destination_label_gauge, Icons.Filled.Calculate),
     SETTINGS(Route.Settings, R.string.settings_root_title, Icons.Filled.Settings),
