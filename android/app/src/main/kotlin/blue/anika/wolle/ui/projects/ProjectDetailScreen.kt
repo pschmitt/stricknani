@@ -63,11 +63,11 @@ import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.ImageViewerDialog
+import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.shareUrl
 import coil3.compose.AsyncImage
-import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
 import com.mikepenz.markdown.m3.Markdown
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -245,6 +245,7 @@ private fun ProjectDetailContent(
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
+    val markdownImageTransformer = remember(resolveMediaUrl) { MarkdownImageTransformer(resolveMediaUrl) }
     // map (not mapNotNull) - keeps indices aligned with detail.images/viewerIndex even if a
     // url somehow fails to resolve.
     val imageUrls = remember(detail.images) { detail.images.map { resolveMediaUrl(it.url) ?: "" } }
@@ -351,7 +352,7 @@ private fun ProjectDetailContent(
                 DetailSectionCard(
                     title = stringResource(R.string.project_detail_description_title)
                 ) {
-                    Markdown(content = value, imageTransformer = Coil3ImageTransformerImpl)
+                    Markdown(content = value, imageTransformer = markdownImageTransformer)
                 }
             }
         }
@@ -372,7 +373,7 @@ private fun ProjectDetailContent(
                             step.description?.let {
                                 Markdown(
                                     content = it,
-                                    imageTransformer = Coil3ImageTransformerImpl,
+                                    imageTransformer = markdownImageTransformer,
                                     modifier = Modifier.padding(top = 4.dp),
                                 )
                             }
@@ -385,7 +386,7 @@ private fun ProjectDetailContent(
         detail.notes?.let { value ->
             item {
                 DetailSectionCard(title = stringResource(R.string.project_detail_notes_title)) {
-                    Markdown(content = value, imageTransformer = Coil3ImageTransformerImpl)
+                    Markdown(content = value, imageTransformer = markdownImageTransformer)
                 }
             }
         }

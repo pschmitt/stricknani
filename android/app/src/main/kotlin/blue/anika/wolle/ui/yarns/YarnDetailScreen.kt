@@ -61,10 +61,10 @@ import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.ImageViewerDialog
+import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.shareUrl
 import coil3.compose.AsyncImage
-import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
 import com.mikepenz.markdown.m3.Markdown
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -240,6 +240,7 @@ private fun YarnDetailContent(
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
+    val markdownImageTransformer = remember(resolveMediaUrl) { MarkdownImageTransformer(resolveMediaUrl) }
     // map (not mapNotNull) - keeps indices aligned with detail.photos/viewerIndex even if a
     // url somehow fails to resolve.
     val photoUrls = remember(detail.photos) { detail.photos.map { resolveMediaUrl(it.url) ?: "" } }
@@ -380,7 +381,7 @@ private fun YarnDetailContent(
                 )
                 Markdown(
                     content = value,
-                    imageTransformer = Coil3ImageTransformerImpl,
+                    imageTransformer = markdownImageTransformer,
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
