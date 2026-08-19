@@ -28,8 +28,10 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
   interceptors, same shape as nyetbox's `DynamicBaseUrlInterceptor`/`AuthInterceptor`.
 - Sync: delta/incremental (`?since=<cursor>`) sync endpoints on the backend instead of full
   refetch every time, sourcing deletions from the existing `AuditLog` table (already records
-  project/yarn deletes) as a tombstone feed. WorkManager periodic sync + manual pull-to-refresh +
-  best-effort sync on launch.
+  project/yarn deletes) as a tombstone feed. Project/yarn clients may opt into bounded pages with
+  `?limit=1..50`, then follow the response's opaque `next_cursor` via `?cursor=...`; omitting
+  `limit` remains the backward-compatible complete-response form. WorkManager periodic sync +
+  manual pull-to-refresh + best-effort sync on launch.
 - Room schema follows the syncwich pattern: real columns for filter/sort/list fields (name,
   category, tags, favorite, thumbnail path, `updatedAt`), full detail (steps, images, notes,
   materials) stored as a JSON column decoded with kotlinx.serialization at read time - not
@@ -110,7 +112,8 @@ collection directly so the `delete-orphan` cascade handles it.
 
 - [x] `GET /api/v1/sync/projects?since=<iso8601>` -> `{updated: [...], deleted_ids: [...],
       server_time: <iso8601>, full_resync_required: bool}`; same shape for `/api/v1/sync/yarns`.
-      `since` omitted/absent means "full sync" (all rows, no deletions to report)
+      `since` omitted/absent means "full sync" (all rows, no deletions to report); an optional
+      `limit` can split that full sync into bounded pages
 - [x] `GET /api/v1/sync/categories` - same response shape, but always returns the full current
       list: categories have no `updated_at` and their deletions aren't recorded in `AuditLog`
       (only projects/yarns are audited), so there's no delta to compute; the list is small enough
@@ -125,9 +128,15 @@ collection directly so the `delete-orphan` cascade handles it.
       there's no actual gap to guard against yet). Field is kept in the response shape as a
       forward-compatible hook - see `sync.py`'s module docstring for what a correct future check
       would need (a recorded pruning cutoff, not "oldest row that happens to exist")
-- [x] Tests: `tests/test_api_sync.py` (6 tests: initial full sync, delta returns only
-      recently-updated rows, deletion reporting for both projects and yarns, the ancient-`since`
-      false-positive regression case, category full-list sync)
+- [x] Optional bounded pagination for projects/yarns: `limit=1..50` caps the combined updated
+      and deleted items per response; `has_more` plus an opaque `next_cursor` continues a fixed
+      snapshot using keyset positions across both feeds. The old `since`-only request remains
+      unbounded so existing Android clients cannot silently lose rows they do not know how to
+      request from a subsequent page. Cursors are bound to their entity type and requesting user;
+      categories remain a small full-list sync.
+- [x] Tests: `tests/test_api_sync.py` (11 tests: legacy/full sync, delta updates, deletion
+      reporting, bounded project/yarn pages, mixed update+tombstone pagination, cursor validation,
+      the ancient-`since` false-positive regression case, and category full-list sync)
 
 Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` against a fresh
 (non-locally-migrated) `DATABASE_URL` to match CI's environment (255 passed), `uv run ruff check
@@ -135,6 +144,9 @@ Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` a
 possibly-aware (client sends an offset), but `updated_at`/`created_at` are stored as naive UTC
 (SQLite has no real datetime type and just compares the bound string) - `since` is now normalized
 to naive UTC before use in any query.
+
+Pagination addition verified on 2026-08-19 with the focused sync suite (11 passed), Ruff, and
+mypy; the original Android `since`-only contract remains unchanged.
 
 ## SNA-4: Bearer-auth support on the media route
 
@@ -1328,13 +1340,14 @@ but out of scope for this ticket.
       `remember(detail.steps)`; both detail screens' image/photo carousels now reuse the
       already-`remember`ed `imageUrls`/`photoUrls` list instead of calling `resolveMediaUrl` a
       second time per item.
-- [ ] **Deliberately not done this pass** (noted by the audit, real but larger/riskier): delta-sync
-      has no server-side pagination at all - a first sync or a long-offline device pulls every row
-      (each with its full detail JSON) in one unbounded response. Needs a backend API change
-      (limit/cursor), not just an app-side fix - worth its own ticket rather than folding into a
-      "quick performance pass".
+- [x] **Delta-sync pagination**: the backend now provides the bounded `limit`/`cursor` contract
+      described under SNA-3. It is deliberately opt-in for compatibility with the current Android
+      `since`-only Retrofit calls; adopting pages in the app can be a separate data-layer change,
+      without another server contract migration.
 
-Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-19) - verified via the backend pagination regression tests and
+`uv run mypy .`; the earlier Android performance changes were also verified via `just gradle
+rofl-13.brkn.lol ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`, no warnings), then confirmed for real on the
 Zenfone 10: search still filters correctly (typed "Crash", got the 3 matching test yarns after the
 debounce settles), and a project detail screen with linked yarns + 10 steps still renders correctly
