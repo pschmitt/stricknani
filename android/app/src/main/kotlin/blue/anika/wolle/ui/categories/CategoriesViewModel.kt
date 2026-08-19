@@ -2,8 +2,12 @@ package blue.anika.wolle.ui.categories
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import blue.anika.wolle.R
+import blue.anika.wolle.data.api.CategoriesApi
+import blue.anika.wolle.data.api.dto.CategoryUpdateRequest
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.repository.CategoryRepository
+import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,6 +17,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** The content state for the categories destination. */
 sealed interface CategoriesContentState {
@@ -56,8 +61,13 @@ internal fun categoriesContentState(
     }
 
 @HiltViewModel
-class CategoriesViewModel @Inject constructor(private val categoryRepository: CategoryRepository) :
-    ViewModel() {
+class CategoriesViewModel
+@Inject
+constructor(
+    private val categoryRepository: CategoryRepository,
+    private val categoriesApi: CategoriesApi,
+    private val mutationFeedback: MutationFeedback,
+) : ViewModel() {
     private val initialSyncComplete = MutableStateFlow(false)
     private val refreshController = RefreshController(viewModelScope)
 
@@ -106,6 +116,35 @@ class CategoriesViewModel @Inject constructor(private val categoryRepository: Ca
     }
 
     fun dismissRefreshFeedback() = refreshController.clearFeedback()
+
+    fun renameCategory(category: CategoryEntity, name: String) {
+        val cleaned = name.trim()
+        if (cleaned.isBlank()) {
+            mutationFeedback.show(R.string.error_name_required)
+            return
+        }
+        viewModelScope.launch {
+            try {
+                categoriesApi.updateCategory(category.id, CategoryUpdateRequest(cleaned))
+                categoryRepository.sync()
+                mutationFeedback.show(R.string.mutation_category_renamed, category.name, cleaned)
+            } catch (_: Exception) {
+                mutationFeedback.show(R.string.error_update_category_failed, category.name)
+            }
+        }
+    }
+
+    fun deleteCategory(category: CategoryEntity) {
+        viewModelScope.launch {
+            try {
+                categoriesApi.deleteCategory(category.id)
+                categoryRepository.sync()
+                mutationFeedback.show(R.string.mutation_category_deleted, category.name)
+            } catch (_: Exception) {
+                mutationFeedback.show(R.string.error_delete_category_failed, category.name)
+            }
+        }
+    }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

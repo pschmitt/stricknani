@@ -72,8 +72,10 @@ fun ProjectsListScreen(
 ) {
     val projects by viewModel.projects.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val selectedTag by viewModel.selectedTag.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val importState by viewModel.importState.collectAsStateWithLifecycle()
@@ -128,6 +130,7 @@ fun ProjectsListScreen(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp),
+                    modifier = Modifier.testTag("projects-list-category-filters"),
                 ) {
                     item {
                         FilterChip(
@@ -161,6 +164,27 @@ fun ProjectsListScreen(
                                 )
                             },
                         )
+                    }
+                }
+                if (tags.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.projects_list_tags_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        modifier = Modifier.testTag("projects-list-tag-filters"),
+                    ) {
+                        items(tags, key = { it }) { tag ->
+                            FilterChip(
+                                selected = selectedTag == tag,
+                                onClick = { viewModel.onTagSelected(tag) },
+                                label = { Text(tag) },
+                            )
+                        }
                     }
                 }
                 Spacer(Modifier.height(8.dp))

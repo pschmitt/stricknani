@@ -350,20 +350,21 @@ running Stricknani server remains unverified because no disposable test server w
 ## SNA-9: Core browsing screens
 
 - [x] Home/dashboard: favorites (projects + yarns) and recently-updated projects, pull-to-refresh
-- [x] Projects list: search, category filter chips (+ inline "add category" dialog), favorite
+- [x] Projects list: search, category/tag filter chips (+ inline "add category" dialog), favorite
       toggle, pull-to-refresh
 - [x] Project detail: steps, images, needles/stitch sample/other materials, linked yarns
       (tappable, resolved from `yarn_ids` against the local yarn cache), notes
 - [x] Yarn stash list + detail: search by name/brand/colorway, favorites-only filter, photos
-- [x] Category management: create via the Projects screen's filter row (`CategoriesApi` direct
-      call + `CategoryRepository.sync()`); rename/delete not implemented (categories.py has no
-      such endpoints yet either)
+- [x] Category management: create from the Projects screen's filter row and rename/delete from
+      the Categories screen, with explicit delete confirmation and project reassignment handled by
+      the authenticated JSON API
 - [x] Global search across projects and yarns - client-side over the Room cache, so it works fully
       offline with zero network call
 
-Status: done (2026-08-18), with one caveat below. No dedicated "tag filter chips" UI landed
-(the checklist item was originally "category/tag filter chips") - category filtering is real;
-tag filtering was scoped out to keep this task bounded and can follow as a small addition.
+Status: **done** (2026-08-19) - tag filter chips are derived from the offline Room project cache,
+and category rename/delete are available in the Android Categories screen and authenticated JSON
+API. Focused Android and API tests cover filtering, rename propagation, deletion clearing project
+categories, and duplicate-name rejection; remote `just check rofl-13.brkn.lol` is green.
 
 Favorite toggling (`ProjectsApi`/`YarnsApi` `favorite`/`unfavorite`, wired into
 `ProjectRepository`/`YarnRepository`) is a direct online call with local optimistic-update +

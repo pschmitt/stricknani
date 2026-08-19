@@ -37,6 +37,10 @@ class CategoryCreateRequest(BaseModel):
     name: str
 
 
+class CategoryUpdateRequest(BaseModel):
+    name: str
+
+
 class YarnPhotoResponse(BaseModel):
     id: int
     url: str

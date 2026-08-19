@@ -101,6 +101,7 @@
     <string name="project_attachment_delete_dialog_text">This can\'t be undone.</string>
     <string name="projects_list_search_placeholder">Search projects</string>
     <string name="projects_list_category_all">All</string>
+    <string name="projects_list_tags_label">Tags</string>
     <string name="projects_list_add_category_description">Add category</string>
     <string name="projects_list_empty_title">No projects yet</string>
     <string name="projects_list_empty_subtitle">Pull to refresh, or adjust your filters.</string>
@@ -116,6 +117,12 @@
     <string name="categories_error_title">Couldn’t load categories</string>
     <string name="categories_error_subtitle">Something went wrong while loading categories. Try again.</string>
     <string name="categories_retry">Retry</string>
+    <string name="categories_name_label">Category name</string>
+    <string name="categories_rename_description">Rename category</string>
+    <string name="categories_delete_description">Delete category</string>
+    <string name="categories_rename_dialog_title">Rename category</string>
+    <string name="categories_delete_dialog_title">Delete category “%1$s”?</string>
+    <string name="categories_delete_dialog_text">Projects using this category will be uncategorized. This can’t be undone.</string>
 
     <!-- Project import -->
     <string name="project_import_dialog_title">Import project</string>
@@ -328,12 +335,16 @@
     <string name="error_attachment_delete_failed">Couldn\'t delete the attachment - try again.</string>
     <string name="error_name_required">Name is required</string>
     <string name="error_create_category_failed">Couldn\'t create category \'%1$s\'.</string>
+    <string name="error_update_category_failed">Couldn\'t rename category \'%1$s\'.</string>
+    <string name="error_delete_category_failed">Couldn\'t delete category \'%1$s\'.</string>
 
     <!-- Mutation feedback -->
     <string name="mutation_favorite_added">Added to favorites.</string>
     <string name="mutation_favorite_removed">Removed from favorites.</string>
     <string name="mutation_favorite_offline">You’re offline - the favorite could not be updated.</string>
     <string name="mutation_category_created">Category “%1$s” created.</string>
+    <string name="mutation_category_renamed">Category “%1$s” renamed to “%2$s”.</string>
+    <string name="mutation_category_deleted">Category “%1$s” deleted.</string>
     <string name="mutation_project_created_queued">Project created locally and queued to sync.</string>
     <string name="mutation_project_updated_queued">Project updated locally and queued to sync.</string>
     <string name="mutation_project_deleted_queued">Project deleted locally and queued to sync.</string>

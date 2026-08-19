@@ -132,17 +132,57 @@ async def test_api_rejects_invalid_bearer_token(api_client: ClientFixture) -> No
     assert response.status_code == 401
 
 
-async def test_category_list_and_create(api_client: ClientFixture) -> None:
+async def test_category_crud_updates_and_clears_projects(
+    api_client: ClientFixture,
+) -> None:
     client, _session_factory, _user_id = api_client
 
     create_response = await client.post("/api/v1/categories", json={"name": "Socks"})
     assert create_response.status_code == 201
-    assert create_response.json()["name"] == "Socks"
+    category = create_response.json()
+    assert category["name"] == "Socks"
+
+    project_response = await client.post(
+        "/api/v1/projects", json={"name": "Category project", "category": "Socks"}
+    )
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    rename_response = await client.put(
+        f"/api/v1/categories/{category['id']}", json={"name": "Knitting"}
+    )
+    assert rename_response.status_code == 200
+    assert rename_response.json() == {"id": category["id"], "name": "Knitting"}
+
+    renamed_project = await client.get(f"/api/v1/projects/{project_id}")
+    assert renamed_project.json()["category"] == "Knitting"
+
+    delete_response = await client.delete(f"/api/v1/categories/{category['id']}")
+    assert delete_response.status_code == 204
+
+    cleared_project = await client.get(f"/api/v1/projects/{project_id}")
+    assert cleared_project.json()["category"] is None
 
     list_response = await client.get("/api/v1/categories")
     assert list_response.status_code == 200
     names = [c["name"] for c in list_response.json()]
-    assert "Socks" in names
+    assert "Knitting" not in names
+
+
+async def test_category_rename_rejects_duplicate_names(
+    api_client: ClientFixture,
+) -> None:
+    client, _session_factory, _user_id = api_client
+
+    first = await client.post("/api/v1/categories", json={"name": "Socks"})
+    second = await client.post("/api/v1/categories", json={"name": "Scarves"})
+
+    response = await client.put(
+        f"/api/v1/categories/{second.json()['id']}", json={"name": "sOcKs"}
+    )
+
+    assert response.status_code == 409
+    assert first.json()["name"] == "Socks"
 
 
 async def test_yarn_crud_and_favorite(api_client: ClientFixture) -> None:
