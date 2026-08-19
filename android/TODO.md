@@ -1671,4 +1671,16 @@ debug APK was installed/launched on PX5.
 
 Status: **wip** (2026-08-19; codex-main) - the dedicated web audit is in progress.
 
+## SNA-56: Let users reorder project and yarn detail cards
+
+- [ ] Support long-pressing a card title to enter a reorder mode and drag cards into a preferred
+      order on project and yarn detail views.
+- [ ] Persist the per-domain card order locally, apply it consistently to all corresponding detail
+      views, and keep a sensible default order for new users.
+- [ ] Add a dedicated Settings entry to review/reset the project and yarn card orders, with clear
+      accessibility feedback and sensible behavior at large font scales.
+- [ ] Add focused state/UI coverage and run the remote Android quality checks.
+
+Status: **wip** (2026-08-19; codex-main) - design and implementation are being started.
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
