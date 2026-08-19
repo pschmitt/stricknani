@@ -59,7 +59,7 @@ def test_pr_smoke_journey() -> None:
             screenshot(page, "smoke-01-projects-list.png")
 
             page.locator('a[href="/projects/new"]').first.click()
-            page.locator("#projectForm .md3-form-card").first.wait_for()
+            page.locator("#projectForm .md3-disclosure").first.wait_for()
             assert page.locator("#projectForm .md3-disclosure").count() >= 1
             assert page.locator('#projectForm [class~="btn"]').count() == 0
             page.locator("#projectForm #name").fill("PR Smoke Project")
@@ -75,7 +75,7 @@ def test_pr_smoke_journey() -> None:
             page.locator("#projects-list .md3-feature-card").first.wait_for()
             assert page.locator('#projects-list [class~="badge"]').count() == 0
 
-            page.locator("button.avatar").click()
+            page.locator("button.md3-navbar__account-trigger").click()
             page.get_by_text("Language", exact=True).wait_for()
             page.get_by_text("Appearance", exact=True).wait_for()
             page.locator('a[href="/user/api-tokens"]').click()
@@ -83,7 +83,7 @@ def test_pr_smoke_journey() -> None:
             page.get_by_text("API Tokens", exact=True).first.wait_for()
             screenshot(page, "smoke-03-account-settings.png")
 
-            page.locator("button.avatar").click()
+            page.locator("button.md3-navbar__account-trigger").click()
             page.locator('form[action="/auth/logout"] button[type="submit"]').evaluate(
                 "button => button.click()"
             )
