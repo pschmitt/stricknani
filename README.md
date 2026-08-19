@@ -51,8 +51,8 @@ All config is via environment variables or `.env` (see `.env.sample`).
 
 | Variable                             | Description                         | Default                               |
 | ------------------------------------ | ----------------------------------- | ------------------------------------- |
-| `SECRET_KEY`                         | Secret key for sessions             | `dev-secret-key-change-in-production` |
-| `CSRF_SECRET_KEY`                    | CSRF secret key                     | Auto-generated on startup             |
+| `SECRET_KEY`                         | Secret key for sessions             | Random per `just run`; set explicitly in production |
+| `CSRF_SECRET_KEY`                    | CSRF secret key                     | Random per `just run`; set explicitly in production |
 | `PORT`                               | Port to listen on                   | `7674`                                |
 | `DEBUG`                              | Enable debug mode                   | `false`                               |
 | `AUTO_RELOAD`                        | Inject dev auto-reload script       | `false`                               |

@@ -11,7 +11,9 @@ from dotenv import load_dotenv
 # Look for .env in the repository root (parent of stricknani package)
 _config_dir = Path(__file__).parent.parent
 _env_file = _config_dir / ".env"
-load_dotenv(_env_file, override=True)
+# Explicit environment variables (including the ephemeral keys supplied by
+# `just run`) take precedence over values in `.env`.
+load_dotenv(_env_file, override=False)
 
 # Sentinel default for SECRET_KEY. If the running config still carries this
 # value in production we refuse to start (see Config.validate_secrets).
