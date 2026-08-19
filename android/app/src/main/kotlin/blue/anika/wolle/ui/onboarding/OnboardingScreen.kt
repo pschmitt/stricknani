@@ -42,11 +42,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 
-private enum class OnboardingMode(val label: String) {
-    MANUAL("Manual"),
-    QR("QR code"),
-    PASSWORD("Sign in"),
+private enum class OnboardingMode {
+    MANUAL,
+    QR,
+    PASSWORD,
 }
+
+@Composable
+private fun OnboardingMode.label(): String =
+    when (this) {
+        OnboardingMode.MANUAL -> stringResource(R.string.onboarding_mode_manual)
+        OnboardingMode.QR -> stringResource(R.string.onboarding_mode_qr)
+        OnboardingMode.PASSWORD -> stringResource(R.string.onboarding_mode_password)
+    }
 
 /**
  * Server URL + personal access token entry, plus two SNA-13 shortcuts that both end up at the same
@@ -97,7 +105,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                     selected = mode == candidate,
                     onClick = { mode = candidate },
                     enabled = !isValidating,
-                    label = { Text(candidate.label) },
+                    label = { Text(candidate.label()) },
                 )
             }
         }
@@ -117,7 +125,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
             OnboardingMode.QR ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Scan the setup QR code from Stricknani's web Settings → API Tokens page.",
+                        stringResource(R.string.onboarding_qr_instructions),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -132,7 +140,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                             contentDescription = null,
                             modifier = Modifier.padding(end = 8.dp),
                         )
-                        Text("Scan QR code")
+                        Text(stringResource(R.string.onboarding_qr_scan_button))
                     }
                 }
             OnboardingMode.PASSWORD ->
@@ -180,7 +188,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                     )
                 }
                 Text(
-                    if (mode == OnboardingMode.PASSWORD) "Sign in"
+                    if (mode == OnboardingMode.PASSWORD) stringResource(R.string.onboarding_mode_password)
                     else stringResource(R.string.onboarding_connect_button)
                 )
             }
@@ -277,7 +285,7 @@ private fun PasswordOnboardingFields(
     OutlinedTextField(
         value = email,
         onValueChange = onEmailChange,
-        label = { Text("Email") },
+        label = { Text(stringResource(R.string.onboarding_email_label)) },
         singleLine = true,
         enabled = enabled,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -287,7 +295,7 @@ private fun PasswordOnboardingFields(
     OutlinedTextField(
         value = password,
         onValueChange = onPasswordChange,
-        label = { Text("Password") },
+        label = { Text(stringResource(R.string.onboarding_password_label)) },
         singleLine = true,
         enabled = enabled,
         visualTransformation =
@@ -298,7 +306,11 @@ private fun PasswordOnboardingFields(
                     imageVector =
                         if (passwordVisible) Icons.Filled.VisibilityOff
                         else Icons.Filled.Visibility,
-                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                    contentDescription =
+                        stringResource(
+                            if (passwordVisible) R.string.onboarding_hide_password
+                            else R.string.onboarding_show_password
+                        ),
                 )
             }
         },

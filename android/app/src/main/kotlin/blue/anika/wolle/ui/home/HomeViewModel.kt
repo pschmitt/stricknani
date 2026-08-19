@@ -1,7 +1,9 @@
 package blue.anika.wolle.ui.home
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import blue.anika.wolle.R
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.entity.ProjectEntity
@@ -12,6 +14,7 @@ import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.util.DateTimeUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,6 +41,7 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     syncStateDao: SyncStateDao,
     pendingMutationDao: PendingMutationDao,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _isRefreshing = MutableStateFlow(false)
@@ -109,7 +113,7 @@ constructor(
                 projectRepository.sync()
                 yarnRepository.sync()
             } catch (e: Exception) {
-                _errorMessage.value = "Couldn't sync - showing cached data."
+                _errorMessage.value = context.getString(R.string.error_sync_failed)
             } finally {
                 _isRefreshing.value = false
             }

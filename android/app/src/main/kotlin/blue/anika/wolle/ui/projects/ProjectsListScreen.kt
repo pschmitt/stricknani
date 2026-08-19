@@ -49,10 +49,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.SearchField
@@ -89,7 +91,7 @@ fun ProjectsListScreen(
             ExtendedFloatingActionButton(
                 onClick = onAddProjectClick,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("New project") },
+                text = { Text(stringResource(R.string.project_new_label)) },
                 expanded = !listState.canScrollBackward,
             )
         },
@@ -103,7 +105,7 @@ fun ProjectsListScreen(
                 SearchField(
                     value = searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
-                    placeholder = "Search projects",
+                    placeholder = stringResource(R.string.projects_list_search_placeholder),
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
 
@@ -115,7 +117,7 @@ fun ProjectsListScreen(
                         FilterChip(
                             selected = selectedCategory == null,
                             onClick = { viewModel.onCategorySelected(null) },
-                            label = { Text("All") },
+                            label = { Text(stringResource(R.string.projects_list_category_all)) },
                         )
                     }
                     items(categories, key = { it.id }) { category ->
@@ -133,7 +135,13 @@ fun ProjectsListScreen(
                         FilterChip(
                             selected = false,
                             onClick = { showAddCategoryDialog = true },
-                            label = { Icon(Icons.Filled.Add, contentDescription = "Add category") },
+                            label = {
+                                Icon(
+                                    Icons.Filled.Add,
+                                    contentDescription =
+                                        stringResource(R.string.projects_list_add_category_description),
+                                )
+                            },
                         )
                     }
                 }
@@ -142,8 +150,8 @@ fun ProjectsListScreen(
                 if (projects.isEmpty()) {
                     EmptyState(
                         icon = Icons.Filled.Folder,
-                        title = "No projects yet",
-                        subtitle = "Pull to refresh, or adjust your filters.",
+                        title = stringResource(R.string.projects_list_empty_title),
+                        subtitle = stringResource(R.string.projects_list_empty_subtitle),
                     )
                 } else {
                     LazyColumn(
@@ -223,7 +231,11 @@ private fun ProjectListCard(
                     imageVector =
                         if (project.isFavorite) Icons.Filled.Favorite
                         else Icons.Filled.FavoriteBorder,
-                    contentDescription = if (project.isFavorite) "Unfavorite" else "Favorite",
+                    contentDescription =
+                        stringResource(
+                            if (project.isFavorite) R.string.common_unfavorite
+                            else R.string.common_favorite
+                        ),
                     tint =
                         if (project.isFavorite) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -238,16 +250,22 @@ private fun AddCategoryDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit
     var name by rememberSaveable { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New category") },
+        title = { Text(stringResource(R.string.projects_list_add_category_dialog_title)) },
         text = {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 singleLine = true,
-                placeholder = { Text("e.g. Sweaters") },
+                placeholder = {
+                    Text(stringResource(R.string.projects_list_add_category_name_placeholder))
+                },
             )
         },
-        confirmButton = { TextButton(onClick = { onConfirm(name) }) { Text("Add") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(name) }) { Text(stringResource(R.string.common_add)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
     )
 }

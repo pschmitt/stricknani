@@ -92,8 +92,11 @@ class MainActivity : ComponentActivity() {
 
     private fun copyCrashReport(report: String) {
         getSystemService<ClipboardManager>()
-            ?.setPrimaryClip(ClipData.newPlainText("Crash report", report))
-        Toast.makeText(this, "Crash report copied", Toast.LENGTH_SHORT).show()
+            ?.setPrimaryClip(
+                ClipData.newPlainText(getString(R.string.main_activity_crash_report_label), report)
+            )
+        Toast.makeText(this, getString(R.string.main_activity_crash_report_copied), Toast.LENGTH_SHORT)
+            .show()
     }
 
     private fun restartApplication() {

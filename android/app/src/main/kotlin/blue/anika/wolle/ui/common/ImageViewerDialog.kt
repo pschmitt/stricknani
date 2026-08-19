@@ -37,9 +37,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import blue.anika.wolle.R
 import coil3.compose.AsyncImage
 import kotlin.math.abs
 import kotlinx.coroutines.launch
@@ -140,7 +142,7 @@ fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () 
                 ) {
                     Icon(
                         Icons.Filled.ChevronLeft,
-                        contentDescription = "Previous image",
+                        contentDescription = stringResource(R.string.image_viewer_previous_image),
                         tint = Color.White.copy(alpha = if (previousPage == null) 0.35f else 1f),
                     )
                 }
@@ -158,7 +160,7 @@ fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () 
                 ) {
                     Icon(
                         Icons.Filled.ChevronRight,
-                        contentDescription = "Next image",
+                        contentDescription = stringResource(R.string.image_viewer_next_image),
                         tint = Color.White.copy(alpha = if (nextPage == null) 0.35f else 1f),
                     )
                 }
@@ -167,7 +169,11 @@ fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () 
                 onClick = onDismiss,
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
             ) {
-                Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.White)
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = stringResource(R.string.common_close),
+                    tint = Color.White,
+                )
             }
         }
     }

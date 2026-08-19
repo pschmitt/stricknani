@@ -32,10 +32,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,10 +68,20 @@ fun YarnEditorScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(if (viewModel.isEditing) "Edit yarn" else "New yarn") },
+                title = {
+                    Text(
+                        stringResource(
+                            if (viewModel.isEditing) R.string.yarn_editor_title_edit
+                            else R.string.yarns_list_new_yarn_fab
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_back),
+                        )
                     }
                 },
                 actions = {
@@ -78,11 +90,18 @@ fun YarnEditorScreen(
                     } else {
                         if (viewModel.isEditing) {
                             IconButton(onClick = { showDeleteDialog = true }) {
-                                Icon(Icons.Filled.Delete, contentDescription = "Delete yarn")
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription =
+                                        stringResource(R.string.yarn_editor_delete_description),
+                                )
                             }
                         }
                         IconButton(onClick = viewModel::save) {
-                            Icon(Icons.Filled.Check, contentDescription = "Save")
+                            Icon(
+                                Icons.Filled.Check,
+                                contentDescription = stringResource(R.string.common_save),
+                            )
                         }
                     }
                 },
@@ -98,7 +117,7 @@ fun YarnEditorScreen(
                 OutlinedTextField(
                     value = form.name,
                     onValueChange = { value -> viewModel.updateForm { it.copy(name = value) } },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.project_editor_name_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -107,7 +126,7 @@ fun YarnEditorScreen(
                 OutlinedTextField(
                     value = form.brand,
                     onValueChange = { value -> viewModel.updateForm { it.copy(brand = value) } },
-                    label = { Text("Brand") },
+                    label = { Text(stringResource(R.string.yarn_detail_field_brand)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -116,7 +135,7 @@ fun YarnEditorScreen(
                 OutlinedTextField(
                     value = form.colorway,
                     onValueChange = { value -> viewModel.updateForm { it.copy(colorway = value) } },
-                    label = { Text("Colorway") },
+                    label = { Text(stringResource(R.string.yarn_detail_field_colorway)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -125,7 +144,7 @@ fun YarnEditorScreen(
                 OutlinedTextField(
                     value = form.dyeLot,
                     onValueChange = { value -> viewModel.updateForm { it.copy(dyeLot = value) } },
-                    label = { Text("Dye lot") },
+                    label = { Text(stringResource(R.string.yarn_detail_field_dye_lot)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -136,7 +155,7 @@ fun YarnEditorScreen(
                     onValueChange = { value ->
                         viewModel.updateForm { it.copy(fiberContent = value) }
                     },
-                    label = { Text("Fiber content") },
+                    label = { Text(stringResource(R.string.yarn_detail_field_fiber_content)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -147,7 +166,7 @@ fun YarnEditorScreen(
                     onValueChange = { value ->
                         viewModel.updateForm { it.copy(weightCategory = value) }
                     },
-                    label = { Text("Weight category") },
+                    label = { Text(stringResource(R.string.yarn_detail_field_weight_category)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -158,7 +177,7 @@ fun YarnEditorScreen(
                     onValueChange = { value ->
                         viewModel.updateForm { it.copy(recommendedNeedles = value) }
                     },
-                    label = { Text("Recommended needles") },
+                    label = { Text(stringResource(R.string.yarn_detail_field_recommended_needles)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -172,7 +191,7 @@ fun YarnEditorScreen(
                                 it.copy(weightGrams = value.filter(Char::isDigit))
                             }
                         },
-                        label = { Text("Weight (g)") },
+                        label = { Text(stringResource(R.string.yarn_editor_weight_grams_label)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -184,7 +203,7 @@ fun YarnEditorScreen(
                                 it.copy(lengthMeters = value.filter(Char::isDigit))
                             }
                         },
-                        label = { Text("Length (m)") },
+                        label = { Text(stringResource(R.string.yarn_editor_length_meters_label)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -195,7 +214,7 @@ fun YarnEditorScreen(
                 OutlinedTextField(
                     value = form.link,
                     onValueChange = { value -> viewModel.updateForm { it.copy(link = value) } },
-                    label = { Text("Link") },
+                    label = { Text(stringResource(R.string.project_editor_link_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -206,7 +225,7 @@ fun YarnEditorScreen(
                     onValueChange = { value ->
                         viewModel.updateForm { it.copy(description = value) }
                     },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(R.string.project_detail_description_title)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                 )
@@ -215,7 +234,7 @@ fun YarnEditorScreen(
                 OutlinedTextField(
                     value = form.notes,
                     onValueChange = { value -> viewModel.updateForm { it.copy(notes = value) } },
-                    label = { Text("Notes") },
+                    label = { Text(stringResource(R.string.project_detail_notes_title)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                 )
@@ -226,8 +245,8 @@ fun YarnEditorScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete yarn?") },
-            text = { Text("This can't be undone.") },
+            title = { Text(stringResource(R.string.yarn_editor_delete_dialog_title)) },
+            text = { Text(stringResource(R.string.project_editor_delete_dialog_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -235,11 +254,13 @@ fun YarnEditorScreen(
                         viewModel.delete()
                     }
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
             },
         )
     }

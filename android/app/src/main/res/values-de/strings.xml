@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Stricknani</string>
+
+    <!-- Common / shared -->
+    <string name="common_back">Zurück</string>
+    <string name="common_close">Schließen</string>
+    <string name="common_add">Hinzufügen</string>
+    <string name="common_save">Speichern</string>
+    <string name="common_edit">Bearbeiten</string>
+    <string name="common_delete">Löschen</string>
+    <string name="common_share">Teilen</string>
+    <string name="common_favorite">Favorit</string>
+    <string name="common_unfavorite">Favorit entfernen</string>
+    <string name="common_cancel">Abbrechen</string>
+    <string name="common_move_up">Nach oben verschieben</string>
+    <string name="common_move_down">Nach unten verschieben</string>
+    <string name="common_field_category">Kategorie</string>
+    <string name="common_field_needles">Nadeln</string>
+    <string name="common_field_stitch_sample">Maschenprobe</string>
+    <string name="common_field_other_materials">Weiteres Material</string>
+
+    <string name="onboarding_title">Mit Stricknani verbinden</string>
+    <string name="onboarding_subtitle">Gib die URL deines selbst gehosteten Stricknani-Servers und ein persönliches Zugriffstoken ein. Es wird nichts anderswohin gesendet.</string>
+    <string name="onboarding_server_url_label">Server-URL</string>
+    <string name="onboarding_server_url_placeholder">https://stricknani.example.com</string>
+    <string name="onboarding_api_token_label">API-Token</string>
+    <string name="onboarding_api_token_help">Erstelle eines in Stricknani unter deinem Kontomenü → API-Token.</string>
+    <string name="onboarding_show_token">Token anzeigen</string>
+    <string name="onboarding_hide_token">Token verbergen</string>
+    <string name="onboarding_connect_button">Verbinden</string>
+    <string name="onboarding_mode_manual">Manuell</string>
+    <string name="onboarding_mode_qr">QR-Code</string>
+    <string name="onboarding_mode_password">Anmelden</string>
+    <string name="onboarding_qr_instructions">Scanne den Einrichtungs-QR-Code von Stricknanis Web-Einstellungen → API-Token-Seite.</string>
+    <string name="onboarding_qr_scan_button">QR-Code scannen</string>
+    <string name="onboarding_email_label">E-Mail</string>
+    <string name="onboarding_password_label">Passwort</string>
+    <string name="onboarding_hide_password">Passwort verbergen</string>
+    <string name="onboarding_show_password">Passwort anzeigen</string>
+
+    <string name="qr_scanner_permission_required">Kamerazugriff ist erforderlich, um den Einrichtungscode zu scannen</string>
+
+    <!-- Bottom nav destination labels -->
+    <string name="destination_label_home">Start</string>
+    <string name="destination_label_projects">Projekte</string>
+    <string name="destination_label_yarns">Wolle</string>
+    <string name="destination_label_search">Suche</string>
+    <string name="destination_label_gauge">Maschenprobe</string>
+
+    <!-- Home -->
+    <string name="home_gauge_calculator_description">Maschenprobenrechner</string>
+    <string name="home_welcome_title">Willkommen bei Stricknani</string>
+    <string name="home_welcome_subtitle">Zum Aktualisieren ziehen, um deine Projekte und deinen Wollvorrat zu synchronisieren.</string>
+    <string name="home_favorite_projects_title">Lieblingsprojekte</string>
+    <string name="home_favorite_yarns_title">Lieblingswolle</string>
+    <string name="home_recent_projects_title">Zuletzt aktualisierte Projekte</string>
+
+    <!-- Search -->
+    <string name="search_placeholder">Projekte und Wolle durchsuchen</string>
+    <string name="search_empty_title">Durchsuche deinen Vorrat</string>
+    <string name="search_empty_subtitle">Finde Projekte und Wolle, die bereits auf dieses Gerät synchronisiert wurden.</string>
+    <string name="search_no_matches_title">Keine Treffer</string>
+    <string name="search_no_matches_subtitle">Versuche einen anderen Suchbegriff.</string>
+
+    <!-- Projects -->
+    <string name="project_new_label">Neues Projekt</string>
+    <string name="project_detail_field_yarn">Wolle</string>
+    <string name="project_detail_more_actions_description">Weitere Aktionen</string>
+    <string name="project_detail_not_found">Projekt nicht gefunden</string>
+    <string name="project_detail_linked_yarns_title">Verknüpfte Wolle</string>
+    <string name="project_detail_description_title">Beschreibung</string>
+    <string name="project_detail_steps_title">Schritte</string>
+    <string name="project_detail_notes_title">Notizen</string>
+    <string name="project_editor_title_edit">Projekt bearbeiten</string>
+    <string name="project_editor_delete_description">Projekt löschen</string>
+    <string name="project_editor_name_label">Name</string>
+    <string name="project_editor_tags_label">Tags (kommagetrennt)</string>
+    <string name="project_editor_link_label">Link</string>
+    <string name="project_editor_delete_dialog_title">Projekt löschen?</string>
+    <string name="project_editor_delete_dialog_text">Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="projects_list_search_placeholder">Projekte durchsuchen</string>
+    <string name="projects_list_category_all">Alle</string>
+    <string name="projects_list_add_category_description">Kategorie hinzufügen</string>
+    <string name="projects_list_empty_title">Noch keine Projekte</string>
+    <string name="projects_list_empty_subtitle">Zum Aktualisieren ziehen oder Filter anpassen.</string>
+    <string name="projects_list_add_category_dialog_title">Neue Kategorie</string>
+    <string name="projects_list_add_category_name_placeholder">z. B. Pullover</string>
+
+    <!-- Yarns -->
+    <string name="yarns_list_new_yarn_fab">Neue Wolle</string>
+    <string name="yarns_list_search_placeholder">Wolle durchsuchen</string>
+    <string name="yarns_list_favorites_only">Nur Favoriten</string>
+    <string name="yarns_list_empty_title">Noch keine Wolle</string>
+    <string name="yarn_detail_not_found">Wolle nicht gefunden</string>
+    <string name="yarn_detail_field_brand">Marke</string>
+    <string name="yarn_detail_field_colorway">Farbe</string>
+    <string name="yarn_detail_field_dye_lot">Charge (Dye Lot)</string>
+    <string name="yarn_detail_field_fiber_content">Materialzusammensetzung</string>
+    <string name="yarn_detail_field_weight_category">Lauflängenklasse</string>
+    <string name="yarn_detail_field_recommended_needles">Empfohlene Nadeln</string>
+    <string name="yarn_detail_field_amount">Menge</string>
+    <string name="yarn_detail_used_in_title">Verwendet in</string>
+    <string name="yarn_editor_title_edit">Wolle bearbeiten</string>
+    <string name="yarn_editor_delete_description">Wolle löschen</string>
+    <string name="yarn_editor_weight_grams_label">Gewicht (g)</string>
+    <string name="yarn_editor_length_meters_label">Lauflänge (m)</string>
+    <string name="yarn_editor_delete_dialog_title">Wolle löschen?</string>
+
+    <!-- Settings categories (hub screen) -->
+    <string name="settings_category_account_title">Konto</string>
+    <string name="settings_category_account_subtitle">Serververbindung und Abmelden</string>
+    <string name="settings_category_appearance_title">Erscheinungsbild</string>
+    <string name="settings_category_appearance_subtitle">Design</string>
+    <string name="settings_category_navigation_title">Navigation</string>
+    <string name="settings_category_navigation_subtitle">Ziele und ihre Reihenfolge wählen</string>
+    <string name="settings_category_sync_title">Synchronisierung</string>
+    <string name="settings_category_sync_subtitle">Status der Hintergrundaktualisierung</string>
+    <string name="settings_category_backup_title">Backup</string>
+    <string name="settings_category_backup_subtitle">Exportieren, wiederherstellen und geplante Backups</string>
+    <string name="settings_category_about_title">Über</string>
+    <string name="settings_category_about_subtitle">Anwendungs- und Serverinformationen</string>
+
+    <!-- Settings root / navigation -->
+    <string name="settings_root_title">Einstellungen</string>
+    <string name="settings_nav_back">Zurück</string>
+    <string name="settings_navigation_bottom_bar_title">Untere Leiste</string>
+    <string name="settings_navigation_bottom_bar_description">Wähle aus, welche Ziele in der unteren Leiste erscheinen und in welcher Reihenfolge.</string>
+    <string name="settings_sync_group_title">Hintergrundsynchronisierung</string>
+    <string name="settings_sync_last_synced_label">Zuletzt synchronisiert</string>
+    <string name="settings_sync_policy_label">Synchronisierungsrichtlinie</string>
+    <string name="settings_sync_policy_description">Automatisch alle 6 Stunden, beim Start und direkt nach jeder Änderung</string>
+    <string name="settings_sync_never">Nie</string>
+    <string name="settings_sign_out">Abmelden</string>
+    <string name="settings_sign_out_description">Entfernt die gespeicherte Server-URL und das API-Token von diesem Gerät.</string>
+
+    <!-- Settings: Account -->
+    <string name="account_settings_server_title">Server</string>
+    <string name="account_settings_server_url_label">Server-URL</string>
+    <string name="account_settings_not_connected">Nicht verbunden</string>
+    <string name="account_settings_sign_out_dialog_title">Abmelden?</string>
+
+    <!-- Settings: Appearance -->
+    <string name="appearance_settings_theme_title">Design</string>
+    <string name="appearance_settings_theme_system_description">Der Erscheinungsbild-Einstellung des Geräts folgen</string>
+    <string name="appearance_settings_theme_system_label">System folgen</string>
+    <string name="appearance_settings_theme_light_label">Hell</string>
+    <string name="appearance_settings_theme_dark_label">Dunkel</string>
+
+    <!-- Settings: About -->
+    <string name="about_settings_version_title">Version</string>
+    <string name="about_settings_app_version_label">App-Version</string>
+    <string name="about_settings_build_label">Build</string>
+    <string name="about_settings_server_version_label">Serverversion</string>
+    <string name="about_settings_server_version_unavailable">Nicht verfügbar</string>
+    <string name="about_settings_libraries_description">Open-Source-Abhängigkeiten dieser App</string>
+    <string name="about_settings_license_label">Lizenz</string>
+    <string name="about_settings_license_value">GPL-3.0</string>
+    <string name="about_settings_view_source_button">Quellcode auf GitHub ansehen</string>
+    <string name="libraries_title">Bibliotheken</string>
+    <string name="libraries_open_source_title">Open-Source-Abhängigkeiten</string>
+    <string name="libraries_open_content_description">%1$s öffnen</string>
+
+    <!-- Settings: Backup -->
+    <string name="backup_settings_manual_title">Manuelles Backup</string>
+    <string name="backup_settings_export_label">Backup exportieren</string>
+    <string name="backup_settings_export_description">Serververbindung und App-Einstellungen, optional verschlüsselt</string>
+    <string name="backup_settings_export_button">Jetzt exportieren</string>
+    <string name="backup_settings_restore_label">Aus Backup wiederherstellen</string>
+    <string name="backup_settings_restore_description">Überschreibt die Serververbindung auf diesem Gerät</string>
+    <string name="backup_settings_choose_file_button">Datei auswählen</string>
+    <string name="backup_settings_scheduled_title">Geplante Backups</string>
+    <string name="backup_settings_enable_scheduled_label">Geplante Backups aktivieren</string>
+    <string name="backup_settings_destination_folder_label">Zielordner</string>
+    <string name="backup_settings_folder_chosen">Ausgewählt</string>
+    <string name="backup_settings_folder_not_set">Nicht festgelegt</string>
+    <string name="backup_settings_change_button">Ändern</string>
+    <string name="backup_settings_frequency_label">Häufigkeit</string>
+    <string name="backup_settings_password_label">Backup-Passwort</string>
+    <string name="backup_settings_password_set">Festgelegt</string>
+    <string name="backup_settings_password_not_set">Nicht festgelegt (unverschlüsselt)</string>
+    <string name="backup_settings_export_password_dialog_title">Backup verschlüsseln? (optional)</string>
+    <string name="backup_settings_export_confirm">Exportieren</string>
+    <string name="backup_settings_restore_password_dialog_title">Dieses Backup ist passwortgeschützt</string>
+    <string name="backup_settings_restore_confirm">Wiederherstellen</string>
+    <string name="backup_settings_scheduled_password_dialog_title">Passwort für geplante Backups</string>
+    <string name="backup_settings_password_removed_toast">Backup-Passwort entfernt</string>
+    <string name="backup_settings_password_set_toast">Backup-Passwort festgelegt</string>
+    <string name="backup_settings_password_field_label">Passwort</string>
+
+    <!-- MainActivity -->
+    <string name="main_activity_crash_report_label">Absturzbericht</string>
+    <string name="main_activity_crash_report_copied">Absturzbericht kopiert</string>
+
+    <!-- Gauge calculator -->
+    <string name="gauge_calculator_title">Maschenprobenrechner</string>
+    <string name="gauge_calculator_description">Berechne, wie viele Maschen anzuschlagen und Reihen zu stricken sind, basierend auf deiner Maschenprobe und der Maschenprobe der Anleitung.</string>
+    <string name="gauge_calculator_pattern_gauge_title">Maschenprobe der Anleitung (pro 10cm)</string>
+    <string name="gauge_calculator_your_gauge_title">Deine Maschenprobe (pro 10cm)</string>
+    <string name="gauge_calculator_pattern_counts_title">Angaben der Anleitung</string>
+    <string name="gauge_calculator_cast_on_label">Anzuschlagende Maschen</string>
+    <string name="gauge_calculator_rows_to_knit_label">Zu strickende Reihen (optional)</string>
+    <string name="gauge_calculator_calculate_button">Berechnen</string>
+    <string name="gauge_calculator_stitches_label">Maschen</string>
+    <string name="gauge_calculator_rows_label">Reihen</string>
+    <string name="gauge_calculator_results_title">Berechnungsergebnis</string>
+    <string name="gauge_calculator_adjusted_stitches_label">Angepasste Maschen</string>
+    <string name="gauge_calculator_adjusted_rows_label">Angepasste Reihen</string>
+    <string name="gauge_calculator_not_available">k. A.</string>
+    <string name="gauge_calculator_summary_with_rows">Basierend auf %1$d angeschlagenen Maschen und %2$d Reihen der Anleitung.</string>
+    <string name="gauge_calculator_summary_without_rows">Basierend auf %1$d angeschlagenen Maschen der Anleitung.</string>
+
+    <!-- Home sync status card -->
+    <string name="sync_status_syncing">Synchronisiere…</string>
+    <string name="sync_status_issue">Synchronisierungsproblem</string>
+    <string name="sync_status_changes_pending">Änderungen ausstehend</string>
+    <string name="sync_status_synced">Synchronisiert</string>
+    <string name="sync_status_pulling_latest">Neueste Projekte und Wolle werden abgerufen.</string>
+    <string name="sync_status_not_synced_yet">Noch nicht synchronisiert</string>
+    <string name="sync_status_last_synced_just_now">Gerade eben synchronisiert</string>
+    <string name="sync_status_last_synced_minutes">Vor %1$d Min. synchronisiert</string>
+    <string name="sync_status_last_synced_hours">Vor %1$d Std. synchronisiert</string>
+    <string name="sync_status_last_synced_days">Vor %1$d Tagen synchronisiert</string>
+    <string name="sync_status_last_synced_date">Zuletzt synchronisiert am %1$s</string>
+
+    <!-- Crash report dialog -->
+    <string name="crash_report_dialog_title">Die App hat sich von einem Absturz erholt</string>
+    <string name="crash_report_dialog_description">Ein Diagnosebericht wurde vom letzten Durchlauf gespeichert. Er enthält kein API-Token.</string>
+    <string name="crash_report_dialog_copy_button">Bericht kopieren</string>
+    <string name="crash_report_dialog_restart_button">App neu starten</string>
+    <string name="crash_report_dialog_dismiss_button">Verwerfen</string>
+
+    <!-- Image viewer -->
+    <string name="image_viewer_previous_image">Vorheriges Bild</string>
+    <string name="image_viewer_next_image">Nächstes Bild</string>
+
+    <!-- Search field -->
+    <string name="search_field_clear">Suche leeren</string>
+
+    <!-- Shared ViewModel error messages -->
+    <string name="error_sync_failed">Synchronisierung fehlgeschlagen - zeige zwischengespeicherte Daten.</string>
+    <string name="error_favorite_failed">Favorit konnte nicht aktualisiert werden - versuche es erneut.</string>
+    <string name="error_save_failed">Speichern fehlgeschlagen - versuche es erneut.</string>
+    <string name="error_delete_failed">Löschen fehlgeschlagen - versuche es erneut.</string>
+    <string name="error_name_required">Name ist erforderlich</string>
+    <string name="error_create_category_failed">Kategorie \'%1$s\' konnte nicht erstellt werden.</string>
+
+    <!-- Onboarding errors -->
+    <string name="onboarding_error_missing_url_token">Gib sowohl die Server-URL als auch das API-Token ein</string>
+    <string name="onboarding_error_missing_password_fields">Gib Server-URL, E-Mail und Passwort ein</string>
+    <string name="onboarding_error_invalid_qr">Das sieht nicht wie ein Stricknani-Einrichtungscode aus</string>
+    <string name="onboarding_error_malformed_url">Gib eine gültige Server-URL ein, z. B. https://stricknani.example.com</string>
+    <string name="onboarding_error_not_a_server">Das sieht nicht wie ein Stricknani-Server aus (HTTP %1$d).</string>
+    <string name="onboarding_error_unauthorized">Der Server hat das API-Token abgelehnt. Erstelle in Stricknani unter deinem Kontomenü → API-Token ein neues und versuche es erneut.</string>
+    <string name="onboarding_error_invalid_credentials">Falsche E-Mail-Adresse oder falsches Passwort.</string>
+    <string name="onboarding_error_unreachable">Der Server konnte nicht erreicht werden. Überprüfe die URL und deine Netzwerkverbindung.</string>
+    <string name="onboarding_error_server_error">Der Server hat mit einem Fehler geantwortet (HTTP %1$d).</string>
+    <string name="onboarding_error_generic">Verbindung zum Server nicht möglich.</string>
+
+    <!-- Settings: developer mode toasts -->
+    <string name="settings_dev_mode_already_developer">Du bist bereits Entwickler</string>
+    <string name="settings_dev_mode_taps_remaining">Noch %1$d Tipps bis zum Entwicklermodus</string>
+    <string name="settings_dev_mode_enabled">Entwicklermodus aktiviert</string>
+
+    <!-- Settings: backup export/import messages -->
+    <string name="backup_error_open_file_write">Die ausgewählte Datei konnte nicht zum Schreiben geöffnet werden</string>
+    <string name="backup_error_open_file_read">Die ausgewählte Datei konnte nicht zum Lesen geöffnet werden</string>
+    <string name="backup_success_exported">Backup exportiert</string>
+    <string name="backup_error_export_failed">Export fehlgeschlagen</string>
+    <string name="backup_success_restored">Backup wiederhergestellt - synchronisiere aktuelle Daten</string>
+    <string name="backup_error_restore_failed">Wiederherstellung fehlgeschlagen</string>
+
+    <!-- Settings: Appearance language picker -->
+    <string name="appearance_settings_language_title">Sprache</string>
+</resources>

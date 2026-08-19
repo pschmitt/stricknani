@@ -52,9 +52,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.shareUrl
@@ -91,7 +93,10 @@ fun ProjectDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_back),
+                        )
                     }
                 },
                 actions = {
@@ -99,7 +104,11 @@ fun ProjectDetailScreen(
                         val context = LocalContext.current
                         var menuExpanded by remember { mutableStateOf(false) }
                         IconButton(onClick = { menuExpanded = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = "More actions")
+                            Icon(
+                                Icons.Filled.MoreVert,
+                                contentDescription =
+                                    stringResource(R.string.project_detail_more_actions_description),
+                            )
                         }
                         DropdownMenu(
                             expanded = menuExpanded,
@@ -107,7 +116,12 @@ fun ProjectDetailScreen(
                         ) {
                             DropdownMenuItem(
                                 text = {
-                                    Text(if (state.entity.isFavorite) "Unfavorite" else "Favorite")
+                                    Text(
+                                        stringResource(
+                                            if (state.entity.isFavorite) R.string.common_unfavorite
+                                            else R.string.common_favorite
+                                        )
+                                    )
                                 },
                                 leadingIcon = {
                                     Icon(
@@ -123,7 +137,7 @@ fun ProjectDetailScreen(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Edit") },
+                                text = { Text(stringResource(R.string.common_edit)) },
                                 leadingIcon = {
                                     Icon(Icons.Filled.Edit, contentDescription = null)
                                 },
@@ -133,7 +147,7 @@ fun ProjectDetailScreen(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Share") },
+                                text = { Text(stringResource(R.string.common_share)) },
                                 leadingIcon = {
                                     Icon(Icons.Filled.Share, contentDescription = null)
                                 },
@@ -161,7 +175,10 @@ fun ProjectDetailScreen(
                     Modifier.fillMaxSize().padding(innerPadding),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Project not found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(R.string.project_detail_not_found),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             is ProjectDetailUiState.Loaded ->
                 ProjectDetailContent(
@@ -226,11 +243,27 @@ private fun ProjectDetailContent(
         if (hasDetails) {
             item {
                 DetailSectionCard {
-                    detail.category?.let { DetailRow(label = "Category", value = it) }
-                    detail.needles?.let { DetailRow(label = "Needles", value = it) }
-                    detail.stitchSample?.let { DetailRow(label = "Stitch sample", value = it) }
-                    detail.yarn?.let { DetailRow(label = "Yarn", value = it) }
-                    detail.otherMaterials?.let { DetailRow(label = "Other materials", value = it) }
+                    detail.category?.let {
+                        DetailRow(label = stringResource(R.string.common_field_category), value = it)
+                    }
+                    detail.needles?.let {
+                        DetailRow(label = stringResource(R.string.common_field_needles), value = it)
+                    }
+                    detail.stitchSample?.let {
+                        DetailRow(
+                            label = stringResource(R.string.common_field_stitch_sample),
+                            value = it,
+                        )
+                    }
+                    detail.yarn?.let {
+                        DetailRow(label = stringResource(R.string.project_detail_field_yarn), value = it)
+                    }
+                    detail.otherMaterials?.let {
+                        DetailRow(
+                            label = stringResource(R.string.common_field_other_materials),
+                            value = it,
+                        )
+                    }
                     if (detail.tags.isNotEmpty()) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -247,7 +280,7 @@ private fun ProjectDetailContent(
 
         if (linkedYarns.isNotEmpty()) {
             item {
-                DetailSectionCard(title = "Linked yarns") {
+                DetailSectionCard(title = stringResource(R.string.project_detail_linked_yarns_title)) {
                     linkedYarns.forEachIndexed { index, yarn ->
                         if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
                         LinkedEntityRow(
@@ -263,7 +296,7 @@ private fun ProjectDetailContent(
 
         detail.description?.let { value ->
             item {
-                DetailSectionCard(title = "Description") {
+                DetailSectionCard(title = stringResource(R.string.project_detail_description_title)) {
                     Markdown(content = value, imageTransformer = Coil3ImageTransformerImpl)
                 }
             }
@@ -271,7 +304,7 @@ private fun ProjectDetailContent(
 
         if (detail.steps.isNotEmpty()) {
             item {
-                DetailSectionCard(title = "Steps") {
+                DetailSectionCard(title = stringResource(R.string.project_detail_steps_title)) {
                     // SNA-36: avoid re-sorting on every recomposition of this item scope.
                     val sortedSteps =
                         remember(detail.steps) { detail.steps.sortedBy { it.stepNumber } }
@@ -297,7 +330,7 @@ private fun ProjectDetailContent(
 
         detail.notes?.let { value ->
             item {
-                DetailSectionCard(title = "Notes") {
+                DetailSectionCard(title = stringResource(R.string.project_detail_notes_title)) {
                     Markdown(content = value, imageTransformer = Coil3ImageTransformerImpl)
                 }
             }

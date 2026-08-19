@@ -41,10 +41,13 @@ internal fun AccountSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMo
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(SettingsCategory.Account.title) },
+                title = { Text(SettingsCategory.Account.title()) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.settings_nav_back),
+                        )
                     }
                 },
             )
@@ -56,10 +59,19 @@ internal fun AccountSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMo
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
-                SettingsGroupCard(title = "Server", icon = Icons.Filled.Dns) {
+                SettingsGroupCard(
+                    title = stringResource(R.string.account_settings_server_title),
+                    icon = Icons.Filled.Dns,
+                ) {
                     SettingsListItem(
-                        headlineContent = { Text("Server URL") },
-                        supportingContent = { Text(serverUrl.ifBlank { "Not connected" }) },
+                        headlineContent = { Text(stringResource(R.string.account_settings_server_url_label)) },
+                        supportingContent = {
+                            Text(
+                                serverUrl.ifBlank {
+                                    stringResource(R.string.account_settings_not_connected)
+                                }
+                            )
+                        },
                     )
                 }
             }
@@ -97,7 +109,7 @@ internal fun AccountSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMo
     if (showSignOutDialog) {
         AlertDialog(
             onDismissRequest = { showSignOutDialog = false },
-            title = { Text("Sign out?") },
+            title = { Text(stringResource(R.string.account_settings_sign_out_dialog_title)) },
             text = { Text(stringResource(R.string.settings_sign_out_description)) },
             confirmButton = {
                 TextButton(
@@ -110,7 +122,9 @@ internal fun AccountSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMo
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showSignOutDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showSignOutDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
             },
         )
     }

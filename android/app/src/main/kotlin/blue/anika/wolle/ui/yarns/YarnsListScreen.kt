@@ -42,10 +42,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.SearchField
@@ -79,7 +81,7 @@ fun YarnsListScreen(
             ExtendedFloatingActionButton(
                 onClick = onAddYarnClick,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("New yarn") },
+                text = { Text(stringResource(R.string.yarns_list_new_yarn_fab)) },
                 expanded = !listState.canScrollBackward,
             )
         },
@@ -93,14 +95,14 @@ fun YarnsListScreen(
                 SearchField(
                     value = searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
-                    placeholder = "Search yarns",
+                    placeholder = stringResource(R.string.yarns_list_search_placeholder),
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
                 Row(modifier = Modifier.padding(horizontal = 16.dp)) {
                     FilterChip(
                         selected = favoritesOnly,
                         onClick = { viewModel.onFavoritesOnlyChange(!favoritesOnly) },
-                        label = { Text("Favorites only") },
+                        label = { Text(stringResource(R.string.yarns_list_favorites_only)) },
                     )
                 }
                 Spacer(Modifier.height(8.dp))
@@ -108,8 +110,8 @@ fun YarnsListScreen(
                 if (yarns.isEmpty()) {
                     EmptyState(
                         icon = Icons.Filled.Checkroom,
-                        title = "No yarns yet",
-                        subtitle = "Pull to refresh, or adjust your filters.",
+                        title = stringResource(R.string.yarns_list_empty_title),
+                        subtitle = stringResource(R.string.projects_list_empty_subtitle),
                     )
                 } else {
                     LazyColumn(
@@ -179,7 +181,11 @@ private fun YarnListCard(
                 Icon(
                     imageVector =
                         if (yarn.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = if (yarn.isFavorite) "Unfavorite" else "Favorite",
+                    contentDescription =
+                        stringResource(
+                            if (yarn.isFavorite) R.string.common_unfavorite
+                            else R.string.common_favorite
+                        ),
                     tint =
                         if (yarn.isFavorite) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,

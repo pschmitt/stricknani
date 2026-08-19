@@ -41,9 +41,6 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Next
 
-- SNA-37: German (DE) translations for the Android app's UI strings, plus an in-app language
-  setting (default: device locale, fallback English) rather than relying on system locale alone
-
 ### Backend (`stricknani/`) - JSON API for the app
 
 ## SNA-1: `ApiToken` model + Settings UI for Personal Access Tokens
@@ -1353,5 +1350,74 @@ Zenfone 10: search still filters correctly (typed "Crash", got the 3 matching te
 debounce settles), and a project detail screen with linked yarns + 10 steps still renders correctly
 with steps in the right order and thumbnails intact - the memoization/gating changes are purely
 about *when* work re-runs, not *what* gets computed, so no behavior changed, only frequency.
+
+## SNA-37: German (DE) translations + in-app language picker
+
+- [x] **Full string extraction** (user chose "extract everything" over a partial/infra-only
+      scope): every hardcoded English UI literal across all ~29 Composable files, 2 enums
+      (`TopLevelDestination`/`SettingsCategory`, whose `label`/`title`/`subtitle` fields became
+      `@StringRes` ints + `@Composable` extension functions since enum constructors can't call
+      `stringResource`), and ~9 ViewModels' error/toast messages (needed `@ApplicationContext
+      Context` injected into each, since `getString()` isn't available outside Compose) - 224
+      `<string>` resources total, plus 2 `<plurals>` (sync status's "N change(s)" count).
+      Parallelized across 4 forks by disjoint file list, with `strings.xml` itself reserved for
+      sequential editing to avoid a shared-file race - see below for what went wrong.
+- [x] **Fork coordination failure, caught by verification, not by trust**: 2 of the 4 dispatched
+      forks (each a `fork`-type subagent, which inherits the *entire* parent conversation including
+      the "I just dispatched 4 forks" tool calls) misread their own inherited context and believed
+      *they* were the coordinator - one tried to re-dispatch the other 3 forks (correctly rejected:
+      nested forking isn't allowed), the other burned its whole turn polling `ListAgents` in a
+      loop. Neither touched a single one of its assigned files. Caught by diffing actual file
+      content/`git status` against each fork's *claimed* file list rather than trusting the
+      self-reported summary - both groups' 12 files (`HomeScreen.kt`, `OnboardingScreen.kt`,
+      `QrScannerDialog.kt`, `ProjectDetailScreen.kt`, `ProjectEditorScreen.kt`,
+      `ProjectsListScreen.kt`, `NavigationSettingsScreen.kt`, `SettingsScreen.kt`,
+      `SyncSettingsScreen.kt`, `YarnDetailScreen.kt`, `YarnEditorScreen.kt`, `YarnsListScreen.kt`)
+      were done directly instead of re-dispatching more forks. The other 2 forks (settings screens
+      + search, `MainActivity.kt`) completed correctly.
+- [x] A `general-purpose` research agent (not a fork, so no shared-context confusion) then swept
+      every remaining file - `ui/gauge/GaugeCalculatorScreen.kt` (the whole screen, never in the
+      original 4-way split), `ui/home/SyncStatusCard.kt` (needed Android `<plurals>` for the
+      "N change(s)" count text, not the manual `if (n==1) "" else "s"` string-concat trick),
+      `CrashReportDialog.kt`, `ImageViewerDialog.kt`, `SearchField.kt`, both enums, and the
+      ViewModel-layer error strings - found and reported with exact code snippets rather than
+      silently missed.
+- [x] `android/app/src/main/res/values-de/strings.xml` - hand-translated (not machine-translated)
+      German for all 224 strings; `English`/`Deutsch` labels themselves are deliberately left
+      untranslated (native self-names, standard language-picker convention). Verified
+      `values/strings.xml` and `values-de/strings.xml` declare the exact same `name=` set both
+      directions (`comm -3` on sorted name lists) and that every `R.string.*`/`R.plurals.*`
+      reference in the Kotlin source has a matching definition (and vice versa) before considering
+      extraction complete.
+- [x] In-app language picker: `AppearanceSettingsScreen`'s new "Language" `SettingsGroupCard`
+      (Follow system / English / Deutsch, mirroring the existing Theme card's `RadioButton` list),
+      backed by a new `AppLanguage` enum (`data/settings/AppLanguage.kt`) and
+      `SettingsViewModel.appLanguage`/`setAppLanguage()`.
+- [x] **`AppCompatDelegate.setApplicationLocales()` silently no-ops on a plain `ComponentActivity`**
+      (this app's `MainActivity` isn't `AppCompatActivity`) - confirmed empirically: tapping
+      "Deutsch" updated the picker's own radio-button state (so the click handler and ViewModel
+      state were fine) but `adb shell cmd locale get-app-locales blue.anika.wolle.debug` stayed
+      `[]` and the UI stayed in English even after an explicit `activity.recreate()`. Running the
+      exact same `cmd locale set-app-locales ... --locales de` from the shell worked immediately
+      and rendered the German strings correctly, isolating the bug to the in-app
+      `AppCompatDelegate` call specifically, not the resources/locale-matching. Fixed by calling
+      the platform `LocaleManager.setApplicationLocales()` directly on API 33+ (what the shell
+      command does under the hood) and keeping `AppCompatDelegate` only as the API < 33 fallback
+      (persisted via the manifest's `AppLocalesMetadataHolderService` auto-store opt-in, added
+      alongside `androidx.appcompat` as a new dependency - `androidx-appcompat = "1.7.1"`).
+- [x] `AppearanceSettingsScreen`'s language rows call `activity?.recreate()` (via
+      `LocalActivity.current`, not a raw `LocalContext.current as Activity` cast - the latter is an
+      Android Lint error, `ContextCastToActivity`) after `setAppLanguage()` so already-composed
+      strings actually refresh instead of only affecting the next cold start.
+
+Status: **done** (2026-08-19) - `just check` (ktfmt + unit tests + Android Lint) green after the
+`LocalActivity`/`LocaleManager` fixes. Verified for real on the Zenfone 10: fresh install renders
+in English (device locale) by default with correct singular text ("1 change couldn't reach the
+server yet."); Settings → Appearance → Language → Deutsch flips every screen to German instantly
+(`Erscheinungsbild`, `Design`, `System folgen`, `Sprache`, and the bottom nav labels
+`Start`/`Projekte`/`Wolle`/`Suche`/`Maschenprobe`/`Einstellungen` all confirmed via screenshot);
+`adb shell cmd locale get-app-locales` correctly reports `[de]` while selected and `[]` (no
+override) after switching back to "Follow system" - reset to "Follow system" before finishing so
+the test device is left in its default state.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

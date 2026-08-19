@@ -25,11 +25,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import blue.anika.wolle.data.settings.NavbarItemPreference
 import blue.anika.wolle.ui.navigation.NavbarCustomization
 import blue.anika.wolle.ui.navigation.TopLevelDestination
+import blue.anika.wolle.ui.navigation.label
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,10 +42,13 @@ internal fun NavigationSettingsScreen(onBack: () -> Unit, viewModel: SettingsVie
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(SettingsCategory.Navigation.title) },
+                title = { Text(SettingsCategory.Navigation.title()) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.settings_nav_back),
+                        )
                     }
                 },
             )
@@ -54,10 +60,12 @@ internal fun NavigationSettingsScreen(onBack: () -> Unit, viewModel: SettingsVie
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
-                SettingsGroupCard(title = "Bottom bar", icon = Icons.Filled.ViewCarousel) {
+                SettingsGroupCard(
+                    title = stringResource(R.string.settings_navigation_bottom_bar_title),
+                    icon = Icons.Filled.ViewCarousel,
+                ) {
                     Text(
-                        text =
-                            "Choose which destinations appear in the bottom bar, and in what order.",
+                        text = stringResource(R.string.settings_navigation_bottom_bar_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -99,15 +107,21 @@ private fun NavbarItemsEditor(
                     modifier = Modifier.padding(end = 8.dp),
                 )
                 Text(
-                    text = destination.label,
+                    text = destination.label(),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f),
                 )
                 IconButton(onClick = { onMove(index, -1) }, enabled = index > 0) {
-                    Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Move up")
+                    Icon(
+                        Icons.Filled.KeyboardArrowUp,
+                        contentDescription = stringResource(R.string.common_move_up),
+                    )
                 }
                 IconButton(onClick = { onMove(index, 1) }, enabled = index < items.lastIndex) {
-                    Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Move down")
+                    Icon(
+                        Icons.Filled.KeyboardArrowDown,
+                        contentDescription = stringResource(R.string.common_move_down),
+                    )
                 }
             }
         }

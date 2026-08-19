@@ -17,8 +17,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -32,10 +34,13 @@ internal fun SyncSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(SettingsCategory.Sync.title) },
+                title = { Text(SettingsCategory.Sync.title()) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.settings_nav_back),
+                        )
                     }
                 },
             )
@@ -47,17 +52,18 @@ internal fun SyncSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
-                SettingsGroupCard(title = "Background sync", icon = Icons.Filled.Sync) {
+                SettingsGroupCard(
+                    title = stringResource(R.string.settings_sync_group_title),
+                    icon = Icons.Filled.Sync,
+                ) {
                     SettingsListItem(
-                        headlineContent = { Text("Last synced") },
+                        headlineContent = { Text(stringResource(R.string.settings_sync_last_synced_label)) },
                         supportingContent = { Text(formatLastSynced(lastSyncedMillis)) },
                     )
                     SettingsListItem(
-                        headlineContent = { Text("Sync policy") },
+                        headlineContent = { Text(stringResource(R.string.settings_sync_policy_label)) },
                         supportingContent = {
-                            Text(
-                                "Automatically every 6 hours, on launch, and right after each edit"
-                            )
+                            Text(stringResource(R.string.settings_sync_policy_description))
                         },
                     )
                 }
@@ -66,8 +72,9 @@ internal fun SyncSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel
     }
 }
 
+@Composable
 private fun formatLastSynced(millis: Long?): String {
-    if (millis == null) return "Never"
+    if (millis == null) return stringResource(R.string.settings_sync_never)
     val formatter =
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
             .withZone(ZoneId.systemDefault())

@@ -1,9 +1,11 @@
 package blue.anika.wolle.ui.projects
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
@@ -13,6 +15,7 @@ import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -45,6 +48,7 @@ constructor(
     categoryRepository: CategoryRepository,
     yarnRepository: YarnRepository,
     private val syncScheduler: SyncScheduler,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.ProjectEditor>()
@@ -127,7 +131,7 @@ constructor(
     fun save() {
         val current = _form.value
         if (current.name.isBlank()) {
-            _errorMessage.value = "Name is required"
+            _errorMessage.value = context.getString(R.string.error_name_required)
             return
         }
         viewModelScope.launch {
@@ -153,7 +157,7 @@ constructor(
                 syncScheduler.replayThenSyncNow()
                 _saved.value = true
             } catch (e: Exception) {
-                _errorMessage.value = "Couldn't save - try again."
+                _errorMessage.value = context.getString(R.string.error_save_failed)
             } finally {
                 _isSaving.value = false
             }
@@ -169,7 +173,7 @@ constructor(
                 syncScheduler.replayThenSyncNow()
                 _deleted.value = true
             } catch (e: Exception) {
-                _errorMessage.value = "Couldn't delete - try again."
+                _errorMessage.value = context.getString(R.string.error_delete_failed)
             } finally {
                 _isSaving.value = false
             }

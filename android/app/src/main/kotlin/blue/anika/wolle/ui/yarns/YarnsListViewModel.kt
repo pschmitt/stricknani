@@ -1,11 +1,14 @@
 package blue.anika.wolle.ui.yarns
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.YarnRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.FlowPreview
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +28,7 @@ class YarnsListViewModel
 constructor(
     private val yarnRepository: YarnRepository,
     private val mediaUrlResolver: MediaUrlResolver,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -85,7 +89,7 @@ constructor(
             try {
                 yarnRepository.sync()
             } catch (e: Exception) {
-                _errorMessage.value = "Couldn't sync - showing cached data."
+                _errorMessage.value = context.getString(R.string.error_sync_failed)
             } finally {
                 _isRefreshing.value = false
             }
@@ -97,7 +101,7 @@ constructor(
             try {
                 yarnRepository.toggleFavorite(entity, wasFavorite = entity.isFavorite)
             } catch (e: Exception) {
-                _errorMessage.value = "Couldn't update favorite - try again."
+                _errorMessage.value = context.getString(R.string.error_favorite_failed)
             }
         }
     }

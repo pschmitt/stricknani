@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Checkroom
@@ -7,7 +8,10 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import blue.anika.wolle.R
 import kotlinx.serialization.Serializable
 
 /** Type-safe Navigation Compose destinations (see MainActivity/StricknaniNavHost). */
@@ -54,11 +58,17 @@ sealed interface Route {
  * `NavbarCustomization.sanitize`'s "missing destination" handling appends it as visible for anyone
  * with an already-saved navbar preference, same as any other newly added destination.
  */
-enum class TopLevelDestination(val route: Route, val label: String, val icon: ImageVector) {
-    HOME(Route.Home, "Home", Icons.Filled.Home),
-    PROJECTS(Route.Projects, "Projects", Icons.Filled.Folder),
-    YARNS(Route.Yarns, "Yarns", Icons.Filled.Checkroom),
-    SEARCH(Route.Search, "Search", Icons.Filled.Search),
-    GAUGE(Route.Gauge, "Gauge", Icons.Filled.Calculate),
-    SETTINGS(Route.Settings, "Settings", Icons.Filled.Settings),
+enum class TopLevelDestination(
+    val route: Route,
+    @StringRes val labelRes: Int,
+    val icon: ImageVector,
+) {
+    HOME(Route.Home, R.string.destination_label_home, Icons.Filled.Home),
+    PROJECTS(Route.Projects, R.string.destination_label_projects, Icons.Filled.Folder),
+    YARNS(Route.Yarns, R.string.destination_label_yarns, Icons.Filled.Checkroom),
+    SEARCH(Route.Search, R.string.destination_label_search, Icons.Filled.Search),
+    GAUGE(Route.Gauge, R.string.destination_label_gauge, Icons.Filled.Calculate),
+    SETTINGS(Route.Settings, R.string.settings_root_title, Icons.Filled.Settings),
 }
+
+@Composable fun TopLevelDestination.label(): String = stringResource(labelRes)

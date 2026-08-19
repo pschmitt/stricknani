@@ -76,6 +76,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Per-app language picker (SNA-37): opts into AppCompat's own SharedPreferences-backed
+             storage for the chosen locale on API < 33 (the platform's LocaleManager already
+             persists it natively on API 33+). Without this, setApplicationLocales() would still
+             apply immediately but wouldn't survive an app restart on older devices. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data android:name="autoStoreLocales" android:value="true" />
+        </service>
+
         <!-- WorkManager will be initialized manually (Configuration.Provider) once SNA-7 adds
              HiltWorkerFactory injection - disable the default ContentProvider-based auto-init
              now so that doesn't require another manifest change later. -->

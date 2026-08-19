@@ -2,6 +2,24 @@
 <resources>
     <string name="app_name">Stricknani</string>
 
+    <!-- Common / shared -->
+    <string name="common_back">Back</string>
+    <string name="common_close">Close</string>
+    <string name="common_add">Add</string>
+    <string name="common_save">Save</string>
+    <string name="common_edit">Edit</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_share">Share</string>
+    <string name="common_favorite">Favorite</string>
+    <string name="common_unfavorite">Unfavorite</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_move_up">Move up</string>
+    <string name="common_move_down">Move down</string>
+    <string name="common_field_category">Category</string>
+    <string name="common_field_needles">Needles</string>
+    <string name="common_field_stitch_sample">Stitch sample</string>
+    <string name="common_field_other_materials">Other materials</string>
+
     <string name="onboarding_title">Connect to Stricknani</string>
     <string name="onboarding_subtitle">Enter your self-hosted Stricknani server\'s URL and a personal access token. Nothing is sent anywhere else.</string>
     <string name="onboarding_server_url_label">Server URL</string>
@@ -11,7 +29,247 @@
     <string name="onboarding_show_token">Show token</string>
     <string name="onboarding_hide_token">Hide token</string>
     <string name="onboarding_connect_button">Connect</string>
+    <string name="onboarding_mode_manual">Manual</string>
+    <string name="onboarding_mode_qr">QR code</string>
+    <string name="onboarding_mode_password">Sign in</string>
+    <string name="onboarding_qr_instructions">Scan the setup QR code from Stricknani\'s web Settings → API Tokens page.</string>
+    <string name="onboarding_qr_scan_button">Scan QR code</string>
+    <string name="onboarding_email_label">Email</string>
+    <string name="onboarding_password_label">Password</string>
+    <string name="onboarding_hide_password">Hide password</string>
+    <string name="onboarding_show_password">Show password</string>
 
+    <string name="qr_scanner_permission_required">Camera permission is required to scan the setup code</string>
+
+    <!-- Bottom nav destination labels -->
+    <string name="destination_label_home">Home</string>
+    <string name="destination_label_projects">Projects</string>
+    <string name="destination_label_yarns">Yarns</string>
+    <string name="destination_label_search">Search</string>
+    <string name="destination_label_gauge">Gauge</string>
+
+    <!-- Home -->
+    <string name="home_gauge_calculator_description">Gauge calculator</string>
+    <string name="home_welcome_title">Welcome to Stricknani</string>
+    <string name="home_welcome_subtitle">Pull to refresh to sync your projects and yarn stash.</string>
+    <string name="home_favorite_projects_title">Favorite projects</string>
+    <string name="home_favorite_yarns_title">Favorite yarns</string>
+    <string name="home_recent_projects_title">Recently updated projects</string>
+
+    <!-- Search -->
+    <string name="search_placeholder">Search projects and yarns</string>
+    <string name="search_empty_title">Search your stash</string>
+    <string name="search_empty_subtitle">Find projects and yarns already synced to this device.</string>
+    <string name="search_no_matches_title">No matches</string>
+    <string name="search_no_matches_subtitle">Try a different search term.</string>
+
+    <!-- Projects -->
+    <string name="project_new_label">New project</string>
+    <string name="project_detail_field_yarn">Yarn</string>
+    <string name="project_detail_more_actions_description">More actions</string>
+    <string name="project_detail_not_found">Project not found</string>
+    <string name="project_detail_linked_yarns_title">Linked yarns</string>
+    <string name="project_detail_description_title">Description</string>
+    <string name="project_detail_steps_title">Steps</string>
+    <string name="project_detail_notes_title">Notes</string>
+    <string name="project_editor_title_edit">Edit project</string>
+    <string name="project_editor_delete_description">Delete project</string>
+    <string name="project_editor_name_label">Name</string>
+    <string name="project_editor_tags_label">Tags (comma-separated)</string>
+    <string name="project_editor_link_label">Link</string>
+    <string name="project_editor_delete_dialog_title">Delete project?</string>
+    <string name="project_editor_delete_dialog_text">This can\'t be undone.</string>
+    <string name="projects_list_search_placeholder">Search projects</string>
+    <string name="projects_list_category_all">All</string>
+    <string name="projects_list_add_category_description">Add category</string>
+    <string name="projects_list_empty_title">No projects yet</string>
+    <string name="projects_list_empty_subtitle">Pull to refresh, or adjust your filters.</string>
+    <string name="projects_list_add_category_dialog_title">New category</string>
+    <string name="projects_list_add_category_name_placeholder">e.g. Sweaters</string>
+
+    <!-- Yarns -->
+    <string name="yarns_list_new_yarn_fab">New yarn</string>
+    <string name="yarns_list_search_placeholder">Search yarns</string>
+    <string name="yarns_list_favorites_only">Favorites only</string>
+    <string name="yarns_list_empty_title">No yarns yet</string>
+    <string name="yarn_detail_not_found">Yarn not found</string>
+    <string name="yarn_detail_field_brand">Brand</string>
+    <string name="yarn_detail_field_colorway">Colorway</string>
+    <string name="yarn_detail_field_dye_lot">Dye lot</string>
+    <string name="yarn_detail_field_fiber_content">Fiber content</string>
+    <string name="yarn_detail_field_weight_category">Weight category</string>
+    <string name="yarn_detail_field_recommended_needles">Recommended needles</string>
+    <string name="yarn_detail_field_amount">Amount</string>
+    <string name="yarn_detail_used_in_title">Used in</string>
+    <string name="yarn_editor_title_edit">Edit yarn</string>
+    <string name="yarn_editor_delete_description">Delete yarn</string>
+    <string name="yarn_editor_weight_grams_label">Weight (g)</string>
+    <string name="yarn_editor_length_meters_label">Length (m)</string>
+    <string name="yarn_editor_delete_dialog_title">Delete yarn?</string>
+
+    <!-- Settings categories (hub screen) -->
+    <string name="settings_category_account_title">Account</string>
+    <string name="settings_category_account_subtitle">Server connection and sign-out</string>
+    <string name="settings_category_appearance_title">Appearance</string>
+    <string name="settings_category_appearance_subtitle">Theme</string>
+    <string name="settings_category_navigation_title">Navigation</string>
+    <string name="settings_category_navigation_subtitle">Choose destinations and their order</string>
+    <string name="settings_category_sync_title">Sync</string>
+    <string name="settings_category_sync_subtitle">Background refresh status</string>
+    <string name="settings_category_backup_title">Backup</string>
+    <string name="settings_category_backup_subtitle">Export, restore, and scheduled backups</string>
+    <string name="settings_category_about_title">About</string>
+    <string name="settings_category_about_subtitle">Application and server information</string>
+
+    <!-- Settings root / navigation -->
+    <string name="settings_root_title">Settings</string>
+    <string name="settings_nav_back">Back</string>
+    <string name="settings_navigation_bottom_bar_title">Bottom bar</string>
+    <string name="settings_navigation_bottom_bar_description">Choose which destinations appear in the bottom bar, and in what order.</string>
+    <string name="settings_sync_group_title">Background sync</string>
+    <string name="settings_sync_last_synced_label">Last synced</string>
+    <string name="settings_sync_policy_label">Sync policy</string>
+    <string name="settings_sync_policy_description">Automatically every 6 hours, on launch, and right after each edit</string>
+    <string name="settings_sync_never">Never</string>
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_sign_out_description">Removes the saved server URL and API token from this device.</string>
+
+    <!-- Settings: Account -->
+    <string name="account_settings_server_title">Server</string>
+    <string name="account_settings_server_url_label">Server URL</string>
+    <string name="account_settings_not_connected">Not connected</string>
+    <string name="account_settings_sign_out_dialog_title">Sign out?</string>
+
+    <!-- Settings: Appearance -->
+    <string name="appearance_settings_theme_title">Theme</string>
+    <string name="appearance_settings_theme_system_description">Follow the device appearance setting</string>
+    <string name="appearance_settings_theme_system_label">Follow system</string>
+    <string name="appearance_settings_theme_light_label">Light</string>
+    <string name="appearance_settings_theme_dark_label">Dark</string>
+
+    <!-- Settings: About -->
+    <string name="about_settings_version_title">Version</string>
+    <string name="about_settings_app_version_label">App version</string>
+    <string name="about_settings_build_label">Build</string>
+    <string name="about_settings_server_version_label">Server version</string>
+    <string name="about_settings_server_version_unavailable">Unavailable</string>
+    <string name="about_settings_libraries_description">Open-source dependencies used by this app</string>
+    <string name="about_settings_license_label">License</string>
+    <string name="about_settings_license_value">GPL-3.0</string>
+    <string name="about_settings_view_source_button">View source on GitHub</string>
+    <string name="libraries_title">Libraries</string>
+    <string name="libraries_open_source_title">Open-source dependencies</string>
+    <string name="libraries_open_content_description">Open %1$s</string>
+
+    <!-- Settings: Backup -->
+    <string name="backup_settings_manual_title">Manual backup</string>
+    <string name="backup_settings_export_label">Export backup</string>
+    <string name="backup_settings_export_description">Server connection and app settings, optionally encrypted</string>
+    <string name="backup_settings_export_button">Export now</string>
+    <string name="backup_settings_restore_label">Restore from backup</string>
+    <string name="backup_settings_restore_description">Overwrites the server connection on this device</string>
+    <string name="backup_settings_choose_file_button">Choose file</string>
+    <string name="backup_settings_scheduled_title">Scheduled backups</string>
+    <string name="backup_settings_enable_scheduled_label">Enable scheduled backups</string>
+    <string name="backup_settings_destination_folder_label">Destination folder</string>
+    <string name="backup_settings_folder_chosen">Chosen</string>
+    <string name="backup_settings_folder_not_set">Not set</string>
+    <string name="backup_settings_change_button">Change</string>
+    <string name="backup_settings_frequency_label">Frequency</string>
+    <string name="backup_settings_password_label">Backup password</string>
+    <string name="backup_settings_password_set">Set</string>
+    <string name="backup_settings_password_not_set">Not set (unencrypted)</string>
+    <string name="backup_settings_export_password_dialog_title">Encrypt backup? (optional)</string>
+    <string name="backup_settings_export_confirm">Export</string>
+    <string name="backup_settings_restore_password_dialog_title">This backup is password-protected</string>
+    <string name="backup_settings_restore_confirm">Restore</string>
+    <string name="backup_settings_scheduled_password_dialog_title">Scheduled backup password</string>
+    <string name="backup_settings_password_removed_toast">Backup password removed</string>
+    <string name="backup_settings_password_set_toast">Backup password set</string>
+    <string name="backup_settings_password_field_label">Password</string>
+
+    <!-- MainActivity -->
+    <string name="main_activity_crash_report_label">Crash report</string>
+    <string name="main_activity_crash_report_copied">Crash report copied</string>
+
+    <!-- Gauge calculator -->
+    <string name="gauge_calculator_title">Gauge calculator</string>
+    <string name="gauge_calculator_description">Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern\'s gauge.</string>
+    <string name="gauge_calculator_pattern_gauge_title">Pattern gauge (per 10cm)</string>
+    <string name="gauge_calculator_your_gauge_title">Your gauge (per 10cm)</string>
+    <string name="gauge_calculator_pattern_counts_title">Pattern counts</string>
+    <string name="gauge_calculator_cast_on_label">Stitches to cast on</string>
+    <string name="gauge_calculator_rows_to_knit_label">Rows to knit (optional)</string>
+    <string name="gauge_calculator_calculate_button">Calculate</string>
+    <string name="gauge_calculator_stitches_label">Stitches</string>
+    <string name="gauge_calculator_rows_label">Rows</string>
+    <string name="gauge_calculator_results_title">Calculation results</string>
+    <string name="gauge_calculator_adjusted_stitches_label">Adjusted stitches</string>
+    <string name="gauge_calculator_adjusted_rows_label">Adjusted rows</string>
+    <string name="gauge_calculator_not_available">N/A</string>
+    <string name="gauge_calculator_summary_with_rows">Based on a pattern cast-on of %1$d stitches and %2$d rows.</string>
+    <string name="gauge_calculator_summary_without_rows">Based on a pattern cast-on of %1$d stitches.</string>
+
+    <!-- Home sync status card -->
+    <string name="sync_status_syncing">Syncing…</string>
+    <string name="sync_status_issue">Sync issue</string>
+    <string name="sync_status_changes_pending">Changes pending</string>
+    <string name="sync_status_synced">Synced</string>
+    <string name="sync_status_pulling_latest">Pulling the latest projects and yarns.</string>
+    <string name="sync_status_not_synced_yet">Not synced yet</string>
+    <string name="sync_status_last_synced_just_now">Last synced just now</string>
+    <string name="sync_status_last_synced_minutes">Last synced %1$dm ago</string>
+    <string name="sync_status_last_synced_hours">Last synced %1$dh ago</string>
+    <string name="sync_status_last_synced_days">Last synced %1$dd ago</string>
+    <string name="sync_status_last_synced_date">Last synced on %1$s</string>
+
+    <!-- Crash report dialog -->
+    <string name="crash_report_dialog_title">The app recovered from a crash</string>
+    <string name="crash_report_dialog_description">A diagnostic report was saved from the previous run. It contains no API token.</string>
+    <string name="crash_report_dialog_copy_button">Copy report</string>
+    <string name="crash_report_dialog_restart_button">Restart app</string>
+    <string name="crash_report_dialog_dismiss_button">Dismiss</string>
+
+    <!-- Image viewer -->
+    <string name="image_viewer_previous_image">Previous image</string>
+    <string name="image_viewer_next_image">Next image</string>
+
+    <!-- Search field -->
+    <string name="search_field_clear">Clear search</string>
+
+    <!-- Shared ViewModel error messages -->
+    <string name="error_sync_failed">Couldn\'t sync - showing cached data.</string>
+    <string name="error_favorite_failed">Couldn\'t update favorite - try again.</string>
+    <string name="error_save_failed">Couldn\'t save - try again.</string>
+    <string name="error_delete_failed">Couldn\'t delete - try again.</string>
+    <string name="error_name_required">Name is required</string>
+    <string name="error_create_category_failed">Couldn\'t create category \'%1$s\'.</string>
+
+    <!-- Onboarding errors -->
+    <string name="onboarding_error_missing_url_token">Enter both the server URL and the API token</string>
+    <string name="onboarding_error_missing_password_fields">Enter the server URL, email, and password</string>
+    <string name="onboarding_error_invalid_qr">That doesn\'t look like a Stricknani setup code</string>
+    <string name="onboarding_error_malformed_url">Enter a valid server URL, e.g. https://stricknani.example.com</string>
+    <string name="onboarding_error_not_a_server">That doesn\'t look like a Stricknani server (HTTP %1$d).</string>
+    <string name="onboarding_error_unauthorized">That server rejected the API token. Generate a new one in Stricknani under your account menu → API Tokens and try again.</string>
+    <string name="onboarding_error_invalid_credentials">Incorrect email or password.</string>
+    <string name="onboarding_error_unreachable">Couldn\'t reach that server. Check the URL and your network connection.</string>
+    <string name="onboarding_error_server_error">The server responded with an error (HTTP %1$d).</string>
+    <string name="onboarding_error_generic">Couldn\'t connect to that server.</string>
+
+    <!-- Settings: developer mode toasts -->
+    <string name="settings_dev_mode_already_developer">You are already a developer</string>
+    <string name="settings_dev_mode_taps_remaining">%1$d more taps to become a developer</string>
+    <string name="settings_dev_mode_enabled">Developer mode enabled</string>
+
+    <!-- Settings: backup export/import messages -->
+    <string name="backup_error_open_file_write">Could not open the selected file for writing</string>
+    <string name="backup_error_open_file_read">Could not open the selected file for reading</string>
+    <string name="backup_success_exported">Backup exported</string>
+    <string name="backup_error_export_failed">Export failed</string>
+    <string name="backup_success_restored">Backup restored - syncing latest data now</string>
+    <string name="backup_error_restore_failed">Restore failed</string>
+
+    <!-- Settings: Appearance language picker -->
+    <string name="appearance_settings_language_title">Language</string>
 </resources>

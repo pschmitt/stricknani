@@ -29,8 +29,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import blue.anika.wolle.R
 import blue.anika.wolle.data.util.GaugeCalculator
 import blue.anika.wolle.data.util.GaugeResult
 
@@ -68,10 +70,13 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gauge calculator") },
+                title = { Text(stringResource(R.string.gauge_calculator_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_back),
+                        )
                     }
                 },
             )
@@ -84,12 +89,16 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
         ) {
             item {
                 Text(
-                    "Calculate how many stitches to cast on and rows to knit based on your " +
-                        "gauge and the pattern's gauge.",
+                    stringResource(R.string.gauge_calculator_description),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            item { Text("Pattern gauge (per 10cm)", style = MaterialTheme.typography.titleSmall) }
+            item {
+                Text(
+                    stringResource(R.string.gauge_calculator_pattern_gauge_title),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
             item {
                 GaugeRow(
                     stitches = patternStitches,
@@ -98,7 +107,12 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
                     onRowsChange = { patternRows = it },
                 )
             }
-            item { Text("Your gauge (per 10cm)", style = MaterialTheme.typography.titleSmall) }
+            item {
+                Text(
+                    stringResource(R.string.gauge_calculator_your_gauge_title),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
             item {
                 GaugeRow(
                     stitches = userStitches,
@@ -107,12 +121,17 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
                     onRowsChange = { userRows = it },
                 )
             }
-            item { Text("Pattern counts", style = MaterialTheme.typography.titleSmall) }
+            item {
+                Text(
+                    stringResource(R.string.gauge_calculator_pattern_counts_title),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
             item {
                 OutlinedTextField(
                     value = castOnStitches,
                     onValueChange = { castOnStitches = it.filter(Char::isDigit) },
-                    label = { Text("Stitches to cast on") },
+                    label = { Text(stringResource(R.string.gauge_calculator_cast_on_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -122,7 +141,7 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
                 OutlinedTextField(
                     value = rowCount,
                     onValueChange = { rowCount = it.filter(Char::isDigit) },
-                    label = { Text("Rows to knit (optional)") },
+                    label = { Text(stringResource(R.string.gauge_calculator_rows_to_knit_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -144,7 +163,7 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
                     enabled = canCalculate,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Calculate")
+                    Text(stringResource(R.string.gauge_calculator_calculate_button))
                 }
             }
             result?.let { r -> item { GaugeResultCard(r) } }
@@ -163,7 +182,7 @@ private fun GaugeRow(
         OutlinedTextField(
             value = stitches,
             onValueChange = { onStitchesChange(it.filter(Char::isDigit)) },
-            label = { Text("Stitches") },
+            label = { Text(stringResource(R.string.gauge_calculator_stitches_label)) },
             modifier = Modifier.weight(1f),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -171,7 +190,7 @@ private fun GaugeRow(
         OutlinedTextField(
             value = rows,
             onValueChange = { onRowsChange(it.filter(Char::isDigit)) },
-            label = { Text("Rows") },
+            label = { Text(stringResource(R.string.gauge_calculator_rows_label)) },
             modifier = Modifier.weight(1f),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -186,17 +205,37 @@ private fun GaugeResultCard(result: GaugeResult) {
             CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text("Calculation results", style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.gauge_calculator_results_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
             Row(
                 modifier = Modifier.padding(top = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                GaugeStat(label = "Adjusted stitches", value = result.adjustedStitches.toString())
-                GaugeStat(label = "Adjusted rows", value = result.adjustedRows?.toString() ?: "N/A")
+                GaugeStat(
+                    label = stringResource(R.string.gauge_calculator_adjusted_stitches_label),
+                    value = result.adjustedStitches.toString(),
+                )
+                GaugeStat(
+                    label = stringResource(R.string.gauge_calculator_adjusted_rows_label),
+                    value =
+                        result.adjustedRows?.toString()
+                            ?: stringResource(R.string.gauge_calculator_not_available),
+                )
             }
-            val rowsText = result.patternRowCount?.let { " and $it rows" } ?: ""
             Text(
-                "Based on a pattern cast-on of ${result.patternCastOnStitches} stitches$rowsText.",
+                result.patternRowCount?.let {
+                    stringResource(
+                        R.string.gauge_calculator_summary_with_rows,
+                        result.patternCastOnStitches,
+                        it,
+                    )
+                }
+                    ?: stringResource(
+                        R.string.gauge_calculator_summary_without_rows,
+                        result.patternCastOnStitches,
+                    ),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 12.dp),
             )

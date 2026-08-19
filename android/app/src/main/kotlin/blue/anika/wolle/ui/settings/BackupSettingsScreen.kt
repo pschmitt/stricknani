@@ -40,9 +40,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import blue.anika.wolle.data.backup.BackupFrequency
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -104,10 +106,13 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(SettingsCategory.Backup.title) },
+                title = { Text(SettingsCategory.Backup.title()) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.settings_nav_back),
+                        )
                     }
                 },
             )
@@ -119,11 +124,14 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
-                SettingsGroupCard(title = "Manual backup", icon = Icons.Filled.CloudUpload) {
+                SettingsGroupCard(
+                    title = stringResource(R.string.backup_settings_manual_title),
+                    icon = Icons.Filled.CloudUpload,
+                ) {
                     SettingsListItem(
-                        headlineContent = { Text("Export backup") },
+                        headlineContent = { Text(stringResource(R.string.backup_settings_export_label)) },
                         supportingContent = {
-                            Text("Server connection and app settings, optionally encrypted")
+                            Text(stringResource(R.string.backup_settings_export_description))
                         },
                     )
                     Button(
@@ -138,12 +146,12 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                         modifier =
                             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     ) {
-                        Text("Export now")
+                        Text(stringResource(R.string.backup_settings_export_button))
                     }
                     SettingsListItem(
-                        headlineContent = { Text("Restore from backup") },
+                        headlineContent = { Text(stringResource(R.string.backup_settings_restore_label)) },
                         supportingContent = {
-                            Text("Overwrites the server connection on this device")
+                            Text(stringResource(R.string.backup_settings_restore_description))
                         },
                     )
                     OutlinedButton(
@@ -151,15 +159,20 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                         modifier =
                             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     ) {
-                        Text("Choose file")
+                        Text(stringResource(R.string.backup_settings_choose_file_button))
                     }
                 }
             }
 
             item {
-                SettingsGroupCard(title = "Scheduled backups", icon = Icons.Filled.History) {
+                SettingsGroupCard(
+                    title = stringResource(R.string.backup_settings_scheduled_title),
+                    icon = Icons.Filled.History,
+                ) {
                     SettingsListItem(
-                        headlineContent = { Text("Enable scheduled backups") },
+                        headlineContent = {
+                            Text(stringResource(R.string.backup_settings_enable_scheduled_label))
+                        },
                         supportingContent = { Text(scheduledFrequency.label) },
                         trailingContent = {
                             Switch(
@@ -175,17 +188,25 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                         },
                     )
                     SettingsListItem(
-                        headlineContent = { Text("Destination folder") },
+                        headlineContent = {
+                            Text(stringResource(R.string.backup_settings_destination_folder_label))
+                        },
                         supportingContent = {
-                            Text(scheduledFolderUri?.let { "Chosen" } ?: "Not set")
+                            Text(
+                                scheduledFolderUri?.let {
+                                    stringResource(R.string.backup_settings_folder_chosen)
+                                } ?: stringResource(R.string.backup_settings_folder_not_set)
+                            )
                         },
                         leadingContent = { Icon(Icons.Filled.Folder, contentDescription = null) },
                         trailingContent = {
-                            TextButton(onClick = { folderLauncher.launch(null) }) { Text("Change") }
+                            TextButton(onClick = { folderLauncher.launch(null) }) {
+                                Text(stringResource(R.string.backup_settings_change_button))
+                            }
                         },
                     )
                     Text(
-                        "Frequency",
+                        stringResource(R.string.backup_settings_frequency_label),
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
                     Row(
@@ -201,14 +222,17 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                         }
                     }
                     SettingsListItem(
-                        headlineContent = { Text("Backup password") },
+                        headlineContent = { Text(stringResource(R.string.backup_settings_password_label)) },
                         supportingContent = {
-                            Text(if (scheduledPasswordSet) "Set" else "Not set (unencrypted)")
+                            Text(
+                                if (scheduledPasswordSet) stringResource(R.string.backup_settings_password_set)
+                                else stringResource(R.string.backup_settings_password_not_set)
+                            )
                         },
                         leadingContent = { Icon(Icons.Filled.Password, contentDescription = null) },
                         trailingContent = {
                             TextButton(onClick = { showScheduledPasswordDialog = true }) {
-                                Text("Change")
+                                Text(stringResource(R.string.backup_settings_change_button))
                             }
                         },
                     )
@@ -219,8 +243,8 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
 
     if (showExportPasswordDialog) {
         BackupPasswordDialog(
-            title = "Encrypt backup? (optional)",
-            confirmLabel = "Export",
+            title = stringResource(R.string.backup_settings_export_password_dialog_title),
+            confirmLabel = stringResource(R.string.backup_settings_export_confirm),
             onDismiss = {
                 showExportPasswordDialog = false
                 pendingExportUri = null
@@ -235,8 +259,8 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
 
     if (showRestorePasswordDialog) {
         BackupPasswordDialog(
-            title = "This backup is password-protected",
-            confirmLabel = "Restore",
+            title = stringResource(R.string.backup_settings_restore_password_dialog_title),
+            confirmLabel = stringResource(R.string.backup_settings_restore_confirm),
             onDismiss = {
                 showRestorePasswordDialog = false
                 viewModel.dismissBackupState()
@@ -249,9 +273,11 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
     }
 
     if (showScheduledPasswordDialog) {
+        val passwordRemovedMessage = stringResource(R.string.backup_settings_password_removed_toast)
+        val passwordSetMessage = stringResource(R.string.backup_settings_password_set_toast)
         BackupPasswordDialog(
-            title = "Scheduled backup password",
-            confirmLabel = "Save",
+            title = stringResource(R.string.backup_settings_scheduled_password_dialog_title),
+            confirmLabel = stringResource(R.string.common_save),
             allowBlankToClear = true,
             onDismiss = { showScheduledPasswordDialog = false },
             onConfirm = { password ->
@@ -259,7 +285,7 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                 viewModel.setScheduledBackupPassword(password)
                 scope.launch {
                     snackbarHostState.showSnackbar(
-                        if (password.isBlank()) "Backup password removed" else "Backup password set"
+                        if (password.isBlank()) passwordRemovedMessage else passwordSetMessage
                     )
                 }
             },
@@ -283,7 +309,7 @@ private fun BackupPasswordDialog(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.backup_settings_password_field_label)) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -298,6 +324,8 @@ private fun BackupPasswordDialog(
                 Text(confirmLabel)
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
     )
 }

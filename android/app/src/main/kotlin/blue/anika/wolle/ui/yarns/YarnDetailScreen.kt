@@ -50,9 +50,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.shareUrl
@@ -87,7 +89,10 @@ fun YarnDetailScreen(
                 title = { Text(if (state is YarnDetailUiState.Loaded) state.entity.name else "") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_back),
+                        )
                     }
                 },
                 actions = {
@@ -95,7 +100,11 @@ fun YarnDetailScreen(
                         val context = LocalContext.current
                         var menuExpanded by remember { mutableStateOf(false) }
                         IconButton(onClick = { menuExpanded = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = "More actions")
+                            Icon(
+                                Icons.Filled.MoreVert,
+                                contentDescription =
+                                    stringResource(R.string.project_detail_more_actions_description),
+                            )
                         }
                         DropdownMenu(
                             expanded = menuExpanded,
@@ -103,7 +112,12 @@ fun YarnDetailScreen(
                         ) {
                             DropdownMenuItem(
                                 text = {
-                                    Text(if (state.entity.isFavorite) "Unfavorite" else "Favorite")
+                                    Text(
+                                        stringResource(
+                                            if (state.entity.isFavorite) R.string.common_unfavorite
+                                            else R.string.common_favorite
+                                        )
+                                    )
                                 },
                                 leadingIcon = {
                                     Icon(
@@ -119,7 +133,7 @@ fun YarnDetailScreen(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Edit") },
+                                text = { Text(stringResource(R.string.common_edit)) },
                                 leadingIcon = {
                                     Icon(Icons.Filled.Edit, contentDescription = null)
                                 },
@@ -129,7 +143,7 @@ fun YarnDetailScreen(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Share") },
+                                text = { Text(stringResource(R.string.common_share)) },
                                 leadingIcon = {
                                     Icon(Icons.Filled.Share, contentDescription = null)
                                 },
@@ -157,7 +171,10 @@ fun YarnDetailScreen(
                     Modifier.fillMaxSize().padding(innerPadding),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Yarn not found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(R.string.yarn_detail_not_found),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             is YarnDetailUiState.Loaded ->
                 YarnDetailContent(
@@ -206,17 +223,40 @@ private fun YarnDetailContent(
             }
         }
 
-        detail.brand?.let { value -> item { DetailRow(label = "Brand", value = value) } }
-        detail.colorway?.let { value -> item { DetailRow(label = "Colorway", value = value) } }
-        detail.dyeLot?.let { value -> item { DetailRow(label = "Dye lot", value = value) } }
+        detail.brand?.let { value ->
+            item { DetailRow(label = stringResource(R.string.yarn_detail_field_brand), value = value) }
+        }
+        detail.colorway?.let { value ->
+            item {
+                DetailRow(label = stringResource(R.string.yarn_detail_field_colorway), value = value)
+            }
+        }
+        detail.dyeLot?.let { value ->
+            item { DetailRow(label = stringResource(R.string.yarn_detail_field_dye_lot), value = value) }
+        }
         detail.fiberContent?.let { value ->
-            item { DetailRow(label = "Fiber content", value = value) }
+            item {
+                DetailRow(
+                    label = stringResource(R.string.yarn_detail_field_fiber_content),
+                    value = value,
+                )
+            }
         }
         detail.weightCategory?.let { value ->
-            item { DetailRow(label = "Weight category", value = value) }
+            item {
+                DetailRow(
+                    label = stringResource(R.string.yarn_detail_field_weight_category),
+                    value = value,
+                )
+            }
         }
         detail.recommendedNeedles?.let { value ->
-            item { DetailRow(label = "Recommended needles", value = value) }
+            item {
+                DetailRow(
+                    label = stringResource(R.string.yarn_detail_field_recommended_needles),
+                    value = value,
+                )
+            }
         }
         if (detail.weightGrams != null || detail.lengthMeters != null) {
             item {
@@ -226,14 +266,17 @@ private fun YarnDetailContent(
                             detail.lengthMeters?.let { "${it}m" },
                         )
                         .joinToString(" / ")
-                DetailRow(label = "Amount", value = amount)
+                DetailRow(label = stringResource(R.string.yarn_detail_field_amount), value = amount)
             }
         }
 
         if (linkedProjects.isNotEmpty()) {
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
-                Text("Used in", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.yarn_detail_used_in_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 Spacer(Modifier.height(8.dp))
             }
             items(linkedProjects, key = { it.id }) { project ->
@@ -278,7 +321,10 @@ private fun YarnDetailContent(
         detail.notes?.let { value ->
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
-                Text("Notes", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.project_detail_notes_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 Markdown(
                     content = value,
                     imageTransformer = Coil3ImageTransformerImpl,

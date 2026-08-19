@@ -1,9 +1,11 @@
 package blue.anika.wolle.ui.projects
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
@@ -11,6 +13,7 @@ import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +48,7 @@ constructor(
     private val projectRepository: ProjectRepository,
     private val yarnRepository: YarnRepository,
     private val mediaUrlResolver: MediaUrlResolver,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val projectId = savedStateHandle.toRoute<Route.ProjectDetail>().projectId
@@ -97,7 +101,7 @@ constructor(
                     wasFavorite = state.entity.isFavorite,
                 )
             } catch (e: Exception) {
-                _errorMessage.value = "Couldn't update favorite - try again."
+                _errorMessage.value = context.getString(R.string.error_favorite_failed)
             }
         }
     }

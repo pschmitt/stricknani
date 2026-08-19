@@ -35,12 +35,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import blue.anika.wolle.R
 import blue.anika.wolle.scanner.BarcodeAnalyzer
 import java.util.concurrent.Executors
 import timber.log.Timber
@@ -79,7 +81,7 @@ fun QrScannerDialog(onResult: (String) -> Unit, onDismiss: () -> Unit) {
                 ScannerViewfinder(modifier = Modifier.fillMaxSize())
             } else {
                 Text(
-                    "Camera permission is required to scan the setup code",
+                    stringResource(R.string.qr_scanner_permission_required),
                     color = Color.White,
                     modifier = Modifier.align(Alignment.Center).padding(24.dp),
                 )
@@ -88,7 +90,11 @@ fun QrScannerDialog(onResult: (String) -> Unit, onDismiss: () -> Unit) {
                 onClick = onDismiss,
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
             ) {
-                Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.White)
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = stringResource(R.string.common_close),
+                    tint = Color.White,
+                )
             }
         }
     }

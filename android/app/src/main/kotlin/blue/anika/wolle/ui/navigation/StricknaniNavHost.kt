@@ -101,9 +101,9 @@ fun StricknaniNavHost(
                                 }
                             },
                             icon = {
-                                Icon(destination.icon, contentDescription = destination.label)
+                                Icon(destination.icon, contentDescription = destination.label())
                             },
-                            label = { Text(destination.label) },
+                            label = { Text(destination.label()) },
                         )
                     }
                 }

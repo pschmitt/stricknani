@@ -33,9 +33,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,10 +70,20 @@ fun ProjectEditorScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(if (viewModel.isEditing) "Edit project" else "New project") },
+                title = {
+                    Text(
+                        stringResource(
+                            if (viewModel.isEditing) R.string.project_editor_title_edit
+                            else R.string.project_new_label
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_back),
+                        )
                     }
                 },
                 actions = {
@@ -80,11 +92,18 @@ fun ProjectEditorScreen(
                     } else {
                         if (viewModel.isEditing) {
                             IconButton(onClick = { showDeleteDialog = true }) {
-                                Icon(Icons.Filled.Delete, contentDescription = "Delete project")
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription =
+                                        stringResource(R.string.project_editor_delete_description),
+                                )
                             }
                         }
                         IconButton(onClick = viewModel::save) {
-                            Icon(Icons.Filled.Check, contentDescription = "Save")
+                            Icon(
+                                Icons.Filled.Check,
+                                contentDescription = stringResource(R.string.common_save),
+                            )
                         }
                     }
                 },
@@ -100,7 +119,7 @@ fun ProjectEditorScreen(
                 OutlinedTextField(
                     value = form.name,
                     onValueChange = { value -> viewModel.updateForm { it.copy(name = value) } },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.project_editor_name_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -109,7 +128,7 @@ fun ProjectEditorScreen(
                 OutlinedTextField(
                     value = form.category,
                     onValueChange = { value -> viewModel.updateForm { it.copy(category = value) } },
-                    label = { Text("Category") },
+                    label = { Text(stringResource(R.string.common_field_category)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -133,7 +152,7 @@ fun ProjectEditorScreen(
                 OutlinedTextField(
                     value = form.needles,
                     onValueChange = { value -> viewModel.updateForm { it.copy(needles = value) } },
-                    label = { Text("Needles") },
+                    label = { Text(stringResource(R.string.common_field_needles)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -144,7 +163,7 @@ fun ProjectEditorScreen(
                     onValueChange = { value ->
                         viewModel.updateForm { it.copy(stitchSample = value) }
                     },
-                    label = { Text("Stitch sample") },
+                    label = { Text(stringResource(R.string.common_field_stitch_sample)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -155,7 +174,7 @@ fun ProjectEditorScreen(
                     onValueChange = { value ->
                         viewModel.updateForm { it.copy(otherMaterials = value) }
                     },
-                    label = { Text("Other materials") },
+                    label = { Text(stringResource(R.string.common_field_other_materials)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -163,7 +182,7 @@ fun ProjectEditorScreen(
                 OutlinedTextField(
                     value = form.tags,
                     onValueChange = { value -> viewModel.updateForm { it.copy(tags = value) } },
-                    label = { Text("Tags (comma-separated)") },
+                    label = { Text(stringResource(R.string.project_editor_tags_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -172,7 +191,7 @@ fun ProjectEditorScreen(
                 OutlinedTextField(
                     value = form.link,
                     onValueChange = { value -> viewModel.updateForm { it.copy(link = value) } },
-                    label = { Text("Link") },
+                    label = { Text(stringResource(R.string.project_editor_link_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -183,7 +202,7 @@ fun ProjectEditorScreen(
                     onValueChange = { value ->
                         viewModel.updateForm { it.copy(description = value) }
                     },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(R.string.project_detail_description_title)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                 )
@@ -192,13 +211,18 @@ fun ProjectEditorScreen(
                 OutlinedTextField(
                     value = form.notes,
                     onValueChange = { value -> viewModel.updateForm { it.copy(notes = value) } },
-                    label = { Text("Notes") },
+                    label = { Text(stringResource(R.string.project_detail_notes_title)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                 )
             }
             if (yarns.isNotEmpty()) {
-                item { Text("Linked yarns", style = MaterialTheme.typography.titleSmall) }
+                item {
+                    Text(
+                        stringResource(R.string.project_detail_linked_yarns_title),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
                 item {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         yarns.forEach { yarn ->
@@ -217,8 +241,8 @@ fun ProjectEditorScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete project?") },
-            text = { Text("This can't be undone.") },
+            title = { Text(stringResource(R.string.project_editor_delete_dialog_title)) },
+            text = { Text(stringResource(R.string.project_editor_delete_dialog_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -226,11 +250,13 @@ fun ProjectEditorScreen(
                         viewModel.delete()
                     }
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
             },
         )
     }

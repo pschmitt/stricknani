@@ -40,10 +40,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
 import coil3.compose.AsyncImage
@@ -81,10 +83,13 @@ fun HomeScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Stricknani") },
+                title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     IconButton(onClick = onGaugeClick) {
-                        Icon(Icons.Filled.Calculate, contentDescription = "Gauge calculator")
+                        Icon(
+                            Icons.Filled.Calculate,
+                            contentDescription = stringResource(R.string.home_gauge_calculator_description),
+                        )
                     }
                 },
             )
@@ -106,8 +111,8 @@ fun HomeScreen(
                     )
                     EmptyState(
                         icon = Icons.Filled.Home,
-                        title = "Welcome to Stricknani",
-                        subtitle = "Pull to refresh to sync your projects and yarn stash.",
+                        title = stringResource(R.string.home_welcome_title),
+                        subtitle = stringResource(R.string.home_welcome_subtitle),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -122,7 +127,7 @@ fun HomeScreen(
                     )
                     Spacer(Modifier.height(16.dp))
                     if (favoriteProjects.isNotEmpty()) {
-                        HomeSection(title = "Favorite projects") {
+                        HomeSection(title = stringResource(R.string.home_favorite_projects_title)) {
                             items(favoriteProjects, key = { "fp-${it.id}" }) { project ->
                                 HomeCard(
                                     title = project.name,
@@ -134,7 +139,7 @@ fun HomeScreen(
                         }
                     }
                     if (favoriteYarns.isNotEmpty()) {
-                        HomeSection(title = "Favorite yarns") {
+                        HomeSection(title = stringResource(R.string.home_favorite_yarns_title)) {
                             items(favoriteYarns, key = { "fy-${it.id}" }) { yarn ->
                                 HomeCard(
                                     title = yarn.name,
@@ -146,7 +151,7 @@ fun HomeScreen(
                         }
                     }
                     if (recentProjects.isNotEmpty()) {
-                        HomeSection(title = "Recently updated projects") {
+                        HomeSection(title = stringResource(R.string.home_recent_projects_title)) {
                             items(recentProjects, key = { "rp-${it.id}" }) { project ->
                                 HomeCard(
                                     title = project.name,
