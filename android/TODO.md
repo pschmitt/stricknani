@@ -517,13 +517,13 @@ change, not that the new screen looks/behaves correctly once opened.
 - [x] The user decided to pursue Play Store publishing; repository scaffolding and a dry-run-safe,
       explicitly gated workflow now live in SNA-42. The external Play Console account/listing,
       screenshots, privacy URL, content-rating/data-safety forms, and service-account credential
-      remain intentionally unverified until that setup is completed.
+      are configured and verified by the successful internal release/assets workflows.
 
-Status: **mostly done** (2026-08-18) - the release workflow's first-ever run (triggered by its own
-landing commit, since it has no `paths:` filter) succeeded outright: all 9 CI checks green
-including `Release`, and `gh release view latest` confirms a real signed prerelease with all 8 APKs
-(4 ABIs x debug/release) plus `SHA256SUMS`. Play Store publication remains a separate SNA-42
-follow-up and is disabled by default.
+Status: **done** (2026-08-19) - the release workflow is green and `gh release view latest` confirms
+a real signed prerelease with all 8 APKs (4 ABIs x debug/release) plus `SHA256SUMS`; Play Console
+internal release code 1 and the reviewed icon, feature graphic, and 24 screenshots were uploaded
+successfully in workflows `32291620107` and `32292338197`. Production promotion remains a manual
+Play Console decision.
 
 ## Stretch / later
 
@@ -618,17 +618,11 @@ list - the full round trip (password → minted token → persisted connection �
 - [x] Treat every destination's startup refresh as automatic, including Categories, so repeated
       navbar navigation stays silent when no data changed
 
-Status: **mostly done** (2026-08-19) - verified via `just check rofl-13.brkn.lol`
-(`BUILD SUCCESSFUL`, unit tests and lint clean -
-including the `POST_NOTIFICATIONS`-gated `NotificationManagerCompat.notify()` call, which lint
-would otherwise flag as a missing-permission call), then `just deploy-all debug` + relaunch on
-Zenfone 10, Mi Pad 4, and Pixel 5 (`ResumedActivity`, no crash in logcat on any of the three).
-**Not verified**: an actual notification firing on-device - that needs a periodic `SyncWorker` run
-that both finds real changes and has connectivity to a real Stricknani server, none of which is
-reachable this session (same recurring gap as every sync-touching ticket since SNA-6/7). The
-deterministic policy tests cover the worker's periodic/change gate and the API-level,
-permission-requested, and app-notification-enabled cases; Android framework delivery itself still
-needs that live device/server run.
+Status: **done** (2026-08-19) - verified via remote Android build/lint/unit checks and a real PX5
+instrumentation run of `SyncNotifierTest` after granting `POST_NOTIFICATIONS`; the test observed
+the posted `sync_updates` notification in Android's active notification manager and then cleaned it
+up. The periodic/change policy remains covered by deterministic unit tests, while manual and
+startup syncs remain intentionally silent.
 
 ## SNA-15: Backup/restore support
 
@@ -1623,5 +1617,39 @@ landed; combined remote `just check rofl-13.brkn.lol` passed.
 Status: **done** (2026-08-19) - URL import UI/state machine, Bearer-authenticated backend
 boundary, offline outbox persistence, and project/step image persistence landed; remote
 `just check rofl-13.brkn.lol` passed.
+
+## SNA-52: Make Markdown images interactive and size-aware
+
+- [ ] Make images embedded in Markdown cards clickable and open the shared full-screen image
+      viewer, consistently across project and yarn detail content.
+- [ ] Show useful image metadata in the viewer for every image (alt text plus context such as
+      title image, stitch sample, step number/title, or yarn photo position).
+- [ ] Support Stricknani's `.sn-size-sm/md/lg/xl` image annotations and long-form aliases such as
+      `.sn-size-large`, while using a smaller default Markdown image size and preserving relative
+      annotation sizes.
+- [ ] Add focused tests/screenshot coverage and run the remote Android quality checks.
+
+Status: **wip** (2026-08-19; codex-main) - implementation is in progress.
+
+## SNA-53: Standardize primary yarn image display
+
+- [ ] Use the yarn's primary/main photo consistently in yarn lists, project links, details, and
+      create/edit recipe yarn pickers.
+- [ ] Centralize preview selection so screens do not silently fall back to a different photo or
+      omit the image when the primary photo is available.
+- [ ] Add focused coverage for primary-photo selection and the create-project yarn picker, then
+      run the remote Android quality checks.
+
+Status: **wip** (2026-08-19; codex-main) - implementation is in progress.
+
+## SNA-54: Polish Android create/edit screens with Material 3
+
+- [ ] Give new project and new yarn flows a stronger Material 3 hierarchy with expressive
+      surfaces, grouped sections, supportive icons, and clearer primary actions.
+- [ ] Keep the forms comfortable at phone/tablet widths, accessible at larger font scales, and
+      visually consistent between project and yarn creation/editing.
+- [ ] Add focused UI/screenshot coverage and run the remote Android quality checks.
+
+Status: **wip** (2026-08-19; codex-main) - implementation is in progress.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

@@ -131,7 +131,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P1
-- **Status**: wip (PID: main, AGENT: codex-main)
+- **Status**: done
 - **Category**: bug
 - **Description**:
   - When instructions are collapsed in the UI, they are not included in the print output

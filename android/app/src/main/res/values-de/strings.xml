@@ -80,6 +80,14 @@
     <string name="project_editor_title_edit">Projekt bearbeiten</string>
     <string name="project_editor_delete_description">Projekt löschen</string>
     <string name="project_editor_name_label">Name</string>
+    <string name="editor_section_project_details">Projektdetails</string>
+    <string name="editor_section_materials">Materialien und Garn</string>
+    <string name="editor_section_content">Beschreibung und Notizen</string>
+    <string name="editor_section_steps">Anleitung</string>
+    <string name="editor_section_media">Bilder und Anhänge</string>
+    <string name="editor_section_yarn_details">Garndetails</string>
+    <string name="editor_section_yarn_specs">Garn-Eigenschaften</string>
+    <string name="editor_section_photos">Fotos</string>
     <string name="project_editor_tags_label">Tags (kommagetrennt)</string>
     <string name="project_editor_link_label">Link</string>
     <string name="project_editor_delete_dialog_title">Projekt „%1$s“ löschen?</string>

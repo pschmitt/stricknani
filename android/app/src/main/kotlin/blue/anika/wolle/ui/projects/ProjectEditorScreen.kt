@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -39,6 +40,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,6 +49,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
+import blue.anika.wolle.ui.common.MdiIcons
+import coil3.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -241,6 +246,20 @@ fun ProjectEditorScreen(
                             FilterChip(
                                 selected = yarn.id in form.selectedYarnIds,
                                 onClick = { viewModel.toggleYarnSelected(yarn.id) },
+                                leadingIcon = {
+                                    val previewUrl = viewModel.previewUrl(yarn)
+                                    if (previewUrl != null) {
+                                        AsyncImage(
+                                            model = previewUrl,
+                                            contentDescription = yarn.name,
+                                            contentScale = ContentScale.Crop,
+                                            modifier =
+                                                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)),
+                                        )
+                                    } else {
+                                        Icon(MdiIcons.Sheep, contentDescription = null)
+                                    }
+                                },
                                 label = { Text(yarn.name) },
                             )
                         }

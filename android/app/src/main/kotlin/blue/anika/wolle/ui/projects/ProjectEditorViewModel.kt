@@ -10,6 +10,7 @@ import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
+import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
@@ -60,6 +61,7 @@ constructor(
     private val projectRepository: ProjectRepository,
     categoryRepository: CategoryRepository,
     yarnRepository: YarnRepository,
+    private val mediaUrlResolver: MediaUrlResolver,
     private val syncScheduler: SyncScheduler,
     private val mutationFeedback: MutationFeedback,
     private val pendingUploadStore: PendingUploadStore,
@@ -97,6 +99,8 @@ constructor(
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
                 emptyList(),
             )
+
+    fun previewUrl(yarn: YarnEntity): String? = mediaUrlResolver.resolve(yarn.previewUrl)
 
     init {
         val id = route.projectId

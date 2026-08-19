@@ -58,6 +58,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.YarnDto
+import blue.anika.wolle.data.api.dto.primaryFirst
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.ImageViewerDialog
@@ -245,16 +246,17 @@ private fun YarnDetailContent(
         remember(resolveMediaUrl) { MarkdownImageTransformer(resolveMediaUrl) }
     // map (not mapNotNull) - keeps indices aligned with detail.photos/viewerIndex even if a
     // url somehow fails to resolve.
-    val photoUrls = remember(detail.photos) { detail.photos.map { resolveMediaUrl(it.url) ?: "" } }
+    val photos = remember(detail.photos) { detail.photos.primaryFirst() }
+    val photoUrls = remember(photos) { photos.map { resolveMediaUrl(it.url) ?: "" } }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("e2e-yarn-detail"),
         contentPadding = PaddingValues(16.dp),
     ) {
-        if (detail.photos.isNotEmpty()) {
+        if (photos.isNotEmpty()) {
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    itemsIndexed(detail.photos, key = { _, photo -> photo.id }) { index, photo ->
+                    itemsIndexed(photos, key = { _, photo -> photo.id }) { index, photo ->
                         AsyncImage(
                             // SNA-36: reuse the already-remembered photoUrls instead of
                             // recomputing resolveMediaUrl per item.
