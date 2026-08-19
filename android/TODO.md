@@ -357,9 +357,9 @@ follow-up push.
       returns `Result.retry()` when any mutation failed; the Home and Settings screens surface
       queued sync issues and offer retry/dismiss actions rather than hiding a stuck local edit
 
-Status: **mostly done** (2026-08-19) - verified with the new conflict/sync-issue unit tests and
-remote `just check rofl-13.brkn.lol` (ktfmt, unit tests, and Android Lint). A live replay against a
-running Stricknani server remains unverified because no disposable test server was available.
+Status: **in progress** (2026-08-19) - previously verified with conflict/sync-issue unit tests and
+remote `just check rofl-13.brkn.lol` (ktfmt, unit tests, and Android Lint). This audit is adding a
+live replay against the disposable Stricknani fixture before the task can be closed.
 
 ### Android app screens
 
@@ -439,11 +439,10 @@ build, and CI is green on the follow-up push.
       project"/"New yarn" `ExtendedFloatingActionButton` on the respective list screens, an edit
       icon in the respective detail screens' `TopAppBar`
 
-Status: **mostly done** (2026-08-19) - verified via remote `just check rofl-13.brkn.lol` (ktfmt,
-unit tests, and Android Lint), plus focused step-reordering and project-attachment mutation tests
-and API regression tests that confirm step IDs and attached images survive an update reorder. An
-actual live create/edit/delete/upload round-trip remains unverified because no reachable
-disposable Stricknani server was available.
+Status: **in progress** (2026-08-19) - previously verified via remote `just check rofl-13.brkn.lol`
+(ktfmt, unit tests, and Android Lint), plus focused step-reordering and project-attachment mutation
+tests and API regression tests that confirm step IDs and attached images survive an update reorder.
+This audit is adding a live create/edit/delete/upload round-trip against the disposable fixture.
 
 ## SNA-11: Gauge calculator
 
