@@ -11,6 +11,8 @@ import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.ui.common.RefreshController
+import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -56,6 +58,13 @@ constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    private val refreshController = RefreshController(viewModelScope)
+    val refreshState: StateFlow<RefreshState> = refreshController.state
+    val isRefreshing: StateFlow<Boolean> =
+        refreshState
+            .map { it is RefreshState.Refreshing }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
+
     // SNA-36: decoding the full detail JSON (steps/images/attachments) is real work, so it's kept
     // in its own upstream step gated by distinctUntilChanged - Room re-emits observeById on *any*
     // write to the projects table (not just this row), and combine's downstream re-runs on every
@@ -87,6 +96,18 @@ constructor(
 
     fun resolveMediaUrl(path: String?): String? = mediaUrlResolver.resolve(path)
 
+    /** Refreshes this project and only the yarns currently linked from its latest detail. */
+    fun refresh() {
+        refreshController.refresh {
+            val project = projectRepository.refreshOne(projectId)
+            var changed = project.changed
+            project.detail.yarnIds.distinct().forEach { yarnId ->
+                changed = yarnRepository.refreshOne(yarnId).changed || changed
+            }
+            changed
+        }
+    }
+
     /** The web URL for this project (SNA-17), for the detail screen's share action. */
     fun shareUrl(): String? = mediaUrlResolver.resolve("/projects/$projectId")
 
@@ -108,6 +129,8 @@ constructor(
     fun dismissError() {
         _errorMessage.value = null
     }
+
+    fun dismissRefreshFeedback() = refreshController.clearFeedback()
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

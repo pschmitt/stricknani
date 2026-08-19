@@ -11,6 +11,8 @@ import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
+import blue.anika.wolle.ui.common.RefreshController
+import blue.anika.wolle.ui.common.RefreshState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -48,8 +51,12 @@ constructor(
     private val _selectedCategory = MutableStateFlow<String?>(null)
     val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
 
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+    private val refreshController = RefreshController(viewModelScope)
+    val refreshState: StateFlow<RefreshState> = refreshController.state
+    val isRefreshing: StateFlow<Boolean> =
+        refreshState
+            .map { it is RefreshState.Refreshing }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
@@ -95,16 +102,9 @@ constructor(
     }
 
     fun refresh() {
-        viewModelScope.launch {
-            _isRefreshing.value = true
-            try {
-                categoryRepository.sync()
-                projectRepository.sync()
-            } catch (e: Exception) {
-                _errorMessage.value = context.getString(R.string.error_sync_failed)
-            } finally {
-                _isRefreshing.value = false
-            }
+        refreshController.refresh {
+            categoryRepository.sync()
+            projectRepository.sync()
         }
     }
 
@@ -133,6 +133,8 @@ constructor(
     fun dismissError() {
         _errorMessage.value = null
     }
+
+    fun dismissRefreshFeedback() = refreshController.clearFeedback()
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

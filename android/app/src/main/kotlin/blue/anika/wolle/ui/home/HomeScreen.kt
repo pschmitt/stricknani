@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -31,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -47,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
 import coil3.compose.AsyncImage
 
@@ -62,7 +64,7 @@ fun HomeScreen(
     val favoriteYarns by viewModel.favoriteYarns.collectAsStateWithLifecycle()
     val recentProjects by viewModel.recentProjects.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val lastSyncedMillis by viewModel.lastSyncedMillis.collectAsStateWithLifecycle()
     val pendingChangesCount by viewModel.pendingChangesCount.collectAsStateWithLifecycle()
     val hasSyncFailures by viewModel.hasSyncFailures.collectAsStateWithLifecycle()
@@ -70,12 +72,7 @@ fun HomeScreen(
 
     RequestNotificationPermissionEffect()
 
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.dismissError()
-        }
-    }
+    RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
     val isEmpty = favoriteProjects.isEmpty() && favoriteYarns.isEmpty() && recentProjects.isEmpty()
 
@@ -102,64 +99,86 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
         ) {
             if (isEmpty) {
-                Column(Modifier.fillMaxSize()) {
-                    HomeSyncStatusCard(
-                        isRefreshing = isRefreshing,
-                        lastSyncedMillis = lastSyncedMillis,
-                        pendingChangesCount = pendingChangesCount,
-                        hasSyncFailures = hasSyncFailures,
-                        modifier = Modifier.padding(16.dp),
-                    )
-                    EmptyState(
-                        icon = Icons.Filled.Home,
-                        title = stringResource(R.string.home_welcome_title),
-                        subtitle = stringResource(R.string.home_welcome_subtitle),
-                        modifier = Modifier.weight(1f),
-                    )
+                LazyColumn(Modifier.fillMaxSize()) {
+                    item {
+                        HomeSyncStatusCard(
+                            isRefreshing = isRefreshing,
+                            lastSyncedMillis = lastSyncedMillis,
+                            pendingChangesCount = pendingChangesCount,
+                            hasSyncFailures = hasSyncFailures,
+                            modifier = Modifier.padding(16.dp),
+                        )
+                    }
+                    item {
+                        Box(Modifier.fillMaxWidth().height(480.dp)) {
+                            EmptyState(
+                                icon = Icons.Filled.Home,
+                                title = stringResource(R.string.home_welcome_title),
+                                subtitle = stringResource(R.string.home_welcome_subtitle),
+                            )
+                        }
+                    }
                 }
             } else {
-                Column(Modifier.fillMaxSize().padding(vertical = 16.dp)) {
-                    HomeSyncStatusCard(
-                        isRefreshing = isRefreshing,
-                        lastSyncedMillis = lastSyncedMillis,
-                        pendingChangesCount = pendingChangesCount,
-                        hasSyncFailures = hasSyncFailures,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                    Spacer(Modifier.height(16.dp))
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 16.dp),
+                ) {
+                    item {
+                        HomeSyncStatusCard(
+                            isRefreshing = isRefreshing,
+                            lastSyncedMillis = lastSyncedMillis,
+                            pendingChangesCount = pendingChangesCount,
+                            hasSyncFailures = hasSyncFailures,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                    item { Spacer(Modifier.height(16.dp)) }
                     if (favoriteProjects.isNotEmpty()) {
-                        HomeSection(title = stringResource(R.string.home_favorite_projects_title)) {
-                            items(favoriteProjects, key = { "fp-${it.id}" }) { project ->
-                                HomeCard(
-                                    title = project.name,
-                                    previewUrl = viewModel.previewUrl(project.previewUrl),
-                                    fallbackIcon = Icons.Filled.Folder,
-                                    onClick = { onProjectClick(project.id) },
-                                )
+                        item {
+                            HomeSection(
+                                title = stringResource(R.string.home_favorite_projects_title)
+                            ) {
+                                items(favoriteProjects, key = { "fp-${it.id}" }) { project ->
+                                    HomeCard(
+                                        title = project.name,
+                                        previewUrl = viewModel.previewUrl(project.previewUrl),
+                                        fallbackIcon = Icons.Filled.Folder,
+                                        onClick = { onProjectClick(project.id) },
+                                    )
+                                }
                             }
                         }
                     }
                     if (favoriteYarns.isNotEmpty()) {
-                        HomeSection(title = stringResource(R.string.home_favorite_yarns_title)) {
-                            items(favoriteYarns, key = { "fy-${it.id}" }) { yarn ->
-                                HomeCard(
-                                    title = yarn.name,
-                                    previewUrl = viewModel.previewUrl(yarn.previewUrl),
-                                    fallbackIcon = MdiIcons.Sheep,
-                                    onClick = { onYarnClick(yarn.id) },
-                                )
+                        item {
+                            HomeSection(
+                                title = stringResource(R.string.home_favorite_yarns_title)
+                            ) {
+                                items(favoriteYarns, key = { "fy-${it.id}" }) { yarn ->
+                                    HomeCard(
+                                        title = yarn.name,
+                                        previewUrl = viewModel.previewUrl(yarn.previewUrl),
+                                        fallbackIcon = MdiIcons.Sheep,
+                                        onClick = { onYarnClick(yarn.id) },
+                                    )
+                                }
                             }
                         }
                     }
                     if (recentProjects.isNotEmpty()) {
-                        HomeSection(title = stringResource(R.string.home_recent_projects_title)) {
-                            items(recentProjects, key = { "rp-${it.id}" }) { project ->
-                                HomeCard(
-                                    title = project.name,
-                                    previewUrl = viewModel.previewUrl(project.previewUrl),
-                                    fallbackIcon = Icons.Filled.Folder,
-                                    onClick = { onProjectClick(project.id) },
-                                )
+                        item {
+                            HomeSection(
+                                title = stringResource(R.string.home_recent_projects_title)
+                            ) {
+                                items(recentProjects, key = { "rp-${it.id}" }) { project ->
+                                    HomeCard(
+                                        title = project.name,
+                                        previewUrl = viewModel.previewUrl(project.previewUrl),
+                                        fallbackIcon = Icons.Filled.Folder,
+                                        onClick = { onProjectClick(project.id) },
+                                    )
+                                }
                             }
                         }
                     }
@@ -171,16 +190,18 @@ fun HomeScreen(
 
 @Composable
 private fun HomeSection(title: String, content: LazyListScope.() -> Unit) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-    )
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-    ) {
-        content()
+    Column {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+        ) {
+            content()
+        }
     }
 }
 

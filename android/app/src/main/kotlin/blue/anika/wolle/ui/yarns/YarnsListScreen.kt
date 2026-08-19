@@ -50,6 +50,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
 
@@ -64,6 +65,7 @@ fun YarnsListScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
@@ -74,6 +76,8 @@ fun YarnsListScreen(
             viewModel.dismissError()
         }
     }
+
+    RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -108,11 +112,16 @@ fun YarnsListScreen(
                 Spacer(Modifier.height(8.dp))
 
                 if (yarns.isEmpty()) {
-                    EmptyState(
-                        icon = MdiIcons.Sheep,
-                        title = stringResource(R.string.yarns_list_empty_title),
-                        subtitle = stringResource(R.string.projects_list_empty_subtitle),
-                    )
+                    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                        item {
+                            EmptyState(
+                                icon = MdiIcons.Sheep,
+                                title = stringResource(R.string.yarns_list_empty_title),
+                                subtitle = stringResource(R.string.projects_list_empty_subtitle),
+                                modifier = Modifier.fillMaxWidth().height(400.dp),
+                            )
+                        }
+                    }
                 } else {
                     LazyColumn(
                         state = listState,

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,6 +40,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,6 +61,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.shareUrl
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
@@ -73,6 +76,8 @@ fun ProjectDetailScreen(
     viewModel: ProjectDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -82,6 +87,8 @@ fun ProjectDetailScreen(
             viewModel.dismissError()
         }
     }
+
+    RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
     val state = uiState
     Scaffold(
@@ -164,32 +171,45 @@ fun ProjectDetailScreen(
             )
         },
     ) { innerPadding ->
-        when (state) {
-            is ProjectDetailUiState.Loading ->
-                Box(
-                    Modifier.fillMaxSize().padding(innerPadding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            is ProjectDetailUiState.NotFound ->
-                Box(
-                    Modifier.fillMaxSize().padding(innerPadding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        stringResource(R.string.project_detail_not_found),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+        ) {
+            when (state) {
+                is ProjectDetailUiState.Loading ->
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        item {
+                            Box(
+                                Modifier.fillMaxWidth().height(400.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+                is ProjectDetailUiState.NotFound ->
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        item {
+                            Box(
+                                Modifier.fillMaxWidth().height(400.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    stringResource(R.string.project_detail_not_found),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                is ProjectDetailUiState.Loaded ->
+                    ProjectDetailContent(
+                        detail = state.detail,
+                        linkedYarns = state.linkedYarns,
+                        resolveMediaUrl = viewModel::resolveMediaUrl,
+                        onYarnClick = onYarnClick,
                     )
-                }
-            is ProjectDetailUiState.Loaded ->
-                ProjectDetailContent(
-                    detail = state.detail,
-                    linkedYarns = state.linkedYarns,
-                    resolveMediaUrl = viewModel::resolveMediaUrl,
-                    onYarnClick = onYarnClick,
-                    modifier = Modifier.padding(innerPadding),
-                )
+            }
         }
     }
 }

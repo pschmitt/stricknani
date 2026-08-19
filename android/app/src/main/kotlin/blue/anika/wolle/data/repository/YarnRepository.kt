@@ -24,6 +24,8 @@ import retrofit2.HttpException
 
 private const val ENTITY_TYPE = "yarn"
 
+data class YarnRefreshResult(val detail: YarnDto, val changed: Boolean)
+
 /** Cache-first access to yarns, delta-synced against `/api/v1/sync/yarns`. */
 @Singleton
 class YarnRepository
@@ -41,6 +43,15 @@ constructor(
     fun observeById(id: Int): Flow<YarnEntity?> = yarnDao.observeById(id)
 
     fun decodeDetail(entity: YarnEntity): YarnDto = json.decodeFromString(entity.detailJson)
+
+    /** Refreshes one yarn and returns its detail so a detail screen can refresh linked projects. */
+    suspend fun refreshOne(id: Int): YarnRefreshResult {
+        val detail = yarnsApi.getYarn(id)
+        val refreshed = detail.toEntity(json)
+        val changed = yarnDao.getById(id)?.let { it != refreshed } ?: true
+        yarnDao.upsertAll(listOf(refreshed))
+        return YarnRefreshResult(detail = detail, changed = changed)
+    }
 
     /** See `ProjectRepository.toggleFavorite`'s kdoc - same optimistic-with-rollback pattern. */
     suspend fun toggleFavorite(entity: YarnEntity, wasFavorite: Boolean) {

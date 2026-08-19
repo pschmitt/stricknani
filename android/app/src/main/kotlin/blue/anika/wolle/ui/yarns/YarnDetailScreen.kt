@@ -39,6 +39,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,6 +58,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.ui.common.ImageViewerDialog
+import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.shareUrl
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
@@ -71,6 +73,8 @@ fun YarnDetailScreen(
     viewModel: YarnDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -80,6 +84,8 @@ fun YarnDetailScreen(
             viewModel.dismissError()
         }
     }
+
+    RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
     val state = uiState
     Scaffold(
@@ -160,32 +166,45 @@ fun YarnDetailScreen(
             )
         },
     ) { innerPadding ->
-        when (state) {
-            is YarnDetailUiState.Loading ->
-                Box(
-                    Modifier.fillMaxSize().padding(innerPadding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            is YarnDetailUiState.NotFound ->
-                Box(
-                    Modifier.fillMaxSize().padding(innerPadding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        stringResource(R.string.yarn_detail_not_found),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+        ) {
+            when (state) {
+                is YarnDetailUiState.Loading ->
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        item {
+                            Box(
+                                Modifier.fillMaxWidth().height(400.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+                is YarnDetailUiState.NotFound ->
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        item {
+                            Box(
+                                Modifier.fillMaxWidth().height(400.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    stringResource(R.string.yarn_detail_not_found),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                is YarnDetailUiState.Loaded ->
+                    YarnDetailContent(
+                        detail = state.detail,
+                        linkedProjects = state.linkedProjects,
+                        resolveMediaUrl = viewModel::resolveMediaUrl,
+                        onProjectClick = onProjectClick,
                     )
-                }
-            is YarnDetailUiState.Loaded ->
-                YarnDetailContent(
-                    detail = state.detail,
-                    linkedProjects = state.linkedProjects,
-                    resolveMediaUrl = viewModel::resolveMediaUrl,
-                    onProjectClick = onProjectClick,
-                    modifier = Modifier.padding(innerPadding),
-                )
+            }
         }
     }
 }

@@ -223,6 +223,12 @@
     <string name="sync_status_last_synced_days">Last synced %1$dd ago</string>
     <string name="sync_status_last_synced_date">Last synced on %1$s</string>
 
+    <!-- Foreground refresh feedback -->
+    <string name="refresh_success">Updated</string>
+    <string name="refresh_no_changes">Already up to date</string>
+    <string name="refresh_offline">You’re offline - showing cached data.</string>
+    <string name="refresh_error">Couldn’t refresh - showing cached data.</string>
+
     <!-- Crash report dialog -->
     <string name="crash_report_dialog_title">The app recovered from a crash</string>
     <string name="crash_report_dialog_description">A diagnostic report was saved from the previous run. It contains no API token.</string>

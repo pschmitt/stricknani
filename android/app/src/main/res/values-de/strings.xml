@@ -223,6 +223,12 @@
     <string name="sync_status_last_synced_days">Vor %1$d Tagen synchronisiert</string>
     <string name="sync_status_last_synced_date">Zuletzt synchronisiert am %1$s</string>
 
+    <!-- Foreground refresh feedback -->
+    <string name="refresh_success">Aktualisiert</string>
+    <string name="refresh_no_changes">Bereits aktuell</string>
+    <string name="refresh_offline">Du bist offline - zwischengespeicherte Daten werden angezeigt.</string>
+    <string name="refresh_error">Aktualisierung fehlgeschlagen - zwischengespeicherte Daten werden angezeigt.</string>
+
     <!-- Crash report dialog -->
     <string name="crash_report_dialog_title">Die App hat sich von einem Absturz erholt</string>
     <string name="crash_report_dialog_description">Ein Diagnosebericht wurde vom letzten Durchlauf gespeichert. Er enthält kein API-Token.</string>

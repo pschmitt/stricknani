@@ -11,6 +11,8 @@ import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.ui.common.RefreshController
+import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -56,6 +58,13 @@ constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    private val refreshController = RefreshController(viewModelScope)
+    val refreshState: StateFlow<RefreshState> = refreshController.state
+    val isRefreshing: StateFlow<Boolean> =
+        refreshState
+            .map { it is RefreshState.Refreshing }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
+
     // SNA-36: see `ProjectDetailViewModel`'s identical fix - keeps the JSON detail decode gated on
     // this yarn's own row actually changing, not every unrelated project write.
     private val detailFlow: Flow<Pair<YarnEntity, YarnDto>?> =
@@ -84,6 +93,18 @@ constructor(
 
     fun resolveMediaUrl(path: String?): String? = mediaUrlResolver.resolve(path)
 
+    /** Refreshes this yarn and only the projects currently linked from its latest detail. */
+    fun refresh() {
+        refreshController.refresh {
+            val yarn = yarnRepository.refreshOne(yarnId)
+            var changed = yarn.changed
+            yarn.detail.projectIds.distinct().forEach { projectId ->
+                changed = projectRepository.refreshOne(projectId).changed || changed
+            }
+            changed
+        }
+    }
+
     /** The web URL for this yarn (SNA-17), for the detail screen's share action. */
     fun shareUrl(): String? = mediaUrlResolver.resolve("/yarn/$yarnId")
 
@@ -102,6 +123,8 @@ constructor(
     fun dismissError() {
         _errorMessage.value = null
     }
+
+    fun dismissRefreshFeedback() = refreshController.clearFeedback()
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

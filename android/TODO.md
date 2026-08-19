@@ -1433,16 +1433,17 @@ Status: **done** (2026-08-19; remotely verified with `just check` on `rofl-13.br
 unit tests, and `lintDebug` all passed).
 ## SNA-38: Pull-to-refresh gestures with user feedback
 
-- [ ] Add pull-to-refresh on Home, refreshing all cached data.
-- [ ] Add pull-to-refresh on the Projects and Yarns list screens, refreshing all items in the
-      relevant collection.
-- [ ] Add pull-to-refresh on individual Project and Yarn detail screens, refreshing only the
-      currently displayed item and its relevant linked data.
-- [ ] Show clear in-progress feedback while a refresh is running, followed by success, no-change,
-      offline, or error feedback as appropriate.
-- [ ] Prevent duplicate concurrent refreshes and cover gesture, offline, and feedback behavior in
-      Android tests.
+- [x] Home pull-to-refresh refreshes categories, projects, and yarns.
+- [x] Projects and Yarns list pull-to-refresh refreshes the complete relevant collection (including
+      category metadata for Projects).
+- [x] Project and Yarn detail pull-to-refresh fetches the current item and only its currently
+      linked yarns/projects.
+- [x] Shared foreground feedback reports in-progress, changed, no-change, offline, and error
+      outcomes in English and German; cached Room content remains visible on failures.
+- [x] An atomic refresh guard prevents duplicate concurrent refreshes; unit tests cover duplicate
+      calls and changed/no-change/offline/error outcomes.
 
-Status: not started (2026-08-19).
+Status: **done** (2026-08-19) - verified with remote `just check` on `rofl-13.brkn.lol`:
+`ktfmtCheck`, `:app:testDebugUnitTest`, and `lintDebug` all passed after remote formatting.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

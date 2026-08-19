@@ -24,6 +24,8 @@ import retrofit2.HttpException
 
 private const val ENTITY_TYPE = "project"
 
+data class ProjectRefreshResult(val detail: ProjectDto, val changed: Boolean)
+
 /** Cache-first access to projects, delta-synced against `/api/v1/sync/projects`. */
 @Singleton
 class ProjectRepository
@@ -43,6 +45,15 @@ constructor(
     fun decodeDetail(entity: ProjectEntity): ProjectDto = json.decodeFromString(entity.detailJson)
 
     fun decodeTags(entity: ProjectEntity): List<String> = json.decodeFromString(entity.tagsJson)
+
+    /** Refreshes one project and returns its detail so a detail screen can refresh linked yarns. */
+    suspend fun refreshOne(id: Int): ProjectRefreshResult {
+        val detail = projectsApi.getProject(id)
+        val refreshed = detail.toEntity(json)
+        val changed = projectDao.getById(id)?.let { it != refreshed } ?: true
+        projectDao.upsertAll(listOf(refreshed))
+        return ProjectRefreshResult(detail = detail, changed = changed)
+    }
 
     /**
      * Flips the favorite flag immediately in Room (optimistic), then fires the network call; on
