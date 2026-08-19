@@ -87,9 +87,9 @@ Execution-oriented backlog for Stricknani.
 | T81 | P1 | todo | android/test | feat | Add focused Android Compose/instrumentation coverage for route, accessibility, dialog, loading/error, and offline UI states |
 | T82 | P2 | todo | android/ci | feat | Add manual Android screenshot capture CI for phone and tablet layouts, light/dark themes, and reviewable artifacts |
 | T83 | P2 | todo | test/ci | refactor | Split browser E2E into a fast pull-request smoke suite and a longer manual cache/offline journey |
-| T84 | P2 | wip (PID: main, AGENT: codex-main) | ci/test | refactor | Enforce the documented 80% Python coverage threshold in CI instead of only uploading a report |
-| T85 | P2 | todo | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
-| T86 | P2 | wip (PID: main, AGENT: codex-main) | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
+| T84 | P2 | done | ci/test | refactor | Enforce the documented 80% Python coverage threshold in CI instead of only uploading a report |
+| T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
+| T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
 | T87 | P3 | todo | release/decision | feat | Decide whether Stricknani should publish to Google Play and, if yes, add the gated store-assets and publishing workflow |
 
 
@@ -1109,7 +1109,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ci/test
 - **Priority**: P2
-- **Status**: wip (PID: main, AGENT: codex-main)
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - The product specification requires at least 80% coverage, but CI currently only generates and uploads `coverage.xml` without enforcing a minimum.
@@ -1123,7 +1123,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ci
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Web CI currently uses floating `uv latest` and Python `3.x`; browser and emulator verification should not silently change underneath the test suite.
@@ -1137,7 +1137,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ci/build
 - **Priority**: P2
-- **Status**: wip (PID: main, AGENT: codex-main)
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Container verification relies on a fixed ten-second sleep, and future disposable E2E/screenshot fixtures will repeatedly pull the same images without a cache strategy.
