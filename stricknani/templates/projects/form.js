@@ -504,9 +504,9 @@ function initTagEditor() {
 			tags.forEach((tag) => {
 				const chip = document.createElement("button");
 				chip.type = "button";
-				chip.className = "badge badge-outline gap-1";
+					chip.className = "md3-tag-chip";
 				chip.setAttribute("data-tag", tag);
-				chip.innerHTML = `#${tag}<span class="mdi mdi-close text-[10px]"></span>`;
+					chip.innerHTML = `#${tag}<span class="mdi mdi-close md3-tag-chip__remove"></span>`;
 				chip.addEventListener("click", () => removeTag(tag));
 				view.chips.appendChild(chip);
 			});
@@ -764,7 +764,7 @@ function initYarnSelector() {
 	function updateSelectedDisplay() {
 		if (selectedYarns.size === 0 && pendingYarns.size === 0) {
 			selectedContainer.innerHTML =
-				'<span class="text-base-content/40 text-sm">{{ _("No yarns selected") }}</span>';
+				'<span class="md3-yarn-selection-empty">{{ _("No yarns selected") }}</span>';
 			return;
 		}
 
@@ -773,22 +773,21 @@ function initYarnSelector() {
 		// Render existing yarns
 		selectedYarns.forEach((yarn, id) => {
 			const chip = document.createElement("div");
-			chip.className =
-				"flex items-center gap-3 py-2.5 px-3.5 bg-primary/10 text-primary border border-primary/20 rounded-xl";
+				chip.className = "md3-yarn-selection";
 
 			const imageHtml = yarn.imageUrl
-				? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="w-10 h-10 rounded-lg object-cover" data-img-fallback="1">`
+					? `<img src="${yarn.imageUrl}" alt="${yarn.name}" class="md3-yarn-selection__media" data-img-fallback="1">`
 				: "";
 
 			chip.innerHTML = `
 	                    ${imageHtml}
-	                    <div class="w-10 h-10 rounded-lg bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? " hidden" : ""}" data-fallback-icon>
-	                        <span class="mdi mdi-image-off text-base" aria-hidden="true"></span>
-	                    </div>
-	                    <span class="text-base flex-1 min-w-0 truncate">
+					                    <div class="md3-yarn-selection__fallback${yarn.imageUrl ? " hidden" : ""}" data-fallback-icon>
+					                        <span class="mdi mdi-image-off" aria-hidden="true"></span>
+					                    </div>
+					                    <span class="md3-yarn-selection__name">
 	                        ${yarn.name}${yarn.brand ? ` • ${yarn.brand}` : ""}
 	                    </span>
-	                    <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-yarn="${id}">
+					                    <button type="button" class="md3-yarn-selection__remove" data-remove-yarn="${id}">
 	                        <span class="mdi mdi-close"></span>
 	                    </button>
 	                `;
@@ -803,23 +802,22 @@ function initYarnSelector() {
 		pendingYarns.forEach((yarn) => {
 			const name = yarn.name;
 			const chip = document.createElement("div");
-			chip.className =
-				"flex items-center gap-3 py-2.5 px-3.5 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl";
+				chip.className = "md3-yarn-selection md3-yarn-selection--pending";
 
 			const imageHtml = yarn.imageUrl
-				? `<img src="${yarn.imageUrl}" alt="${name}" class="w-10 h-10 rounded-lg object-cover" data-img-fallback="1">`
+					? `<img src="${yarn.imageUrl}" alt="${name}" class="md3-yarn-selection__media" data-img-fallback="1">`
 				: "";
 
 			chip.innerHTML = `
 	                    ${imageHtml}
-	                    <div class="relative w-10 h-10 rounded-lg bg-base-300 flex items-center justify-center text-base-content/60${yarn.imageUrl ? " hidden" : ""}" data-fallback-icon>
-	                        <span class="mdi mdi-sheep text-base" aria-hidden="true"></span>
-	                        <span class="absolute -top-1.5 -right-1.5 badge badge-secondary font-black text-[8px] h-3 min-h-0 px-1 border-none shadow-sm scale-90">NEW</span>
-	                    </div>
-	                    <div class="flex-1 min-w-0">
-	                        <span class="text-base block truncate">${name}</span>
-	                    </div>
-	                    <button type="button" class="btn btn-ghost btn-xs btn-circle" data-remove-pending="${name}">
+					                    <div class="md3-yarn-selection__fallback${yarn.imageUrl ? " hidden" : ""}" data-fallback-icon>
+					                        <span class="mdi mdi-sheep" aria-hidden="true"></span>
+					                        <span class="md3-yarn-selection__new">NEW</span>
+					                    </div>
+					                    <div class="md3-yarn-selection__name">
+					                        <span>${name}</span>
+					                    </div>
+					                    <button type="button" class="md3-yarn-selection__remove" data-remove-pending="${name}">
 	                        <span class="mdi mdi-close"></span>
 	                    </button>
 	                `;
@@ -1038,9 +1036,10 @@ function createImagePreviewHTML(imageData, options = {}) {
 	const pswpHeight = imageData.height || 1200;
 	const altText = imageData.alt_text || "";
 	const thumbUrl = imageData.thumbnail_url || imageData.url;
+	const imageVariant = imageClass === "h-20" ? " md3-photo-tile__image--compact" : "";
 
 	return `
-        <div class="relative group" data-image-id="${imageData.id}">
+		<div class="md3-photo-tile" data-image-id="${imageData.id}">
             <a href="${imageData.url}"
                data-pswp-width="${pswpWidth}"
                data-pswp-height="${pswpHeight}"
@@ -1049,16 +1048,16 @@ function createImagePreviewHTML(imageData, options = {}) {
                ${showDelete ? 'data-pswp-delete="true"' : ""}
                data-pswp-is-primary="${isPrimary ? "true" : "false"}"
                draggable="true" data-call-dragstart="handleImageDragStart" data-call-dragstart-args='["$event"]'
-               class="block">
-                <img src="${thumbUrl}"
-                     alt="${altText}"
-                     class="${imageClass} w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
+		               class="md3-photo-tile__link">
+		                <img src="${thumbUrl}"
+		                     alt="${altText}"
+		                     class="md3-photo-tile__image${imageVariant}">
             </a>
 	            ${
 								showPromote
 									? `
 	            <button type="button" data-call="promoteImage" data-call-args='[${projectId},${imageData.id}]'
-	                class="title-promote-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all ${isPrimary ? "bg-amber-400 text-white opacity-100" : "bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500"} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+		                class="title-promote-btn md3-photo-action md3-photo-action--promote${isPrimary ? " is-primary" : ""}"
 	                title="{{ _('Make title image') }}">
 	                <span class="mdi ${isPrimary ? "mdi-star" : "mdi-star-outline"}"></span>
 	            </button>
@@ -1069,7 +1068,7 @@ function createImagePreviewHTML(imageData, options = {}) {
 								showDelete
 									? `
 	            <button type="button" data-call="deleteImage" data-call-args='[${imageData.id}]'
-	                class="absolute top-1 right-1 z-10 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+		                class="md3-photo-action md3-photo-action--delete"
 	                <span class="mdi mdi-delete"></span>
 	            </button>
 	            `
@@ -1437,16 +1436,16 @@ function addAttachmentToUI(data) {
 
 	const thumbOrIcon = thumbUrl
 		? `
-                            <img src="${thumbUrl}" alt="" class="w-full h-full object-cover" loading="lazy">
+							<img src="${thumbUrl}" alt="" class="md3-attachment-item__thumbnail" loading="lazy">
             `
 		: `
-                            <span class="mdi ${icon} text-2xl"></span>
+	                <span class="mdi ${icon} md3-attachment-item__icon"></span>
             `;
 
 	const pswpWidth = typeof data.width === "number" ? data.width : 1200;
 	const pswpHeight = typeof data.height === "number" ? data.height : 1200;
 	const html = `
-                <div class="flex items-center justify-between p-3 rounded-xl border border-base-200 bg-base-200/30 group cursor-pointer"
+				<div class="md3-attachment-item"
                     role="button"
                     tabindex="0"
                     data-action="open-attachment"
@@ -1455,30 +1454,30 @@ function addAttachmentToUI(data) {
                     data-attachment-name="${originalName}"
                     ${data.id ? `data-attachment-id="${data.id}"` : `data-pending-token="${data.token}"`}
                     ${kind === "image" ? `data-pswp-open-index="${openIndex}"` : ""}>
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+					<div class="md3-attachment-item__main">
+						<div class="md3-attachment-item__preview">
                             ${thumbOrIcon}
                         </div>
-                    <div class="min-w-0">
-                        <p class="font-medium text-sm truncate" title="${originalName}">
+					<div class="md3-attachment-item__details">
+						<p class="md3-attachment-item__name" title="${originalName}">
                             ${originalName}
                         </p>
-                        <p class="text-[10px] text-base-content/50 uppercase font-bold tracking-wider">
+						<p class="md3-attachment-item__type">
                             ${sizeMb} MB
                         </p>
                     </div>
                 </div>
-                <div class="flex items-center gap-1">
+				<div class="md3-attachment-item__actions">
                     <a href="${url}" target="_blank"
-                        class="btn btn-ghost btn-sm btn-circle text-primary"
+						class="md3-button md3-button--icon md3-button--text md3-attachment-action--download"
                         title="{{ _('Download') }}">
-                        <span class="mdi mdi-download text-xl"></span>
+						<span class="mdi mdi-download md3-attachment-action__icon"></span>
                     </a>
                     <button type="button" data-call="deleteAttachment"
                         data-call-args='[${data.id ? data.id : `"${token}"`}]'
-                        class="btn btn-ghost btn-sm btn-circle text-error"
+						class="md3-button md3-button--icon md3-button--text md3-attachment-action--delete"
                         title="{{ _('Delete') }}">
-                        <span class="mdi mdi-delete-outline text-xl"></span>
+						<span class="mdi mdi-delete-outline md3-attachment-action__icon"></span>
                     </button>
                 </div>
                     ${
@@ -1525,12 +1524,12 @@ async function deleteAttachment(idOrToken) {
 		const sizeText =
 			sizeBytes > 0 ? (sizeBytes / 1024 / 1024).toFixed(2) + " MB" : "";
 
-		contentHtml = '<div class="flex items-start gap-4 py-4">';
+		contentHtml = '<div class="md3-attachment-preview">';
 
 		contentHtml +=
-			'<div class="shrink-0 w-24 h-24 rounded-lg bg-base-200 flex items-center justify-center overflow-hidden">';
+			'<div class="md3-attachment-preview__media">';
 		if (thumbnailUrl) {
-			contentHtml += `<img src="${thumbnailUrl}" alt="" class="w-full h-full object-cover">`;
+		contentHtml += `<img src="${thumbnailUrl}" alt="" class="md3-attachment-preview__image">`;
 		} else {
 			let iconClass = "mdi-file-outline";
 			if (kind === "pdf") {
@@ -1538,15 +1537,15 @@ async function deleteAttachment(idOrToken) {
 			} else if (kind === "image") {
 				iconClass = "mdi-file-image-outline";
 			}
-			contentHtml += `<span class="mdi ${iconClass} text-4xl text-primary/60"></span>`;
+		contentHtml += `<span class="mdi ${iconClass} md3-attachment-preview__icon"></span>`;
 		}
 		contentHtml += "</div>";
 
-		contentHtml += '<div class="flex-1 min-w-0">';
-		contentHtml += `<p class="font-medium text-base-content truncate" title="${filename}">${filename}</p>`;
-		contentHtml += `<p class="text-sm text-base-content/60 mt-1">${typeLabel}</p>`;
+		contentHtml += '<div class="md3-attachment-preview__details">';
+		contentHtml += `<p class="md3-attachment-preview__name" title="${filename}">${filename}</p>`;
+		contentHtml += `<p class="md3-attachment-preview__type">${typeLabel}</p>`;
 		if (sizeText) {
-			contentHtml += `<p class="text-sm text-base-content/60">${sizeText}</p>`;
+			contentHtml += `<p class="md3-attachment-preview__size">${sizeText}</p>`;
 		}
 		contentHtml += "</div>";
 
@@ -1627,21 +1626,21 @@ function addPendingTitleImageToGallery(url, options = {}) {
 		}
 	}
 	const div = document.createElement("div");
-	div.className = "relative group";
+	div.className = "md3-photo-tile";
 	div.setAttribute("data-pending-url", url);
 	div.innerHTML = `
         <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption=""
             data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false"
             draggable="true" data-call-dragstart="handleImageDragStart" data-call-dragstart-args='["$event"]'
-            class="block">
-            <img src="${url}" alt="{{ _('Uploaded image') }}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
+            class="md3-photo-tile__link">
+	            <img src="${url}" alt="{{ _('Uploaded image') }}" class="md3-photo-tile__image">
         </a>
 	        <button type="button" data-call="promotePendingImage" data-call-args='["$this","$dataset:url"]' data-url="${url}"
-	            class="promote-pending-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+	            class="promote-pending-btn md3-photo-action md3-photo-action--promote"
 	            title="{{ _('Make title image') }}">
 	            <span class="mdi mdi-star-outline"></span>
 	        </button>
-	        <button type="button" data-call="deletePendingImage" data-call-args='["$this","$dataset:url"]' data-url="${url}" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+	        <button type="button" data-call="deletePendingImage" data-call-args='["$this","$dataset:url"]' data-url="${url}" class="md3-photo-action md3-photo-action--delete">
 	            <span class="mdi mdi-delete"></span>
 	        </button>
     `;
@@ -1667,8 +1666,7 @@ function promotePendingImage(btn, url) {
 
 	// Visual update
 	document.querySelectorAll(".promote-pending-btn").forEach((b) => {
-		b.classList.remove("bg-amber-400", "text-white", "opacity-100");
-		b.classList.add("bg-white/90", "text-slate-400", "opacity-0");
+		b.classList.remove("is-primary");
 		const star = b.querySelector("span");
 		if (star) {
 			star.classList.remove("mdi-star");
@@ -1683,8 +1681,7 @@ function promotePendingImage(btn, url) {
 	});
 
 	if (btn) {
-		btn.classList.add("bg-amber-400", "text-white", "opacity-100");
-		btn.classList.remove("bg-white/90", "text-slate-400", "opacity-0");
+		btn.classList.add("is-primary");
 		const star = btn.querySelector("span");
 		if (star) {
 			star.classList.remove("mdi-star-outline");
@@ -1761,14 +1758,14 @@ async function deleteImage(imageId) {
 	const width = linkTag?.dataset.pswpWidth || "";
 	const height = linkTag?.dataset.pswpHeight || "";
 
-	let contentHtml = '<div class="flex flex-col items-center gap-4 py-4">';
+	let contentHtml = '<div class="md3-file-preview">';
 	if (thumbnailUrl) {
-		contentHtml += `<img src="${thumbnailUrl}" alt="" class="max-h-48 rounded-lg shadow-md object-contain">`;
+		contentHtml += `<img src="${thumbnailUrl}" alt="" class="md3-file-preview__image">`;
 	}
-	contentHtml += '<div class="text-center">';
-	contentHtml += `<p class="font-medium text-base-content">${filename}</p>`;
+	contentHtml += '<div class="md3-file-preview__details">';
+	contentHtml += `<p class="md3-file-preview__name">${filename}</p>`;
 	if (width && height) {
-		contentHtml += `<p class="text-sm text-base-content/60 mt-1">${width} × ${height} px</p>`;
+		contentHtml += `<p class="md3-file-preview__dimensions">${width} × ${height} px</p>`;
 	}
 	contentHtml += "</div></div>";
 
@@ -1849,8 +1846,7 @@ function setPrimaryTitleImage(imageId) {
 		}
 		const button = item.querySelector(".title-promote-btn");
 		if (button) {
-			button.classList.remove("bg-amber-400", "text-white", "opacity-100");
-			button.classList.add("bg-white/90", "text-slate-400", "opacity-0");
+			button.classList.remove("is-primary");
 			const icon = button.querySelector("span");
 			if (icon) {
 				icon.classList.remove("mdi-star");
@@ -1869,8 +1865,7 @@ function setPrimaryTitleImage(imageId) {
 	}
 	const targetButton = target.querySelector(".title-promote-btn");
 	if (targetButton) {
-		targetButton.classList.add("bg-amber-400", "text-white", "opacity-100");
-		targetButton.classList.remove("bg-white/90", "text-slate-400", "opacity-0");
+		targetButton.classList.add("is-primary");
 		const icon = targetButton.querySelector("span");
 		if (icon) {
 			icon.classList.add("mdi-star");
@@ -2129,60 +2124,59 @@ function addStep(elOrTitle = "", description = "", stepImages = []) {
 	const container = document.getElementById("stepsContainer");
 	const stepNumber = container.children.length + 1;
 	const div = document.createElement("div");
-	div.className =
-		"step-item border rounded-lg p-2 md:p-4 bg-base-200 border-base-300 dark:bg-base-300/50 dark:border-base-700";
+	div.className = "step-item md3-step-item";
 	div.setAttribute("data-step-number", stepNumber);
 	const inputId = `newStepImageInput${Date.now()}`;
 	const textareaId = `step-description-new-${Date.now()}`;
 	const stepImageUploadDropzoneHtml = projectId
 		? ""
 		: `
-			        <div class="step-image-dropzone border-2 border-dashed border-slate-300 dark:border-slate-600 p-4 sm:p-8 text-center transition-colors dark:border-slate-600 dark:hover:border-blue-400" data-step-id="">
+			        <div class="step-image-dropzone md3-step-dropzone" data-step-id="">
 			            <input type="file" class="step-image-input hidden" accept="image/*" multiple data-step-id="" id="${inputId}">
-			            <label for="${inputId}" class="block cursor-pointer">
-			                <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+			            <label for="${inputId}" class="md3-step-dropzone__label">
+			                <svg class="md3-step-dropzone__icon" stroke="currentColor" fill="none" viewBox="0 0 48 48">
 			                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
 			                </svg>
-			                <p class="upload-instructions mt-2 text-sm text-gray-600 dark:text-slate-300" data-enabled-text="${uploadInstructionsText}" data-disabled-text="${stepUploadDisabledMessage}">${stepUploadDisabledMessage}</p>
+			                <p class="upload-instructions md3-step-dropzone__instructions" data-enabled-text="${uploadInstructionsText}" data-disabled-text="${stepUploadDisabledMessage}">${stepUploadDisabledMessage}</p>
 			            </label>
 			        </div>
 			    `;
 	div.innerHTML = `
-		        <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-		            <h4 class="text-lg font-medium text-base-content">{{ _('Step') }} <span class="step-number">${stepNumber}</span></h4>
-		            <div class="flex flex-wrap gap-2">
-		                <button type="button" data-call="moveStepUp" class="btn btn-xs btn-ghost gap-1" title="{{ _('Move Up') }}">
-		                    <span class="mdi mdi-arrow-up"></span><span class="hidden sm:inline">{{ _('Move Up') }}</span>
+		        <div class="md3-step-header">
+		            <h4 class="md3-step-heading">{{ _('Step') }} <span class="step-number">${stepNumber}</span></h4>
+		            <div class="md3-step-actions">
+		                <button type="button" data-call="moveStepUp" class="md3-step-action" title="{{ _('Move Up') }}">
+		                    <span class="mdi mdi-arrow-up"></span><span class="md3-step-action__label">{{ _('Move Up') }}</span>
 		                </button>
-		                <button type="button" data-call="moveStepDown" class="btn btn-xs btn-ghost gap-1" title="{{ _('Move Down') }}">
-	                    <span class="mdi mdi-arrow-down"></span><span class="hidden sm:inline">{{ _('Move Down') }}</span>
+		                <button type="button" data-call="moveStepDown" class="md3-step-action" title="{{ _('Move Down') }}">
+	                    <span class="mdi mdi-arrow-down"></span><span class="md3-step-action__label">{{ _('Move Down') }}</span>
 	                </button>
-	                <button type="button" data-call="saveStep" class="btn btn-xs btn-primary gap-1" title="{{ _('Save') }}">
-	                    <span class="mdi mdi-content-save"></span><span class="hidden sm:inline">{{ _('Save') }}</span>
+		                <button type="button" data-call="saveStep" class="md3-step-action md3-step-action--save" title="{{ _('Save') }}">
+	                    <span class="mdi mdi-content-save"></span><span class="md3-step-action__label">{{ _('Save') }}</span>
 	                </button>
-		                <button type="button" data-call="removeStep" class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
-		                    <span class="mdi mdi-delete"></span><span class="hidden sm:inline">{{ _('Remove') }}</span>
+		                <button type="button" data-call="removeStep" class="md3-step-action md3-step-action--delete" title="{{ _('Remove Step') }}">
+	                    <span class="mdi mdi-delete"></span><span class="md3-step-action__label">{{ _('Remove') }}</span>
 		                </button>
 	            </div>
 		        </div>
-		        <div class="mb-2">
-			            <input type="text" class="step-title input  w-full" placeholder="{{ _('Step Title') }}" value="${escapeAttr(title)}">
+		        <div class="md3-step-title-wrap">
+			            <input type="text" class="step-title md3-text-field md3-step-title" placeholder="{{ _('Step Title') }}" value="${escapeAttr(title)}">
 			        </div>
 		            <div class="step-wysiwyg-host"></div>
-				        <h4 class="step-photos-label text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2 flex items-center gap-1 mt-4 pt-4 border-t border-base-100 ${stepImages.length > 0 ? "" : "hidden"}">
+				        <h4 class="step-photos-label md3-step-photos-label ${stepImages.length > 0 ? "" : "hidden"}">
 				            <span class="mdi mdi-image-outline"></span> {{ _('Step Photos') }}
 				        </h4>
-			        <div class="step-images mb-2 grid grid-cols-3 gap-2 pswp-gallery ${stepImages.length > 0 ? "" : "hidden"}" data-pswp-gallery>
+		        <div class="step-images md3-step-images pswp-gallery ${stepImages.length > 0 ? "" : "hidden"}" data-pswp-gallery>
 		            ${stepImages
 									.map((img, imageIndex) => {
 										const url = typeof img === "string" ? img : img.url;
 										return `
-		                <div class="relative" data-pending-url="${url}">
-		                    <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" data-pswp-delete="true" class="block">
-		                        <img src="${url}" alt="{{ _('Step') }} ${stepNumber} #${imageIndex + 1}" class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30" draggable="true" data-call-dragstart="handleImageDragStart" data-call-dragstart-args='["$event"]'>
+		                <div class="md3-step-image" data-pending-url="${url}">
+		                    <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-caption="" data-pswp-delete="true" class="md3-photo-tile__link">
+		                        <img src="${url}" alt="{{ _('Step') }} ${stepNumber} #${imageIndex + 1}" class="md3-step-image__img" draggable="true" data-call-dragstart="handleImageDragStart" data-call-dragstart-args='["$event"]'>
 		                    </a>
-		                    <button type="button" data-call="removePendingStepImage" class="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700">
-		                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+		                    <button type="button" data-call="removePendingStepImage" class="md3-step-image__remove">
+	                        <svg class="md3-step-image__remove-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
 		                    </button>
 		                </div>
 		                `;

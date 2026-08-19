@@ -111,3 +111,41 @@ def test_feature_templates_use_semantic_material_components() -> None:
     assert ".md3-feature-card" in css
     assert ".md3-disclosure" in css
     assert ".md3-form-card" in css
+
+
+def test_remaining_material_surfaces_use_semantic_components() -> None:
+    """Navbar, categories, and generated form fragments stay on the M3 vocabulary."""
+    template_root = Path(__file__).resolve().parent.parent / "stricknani" / "templates"
+    navbar = (template_root / "shared/unified_navbar.html").read_text(encoding="utf-8")
+    language = (template_root / "shared/_language_selector.html").read_text(
+        encoding="utf-8"
+    )
+    categories = (template_root / "projects/categories.html").read_text(
+        encoding="utf-8"
+    )
+    assert "md3-navbar__title-menu" in navbar
+    assert "md3-app-logo" in navbar
+    assert "navbar-nav-dropdown" not in navbar
+    assert 'class="join' not in language
+    assert 'class="btn' not in language
+    assert "md3-language-selector" in language
+    assert "md3-category-card" in categories
+    assert 'class="card' not in categories
+    assert 'class="input' not in categories
+
+    for relative_path in ("projects/form.js", "yarn/form.js"):
+        contents = (template_root / relative_path).read_text(encoding="utf-8")
+        assert "md3-photo-tile" in contents
+        assert "md3-step-item" in contents or relative_path == "yarn/form.js"
+        assert not re.search(
+            r'class="[^\"]*\s(?:btn|badge|card)(?:\s|[\"]|$)', contents
+        )
+
+
+def test_logo_animation_is_accessible() -> None:
+    """The logo has a visible affordance without forcing motion on users."""
+    css = (STATIC_CSS_DIR / "material.css").read_text(encoding="utf-8")
+    assert ".md3-app-logo__link:hover" in css
+    assert ".md3-app-logo__link:focus-visible" in css
+    assert "@media (prefers-reduced-motion: reduce)" in css
+    assert ".md3-app-logo__link:hover .md3-app-logo__image" in css
