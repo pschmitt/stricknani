@@ -51,6 +51,10 @@ fi
 mkdir -p "$GITHUB_WORKSPACE/screenshot-captures"
 adb pull /sdcard/Android/data/blue.anika.wolle.debug/files/screenshot-captures/. \
   "$GITHUB_WORKSPACE/screenshot-captures/" || true
+if ! compgen -G "$GITHUB_WORKSPACE/screenshot-captures/*.png" >/dev/null
+then
+  adb exec-out screencap -p > "$GITHUB_WORKSPACE/screenshot-captures/${DEVICE}_${SCREENSHOT_THEME}_offline.png" || true
+fi
 timeout 60s adb logcat -d > "$GITHUB_WORKSPACE/screenshot-logcat.txt" || true
 timeout 20s adb exec-out screencap -p > "$GITHUB_WORKSPACE/screenshot-final-frame.png" || true
 exit "$test_rc"
