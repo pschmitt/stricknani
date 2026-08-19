@@ -4,10 +4,14 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
 import blue.anika.wolle.MainActivity
+import java.io.Closeable
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -110,5 +114,52 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
         composeRule.onNodeWithText("Settings").performClick()
         waitForText("Settings")
         captureE2eScreenshot("full-03-settings")
+    }
+
+    @Test
+    fun cachedBrowsingAndQueuedEditSurviveOfflineMode() {
+        connectToFixture()
+        openProjects()
+        composeRule.onNodeWithText("Heirloom Baby Blanket").performClick()
+        waitForText("Description")
+
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        setAirplaneMode(device, enabled = true)
+        try {
+            // The detail remains available from Room while the server is unreachable.
+            composeRule.onNodeWithContentDescription("More actions").performClick()
+            composeRule.onNodeWithText("Edit").performClick()
+            waitForText("Edit project")
+            composeRule
+                .onNodeWithText("Heirloom Baby Blanket", useUnmergedTree = true)
+                .performTextReplacement("Offline queued project")
+            composeRule.onNodeWithContentDescription("Save").performClick()
+            waitForText("Offline queued project")
+
+            // Returning to the cached list and Home proves both the read path and pending-write
+            // status survive without a network response.
+            composeRule.onNodeWithText("Projects").performClick()
+            waitForText("Offline queued project")
+            composeRule.onNodeWithText("Home").performClick()
+            waitForText("Changes pending")
+            captureE2eScreenshot("full-04-offline-queued-edit")
+        } finally {
+            setAirplaneMode(device, enabled = false)
+        }
+    }
+
+    private fun setAirplaneMode(device: UiDevice, enabled: Boolean) {
+        val command =
+            if (enabled) "cmd connectivity airplane-mode enable"
+            else "cmd connectivity airplane-mode disable"
+        InstrumentationRegistry
+            .getInstrumentation()
+            .uiAutomation
+            .executeShellCommand(command)
+            .closeQuietly()
+    }
+
+    private fun Closeable.closeQuietly() {
+        runCatching { close() }
     }
 }

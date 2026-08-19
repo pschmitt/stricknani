@@ -1056,7 +1056,7 @@ Execution-oriented backlog for Stricknani.
   - [x] Add a short onboarding/sync/detail/settings smoke journey for pull requests and a manual full-lane scaffold covering cached browsing, search, and settings.
   - [x] Pass the fixture URL/token through instrumentation arguments, build before emulator startup, use a fresh API-34 emulator, and tear down the fixture with volumes on every exit path.
   - [x] Upload instrumentation reports, logcat, emulator screenshots, server logs, and host diagnostics on every run.
-  - [ ] Extend the manual full lane with an explicit network-offline cached browse and queued-edit assertion once the emulator authority runs the new lane.
+  - [x] Extend the manual full lane with an explicit network-offline cached browse and queued-edit assertion.
 - **Files**: `android/app/src/androidTest/`, `.github/workflows/android-e2e.yaml`, `ci/stricknani/`, `android/justfile`, and Android E2E documentation.
 - **Testing**: remote `just e2e-build rofl-13.brkn.lol` and `just check rofl-13.brkn.lol` pass; GitHub Actions must still run both lanes against the disposable fixture and confirm no production endpoint is contacted.
 
@@ -1064,7 +1064,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: android/test
 - **Priority**: P1
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - Pure JVM tests cannot catch Compose navigation, layout, semantics, dialog, accessibility, loading/error, or offline rendering regressions.
@@ -1083,7 +1083,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: android/ci
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: feat
 - **Description**:
   - `screengrab` is already a declared Android test dependency, but Stricknani has no screenshot test, Fastlane configuration, or screenshot workflow.
