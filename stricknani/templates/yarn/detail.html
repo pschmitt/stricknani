@@ -9,20 +9,20 @@
 {% set page_title %}{{ yarn.name }}{% endset %}
 {% set page_title_mobile_hidden = true %}
 {% set page_actions %}
-<a href="/yarn" class="btn btn-ghost btn-circle" aria-label="{{ _('Back to yarn') }}">
+<a href="/yarn" class="md3-icon-button" aria-label="{{ _('Back to yarn') }}">
     <span class="mdi mdi-arrow-left text-xl"></span>
 </a>
-<a href="/yarn/{{ yarn.id }}/edit" class="btn btn-primary gap-2">
+<a href="/yarn/{{ yarn.id }}/edit" class="md3-button md3-button--filled">
     <span class="mdi mdi-pencil"></span>
     {{ _('Edit') }}
 </a>
 
-<div class="dropdown dropdown-end dropdown-bottom">
-    <div tabindex="0" role="button" class="btn btn-ghost btn-circle" aria-label="{{ _('More actions') }}">
+<div class="md3-dropdown md3-dropdown--end">
+    <div tabindex="0" role="button" class="md3-icon-button" aria-label="{{ _('More actions') }}">
         <span class="mdi mdi-dots-vertical text-xl"></span>
     </div>
     <ul tabindex="0"
-        class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box border border-base-200">
+        class="md3-menu md3-menu--end">
         <li data-favorite-toggle>
             {% with yarn_id=yarn.id, is_favorite=is_favorite, variant='detail', extra_classes='flex justify-start gap-2'
             %}
@@ -63,26 +63,26 @@ data-shortcut-delete-dialog="deleteYarnDialog"
 {% block head %}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
+<div class="md3-page-frame">
     <h1 class="text-2xl font-bold mb-4 md:hidden flex items-center gap-2">
         <span class="mdi mdi-sheep text-primary text-2xl"></span>
         {{ yarn.name }}
     </h1>
 
-    <div id="yarn-grid" class="relative grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 transition-all duration-300">
+    <div id="yarn-grid" class="md3-detail-layout">
         <!-- Main Content Column -->
-        <div id="main-column" class="lg:col-span-2 space-y-8 transition-all duration-300">
+        <div id="main-column" class="md3-detail-main">
             <!-- Gallery Section -->
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
+            <div class="md3-disclosure">
                 <input type="checkbox" checked />
-                <div class="collapse-title p-4 flex items-center justify-between">
+                <div class="md3-disclosure__title">
                     <h2 class="font-bold text-lg flex items-center gap-2">
                         <span class="mdi mdi-image-multiple text-primary"></span>
                         {{ _('Gallery') }}
                     </h2>
                     <span class="text-xs font-medium text-base-content/50 mr-8">{{ photos|length }} {{ _('photos') }}</span>
                 </div>
-                <div class="collapse-content p-0">
+                <div class="md3-disclosure__content">
                     <div class="p-2 bg-base-200/50">
                         {% if photos %}
                         {% set photo_count = photos|length %}
@@ -127,22 +127,22 @@ data-shortcut-delete-dialog="deleteYarnDialog"
 
             <!-- Description -->
             {% if yarn.description %}
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+            <div class="md3-disclosure">
                 <input type="checkbox" checked />
-                <div class="collapse-title p-4 flex items-center justify-between">
+                <div class="md3-disclosure__title">
                     <h2 class="font-bold text-lg flex items-center gap-2">
                         <span class="mdi mdi-text-box-outline text-primary"></span>
                         {{ _('Description') }}
                     </h2>
                 </div>
-                <div class="collapse-content relative">
-                    <button type="button" class="btn btn-ghost btn-xs gap-1 absolute top-2 right-2"
+                <div class="md3-disclosure__content">
+                    <button type="button" class="md3-button md3-button--text md3-button--small absolute top-2 right-2"
                         data-call="copyToClipboard"
                         data-call-args='[{{ (yarn.description or "")|tojson }}, "$this"]'
                         title="{{ _('Copy Description') }}">
                         <span class="mdi mdi-content-copy"></span>
                     </button>
-                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                    <div class="md3-content-prose">
                         {% if description_html %}
                         {{ description_html | safe }}
                         {% else %}
@@ -155,22 +155,22 @@ data-shortcut-delete-dialog="deleteYarnDialog"
 
             <!-- Notes -->
             {% if yarn.notes %}
-            <div class="collapse collapse-arrow bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30">
+            <div class="md3-disclosure md3-content-card--notes">
                 <input type="checkbox" checked />
-                <div class="collapse-title font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest flex items-center justify-between gap-2 text-xs">
+                <div class="md3-disclosure__title">
                     <div class="flex items-center gap-2">
                         <span class="mdi mdi-notebook-outline"></span>
                         {{ _('Notes') }}
                     </div>
                 </div>
-                <div class="collapse-content relative">
-                    <button type="button" class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20 absolute top-2 right-2"
+                <div class="md3-disclosure__content">
+                    <button type="button" class="md3-button md3-button--text md3-button--small absolute top-2 right-2"
                         data-call="copyToClipboard"
                         data-call-args='[{{ (yarn.notes or "")|tojson }}, "$this"]'
                         title="{{ _('Copy Notes') }}">
                         <span class="mdi mdi-content-copy"></span>
                     </button>
-                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
+                    <div class="md3-content-prose">
                         {% if notes_html %}
                         {{ notes_html | safe }}
                         {% else %}
@@ -181,16 +181,16 @@ data-shortcut-delete-dialog="deleteYarnDialog"
             </div>
             {% endif %}
 
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+            <div class="md3-disclosure">
                 <input type="checkbox" />
-                <div class="collapse-title p-4 flex items-center justify-between">
+                <div class="md3-disclosure__title">
                     <h2 class="font-bold text-lg flex items-center gap-2">
                         <span class="mdi mdi-history text-primary"></span>
                         {{ _('Audit Log') }}
                     </h2>
                     <span class="text-xs font-medium text-base-content/50 mr-8">{{ audit_entries|length }}</span>
                 </div>
-                <div class="collapse-content p-0">
+                <div class="md3-disclosure__content">
                     {% if audit_entries %}
                     <div class="p-4">
                         <!-- Mobile-first activity list (single UI for all breakpoints) -->
@@ -221,12 +221,12 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                         <div class="flex flex-wrap items-start justify-between gap-2">
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <span class="text-sm font-semibold text-base-content">{{ action.replace('_', ' ')|title }}</span>
-                                                <span class="badge badge-ghost font-semibold tracking-wide uppercase text-[10px]">{{ action.replace('_', ' ') }}</span>
+                                                <span class="md3-chip md3-chip--compact">{{ action.replace('_', ' ') }}</span>
                                                 {% if details.get('step_number') is not none %}
-                                                <span class="badge badge-ghost text-[10px]">{{ _('Step') }} {{ details.get('step_number') }}</span>
+                                                <span class="md3-chip md3-chip--compact">{{ _('Step') }} {{ details.get('step_number') }}</span>
                                                 {% endif %}
                                                 {% if details.get('step_id') is not none and details.get('step_number') is none %}
-                                                <span class="badge badge-ghost text-[10px]">{{ _('Step') }} #{{ details.get('step_id') }}</span>
+                                                <span class="md3-chip md3-chip--compact">{{ _('Step') }} #{{ details.get('step_id') }}</span>
                                                 {% endif %}
                                             </div>
                                             <time class="text-[11px] font-mono text-base-content/40 whitespace-nowrap">{{ entry.created_at[:19].replace('T', ' ') }}</time>
@@ -313,7 +313,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                     <div class="space-y-2 text-xs">
                                         {% for field, diff in details['changes'].items() %}
                                         <div class="rounded-xl bg-base-200/30 px-3 py-2 flex flex-wrap items-center gap-2">
-                                            <span class="badge badge-ghost text-[10px] uppercase">{{ field }}</span>
+                                            <span class="md3-chip md3-chip--compact">{{ field }}</span>
                                             <span class="text-base-content/60">{{ diff.old }} → {{ diff.new }}</span>
                                         </div>
                                         {% endfor %}
@@ -347,18 +347,18 @@ data-shortcut-delete-dialog="deleteYarnDialog"
 	            </button>
         </div>
 
-        <div id="sidebar-column" class="space-y-6 lg:col-start-3 lg:row-start-1 lg:sticky lg:top-20 lg:self-start transition-all duration-300">
+        <div id="sidebar-column" class="md3-detail-sidebar">
             <!-- Details Card -->
-            <div class="collapse collapse-right collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+            <div class="md3-disclosure md3-disclosure--right">
 	                <input type="checkbox" id="details-toggle-sidebar" checked data-call-change="toggleSidebarExpansion" />
-                <div class="collapse-title w-full font-bold text-base text-base-content/40 uppercase tracking-widest text-sm">
+                <div class="md3-disclosure__title">
                     <span class="flex items-center gap-2">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Yarn Details') }}
                     </span>
                 </div>
 
-                <div class="collapse-content space-y-4 text-base">
+                <div class="md3-disclosure__content">
                     <div class="pt-2">
                         <!-- Badge Info -->
                         {% if yarn.brand %}
@@ -385,7 +385,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                         {% if yarn.is_ai_enhanced %}
                         <div class="py-1">
                             <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Data Source') }}</span>
-                            <span class="badge badge-primary font-black text-[10px] tracking-tighter uppercase h-5 min-h-0" title="{{ _('AI Enhanced') }}">AI</span>
+                            <span class="md3-chip md3-chip--ai md3-chip--compact" title="{{ _('AI Enhanced') }}">AI</span>
                         </div>
                         {% endif %}
 
@@ -480,7 +480,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                     {{ yarn.link }}
                                 </a>
 	                                <button type="button" data-call="copyToClipboard" data-call-args='[{{ yarn.link|tojson }},"$this"]'
-	                                    class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
+	                                    class="md3-icon-button md3-button--small opacity-0 group-hover/link:opacity-100 transition-opacity"
 	                                    title="{{ _('Copy URL') }}">
                                     <span class="mdi mdi-content-copy text-xs"></span>
                                 </button>
@@ -494,7 +494,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                 </a>
                                 <form action="/yarn/{{ yarn.id }}/retry-archive" method="post" class="inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                    <button type="submit" class="md3-button md3-button--text md3-button--small">
                                         <span class="mdi mdi-refresh"></span>
                                         {{ _('Request new snapshot') }}
                                     </button>
@@ -509,7 +509,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                 </div>
                                 <form action="/yarn/{{ yarn.id }}/retry-archive" method="post" class="inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                    <button type="submit" class="md3-button md3-button--text md3-button--small">
                                         <span class="mdi mdi-refresh"></span>
                                         {{ _('Retry') }}
                                     </button>
@@ -525,7 +525,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                 </a>
                                 <form action="/yarn/{{ yarn.id }}/retry-archive" method="post" class="inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                    <button type="submit" class="md3-button md3-button--text md3-button--small">
                                         <span class="mdi mdi-refresh"></span>
                                         {{ _('Request snapshot') }}
                                     </button>
@@ -540,14 +540,14 @@ data-shortcut-delete-dialog="deleteYarnDialog"
 </div>
 
             <!-- Linked Projects Card -->
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
+            <div class="md3-disclosure">
                 <input type="checkbox" checked />
-                <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
+                <div class="md3-disclosure__title">
                     <span class="mdi mdi-folder-outline"></span>
                     {{ _('Linked Projects') }}
                 </div>
 
-                <div class="collapse-content">
+                <div class="md3-disclosure__content">
                     {% if linked_projects %}
                     <div class="space-y-3">
                         {% for project in linked_projects %}
@@ -570,7 +570,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                     project.name }}</div>
                                 {% if project.category %}
                                 <div class="mt-0.5">
-                                    <span class="badge badge-xs border {{ project.category|category_color }} font-medium">
+                                    <span class="md3-chip md3-chip--compact">
                                         {{ _(project.category) }}
                                     </span>
                                 </div>
@@ -594,8 +594,8 @@ data-shortcut-delete-dialog="deleteYarnDialog"
     </div>
 </div>
 
-<dialog id="deleteYarnDialog" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box p-0 overflow-hidden">
+<dialog id="deleteYarnDialog" class="md3-dialog">
+    <div class="md3-dialog-surface p-0 overflow-hidden">
         <div class="bg-error/10 p-6 flex items-center gap-4 text-error">
             <span class="mdi mdi-alert-circle text-4xl"></span>
             <div>

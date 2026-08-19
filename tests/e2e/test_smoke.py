@@ -54,14 +54,26 @@ def test_pr_smoke_journey() -> None:
             wait_for_path(page, r"/projects(?:\?.*)?")
 
             page.locator("#projects-list").wait_for()
+            assert page.locator(".md3-list-toolbar").is_visible()
+            assert page.locator('#projects-list [class~="btn"]').count() == 0
             screenshot(page, "smoke-01-projects-list.png")
 
             page.locator('a[href="/projects/new"]').first.click()
+            page.locator("#projectForm .md3-form-card").first.wait_for()
+            assert page.locator("#projectForm .md3-disclosure").count() >= 1
+            assert page.locator('#projectForm [class~="btn"]').count() == 0
             page.locator("#projectForm #name").fill("PR Smoke Project")
             page.locator('button[form="projectForm"][type="submit"]').first.click()
             wait_for_path(page, r"/projects/\d+\?toast=project_created")
             page.get_by_text("PR Smoke Project", exact=True).first.wait_for()
+            page.locator(".md3-detail-main").wait_for()
+            assert page.locator(".md3-disclosure").count() >= 1
+            assert page.locator('#main-content [class~="collapse"]').count() == 0
             screenshot(page, "smoke-02-project-detail.png")
+
+            page.goto(f"{BASE_URL}/projects/")
+            page.locator("#projects-list .md3-feature-card").first.wait_for()
+            assert page.locator('#projects-list [class~="badge"]').count() == 0
 
             page.locator("button.avatar").click()
             page.get_by_text("Language", exact=True).wait_for()

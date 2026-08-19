@@ -1,14 +1,14 @@
 {# Dialog action buttons – always include icons. Use for modal-action footers. #}
 
 {% macro dialog_cancel(text, type='button', id=None, class='', attrs='') %}
-<button type="{{ type }}" class="md3-button md3-button--text btn btn-ghost gap-2 {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{ attrs|safe }}>
+<button type="{{ type }}" class="md3-button md3-button--text {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{ attrs|safe }}>
     <span class="mdi mdi-close"></span>
     {{ text }}
 </button>
 {% endmacro %}
 
 {% macro dialog_primary(text, icon='mdi-check', type='button', id=None, class='', attrs='') %}
-<button type="{{ type }}" class="md3-button md3-button--filled btn btn-primary gap-2 {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{ attrs|safe
+<button type="{{ type }}" class="md3-button md3-button--filled {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{ attrs|safe
     }}>
     <span class="mdi {{ icon }}"></span>
     {{ text }}
@@ -16,7 +16,7 @@
 {% endmacro %}
 
 {% macro dialog_danger(text, icon='mdi-delete-forever', type='button', id=None, class='', attrs='') %}
-<button type="{{ type }}" class="md3-button md3-button--filled md3-button--destructive btn btn-error text-white gap-2 {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{
+<button type="{{ type }}" class="md3-button md3-button--destructive {{ class }}" {% if id %}id="{{ id }}" {% endif %} {{
     attrs|safe }}>
     <span class="mdi {{ icon }}"></span>
     {{ text }}
@@ -24,16 +24,16 @@
 {% endmacro %}
 
 {% macro modal_backdrop() %}
-<form method="dialog" class="modal-backdrop">
+<form method="dialog" class="md3-dialog-backdrop">
     <button type="submit" aria-label="{{ _('Close dialog') }}"></button>
 </form>
 {% endmacro %}
 
 {% macro modal(id, title=None, class='', box_class='', attrs='') %}
-<dialog id="{{ id }}" class="md3-dialog modal modal-top sm:modal-middle {{ class }}" {{ attrs|safe }}>
-    <div class="md3-dialog-surface modal-box {{ box_class }}">
+<dialog id="{{ id }}" class="md3-dialog {{ class }}" {{ attrs|safe }}>
+    <div class="md3-dialog-surface {{ box_class }}">
         <form method="dialog">
-            <button class="md3-button md3-button--icon md3-button--text btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+            <button class="md3-button md3-button--icon md3-button--text md3-button--small md3-dialog-close">
                 <span class="mdi mdi-close text-xl"></span>
             </button>
         </form>

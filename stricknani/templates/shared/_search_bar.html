@@ -1,5 +1,5 @@
-<div class="w-full" id="{{ wrapper_id }}" data-search-bar>
-    <div class="relative">
+<div class="md3-search-bar" id="{{ wrapper_id }}" data-search-bar>
+    <div class="md3-search-bar__control">
         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50 z-30">
             <span class="mdi mdi-magnify text-lg"></span>
         </div>
@@ -23,11 +23,11 @@
         {% set inline_filters = filters|length == 1 %}
         <input type="text" id="{{ search_id }}" name="{{ search_name }}" value="{{ search_value }}" data-search-input
             placeholder="{{ search_placeholder }}"
-            class="md3-text-field input w-full pl-10 pr-10{% if inline_filters %} sm:pr-32{% endif %} relative z-20 border border-primary/70 dark:border-primary/80 focus:border-primary"
+            class="md3-text-field md3-search-bar__input"
             hx-get="{{ search_url }}" hx-target="{{ search_target }}" hx-trigger="keyup changed delay:500ms"
             hx-replace-url="true" {% if filters %}hx-include=".search-filter-input" {% endif %}>
         <button type="button"
-            class="btn btn-ghost btn-sm btn-circle absolute inset-y-0 right-2 my-auto hidden z-30"
+            class="md3-icon-button md3-search-bar__clear hidden"
             data-search-clear aria-label="{{ _('Clear search') }}" title="{{ _('Clear search') }}">
             <span class="mdi mdi-close text-lg"></span>
         </button>
@@ -39,7 +39,7 @@
         {% if inline_filters %}
         {% set filter = filters[0] %}
         <div class="absolute inset-y-0 right-0 hidden sm:flex items-center pr-2">
-            <div class="badge {% if filter.name == 'category' %}border {{ filter.value|category_color }}{% else %}border-primary/20 bg-primary/5 text-primary{% endif %} gap-1 font-bold shadow-sm">
+            <div class="md3-chip md3-chip--compact">
                 <span class="mdi {{ filter.icon }} text-xs" aria-hidden="true"></span>
                 <span class="truncate max-w-[6rem] sm:max-w-[10rem] text-xs">
                     {{ filter.label_value }}
@@ -52,15 +52,14 @@
         </div>
         {% endif %}
         {% endif %}
-        <div id="{{ search_id }}-suggestions" data-search-suggestions
-            class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-box shadow-xl hidden overflow-hidden">
-            <ul class="menu p-1" id="{{ search_id }}-suggestion-list" data-search-suggestion-list></ul>
+        <div id="{{ search_id }}-suggestions" data-search-suggestions class="md3-search-bar__suggestions hidden">
+            <ul class="md3-menu" id="{{ search_id }}-suggestion-list" data-search-suggestion-list></ul>
         </div>
     </div>
     {% if filters %}
-    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs {% if inline_filters %}sm:hidden{% endif %}">
+    <div class="md3-search-bar__filters {% if inline_filters %}md3-search-bar__filters--inline{% endif %}">
         {% for filter in filters %}
-        <div class="badge {% if filter.name == 'category' %}border {{ filter.value|category_color }}{% else %}border-primary/20 bg-primary/5 text-primary{% endif %} gap-1 font-bold shadow-sm py-3 px-3">
+        <div class="md3-chip">
             <span class="mdi {{ filter.icon }} text-xs" aria-hidden="true"></span>
             <span class="truncate">
                 {{ filter.label_value }}

@@ -6,29 +6,27 @@
 
 {% block content %}
 {% block list_styles %}{% endblock %}
-<div class="md3-page-frame max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-    <div class="flex flex-col gap-8">
+<div class="md3-page-frame md3-list-layout">
         <!-- Filters & Search -->
         {% block list_filters_container %}
         <div
-            class="md3-filter-surface md3-elevated-surface bg-base-100 rounded-2xl shadow-sm border border-base-200 p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="w-full md:flex-1">
+            class="md3-list-toolbar">
+            <div class="md3-list-filter">
                 {% block list_filters %}{% endblock %}
             </div>
             <!-- Optional: Sort or View toggles could go here -->
-            <div class="text-sm text-base-content/50 font-medium">
+            <div class="md3-list-stats">
                 {% block list_stats %}{% endblock %}
             </div>
         </div>
         {% endblock %}
 
         <!-- Content Grid -->
-        <div {% block list_container_attrs %}id="list-content" {% endblock %}>
+        <div class="md3-list-content" {% block list_container_attrs %}id="list-content" {% endblock %}>
             {% block list_content %}{% endblock %}
         </div>
 
         {% block list_extra %}{% endblock %}
-    </div>
 </div>
 {% block page_scripts %}
 <script nonce="{{ csp_nonce }}">

@@ -21,12 +21,12 @@ accept=None
     {% set onchange_fn = onchange_fn[:-2] %}
   {% endif %}
 {% endif %}
-<div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors dark:border-slate-600 dark:hover:border-blue-400 {{ container_class or '' }}"
+<div class="md3-dropzone {{ container_class or '' }}"
     {% if container_id %} id="{{ container_id }}" {% endif %}>
     <input type="file" id="{{ input_id }}" {% if input_name %} name="{{ input_name }}" {% endif %}
         accept="{{ accept or 'image/*' }}" {% if multiple %} multiple{% endif %} class="hidden" {% if onchange_fn %}
         data-call-change="{{ onchange_fn }}" {% endif %}>
-    <label for="{{ input_id }}" class="cursor-pointer block">
+    <label for="{{ input_id }}" class="md3-dropzone__label">
         <span class="mdi {{ icon or 'mdi-image-plus' }} mx-auto text-4xl text-slate-400 dark:text-slate-500"></span>
         <p class="upload-instructions mt-2 text-sm text-base-content/70" {% if label_text %}
             data-enabled-text="{{ label_text }}" {% endif %}>
@@ -43,11 +43,11 @@ step_id=None,
 enabled_text=None,
 disabled_text=None
 ) -%}
-<div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors step-image-dropzone dark:border-slate-600 dark:hover:border-blue-400"
+<div class="md3-dropzone step-image-dropzone"
     {% if step_id %} data-step-id="{{ step_id }}" {% endif %}>
     <input type="file" class="step-image-input hidden" accept="image/*" multiple{% if step_id %}
         data-step-id="{{ step_id }}" {% endif %} id="{{ input_id }}">
-    <label for="{{ input_id }}" class="cursor-pointer block">
+    <label for="{{ input_id }}" class="md3-dropzone__label">
         <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none"
             viewBox="0 0 48 48">
             <path
@@ -73,7 +73,7 @@ disabled_text=None
         %}draggable="true" data-call-dragstart="handleImageDragStart" data-call-dragstart-args='["$event"]' {% endif
         %}>
         <img src="{{ image.thumbnail_url or image.url }}" alt="{{ image.alt_text or _('Uploaded image') }}"
-            class="h-32 w-full cursor-zoom-in rounded object-cover shadow dark:shadow-slate-900/30">
+        class="md3-upload-preview">
     </a>
     {% if show_promote %}
     <button type="button" data-call="promoteImage" data-call-args='[{{ project_id }},{{ image.id }}]'

@@ -1,7 +1,7 @@
 async function deleteYarn(id) {
 	if (!id) return;
 
-	const btn = document.querySelector("#deleteYarnDialog .btn-error");
+	const btn = document.querySelector("#deleteYarnDialog .md3-button--destructive");
 	if (btn) {
 		btn.disabled = true;
 		const originalHtml = btn.innerHTML;

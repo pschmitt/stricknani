@@ -13,17 +13,17 @@
 {% set back_label = _('Back to projects') %}
 {% set page_actions %}
 <div class="flex items-center gap-1">
-    <button type="submit" form="projectForm" class="btn btn-primary gap-2 h-10 min-h-0 px-3 md:px-4">
+    <button type="submit" form="projectForm" class="md3-button md3-button--filled">
         <span class="mdi mdi-content-save text-xl"></span>
         <span>{{ _('Save') }}</span>
     </button>
     {% if not project %}
-    <div class="dropdown dropdown-end dropdown-bottom">
-        <button type="button" class="btn btn-square btn-ghost btn-sm md:btn-md" aria-label="{{ _('More options') }}">
+    <div class="md3-dropdown md3-dropdown--end">
+        <button type="button" class="md3-icon-button md3-button--small" aria-label="{{ _('More options') }}">
             <span class="mdi mdi-dots-vertical text-xl"></span>
         </button>
         <ul tabindex="0"
-            class="dropdown-content ellipsis-dropdown-content z-[100] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
+            class="md3-menu md3-menu--end">
             <li>
                 <button type="button" data-action="open-dialog" data-dialog-id="importDialog">
                     <span class="mdi mdi-download"></span>
@@ -41,15 +41,16 @@
 
 {% block form_before %}
 <dialog id="previewDialog"
-    class="p-0 rounded-lg shadow-xl backdrop:bg-black/50 dark:bg-slate-900 dark:text-slate-100 w-full max-w-2xl">
-    <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+    class="md3-dialog">
+    <div class="md3-dialog-surface">
+    <div class="md3-dialog-header">
         <h3 class="text-lg font-semibold">{{ _('Preview') }}</h3>
-        <button data-action="close-dialog" data-dialog-id="previewDialog"
-            class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+        <button data-action="close-dialog" data-dialog-id="previewDialog" class="md3-icon-button">
             <span class="mdi mdi-close text-xl"></span>
         </button>
     </div>
-    <div id="previewContent" class="p-6 prose max-w-none dark:prose-invert overflow-y-auto max-h-[70vh]"></div>
+    <div id="previewContent" class="md3-dialog-content md3-content-prose"></div>
+    </div>
 </dialog>
 
 {% include "projects/_import_dialog.html" %}
@@ -61,7 +62,7 @@ attrs='data-unsaved-confirm="true"') }}
 {% endblock %}
 
 {% block form_header_class %}
-md:sticky md:top-0 md:z-50 bg-base-100 py-4 px-4 -mx-4 shadow-none
+    md3-form-header
 {% endblock %}
 
 {% block form_actions %}
@@ -73,7 +74,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 {# Save button logic:
 - Always hidden on mobile (moved to FAB)
 - Visible on desktop #}
-{% set save_classes = 'hidden md:inline-flex flex-1 sm:flex-none md:btn-wide' %}
+{% set save_classes = 'hidden md:inline-flex flex-1 sm:flex-none md3-button--wide' %}
 
 {{ buttons.primary(_('Save'), icon='mdi-content-save', type='submit', attrs='form="projectForm"', class=save_classes) }}
 
@@ -86,8 +87,8 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 {% endblock %}
 
 {% block form_body %}
-<form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects/' }}" method="post"
-    data-primary-form="true" class="space-y-6">
+    <form id="projectForm" action="{{ '/projects/' + project.id|string if project else '/projects/' }}" method="post"
+    data-primary-form="true" class="md3-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" id="import_image_urls" name="import_image_urls" value="">
     <input type="hidden" id="import_title_image_url" name="import_title_image_url" value="">
@@ -113,21 +114,21 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
         </div>
     </div>
 
-    <div class="relative grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+    <div class="md3-form-layout">
         <!-- Main Content Column -->
-        <div id="main-column" class="lg:col-span-2 space-y-6">
+        <div id="main-column" class="md3-form-main">
             <!-- Basic Info Card -->
             <div
-                class="collapse collapse-arrow bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 overflow-visible">
+                class="md3-disclosure">
                 <input type="checkbox" checked />
-                <div class="collapse-title p-3 sm:p-6 pb-0">
+                <div class="md3-disclosure__title">
                     <h3
                         class="text-sm font-bold uppercase tracking-widest text-base-content/40 flex items-center gap-2">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Basic Information') }}
                     </h3>
                 </div>
-                <div class="collapse-content p-3 sm:p-6 pt-0">
+                <div class="md3-disclosure__content">
                     <div class="space-y-4 sm:space-y-6 pt-4">
                         <div>
                             <label for="name" class=" text-sm font-medium mb-1 inline-flex items-center gap-2">
@@ -136,7 +137,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                             </label>
                             <input type="text" id="name" name="name" required
                                 value="{{ project.name if project and project.name else '' }}"
-                                class="input input-bordered w-full" placeholder="{{ _('e.g. My Amazing Project') }}">
+                                class="md3-text-field" placeholder="{{ _('e.g. My Amazing Project') }}">
                         </div>
 
                         <div>
@@ -168,16 +169,16 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 
             <!-- Gallery Card -->
             <div
-                class="collapse collapse-arrow bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 overflow-visible">
+                class="md3-disclosure">
                 <input type="checkbox" checked />
-                <div class="collapse-title p-3 sm:p-6 pb-0">
+                <div class="md3-disclosure__title">
                     <h3
                         class="text-sm font-bold uppercase tracking-widest text-base-content/40 flex items-center gap-2">
                         <span class="mdi mdi-image-multiple"></span>
                         {{ _('Gallery') }}
                     </h3>
                 </div>
-                <div class="collapse-content p-3 sm:p-6 pt-0">
+                <div class="md3-disclosure__content">
                     <div class="pt-4">
                         <div id="titleImagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 pswp-gallery"
                             data-pswp-gallery>
@@ -203,16 +204,16 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 
             <!-- Attachments Card -->
             <div
-                class="collapse collapse-arrow bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 overflow-visible">
+                class="md3-disclosure">
                 <input type="checkbox" checked />
-                <div class="collapse-title p-3 sm:p-6 pb-0">
+                <div class="md3-disclosure__title">
                     <h3
                         class="text-sm font-bold uppercase tracking-widest text-base-content/40 flex items-center gap-2">
                         <span class="mdi mdi-paperclip"></span>
                         {{ _('Attachments') }}
                     </h3>
                 </div>
-                <div class="collapse-content p-3 sm:p-6 pt-0">
+                <div class="md3-disclosure__content">
                     <div class="pt-4">
                         <div id="attachmentsContainer" class="space-y-2 mb-4 pswp-gallery" data-pswp-gallery>
                             {% if project and project.attachments %}
@@ -259,13 +260,13 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                 </div>
                                 <div class="flex items-center gap-1">
                                     <a href="{{ attachment.url }}" target="_blank"
-                                        class="btn btn-ghost btn-sm btn-circle text-primary"
+                                        class="md3-icon-button md3-button--small"
                                         title="{{ _('Download') }}">
                                         <span class="mdi mdi-download text-xl"></span>
                                     </a>
                                     <button type="button" data-call="deleteAttachment"
                                         data-call-args='[{{ attachment.id }}]'
-                                        class="btn btn-ghost btn-sm btn-circle text-error" title="{{ _('Delete') }}">
+                                        class="md3-icon-button md3-button--small md3-icon-button--danger" title="{{ _('Delete') }}">
                                         <span class="mdi mdi-delete-outline text-xl"></span>
                                     </button>
                                 </div>
@@ -309,7 +310,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                 {{ _('Manage') }}
                             </a>
                         </div>
-                        <select name="category" class="select  select-sm w-full mt-1">
+                        <select name="category" class="md3-select">
                             <option value="">{{ _('Select a category') }}</option>
                             {% for category in categories %}
                             <option value="{{ category }}" {% if project and project.category==category %}selected{%
@@ -327,7 +328,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                             value="{{ project.tags | join(', ') if project and project.tags else '' }}">
                         <div id="tags_chips_mobile" class="flex flex-wrap gap-2 mt-2"></div>
                         <div class="relative mt-2">
-                            <input type="text" id="tags_input_mobile" class="input  input-sm w-full" autocomplete="off"
+                            <input type="text" id="tags_input_mobile" class="md3-text-field" autocomplete="off"
                                 placeholder="{{ _('Add a tag...') }}">
                             <div id="tags_suggestions_mobile"
                                 class="hidden absolute z-30 w-full mt-1 max-h-48 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
@@ -349,24 +350,24 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                             <label class=" text-xs font-bold uppercase text-base-content/50">{{
                                 _('Pattern Source') }}</label>
                             <button type="button" id="reimport-btn-mobile"
-                                class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
+                                class="md3-button md3-button--text md3-button--small {{ 'hidden' if not project.link else '' }}"
                                 data-call="importFromUrl" data-call-args='["$value:#link"]'>
                                 <span class="mdi mdi-download"></span>
                                 {{ _('Re-import') }}
                             </button>
                             <a href="{{ project.link }}" target="_blank"
-                                class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
+                                class="md3-button md3-button--text md3-button--small {{ 'hidden' if not project.link else '' }}"
                                 id="visit-link-btn-mobile" title="{{ _('Visit Website') }}">
                                 <span class="mdi mdi-open-in-new"></span>
                                 {{ _('Visit') }}
                             </a>
-                            <button type="button" class="btn btn-ghost btn-xs gap-1 normal-case"
+                            <button type="button" class="md3-button md3-button--text md3-button--small"
                                 data-call="copyToClipboard" data-call-args='["$value:#link","$this"]'
                                 title="{{ _('Copy URL') }}">
                                 <span class="mdi mdi-content-copy"></span>
                             </button>
                         </div>
-                        <input type="url" name="link" value="{{ project.link or '' }}" class="input  input-sm w-full"
+                        <input type="url" name="link" value="{{ project.link or '' }}" class="md3-text-field"
                             placeholder="https://..." data-call-input="syncLinkInputs">
                         <label id="wayback_mobile_container"
                             class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2 {% if not feature_wayback_enabled %}hidden{% endif %}">
@@ -384,7 +385,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                 %}checked{% endif %} data-call-change="syncAiEnhanced">
                             <span
                                 class="label-text text-xs font-bold uppercase text-base-content/50 flex items-center gap-2">
-                                <span class="badge badge-primary font-black text-[10px] h-4 min-h-0">AI</span>
+                                <span class="md3-chip md3-chip--ai md3-chip--compact">AI</span>
                                 {{ _('AI Enhanced') }}
                             </span>
                         </label>
@@ -394,16 +395,16 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 
             <!-- Technical Specifications Group -->
             <div
-                class="collapse collapse-arrow bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 overflow-visible">
+                class="md3-disclosure">
                 <input type="checkbox" checked />
-                <div class="collapse-title p-3 sm:p-6 pb-0">
+                <div class="md3-disclosure__title">
                     <h3
                         class="font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
                         <span class="mdi mdi-cog-outline"></span>
                         {{ _('Technical Specifications') }}
                     </h3>
                 </div>
-                <div class="collapse-content p-3 sm:p-6 pt-0">
+                <div class="md3-disclosure__content">
                     <div class="space-y-6 pt-4">
                         <!-- Yarns Card -->
                         <div class="bg-base-200/30 rounded-xl border border-base-200 p-4">
@@ -412,7 +413,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                     <span class="mdi mdi-sheep text-primary"></span>
                                     {{ _('Yarns Used') }}
                                 </h3>
-                                <a href="/yarn/new" class="btn btn-link btn-xs p-0 h-auto min-h-0" target="_blank"
+                                <a href="/yarn/new" class="md3-button md3-button--text md3-button--small" target="_blank"
                                     rel="noreferrer">
                                     {{ _('Add new') }}
                                 </a>
@@ -424,7 +425,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 
                                 <div class="relative">
                                     <input type="text" id="yarn_search" placeholder="{{ _('Search yarns...') }}"
-                                        class="input input-bordered w-full pl-10" autocomplete="off">
+                                        class="md3-text-field" autocomplete="off">
                                     <span
                                         class="mdi mdi-magnify absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60 text-xl"></span>
                                 </div>
@@ -484,7 +485,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                 {{ _('Recommended Needles') }}
                             </h3>
                             <div>
-                                <textarea id="needles" name="needles" rows="2" class="textarea textarea-bordered w-full"
+                                <textarea id="needles" name="needles" rows="2" class="md3-text-field"
                                     placeholder="{{ _('e.g. 4.0mm circular') }}">{{ project.needles if project and project.needles else '' }}</textarea>
                             </div>
                         </div>
@@ -526,15 +527,15 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 
             <!-- Steps Card -->
             <div
-                class="collapse collapse-arrow bg-base-100 rounded-none sm:rounded-2xl shadow-sm border-y sm:border border-base-200 overflow-visible">
+                class="md3-disclosure">
                 <input type="checkbox" checked />
-                <div class="collapse-title p-3 sm:p-6 pb-0">
+                <div class="md3-disclosure__title">
                     <h3 class="text-xl font-semibold text-base-content flex items-center gap-2">
                         <span class="mdi mdi-format-list-text text-primary"></span>
                         {{ _('Steps') }}
                     </h3>
                 </div>
-                <div class="collapse-content p-3 sm:p-6 pt-0">
+                <div class="md3-disclosure__content">
                     <div id="stepsContainer" class="space-y-4 pt-4">
                         {% for step in (project.steps if project else []) %}
                         <div class="step-item border rounded-lg p-2 md:p-4 bg-base-200/50 border-base-300"
@@ -545,30 +546,30 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                         class="step-number">{{
                                         step.step_number }}</span></h4>
                                 <div class="flex flex-wrap gap-2">
-                                    <button type="button" data-call="moveStepUp" class="btn btn-xs btn-ghost gap-1"
+                                        <button type="button" data-call="moveStepUp" class="md3-button md3-button--text md3-button--small"
                                         title="{{ _('Move Up') }}">
                                         <span class="mdi mdi-arrow-up"></span>
                                         <span class="hidden sm:inline">{{ _('Move Up') }}</span>
                                     </button>
-                                    <button type="button" data-call="moveStepDown" class="btn btn-xs btn-ghost gap-1"
+                                        <button type="button" data-call="moveStepDown" class="md3-button md3-button--text md3-button--small"
                                         title="{{ _('Move Down') }}">
                                         <span class="mdi mdi-arrow-down"></span>
                                         <span class="hidden sm:inline">{{ _('Move Down') }}</span>
                                     </button>
-                                    <button type="button" data-call="saveStep" class="btn btn-xs btn-primary gap-1"
+                                        <button type="button" data-call="saveStep" class="md3-button md3-button--filled md3-button--small"
                                         title="{{ _('Save') }}">
                                         <span class="mdi mdi-content-save"></span>
                                         <span class="hidden sm:inline">{{ _('Save') }}</span>
                                     </button>
                                     <button type="button" data-call="removeStep"
-                                        class="btn btn-xs btn-error text-white gap-1" title="{{ _('Remove Step') }}">
+                                        class="md3-button md3-button--destructive md3-button--small" title="{{ _('Remove Step') }}">
                                         <span class="mdi mdi-delete"></span>
                                         <span class="hidden sm:inline">{{ _('Remove') }}</span>
                                     </button>
                                 </div>
                             </div>
 	                            <div class="mb-2">
-	                                <input type="text" class="step-title input input-bordered w-full"
+	                                <input type="text" class="step-title md3-text-field"
 	                                    placeholder="{{ _('Step Title') }}" value="{{ step.title }}">
 	                            </div>
 	                            {{ wysiwyg.wysiwyg(
@@ -592,7 +593,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                         </div>
                         {% endfor %}
                     </div>
-	                    <button type="button" data-call="addStep" class="btn btn-success text-white mt-4 gap-2">
+	                    <button type="button" data-call="addStep" class="md3-button md3-button--filled mt-4">
 	                        <span class="mdi mdi-playlist-plus text-xl"></span>
 	                        {{ _('Add Step') }}
 	                    </button>
@@ -625,30 +626,30 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
         <div id="sidebar-column" class="space-y-6 lg:col-start-3 lg:row-start-1 lg:sticky lg:top-24 lg:self-start">
             <!-- Project Details Card -->
             <div
-                class="collapse collapse-right collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 hidden lg:block">
+                class="md3-disclosure md3-disclosure--right hidden lg:block">
                 <input type="checkbox" id="project-details-toggle-sidebar" checked
                     data-call-change="toggleEditSidebarExpansion" />
                 <label for="project-details-toggle-sidebar"
-                    class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest text-xs">
+                    class="md3-disclosure__title">
                     <span class="flex items-center gap-2">
                         <span class="mdi mdi-information-outline"></span>
                         {{ _('Project Details') }}
                     </span>
                 </label>
 
-                <div class="collapse-content space-y-4">
+                <div class="md3-disclosure__content">
                     <div class="pt-2">
                         <div>
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
                                 <label for="category" class=" text-xs font-bold uppercase text-base-content/50">
                                     {{ _('Category') }}
                                 </label>
-                                <a href="/projects/categories" class="btn btn-link btn-xs p-0 h-auto min-h-0"
+                                <a href="/projects/categories" class="md3-button md3-button--text md3-button--small"
                                     target="_blank" rel="noreferrer">
                                     {{ _('Manage') }}
                                 </a>
                             </div>
-                            <select id="category" name="category" class="select  select-sm w-full">
+                            <select id="category" name="category" class="md3-select">
                                 <option value="">{{ _('Select a category') }}</option>
                                 {% for category in categories %}
                                 <option value="{{ category }}" {% if project and project.category==category %}selected{%
@@ -665,7 +666,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                             </label>
                             <div id="tags_chips" class="flex flex-wrap gap-2 mt-2"></div>
                             <div class="relative mt-2">
-                                <input type="text" id="tags_input" class="input  input-sm w-full" autocomplete="off"
+                                <input type="text" id="tags_input" class="md3-text-field" autocomplete="off"
                                     placeholder="{{ _('Add a tag...') }}">
                                 <div id="tags_suggestions"
                                     class="hidden absolute z-30 w-full mt-1 max-h-48 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl">
@@ -691,25 +692,25 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                     {{ _('Pattern Source') }}
                                 </label>
                                 <button type="button" id="reimport-btn"
-                                    class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
+                                    class="md3-button md3-button--text md3-button--small {{ 'hidden' if not project.link else '' }}"
                                     data-call="importFromUrl" data-call-args='["$value:#link"]'>
                                     <span class="mdi mdi-download"></span>
                                     {{ _('Re-import') }}
                                 </button>
                                 <a href="{{ project.link }}" target="_blank"
-                                    class="btn btn-ghost btn-xs gap-1 normal-case {{ 'hidden' if not project.link else '' }}"
+                                    class="md3-button md3-button--text md3-button--small {{ 'hidden' if not project.link else '' }}"
                                     id="visit-link-btn" title="{{ _('Visit Website') }}">
                                     <span class="mdi mdi-open-in-new"></span>
                                     {{ _('Visit') }}
                                 </a>
-                                <button type="button" class="btn btn-ghost btn-xs gap-1 normal-case"
+                                <button type="button" class="md3-button md3-button--text md3-button--small"
                                     data-call="copyToClipboard" data-call-args='["$value:#link","$this"]'
                                     title="{{ _('Copy URL') }}">
                                     <span class="mdi mdi-content-copy"></span>
                                 </button>
                             </div>
                             <input type="url" id="link" name="link" value="{{ project.link or '' }}"
-                                class="input  input-sm w-full" placeholder="https://..."
+                                class="md3-text-field" placeholder="https://..."
                                 data-call-input="syncLinkInputs">
                             <label id="wayback_sidebar_container"
                                 class="label cursor-pointer justify-start gap-3 px-3 py-2 bg-base-200/50 rounded-xl border border-base-300 mt-2 {% if not feature_wayback_enabled %}hidden{% endif %}">
@@ -727,7 +728,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                     project.is_ai_enhanced %}checked{% endif %} data-call-change="syncAiEnhanced">
                                 <span
                                     class="label-text text-xs font-bold uppercase text-base-content/50 flex items-center gap-2">
-                                    <span class="badge badge-primary font-black text-[10px] h-4 min-h-0">AI</span>
+                                    <span class="md3-chip md3-chip--ai md3-chip--compact">AI</span>
                                     {{ _('AI Enhanced') }}
                                 </span>
                             </label>
@@ -761,8 +762,8 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
 {{ wysiwyg.wysiwyg_scripts() }}
 
 
-<dialog id="deleteProjectDialog" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box">
+<dialog id="deleteProjectDialog" class="md3-dialog">
+    <div class="md3-dialog-surface">
         <h3 class="font-bold text-lg">{{ _('Delete Project') }}</h3>
         <div class="py-4 space-y-4">
             <p class="text-base-content/80">
@@ -814,7 +815,7 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
             </div>
             {% endif %}
         </div>
-        <div class="modal-action">
+        <div class="md3-action-row">
             {{ dialogs.dialog_cancel(_('Cancel'),
             attrs='data-action="close-dialog" data-dialog-id="deleteProjectDialog"') }}
             {{ dialogs.dialog_danger(_('Delete'), attrs='data-call="deleteProject" data-call-args="[]"') }}
@@ -823,17 +824,17 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
     {{ dialogs.modal_backdrop() }}
 </dialog>
 
-<dialog id="csrfErrorDialog" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box">
+<dialog id="csrfErrorDialog" class="md3-dialog">
+    <div class="md3-dialog-surface">
         <h3 class="font-bold text-lg">{{ _('Session expired') }}</h3>
         <div class="py-4 space-y-4">
             <p class="text-base-content/80">{{ _('Your session has expired. Reload the page to continue.') }}</p>
             <p class="text-base-content/70 text-sm">{{ _('This can happen after restarting the server.') }}</p>
         </div>
-        <div class="modal-action">
+        <div class="md3-action-row">
             {{ dialogs.dialog_cancel(_('Cancel'),
             attrs='data-action="close-dialog" data-dialog-id="csrfErrorDialog"') }}
-            <button type="button" class="btn btn-primary" data-action="reload">
+            <button type="button" class="md3-button md3-button--filled" data-action="reload">
                 <span class="mdi mdi-refresh"></span>
                 {{ _('Reload page') }}
             </button>
