@@ -14,7 +14,6 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', path='icons/icon-192.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='vendor/mdi/css/materialdesignicons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='vendor/photoswipe/photoswipe.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
     <script nonce="{{ csp_nonce }}">
         window.STRICKNANI = window.STRICKNANI || {};
         window.STRICKNANI.i18n = {{
@@ -102,6 +101,7 @@
     <link href="{{ url_for('static', path='vendor/daisyui/daisyui.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ url_for('static', path='vendor/daisyui/themes.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ url_for('static', path='css/tailwind.css') }}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
     <script src="{{ url_for('static', path='vendor/htmx/htmx.min.js') }}"></script>
     <script src="{{ url_for('static', path='js/htmx/csrf.js') }}"></script>
     {% if auto_reload_enabled %}

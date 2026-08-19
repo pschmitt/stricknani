@@ -81,6 +81,16 @@ Execution-oriented backlog for Stricknani.
 | T75 | P1 | done | api | feat | Add versioned JSON API (`/api/v1/`): projects/yarns/categories CRUD, favorites, image/attachment upload, `GET /api/v1/meta` (backend foundation for the Android app; mirrors `android/TODO.md` SNA-2) |
 | T76 | P1 | done | api | feat | Add `require_auth_or_api_token` dependency so `/media` serving accepts either the session cookie or a Bearer API token (backend foundation for the Android app; mirrors `android/TODO.md` SNA-4) |
 | T77 | P1 | done | api | feat | Add delta-sync endpoints (`/api/v1/sync/{projects,yarns,categories}`) sourcing deletions from `AuditLog` (backend foundation for the Android app; mirrors `android/TODO.md` SNA-3) |
+| T78 | P1 | todo | test/ci | feat | Add disposable browser E2E tests for critical Stricknani user journeys, following the NetBox/Syncwich CI pattern |
+| T79 | P2 | todo | ci | feat | Capture named Stricknani browser screenshots in CI E2E runs and upload them as reviewable artifacts, following the NetBox/Syncwich screenshot pattern |
+| T80 | P1 | todo | android/test/ci | feat | Add disposable Android instrumentation E2E tests against a seeded Stricknani fixture, with PR smoke and manual full journeys |
+| T81 | P1 | todo | android/test | feat | Add focused Android Compose/instrumentation coverage for route, accessibility, dialog, loading/error, and offline UI states |
+| T82 | P2 | todo | android/ci | feat | Add manual Android screenshot capture CI for phone and tablet layouts, light/dark themes, and reviewable artifacts |
+| T83 | P2 | todo | test/ci | refactor | Split browser E2E into a fast pull-request smoke suite and a longer manual cache/offline journey |
+| T84 | P2 | todo | ci/test | refactor | Enforce the documented 80% Python coverage threshold in CI instead of only uploading a report |
+| T85 | P2 | todo | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
+| T86 | P2 | todo | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
+| T87 | P3 | todo | release/decision | feat | Decide whether Stricknani should publish to Google Play and, if yes, add the gated store-assets and publishing workflow |
 
 
 ## Done
@@ -666,7 +676,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: cli
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Change the `--query Q` flag to a positional argument in the `stricknani-cli project show` command
@@ -681,7 +691,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P2
-- **Status**: todo
+- **Status**: done
 - **Category**: refactor
 - **Description**:
   - Conditionally render the "other materials" widget only when there is content to display
@@ -696,7 +706,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: search
 - **Priority**: P0
-- **Status**: todo
+- **Status**: done
 - **Category**: bug
 - **Description**:
   - Universal search (bound to Ctrl-K) is failing with HTTP 500 error due to CSRF protection
@@ -995,3 +1005,182 @@ Execution-oriented backlog for Stricknani.
   - No rate limiting/lockout on login/signup; no password policy (1-char accepted); sessions are non-revocable 1-week JWTs (logout only clears the cookie).
 - **Implementation**: add per-IP/per-account rate limiting (e.g. slowapi); enforce a minimum password policy; add a token version/jti in the DB checked in `get_current_user`, bumped on password change/logout-all.
 - **Files**: `stricknani/routes/auth.py`, `stricknani/utils/auth.py`, `stricknani/models/user.py`, `stricknani/config.py`
+
+### T78: Add disposable browser E2E tests for critical user journeys
+
+- **Area**: test/ci
+- **Priority**: P1
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - The pytest suite exercises backend behavior but no real browser journey currently protects the primary web UI.
+  - Add an isolated, disposable E2E environment and cover the highest-value authenticated flows: signup/login/logout, project and yarn creation/editing, detail-page navigation, and representative image/form interactions.
+- **Implementation**:
+  - Use Playwright (or the repository-standard browser E2E tool) with a dedicated `just` target and documented local invocation.
+  - Start Stricknani against a temporary database/media directory, seed deterministic fixture data, and wait for `/healthz`; never point the suite at production or shared data.
+  - Run the E2E journey in GitHub Actions alongside the existing checks, with browser dependencies cached or installed reproducibly.
+  - Upload screenshots, traces/video, server logs, and test reports on failure; keep destructive cases limited to disposable fixture records.
+- **Files**: `tests/e2e/`, `justfile`, `pyproject.toml`, `.github/workflows/`, and E2E setup documentation.
+- **Testing**: verify the complete journey locally and in a hosted CI run, including an assertion that the disposable environment is torn down afterward.
+
+### T79: Capture named browser screenshots in CI E2E runs
+
+- **Area**: ci
+- **Priority**: P2
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Make the disposable browser E2E workflow useful for visual review and failure diagnosis by retaining screenshots from meaningful application states, not only test logs.
+  - Keep all captures based on deterministic disposable fixture data; never capture production or personal records.
+- **Implementation**:
+  - Capture clearly named screenshots at key states such as authenticated home/list, project detail, yarn detail, and create/edit forms.
+  - Pull the images into the GitHub Actions workspace and upload them on both successful and failed E2E runs alongside traces, logs, and test reports.
+  - Add a local screenshot target that reuses the same fixture and journey where practical, and fail if a required state is blank or still loading.
+  - Preserve stable viewport/theme naming so later visual comparisons can identify regressions without rerunning CI.
+- **Files**: `tests/e2e/`, `justfile`, `.github/workflows/`, and screenshot documentation.
+- **Testing**: verify the hosted workflow produces non-empty, reviewable screenshots for every named state and always tears down the disposable environment.
+
+### T80: Add disposable Android instrumentation E2E tests
+
+- **Area**: android/test/ci
+- **Priority**: P1
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - The Android app has instrumentation-test dependencies but no `androidTest` sources or emulator journey; CI currently runs only JVM tests and APK assembly.
+  - Add an isolated Android E2E environment that never uses the production Stricknani server or personal data.
+- **Implementation**:
+  - Start a disposable Stricknani instance with temporary database/media storage, seed a deterministic user, API token, categories, projects, yarns, and representative images, then wait for `/healthz`.
+  - Add a short onboarding/sync/detail/settings smoke journey for pull requests and a longer manual journey covering cached browsing, search, offline mode, and queued edits.
+  - Pass the fixture URL/token through instrumentation arguments, build before emulator startup, use a fresh API-34 emulator, and tear down the fixture with volumes on every exit path.
+  - Upload instrumentation reports, logcat, emulator screenshots, server logs, and host diagnostics on every run.
+- **Files**: `android/app/src/androidTest/`, `.github/workflows/android-e2e.yaml`, `ci/stricknani/`, `android/justfile`, and Android E2E documentation.
+- **Testing**: verify both the pull-request smoke lane and the manual full lane against the disposable fixture; confirm no production endpoint is contacted.
+
+### T81: Add focused Android Compose/instrumentation coverage
+
+- **Area**: android/test
+- **Priority**: P1
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Pure JVM tests cannot catch Compose navigation, layout, semantics, dialog, accessibility, loading/error, or offline rendering regressions.
+  - Add focused instrumentation coverage alongside the broader E2E journey, following the route-level coverage in NetBox and Syncwich.
+- **Implementation**:
+  - Cover onboarding validation, home/projects/yarns navigation, list/detail/editor states, search, gauge, settings/about, backup dialogs, image viewer, empty/loading/error states, and offline/cache-first rendering.
+  - Assert stable accessibility labels and semantics for important controls, not only screenshots.
+  - Keep tests deterministic and fixture-driven; isolate mutation-heavy or permission-gated paths from the PR smoke suite where appropriate.
+- **Files**: `android/app/src/androidTest/kotlin/`, Android test fixtures/helpers, and `android/justfile`.
+- **Testing**: run focused instrumentation tests on API 34 locally/CI and retain the relevant reports for failures.
+
+### T82: Add manual Android screenshot capture CI
+
+- **Area**: android/ci
+- **Priority**: P2
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - `screengrab` is already a declared Android test dependency, but Stricknani has no screenshot test, Fastlane configuration, or screenshot workflow.
+  - Provide a repeatable visual-review path for the app's primary phone and tablet layouts.
+- **Implementation**:
+  - Add a manual GitHub Actions workflow using the same disposable seeded fixture as T80 and an emulator matrix for phone, 7-inch tablet, and 10-inch tablet profiles.
+  - Capture named onboarding, home/list, project detail, yarn detail, settings, and offline states in light and dark themes.
+  - Upload screenshots and instrumentation reports on success and failure, including a direct failure screenshot when the test journey aborts.
+  - Add an optional `open_pr` path for committing reviewed screenshots to a stable update branch; keep Play Console mutation behind a separate explicit gate.
+- **Files**: `.github/workflows/android-screenshots.yaml`, `android/app/src/androidTest/`, `fastlane/`, `android/justfile`, and screenshot documentation.
+- **Testing**: run the full matrix from a manual CI dispatch and verify every named image contains seeded content rather than a loading/blank state.
+
+### T83: Split browser E2E into smoke and full suites
+
+- **Area**: test/ci
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - T78 currently describes one browser E2E journey; the CI cost and coverage need separate pull-request and deeper verification paths.
+- **Implementation**:
+  - Run a short deterministic login/list/detail/settings smoke journey on pull requests with path filters for browser-test and app changes.
+  - Keep the longer manual journey for project/yarn editing, image/form interactions, search, import boundaries, responsive layouts, and offline/cache behavior.
+  - Add workflow concurrency cancellation, explicit timeouts, deterministic fixture teardown, and artifacts on every run.
+- **Files**: `tests/e2e/`, `.github/workflows/`, `justfile`, and E2E documentation.
+- **Testing**: verify the smoke suite is fast and mutation-safe on pull requests while the full suite remains runnable by manual dispatch.
+
+### T84: Enforce the documented Python coverage threshold
+
+- **Area**: ci/test
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - The product specification requires at least 80% coverage, but CI currently only generates and uploads `coverage.xml` without enforcing a minimum.
+- **Implementation**:
+  - Add `--cov-fail-under=80` to the canonical test command or configure the threshold in `pyproject.toml` so local and CI checks agree.
+  - Keep the coverage artifact and make failures identify the measured total and the missing threshold.
+- **Files**: `pyproject.toml`, `justfile`, `.github/workflows/test.yaml`, and `docs/spec-and-implementation.md` if the chosen threshold or scope changes.
+- **Testing**: verify CI fails below the threshold and passes with the current suite after accounting for intentionally excluded modules.
+
+### T85: Pin CI runtimes and E2E browser dependencies
+
+- **Area**: ci
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Web CI currently uses floating `uv latest` and Python `3.x`; browser and emulator verification should not silently change underneath the test suite.
+- **Implementation**:
+  - Pin the supported Python and uv versions, Playwright/browser versions, and any Ruby/Fastlane tooling used by Android screenshots.
+  - Cache dependency downloads and document the version update path so upgrades remain intentional and reviewable.
+- **Files**: `.github/workflows/`, `pyproject.toml`, `uv.lock`, `package.json`/lockfiles for E2E tooling, `fastlane/`, and setup documentation.
+- **Testing**: run all affected CI lanes from a clean cache and confirm they use the declared versions.
+
+### T86: Harden container readiness and disposable fixture startup
+
+- **Area**: ci/build
+- **Priority**: P2
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - Container verification relies on a fixed ten-second sleep, and future disposable E2E/screenshot fixtures will repeatedly pull the same images without a cache strategy.
+- **Implementation**:
+  - Replace fixed sleeps with bounded `/healthz` polling that reports useful logs on timeout.
+  - Pin fixture image versions, cache large Docker images in GitHub Actions where practical, use `docker compose --wait` for disposable services, and always remove volumes/orphans.
+- **Files**: `.github/workflows/container.yaml`, `.github/workflows/`, `ci/`, and fixture startup scripts.
+- **Testing**: verify cold and cached CI runs, delayed startup, health timeout diagnostics, and cleanup after both success and failure.
+
+### T87: Decide on Google Play distribution
+
+- **Area**: release/decision
+- **Priority**: P3
+- **Status**: todo
+- **Category**: feat
+- **Description**:
+  - Android release signing, GitHub Releases, and Obtainium are implemented; Google Play publishing remains deliberately undecided and is currently documented only in `android/TODO.md`.
+- **Implementation**:
+  - Decide whether the self-hosted audience warrants Play distribution. If approved, prepare store copy, privacy/data-safety information, content rating, signed AAB publication, and the gated screenshot/store-assets workflow from T82.
+  - Keep publishing disabled by default and require an explicit repository-level gate and credentials check before any upload.
+- **Files**: `android/TODO.md`, `.github/workflows/`, `fastlane/`, `android/README.md`, and store metadata.
+- **Testing**: validate a signed AAB and store assets without publishing first; publish only after the explicit product decision and gate are enabled.
+
+### T88: Migrate the web UI to Material 3 Expressive
+
+- **Area**: frontend/ux
+- **Priority**: P2
+- **Status**: wip (PID: main, AGENT: codex-main)
+- **Category**: refactor
+- **Description**:
+  - Replace the current DaisyUI/Tailwind visual language with a Material Design 3 / Material 3
+    Expressive direction across the web UI.
+  - Keep Projects and Yarns visually and behaviorally consistent while the migration is staged.
+- **Implementation**:
+  - Define the Material 3 color, typography, shape, elevation, state-layer, and responsive layout
+    tokens for light and dark themes.
+  - Replace shared navigation, buttons, forms, cards, dialogs, lists, and feedback components
+    incrementally, starting from shared templates/macros so individual pages inherit the system.
+  - Keep all frontend dependencies vendored through `vendir.yml`; prefer existing vanilla JS and
+    avoid introducing a client-side framework unless a concrete interaction requires it.
+  - Preserve accessibility semantics, keyboard navigation, responsive behavior, translations,
+    and the existing project/yarn UI parity throughout the migration.
+- **Files**: `stricknani/templates/`, `stricknani/static/css/`, `stricknani/static/js/`,
+  `vendir.yml`, and both translation catalogs as UI strings change.
+- **Testing**: add/update browser E2E and screenshot coverage for light/dark themes and key
+  responsive viewports; run i18n checks, frontend lint/format, and the full web test suite.

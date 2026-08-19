@@ -9,7 +9,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from stricknani.config import config
-from stricknani.models import Attachment, AuditLog, Image, ProjectCategory, Step, Yarn
+from stricknani.models import (
+    Attachment,
+    AuditLog,
+    Image,
+    Project,
+    ProjectCategory,
+    Step,
+    Yarn,
+)
 
 
 async def _fetch_steps(
@@ -244,6 +252,35 @@ async def test_project_create_with_new_yarn_text_writes_yarn_creation_audit_log(
     details = json.loads(created_entry.details)
     assert details.get("name") == "Audit Created Yarn"
     assert details.get("source") == "project_yarn_resolution"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("other_materials", "visible"),
+    [
+        (None, False),
+        (" \n\t", False),
+        ("![Buttons](https://example.invalid/buttons.png)", True),
+        ("4 buttons", True),
+    ],
+)
+async def test_project_detail_hides_only_empty_other_materials(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+    other_materials: str | None,
+    visible: bool,
+) -> None:
+    client, session_factory, _user_id, project_id, _step_id = test_client
+
+    async with session_factory() as session:
+        project = await session.get(Project, project_id)
+        assert project is not None
+        project.other_materials = other_materials
+        await session.commit()
+
+    response = await client.get(f"/projects/{project_id}")
+
+    assert response.status_code == 200
+    assert ("mdi-package-variant-closed" in response.text) is visible
 
 
 @pytest.mark.asyncio

@@ -129,6 +129,12 @@ def _normalize_entity_lookup_args(raw_args: list[str]) -> list[str]:
                 normalized.append(next_token)
                 skip_next = True
                 continue
+            if token.startswith("--query="):
+                query_value = token.partition("=")[2]
+                if not query_value:
+                    return raw_args
+                normalized.append(query_value)
+                continue
             normalized.append(token)
         raw_args = normalized
 

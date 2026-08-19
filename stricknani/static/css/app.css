@@ -990,3 +990,261 @@ textarea::placeholder {
 	background-image: radial-gradient(#000 1px, transparent 1px);
 	background-size: 20px 20px;
 }
+
+/* Material 3 Expressive foundation (T88).
+ *
+ * Templates currently use DaisyUI-compatible component names. Keeping those
+ * names as a compatibility layer lets the visual system migrate incrementally
+ * while Projects and Yarns share one token set and interaction treatment. */
+:root,
+[data-theme="light"] {
+	--md-sys-color-primary: oklch(46% 0.16 264);
+	--md-sys-color-on-primary: oklch(99% 0.01 264);
+	--md-sys-color-primary-container: oklch(91% 0.06 264);
+	--md-sys-color-on-primary-container: oklch(25% 0.09 264);
+	--md-sys-color-secondary: oklch(45% 0.08 315);
+	--md-sys-color-on-secondary: oklch(99% 0.01 315);
+	--md-sys-color-secondary-container: oklch(92% 0.05 315);
+	--md-sys-color-on-secondary-container: oklch(25% 0.06 315);
+	--md-sys-color-tertiary: oklch(45% 0.1 175);
+	--md-sys-color-on-tertiary: oklch(99% 0.01 175);
+	--md-sys-color-tertiary-container: oklch(90% 0.08 175);
+	--md-sys-color-on-tertiary-container: oklch(23% 0.07 175);
+	--md-sys-color-error: oklch(50% 0.16 27);
+	--md-sys-color-on-error: oklch(99% 0.01 27);
+	--md-sys-color-surface: oklch(98% 0.006 264);
+	--md-sys-color-surface-container-low: oklch(96% 0.01 264);
+	--md-sys-color-surface-container: oklch(94% 0.012 264);
+	--md-sys-color-surface-container-high: oklch(91% 0.016 264);
+	--md-sys-color-on-surface: oklch(20% 0.025 264);
+	--md-sys-color-on-surface-variant: oklch(42% 0.025 264);
+	--md-sys-color-outline: oklch(50% 0.02 264);
+	--md-sys-color-outline-variant: oklch(78% 0.025 264);
+	--md-sys-color-scrim: oklch(0% 0 0 / 0.32);
+
+	/* DaisyUI semantic aliases used by the existing utility classes. */
+	--color-base-100: var(--md-sys-color-surface);
+	--color-base-200: var(--md-sys-color-surface-container);
+	--color-base-300: var(--md-sys-color-surface-container-high);
+	--color-base-content: var(--md-sys-color-on-surface);
+	--color-primary: var(--md-sys-color-primary);
+	--color-primary-content: var(--md-sys-color-on-primary);
+	--color-secondary: var(--md-sys-color-secondary);
+	--color-secondary-content: var(--md-sys-color-on-secondary);
+	--color-accent: var(--md-sys-color-tertiary);
+	--color-accent-content: var(--md-sys-color-on-tertiary);
+	--color-neutral: var(--md-sys-color-on-surface);
+	--color-neutral-content: var(--md-sys-color-surface);
+	--color-info: oklch(52% 0.13 245);
+	--color-info-content: oklch(99% 0.01 245);
+	--color-success: oklch(48% 0.12 150);
+	--color-success-content: oklch(99% 0.01 150);
+	--color-warning: oklch(62% 0.14 78);
+	--color-warning-content: oklch(22% 0.06 78);
+	--color-error: var(--md-sys-color-error);
+	--color-error-content: var(--md-sys-color-on-error);
+	--radius-selector: 0.75rem;
+	--radius-field: 0.75rem;
+	--radius-box: 1rem;
+	--md-focus-ring: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-primary) 32%, transparent);
+}
+
+[data-theme="dark"] {
+	--md-sys-color-primary: oklch(79% 0.12 264);
+	--md-sys-color-on-primary: oklch(24% 0.08 264);
+	--md-sys-color-primary-container: oklch(36% 0.1 264);
+	--md-sys-color-on-primary-container: oklch(91% 0.06 264);
+	--md-sys-color-secondary: oklch(79% 0.08 315);
+	--md-sys-color-on-secondary: oklch(24% 0.06 315);
+	--md-sys-color-secondary-container: oklch(36% 0.06 315);
+	--md-sys-color-on-secondary-container: oklch(91% 0.05 315);
+	--md-sys-color-tertiary: oklch(78% 0.1 175);
+	--md-sys-color-on-tertiary: oklch(22% 0.07 175);
+	--md-sys-color-tertiary-container: oklch(35% 0.07 175);
+	--md-sys-color-on-tertiary-container: oklch(90% 0.08 175);
+	--md-sys-color-error: oklch(80% 0.12 27);
+	--md-sys-color-on-error: oklch(25% 0.08 27);
+	--md-sys-color-surface: oklch(18% 0.018 264);
+	--md-sys-color-surface-container-low: oklch(20% 0.02 264);
+	--md-sys-color-surface-container: oklch(23% 0.022 264);
+	--md-sys-color-surface-container-high: oklch(27% 0.024 264);
+	--md-sys-color-on-surface: oklch(91% 0.018 264);
+	--md-sys-color-on-surface-variant: oklch(75% 0.025 264);
+	--md-sys-color-outline: oklch(72% 0.02 264);
+	--md-sys-color-outline-variant: oklch(45% 0.025 264);
+	--color-info: oklch(77% 0.1 245);
+	--color-info-content: oklch(22% 0.06 245);
+	--color-success: oklch(75% 0.1 150);
+	--color-success-content: oklch(22% 0.05 150);
+	--color-warning: oklch(82% 0.12 78);
+	--color-warning-content: oklch(24% 0.06 78);
+}
+
+html,
+body {
+	background: var(--md-sys-color-surface);
+	color: var(--md-sys-color-on-surface);
+	font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+:where(button, a, input, textarea, select):focus-visible {
+	outline: none;
+	box-shadow: var(--md-focus-ring);
+}
+
+.btn {
+	min-height: 2.5rem;
+	border: 0;
+	border-radius: 1.25rem;
+	font-weight: 650;
+	letter-spacing: 0.01em;
+	box-shadow: none;
+	transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.btn:hover {
+	box-shadow: 0 1px 3px color-mix(in srgb, var(--md-sys-color-on-surface) 18%, transparent);
+}
+
+.btn:active {
+	transform: scale(0.98);
+}
+
+.btn-primary {
+	background: var(--md-sys-color-primary);
+	color: var(--md-sys-color-on-primary);
+}
+
+.btn-secondary {
+	background: var(--md-sys-color-secondary);
+	color: var(--md-sys-color-on-secondary);
+}
+
+.btn-accent {
+	background: var(--md-sys-color-tertiary);
+	color: var(--md-sys-color-on-tertiary);
+}
+
+.btn-outline {
+	border: 1px solid var(--md-sys-color-outline);
+	background: transparent;
+	color: var(--md-sys-color-primary);
+}
+
+.btn-ghost {
+	background: transparent;
+	color: var(--md-sys-color-on-surface-variant);
+}
+
+.btn-ghost:hover {
+	background: color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent);
+	color: var(--md-sys-color-on-surface);
+}
+
+.btn-error {
+	background: var(--md-sys-color-error);
+	color: var(--md-sys-color-on-primary);
+}
+
+.btn-warning {
+	background: var(--color-warning);
+	color: var(--color-warning-content);
+}
+
+.btn-sm {
+	min-height: 2rem;
+	border-radius: 1rem;
+}
+
+.btn-xs {
+	min-height: 1.75rem;
+	border-radius: 0.875rem;
+}
+
+.input,
+.textarea,
+.select,
+.file-input {
+	border: 1px solid var(--md-sys-color-outline);
+	border-radius: var(--radius-field);
+	background: var(--md-sys-color-surface-container-low);
+	color: var(--md-sys-color-on-surface);
+	box-shadow: none;
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+	border-color: var(--md-sys-color-primary);
+	box-shadow: var(--md-focus-ring);
+	outline: none;
+}
+
+.input-bordered,
+.textarea-bordered,
+.select-bordered {
+	border-color: var(--md-sys-color-outline);
+}
+
+.card,
+.modal-box,
+.dropdown-content,
+.menu {
+	border-radius: var(--radius-box);
+	border-color: var(--md-sys-color-outline-variant);
+	background: var(--md-sys-color-surface-container-low);
+	box-shadow: 0 2px 8px color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+}
+
+.card.bg-base-200,
+.bg-base-200 {
+	background: var(--md-sys-color-surface-container);
+}
+
+.alert {
+	border: 0;
+	border-radius: var(--radius-box);
+	box-shadow: none;
+}
+
+.badge {
+	border: 0;
+	border-radius: 0.5rem;
+	font-weight: 650;
+}
+
+.navbar {
+	min-height: 4rem;
+	background: var(--md-sys-color-surface-container-low);
+	border-color: var(--md-sys-color-outline-variant);
+	box-shadow: 0 1px 3px color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+}
+
+.tabs-boxed {
+	border-radius: 1.25rem;
+	background: var(--md-sys-color-surface-container);
+}
+
+.tab {
+	border-radius: 1rem;
+	font-weight: 650;
+}
+
+.tab-active {
+	background: var(--md-sys-color-secondary-container);
+	color: var(--md-sys-color-on-secondary-container);
+}
+
+.divider {
+	border-color: var(--md-sys-color-outline-variant);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.btn {
+		transition: none;
+	}
+
+	.btn:active {
+		transform: none;
+	}
+}

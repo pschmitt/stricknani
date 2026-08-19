@@ -40,6 +40,17 @@ async def test_links_static_tailwind_css_bundle(test_client: Any) -> None:
     assert "static/css/tailwind.css" in response.text
 
 
+@pytest.mark.asyncio
+async def test_links_material_theme_after_generated_css(test_client: Any) -> None:
+    """The shared Material 3 layer must load after generated utilities."""
+    client, _, _, _, _ = test_client
+    response = await client.get("/projects/")
+    assert response.status_code == 200
+    body = response.text
+    assert body.index("static/css/tailwind.css") < body.index("static/css/app.css")
+    assert "--md-sys-color-primary" in (STATIC_CSS_DIR / "app.css").read_text()
+
+
 @pytest.mark.skipif(
     shutil.which("tailwindcss") is None,
     reason="tailwindcss CLI not on PATH (expected inside the nix devShell)",

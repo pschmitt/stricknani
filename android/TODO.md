@@ -1431,5 +1431,18 @@ the test device is left in its default state.
 
 Status: **done** (2026-08-19; remotely verified with `just check` on `rofl-13.brkn.lol`: ktfmt,
 unit tests, and `lintDebug` all passed).
+## SNA-38: Pull-to-refresh gestures with user feedback
+
+- [ ] Add pull-to-refresh on Home, refreshing all cached data.
+- [ ] Add pull-to-refresh on the Projects and Yarns list screens, refreshing all items in the
+      relevant collection.
+- [ ] Add pull-to-refresh on individual Project and Yarn detail screens, refreshing only the
+      currently displayed item and its relevant linked data.
+- [ ] Show clear in-progress feedback while a refresh is running, followed by success, no-change,
+      offline, or error feedback as appropriate.
+- [ ] Prevent duplicate concurrent refreshes and cover gesture, offline, and feedback behavior in
+      Android tests.
+
+Status: not started (2026-08-19).
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
