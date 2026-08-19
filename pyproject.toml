@@ -136,6 +136,13 @@ module = [
 ]
 ignore_missing_imports = true
 
+[tool.coverage.run]
+source = ["stricknani"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

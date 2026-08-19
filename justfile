@@ -143,7 +143,7 @@ todo-todo:
 # Run tests
 [group: 'test']
 test:
-  uv run pytest -v
+  uv run pytest -v --cov=stricknani --cov-report=term-missing --cov-report=xml
 
 # Run the browser end-to-end suite against a disposable local database.
 [group: 'test']
