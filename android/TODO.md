@@ -41,8 +41,6 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Next
 
-- SNA-30: Redesign the Project detail view with cards, more readable/modern layout; linked-yarn
-  rows should show the yarn's icon/primary photo, not bare text
 - SNA-33: Harden offline sync - deletes/edits from both sides (device and server) need to resolve
   without data loss; needs an explicit conflict-handling strategy, not just last-write-wins by
   accident
@@ -1253,5 +1251,25 @@ opened the new screen with all dependencies listed correctly. One real quirk hit
 rapid-fire `adb shell input tap` calls under ~150ms apart didn't all register as discrete clicks
 (only 2 of 7 landed) - not an app bug, just `adb input tap`'s own dispatch timing; spacing taps
 ~400ms apart worked reliably.
+
+## SNA-30: Redesign Project detail view with cards
+
+- [x] `ProjectDetailScreen`'s content was a flat `LazyColumn` of bare rows separated by
+      `HorizontalDivider`s - replaced with a new `DetailSectionCard` (a rounded, elevated
+      `surfaceContainer` card matching Settings' `SettingsGroupCard` visual language) grouping each
+      section (Details facts + tags, Linked yarns, Description, Steps, Notes) into its own card,
+      with dividers only *within* a card between its own entries. Linked-yarn rows now use a new
+      shared `LinkedEntityRow` (thumbnail-or-`Checkroom`-icon leading avatar + name, clickable) -
+      the exact same pattern `YarnDetailScreen`'s "Used in" list already used for linked projects,
+      just extracted so both directions show a real photo where one exists. Needed adding
+      `previewUrl` to `ProjectDetailViewModel.LinkedYarn` (already present on `YarnEntity`, just
+      wasn't threaded through).
+
+Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`), then confirmed for real on the Zenfone 10 against
+the "Crash Repro Project" test project (3 linked yarns + 10 steps): each section now renders as its
+own rounded card, linked yarns show the clothes-hanger fallback icon (none of the test yarns have a
+photo), and tapping through to a linked yarn still navigates correctly and its own "Used in" card
+(unchanged) still finds its way back.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

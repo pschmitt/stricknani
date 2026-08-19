@@ -1,15 +1,15 @@
 package blue.anika.wolle.ui.projects
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -48,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -188,7 +191,21 @@ private fun ProjectDetailContent(
     // url somehow fails to resolve.
     val imageUrls = remember(detail.images) { detail.images.map { resolveMediaUrl(it.url) ?: "" } }
 
-    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
+    val hasDetails =
+        listOf(
+                detail.category,
+                detail.needles,
+                detail.stitchSample,
+                detail.yarn,
+                detail.otherMaterials,
+            )
+            .any { it != null } || detail.tags.isNotEmpty()
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         if (detail.images.isNotEmpty()) {
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -204,75 +221,74 @@ private fun ProjectDetailContent(
                         )
                     }
                 }
-                Spacer(Modifier.height(16.dp))
             }
         }
 
-        detail.category?.let { category ->
-            item { DetailRow(label = "Category", value = category) }
-        }
-        detail.needles?.let { value -> item { DetailRow(label = "Needles", value = value) } }
-        detail.stitchSample?.let { value ->
-            item { DetailRow(label = "Stitch sample", value = value) }
-        }
-        detail.yarn?.let { value -> item { DetailRow(label = "Yarn", value = value) } }
-        detail.otherMaterials?.let { value ->
-            item { DetailRow(label = "Other materials", value = value) }
-        }
-
-        if (detail.tags.isNotEmpty()) {
+        if (hasDetails) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    detail.tags.forEach { tag -> AssistChip(onClick = {}, label = { Text(tag) }) }
+                DetailSectionCard {
+                    detail.category?.let { DetailRow(label = "Category", value = it) }
+                    detail.needles?.let { DetailRow(label = "Needles", value = it) }
+                    detail.stitchSample?.let { DetailRow(label = "Stitch sample", value = it) }
+                    detail.yarn?.let { DetailRow(label = "Yarn", value = it) }
+                    detail.otherMaterials?.let { DetailRow(label = "Other materials", value = it) }
+                    if (detail.tags.isNotEmpty()) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(top = 8.dp),
+                        ) {
+                            detail.tags.forEach { tag ->
+                                AssistChip(onClick = {}, label = { Text(tag) })
+                            }
+                        }
+                    }
                 }
-                Spacer(Modifier.height(16.dp))
             }
         }
 
         if (linkedYarns.isNotEmpty()) {
             item {
-                Text("Linked yarns", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-            }
-            items(linkedYarns, key = { "yarn-${it.id}" }) { yarn ->
-                Card(
-                    onClick = { onYarnClick(yarn.id) },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                ) {
-                    Text(yarn.name, modifier = Modifier.padding(12.dp))
+                DetailSectionCard(title = "Linked yarns") {
+                    linkedYarns.forEachIndexed { index, yarn ->
+                        if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                        LinkedEntityRow(
+                            name = yarn.name,
+                            previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
+                            fallbackIcon = Icons.Filled.Checkroom,
+                            onClick = { onYarnClick(yarn.id) },
+                        )
+                    }
                 }
             }
         }
 
         detail.description?.let { value ->
             item {
-                HorizontalDivider(Modifier.padding(vertical = 16.dp))
-                Text("Description", style = MaterialTheme.typography.titleMedium)
-                Markdown(
-                    content = value,
-                    imageTransformer = Coil3ImageTransformerImpl,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
+                DetailSectionCard(title = "Description") {
+                    Markdown(content = value, imageTransformer = Coil3ImageTransformerImpl)
+                }
             }
         }
 
         if (detail.steps.isNotEmpty()) {
             item {
-                HorizontalDivider(Modifier.padding(vertical = 16.dp))
-                Text("Steps", style = MaterialTheme.typography.titleMedium)
-            }
-            items(detail.steps.sortedBy { it.stepNumber }, key = { "step-${it.id}" }) { step ->
-                Column(Modifier.padding(top = 12.dp)) {
-                    Text(
-                        "${step.stepNumber}. ${step.title}",
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    step.description?.let {
-                        Markdown(
-                            content = it,
-                            imageTransformer = Coil3ImageTransformerImpl,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
+                DetailSectionCard(title = "Steps") {
+                    val sortedSteps = detail.steps.sortedBy { it.stepNumber }
+                    sortedSteps.forEachIndexed { index, step ->
+                        if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                        Column {
+                            Text(
+                                "${step.stepNumber}. ${step.title}",
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            step.description?.let {
+                                Markdown(
+                                    content = it,
+                                    imageTransformer = Coil3ImageTransformerImpl,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -280,13 +296,9 @@ private fun ProjectDetailContent(
 
         detail.notes?.let { value ->
             item {
-                HorizontalDivider(Modifier.padding(vertical = 16.dp))
-                Text("Notes", style = MaterialTheme.typography.titleMedium)
-                Markdown(
-                    content = value,
-                    imageTransformer = Coil3ImageTransformerImpl,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
+                DetailSectionCard(title = "Notes") {
+                    Markdown(content = value, imageTransformer = Coil3ImageTransformerImpl)
+                }
             }
         }
     }
@@ -297,6 +309,74 @@ private fun ProjectDetailContent(
             initialIndex = index,
             onDismiss = { viewerIndex = null },
         )
+    }
+}
+
+/** A rounded, elevated grouping card - matches Settings' `SettingsGroupCard` visual language. */
+@Composable
+internal fun DetailSectionCard(
+    title: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            title?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+            }
+            content()
+        }
+    }
+}
+
+/** A tappable row with a thumbnail-or-fallback-icon leading avatar, used for linked-entity lists. */
+@Composable
+internal fun LinkedEntityRow(
+    name: String,
+    previewUrl: String?,
+    fallbackIcon: ImageVector,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier =
+                Modifier.size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            if (previewUrl != null) {
+                AsyncImage(
+                    model = previewUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        fallbackIcon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        Text(name)
     }
 }
 
