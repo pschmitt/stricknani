@@ -21,6 +21,9 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -49,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
+import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.MdiIcons
 import coil3.compose.AsyncImage
 
@@ -133,105 +137,126 @@ fun ProjectEditorScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                OutlinedTextField(
-                    value = form.name,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(name = value) } },
-                    label = { Text(stringResource(R.string.project_editor_name_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = form.category,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(category = value) } },
-                    label = { Text(stringResource(R.string.common_field_category)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            }
-            if (categories.isNotEmpty()) {
-                item {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        categories.forEach { category ->
-                            FilterChip(
-                                selected = form.category == category.name,
-                                onClick = {
-                                    viewModel.updateForm { it.copy(category = category.name) }
-                                },
-                                label = { Text(category.name) },
-                            )
+                EditorSectionCard(
+                    title = stringResource(R.string.editor_section_project_details),
+                    icon = Icons.Filled.Info,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = form.name,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(name = value) }
+                            },
+                            label = { Text(stringResource(R.string.project_editor_name_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            value = form.category,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(category = value) }
+                            },
+                            label = { Text(stringResource(R.string.common_field_category)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                        )
+                        if (categories.isNotEmpty()) {
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                categories.forEach { category ->
+                                    FilterChip(
+                                        selected = form.category == category.name,
+                                        onClick = {
+                                            viewModel.updateForm { it.copy(category = category.name) }
+                                        },
+                                        label = { Text(category.name) },
+                                    )
+                                }
+                            }
                         }
+                        OutlinedTextField(
+                            value = form.needles,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(needles = value) }
+                            },
+                            label = { Text(stringResource(R.string.common_field_needles)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                        )
                     }
                 }
             }
             item {
-                OutlinedTextField(
-                    value = form.needles,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(needles = value) } },
-                    label = { Text(stringResource(R.string.common_field_needles)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
+                EditorSectionCard(
+                    title = stringResource(R.string.editor_section_materials),
+                    icon = Icons.Filled.Tune,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = form.stitchSample,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(stitchSample = value) }
+                            },
+                            label = { Text(stringResource(R.string.common_field_stitch_sample)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            value = form.otherMaterials,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(otherMaterials = value) }
+                            },
+                            label = { Text(stringResource(R.string.common_field_other_materials)) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = form.tags,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(tags = value) }
+                            },
+                            label = { Text(stringResource(R.string.project_editor_tags_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            value = form.link,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(link = value) }
+                            },
+                            label = { Text(stringResource(R.string.project_editor_link_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                        )
+                    }
+                }
             }
             item {
-                OutlinedTextField(
-                    value = form.stitchSample,
-                    onValueChange = { value ->
-                        viewModel.updateForm { it.copy(stitchSample = value) }
-                    },
-                    label = { Text(stringResource(R.string.common_field_stitch_sample)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = form.otherMaterials,
-                    onValueChange = { value ->
-                        viewModel.updateForm { it.copy(otherMaterials = value) }
-                    },
-                    label = { Text(stringResource(R.string.common_field_other_materials)) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = form.tags,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(tags = value) } },
-                    label = { Text(stringResource(R.string.project_editor_tags_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = form.link,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(link = value) } },
-                    label = { Text(stringResource(R.string.project_editor_link_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = form.description,
-                    onValueChange = { value ->
-                        viewModel.updateForm { it.copy(description = value) }
-                    },
-                    label = { Text(stringResource(R.string.project_detail_description_title)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = form.notes,
-                    onValueChange = { value -> viewModel.updateForm { it.copy(notes = value) } },
-                    label = { Text(stringResource(R.string.project_detail_notes_title)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                )
+                EditorSectionCard(
+                    title = stringResource(R.string.editor_section_content),
+                    icon = Icons.Filled.Description,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = form.description,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(description = value) }
+                            },
+                            label = {
+                                Text(stringResource(R.string.project_detail_description_title))
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                        )
+                        OutlinedTextField(
+                            value = form.notes,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(notes = value) }
+                            },
+                            label = { Text(stringResource(R.string.project_detail_notes_title)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                        )
+                    }
+                }
             }
             if (yarns.isNotEmpty()) {
                 item {

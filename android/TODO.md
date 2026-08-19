@@ -1620,36 +1620,55 @@ boundary, offline outbox persistence, and project/step image persistence landed;
 
 ## SNA-52: Make Markdown images interactive and size-aware
 
-- [ ] Make images embedded in Markdown cards clickable and open the shared full-screen image
+- [x] Make images embedded in Markdown cards clickable and open the shared full-screen image
       viewer, consistently across project and yarn detail content.
-- [ ] Show useful image metadata in the viewer for every image (alt text plus context such as
+- [x] Show useful image metadata in the viewer for every image (alt text plus context such as
       title image, stitch sample, step number/title, or yarn photo position).
-- [ ] Support Stricknani's `.sn-size-sm/md/lg/xl` image annotations and long-form aliases such as
+- [x] Support Stricknani's `.sn-size-sm/md/lg/xl` image annotations and long-form aliases such as
       `.sn-size-large`, while using a smaller default Markdown image size and preserving relative
       annotation sizes.
-- [ ] Add focused tests/screenshot coverage and run the remote Android quality checks.
+- [x] Add focused tests/screenshot coverage and run the remote Android quality checks.
 
-Status: **wip** (2026-08-19; codex-main) - implementation is in progress.
+Status: **done** (2026-08-19) - Markdown images are clickable in project/yarn cards, the shared
+viewer shows localized context/alt text/dimensions, and size annotations support short and long
+forms with a smaller default width. Focused Markdown tests, remote `just check`, `just e2e-build`,
+and a real PX5 viewer run passed.
 
 ## SNA-53: Standardize primary yarn image display
 
-- [ ] Use the yarn's primary/main photo consistently in yarn lists, project links, details, and
+- [x] Use the yarn's primary/main photo consistently in yarn lists, project links, details, and
       create/edit recipe yarn pickers.
-- [ ] Centralize preview selection so screens do not silently fall back to a different photo or
+- [x] Centralize preview selection so screens do not silently fall back to a different photo or
       omit the image when the primary photo is available.
-- [ ] Add focused coverage for primary-photo selection and the create-project yarn picker, then
+- [x] Add focused coverage for primary-photo selection and the create-project yarn picker, then
       run the remote Android quality checks.
 
-Status: **wip** (2026-08-19; codex-main) - implementation is in progress.
+Status: **done** (2026-08-19) - primary-photo ordering is centralized and the project editor's yarn
+chips now show the authenticated primary thumbnail (or the sheep fallback). Focused ordering tests,
+remote `just check`, and the latest debug APK deployment to PX5 passed.
 
 ## SNA-54: Polish Android create/edit screens with Material 3
 
-- [ ] Give new project and new yarn flows a stronger Material 3 hierarchy with expressive
+- [x] Give new project and new yarn flows a stronger Material 3 hierarchy with expressive
       surfaces, grouped sections, supportive icons, and clearer primary actions.
-- [ ] Keep the forms comfortable at phone/tablet widths, accessible at larger font scales, and
+- [x] Keep the forms comfortable at phone/tablet widths, accessible at larger font scales, and
       visually consistent between project and yarn creation/editing.
-- [ ] Add focused UI/screenshot coverage and run the remote Android quality checks.
+- [x] Add focused UI/screenshot coverage and run the remote Android quality checks.
 
-Status: **wip** (2026-08-19; codex-main) - implementation is in progress.
+Status: **done** (2026-08-19) - project and yarn editors now use shared expressive Material 3
+section cards, icons, spacing, and grouped fields. Remote `just check` passed and the resulting
+debug APK was installed/launched on PX5.
+
+## SNA-55: Verify every web view on a disposable seeded instance
+
+- [ ] Start a proper disposable Stricknani test instance with deterministic seed data and exercise
+      every authenticated and public web route.
+- [ ] Check desktop and mobile layouts for unstyled/legacy controls, broken dialogs, incorrect
+      responsive behavior, and Material 3 consistency; capture reviewable screenshots.
+- [ ] Fix all discovered web UI regressions and add route-level E2E assertions so they remain
+      covered in CI.
+- [ ] Run the complete browser E2E suite and record the instance-backed verification result.
+
+Status: **wip** (2026-08-19; codex-main) - the dedicated web audit is in progress.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
