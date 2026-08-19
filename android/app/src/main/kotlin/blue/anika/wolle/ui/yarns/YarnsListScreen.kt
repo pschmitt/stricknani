@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -103,7 +104,10 @@ fun YarnsListScreen(
                 Spacer(Modifier.height(8.dp))
 
                 if (yarns.isEmpty()) {
-                    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize().testTag("e2e-yarns-list"),
+                    ) {
                         item {
                             EmptyState(
                                 icon = MdiIcons.Sheep,
@@ -116,6 +120,7 @@ fun YarnsListScreen(
                 } else {
                     LazyColumn(
                         state = listState,
+                        modifier = Modifier.testTag("e2e-yarns-list"),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {

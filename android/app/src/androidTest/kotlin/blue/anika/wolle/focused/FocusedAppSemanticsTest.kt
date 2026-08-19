@@ -2,14 +2,16 @@ package blue.anika.wolle.focused
 
 import android.Manifest
 import android.os.Build
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -63,16 +65,14 @@ class FocusedAppSemanticsTest {
             composeRule.onNodeWithText(it).assertIsDisplayed()
         }
 
-        composeRule.onNodeWithText("Projects").performClick()
-        waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
+        openProjects()
         composeRule.onNodeWithContentDescription("Search projects").performClick()
         composeRule
             .onNodeWithContentDescription("Search projects")
             .performTextInput("focused-no-project-match")
         waitForText("No projects yet")
 
-        composeRule.onNodeWithText("Yarns").performClick()
-        waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
+        openYarns()
         composeRule.onNodeWithContentDescription("Search yarns").performClick()
         composeRule
             .onNodeWithContentDescription("Search yarns")
@@ -113,7 +113,7 @@ class FocusedAppSemanticsTest {
         clickSignOutButton()
         waitForText("Sign out?")
         composeRule.onNodeWithText("Cancel").assertIsDisplayed()
-        composeRule.onNodeWithText("Sign out").assertIsDisplayed()
+        composeRule.onNodeWithTag("e2e-sign-out-confirm").assertIsDisplayed()
         composeRule.onNodeWithText("Cancel").performClick()
         assertTrue(!hasText("Sign out?"))
     }
@@ -121,8 +121,8 @@ class FocusedAppSemanticsTest {
     @Test
     fun cachedContentSurvivesAnOfflineRefresh() {
         ensureConfigured()
-        composeRule.onNodeWithText("Projects").performClick()
-        waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
+        openProjects()
+        composeRule.onNodeWithTag("e2e-projects-list").performScrollToIndex(0)
 
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         setAirplaneMode(device, enabled = true)
@@ -179,7 +179,7 @@ class FocusedAppSemanticsTest {
             waitForText("Server URL")
             clickSignOutButton()
             waitForText("Sign out?")
-            clickSignOutButton()
+            confirmSignOutButton()
             waitForText("Connect to Stricknani")
         }
     }
@@ -230,13 +230,29 @@ class FocusedAppSemanticsTest {
         InstrumentationRegistry.getArguments().getString(name)?.takeIf(String::isNotBlank)
 
     private fun clickSignOutButton() {
-        val candidates = composeRule.onAllNodesWithText("Sign out")
-        val clickIndex =
-            candidates.fetchSemanticsNodes().indexOfFirst {
-                it.config.contains(SemanticsActions.OnClick)
-            }
-        check(clickIndex >= 0) { "Sign out button is missing click semantics" }
-        candidates[clickIndex].performClick()
+        composeRule.onNodeWithTag("e2e-sign-out-button").performClick()
+    }
+
+    private fun confirmSignOutButton() {
+        composeRule.onNodeWithTag("e2e-sign-out-confirm").performClick()
+    }
+
+    private fun openProjects() {
+        composeRule.onNodeWithText("Projects").performClick()
+        waitForText("Search projects")
+        composeRule
+            .onNodeWithTag("e2e-projects-list")
+            .performScrollToNode(hasTextMatcher("Heirloom Baby Blanket"))
+        waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
+    }
+
+    private fun openYarns() {
+        composeRule.onNodeWithText("Yarns").performClick()
+        waitForText("Search yarns")
+        composeRule
+            .onNodeWithTag("e2e-yarns-list")
+            .performScrollToNode(hasTextMatcher("Riverbend Merino DK"))
+        waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
     }
 
     private fun setAirplaneMode(device: UiDevice, enabled: Boolean) {
