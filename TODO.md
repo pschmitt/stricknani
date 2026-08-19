@@ -91,7 +91,7 @@ Execution-oriented backlog for Stricknani.
 | T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
  | T87 | P3 | wip (PID: main, AGENT: codex-main) | release/decision | feat | Prepare gated Google Play store-assets and publishing workflow; external Console/listing setup remains |
- | T88 | P2 | done | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
+ | T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Complete the web UI migration to a truly Material 3-native design |
 | T89 | P2 | done | web/i18n | bug | Translate the login-page “Please sign in below” string |
 | T90 | P1 | done | privacy/legal | feat | Publish a complete privacy policy for the web app and Android client |
 | T91 | P2 | done | dev | bug | Make `just run` generate ephemeral runtime secrets when SECRET_KEY/CSRF_SECRET_KEY are unset, while preserving production fail-fast validation |
@@ -131,7 +131,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: ux
 - **Priority**: P1
-- **Status**: done
+- **Status**: wip (PID: main, AGENT: codex-main)
 - **Category**: bug
 - **Description**:
   - When instructions are collapsed in the UI, they are not included in the print output
@@ -1201,14 +1201,13 @@ Execution-oriented backlog for Stricknani.
   - Preserve accessibility semantics, keyboard navigation, responsive behavior, translations,
     and the existing project/yarn UI parity throughout the migration.
 - **Current progress**:
-  - The shared shell now loads a framework-free `material.css`; rendered pages no longer load
-    Tailwind or DaisyUI, and the vendored DaisyUI package plus Tailwind build/watch pipeline were
-    removed.
-  - Shared navigation, buttons, fields, cards, menus, dialogs, responsive layout primitives, and
-    service-worker precaching use the Material layer. Browser smoke and full CRUD journeys pass.
-  - The remaining navbar, language selector, category management, and generated form fragments now
-    use semantic Material classes; the logo also has an accessible hover/focus motion treatment.
-    Browser smoke and full CRUD journeys pass at desktop and responsive breakpoints.
+  - A framework-free `material.css` baseline replaced the old Tailwind/DaisyUI loading path, but
+    the migration is not visually complete.
+  - Visual regressions remain across search, header navigation, shared dialogs, admin avatars, and
+    the project/yarn detail pages; several native elements are still unstyled or inconsistently
+    sized.
+  - Rework the shared component layer and then visually verify every major page at desktop,
+    responsive, light, and dark breakpoints before marking this task done.
 - **Files**: `stricknani/templates/`, `stricknani/static/css/`, `stricknani/static/js/`,
   `vendir.yml`, and both translation catalogs as UI strings change.
 - **Testing**: add/update browser E2E and screenshot coverage for light/dark themes and key
