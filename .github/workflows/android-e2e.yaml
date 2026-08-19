@@ -91,9 +91,6 @@ jobs:
           script: |
             curl -fsSL https://raw.githubusercontent.com/pschmitt/android-app-ci/main/scripts/wait-for-android-emulator.sh | bash
             adb reverse tcp:7674 tcp:7674
-            adb install -r app/build/outputs/apk/debug/app-x86_64-debug.apk
-            adb shell pm clear blue.anika.wolle.debug || true
-            adb shell pm grant blue.anika.wolle.debug android.permission.POST_NOTIFICATIONS || true
             ./scripts/run-e2e-tests.sh
 
       - name: Capture emulator diagnostics

@@ -97,9 +97,6 @@ jobs:
             curl -fsSL https://raw.githubusercontent.com/pschmitt/android-app-ci/main/scripts/wait-for-android-emulator.sh | bash
             adb reverse tcp:7674 tcp:7674
             adb shell cmd uimode night "$NIGHT_MODE"
-            adb install -r -g app/build/outputs/apk/debug/app-x86_64-debug.apk
-            adb shell pm clear blue.anika.wolle.debug
-            adb shell pm grant blue.anika.wolle.debug android.permission.POST_NOTIFICATIONS || true
             ./scripts/run-screenshot-test.sh
         env:
           DEVICE: ${{ matrix.device }}
