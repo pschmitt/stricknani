@@ -12,7 +12,9 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import blue.anika.wolle.MainActivity
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -175,6 +177,8 @@ class FocusedAppSemanticsTest {
                 .onNodeWithTag("e2e-onboarding-api-token")
                 .performTextInput(token!!)
             composeRule.onNodeWithText("Connect").performClick()
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            device.wait(Until.findObject(By.text("Allow")), 10_000)?.click()
         }
         waitForText("Home", timeoutMillis = 120_000)
     }
