@@ -18,6 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -39,6 +40,32 @@ import blue.anika.wolle.ui.settings.SettingsScreen
 import blue.anika.wolle.ui.yarns.YarnDetailScreen
 import blue.anika.wolle.ui.yarns.YarnEditorScreen
 import blue.anika.wolle.ui.yarns.YarnsListScreen
+
+internal fun shouldNavigateToTopLevelRoot(isAlreadyAtRoot: Boolean): Boolean = !isAlreadyAtRoot
+
+internal fun shouldOpenFreshTopLevelRoot(didPopToRoot: Boolean): Boolean = !didPopToRoot
+
+/**
+ * Returns to a bottom-navigation destination's root without adding duplicate roots. If the root
+ * is already in the back stack, popping is enough. If a detail route was reached directly (for
+ * example from Home) and no root exists yet, clear that nested stack before opening a fresh root.
+ */
+internal fun navigateToTopLevelRoot(
+    navController: NavHostController,
+    destination: TopLevelDestination,
+) {
+    if (
+        shouldOpenFreshTopLevelRoot(
+            navController.popBackStack(destination.route, inclusive = false)
+        )
+    ) {
+        navController.navigate(destination.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+}
 
 /**
  * The app's main scaffold: a Material 3 bottom navigation bar switching between the top-level
@@ -96,18 +123,20 @@ fun StricknaniNavHost(
                     visibleDestinations.forEach { destination ->
                         val selected =
                             currentDestination?.hierarchy?.any {
-                                it.hasRoute(destination.route::class)
+                                destination.routeTypes.any { routeType -> it.hasRoute(routeType) }
                             } ?: false
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
-                                navController.navigate(destination.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                if (
+                                    !shouldNavigateToTopLevelRoot(
+                                        currentDestination?.hasRoute(destination.route::class) ==
+                                            true
+                                    )
+                                ) {
+                                    return@NavigationBarItem
                                 }
+                                navigateToTopLevelRoot(navController, destination)
                             },
                             icon = {
                                 Icon(destination.icon, contentDescription = destination.label())

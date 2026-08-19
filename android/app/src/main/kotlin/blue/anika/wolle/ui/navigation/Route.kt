@@ -13,6 +13,7 @@ import androidx.compose.ui.res.stringResource
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.MdiIcons
 import kotlinx.serialization.Serializable
+import kotlin.reflect.KClass
 
 /** Type-safe Navigation Compose destinations (see MainActivity/StricknaniNavHost). */
 sealed interface Route {
@@ -62,13 +63,44 @@ enum class TopLevelDestination(
     val route: Route,
     @StringRes val labelRes: Int,
     val icon: ImageVector,
+    val routeTypes: Set<KClass<out Route>>,
 ) {
-    HOME(Route.Home, R.string.destination_label_home, Icons.Filled.Home),
-    PROJECTS(Route.Projects, R.string.destination_label_projects, Icons.Filled.Folder),
-    YARNS(Route.Yarns, R.string.destination_label_yarns, MdiIcons.Sheep),
-    SEARCH(Route.Search, R.string.destination_label_search, Icons.Filled.Search),
-    GAUGE(Route.Gauge, R.string.destination_label_gauge, Icons.Filled.Calculate),
-    SETTINGS(Route.Settings, R.string.settings_root_title, Icons.Filled.Settings),
+    HOME(
+        Route.Home,
+        R.string.destination_label_home,
+        Icons.Filled.Home,
+        setOf(Route.Home::class),
+    ),
+    PROJECTS(
+        Route.Projects,
+        R.string.destination_label_projects,
+        Icons.Filled.Folder,
+        setOf(Route.Projects::class, Route.ProjectDetail::class, Route.ProjectEditor::class),
+    ),
+    YARNS(
+        Route.Yarns,
+        R.string.destination_label_yarns,
+        MdiIcons.Sheep,
+        setOf(Route.Yarns::class, Route.YarnDetail::class, Route.YarnEditor::class),
+    ),
+    SEARCH(
+        Route.Search,
+        R.string.destination_label_search,
+        Icons.Filled.Search,
+        setOf(Route.Search::class),
+    ),
+    GAUGE(
+        Route.Gauge,
+        R.string.destination_label_gauge,
+        Icons.Filled.Calculate,
+        setOf(Route.Gauge::class),
+    ),
+    SETTINGS(
+        Route.Settings,
+        R.string.settings_root_title,
+        Icons.Filled.Settings,
+        setOf(Route.Settings::class, Route.SettingsCategoryRoute::class, Route.Libraries::class),
+    ),
 }
 
 @Composable fun TopLevelDestination.label(): String = stringResource(labelRes)
