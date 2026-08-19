@@ -192,6 +192,9 @@ async def test_qr_setup_creates_token_and_renders_qr(
     assert response.status_code == 200
     assert "QR setup" in response.text
     assert 'src="data:image/png;base64,' in response.text
+    assert 'class="qr-code-frame"' in response.text
+    assert 'class="qr-code-image"' in response.text
+    assert 'class="qr-code-url' in response.text
     assert "stricknani://setup?p=" in response.text
 
     async with session_factory() as session:
