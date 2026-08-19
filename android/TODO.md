@@ -1537,4 +1537,18 @@ Status: **done** (2026-08-19; remotely verified with `ktfmtCheck`, 45 unit tests
 
 Status: not started (2026-08-19).
 
+## SNA-46: Use the shared android-app-ci actions
+
+- [ ] Audit Android build, lint, E2E, screenshot, signing, and release workflows against the
+      reusable actions exposed by `pschmitt/android-app-ci`.
+- [ ] Replace duplicated setup/remote-Gradle/diagnostic shell glue with the shared actions where
+      their contracts fit, while keeping Stricknani-specific fixture and test steps explicit.
+- [ ] If the shared actions do not support the required source paths or artifacts, add the smallest
+      compatible upstream fixes and pin/document the consumed action interfaces.
+- [ ] Keep local `just` targets as developer-facing wrappers, but make hosted CI exercise the shared
+      action path and verify Android Lint, E2E, screenshots, signing, and release artifacts.
+- [ ] Run the affected workflows and `just check` remotely on `rofl-13.brkn.lol` after migration.
+
+Status: not started (2026-08-19).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
