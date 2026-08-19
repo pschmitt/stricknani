@@ -9,6 +9,9 @@ sync, project detail navigation, and the account settings route. Start the longe
 browsing, search, and settings coverage. Both lanes receive the fixture URL and token only as
 instrumentation arguments (`e2e_base_url` and `e2e_token`).
 
+The manual `focused` lane runs the route/accessibility, dialog, empty-state, sync-feedback, and
+offline-cache instrumentation classes separately so a failure identifies the affected surface.
+
 The fixture is defined in [`ci/stricknani/docker-compose.yml`](../../ci/stricknani/docker-compose.yml).
 The workflow builds the repository image, waits for `/healthz`, runs the existing deterministic
 `seed_demo` command, validates the seeded records and representative images through the API, and

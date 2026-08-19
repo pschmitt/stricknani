@@ -9,6 +9,8 @@ import sys
 import urllib.error
 import urllib.request
 
+type JsonData = dict[str, object] | list[object]
+
 
 def request(
     base_url: str,
@@ -17,7 +19,7 @@ def request(
     method: str = "GET",
     payload: dict[str, object] | None = None,
     token: str | None = None,
-) -> dict[str, object]:
+) -> JsonData:
     data = None if payload is None else json.dumps(payload).encode("utf-8")
     headers = {"Accept": "application/json"}
     if data is not None:
@@ -32,7 +34,10 @@ def request(
     )
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
-            return json.load(response)
+            decoded = json.load(response)
+            if not isinstance(decoded, (dict, list)):
+                raise RuntimeError("fixture returned a non-JSON object")
+            return decoded
     except urllib.error.HTTPError as error:
         body = error.read().decode("utf-8", errors="replace")
         raise RuntimeError(
@@ -48,6 +53,8 @@ def seed(base_url: str, email: str, password: str) -> str:
         method="POST",
         payload={"email": email, "password": password, "token_name": "Android E2E"},
     )
+    if not isinstance(token_response, dict):
+        raise RuntimeError("fixture token response is not an object")
     token = token_response.get("token")
     if not isinstance(token, str) or not token:
         raise RuntimeError("fixture did not return an API token")
@@ -56,13 +63,10 @@ def seed(base_url: str, email: str, password: str) -> str:
     projects = request(base_url, "api/v1/projects?limit=100", token=token)
     yarns = request(base_url, "api/v1/yarns?limit=100", token=token)
 
-    category_names = {
-        item["name"] for item in categories if isinstance(item, dict)
-    }
-    project_items = [
-        item for item in projects.get("items", []) if isinstance(item, dict)
-    ]
-    yarn_items = [item for item in yarns.get("items", []) if isinstance(item, dict)]
+    category_items = records(categories)
+    project_items = records(projects, key="items")
+    yarn_items = records(yarns, key="items")
+    category_names = {item["name"] for item in category_items}
     project_names = {item["name"] for item in project_items}
     yarn_names = {item["name"] for item in yarn_items}
     expected_category = "Schal"
@@ -92,6 +96,18 @@ def seed(base_url: str, email: str, password: str) -> str:
         raise RuntimeError(f"fixture yarn has no preview image: {expected_yarn}")
 
     return token
+
+
+def records(payload: JsonData, *, key: str | None = None) -> list[dict[str, object]]:
+    """Return object records from either a list response or a paginated response."""
+    raw: object = payload
+    if key is not None:
+        if not isinstance(payload, dict):
+            raise RuntimeError(f"fixture response is missing {key}")
+        raw = payload.get(key, [])
+    if not isinstance(raw, list):
+        raise RuntimeError("fixture response does not contain a record list")
+    return [item for item in raw if isinstance(item, dict)]
 
 
 def main() -> int:

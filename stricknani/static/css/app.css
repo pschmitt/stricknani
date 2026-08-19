@@ -1021,6 +1021,25 @@ textarea::placeholder {
 	--md-sys-color-outline: oklch(50% 0.02 264);
 	--md-sys-color-outline-variant: oklch(78% 0.025 264);
 	--md-sys-color-scrim: oklch(0% 0 0 / 0.32);
+	--md-sys-color-background: var(--md-sys-color-surface);
+	--md-sys-color-on-background: var(--md-sys-color-on-surface);
+	--md-sys-typescale-display: 2.75rem;
+	--md-sys-typescale-headline: 2rem;
+	--md-sys-typescale-title: 1.5rem;
+	--md-sys-typescale-body: 1rem;
+	--md-sys-typescale-label: 0.875rem;
+	--md-sys-typescale-line-height: 1.4;
+	--md-sys-shape-corner-extra-small: 0.25rem;
+	--md-sys-shape-corner-small: 0.5rem;
+	--md-sys-shape-corner-medium: 0.75rem;
+	--md-sys-shape-corner-large: 1rem;
+	--md-sys-shape-corner-extra-large: 1.75rem;
+	--md-sys-elevation-level-0: none;
+	--md-sys-elevation-level-1: 0 1px 3px 1px color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+	--md-sys-elevation-level-2: 0 2px 6px 2px color-mix(in srgb, var(--md-sys-color-on-surface) 14%, transparent);
+	--md-sys-motion-duration-short: 160ms;
+	--md-sys-motion-duration-medium: 280ms;
+	--md-sys-motion-easing: cubic-bezier(0.2, 0, 0, 1);
 
 	/* DaisyUI semantic aliases used by the existing utility classes. */
 	--color-base-100: var(--md-sys-color-surface);
@@ -1078,6 +1097,8 @@ textarea::placeholder {
 	--color-success-content: oklch(22% 0.05 150);
 	--color-warning: oklch(82% 0.12 78);
 	--color-warning-content: oklch(24% 0.06 78);
+	--md-sys-color-background: var(--md-sys-color-surface);
+	--md-sys-color-on-background: var(--md-sys-color-on-surface);
 }
 
 html,
@@ -1085,6 +1106,58 @@ body {
 	background: var(--md-sys-color-surface);
 	color: var(--md-sys-color-on-surface);
 	font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+	line-height: var(--md-sys-typescale-line-height);
+}
+
+.md3-app-surface {
+	background:
+		radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--md-sys-color-primary-container) 28%, transparent), transparent 24rem),
+		var(--md-sys-color-background);
+}
+
+.md3-top-app-bar {
+	background: color-mix(in srgb, var(--md-sys-color-surface) 94%, transparent);
+	border-bottom: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
+	box-shadow: none;
+}
+
+.md3-top-app-bar .navbar-nav-dropdown > button {
+	min-height: 3rem;
+	padding: 0.5rem 0.75rem;
+	border-radius: var(--md-sys-shape-corner-extra-large);
+	font-size: var(--md-sys-typescale-title);
+	line-height: 1.2;
+	transition: background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing);
+}
+
+.md3-top-app-bar .navbar-nav-dropdown > button:hover {
+	background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+}
+
+.md3-top-app-bar .dropdown-content {
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+/* DaisyUI gives navbar buttons a positioned stacking context. Restore the
+ * FAB's M3 fixed placement explicitly and keep it out of the desktop app bar. */
+.md3-top-app-bar .md3-mobile-fab {
+	position: fixed !important;
+	top: auto !important;
+	right: 1.5rem !important;
+	bottom: 1.5rem !important;
+	left: auto !important;
+	z-index: 50 !important;
+}
+
+@media (min-width: 768px) {
+	.md3-top-app-bar .md3-mobile-fab {
+		display: none !important;
+	}
+}
+
+.md3-footer {
+	background: color-mix(in srgb, var(--md-sys-color-surface-container-low) 90%, transparent);
+	border-top-color: var(--md-sys-color-outline-variant);
 }
 
 :where(button, a, input, textarea, select):focus-visible {
@@ -1095,11 +1168,13 @@ body {
 .btn {
 	min-height: 2.5rem;
 	border: 0;
-	border-radius: 1.25rem;
+	border-radius: var(--md-sys-shape-corner-extra-large);
 	font-weight: 650;
 	letter-spacing: 0.01em;
 	box-shadow: none;
-	transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+	transition: background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing),
+		box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing),
+		transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing);
 }
 
 .btn:hover {
@@ -1190,10 +1265,10 @@ body {
 .modal-box,
 .dropdown-content,
 .menu {
-	border-radius: var(--radius-box);
+	border-radius: var(--md-sys-shape-corner-large);
 	border-color: var(--md-sys-color-outline-variant);
 	background: var(--md-sys-color-surface-container-low);
-	box-shadow: 0 2px 8px color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+	box-shadow: var(--md-sys-elevation-level-1);
 }
 
 .card.bg-base-200,
@@ -1221,7 +1296,7 @@ body {
 }
 
 .tabs-boxed {
-	border-radius: 1.25rem;
+	border-radius: var(--md-sys-shape-corner-extra-large);
 	background: var(--md-sys-color-surface-container);
 }
 
@@ -1239,6 +1314,34 @@ body {
 	border-color: var(--md-sys-color-outline-variant);
 }
 
+.md3-section-title {
+	color: var(--md-sys-color-on-surface);
+	font-size: var(--md-sys-typescale-title);
+	font-weight: 700;
+	line-height: 1.25;
+}
+
+.md3-page-frame {
+	color: var(--md-sys-color-on-surface);
+}
+
+.md3-elevated-surface {
+	border-color: var(--md-sys-color-outline-variant);
+	box-shadow: var(--md-sys-elevation-level-1);
+}
+
+.md3-tonal-surface {
+	background: var(--md-sys-color-secondary-container);
+	color: var(--md-sys-color-on-secondary-container);
+	border-radius: var(--md-sys-shape-corner-large);
+}
+
+.md3-outlined-surface {
+	background: transparent;
+	border: 1px solid var(--md-sys-color-outline-variant);
+	border-radius: var(--md-sys-shape-corner-large);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.btn {
 		transition: none;
@@ -1247,4 +1350,5 @@ body {
 	.btn:active {
 		transform: none;
 	}
+
 }

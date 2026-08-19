@@ -48,7 +48,12 @@ async def test_links_material_theme_after_generated_css(test_client: Any) -> Non
     assert response.status_code == 200
     body = response.text
     assert body.index("static/css/tailwind.css") < body.index("static/css/app.css")
-    assert "--md-sys-color-primary" in (STATIC_CSS_DIR / "app.css").read_text()
+    assert "md3-top-app-bar" in body
+    assert "md3-footer" in body
+    css = (STATIC_CSS_DIR / "app.css").read_text()
+    assert "--md-sys-color-primary" in css
+    assert "--md-sys-typescale-title" in css
+    assert "--md-sys-elevation-level-1" in css
 
 
 @pytest.mark.skipif(

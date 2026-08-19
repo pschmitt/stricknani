@@ -1,0 +1,170 @@
+name: Android screenshots
+
+# This lane is manual and review-only. It never commits images, opens a PR, uploads to a store,
+# or talks to a production Stricknani instance. The fixture and artifact are disposable.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: android-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: ${{ matrix.device }} / ${{ matrix.theme }} screenshots
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - device: phone
+            profile: pixel_2
+            theme: light
+            night_mode: no
+          - device: tablet-7
+            profile: Nexus 7
+            theme: light
+            night_mode: no
+          - device: tablet-10
+            profile: Nexus 10
+            theme: light
+            night_mode: no
+          - device: phone
+            profile: pixel_2
+            theme: dark
+            night_mode: yes
+          - device: tablet-7
+            profile: Nexus 7
+            theme: dark
+            night_mode: yes
+          - device: tablet-10
+            profile: Nexus 10
+            theme: dark
+            night_mode: yes
+    env:
+      COMPOSE_FILE: ci/stricknani/docker-compose.yml
+      E2E_IMAGE: stricknani:screenshots
+      SCREENSHOT_THEME: ${{ matrix.theme }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+
+      - name: Build disposable Stricknani image
+        run: docker build --tag "$E2E_IMAGE" .
+
+      - name: Start disposable Stricknani fixture
+        run: docker compose -f "$COMPOSE_FILE" up --detach --wait --wait-timeout 180
+
+      - name: Seed deterministic fixture data and mint an API token
+        run: |
+          docker compose -f "$COMPOSE_FILE" exec -T stricknani \
+            python -m stricknani.scripts.seed_demo --reset
+          token="$(python3 ci/stricknani/seed.py --base-url http://127.0.0.1:7674)"
+          echo "::add-mask::$token"
+          printf 'E2E_TOKEN=%s\n' "$token" >> "$GITHUB_ENV"
+
+      # Build before booting the emulator: compiling while the emulator is starting makes the
+      # tablet profiles especially likely to time out on GitHub-hosted runners.
+      - name: Build debug and instrumentation APKs
+        run: ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace
+        working-directory: android
+
+      - uses: pschmitt/android-app-ci/.github/actions/enable-kvm@main
+
+      - name: Capture screenshots in ${{ matrix.device }} / ${{ env.SCREENSHOT_THEME }} emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          target: google_apis
+          force-avd-creation: true
+          emulator-boot-timeout: 1800
+          disable-animations: true
+          ram-size: 4096M
+          heap-size: 512M
+          cores: 4
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
+          script: |
+            curl -fsSL https://raw.githubusercontent.com/pschmitt/android-app-ci/main/scripts/wait-for-android-emulator.sh | bash
+            adb reverse tcp:7674 tcp:7674
+            adb shell cmd uimode night "$NIGHT_MODE"
+            adb install -r -g android/app/build/outputs/apk/debug/app-x86_64-debug.apk
+            adb shell pm clear blue.anika.wolle.debug
+            adb shell pm grant blue.anika.wolle.debug android.permission.POST_NOTIFICATIONS || true
+            test_rc=0
+            if ./gradlew connectedDebugAndroidTest --stacktrace \
+                -Pandroid.testInstrumentationRunnerArguments.class=blue.anika.wolle.screenshots.StricknaniScreenshotTest \
+                -Pandroid.testInstrumentationRunnerArguments.e2e_base_url=http://127.0.0.1:7674 \
+                -Pandroid.testInstrumentationRunnerArguments.e2e_token="$E2E_TOKEN" \
+                -Pandroid.testInstrumentationRunnerArguments.screenshot_device="$DEVICE" \
+                -Pandroid.testInstrumentationRunnerArguments.screenshot_theme="$SCREENSHOT_THEME"
+            then
+              test_rc=0
+            else
+              test_rc=$?
+            fi
+            mkdir -p "$GITHUB_WORKSPACE/screenshot-captures"
+            adb pull /sdcard/Android/data/blue.anika.wolle.debug/files/screenshot-captures/. \
+              "$GITHUB_WORKSPACE/screenshot-captures/" || true
+            timeout 60s adb logcat -d > "$GITHUB_WORKSPACE/screenshot-logcat.txt" || true
+            timeout 20s adb exec-out screencap -p > "$GITHUB_WORKSPACE/screenshot-final-frame.png" || true
+            exit "$test_rc"
+        env:
+          DEVICE: ${{ matrix.device }}
+          NIGHT_MODE: ${{ matrix.night_mode }}
+        working-directory: android
+
+      - name: Collect screenshots and emulator diagnostics
+        if: ${{ always() }}
+        run: |
+          mkdir -p screenshot-captures
+          adb pull /sdcard/Android/data/blue.anika.wolle.debug/files/screenshot-captures/. \
+            screenshot-captures/ || true
+          timeout 60s adb logcat -d > screenshot-logcat.txt || true
+          timeout 20s adb exec-out screencap -p > screenshot-final-frame.png || true
+          {
+            echo '--- adb devices ---'
+            timeout 10s adb devices -l
+            echo '--- host memory ---'
+            free -h
+            echo '--- host disk ---'
+            df -h
+          } > screenshot-host-diagnostics.txt 2>&1 || true
+
+      - name: Upload screenshot reports and artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: stricknani-${{ matrix.device }}-${{ env.SCREENSHOT_THEME }}-screenshots-${{ github.run_id }}
+          if-no-files-found: warn
+          path: |
+            screenshot-captures/
+            screenshot-logcat.txt
+            screenshot-final-frame.png
+            screenshot-host-diagnostics.txt
+            android/app/build/reports/androidTests/connected/
+            android/app/build/outputs/androidTest-results/connected/
+
+      - name: Capture fixture logs on failure
+        if: ${{ failure() }}
+        run: docker compose -f "$COMPOSE_FILE" logs --no-color > screenshot-stricknani.log || true
+
+      - name: Upload fixture diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: stricknani-${{ matrix.device }}-${{ env.SCREENSHOT_THEME }}-diagnostics-${{ github.run_id }}
+          if-no-files-found: ignore
+          path: screenshot-stricknani.log
+
+      - name: Tear down disposable Stricknani fixture
+        if: ${{ always() }}
+        run: docker compose -f "$COMPOSE_FILE" down --volumes --remove-orphans

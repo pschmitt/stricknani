@@ -84,14 +84,15 @@ Execution-oriented backlog for Stricknani.
 | T78 | P1 | done | test/ci | feat | Add disposable browser E2E tests for critical Stricknani user journeys, following the NetBox/Syncwich CI pattern |
 | T79 | P2 | done | ci | feat | Capture named Stricknani browser screenshots in CI E2E runs and upload them as reviewable artifacts, following the NetBox/Syncwich screenshot pattern |
 | T80 | P1 | wip (PID: main, AGENT: codex-main) | android/test/ci | feat | Add disposable Android instrumentation E2E tests against a seeded Stricknani fixture, with PR smoke and manual full journeys |
-| T81 | P1 | todo | android/test | feat | Add focused Android Compose/instrumentation coverage for route, accessibility, dialog, loading/error, and offline UI states |
-| T82 | P2 | todo | android/ci | feat | Add manual Android screenshot capture CI for phone and tablet layouts, light/dark themes, and reviewable artifacts |
+| T81 | P1 | done | android/test | feat | Add focused Android Compose/instrumentation coverage for route, accessibility, dialog, loading/error, and offline UI states |
+| T82 | P2 | done | android/ci | feat | Add manual Android screenshot capture CI for phone and tablet layouts, light/dark themes, and reviewable artifacts |
 | T83 | P2 | done | test/ci | refactor | Split browser E2E into a fast pull-request smoke suite and a longer manual cache/offline journey |
 | T84 | P2 | done | ci/test | refactor | Enforce the documented 80% Python coverage threshold in CI instead of only uploading a report |
 | T85 | P2 | done | ci | refactor | Pin CI runtimes and E2E browser dependencies for reproducible web and Android verification |
 | T86 | P2 | done | ci/build | refactor | Replace fixed container startup sleeps with health-readiness checks and cache disposable fixture images |
 | T87 | P3 | todo | release/decision | feat | Decide whether Stricknani should publish to Google Play and, if yes, add the gated store-assets and publishing workflow |
 | T88 | P2 | wip (PID: main, AGENT: codex-main) | frontend/ux | refactor | Migrate the web UI to Material 3 Expressive |
+| T89 | P2 | todo | web/i18n | bug | Translate the login-page “Please sign in below” string |
 
 
 ## Done
@@ -1072,8 +1073,11 @@ Execution-oriented backlog for Stricknani.
   - Cover onboarding validation, home/projects/yarns navigation, list/detail/editor states, search, gauge, settings/about, backup dialogs, image viewer, empty/loading/error states, and offline/cache-first rendering.
   - Assert stable accessibility labels and semantics for important controls, not only screenshots.
   - Keep tests deterministic and fixture-driven; isolate mutation-heavy or permission-gated paths from the PR smoke suite where appropriate.
+- **Completed**:
+  - Added focused route/accessibility, dialog, empty-state, sync-feedback, and offline-cache tests.
+  - Added a manual `focused` Android E2E lane that runs the focused classes separately against the disposable fixture.
 - **Files**: `android/app/src/androidTest/kotlin/`, Android test fixtures/helpers, and `android/justfile`.
-- **Testing**: run focused instrumentation tests on API 34 locally/CI and retain the relevant reports for failures.
+- **Testing**: remote `just e2e-build rofl-13.brkn.lol` and `just check rofl-13.brkn.lol` pass; the API-34 emulator execution is owned by the manual GitHub Actions lane.
 
 ### T82: Add manual Android screenshot capture CI
 
@@ -1089,8 +1093,11 @@ Execution-oriented backlog for Stricknani.
   - Capture named onboarding, home/list, project detail, yarn detail, settings, and offline states in light and dark themes.
   - Upload screenshots and instrumentation reports on success and failure, including a direct failure screenshot when the test journey aborts.
   - Add an optional `open_pr` path for committing reviewed screenshots to a stable update branch; keep Play Console mutation behind a separate explicit gate.
+- **Completed**:
+  - Added the manual six-job phone/7-inch tablet/10-inch tablet × light/dark workflow with disposable fixture teardown and diagnostics.
+  - Added named onboarding, home, list/detail, settings, and offline screenshot instrumentation plus review documentation.
 - **Files**: `.github/workflows/android-screenshots.yaml`, `android/app/src/androidTest/`, `fastlane/`, `android/justfile`, and screenshot documentation.
-- **Testing**: run the full matrix from a manual CI dispatch and verify every named image contains seeded content rather than a loading/blank state.
+- **Testing**: remote `just e2e-build rofl-13.brkn.lol` and `just check rofl-13.brkn.lol` pass; the hosted matrix still needs one manual dispatch to verify rendered tablet captures.
 
 ### T83: Split browser E2E into smoke and full suites
 
@@ -1186,3 +1193,19 @@ Execution-oriented backlog for Stricknani.
   `vendir.yml`, and both translation catalogs as UI strings change.
 - **Testing**: add/update browser E2E and screenshot coverage for light/dark themes and key
   responsive viewports; run i18n checks, frontend lint/format, and the full web test suite.
+
+### T89: Translate the login-page “Please sign in below” string
+
+- **Area**: web/i18n
+- **Priority**: P2
+- **Status**: todo
+- **Category**: bug
+- **Description**:
+  - The login page renders “Please sign in below” without passing it through the translation
+    catalog, so German users see English text.
+- **Implementation**:
+  - Wrap the template string in the existing translation helper.
+  - Add the English and German catalog entries and regenerate compiled catalogs.
+- **Files**: login template and both locale catalogs.
+- **Testing**: run the i18n update/compile/check commands and assert the rendered login page uses the
+  translated string.

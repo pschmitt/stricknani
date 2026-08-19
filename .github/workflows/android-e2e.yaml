@@ -19,6 +19,7 @@ on:
         options:
           - smoke
           - full
+          - focused
 
 concurrency:
   group: android-e2e-${{ github.ref }}
@@ -92,15 +93,28 @@ jobs:
             adb install -r android/app/build/outputs/apk/debug/app-x86_64-debug.apk
             adb shell pm clear blue.anika.wolle.debug || true
             adb shell pm grant blue.anika.wolle.debug android.permission.POST_NOTIFICATIONS || true
-            test_class="blue.anika.wolle.e2e.StricknaniSmokeTest"
-            if [[ "$E2E_LANE" == "full" ]]
+            if [[ "$E2E_LANE" == "focused" ]]
             then
-              test_class="blue.anika.wolle.e2e.StricknaniFullE2eTest"
+              for test_class in \
+                blue.anika.wolle.focused.FocusedAppSemanticsTest \
+                blue.anika.wolle.focused.FocusedComponentSemanticsTest
+              do
+                ./gradlew connectedDebugAndroidTest --stacktrace \
+                  -Pandroid.testInstrumentationRunnerArguments.class="$test_class" \
+                  -Pandroid.testInstrumentationRunnerArguments.e2e_base_url=http://127.0.0.1:7674 \
+                  -Pandroid.testInstrumentationRunnerArguments.e2e_token="$E2E_TOKEN"
+              done
+            else
+              test_class="blue.anika.wolle.e2e.StricknaniSmokeTest"
+              if [[ "$E2E_LANE" == "full" ]]
+              then
+                test_class="blue.anika.wolle.e2e.StricknaniFullE2eTest"
+              fi
+              ./gradlew connectedDebugAndroidTest --stacktrace \
+                -Pandroid.testInstrumentationRunnerArguments.class="$test_class" \
+                -Pandroid.testInstrumentationRunnerArguments.e2e_base_url=http://127.0.0.1:7674 \
+                -Pandroid.testInstrumentationRunnerArguments.e2e_token="$E2E_TOKEN"
             fi
-            ./gradlew connectedDebugAndroidTest --stacktrace \
-              -Pandroid.testInstrumentationRunnerArguments.class="$test_class" \
-              -Pandroid.testInstrumentationRunnerArguments.e2e_base_url=http://127.0.0.1:7674 \
-              -Pandroid.testInstrumentationRunnerArguments.e2e_token="$E2E_TOKEN"
         working-directory: android
 
       - name: Capture emulator diagnostics
