@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -59,13 +60,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.primaryFirst
+import blue.anika.wolle.data.settings.DetailCardDomain
+import blue.anika.wolle.data.settings.DetailCardOrder
+import blue.anika.wolle.data.settings.YarnDetailCard
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
+import blue.anika.wolle.ui.common.DetailCardReorderHint
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.NotesCard
+import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
+import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.shareUrl
@@ -85,6 +92,10 @@ fun YarnDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
+    val cardOrder by
+        viewModel.cardOrder.collectAsStateWithLifecycle(
+            initialValue = DetailCardOrder.defaults(DetailCardDomain.YARN)
+        )
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -215,6 +226,8 @@ fun YarnDetailScreen(
                     YarnDetailContent(
                         detail = state.detail,
                         linkedProjects = state.linkedProjects,
+                        cardOrder = cardOrder,
+                        onCardOrderChanged = viewModel::saveCardOrder,
                         resolveMediaUrl = viewModel::resolveMediaUrl,
                         onProjectClick = onProjectClick,
                     )
@@ -239,6 +252,8 @@ fun YarnDetailScreen(
 private fun YarnDetailContent(
     detail: YarnDto,
     linkedProjects: List<LinkedProject>,
+    cardOrder: List<String>,
+    onCardOrderChanged: (List<String>) -> Unit,
     resolveMediaUrl: (String?) -> String?,
     onProjectClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -249,10 +264,51 @@ private fun YarnDetailContent(
         viewerIndex = viewerImages.indexOfFirst { image -> image.url == url }.takeIf { it >= 0 }
     }
     val photos = remember(detail.photos) { detail.photos.primaryFirst() }
+    val availableCardKeys =
+        buildList {
+            if (
+                listOf(
+                        detail.brand,
+                        detail.colorway,
+                        detail.dyeLot,
+                        detail.fiberContent,
+                        detail.weightCategory,
+                        detail.recommendedNeedles,
+                        detail.weightGrams,
+                        detail.lengthMeters,
+                    )
+                    .any { it != null }
+            ) {
+                add(YarnDetailCard.DETAILS)
+            }
+            if (detail.description != null) add(YarnDetailCard.DESCRIPTION)
+            if (linkedProjects.isNotEmpty()) add(YarnDetailCard.USED_IN)
+            if (detail.notes != null) add(YarnDetailCard.NOTES)
+        }
+    val savedVisibleOrder =
+        remember(cardOrder, availableCardKeys) {
+            DetailCardOrder.visible(DetailCardDomain.YARN, cardOrder, availableCardKeys)
+        }
+    var orderedCardKeys by remember(savedVisibleOrder) { mutableStateOf(savedVisibleOrder) }
+    LaunchedEffect(savedVisibleOrder) { orderedCardKeys = savedVisibleOrder }
+    val reorderState = rememberDetailCardReorderState()
+    val listState = remember { LazyListState() }
+    val itemIndexOffset = (if (photos.isNotEmpty()) 1 else 0) + 1
+    val moveCard: (Int, Int) -> Unit = { fromIndex, toIndex ->
+        val next = DetailCardOrder.move(orderedCardKeys, fromIndex, toIndex)
+        if (next != orderedCardKeys) {
+            orderedCardKeys = next
+            onCardOrderChanged(
+                DetailCardOrder.withVisibleOrder(DetailCardDomain.YARN, cardOrder, next)
+            )
+        }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("e2e-yarn-detail"),
+        state = listState,
         contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (photos.isNotEmpty()) {
             item {
@@ -275,129 +331,136 @@ private fun YarnDetailContent(
             }
         }
 
-        detail.brand?.let { value ->
-            item {
-                DetailRow(label = stringResource(R.string.yarn_detail_field_brand), value = value)
-            }
-        }
-        detail.colorway?.let { value ->
-            item {
-                DetailRow(
-                    label = stringResource(R.string.yarn_detail_field_colorway),
-                    value = value,
-                )
-            }
-        }
-        detail.dyeLot?.let { value ->
-            item {
-                DetailRow(label = stringResource(R.string.yarn_detail_field_dye_lot), value = value)
-            }
-        }
-        detail.fiberContent?.let { value ->
-            item {
-                DetailRow(
-                    label = stringResource(R.string.yarn_detail_field_fiber_content),
-                    value = value,
-                )
-            }
-        }
-        detail.weightCategory?.let { value ->
-            item {
-                DetailRow(
-                    label = stringResource(R.string.yarn_detail_field_weight_category),
-                    value = value,
-                )
-            }
-        }
-        detail.recommendedNeedles?.let { value ->
-            item {
-                DetailRow(
-                    label = stringResource(R.string.yarn_detail_field_recommended_needles),
-                    value = value,
-                )
-            }
-        }
-        if (detail.weightGrams != null || detail.lengthMeters != null) {
-            item {
-                val amount =
-                    listOfNotNull(
-                            detail.weightGrams?.let { "${it}g" },
-                            detail.lengthMeters?.let { "${it}m" },
-                        )
-                        .joinToString(" / ")
-                DetailRow(label = stringResource(R.string.yarn_detail_field_amount), value = amount)
-            }
-        }
+        item { DetailCardReorderHint(reorderState, onDone = reorderState::finish) }
 
-        detail.description?.let { value ->
-            item {
-                NotesCard(title = stringResource(R.string.project_detail_description_title)) {
-                    YarnMarkdown(
-                        value = value,
-                        resolveMediaUrl = resolveMediaUrl,
-                        onImageClick = openViewerImage,
-                    )
-                }
-            }
-        }
-
-        if (linkedProjects.isNotEmpty()) {
-            item {
-                HorizontalDivider(Modifier.padding(vertical = 16.dp))
-                Text(
-                    stringResource(R.string.yarn_detail_used_in_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(Modifier.height(8.dp))
-            }
-            items(linkedProjects, key = { it.id }) { project ->
-                Card(
-                    onClick = { onProjectClick(project.id) },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        items(orderedCardKeys, key = { it }) { cardKey ->
+            val cardIndex = orderedCardKeys.indexOf(cardKey)
+            when (cardKey) {
+                YarnDetailCard.DETAILS ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.yarn_detail_details_title),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
                     ) {
-                        Box(
-                            modifier =
-                                Modifier.size(48.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            if (project.previewUrl != null) {
-                                AsyncImage(
-                                    model = resolveMediaUrl(project.previewUrl),
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            } else {
-                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Filled.Folder,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        detail.brand?.let {
+                            DetailRow(stringResource(R.string.yarn_detail_field_brand), it)
+                        }
+                        detail.colorway?.let {
+                            DetailRow(stringResource(R.string.yarn_detail_field_colorway), it)
+                        }
+                        detail.dyeLot?.let {
+                            DetailRow(stringResource(R.string.yarn_detail_field_dye_lot), it)
+                        }
+                        detail.fiberContent?.let {
+                            DetailRow(stringResource(R.string.yarn_detail_field_fiber_content), it)
+                        }
+                        detail.weightCategory?.let {
+                            DetailRow(stringResource(R.string.yarn_detail_field_weight_category), it)
+                        }
+                        detail.recommendedNeedles?.let {
+                            DetailRow(
+                                stringResource(R.string.yarn_detail_field_recommended_needles),
+                                it,
+                            )
+                        }
+                        if (detail.weightGrams != null || detail.lengthMeters != null) {
+                            val amount =
+                                listOfNotNull(
+                                        detail.weightGrams?.let { "${it}g" },
+                                        detail.lengthMeters?.let { "${it}m" },
                                     )
+                                    .joinToString(" / ")
+                            DetailRow(stringResource(R.string.yarn_detail_field_amount), amount)
+                        }
+                    }
+                YarnDetailCard.DESCRIPTION ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.project_detail_description_title),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
+                    ) {
+                        YarnMarkdown(
+                            value = detail.description.orEmpty(),
+                            resolveMediaUrl = resolveMediaUrl,
+                            onImageClick = openViewerImage,
+                        )
+                    }
+                YarnDetailCard.USED_IN ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.yarn_detail_used_in_title),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
+                    ) {
+                        linkedProjects.forEachIndexed { index, project ->
+                            if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                            Card(onClick = { onProjectClick(project.id) }) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    Box(
+                                        modifier =
+                                            Modifier.size(48.dp)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    ) {
+                                        if (project.previewUrl != null) {
+                                            AsyncImage(
+                                                model = resolveMediaUrl(project.previewUrl),
+                                                contentDescription = null,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize(),
+                                            )
+                                        } else {
+                                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    Icons.Filled.Folder,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Text(project.name)
                                 }
                             }
                         }
-                        Text(project.name)
                     }
-                }
-            }
-        }
-
-        detail.notes?.let { value ->
-            item {
-                NotesCard(title = stringResource(R.string.project_detail_notes_title)) {
-                    YarnMarkdown(
-                        value = value,
-                        resolveMediaUrl = resolveMediaUrl,
-                        onImageClick = openViewerImage,
-                    )
-                }
+                YarnDetailCard.NOTES ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.project_detail_notes_title),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    ) {
+                        YarnMarkdown(
+                            value = detail.notes.orEmpty(),
+                            resolveMediaUrl = resolveMediaUrl,
+                            onImageClick = openViewerImage,
+                        )
+                    }
             }
         }
     }

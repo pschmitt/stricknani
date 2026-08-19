@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,7 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,8 +26,6 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -61,14 +60,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ProjectDto
+import blue.anika.wolle.data.settings.DetailCardDomain
+import blue.anika.wolle.data.settings.DetailCardOrder
+import blue.anika.wolle.data.settings.ProjectDetailCard
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
+import blue.anika.wolle.ui.common.DetailCardReorderHint
+import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
-import blue.anika.wolle.ui.common.NotesCard
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
+import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.shareUrl
@@ -88,6 +92,10 @@ fun ProjectDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
+    val cardOrder by
+        viewModel.cardOrder.collectAsStateWithLifecycle(
+            initialValue = DetailCardOrder.defaults(DetailCardDomain.PROJECT)
+        )
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var attachmentToDelete by remember { mutableStateOf<AttachmentDto?>(null) }
@@ -221,6 +229,8 @@ fun ProjectDetailScreen(
                     ProjectDetailContent(
                         detail = state.detail,
                         linkedYarns = state.linkedYarns,
+                        cardOrder = cardOrder,
+                        onCardOrderChanged = viewModel::saveCardOrder,
                         resolveMediaUrl = viewModel::resolveMediaUrl,
                         onYarnClick = onYarnClick,
                         onDeleteAttachment = { attachmentToDelete = it },
@@ -262,6 +272,8 @@ fun ProjectDetailScreen(
 private fun ProjectDetailContent(
     detail: ProjectDto,
     linkedYarns: List<LinkedYarn>,
+    cardOrder: List<String>,
+    onCardOrderChanged: (List<String>) -> Unit,
     resolveMediaUrl: (String?) -> String?,
     onYarnClick: (Int) -> Unit,
     onDeleteAttachment: (AttachmentDto) -> Unit,
@@ -276,18 +288,42 @@ private fun ProjectDetailContent(
     }
     val stitchSampleImages =
         remember(detail.images) { detail.images.filter { it.isStitchSample && it.stepId == null } }
-
     val hasDetails =
-        listOf(
-                detail.category,
-                detail.needles,
-                detail.yarn,
-                detail.otherMaterials,
+        listOf(detail.category, detail.needles, detail.yarn, detail.otherMaterials).any {
+            it != null
+        } || detail.tags.isNotEmpty()
+    val availableCardKeys =
+        buildList {
+            if (detail.attachments.isNotEmpty()) add(ProjectDetailCard.ATTACHMENTS)
+            if (hasDetails) add(ProjectDetailCard.DETAILS)
+            if (detail.stitchSample != null) add(ProjectDetailCard.STITCH_SAMPLE)
+            if (linkedYarns.isNotEmpty()) add(ProjectDetailCard.LINKED_YARNS)
+            if (detail.description != null) add(ProjectDetailCard.DESCRIPTION)
+            if (detail.steps.isNotEmpty()) add(ProjectDetailCard.STEPS)
+            if (detail.notes != null) add(ProjectDetailCard.NOTES)
+        }
+    val savedVisibleOrder =
+        remember(cardOrder, availableCardKeys) {
+            DetailCardOrder.visible(DetailCardDomain.PROJECT, cardOrder, availableCardKeys)
+        }
+    var orderedCardKeys by remember(savedVisibleOrder) { mutableStateOf(savedVisibleOrder) }
+    LaunchedEffect(savedVisibleOrder) { orderedCardKeys = savedVisibleOrder }
+    val reorderState = rememberDetailCardReorderState()
+    val listState = remember { LazyListState() }
+    val itemIndexOffset = (if (detail.images.isNotEmpty()) 1 else 0) + 1
+    val moveCard: (Int, Int) -> Unit = { fromIndex, toIndex ->
+        val next = DetailCardOrder.move(orderedCardKeys, fromIndex, toIndex)
+        if (next != orderedCardKeys) {
+            orderedCardKeys = next
+            onCardOrderChanged(
+                DetailCardOrder.withVisibleOrder(DetailCardDomain.PROJECT, cardOrder, next)
             )
-            .any { it != null } || detail.tags.isNotEmpty()
+        }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("e2e-project-detail"),
+        state = listState,
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -310,161 +346,160 @@ private fun ProjectDetailContent(
                 }
             }
         }
+        item { DetailCardReorderHint(reorderState, onDone = reorderState::finish) }
 
-        if (detail.attachments.isNotEmpty()) {
-            item {
-                DetailSectionCard(
-                    title = stringResource(R.string.project_detail_attachments_title)
-                ) {
-                    detail.attachments.forEachIndexed { index, attachment ->
-                        if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(modifier = Modifier.weight(1f)) {
+        items(orderedCardKeys, key = { it }) { cardKey ->
+            val cardIndex = orderedCardKeys.indexOf(cardKey)
+            when (cardKey) {
+                ProjectDetailCard.ATTACHMENTS ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.project_detail_attachments_title),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
+                    ) {
+                        detail.attachments.forEachIndexed { index, attachment ->
+                            if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     attachment.originalFilename,
                                     style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.weight(1f),
                                 )
-                                Text(
-                                    attachment.contentType,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            IconButton(onClick = { onDeleteAttachment(attachment) }) {
-                                DestructiveDeleteIcon(
-                                    contentDescription =
-                                        stringResource(
-                                            R.string.project_detail_delete_attachment_description
-                                        )
-                                )
+                                IconButton(onClick = { onDeleteAttachment(attachment) }) {
+                                    DestructiveDeleteIcon(
+                                        contentDescription =
+                                            stringResource(
+                                                R.string.project_detail_delete_attachment_description
+                                            )
+                                    )
+                                }
                             }
                         }
                     }
-                }
-            }
-        }
-
-        if (hasDetails) {
-            item {
-                DetailSectionCard {
-                    detail.category?.let {
-                        DetailRow(
-                            label = stringResource(R.string.common_field_category),
-                            value = it,
-                        )
-                    }
-                    detail.needles?.let {
-                        DetailRow(label = stringResource(R.string.common_field_needles), value = it)
-                    }
-                    detail.yarn?.let {
-                        DetailRow(
-                            label = stringResource(R.string.project_detail_field_yarn),
-                            value = it,
-                        )
-                    }
-                    detail.otherMaterials?.let {
-                        DetailRow(
-                            label = stringResource(R.string.common_field_other_materials),
-                            value = it,
-                        )
-                    }
-                    if (detail.tags.isNotEmpty()) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(top = 8.dp),
-                        ) {
-                            detail.tags.forEach { tag ->
-                                AssistChip(onClick = {}, label = { Text(tag) })
+                ProjectDetailCard.DETAILS ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.project_detail_details_title),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
+                    ) {
+                        detail.category?.let {
+                            DetailRow(stringResource(R.string.common_field_category), it)
+                        }
+                        detail.needles?.let {
+                            DetailRow(stringResource(R.string.common_field_needles), it)
+                        }
+                        detail.yarn?.let {
+                            DetailRow(stringResource(R.string.project_detail_field_yarn), it)
+                        }
+                        detail.otherMaterials?.let {
+                            DetailRow(stringResource(R.string.common_field_other_materials), it)
+                        }
+                        if (detail.tags.isNotEmpty()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(top = 8.dp),
+                            ) {
+                                detail.tags.forEach { tag -> AssistChip(onClick = {}, label = { Text(tag) }) }
                             }
                         }
                     }
-                }
-            }
-        }
-
-        detail.stitchSample?.let { value ->
-            item {
-                DetailSectionCard(title = stringResource(R.string.common_field_stitch_sample)) {
-                    ProjectMarkdown(
-                        value = value,
-                        resolveMediaUrl = resolveMediaUrl,
-                        onImageClick = openViewerImage,
-                    )
-                    if (stitchSampleImages.isNotEmpty()) {
-                        LazyRow(
-                            modifier = Modifier.padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            itemsIndexed(
-                                stitchSampleImages,
-                                key = { _, image -> image.id },
-                            ) { _, image ->
-                                val imageIndex = detail.images.indexOfFirst { it.id == image.id }
-                                AsyncImage(
-                                    model = resolveMediaUrl(image.url),
-                                    contentDescription = image.altText,
-                                    contentScale = ContentScale.Crop,
-                                    modifier =
-                                        Modifier.size(160.dp)
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .clickable {
-                                        if (imageIndex >= 0) {
+                ProjectDetailCard.STITCH_SAMPLE ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.common_field_stitch_sample),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
+                    ) {
+                        ProjectMarkdown(
+                            value = detail.stitchSample.orEmpty(),
+                            resolveMediaUrl = resolveMediaUrl,
+                            onImageClick = openViewerImage,
+                        )
+                        if (stitchSampleImages.isNotEmpty()) {
+                            LazyRow(
+                                modifier = Modifier.padding(top = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                itemsIndexed(stitchSampleImages, key = { _, image -> image.id }) { _, image ->
+                                    AsyncImage(
+                                        model = resolveMediaUrl(image.url),
+                                        contentDescription = image.altText,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
                                             resolveMediaUrl(image.url)?.let(openViewerImage)
-                                        }
-                                            },
-                                )
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
-                }
-            }
-        }
-
-        if (linkedYarns.isNotEmpty()) {
-            item {
-                DetailSectionCard(
-                    title = stringResource(R.string.project_detail_linked_yarns_title)
-                ) {
-                    linkedYarns.forEachIndexed { index, yarn ->
-                        if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                        LinkedEntityRow(
-                            name = yarn.name,
-                            previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
-                            fallbackIcon = MdiIcons.Sheep,
-                            onClick = { onYarnClick(yarn.id) },
+                ProjectDetailCard.LINKED_YARNS ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.project_detail_linked_yarns_title),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
+                    ) {
+                        linkedYarns.forEachIndexed { index, yarn ->
+                            if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                            LinkedEntityRow(
+                                name = yarn.name,
+                                previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
+                                fallbackIcon = MdiIcons.Sheep,
+                                onClick = { onYarnClick(yarn.id) },
+                            )
+                        }
+                    }
+                ProjectDetailCard.DESCRIPTION ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.project_detail_description_title),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
+                    ) {
+                        ProjectMarkdown(
+                            value = detail.description.orEmpty(),
+                            resolveMediaUrl = resolveMediaUrl,
+                            onImageClick = openViewerImage,
                         )
                     }
-                }
-            }
-        }
-
-        detail.description?.let { value ->
-            item {
-                DetailSectionCard(
-                    title = stringResource(R.string.project_detail_description_title)
-                ) {
-                    ProjectMarkdown(
-                        value = value,
-                        resolveMediaUrl = resolveMediaUrl,
-                        onImageClick = openViewerImage,
-                    )
-                }
-            }
-        }
-
-        if (detail.steps.isNotEmpty()) {
-            item {
-                DetailSectionCard(title = stringResource(R.string.project_detail_steps_title)) {
-                    // SNA-36: avoid re-sorting on every recomposition of this item scope.
-                    val sortedSteps =
-                        remember(detail.steps) { detail.steps.sortedBy { it.stepNumber } }
-                    sortedSteps.forEachIndexed { index, step ->
-                        if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp))
-                        Column {
-                            Text(
-                                "${step.stepNumber}. ${step.title}",
-                                style = MaterialTheme.typography.titleSmall,
-                            )
+                ProjectDetailCard.STEPS ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.project_detail_steps_title),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
+                    ) {
+                        val sortedSteps = remember(detail.steps) { detail.steps.sortedBy { it.stepNumber } }
+                        sortedSteps.forEachIndexed { index, step ->
+                            if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                            Text("${step.stepNumber}. ${step.title}", style = MaterialTheme.typography.titleSmall)
                             step.description?.let {
                                 ProjectMarkdown(
                                     value = it,
@@ -475,19 +510,25 @@ private fun ProjectDetailContent(
                             }
                         }
                     }
-                }
-            }
-        }
-
-        detail.notes?.let { value ->
-            item {
-                NotesCard(title = stringResource(R.string.project_detail_notes_title)) {
-                    ProjectMarkdown(
-                        value = value,
-                        resolveMediaUrl = resolveMediaUrl,
-                        onImageClick = openViewerImage,
-                    )
-                }
+                ProjectDetailCard.NOTES ->
+                    ReorderableDetailCard(
+                        title = stringResource(R.string.project_detail_notes_title),
+                        cardKey = cardKey,
+                        cardIndex = cardIndex,
+                        listState = listState,
+                        orderedKeys = orderedCardKeys,
+                        itemIndexOffset = itemIndexOffset,
+                        reorderState = reorderState,
+                        onMove = moveCard,
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    ) {
+                        ProjectMarkdown(
+                            value = detail.notes.orEmpty(),
+                            resolveMediaUrl = resolveMediaUrl,
+                            onImageClick = openViewerImage,
+                        )
+                    }
             }
         }
     }
@@ -579,35 +620,6 @@ private fun projectViewerImages(
         }
     }
     return images.values.toList()
-}
-
-/** A rounded, elevated grouping card - matches Settings' `SettingsGroupCard` visual language. */
-@Composable
-internal fun DetailSectionCard(
-    title: String? = null,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors =
-            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            title?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 4.dp),
-                )
-            }
-            content()
-        }
-    }
 }
 
 /**

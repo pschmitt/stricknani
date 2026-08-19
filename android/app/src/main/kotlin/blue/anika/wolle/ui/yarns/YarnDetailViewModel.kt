@@ -10,6 +10,8 @@ import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.settings.DetailCardDomain
+import blue.anika.wolle.data.settings.DetailCardOrderRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
@@ -54,12 +56,21 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     private val syncScheduler: SyncScheduler,
     private val mutationFeedback: MutationFeedback,
+    private val detailCardOrderRepository: DetailCardOrderRepository,
 ) : ViewModel() {
 
     private val yarnId = savedStateHandle.toRoute<Route.YarnDetail>().yarnId
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
+
+    val cardOrder = detailCardOrderRepository.yarnOrder
+
+    fun saveCardOrder(order: List<String>) {
+        viewModelScope.launch {
+            detailCardOrderRepository.setOrder(DetailCardDomain.YARN, order)
+        }
+    }
 
     private val refreshController = RefreshController(viewModelScope)
     val refreshState: StateFlow<RefreshState> = refreshController.state

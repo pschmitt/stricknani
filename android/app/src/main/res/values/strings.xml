@@ -71,6 +71,7 @@
     <string name="project_detail_field_yarn">Yarn</string>
     <string name="project_detail_more_actions_description">More actions</string>
     <string name="project_detail_not_found">Project not found</string>
+    <string name="project_detail_details_title">Project details</string>
     <string name="project_detail_linked_yarns_title">Linked yarns</string>
     <string name="project_detail_description_title">Description</string>
     <string name="project_detail_steps_title">Steps</string>
@@ -172,6 +173,7 @@
     <string name="yarn_detail_field_recommended_needles">Recommended needles</string>
     <string name="yarn_detail_field_amount">Amount</string>
     <string name="yarn_detail_used_in_title">Used in</string>
+    <string name="yarn_detail_details_title">Yarn details</string>
     <string name="yarn_editor_title_edit">Edit yarn</string>
     <string name="yarn_editor_delete_description">Delete yarn</string>
     <string name="yarn_editor_weight_grams_label">Weight (g)</string>
@@ -191,6 +193,8 @@
     <string name="settings_category_navigation_subtitle">Choose destinations and their order</string>
     <string name="settings_category_categories_title">Categories</string>
     <string name="settings_category_categories_subtitle">Manage project and yarn categories</string>
+    <string name="settings_category_detail_cards_title">Detail cards</string>
+    <string name="settings_category_detail_cards_subtitle">Choose the order of project and yarn sections</string>
     <string name="settings_category_sync_title">Sync</string>
     <string name="settings_category_sync_subtitle">Background refresh status</string>
     <string name="settings_category_backup_title">Backup</string>
@@ -203,6 +207,15 @@
     <string name="settings_nav_back">Back</string>
     <string name="settings_navigation_bottom_bar_title">Bottom bar</string>
     <string name="settings_navigation_bottom_bar_description">Choose which destinations appear in the bottom bar, and in what order.</string>
+    <string name="settings_detail_cards_project_title">Project detail cards</string>
+    <string name="settings_detail_cards_yarn_title">Yarn detail cards</string>
+    <string name="settings_detail_cards_description">Use the arrows to choose the default order. Optional sections appear when they have content.</string>
+    <string name="settings_detail_cards_reset">Reset to default order</string>
+    <string name="detail_card_reorder_hint">Long-press a card title to reorder sections.</string>
+    <string name="detail_card_reorder_active">Drag the card titles into place.</string>
+    <string name="detail_card_reorder_done">Done</string>
+    <string name="detail_card_reorder_title_description">%1$s card title</string>
+    <string name="detail_card_reorder_long_press_description">Long-press and drag to reorder</string>
     <string name="settings_sync_group_title">Background sync</string>
     <string name="settings_sync_last_synced_label">Last synced</string>
     <string name="settings_sync_policy_label">Sync policy</string>

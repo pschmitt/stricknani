@@ -44,6 +44,11 @@ enum class SettingsCategory(
         R.string.settings_category_categories_subtitle,
         Icons.Filled.Category,
     ),
+    DetailCards(
+        R.string.settings_category_detail_cards_title,
+        R.string.settings_category_detail_cards_subtitle,
+        Icons.Filled.ViewCarousel,
+    ),
     Sync(
         R.string.settings_category_sync_title,
         R.string.settings_category_sync_subtitle,

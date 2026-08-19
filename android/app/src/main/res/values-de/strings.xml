@@ -71,6 +71,7 @@
     <string name="project_detail_field_yarn">Wolle</string>
     <string name="project_detail_more_actions_description">Weitere Aktionen</string>
     <string name="project_detail_not_found">Projekt nicht gefunden</string>
+    <string name="project_detail_details_title">Projektdetails</string>
     <string name="project_detail_linked_yarns_title">Verknüpfte Wolle</string>
     <string name="project_detail_description_title">Beschreibung</string>
     <string name="project_detail_steps_title">Schritte</string>
@@ -172,6 +173,7 @@
     <string name="yarn_detail_field_recommended_needles">Empfohlene Nadeln</string>
     <string name="yarn_detail_field_amount">Menge</string>
     <string name="yarn_detail_used_in_title">Verwendet in</string>
+    <string name="yarn_detail_details_title">Wolldetails</string>
     <string name="yarn_editor_title_edit">Wolle bearbeiten</string>
     <string name="yarn_editor_delete_description">Wolle löschen</string>
     <string name="yarn_editor_weight_grams_label">Gewicht (g)</string>
@@ -191,6 +193,8 @@
     <string name="settings_category_navigation_subtitle">Ziele und ihre Reihenfolge wählen</string>
     <string name="settings_category_categories_title">Kategorien</string>
     <string name="settings_category_categories_subtitle">Projekt- und Wollkategorien verwalten</string>
+    <string name="settings_category_detail_cards_title">Detailkarten</string>
+    <string name="settings_category_detail_cards_subtitle">Reihenfolge der Projekt- und Wollbereiche wählen</string>
     <string name="settings_category_sync_title">Synchronisierung</string>
     <string name="settings_category_sync_subtitle">Status der Hintergrundaktualisierung</string>
     <string name="settings_category_backup_title">Backup</string>
@@ -203,6 +207,15 @@
     <string name="settings_nav_back">Zurück</string>
     <string name="settings_navigation_bottom_bar_title">Untere Leiste</string>
     <string name="settings_navigation_bottom_bar_description">Wähle aus, welche Ziele in der unteren Leiste erscheinen und in welcher Reihenfolge.</string>
+    <string name="settings_detail_cards_project_title">Projekt-Detailkarten</string>
+    <string name="settings_detail_cards_yarn_title">Woll-Detailkarten</string>
+    <string name="settings_detail_cards_description">Mit den Pfeilen die Standardreihenfolge wählen. Optionale Bereiche erscheinen, wenn sie Inhalte haben.</string>
+    <string name="settings_detail_cards_reset">Auf Standardreihenfolge zurücksetzen</string>
+    <string name="detail_card_reorder_hint">Einen Kartentitel lange drücken, um Bereiche zu sortieren.</string>
+    <string name="detail_card_reorder_active">Kartentitel an die gewünschte Stelle ziehen.</string>
+    <string name="detail_card_reorder_done">Fertig</string>
+    <string name="detail_card_reorder_title_description">Kartentitel: %1$s</string>
+    <string name="detail_card_reorder_long_press_description">Lange drücken und zum Sortieren ziehen</string>
     <string name="settings_sync_group_title">Hintergrundsynchronisierung</string>
     <string name="settings_sync_last_synced_label">Zuletzt synchronisiert</string>
     <string name="settings_sync_policy_label">Synchronisierungsrichtlinie</string>
