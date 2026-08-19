@@ -50,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -154,7 +155,10 @@ fun ProjectsListScreen(
                 Spacer(Modifier.height(8.dp))
 
                 if (projects.isEmpty()) {
-                    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize().testTag("e2e-projects-list"),
+                    ) {
                         item {
                             EmptyState(
                                 icon = Icons.Filled.Folder,
@@ -167,6 +171,7 @@ fun ProjectsListScreen(
                 } else {
                     LazyColumn(
                         state = listState,
+                        modifier = Modifier.testTag("e2e-projects-list"),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
