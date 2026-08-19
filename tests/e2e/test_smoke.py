@@ -104,6 +104,12 @@ def test_material_dark_login_surface() -> None:
             assert page.locator("html").get_attribute("data-theme") == "dark"
             assert page.locator(".md3-top-app-bar").is_visible()
             assert page.locator(".md3-footer").is_visible()
+            assert page.locator('link[href*="/static/css/material.css"]').count() == 1
+            assert page.locator('link[href*="/static/css/tailwind.css"]').count() == 0
+            assert page.locator('link[href*="/static/vendor/daisyui/"]').count() == 0
+            assert page.locator("#login-form .md3-button--filled").evaluate(
+                "element => getComputedStyle(element).borderRadius"
+            ) == "999px"
             screenshot(page, "smoke-dark-01-login.png")
         except BaseException:
             screenshot(page, "smoke-dark-failure.png")

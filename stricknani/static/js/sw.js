@@ -38,6 +38,7 @@ const PRECACHE_URLS = [
 	OFFLINE_URL,
 	"/manifest.webmanifest",
 	"/static/favicon.svg",
+	"/static/css/material.css",
 	"/static/css/app.css",
 	"/static/js/app.js",
 	"/static/js/htmx/csrf.js",

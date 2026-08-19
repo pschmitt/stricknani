@@ -32,29 +32,35 @@ async def test_no_runtime_tailwind_script(test_client: Any) -> None:
 
 
 @pytest.mark.asyncio
-async def test_links_static_tailwind_css_bundle(test_client: Any) -> None:
-    """The rendered page must link the prebuilt static CSS bundle."""
-    client, _, _, _, _ = test_client
-    response = await client.get("/projects/")
-    assert response.status_code == 200
-    assert "static/css/tailwind.css" in response.text
-
-
-@pytest.mark.asyncio
-async def test_links_material_theme_after_generated_css(test_client: Any) -> None:
-    """The shared Material 3 layer must load after generated utilities."""
+async def test_links_material_css_without_legacy_component_stylesheets(
+    test_client: Any,
+) -> None:
+    """The shared shell must use Material CSS instead of DaisyUI/Tailwind."""
     client, _, _, _, _ = test_client
     response = await client.get("/projects/")
     assert response.status_code == 200
     body = response.text
-    assert body.index("static/css/tailwind.css") < body.index("static/css/app.css")
+    assert "static/css/material.css" in body
+    assert "static/css/tailwind.css" not in body
+    assert "vendor/daisyui/daisyui.css" not in body
+    assert "vendor/daisyui/themes.css" not in body
+
+
+@pytest.mark.asyncio
+async def test_links_material_theme_and_shared_components(test_client: Any) -> None:
+    """The shared Material 3 layer owns the common component vocabulary."""
+    client, _, _, _, _ = test_client
+    response = await client.get("/projects/")
+    assert response.status_code == 200
+    body = response.text
+    assert body.index("static/css/material.css") < body.index("static/css/app.css")
     assert "md3-top-app-bar" in body
     assert "md3-footer" in body
     assert "md3-filter-surface" in body
     assert "md3-navigation-menu" in body
     assert "md3-button--filled" in body
     assert "md3-text-field" in body
-    css = (STATIC_CSS_DIR / "app.css").read_text()
+    css = (STATIC_CSS_DIR / "material.css").read_text()
     assert "--md-sys-color-primary" in css
     assert "--md-sys-typescale-title" in css
     assert "--md-sys-elevation-level-1" in css
@@ -62,6 +68,8 @@ async def test_links_material_theme_after_generated_css(test_client: Any) -> Non
     assert ".md3-card--elevated" in css
     assert ".md3-navigation-menu" in css
     assert ".md3-text-field" in css
+    assert ".md3-dialog" in css
+    assert ".md3-navigation-menu" in css
 
 
 @pytest.mark.skipif(
