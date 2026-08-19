@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Folder
@@ -37,6 +38,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,13 +76,32 @@ fun ProjectsListScreen(
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
+    val importState by viewModel.importState.collectAsStateWithLifecycle()
     var showAddCategoryDialog by rememberSaveable { mutableStateOf(false) }
+    var showImportDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
 
     RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.projects_list_title)) },
+                actions = {
+                    IconButton(
+                        modifier = Modifier.testTag("project-import-open"),
+                        onClick = { showImportDialog = true },
+                    ) {
+                        Icon(
+                            Icons.Filled.FileDownload,
+                            contentDescription =
+                                stringResource(R.string.projects_list_import_description),
+                        )
+                    }
+                },
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -188,6 +209,18 @@ fun ProjectsListScreen(
             onDismiss = { showAddCategoryDialog = false },
         )
     }
+
+    ProjectImportDialog(
+        visible = showImportDialog,
+        state = importState,
+        onStart = viewModel::startImport,
+        onConfirm = viewModel::confirmImport,
+        onCancel = {
+            showImportDialog = false
+            viewModel.cancelImport()
+        },
+        onRetry = viewModel::retryImport,
+    )
 }
 
 @Composable

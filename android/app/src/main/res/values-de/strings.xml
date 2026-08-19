@@ -65,7 +65,9 @@
     <string name="search_no_matches_subtitle">Versuche einen anderen Suchbegriff.</string>
 
     <!-- Projects -->
+    <string name="projects_list_title">Projekte</string>
     <string name="project_new_label">Neues Projekt</string>
+    <string name="projects_list_import_description">Projekt importieren</string>
     <string name="project_detail_field_yarn">Wolle</string>
     <string name="project_detail_more_actions_description">Weitere Aktionen</string>
     <string name="project_detail_not_found">Projekt nicht gefunden</string>
@@ -97,6 +99,32 @@
     <string name="categories_error_title">Kategorien konnten nicht geladen werden</string>
     <string name="categories_error_subtitle">Beim Laden der Kategorien ist ein Fehler aufgetreten. Versuche es erneut.</string>
     <string name="categories_retry">Erneut versuchen</string>
+
+    <!-- Project import -->
+    <string name="project_import_dialog_title">Projekt importieren</string>
+    <string name="project_import_url_label">Anleitungs-URL</string>
+    <string name="project_import_url_placeholder">https://example.com/meine-anleitung</string>
+    <string name="project_import_start">Importieren</string>
+    <string name="project_import_cancel">Import abbrechen</string>
+    <string name="project_import_progress">Projekt wird importiert</string>
+    <string name="project_import_progress_description">Anleitungsdaten werden vom Server abgerufen…</string>
+    <string name="project_import_saving_description">Importiertes Projekt wird lokal gespeichert…</string>
+    <string name="project_import_confirmation_title">Importiertes Projekt prüfen</string>
+    <string name="project_import_confirmation_text">„%1$s“ zu deinen Projekten hinzufügen? Es wird lokal gespeichert und zur Synchronisierung vorgemerkt.</string>
+    <string name="project_import_steps_summary">%1$d Schritte gefunden</string>
+    <string name="project_import_images_summary">%1$d Bild-URLs gefunden</string>
+    <string name="project_import_images_not_supported">Die aktuelle API liefert Bild-URLs, fügt sie aber noch nicht automatisch zu einem neuen Offline-Projekt hinzu. Text und Schritte werden gespeichert; Bilder können später ergänzt werden.</string>
+    <string name="project_import_ai_fallback">Die KI-Extraktion war nicht verfügbar; die einfache Anleitungserkennung wurde verwendet.</string>
+    <string name="project_import_confirm_save">Projekt hinzufügen</string>
+    <string name="project_import_success_title">Projekt importiert</string>
+    <string name="project_import_success_text">„%1$s“ wurde lokal gespeichert und zur Synchronisierung vorgemerkt.</string>
+    <string name="project_import_done">Fertig</string>
+    <string name="project_import_retry">Erneut versuchen</string>
+    <string name="project_import_error_title">Import fehlgeschlagen</string>
+    <string name="project_import_error_invalid_url">Gib eine vollständige HTTP- oder HTTPS-URL der Anleitung ein.</string>
+    <string name="project_import_error_offline">Der Server konnte nicht erreicht werden. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="project_import_error_server">Der Server hat den Import abgelehnt. Prüfe, ob dieser Stricknani-Server Projektimporte mit API-Token unterstützt.</string>
+    <string name="project_import_error_unknown">Das Projekt konnte nicht importiert werden. Bitte versuche es erneut.</string>
 
     <!-- Yarns -->
     <string name="yarns_list_new_yarn_fab">Neue Wolle</string>
@@ -270,6 +298,7 @@
     <string name="mutation_project_created_queued">Projekt lokal erstellt und zur Synchronisierung vorgemerkt.</string>
     <string name="mutation_project_updated_queued">Projekt lokal aktualisiert und zur Synchronisierung vorgemerkt.</string>
     <string name="mutation_project_deleted_queued">Projekt lokal gelöscht und zur Synchronisierung vorgemerkt.</string>
+    <string name="mutation_project_imported_queued">Projekt „%1$s“ lokal importiert und zur Synchronisierung vorgemerkt.</string>
     <string name="mutation_yarn_created_queued">Wolle lokal erstellt und zur Synchronisierung vorgemerkt.</string>
     <string name="mutation_yarn_updated_queued">Wolle lokal aktualisiert und zur Synchronisierung vorgemerkt.</string>
     <string name="mutation_yarn_deleted_queued">Wolle lokal gelöscht und zur Synchronisierung vorgemerkt.</string>

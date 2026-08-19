@@ -10,6 +10,8 @@ import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
+import blue.anika.wolle.data.repository.ProjectImporter
+import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
@@ -39,6 +41,8 @@ constructor(
     private val categoriesApi: CategoriesApi,
     private val mediaUrlResolver: MediaUrlResolver,
     private val mutationFeedback: MutationFeedback,
+    private val projectImporter: ProjectImporter,
+    private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -84,6 +88,22 @@ constructor(
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
                 emptyList(),
             )
+
+    private val importController =
+        ProjectImportController(
+            scope = viewModelScope,
+            importer = projectImporter,
+        ) { preview ->
+            val projectId = projectRepository.createProject(preview.request)
+            syncScheduler.replayThenSyncNow()
+            mutationFeedback.show(
+                R.string.mutation_project_imported_queued,
+                preview.request.name,
+            )
+            projectId
+        }
+
+    val importState: StateFlow<ProjectImportState> = importController.state
 
     init {
         refresh(trigger = RefreshTrigger.Automatic)
@@ -136,6 +156,16 @@ constructor(
             }
         }
     }
+
+    fun startImport(url: String) = importController.start(url)
+
+    fun retryImport() = importController.retry()
+
+    fun confirmImport() = importController.confirm()
+
+    fun cancelImport() = importController.cancel()
+
+    fun dismissImport() = importController.dismiss()
 
     fun dismissRefreshFeedback() = refreshController.clearFeedback()
 

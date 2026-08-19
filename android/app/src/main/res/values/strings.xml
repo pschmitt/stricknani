@@ -65,7 +65,9 @@
     <string name="search_no_matches_subtitle">Try a different search term.</string>
 
     <!-- Projects -->
+    <string name="projects_list_title">Projects</string>
     <string name="project_new_label">New project</string>
+    <string name="projects_list_import_description">Import project</string>
     <string name="project_detail_field_yarn">Yarn</string>
     <string name="project_detail_more_actions_description">More actions</string>
     <string name="project_detail_not_found">Project not found</string>
@@ -97,6 +99,32 @@
     <string name="categories_error_title">Couldn’t load categories</string>
     <string name="categories_error_subtitle">Something went wrong while loading categories. Try again.</string>
     <string name="categories_retry">Retry</string>
+
+    <!-- Project import -->
+    <string name="project_import_dialog_title">Import project</string>
+    <string name="project_import_url_label">Pattern URL</string>
+    <string name="project_import_url_placeholder">https://example.com/my-pattern</string>
+    <string name="project_import_start">Import</string>
+    <string name="project_import_cancel">Cancel import</string>
+    <string name="project_import_progress">Importing project</string>
+    <string name="project_import_progress_description">Fetching pattern details from the server…</string>
+    <string name="project_import_saving_description">Saving the imported project locally…</string>
+    <string name="project_import_confirmation_title">Review imported project</string>
+    <string name="project_import_confirmation_text">Add “%1$s” to your projects? It will be saved locally and queued for synchronization.</string>
+    <string name="project_import_steps_summary">%1$d steps found</string>
+    <string name="project_import_images_summary">%1$d image URLs found</string>
+    <string name="project_import_images_not_supported">The current API returns image URLs but does not attach them to a new offline project yet. The text and steps will be saved; you can add images later.</string>
+    <string name="project_import_ai_fallback">AI extraction was unavailable; basic pattern extraction was used.</string>
+    <string name="project_import_confirm_save">Add project</string>
+    <string name="project_import_success_title">Project imported</string>
+    <string name="project_import_success_text">“%1$s” was saved locally and queued for synchronization.</string>
+    <string name="project_import_done">Done</string>
+    <string name="project_import_retry">Retry</string>
+    <string name="project_import_error_title">Import failed</string>
+    <string name="project_import_error_invalid_url">Enter a complete HTTP or HTTPS pattern URL.</string>
+    <string name="project_import_error_offline">The server could not be reached. Check your connection and try again.</string>
+    <string name="project_import_error_server">The server rejected the import. Check that this Stricknani server supports API-token project imports.</string>
+    <string name="project_import_error_unknown">The project could not be imported. Please try again.</string>
 
     <!-- Yarns -->
     <string name="yarns_list_new_yarn_fab">New yarn</string>
@@ -270,6 +298,7 @@
     <string name="mutation_project_created_queued">Project created locally and queued to sync.</string>
     <string name="mutation_project_updated_queued">Project updated locally and queued to sync.</string>
     <string name="mutation_project_deleted_queued">Project deleted locally and queued to sync.</string>
+    <string name="mutation_project_imported_queued">Project “%1$s” imported locally and queued to sync.</string>
     <string name="mutation_yarn_created_queued">Yarn created locally and queued to sync.</string>
     <string name="mutation_yarn_updated_queued">Yarn updated locally and queued to sync.</string>
     <string name="mutation_yarn_deleted_queued">Yarn deleted locally and queued to sync.</string>
