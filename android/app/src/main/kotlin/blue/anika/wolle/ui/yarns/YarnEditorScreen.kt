@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -109,7 +110,8 @@ fun YarnEditorScreen(
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            modifier =
+                Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-yarn-editor-form"),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -125,7 +127,7 @@ fun YarnEditorScreen(
                                 viewModel.updateForm { it.copy(name = value) }
                             },
                             label = { Text(stringResource(R.string.project_editor_name_label)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().testTag("e2e-yarn-editor-name"),
                             singleLine = true,
                         )
                         OutlinedTextField(
