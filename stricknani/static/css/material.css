@@ -2506,13 +2506,13 @@ svg {
 .md3-search-bar__control {
 	position: relative;
 }
-.md3-search-bar__input {
+.md3-search-bar__control .md3-search-bar__input {
 	position: relative;
 	z-index: 2;
 	width: 100%;
 	min-height: 3.5rem;
 	border: 1px solid var(--md-sys-color-outline-variant);
-	border-radius: var(--md-sys-shape-extra-large);
+	border-radius: 999px;
 	background: var(--md-sys-color-surface-container);
 	box-shadow: var(--md-sys-elevation-1);
 	padding-inline: 3rem;

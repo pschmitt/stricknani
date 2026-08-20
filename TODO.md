@@ -30,6 +30,9 @@ Execution-oriented backlog for Stricknani.
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T52 | P0 | done | security | bug | Add SSRF guard to import fetch layer (block private/loopback/link-local, re-validate redirects) |
 | T54 | P0 | done | import | bug | Return friendly 4xx/502 on import fetch failures instead of 500 with raw error text |
+| T99 | P3 | todo | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |
+| T100 | P2 | done | web/ux | refactor | Make search box inputs more rounded (pill-shaped) across list pages and the global search modal |
+| T101 | P2 | done | web/ux | feat | Use real Material 3 cards (not plain list rows) consistently on both project/yarn list pages and their detail/view pages |
 
 ## Next
 
@@ -1301,3 +1304,63 @@ Execution-oriented backlog for Stricknani.
     images with canonical extensions.
 - **Testing**: Existing import, SSRF, and health coverage passes (25 tests in the focused run),
   including the updated streamed-response import fixture.
+
+### T99: Overhaul the web UI look and feel further
+
+- **Area**: web/ux
+- **Priority**: P3
+- **Status**: todo
+- **Category**: refactor
+- **Description**:
+  - User flagged that the web UI should get another visual pass beyond the T88 Material 3 migration.
+  - No concrete specifics given yet beyond the two items split out as T100 and T101 — this ticket
+    is a placeholder for whatever else the user wants once they scope it further (e.g. spacing
+    rhythm, color/elevation tuning, typography).
+  - Blocked on user input before implementation starts.
+
+### T100: Make search box inputs more rounded across list pages and global search
+
+- **Area**: web/ux
+- **Priority**: P2
+- **Status**: done
+- **Category**: refactor
+- **Description**:
+  - User wants the search boxes to look more rounded/pill-shaped.
+  - Root cause: `stricknani/static/css/app.css`'s generic `.md3-text-field { border-radius: 0.25rem
+    0.25rem 0 0; }` rule loads after `material.css` and has equal (single-class) specificity to
+    `material.css`'s `.md3-search-bar__input` pill-radius rule, so it won by source order and the
+    list-page search bars rendered with only slightly-rounded top corners instead of the intended
+    full stadium shape.
+- **Implementation**:
+  - Rescoped `material.css`'s rule to `.md3-search-bar__control .md3-search-bar__input` (raises
+    specificity above the single-class `app.css` rule regardless of load order) and set
+    `border-radius: 999px` for an explicit full pill, verified in-browser (light + dark) on the
+    project and yarn list pages.
+  - Left the global search modal (`base.html` `#globalSearchModal`) and regular form `.md3-text-field`
+    inputs untouched — those intentionally keep the M3 filled-field look; only the standalone
+    list-page search bar was in scope.
+- **Testing**: `just lint-css` (pre-existing unrelated `.md3-chip` specificity warning only, no new
+  issues; this change actually resolved one of the two prior warnings).
+
+### T101: Use real Material 3 cards consistently on project/yarn list and detail pages
+
+- **Area**: web/ux
+- **Priority**: P2
+- **Status**: done
+- **Category**: feat
+- **Description**:
+  - User wants "real material cards" on the project/yarn list *and* view (detail) pages.
+- **Findings** (verified in-browser via seeded demo data, light + dark):
+  - List pages already render `.md3-feature-card` (`macros/cards.html` `list_card` macro) with
+    border, `--md-sys-shape-extra-large` radius, `surface-container-low` background, and
+    `elevation-1` shadow plus a hover lift.
+  - Detail pages (`projects/detail.html`, `yarn/detail.html`) already render every section (Gallery,
+    Description, Technical Specifications, Instructions/step cards, Notes, Linked Projects, Audit
+    Log) as `.md3-disclosure` panels, which share the identical card treatment (border, extra-large
+    radius, `surface-container-low` background, `elevation-1` shadow) — they're real M3 cards, just
+    also collapsible.
+  - No plain/unstyled row-based list or detail rendering exists; there is no alternate table/row view
+    to convert. Concluding this was already satisfied by the T88 migration; no code change made.
+  - Nested widgets inside a detail card (e.g. "Yarns Used" row, "Linked Projects" row) are
+    intentionally plain rows rather than nested elevated cards — stacking two elevated surfaces is
+    not idiomatic Material 3, so this was left as-is.
