@@ -75,7 +75,7 @@
 	}
 
 	/* Make project details much more compact in print. */
-	.project-details-card .md3-disclosure__content {
+	.project-details-card > input ~ .md3-disclosure__content {
 		padding: 0 !important;
 	}
 

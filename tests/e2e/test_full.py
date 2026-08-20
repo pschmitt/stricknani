@@ -98,10 +98,9 @@ def test_full_user_journey() -> None:
             page.locator('button[form="projectForm"][type="submit"]').first.click()
             wait_for_path(page, r"/projects/\d+\?toast=project_created")
             page.get_by_text("CI E2E Project", exact=True).first.wait_for()
-            project_main = page.locator("#main-column").bounding_box()
-            project_sidebar = page.locator("#sidebar-column").bounding_box()
-            assert project_main is not None and project_sidebar is not None
-            assert project_sidebar["x"] > project_main["x"]
+            project_details = page.locator('label[for="details-toggle"]').bounding_box()
+            assert project_details is not None
+            assert project_details["width"] > 500
             screenshot(page, "full-02-project-detail.png")
 
             project_edit_href = page.locator(
@@ -127,10 +126,9 @@ def test_full_user_journey() -> None:
             page.locator('button[form="yarnForm"][type="submit"]').first.click()
             wait_for_path(page, r"/yarn/\d+\?toast=yarn_created")
             page.get_by_text("CI E2E Yarn", exact=True).first.wait_for()
-            yarn_main = page.locator("#main-column").bounding_box()
-            yarn_sidebar = page.locator("#sidebar-column").bounding_box()
-            assert yarn_main is not None and yarn_sidebar is not None
-            assert yarn_sidebar["x"] > yarn_main["x"]
+            yarn_details = page.locator('label[for="details-toggle"]').bounding_box()
+            assert yarn_details is not None
+            assert yarn_details["width"] > 500
             screenshot(page, "full-04-yarn-detail.png")
 
             yarn_edit_href = page.locator(
