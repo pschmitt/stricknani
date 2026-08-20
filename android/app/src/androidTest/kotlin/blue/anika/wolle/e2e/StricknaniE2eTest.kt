@@ -310,7 +310,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         // viewport - scroll back to it explicitly rather than assuming it is still on screen.
         scrollYarnsListToText(currentName, timeoutMillis = 30_000)
         composeRule.onNodeWithText(currentName).performClick()
-        waitForText("More actions")
+        waitForContentDescription("More actions")
         composeRule.onNodeWithContentDescription("More actions").performClick()
         clickTextWithAction("Edit")
         waitForText("Edit yarn")
@@ -368,7 +368,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
 
     private fun editProject(currentName: String, updatedName: String) {
         composeRule.onNodeWithText(currentName).performClick()
-        waitForText("More actions")
+        waitForContentDescription("More actions")
         composeRule.onNodeWithContentDescription("More actions").performClick()
         clickTextWithAction("Edit")
         waitForText("Edit project")
