@@ -101,6 +101,7 @@ Execution-oriented backlog for Stricknani.
 | T95 | P1 | done | web/ux | bug | Repair shared dialog regressions introduced by the Material 3 migration, including import and create-user dialogs |
 | T96 | P1 | done | web/ux | bug | Normalize admin user-profile icon sizing so avatars render consistently |
 | T97 | P0 | done | security | bug | Normalize upload ingress through bounded reads and validated image storage |
+| T98 | P0 | done | security/import | bug | Stream and SSRF-guard all remote image imports before buffering or persisting them |
 
 
 ## Done
@@ -1281,3 +1282,22 @@ Execution-oriented backlog for Stricknani.
   - Applied bounded reads to project images, attachments, imports, and crop-image operations.
 - **Testing**: Added regression coverage for invalid avatar/yarn-photo uploads and the size cap;
   the focused user/API/yarn/health suite passes (28 tests), along with Ruff and mypy.
+
+### T98: Stream and SSRF-guard all remote image imports before buffering or persisting them
+
+- **Area**: security/import
+- **Priority**: P0
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - The backend audit found that the shared remote-image downloader checked its size limit only
+    after `httpx` had already buffered the complete response.
+  - Garnstudio inline-symbol localization used a separate redirect-following client without the
+    shared SSRF/content validation path, and retained URL-derived extensions.
+- **Implementation**:
+  - Stream remote image responses with a content-length and chunked-body cap, while re-validating
+    every redirect target before connecting.
+  - Route inline-symbol localization through the hardened downloader and persist only validated
+    images with canonical extensions.
+- **Testing**: Existing import, SSRF, and health coverage passes (25 tests in the focused run),
+  including the updated streamed-response import fixture.

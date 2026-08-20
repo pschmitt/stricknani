@@ -6,6 +6,7 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from PIL import Image
 
@@ -104,7 +105,7 @@ async def test_import_url_extracts_steps_and_images(
     </html>
     """
 
-    async def _mock_get(url: str, **kwargs: Any) -> MagicMock:
+    def _mock_response(url: str) -> MagicMock:
         # Create a unique valid JPEG for each URL based on its hash
         import hashlib
 
@@ -124,6 +125,25 @@ async def test_import_url_extracts_steps_and_images(
         }
         return mock_resp
 
+    class _StreamResponse:
+        def __init__(self, response: MagicMock) -> None:
+            self._response = response
+
+        async def __aenter__(self) -> MagicMock:
+            self._response.request = httpx.Request("GET", "https://example.com")
+
+            async def _aiter_bytes(chunk_size: int) -> Any:
+                yield self._response.content
+
+            self._response.aiter_bytes = _aiter_bytes
+            return self._response
+
+        async def __aexit__(self, *args: Any) -> bool:
+            return False
+
+    def _mock_stream(method: str, url: str, **kwargs: Any) -> _StreamResponse:
+        return _StreamResponse(_mock_response(url))
+
     async def _mock_page(*args: Any, **kwargs: Any) -> MagicMock:
         # The page fetch goes through curl_cffi (fetch_url); image downloads
         # still go through httpx (_mock_get above).
@@ -134,7 +154,7 @@ async def test_import_url_extracts_steps_and_images(
 
     with (
         patch("stricknani.importing.fetch.fetch_url", side_effect=_mock_page),
-        patch("httpx.AsyncClient.get", side_effect=_mock_get),
+        patch("httpx.AsyncClient.stream", side_effect=_mock_stream),
     ):
         response = await client.post(
             "/projects/import",

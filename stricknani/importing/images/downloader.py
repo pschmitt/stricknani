@@ -194,6 +194,8 @@ class ImageDownloader:
         self,
         client: httpx.AsyncClient,
         url: str,
+        *,
+        max_bytes: int,
     ) -> httpx.Response:
         """GET ``url`` following redirects manually with an SSRF check per hop.
 
@@ -209,12 +211,41 @@ class ImageDownloader:
         current_url = url
         for _ in range(_MAX_REDIRECTS + 1):
             validate_public_url(current_url)
-            response = await client.get(current_url)
-            location = response.headers.get("location")
-            if response.status_code in _REDIRECT_STATUSES and location:
-                current_url = urljoin(current_url, location)
-                continue
-            return response
+            async with client.stream("GET", current_url) as response:
+                location = response.headers.get("location")
+                if response.status_code in _REDIRECT_STATUSES and location:
+                    current_url = urljoin(current_url, location)
+                    continue
+
+                content_length = response.headers.get("content-length")
+                if content_length:
+                    try:
+                        if int(content_length) > max_bytes:
+                            raise httpx.HTTPError(
+                                f"Response exceeds the {max_bytes} byte limit"
+                            )
+                    except ValueError:
+                        pass
+
+                chunks: list[bytes] = []
+                total = 0
+                async for chunk in response.aiter_bytes(64 * 1024):
+                    total += len(chunk)
+                    if total > max_bytes:
+                        raise httpx.HTTPError(
+                            f"Response exceeds the {max_bytes} byte limit"
+                        )
+                    chunks.append(chunk)
+
+                # The streamed response is closed by the context manager, so
+                # return a regular in-memory response containing only the
+                # bounded payload needed by the image validator.
+                return httpx.Response(
+                    response.status_code,
+                    headers=response.headers,
+                    content=b"".join(chunks),
+                    request=response.request,
+                )
         raise httpx.HTTPError(f"Too many redirects for {url}")
 
     async def _download_single(
@@ -233,7 +264,9 @@ class ImageDownloader:
         """
         # Download (SSRF guard + manual redirect handling in _fetch_with_guard).
         try:
-            response = await self._fetch_with_guard(client, url)
+            response = await self._fetch_with_guard(
+                client, url, max_bytes=self.max_bytes
+            )
             response.raise_for_status()
         except httpx.HTTPError as exc:
             logger.debug("HTTP error for %s: %s", url, exc)

@@ -1,7 +1,9 @@
 import json
 from io import BytesIO
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any
+from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 from httpx import AsyncClient
 from PIL import Image as PILImage
@@ -303,12 +305,28 @@ async def test_create_project_imports_images(
         response.raise_for_status = MagicMock()
         return response
 
-    with patch(
-        "httpx.AsyncClient.get",
-        new=AsyncMock(
-            side_effect=[_mock_response(image_one), _mock_response(image_two)]
-        ),
-    ):
+    class _StreamResponse:
+        def __init__(self, response: MagicMock) -> None:
+            self._response = response
+
+        async def __aenter__(self) -> MagicMock:
+            self._response.request = httpx.Request("GET", "https://example.com")
+
+            async def _aiter_bytes(chunk_size: int) -> Any:
+                yield self._response.content
+
+            self._response.aiter_bytes = _aiter_bytes
+            return self._response
+
+        async def __aexit__(self, *args: Any) -> bool:
+            return False
+
+    responses = iter([_mock_response(image_one), _mock_response(image_two)])
+
+    def _mock_stream(method: str, url: str, **kwargs: Any) -> _StreamResponse:
+        return _StreamResponse(next(responses))
+
+    with patch("httpx.AsyncClient.stream", side_effect=_mock_stream):
         response = await client.post(
             "/projects/",
             data={
