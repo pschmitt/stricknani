@@ -1835,27 +1835,40 @@ svg {
 	width: 2rem;
 	align-items: center;
 	justify-content: center;
-	border-radius: var(--md-sys-shape-small);
-	transition:
-		transform var(--md-motion-short),
-		filter var(--md-motion-short),
-		background-color var(--md-motion-short);
+	border-radius: 999px;
+	transition: box-shadow var(--md-motion-short);
 }
 .md3-app-logo__image {
 	display: block;
 	height: 2rem;
 	width: 2rem;
-	transition: transform var(--md-motion-short);
+	transform-origin: 50% 90%;
 }
 .md3-app-logo__link:hover,
 .md3-app-logo__link:focus-visible {
-	background: var(--md-sys-color-primary-container);
-	filter: saturate(1.12);
-	transform: rotate(-6deg) scale(1.08);
+	box-shadow: 0 3px 10px
+		color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
 }
 .md3-app-logo__link:hover .md3-app-logo__image,
 .md3-app-logo__link:focus-visible .md3-app-logo__image {
-	transform: rotate(12deg) scale(1.04);
+	animation: md3-logo-boing 650ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes md3-logo-boing {
+	0% {
+		transform: scale(1) rotate(0deg);
+	}
+	30% {
+		transform: scale(1.18, 0.85) rotate(-10deg);
+	}
+	55% {
+		transform: scale(0.92, 1.1) rotate(8deg);
+	}
+	75% {
+		transform: scale(1.06, 0.97) rotate(-4deg);
+	}
+	100% {
+		transform: scale(1) rotate(0deg);
+	}
 }
 .md3-navbar__title-menu {
 	min-width: 0;
@@ -4005,6 +4018,7 @@ svg {
 	.md3-app-logo__link:focus-visible,
 	.md3-app-logo__link:hover .md3-app-logo__image,
 	.md3-app-logo__link:focus-visible .md3-app-logo__image {
+		animation: none;
 		filter: none;
 		transform: none;
 	}

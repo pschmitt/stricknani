@@ -35,6 +35,7 @@ Execution-oriented backlog for Stricknani.
 | T101 | P2 | done | web/ux | feat | Use real Material 3 cards (not plain list rows) consistently on both project/yarn list pages and their detail/view pages |
 | T102 | P1 | done | web/ux | bug | Fix misplaced badges/icons caused by negative-offset utility classes missing from the static CSS bundle (admin shield badge, yarn-search icon, sidebar restore tab, vertical-centering transforms) |
 | T103 | P1 | done | web/ux | bug | Fix project/yarn detail pages: sections couldn't actually be collapsed, and drop the two-column sidebar layout in favor of a single content column |
+| T104 | P3 | done | web/ux | refactor | Replace the app logo's hover animation (flat blue circle + slight grow) with a cuter squash-and-stretch "boing" wobble fitting the yarn-ball mascot |
 
 ## Next
 
@@ -1462,3 +1463,28 @@ Execution-oriented backlog for Stricknani.
   `tests/test_printing.py` (updated the stale `.collapse` selector assertions to
   `.md3-disclosure`). Full non-e2e suite: 292 passed, 1 skipped. `just lint-css`,
   `just lint-template-js`, `just lint-template-js-format`, `just i18n-check` all pass.
+
+### T104: Give the app logo a cuter hover animation
+
+- **Area**: web/ux
+- **Priority**: P3
+- **Status**: done
+- **Category**: refactor
+- **Description**:
+  - User felt the existing logo hover animation (a flat `primary-container` circle fill behind the
+    icon, plus a small rotate+scale on both the link and the image) looked "weird" and asked for
+    something cuter, fitting the yarn-ball-with-a-face mascot.
+- **Implementation** (`stricknani/static/css/material.css`, `.md3-app-logo__link`/`__image`):
+  - Replaced the flat circular background fill with a soft drop shadow (`box-shadow`) so hovering
+    feels like the logo lifts slightly rather than sitting on a hard colored disc.
+  - Replaced the static rotate+scale transform with a `@keyframes md3-logo-boing` squash-and-stretch
+    wobble (non-uniform scale + alternating rotation, `cubic-bezier(0.34, 1.56, 0.64, 1)` for a
+    bouncy overshoot), played once on hover/focus — reads as the yarn ball bouncing rather than a
+    generic UI hover state.
+  - Extended the existing `prefers-reduced-motion: reduce` block to also null out the new
+    `animation`, matching the existing transform/filter overrides there.
+- **Testing**: Verified with Playwright (frame-by-frame screenshots through the ~650ms animation,
+  light + dark) that the squash/stretch/rotate plays and settles cleanly; confirmed
+  `getComputedStyle(...).animationName === "none"` under `reduced_motion: reduce` while hovered.
+  `just lint-css` (same 2 pre-existing unrelated warnings, none new), `pytest tests/test_health.py`
+  passes.
