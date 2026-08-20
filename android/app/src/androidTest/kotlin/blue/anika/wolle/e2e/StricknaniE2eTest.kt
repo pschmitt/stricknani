@@ -283,7 +283,11 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
             composeRule.onNodeWithTag("e2e-yarn-editor-name").performTextReplacement(name)
             selectFixturePhoto(photoName)
             composeRule.onNodeWithContentDescription("Save").performClick()
-            waitForText(name)
+            runCatching { waitForText(name) }
+                .onFailure {
+                    composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
+                    throw it
+                }
 
             composeRule.onNodeWithText("Home").performClick()
             waitForText("Changes pending")
