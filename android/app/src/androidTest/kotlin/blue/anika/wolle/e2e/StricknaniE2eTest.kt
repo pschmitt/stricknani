@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.os.Build
 import android.os.SystemClock
 import android.provider.MediaStore
+import android.util.Log
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText as hasTextMatcher
@@ -15,7 +16,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
@@ -26,9 +26,11 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import blue.anika.wolle.MainActivity
 import blue.anika.wolle.ui.common.DESTRUCTIVE_DELETE_DIALOG_TAG
+import java.io.ByteArrayOutputStream
 import java.io.Closeable
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.regex.Pattern
 import org.json.JSONObject
 import org.junit.Rule
 import org.junit.Test
@@ -349,9 +351,26 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
             .performScrollToNode(hasTextMatcher("Add yarn photos"))
         composeRule.onNodeWithText("Add yarn photos").performClick()
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        checkNotNull(device.wait(Until.findObject(By.text(fileName)), PICKER_TIMEOUT_MILLIS)) {
-            "Fixture photo $fileName did not appear in the system picker"
-        }.click()
+        // The modern Android Photo Picker (API 33+) renders a thumbnail grid rather than visible
+        // filenames, so a text match on `fileName` never hits. The freshly-inserted fixture image
+        // is the only (or most recent) item, so fall back to its thumbnail resource id. Log the
+        // window hierarchy either way so a failure here is diagnosable from the captured logcat
+        // instead of guessing again.
+        device.waitForIdle()
+        val hierarchy =
+            ByteArrayOutputStream().use { stream ->
+                device.dumpWindowHierarchy(stream)
+                stream.toString("UTF-8")
+            }
+        Log.i(E2E_LOG_TAG, "Photo picker hierarchy before selecting $fileName:\n$hierarchy")
+        val target =
+            device.wait(Until.findObject(By.text(fileName)), TEXT_MATCH_TIMEOUT_MILLIS)
+                ?: device.wait(
+                    Until.findObject(By.res(Pattern.compile(".*:id/icon_thumbnail$"))),
+                    PICKER_TIMEOUT_MILLIS,
+                )
+        checkNotNull(target) { "Fixture photo $fileName did not appear in the system picker" }
+            .click()
         waitForText(fileName)
     }
 
@@ -465,7 +484,9 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
     }
 
     private companion object {
+        const val E2E_LOG_TAG = "StricknaniE2E"
         const val PICKER_TIMEOUT_MILLIS = 15_000L
+        const val TEXT_MATCH_TIMEOUT_MILLIS = 3_000L
         const val FIXTURE_TIMEOUT_MILLIS = 120_000L
         const val FIXTURE_POLL_INTERVAL_MILLIS = 500L
         const val FIXTURE_CONNECT_TIMEOUT_MILLIS = 5_000
