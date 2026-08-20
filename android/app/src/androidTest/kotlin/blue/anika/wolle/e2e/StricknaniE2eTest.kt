@@ -308,9 +308,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         // openYarns() leaves the list scrolled to its "Riverbend Merino DK" load marker, which
         // can push this freshly-created row (sorted first by updatedAt) out of the composed
         // viewport - scroll back to it explicitly rather than assuming it is still on screen.
-        composeRule
-            .onNodeWithTag("e2e-yarns-list")
-            .performScrollToNode(hasTextMatcher(currentName))
+        scrollYarnsListToText(currentName, timeoutMillis = 30_000)
         composeRule.onNodeWithText(currentName).performClick()
         waitForText("More actions")
         composeRule.onNodeWithContentDescription("More actions").performClick()
@@ -360,9 +358,11 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
     private fun openYarns() {
         composeRule.onNodeWithText("Yarns").performClick()
         waitForText("Search yarns")
-        composeRule
-            .onNodeWithTag("e2e-yarns-list")
-            .performScrollToNode(hasTextMatcher("Riverbend Merino DK"))
+        // A freshly (re)created Yarns screen kicks off its own server sync; a fresh CI run showed
+        // the list transiently rendering as few as 2 (non-scrollable) rows while that sync
+        // replaces local data, even after the create/edit under test was already confirmed
+        // server-side via the fixture API. Retry rather than a one-shot scroll attempt.
+        scrollYarnsListToText("Riverbend Merino DK", timeoutMillis = 120_000)
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
     }
 
@@ -448,21 +448,24 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         error("Foreground package did not change away from $from within ${timeoutMillis}ms")
     }
 
-    private fun waitForYarnRow(name: String, timeoutMillis: Long = 30_000) {
+    private fun waitForYarnRow(name: String, timeoutMillis: Long = 30_000) =
+        scrollYarnsListToText(name, timeoutMillis)
+
+    private fun scrollYarnsListToText(text: String, timeoutMillis: Long) {
         val deadline = SystemClock.elapsedRealtime() + timeoutMillis
         while (SystemClock.elapsedRealtime() < deadline) {
             val found =
                 runCatching {
                         composeRule
                             .onNodeWithTag("e2e-yarns-list")
-                            .performScrollToNode(hasTextMatcher(name))
+                            .performScrollToNode(hasTextMatcher(text))
                         true
                     }
                     .getOrDefault(false)
             if (found) return
             Thread.sleep(FIXTURE_POLL_INTERVAL_MILLIS)
         }
-        error("\"$name\" did not appear in the yarns list within ${timeoutMillis}ms")
+        error("\"$text\" did not appear in the yarns list within ${timeoutMillis}ms")
     }
 
     private fun logWindowHierarchy(label: String) {
