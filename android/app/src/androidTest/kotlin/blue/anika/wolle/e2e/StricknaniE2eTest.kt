@@ -316,7 +316,11 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         waitForText("Edit yarn")
         composeRule.onNodeWithTag("e2e-yarn-editor-name").performTextReplacement(updatedName)
         composeRule.onNodeWithContentDescription("Save").performClick()
-        waitForText(updatedName)
+        runCatching { waitForText(updatedName) }
+            .onFailure {
+                composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
+                throw it
+            }
     }
 
     private fun deleteYarn() {
@@ -333,7 +337,33 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         waitForText("New project")
         composeRule.onNodeWithTag("e2e-project-editor-name").performTextReplacement(name)
         composeRule.onNodeWithContentDescription("Save").performClick()
+        // Same class of issue fixed for the yarns list: the Projects list underneath the pushed
+        // editor is never disposed, so it stays scrolled to openProjects()'s "Heirloom Baby
+        // Blanket" load marker rather than resetting to top - scroll back to the new row (sorted
+        // first by updatedAt) with retries instead of a bare waitForText.
+        runCatching { scrollProjectsListToText(name, timeoutMillis = 30_000) }
+            .onFailure {
+                composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
+                throw it
+            }
         waitForText(name)
+    }
+
+    private fun scrollProjectsListToText(text: String, timeoutMillis: Long) {
+        val deadline = SystemClock.elapsedRealtime() + timeoutMillis
+        while (SystemClock.elapsedRealtime() < deadline) {
+            val found =
+                runCatching {
+                        composeRule
+                            .onNodeWithTag("e2e-projects-list")
+                            .performScrollToNode(hasTextMatcher(text))
+                        true
+                    }
+                    .getOrDefault(false)
+            if (found) return
+            Thread.sleep(FIXTURE_POLL_INTERVAL_MILLIS)
+        }
+        error("\"$text\" did not appear in the projects list within ${timeoutMillis}ms")
     }
 
     private fun editProject(currentName: String, updatedName: String) {
@@ -344,7 +374,11 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         waitForText("Edit project")
         composeRule.onNodeWithTag("e2e-project-editor-name").performTextReplacement(updatedName)
         composeRule.onNodeWithContentDescription("Save").performClick()
-        waitForText(updatedName)
+        runCatching { waitForText(updatedName) }
+            .onFailure {
+                composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
+                throw it
+            }
     }
 
     private fun deleteProject() {
