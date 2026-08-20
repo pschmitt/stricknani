@@ -283,7 +283,14 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
             composeRule.onNodeWithTag("e2e-yarn-editor-name").performTextReplacement(name)
             selectFixturePhoto(photoName)
             composeRule.onNodeWithContentDescription("Save").performClick()
-            runCatching { waitForText(name) }
+            // Unlike the create-then-navigateUp() flows used elsewhere in this test, the Yarns
+            // list screen underneath the editor is never disposed here, so it keeps whatever
+            // scroll position openYarns() left it at (near "Riverbend Merino DK") rather than
+            // resetting to top. Confirmed via a live CI run's printed tree: the create succeeded,
+            // but the new row (sorted first by updatedAt) was simply off-screen above the
+            // viewport. Retry scrolling to it rather than a one-shot attempt, since the local
+            // insert lands asynchronously on the ViewModel's coroutine.
+            runCatching { waitForYarnRow(name) }
                 .onFailure {
                     composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
                     throw it
@@ -439,6 +446,23 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
             Thread.sleep(FIXTURE_POLL_INTERVAL_MILLIS)
         }
         error("Foreground package did not change away from $from within ${timeoutMillis}ms")
+    }
+
+    private fun waitForYarnRow(name: String, timeoutMillis: Long = 30_000) {
+        val deadline = SystemClock.elapsedRealtime() + timeoutMillis
+        while (SystemClock.elapsedRealtime() < deadline) {
+            val found =
+                runCatching {
+                        composeRule
+                            .onNodeWithTag("e2e-yarns-list")
+                            .performScrollToNode(hasTextMatcher(name))
+                        true
+                    }
+                    .getOrDefault(false)
+            if (found) return
+            Thread.sleep(FIXTURE_POLL_INTERVAL_MILLIS)
+        }
+        error("\"$name\" did not appear in the yarns list within ${timeoutMillis}ms")
     }
 
     private fun logWindowHierarchy(label: String) {
