@@ -392,6 +392,13 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
             .click()
         waitForForegroundPackageChange(from = pickerPackage, timeoutMillis = PICKER_TIMEOUT_MILLIS)
         logWindowHierarchy("app, after selecting $fileName")
+        // Returning from the external picker Activity does not preserve the form's LazyColumn
+        // scroll position (confirmed via a live CI run: the app resumed scrolled to the
+        // description/notes fields, with the photos section - and the newly-picked filename -
+        // below the fold again). Scroll back to it before asserting the pick landed.
+        composeRule
+            .onNodeWithTag("e2e-yarn-editor-form")
+            .performScrollToNode(hasTextMatcher("Add yarn photos"))
         waitForText(fileName)
     }
 
