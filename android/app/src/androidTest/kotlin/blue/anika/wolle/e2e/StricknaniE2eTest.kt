@@ -15,10 +15,12 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.printToLog
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -399,7 +401,15 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         composeRule
             .onNodeWithTag("e2e-yarn-editor-form")
             .performScrollToNode(hasTextMatcher("Add yarn photos"))
-        waitForText(fileName)
+        // The copy from the picker's content URI into local storage happens asynchronously
+        // (PendingUploadStore.copy, on the IO dispatcher) - if it silently failed or never fired,
+        // printing the semantics tree on failure shows exactly what the photos section actually
+        // rendered instead of another opaque timeout.
+        runCatching { waitForText(fileName) }
+            .onFailure {
+                composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
+                throw it
+            }
     }
 
     private fun waitForForegroundPackageChange(from: String, timeoutMillis: Long): String {
