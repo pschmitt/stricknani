@@ -366,7 +366,8 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         // the picker's own package to actually become foreground before doing anything - our own
         // Activity is still frontmost for a moment after the click - then log its hierarchy either
         // way so a failure here is diagnosable from the captured logcat instead of guessing again.
-        waitForForegroundPackageChange(from = appPackage, timeoutMillis = PICKER_TIMEOUT_MILLIS)
+        val pickerPackage =
+            waitForForegroundPackageChange(from = appPackage, timeoutMillis = PICKER_TIMEOUT_MILLIS)
         logWindowHierarchy("picker, before selecting $fileName")
         val target =
             device.wait(Until.findObject(By.text(fileName)), TEXT_MATCH_TIMEOUT_MILLIS)
@@ -376,7 +377,20 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
                 )
         checkNotNull(target) { "Fixture photo $fileName did not appear in the system picker" }
             .click()
-        waitForForegroundPackageChange(from = target.applicationPackage, timeoutMillis = PICKER_TIMEOUT_MILLIS)
+        // This is a multi-select picker (the app launches GetMultipleContents()): tapping a
+        // thumbnail only toggles its selection state and reveals a confirm button - it does not
+        // by itself return to the app. Log the post-tap hierarchy either way, so if the confirm
+        // button's real id/text differs from this guess, the next failure is diagnosable instead
+        // of another blind guess.
+        logWindowHierarchy("picker, after tapping thumbnail for $fileName")
+        val confirm =
+            device.wait(
+                Until.findObject(By.res(Pattern.compile(".*:id/button_add$"))),
+                TEXT_MATCH_TIMEOUT_MILLIS,
+            ) ?: device.wait(Until.findObject(By.textStartsWith("Add")), PICKER_TIMEOUT_MILLIS)
+        checkNotNull(confirm) { "No confirm/add button appeared after selecting $fileName" }
+            .click()
+        waitForForegroundPackageChange(from = pickerPackage, timeoutMillis = PICKER_TIMEOUT_MILLIS)
         logWindowHierarchy("app, after selecting $fileName")
         waitForText(fileName)
     }
