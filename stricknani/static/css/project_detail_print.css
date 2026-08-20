@@ -37,40 +37,30 @@
 		margin: 0 !important;
 	}
 
-	/* Main layout linearization */
+	/* Main layout linearization (single column already, but drop any gap). */
 	#project-grid {
 		display: block !important;
 	}
 
-	.col-span-2,
-	.lg\:col-span-3,
-	.lg\:col-span-2 {
-		width: 100% !important;
-	}
-
-	/* Force mobile details view, hide sidebar */
-	.lg\:hidden {
-		display: block !important;
-	}
-
-	.hidden.lg\:block {
-		display: none !important;
-	}
-
-	/* Expand collapses and remove decorative chrome */
-	.collapse {
+	/* Expand disclosures and remove decorative chrome */
+	.md3-disclosure {
 		display: block !important;
 		border: none !important;
 		box-shadow: none !important;
 		background: transparent !important;
 	}
 
-	.collapse-title {
+	.md3-disclosure__title {
 		padding: 0.5rem 0 !important;
 		min-height: 0 !important;
 	}
 
-	.collapse-content {
+	/*
+	Force collapsed sections to print expanded, regardless of the checkbox
+	state the user left them in on screen.
+	*/
+	.md3-disclosure > input:not(:checked) ~ .md3-disclosure__content,
+	.md3-disclosure > input:checked ~ .md3-disclosure__content {
 		display: block !important;
 		visibility: visible !important;
 		opacity: 1 !important;
@@ -80,26 +70,12 @@
 		padding: 0.25rem 0 0.75rem 0 !important;
 	}
 
-	/*
-	Force collapsed DaisyUI sections to print expanded.
-	DaisyUI typically hides content via sibling selectors on the checkbox.
-	*/
-	.collapse > input:not(:checked) ~ .collapse-content,
-	.collapse > input:checked ~ .collapse-content {
-		display: block !important;
-		visibility: visible !important;
-		opacity: 1 !important;
-		height: auto !important;
-		max-height: none !important;
-		overflow: visible !important;
-	}
-
-	.collapse-arrow > .collapse-title::after {
+	.md3-disclosure__title::after {
 		display: none !important;
 	}
 
 	/* Make project details much more compact in print. */
-	.project-details-card .collapse-content {
+	.project-details-card .md3-disclosure__content {
 		padding: 0 !important;
 	}
 
