@@ -282,6 +282,12 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
 
     private fun editYarn(currentName: String, updatedName: String) {
         openYarns()
+        // openYarns() leaves the list scrolled to its "Riverbend Merino DK" load marker, which
+        // can push this freshly-created row (sorted first by updatedAt) out of the composed
+        // viewport - scroll back to it explicitly rather than assuming it is still on screen.
+        composeRule
+            .onNodeWithTag("e2e-yarns-list")
+            .performScrollToNode(hasTextMatcher(currentName))
         composeRule.onNodeWithText(currentName).performClick()
         waitForText("More actions")
         composeRule.onNodeWithContentDescription("More actions").performClick()
@@ -338,7 +344,10 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
     }
 
     private fun selectFixturePhoto(fileName: String) {
-        composeRule.onNodeWithText("Add yarn photos").performScrollTo().performClick()
+        composeRule
+            .onNodeWithTag("e2e-yarn-editor-form")
+            .performScrollToNode(hasTextMatcher("Add yarn photos"))
+        composeRule.onNodeWithText("Add yarn photos").performClick()
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         checkNotNull(device.wait(Until.findObject(By.text(fileName)), PICKER_TIMEOUT_MILLIS)) {
             "Fixture photo $fileName did not appear in the system picker"
