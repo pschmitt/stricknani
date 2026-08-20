@@ -36,6 +36,7 @@ Execution-oriented backlog for Stricknani.
 | T102 | P1 | done | web/ux | bug | Fix misplaced badges/icons caused by negative-offset utility classes missing from the static CSS bundle (admin shield badge, yarn-search icon, sidebar restore tab, vertical-centering transforms) |
 | T103 | P1 | done | web/ux | bug | Fix project/yarn detail pages: sections couldn't actually be collapsed, and drop the two-column sidebar layout in favor of a single content column |
 | T104 | P3 | done | web/ux | refactor | Replace the app logo's hover animation (flat blue circle + slight grow) with a cuter squash-and-stretch "boing" wobble fitting the yarn-ball mascot |
+| T105 | P1 | done | deploy | bug | Fix stricknani.service ending up on the pre-deploy build after `nixos-rebuild switch`: monit's healthcheck raced its own `systemctl restart` against the deploy's restart of the same unit |
 
 ## Next
 
@@ -1488,3 +1489,36 @@ Execution-oriented backlog for Stricknani.
   `getComputedStyle(...).animationName === "none"` under `reduced_motion: reduce` while hovered.
   `just lint-css` (same 2 pre-existing unrelated warnings, none new), `pytest tests/test_health.py`
   passes.
+
+### T105: Fix the deploy race that left stricknani.service on the pre-deploy build
+
+- **Area**: deploy
+- **Priority**: P1
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - Twice after `just deploy rofl-10` (from the sibling `nixos-config` repo) reported successfully
+    restarting `stricknani.service` with the new build, the live site kept serving the *previous*
+    build: `systemctl show stricknani.service -p ExecStart` showed the new nix store path, but the
+    actual running process (checked via `/proc/<MainPID>/cmdline`) was still executing the old one.
+  - First response was to add a generic "verify the running binary matches ExecStart, restart if
+    stale" script to the `nixos-config` repo's deploy tooling — wrong layer: rejected by the user
+    ("there's no reason to alter the nix config for this issue. it's all in stricknani! fix the
+    stricknani nix module.") and reverted before committing/pushing anything to that repo.
+- **Root cause** (confirmed via `journalctl -u monit` on rofl-10 at the exact deploy timestamp):
+  `nix/module.nix`'s own `services.monit.config` check hits `https://<host>/healthz` and runs
+  `systemctl restart stricknani` whenever it fails. Stricknani's startup takes ~15-25s (scikit-image
+  /pymupdf/weasyprint imports), and monit polls every 60s (`set daemon 60`, host-level). During a
+  deploy, `nixos-rebuild switch` stops the old process and starts the new one; if monit's periodic
+  poll lands in that ~20s startup gap, it sees a 502 and fires its own independent
+  `systemctl restart stricknani` — racing switch-to-configuration's own restart of the exact same
+  unit. That double-restart race is what left the process bound to the pre-switch build.
+- **Implementation** (`nix/module.nix`, `services.monit.config`): added `for 2 cycles` to monit's
+  `if failed ... then restart` check, so a single failed healthcheck cycle (the normal, expected
+  startup window after any deploy) no longer triggers monit's own restart — only a genuinely
+  sustained (~2 minute) outage does. Verified the exact syntax with `monit -t -c <test file>`
+  ("Control file syntax OK") since Monit's config isn't Nix and nothing else in this repo checks it.
+- **Testing**: `nix develop -c nixfmt --check nix/module.nix` and `nix develop -c statix check
+  nix/module.nix` both pass; `pytest tests/test_health.py` passes (no test references this file).
+  Full end-to-end confirmation (a deploy that doesn't race) happens on the next `just deploy
+  rofl-10`.
