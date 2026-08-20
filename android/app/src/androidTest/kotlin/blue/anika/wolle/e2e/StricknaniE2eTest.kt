@@ -356,20 +356,18 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         composeRule
             .onNodeWithTag("e2e-yarn-editor-form")
             .performScrollToNode(hasTextMatcher("Add yarn photos"))
-        composeRule.onNodeWithText("Add yarn photos").performClick()
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val appPackage =
+            InstrumentationRegistry.getInstrumentation().targetContext.packageName
+        composeRule.onNodeWithText("Add yarn photos").performClick()
         // The modern Android Photo Picker (API 33+) renders a thumbnail grid rather than visible
         // filenames, so a text match on `fileName` never hits. The freshly-inserted fixture image
-        // is the only (or most recent) item, so fall back to its thumbnail resource id. Log the
-        // window hierarchy either way so a failure here is diagnosable from the captured logcat
-        // instead of guessing again.
-        device.waitForIdle()
-        val hierarchy =
-            ByteArrayOutputStream().use { stream ->
-                device.dumpWindowHierarchy(stream)
-                stream.toString("UTF-8")
-            }
-        Log.i(E2E_LOG_TAG, "Photo picker hierarchy before selecting $fileName:\n$hierarchy")
+        // is the only (or most recent) item, so fall back to its thumbnail resource id. Wait for
+        // the picker's own package to actually become foreground before doing anything - our own
+        // Activity is still frontmost for a moment after the click - then log its hierarchy either
+        // way so a failure here is diagnosable from the captured logcat instead of guessing again.
+        waitForForegroundPackageChange(from = appPackage, timeoutMillis = PICKER_TIMEOUT_MILLIS)
+        logWindowHierarchy("picker, before selecting $fileName")
         val target =
             device.wait(Until.findObject(By.text(fileName)), TEXT_MATCH_TIMEOUT_MILLIS)
                 ?: device.wait(
@@ -378,7 +376,30 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
                 )
         checkNotNull(target) { "Fixture photo $fileName did not appear in the system picker" }
             .click()
+        waitForForegroundPackageChange(from = target.applicationPackage, timeoutMillis = PICKER_TIMEOUT_MILLIS)
+        logWindowHierarchy("app, after selecting $fileName")
         waitForText(fileName)
+    }
+
+    private fun waitForForegroundPackageChange(from: String, timeoutMillis: Long): String {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val deadline = SystemClock.elapsedRealtime() + timeoutMillis
+        while (SystemClock.elapsedRealtime() < deadline) {
+            val current = device.currentPackageName
+            if (current != null && current != from) return current
+            Thread.sleep(FIXTURE_POLL_INTERVAL_MILLIS)
+        }
+        error("Foreground package did not change away from $from within ${timeoutMillis}ms")
+    }
+
+    private fun logWindowHierarchy(label: String) {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val hierarchy =
+            ByteArrayOutputStream().use { stream ->
+                device.dumpWindowHierarchy(stream)
+                stream.toString("UTF-8")
+            }
+        Log.i(E2E_LOG_TAG, "Window hierarchy ($label):\n$hierarchy")
     }
 
     private fun createFixturePhoto(fileName: String): FixturePhoto {
