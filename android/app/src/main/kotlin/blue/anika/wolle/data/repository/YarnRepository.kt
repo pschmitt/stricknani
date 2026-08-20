@@ -94,9 +94,10 @@ constructor(
             .filterNot { it.id in pendingUpdatedIds }
             .takeIf { it.isNotEmpty() }
             ?.let { yarnDao.upsertAll(it.map { yarn -> yarn.toEntity(json) }) }
-        response.deletedIds.filterNot { it in pendingDeletedIds }.takeIf { it.isNotEmpty() }?.let {
-            yarnDao.deleteByIds(it)
-        }
+        response.deletedIds
+            .filterNot { it in pendingDeletedIds }
+            .takeIf { it.isNotEmpty() }
+            ?.let { yarnDao.deleteByIds(it) }
         syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, response.serverTime))
         return response.updated.isNotEmpty() || response.deletedIds.isNotEmpty()
     }
@@ -322,12 +323,10 @@ internal fun YarnWriteRequest.coalesceExpectedUpdatedAt(
 ): YarnWriteRequest =
     copy(
         expectedUpdatedAt =
-            previousPayloadJson
-                ?.let { payload ->
-                    runCatching {
-                            json.decodeFromString<YarnWriteRequest>(payload).expectedUpdatedAt
-                        }
-                        .getOrNull()
+            previousPayloadJson?.let { payload ->
+                runCatching {
+                    json.decodeFromString<YarnWriteRequest>(payload).expectedUpdatedAt
                 }
-                ?: expectedUpdatedAt
+                    .getOrNull()
+            } ?: expectedUpdatedAt
     )

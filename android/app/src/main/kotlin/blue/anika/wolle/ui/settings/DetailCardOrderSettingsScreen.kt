@@ -153,11 +153,15 @@ private fun detailCardLabel(domain: DetailCardDomain, id: String): String =
     when (domain) {
         DetailCardDomain.PROJECT ->
             when (id) {
-                ProjectDetailCard.ATTACHMENTS -> stringResource(R.string.project_detail_attachments_title)
+                ProjectDetailCard.ATTACHMENTS ->
+                    stringResource(R.string.project_detail_attachments_title)
                 ProjectDetailCard.DETAILS -> stringResource(R.string.project_detail_details_title)
-                ProjectDetailCard.STITCH_SAMPLE -> stringResource(R.string.common_field_stitch_sample)
-                ProjectDetailCard.LINKED_YARNS -> stringResource(R.string.project_detail_linked_yarns_title)
-                ProjectDetailCard.DESCRIPTION -> stringResource(R.string.project_detail_description_title)
+                ProjectDetailCard.STITCH_SAMPLE ->
+                    stringResource(R.string.common_field_stitch_sample)
+                ProjectDetailCard.LINKED_YARNS ->
+                    stringResource(R.string.project_detail_linked_yarns_title)
+                ProjectDetailCard.DESCRIPTION ->
+                    stringResource(R.string.project_detail_description_title)
                 ProjectDetailCard.STEPS -> stringResource(R.string.project_detail_steps_title)
                 ProjectDetailCard.NOTES -> stringResource(R.string.project_detail_notes_title)
                 else -> id
@@ -165,7 +169,8 @@ private fun detailCardLabel(domain: DetailCardDomain, id: String): String =
         DetailCardDomain.YARN ->
             when (id) {
                 YarnDetailCard.DETAILS -> stringResource(R.string.yarn_detail_details_title)
-                YarnDetailCard.DESCRIPTION -> stringResource(R.string.project_detail_description_title)
+                YarnDetailCard.DESCRIPTION ->
+                    stringResource(R.string.project_detail_description_title)
                 YarnDetailCard.USED_IN -> stringResource(R.string.yarn_detail_used_in_title)
                 YarnDetailCard.NOTES -> stringResource(R.string.project_detail_notes_title)
                 else -> id

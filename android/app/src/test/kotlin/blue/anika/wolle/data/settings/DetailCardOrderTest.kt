@@ -8,12 +8,23 @@ class DetailCardOrderTest {
     @Test
     fun `missing and unknown saved cards are sanitized in default order`() {
         assertEquals(
-            listOf(ProjectDetailCard.NOTES, ProjectDetailCard.ATTACHMENTS, ProjectDetailCard.DETAILS,
-                ProjectDetailCard.STITCH_SAMPLE, ProjectDetailCard.LINKED_YARNS,
-                ProjectDetailCard.DESCRIPTION, ProjectDetailCard.STEPS),
+            listOf(
+                ProjectDetailCard.NOTES,
+                ProjectDetailCard.ATTACHMENTS,
+                ProjectDetailCard.DETAILS,
+                ProjectDetailCard.STITCH_SAMPLE,
+                ProjectDetailCard.LINKED_YARNS,
+                ProjectDetailCard.DESCRIPTION,
+                ProjectDetailCard.STEPS,
+            ),
             DetailCardOrder.sanitize(
                 DetailCardDomain.PROJECT,
-                listOf(ProjectDetailCard.NOTES, "unknown", ProjectDetailCard.NOTES, ProjectDetailCard.ATTACHMENTS),
+                listOf(
+                    ProjectDetailCard.NOTES,
+                    "unknown",
+                    ProjectDetailCard.NOTES,
+                    ProjectDetailCard.ATTACHMENTS,
+                ),
             ),
         )
     }

@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onLongClick
@@ -36,7 +37,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import blue.anika.wolle.R
-import androidx.compose.ui.res.stringResource
 import kotlin.math.roundToInt
 
 /** State for the long-press-and-drag interaction used by both detail-page families. */
@@ -99,8 +99,9 @@ class DetailCardReorderState internal constructor() {
 }
 
 @Composable
-internal fun rememberDetailCardReorderState(): DetailCardReorderState =
-    remember { DetailCardReorderState() }
+internal fun rememberDetailCardReorderState(): DetailCardReorderState = remember {
+    DetailCardReorderState()
+}
 
 /** A Material 3 section card whose title is the drag handle for reorder mode. */
 @Composable

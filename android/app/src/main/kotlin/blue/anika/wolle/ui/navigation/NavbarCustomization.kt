@@ -25,7 +25,8 @@ object NavbarCustomization {
                     TopLevelDestination.entries
                         .find { it.name == pref.id }
                         ?.let { destination ->
-                            val visible = destination == TopLevelDestination.SETTINGS || pref.visible
+                            val visible =
+                                destination == TopLevelDestination.SETTINGS || pref.visible
                             NavbarItemPreference(pref.id, visible)
                         }
                 }

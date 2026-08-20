@@ -31,7 +31,8 @@ constructor(private val repository: DetailCardOrderRepository) : ViewModel() {
         )
 
     fun move(domain: DetailCardDomain, fromIndex: Int, toIndex: Int) {
-        val current = if (domain == DetailCardDomain.PROJECT) projectOrder.value else yarnOrder.value
+        val current =
+            if (domain == DetailCardDomain.PROJECT) projectOrder.value else yarnOrder.value
         val moved = DetailCardOrder.move(current, fromIndex, toIndex)
         if (moved != current) viewModelScope.launch { repository.setOrder(domain, moved) }
     }

@@ -110,8 +110,7 @@ fun YarnEditorScreen(
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier =
-                Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-yarn-editor-form"),
+            modifier = Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-yarn-editor-form"),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -212,7 +211,8 @@ fun YarnEditorScreen(
                                 },
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                keyboardOptions =
+                                    KeyboardOptions(keyboardType = KeyboardType.Number),
                             )
                             OutlinedTextField(
                                 value = form.lengthMeters,
@@ -226,7 +226,8 @@ fun YarnEditorScreen(
                                 },
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                keyboardOptions =
+                                    KeyboardOptions(keyboardType = KeyboardType.Number),
                             )
                         }
                     }

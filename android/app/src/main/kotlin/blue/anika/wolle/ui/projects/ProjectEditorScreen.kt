@@ -167,7 +167,9 @@ fun ProjectEditorScreen(
                                     FilterChip(
                                         selected = form.category == category.name,
                                         onClick = {
-                                            viewModel.updateForm { it.copy(category = category.name) }
+                                            viewModel.updateForm {
+                                                it.copy(category = category.name)
+                                            }
                                         },
                                         label = { Text(category.name) },
                                     )

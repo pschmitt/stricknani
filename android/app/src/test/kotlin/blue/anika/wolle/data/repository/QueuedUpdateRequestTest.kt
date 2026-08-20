@@ -64,8 +64,7 @@ class QueuedUpdateRequestTest {
         val first = ProjectWriteRequest(name = "First", expectedUpdatedAt = "server-v1")
         val second = ProjectWriteRequest(name = "Second", expectedUpdatedAt = "client-v2")
 
-        val coalesced =
-            second.coalesceExpectedUpdatedAt(json.encodeToString(first), json)
+        val coalesced = second.coalesceExpectedUpdatedAt(json.encodeToString(first), json)
 
         assertEquals("Second", coalesced.name)
         assertEquals("server-v1", coalesced.expectedUpdatedAt)

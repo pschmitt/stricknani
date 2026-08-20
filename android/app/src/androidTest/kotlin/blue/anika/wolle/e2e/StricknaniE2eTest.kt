@@ -10,9 +10,9 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -84,20 +84,20 @@ abstract class StricknaniE2eTest {
     }
 
     private fun hasTag(tag: String): Boolean =
-        // Momentarily false (rather than propagating) while returning from an external Activity
-        // (e.g. the system photo picker): our Activity has not finished resuming yet, so there is
-        // no Compose hierarchy to query. The caller's waitUntil polls again on the next frame.
-        runCatching { composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
-            .getOrDefault(false)
+    // Momentarily false (rather than propagating) while returning from an external Activity
+    // (e.g. the system photo picker): our Activity has not finished resuming yet, so there is
+    // no Compose hierarchy to query. The caller's waitUntil polls again on the next frame.
+    runCatching {
+        composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+    }.getOrDefault(false)
 
-    private fun hasText(text: String): Boolean =
-        runCatching {
-                composeRule
-                    .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
-                    .fetchSemanticsNodes()
-                    .isNotEmpty()
-            }
-            .getOrDefault(false)
+    private fun hasText(text: String): Boolean = runCatching {
+        composeRule
+            .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+    }
+        .getOrDefault(false)
 
     protected fun openProjects() {
         composeRule.onNodeWithText("Projects").performClick()
@@ -352,14 +352,13 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
     private fun scrollProjectsListToText(text: String, timeoutMillis: Long) {
         val deadline = SystemClock.elapsedRealtime() + timeoutMillis
         while (SystemClock.elapsedRealtime() < deadline) {
-            val found =
-                runCatching {
-                        composeRule
-                            .onNodeWithTag("e2e-projects-list")
-                            .performScrollToNode(hasTextMatcher(text))
-                        true
-                    }
-                    .getOrDefault(false)
+            val found = runCatching {
+                composeRule
+                    .onNodeWithTag("e2e-projects-list")
+                    .performScrollToNode(hasTextMatcher(text))
+                true
+            }
+                .getOrDefault(false)
             if (found) return
             Thread.sleep(FIXTURE_POLL_INTERVAL_MILLIS)
         }
@@ -405,8 +404,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
             .onNodeWithTag("e2e-yarn-editor-form")
             .performScrollToNode(hasTextMatcher("Add yarn photos"))
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        val appPackage =
-            InstrumentationRegistry.getInstrumentation().targetContext.packageName
+        val appPackage = InstrumentationRegistry.getInstrumentation().targetContext.packageName
         composeRule.onNodeWithText("Add yarn photos").performClick()
         // The modern Android Photo Picker (API 33+) renders a thumbnail grid rather than visible
         // filenames, so a text match on `fileName` never hits. The freshly-inserted fixture image
@@ -436,8 +434,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
                 Until.findObject(By.res(Pattern.compile(".*:id/button_add$"))),
                 TEXT_MATCH_TIMEOUT_MILLIS,
             ) ?: device.wait(Until.findObject(By.textStartsWith("Add")), PICKER_TIMEOUT_MILLIS)
-        checkNotNull(confirm) { "No confirm/add button appeared after selecting $fileName" }
-            .click()
+        checkNotNull(confirm) { "No confirm/add button appeared after selecting $fileName" }.click()
         waitForForegroundPackageChange(from = pickerPackage, timeoutMillis = PICKER_TIMEOUT_MILLIS)
         logWindowHierarchy("app, after selecting $fileName")
         // Returning from the external picker Activity does not preserve the form's LazyColumn
@@ -488,14 +485,13 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
     private fun scrollYarnsListToText(text: String, timeoutMillis: Long) {
         val deadline = SystemClock.elapsedRealtime() + timeoutMillis
         while (SystemClock.elapsedRealtime() < deadline) {
-            val found =
-                runCatching {
-                        composeRule
-                            .onNodeWithTag("e2e-yarns-list")
-                            .performScrollToNode(hasTextMatcher(text))
-                        true
-                    }
-                    .getOrDefault(false)
+            val found = runCatching {
+                composeRule
+                    .onNodeWithTag("e2e-yarns-list")
+                    .performScrollToNode(hasTextMatcher(text))
+                true
+            }
+                .getOrDefault(false)
             if (found) return
             Thread.sleep(FIXTURE_POLL_INTERVAL_MILLIS)
         }
@@ -523,7 +519,9 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
                         put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
                     },
                 )
-            ) { "Unable to create fixture image" }
+            ) {
+                "Unable to create fixture image"
+            }
         resolver.openOutputStream(uri).use { output ->
             checkNotNull(output) { "Unable to write fixture image" }.write(PNG_1X1)
         }
@@ -579,7 +577,8 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         fixtureConnection(path).useResponse { status, _ -> status }
 
     private fun fixtureConnection(path: String): HttpURLConnection =
-        (URL("${baseUrl.trimEnd('/')}/${path.trimStart('/')}").openConnection() as HttpURLConnection)
+        (URL("${baseUrl.trimEnd('/')}/${path.trimStart('/')}").openConnection()
+                as HttpURLConnection)
             .apply {
                 requestMethod = "GET"
                 setRequestProperty("Authorization", "Bearer $token")
@@ -592,9 +591,11 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
     ): T =
         try {
             val status = responseCode
-            val body = (if (status in 200..399) inputStream else errorStream)?.bufferedReader()?.use {
-                it.readText()
-            }.orEmpty()
+            val body =
+                (if (status in 200..399) inputStream else errorStream)
+                    ?.bufferedReader()
+                    ?.use { it.readText() }
+                    .orEmpty()
             block(status, body)
         } finally {
             disconnect()
@@ -614,7 +615,10 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         val command =
             if (enabled) "cmd connectivity airplane-mode enable"
             else "cmd connectivity airplane-mode disable"
-        InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command).close()
+        InstrumentationRegistry.getInstrumentation()
+            .uiAutomation
+            .executeShellCommand(command)
+            .close()
     }
 
     private class FixturePhoto(val fileName: String, private val cleanup: () -> Unit) {
@@ -630,12 +634,75 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         const val FIXTURE_CONNECT_TIMEOUT_MILLIS = 5_000
         val PNG_1X1 =
             byteArrayOf(
-                0x89.toByte(), 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
-                0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
-                0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4.toByte(), 0x89.toByte(), 0x00, 0x00, 0x00, 0x0d,
-                0x49, 0x44, 0x41, 0x54, 0x08, 0xd7.toByte(), 0x63, 0xf8.toByte(), 0xcf.toByte(), 0xc0.toByte(),
-                0xf0.toByte(), 0x1f, 0x00, 0x05, 0x00, 0x01, 0xff.toByte(), 0x89.toByte(), 0x99.toByte(),
-                0x3d, 0x1d, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae.toByte(), 0x42, 0x60,
+                0x89.toByte(),
+                0x50,
+                0x4e,
+                0x47,
+                0x0d,
+                0x0a,
+                0x1a,
+                0x0a,
+                0x00,
+                0x00,
+                0x00,
+                0x0d,
+                0x49,
+                0x48,
+                0x44,
+                0x52,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x08,
+                0x06,
+                0x00,
+                0x00,
+                0x00,
+                0x1f,
+                0x15,
+                0xc4.toByte(),
+                0x89.toByte(),
+                0x00,
+                0x00,
+                0x00,
+                0x0d,
+                0x49,
+                0x44,
+                0x41,
+                0x54,
+                0x08,
+                0xd7.toByte(),
+                0x63,
+                0xf8.toByte(),
+                0xcf.toByte(),
+                0xc0.toByte(),
+                0xf0.toByte(),
+                0x1f,
+                0x00,
+                0x05,
+                0x00,
+                0x01,
+                0xff.toByte(),
+                0x89.toByte(),
+                0x99.toByte(),
+                0x3d,
+                0x1d,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x49,
+                0x45,
+                0x4e,
+                0x44,
+                0xae.toByte(),
+                0x42,
+                0x60,
                 0x82.toByte(),
             )
     }

@@ -11,10 +11,10 @@ import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -88,9 +88,7 @@ private fun targetIndex(currentPage: Int, pageCount: Int, step: Int): Int? {
 fun ImageViewerDialog(images: List<ImageViewerImage>, initialIndex: Int, onDismiss: () -> Unit) {
     if (images.isEmpty()) return
     val pagerState =
-        rememberPagerState(initialPage = initialIndex.coerceIn(0, images.lastIndex)) {
-            images.size
-        }
+        rememberPagerState(initialPage = initialIndex.coerceIn(0, images.lastIndex)) { images.size }
     val dismissOffsetY = remember { Animatable(0f) }
     var isZoomed by remember { mutableStateOf(false) }
     var loadedDimensions by remember { mutableStateOf<Map<String, ImageDimensions>>(emptyMap()) }
@@ -250,30 +248,28 @@ private fun ZoomableImagePage(
         modifier =
             Modifier.fillMaxSize()
                 .pointerInput(image.url) {
-                detectZoomPan(
-                    isZoomed = { scale > MIN_SCALE },
-                    onGesture = { pan, zoom ->
-                        val newScale = (scale * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
-                        val maxOffsetX = (size.width * (newScale - 1)) / 2f
-                        val maxOffsetY = (size.height * (newScale - 1)) / 2f
-                        offset =
-                            Offset(
-                                x = (offset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX),
-                                y = (offset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY),
-                            )
-                        scale = newScale
-                        onZoomChanged(newScale > MIN_SCALE)
-                    },
-                    onDoubleTap = {
-                        scale = if (scale > MIN_SCALE) MIN_SCALE else 2.5f
-                        offset = Offset.Zero
-                        onZoomChanged(scale > MIN_SCALE)
-                    },
-                )
+                    detectZoomPan(
+                        isZoomed = { scale > MIN_SCALE },
+                        onGesture = { pan, zoom ->
+                            val newScale = (scale * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
+                            val maxOffsetX = (size.width * (newScale - 1)) / 2f
+                            val maxOffsetY = (size.height * (newScale - 1)) / 2f
+                            offset =
+                                Offset(
+                                    x = (offset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX),
+                                    y = (offset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY),
+                                )
+                            scale = newScale
+                            onZoomChanged(newScale > MIN_SCALE)
+                        },
+                        onDoubleTap = {
+                            scale = if (scale > MIN_SCALE) MIN_SCALE else 2.5f
+                            offset = Offset.Zero
+                            onZoomChanged(scale > MIN_SCALE)
+                        },
+                    )
                 }
-                .semantics {
-                    contentDescription = accessibilityDescription
-                },
+                .semantics { contentDescription = accessibilityDescription },
         contentAlignment = Alignment.Center,
     ) {
         Image(
@@ -299,7 +295,8 @@ private fun ImageMetadataPanel(
 ) {
     Column(
         modifier =
-            modifier.fillMaxWidth()
+            modifier
+                .fillMaxWidth()
                 .background(Color.Black.copy(alpha = 0.72f))
                 .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
@@ -338,12 +335,11 @@ private fun ImageMetadataPanel(
 private fun imageMetadataRows(
     image: ImageViewerImage,
     dimensions: ImageDimensions?,
-): List<Pair<String, String>> =
-    buildList {
-        add("context" to image.sourceLabel)
-        image.altText?.takeIf(String::isNotBlank)?.let { add("description" to it) }
-        dimensions?.let { add("dimensions" to "${it.width} × ${it.height} px") }
-    }
+): List<Pair<String, String>> = buildList {
+    add("context" to image.sourceLabel)
+    image.altText?.takeIf(String::isNotBlank)?.let { add("description" to it) }
+    dimensions?.let { add("dimensions" to "${it.width} × ${it.height} px") }
+}
 
 /**
  * Combined pinch-zoom + pan gesture detector that only consumes pointer events while actually

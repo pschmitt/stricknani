@@ -57,7 +57,11 @@ object DetailCardOrder {
     }
 
     /** Retains the saved order for cards that are currently present on a detail page. */
-    fun visible(domain: DetailCardDomain, saved: List<String>?, available: List<String>): List<String> {
+    fun visible(
+        domain: DetailCardDomain,
+        saved: List<String>?,
+        available: List<String>,
+    ): List<String> {
         val availableSet = available.toSet()
         return sanitize(domain, saved).filter { it in availableSet } +
             available.filterNot { it in sanitize(domain, saved) }
@@ -87,9 +91,7 @@ object DetailCardOrder {
 
 /** DataStore-backed local preference for detail-card ordering. */
 @Singleton
-class DetailCardOrderRepository
-@Inject
-constructor(private val dataStore: DataStore<Preferences>) {
+class DetailCardOrderRepository @Inject constructor(private val dataStore: DataStore<Preferences>) {
 
     val projectOrder = orderFlow(DetailCardDomain.PROJECT)
     val yarnOrder = orderFlow(DetailCardDomain.YARN)
@@ -105,10 +107,9 @@ constructor(private val dataStore: DataStore<Preferences>) {
     private fun orderFlow(domain: DetailCardDomain) =
         dataStore.data.map { preferences ->
             val saved =
-                preferences[key(domain)]
-                    ?.split(",")
-                    ?.filter(String::isNotBlank)
-                    ?.takeIf { it.isNotEmpty() }
+                preferences[key(domain)]?.split(",")?.filter(String::isNotBlank)?.takeIf {
+                    it.isNotEmpty()
+                }
             DetailCardOrder.sanitize(domain, saved)
         }
 

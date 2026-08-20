@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -66,15 +65,15 @@ import blue.anika.wolle.data.settings.ProjectDetailCard
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DetailCardReorderHint
-import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
-import blue.anika.wolle.ui.common.rememberDetailCardReorderState
+import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
+import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
 import coil3.compose.AsyncImage
@@ -280,9 +279,8 @@ private fun ProjectDetailContent(
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
-    val viewerImages = remember(detail, resolveMediaUrl) {
-        projectViewerImages(detail, resolveMediaUrl)
-    }
+    val viewerImages =
+        remember(detail, resolveMediaUrl) { projectViewerImages(detail, resolveMediaUrl) }
     val openViewerImage: (String) -> Unit = { url ->
         viewerIndex = viewerImages.indexOfFirst { image -> image.url == url }.takeIf { it >= 0 }
     }
@@ -292,16 +290,15 @@ private fun ProjectDetailContent(
         listOf(detail.category, detail.needles, detail.yarn, detail.otherMaterials).any {
             it != null
         } || detail.tags.isNotEmpty()
-    val availableCardKeys =
-        buildList {
-            if (detail.attachments.isNotEmpty()) add(ProjectDetailCard.ATTACHMENTS)
-            if (hasDetails) add(ProjectDetailCard.DETAILS)
-            if (detail.stitchSample != null) add(ProjectDetailCard.STITCH_SAMPLE)
-            if (linkedYarns.isNotEmpty()) add(ProjectDetailCard.LINKED_YARNS)
-            if (detail.description != null) add(ProjectDetailCard.DESCRIPTION)
-            if (detail.steps.isNotEmpty()) add(ProjectDetailCard.STEPS)
-            if (detail.notes != null) add(ProjectDetailCard.NOTES)
-        }
+    val availableCardKeys = buildList {
+        if (detail.attachments.isNotEmpty()) add(ProjectDetailCard.ATTACHMENTS)
+        if (hasDetails) add(ProjectDetailCard.DETAILS)
+        if (detail.stitchSample != null) add(ProjectDetailCard.STITCH_SAMPLE)
+        if (linkedYarns.isNotEmpty()) add(ProjectDetailCard.LINKED_YARNS)
+        if (detail.description != null) add(ProjectDetailCard.DESCRIPTION)
+        if (detail.steps.isNotEmpty()) add(ProjectDetailCard.STEPS)
+        if (detail.notes != null) add(ProjectDetailCard.NOTES)
+    }
     val savedVisibleOrder =
         remember(cardOrder, availableCardKeys) {
             DetailCardOrder.visible(DetailCardDomain.PROJECT, cardOrder, availableCardKeys)
@@ -338,9 +335,10 @@ private fun ProjectDetailContent(
                             model = url,
                             contentDescription = image.altText,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
-                                url?.let(openViewerImage)
-                            },
+                            modifier =
+                                Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
+                                    url?.let(openViewerImage)
+                                },
                         )
                     }
                 }
@@ -374,7 +372,8 @@ private fun ProjectDetailContent(
                                     DestructiveDeleteIcon(
                                         contentDescription =
                                             stringResource(
-                                                R.string.project_detail_delete_attachment_description
+                                                R.string
+                                                    .project_detail_delete_attachment_description
                                             )
                                     )
                                 }
@@ -409,7 +408,9 @@ private fun ProjectDetailContent(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.padding(top = 8.dp),
                             ) {
-                                detail.tags.forEach { tag -> AssistChip(onClick = {}, label = { Text(tag) }) }
+                                detail.tags.forEach { tag ->
+                                    AssistChip(onClick = {}, label = { Text(tag) })
+                                }
                             }
                         }
                     }
@@ -434,14 +435,19 @@ private fun ProjectDetailContent(
                                 modifier = Modifier.padding(top = 8.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                itemsIndexed(stitchSampleImages, key = { _, image -> image.id }) { _, image ->
+                                itemsIndexed(stitchSampleImages, key = { _, image -> image.id }) {
+                                    _,
+                                    image ->
                                     AsyncImage(
                                         model = resolveMediaUrl(image.url),
                                         contentDescription = image.altText,
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
-                                            resolveMediaUrl(image.url)?.let(openViewerImage)
-                                        },
+                                        modifier =
+                                            Modifier.size(160.dp)
+                                                .clip(RoundedCornerShape(16.dp))
+                                                .clickable {
+                                                    resolveMediaUrl(image.url)?.let(openViewerImage)
+                                                },
                                     )
                                 }
                             }
@@ -496,10 +502,14 @@ private fun ProjectDetailContent(
                         reorderState = reorderState,
                         onMove = moveCard,
                     ) {
-                        val sortedSteps = remember(detail.steps) { detail.steps.sortedBy { it.stepNumber } }
+                        val sortedSteps =
+                            remember(detail.steps) { detail.steps.sortedBy { it.stepNumber } }
                         sortedSteps.forEachIndexed { index, step ->
                             if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp))
-                            Text("${step.stepNumber}. ${step.title}", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                "${step.stepNumber}. ${step.title}",
+                                style = MaterialTheme.typography.titleSmall,
+                            )
                             step.description?.let {
                                 ProjectMarkdown(
                                     value = it,
@@ -595,15 +605,14 @@ private fun projectViewerImages(
             )
         }
     }
-    val markdownContexts =
-        buildList {
-            detail.stitchSample?.let { add("Stitch sample" to it) }
-            detail.description?.let { add("Project description" to it) }
-            detail.steps.forEach { step ->
-                step.description?.let { add("Step ${step.stepNumber}: ${step.title}" to it) }
-            }
-            detail.notes?.let { add("Notes" to it) }
+    val markdownContexts = buildList {
+        detail.stitchSample?.let { add("Stitch sample" to it) }
+        detail.description?.let { add("Project description" to it) }
+        detail.steps.forEach { step ->
+            step.description?.let { add("Step ${step.stepNumber}: ${step.title}" to it) }
         }
+        detail.notes?.let { add("Notes" to it) }
+    }
     markdownContexts.forEach { (context, content) ->
         extractMarkdownImageReferences(normalizeMarkdownContent(content)).forEach { reference ->
             resolveMediaUrl(reference.source)?.let { url ->

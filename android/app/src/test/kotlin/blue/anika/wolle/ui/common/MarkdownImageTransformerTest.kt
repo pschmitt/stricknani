@@ -8,13 +8,16 @@ class MarkdownImageTransformerTest {
 
     @Test
     fun `renderer adapter resolves relative media links before Coil`() {
-        val transformer = MarkdownImageTransformer(resolveUrl = { link ->
-            if (link == "/media/project/photo.jpg") {
-                "https://stricknani.example/media/project/photo.jpg"
-            } else {
-                null
-            }
-        })
+        val transformer =
+            MarkdownImageTransformer(
+                resolveUrl = { link ->
+                    if (link == "/media/project/photo.jpg") {
+                        "https://stricknani.example/media/project/photo.jpg"
+                    } else {
+                        null
+                    }
+                }
+            )
 
         assertEquals(
             "https://stricknani.example/media/project/photo.jpg",

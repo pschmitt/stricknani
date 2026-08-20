@@ -69,12 +69,11 @@ import blue.anika.wolle.ui.common.DetailCardReorderHint
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
-import blue.anika.wolle.ui.common.NotesCard
-import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
-import blue.anika.wolle.ui.common.rememberDetailCardReorderState
+import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
+import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
 import coil3.compose.AsyncImage
@@ -259,32 +258,32 @@ private fun YarnDetailContent(
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
-    val viewerImages = remember(detail, resolveMediaUrl) { yarnViewerImages(detail, resolveMediaUrl) }
+    val viewerImages =
+        remember(detail, resolveMediaUrl) { yarnViewerImages(detail, resolveMediaUrl) }
     val openViewerImage: (String) -> Unit = { url ->
         viewerIndex = viewerImages.indexOfFirst { image -> image.url == url }.takeIf { it >= 0 }
     }
     val photos = remember(detail.photos) { detail.photos.primaryFirst() }
-    val availableCardKeys =
-        buildList {
-            if (
-                listOf(
-                        detail.brand,
-                        detail.colorway,
-                        detail.dyeLot,
-                        detail.fiberContent,
-                        detail.weightCategory,
-                        detail.recommendedNeedles,
-                        detail.weightGrams,
-                        detail.lengthMeters,
-                    )
-                    .any { it != null }
-            ) {
-                add(YarnDetailCard.DETAILS)
-            }
-            if (detail.description != null) add(YarnDetailCard.DESCRIPTION)
-            if (linkedProjects.isNotEmpty()) add(YarnDetailCard.USED_IN)
-            if (detail.notes != null) add(YarnDetailCard.NOTES)
+    val availableCardKeys = buildList {
+        if (
+            listOf(
+                    detail.brand,
+                    detail.colorway,
+                    detail.dyeLot,
+                    detail.fiberContent,
+                    detail.weightCategory,
+                    detail.recommendedNeedles,
+                    detail.weightGrams,
+                    detail.lengthMeters,
+                )
+                .any { it != null }
+        ) {
+            add(YarnDetailCard.DETAILS)
         }
+        if (detail.description != null) add(YarnDetailCard.DESCRIPTION)
+        if (linkedProjects.isNotEmpty()) add(YarnDetailCard.USED_IN)
+        if (detail.notes != null) add(YarnDetailCard.NOTES)
+    }
     val savedVisibleOrder =
         remember(cardOrder, availableCardKeys) {
             DetailCardOrder.visible(DetailCardDomain.YARN, cardOrder, availableCardKeys)
@@ -321,9 +320,10 @@ private fun YarnDetailContent(
                             model = url,
                             contentDescription = photo.altText,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
-                                url?.let(openViewerImage)
-                            },
+                            modifier =
+                                Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
+                                    url?.let(openViewerImage)
+                                },
                         )
                     }
                 }
@@ -360,7 +360,10 @@ private fun YarnDetailContent(
                             DetailRow(stringResource(R.string.yarn_detail_field_fiber_content), it)
                         }
                         detail.weightCategory?.let {
-                            DetailRow(stringResource(R.string.yarn_detail_field_weight_category), it)
+                            DetailRow(
+                                stringResource(R.string.yarn_detail_field_weight_category),
+                                it,
+                            )
                         }
                         detail.recommendedNeedles?.let {
                             DetailRow(
@@ -418,7 +421,9 @@ private fun YarnDetailContent(
                                         modifier =
                                             Modifier.size(48.dp)
                                                 .clip(RoundedCornerShape(12.dp))
-                                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                .background(
+                                                    MaterialTheme.colorScheme.surfaceVariant
+                                                )
                                     ) {
                                         if (project.previewUrl != null) {
                                             AsyncImage(
@@ -428,11 +433,15 @@ private fun YarnDetailContent(
                                                 modifier = Modifier.fillMaxSize(),
                                             )
                                         } else {
-                                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                            Box(
+                                                Modifier.fillMaxSize(),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
                                                 Icon(
                                                     Icons.Filled.Folder,
                                                     contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    tint =
+                                                        MaterialTheme.colorScheme.onSurfaceVariant,
                                                 )
                                             }
                                         }
@@ -517,11 +526,10 @@ private fun yarnViewerImages(
             )
         }
     }
-    val markdownContents =
-        buildList {
-            detail.description?.let { add("Yarn description" to it) }
-            detail.notes?.let { add("Notes" to it) }
-        }
+    val markdownContents = buildList {
+        detail.description?.let { add("Yarn description" to it) }
+        detail.notes?.let { add("Notes" to it) }
+    }
     markdownContents.forEach { (context, content) ->
         extractMarkdownImageReferences(normalizeMarkdownContent(content)).forEach { reference ->
             resolveMediaUrl(reference.source)?.let { url ->

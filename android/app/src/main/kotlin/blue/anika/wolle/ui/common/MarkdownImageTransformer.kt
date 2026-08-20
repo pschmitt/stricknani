@@ -1,11 +1,11 @@
 package blue.anika.wolle.ui.common
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
@@ -24,12 +24,12 @@ internal class MarkdownImageTransformer(
     private val resolveUrl: (String) -> String?,
     private val onImageClick: (String) -> Unit = {},
     private val imageReferences: List<MarkdownImageReference> = emptyList(),
-) :
-    ImageTransformer {
+) : ImageTransformer {
     internal fun resolve(link: String): String? = resolveUrl(link)
 
-    internal fun referenceFor(link: String): MarkdownImageReference? =
-        imageReferences.firstOrNull { it.source == link }
+    internal fun referenceFor(link: String): MarkdownImageReference? = imageReferences.firstOrNull {
+        it.source == link
+    }
 
     @Composable
     override fun transform(link: String): ImageData? {
@@ -38,13 +38,16 @@ internal class MarkdownImageTransformer(
         val imageData = Coil3ImageTransformerImpl.transform(resolved)
         val modifier =
             imageData.modifier
-                .then(Modifier.fillMaxWidth(reference?.size?.widthFraction ?: MarkdownImageSize.SM.widthFraction))
+                .then(
+                    Modifier.fillMaxWidth(
+                        reference?.size?.widthFraction ?: MarkdownImageSize.SM.widthFraction
+                    )
+                )
                 .then(Modifier.clickable { onImageClick(resolved) })
                 .then(
                     Modifier.semantics {
                         contentDescription =
-                            reference?.altText?.takeIf(String::isNotBlank)
-                                ?: "Open image"
+                            reference?.altText?.takeIf(String::isNotBlank) ?: "Open image"
                     }
                 )
         return imageData.copy(

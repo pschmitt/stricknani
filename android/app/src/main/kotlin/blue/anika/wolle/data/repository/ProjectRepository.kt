@@ -104,9 +104,10 @@ constructor(
             .filterNot { it.id in pendingUpdatedIds }
             .takeIf { it.isNotEmpty() }
             ?.let { projectDao.upsertAll(it.map { project -> project.toEntity(json) }) }
-        response.deletedIds.filterNot { it in pendingDeletedIds }.takeIf { it.isNotEmpty() }?.let {
-            projectDao.deleteByIds(it)
-        }
+        response.deletedIds
+            .filterNot { it in pendingDeletedIds }
+            .takeIf { it.isNotEmpty() }
+            ?.let { projectDao.deleteByIds(it) }
         syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, response.serverTime))
         return response.updated.isNotEmpty() || response.deletedIds.isNotEmpty()
     }
@@ -459,14 +460,12 @@ internal fun ProjectWriteRequest.coalesceExpectedUpdatedAt(
 ): ProjectWriteRequest =
     copy(
         expectedUpdatedAt =
-            previousPayloadJson
-                ?.let { payload ->
-                    runCatching {
-                            json.decodeFromString<ProjectWriteRequest>(payload).expectedUpdatedAt
-                        }
-                        .getOrNull()
+            previousPayloadJson?.let { payload ->
+                runCatching {
+                    json.decodeFromString<ProjectWriteRequest>(payload).expectedUpdatedAt
                 }
-                ?: expectedUpdatedAt
+                    .getOrNull()
+            } ?: expectedUpdatedAt
     )
 
 private fun stepsFromRequest(

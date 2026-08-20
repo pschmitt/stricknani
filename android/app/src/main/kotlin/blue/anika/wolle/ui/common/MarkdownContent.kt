@@ -29,8 +29,7 @@ internal enum class MarkdownImageSize(val widthFraction: Float) {
     SM(0.55f),
     MD(0.7f),
     LG(0.86f),
-    XL(1f),
-    ;
+    XL(1f);
 
     companion object {
         fun fromToken(token: String?): MarkdownImageSize? =
@@ -110,24 +109,34 @@ private fun normalizeMarkdownImageAttributes(content: String): String =
         val size = MarkdownImageSize.fromToken(sizeToken)
         val cleanedTitle = title?.replace(IMAGE_SIZE_TITLE, "")?.replace(Regex("\\s+"), " ")?.trim()
         val nextTitle =
-            size?.let { "sn:size=${it.name.lowercase()}".let { marker -> listOfNotNull(cleanedTitle, marker).joinToString(" ") } }
-                ?: cleanedTitle
-        val titlePart = nextTitle?.takeIf(String::isNotBlank)?.let { " \"${escapeMarkdownText(it)}\"" }.orEmpty()
+            size?.let {
+                "sn:size=${it.name.lowercase()}"
+                    .let { marker -> listOfNotNull(cleanedTitle, marker).joinToString(" ") }
+            } ?: cleanedTitle
+        val titlePart =
+            nextTitle
+                ?.takeIf(String::isNotBlank)
+                ?.let { " \"${escapeMarkdownText(it)}\"" }
+                .orEmpty()
         "![${escapeMarkdownText(alt)}]($source$titlePart)"
     }
 
 /** Extract Markdown image occurrences after [normalizeMarkdownContent] has cleaned their syntax. */
 internal fun extractMarkdownImageReferences(content: String): List<MarkdownImageReference> =
-    MARKDOWN_IMAGE.findAll(content).map { match ->
-        val title = match.groups[4]?.value ?: match.groups[5]?.value ?: match.groups[6]?.value
-        MarkdownImageReference(
-            source = match.groups[2]?.value ?: match.groups[3]?.value.orEmpty(),
-            altText = match.groups[1]?.value.orEmpty(),
-            title = title?.replace(IMAGE_SIZE_TITLE, "")?.replace(Regex("\\s+"), " ")?.trim(),
-            size = MarkdownImageSize.fromToken(title?.let { IMAGE_SIZE_TITLE.find(it)?.groupValues?.get(1) })
-                ?: MarkdownImageSize.SM,
-        )
-    }.toList()
+    MARKDOWN_IMAGE.findAll(content)
+        .map { match ->
+            val title = match.groups[4]?.value ?: match.groups[5]?.value ?: match.groups[6]?.value
+            MarkdownImageReference(
+                source = match.groups[2]?.value ?: match.groups[3]?.value.orEmpty(),
+                altText = match.groups[1]?.value.orEmpty(),
+                title = title?.replace(IMAGE_SIZE_TITLE, "")?.replace(Regex("\\s+"), " ")?.trim(),
+                size =
+                    MarkdownImageSize.fromToken(
+                        title?.let { IMAGE_SIZE_TITLE.find(it)?.groupValues?.get(1) }
+                    ) ?: MarkdownImageSize.SM,
+            )
+        }
+        .toList()
 
 private fun parseHtmlAttributes(rawAttributes: String): Map<String, String> = buildMap {
     HTML_ATTRIBUTE.findAll(rawAttributes).forEach { match ->

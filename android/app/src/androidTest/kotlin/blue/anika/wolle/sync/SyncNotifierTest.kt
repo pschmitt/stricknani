@@ -36,8 +36,9 @@ class SyncNotifierTest {
             notificationManager.activeNotifications.any { notification ->
                 notification.id == 1001 &&
                     notification.notification.channelId == "sync_updates" &&
-                    notification.notification.extras.getCharSequence(android.app.Notification.EXTRA_TITLE) ==
-                        context.getString(R.string.app_name)
+                    notification.notification.extras.getCharSequence(
+                        android.app.Notification.EXTRA_TITLE
+                    ) == context.getString(R.string.app_name)
             }
         )
 
