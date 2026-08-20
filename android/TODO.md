@@ -357,9 +357,13 @@ follow-up push.
       returns `Result.retry()` when any mutation failed; the Home and Settings screens surface
       queued sync issues and offer retry/dismiss actions rather than hiding a stuck local edit
 
-Status: **mostly done** (2026-08-19) - verified with the new conflict/sync-issue unit tests and
-remote `just check rofl-13.brkn.lol` (ktfmt, unit tests, and Android Lint). A live replay against a
-running Stricknani server remains unverified because no disposable test server was available.
+Status: **done** (2026-08-20) - verified with the conflict/sync-issue unit tests, remote `just
+check rofl-13.brkn.lol` (ktfmt, unit tests, and Android Lint), and a live replay against the
+disposable Stricknani fixture: `StricknaniLiveWriteE2eTest.queuedWritesAndUploadsReachTheDisposableFixture`
+creates a yarn (with a photo) and a project while offline, then polls the fixture's REST API
+directly (not just cached UI state) to confirm the queued create, the photo upload, a subsequent
+edit, and a delete all actually reached the server once connectivity returned. Closing the earlier
+"live replay unverified" caveat.
 
 ### Android app screens
 
@@ -439,11 +443,11 @@ build, and CI is green on the follow-up push.
       project"/"New yarn" `ExtendedFloatingActionButton` on the respective list screens, an edit
       icon in the respective detail screens' `TopAppBar`
 
-Status: **mostly done** (2026-08-19) - verified via remote `just check rofl-13.brkn.lol` (ktfmt,
-unit tests, and Android Lint), plus focused step-reordering and project-attachment mutation tests
-and API regression tests that confirm step IDs and attached images survive an update reorder. An
-actual live create/edit/delete/upload round-trip remains unverified because no reachable
-disposable Stricknani server was available.
+Status: **done** (2026-08-20) - verified via remote `just check rofl-13.brkn.lol` (ktfmt, unit
+tests, and Android Lint), focused step-reordering and project-attachment mutation tests, API
+regression tests confirming step IDs and attached images survive an update reorder, and a live
+create/edit/delete/upload round-trip against the disposable Stricknani fixture
+(`StricknaniLiveWriteE2eTest`, see SNA-8's status for details).
 
 ## SNA-11: Gauge calculator
 
