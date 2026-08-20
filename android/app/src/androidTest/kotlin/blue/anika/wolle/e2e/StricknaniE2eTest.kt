@@ -89,7 +89,8 @@ abstract class StricknaniE2eTest {
     // no Compose hierarchy to query. The caller's waitUntil polls again on the next frame.
     runCatching {
         composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
-    }.getOrDefault(false)
+    }
+        .getOrDefault(false)
 
     private fun hasText(text: String): Boolean = runCatching {
         composeRule
