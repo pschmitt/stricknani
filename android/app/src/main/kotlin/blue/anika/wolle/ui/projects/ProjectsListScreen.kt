@@ -108,6 +108,7 @@ fun ProjectsListScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddProjectClick,
+                modifier = Modifier.testTag("e2e-new-project"),
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.project_new_label)) },
                 expanded = !listState.canScrollBackward,

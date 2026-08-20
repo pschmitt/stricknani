@@ -18,6 +18,7 @@ case "${E2E_LANE:-smoke}" in
     ;;
   full)
     run_test blue.anika.wolle.e2e.StricknaniFullE2eTest
+    run_test blue.anika.wolle.e2e.StricknaniLiveWriteE2eTest
     ;;
   smoke)
     run_test blue.anika.wolle.e2e.StricknaniSmokeTest

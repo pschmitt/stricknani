@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -148,7 +149,7 @@ fun ProjectEditorScreen(
                                 viewModel.updateForm { it.copy(name = value) }
                             },
                             label = { Text(stringResource(R.string.project_editor_name_label)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().testTag("e2e-project-editor-name"),
                             singleLine = true,
                         )
                         OutlinedTextField(

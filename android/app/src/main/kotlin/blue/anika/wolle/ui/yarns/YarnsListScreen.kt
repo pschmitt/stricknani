@@ -76,6 +76,7 @@ fun YarnsListScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddYarnClick,
+                modifier = Modifier.testTag("e2e-new-yarn"),
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.yarns_list_new_yarn_fab)) },
                 expanded = !listState.canScrollBackward,
