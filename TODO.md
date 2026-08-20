@@ -34,6 +34,7 @@ Execution-oriented backlog for Stricknani.
 | T100 | P2 | done | web/ux | refactor | Make search box inputs more rounded (pill-shaped) across list pages and the global search modal |
 | T101 | P2 | done | web/ux | feat | Use real Material 3 cards (not plain list rows) consistently on both project/yarn list pages and their detail/view pages |
 | T102 | P1 | done | web/ux | bug | Fix misplaced badges/icons caused by negative-offset utility classes missing from the static CSS bundle (admin shield badge, yarn-search icon, sidebar restore tab, vertical-centering transforms) |
+| T103 | P1 | done | web/ux | bug | Fix project/yarn detail pages: sections couldn't actually be collapsed, and drop the two-column sidebar layout in favor of a single content column |
 
 ## Next
 
@@ -1407,3 +1408,57 @@ Execution-oriented backlog for Stricknani.
   the details sidebar via JS) but is a single, low-risk CSS property.
   `just lint-css` (1 pre-existing unrelated warning only), `pytest tests/test_health.py` (4 passed),
   `just lint-template-js` pass.
+
+### T103: Fix uncollapsible detail-page sections and drop the two-column sidebar layout
+
+- **Area**: web/ux
+- **Priority**: P1
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - User reported the project/yarn view (detail) pages "look a bit wrong" and that section
+    collapsing didn't work, and asked to move Project/Yarn Details and Notes out of the sidebar
+    into the main content column (no more multi-column layout).
+- **Root cause (collapse bug)**:
+  - Every `.md3-disclosure` accordion on `projects/detail.html`/`yarn/detail.html` (Gallery,
+    Attachments, Description, Technical Specs, Instructions, each step, Audit Log, and the sidebar
+    Details/Notes cards) rendered its toggle as a bare `<input type="checkbox">` with no `id`, and
+    its title as a plain `<div class="md3-disclosure__title">` — never a `<label for="...">`
+    pointing at the checkbox. Nothing could actually change the checkbox's `:checked` state by
+    clicking, so sections could never be toggled. The edit-form pages (`projects/form.html`,
+    `yarn/form.html`) already used the correct `<label for="...">` pattern for their own sidebar
+    disclosure — the detail pages just never adopted it.
+- **Root cause (layout)**:
+  - Both detail templates duplicated their "Details"/"Notes" content: once in a `lg:hidden` block
+    for mobile, and again in a `hidden lg:flex` sidebar column laid out via a `.md3-detail-layout`
+    2-column CSS grid at `>=1024px` — plus, on `projects/detail.html`, a third duplicate of "Other
+    Materials" that was already shown inside Technical Specifications. A `detail_sidebar_toggle.js`
+    (collapse-sidebar-to-a-narrow-rail feature) referenced Tailwind-era classes/ids
+    (`lg:col-span-3`, `#main-column`, `#sidebar-column`) that no longer existed anywhere in the
+    current markup or CSS — fully dead code.
+- **Implementation**:
+  - Gave every disclosure checkbox a unique `id` and converted its title to `<label for="...">` on
+    both detail pages.
+  - Collapsed the duplicated Details/Notes (and, for projects, Other Materials) renderings down to
+    one copy each, in the single main content column; moved yarn's "Yarn Details" and "Linked
+    Projects" out of the sidebar into that same column (right after Gallery, and after Notes,
+    respectively).
+  - Removed the two-column grid CSS (`.md3-detail-main`/`.md3-detail-sidebar`/`.md3-detail-restore`,
+    and the `>=1024px` grid override) — `.md3-detail-layout` is now just the single-column flex list
+    it already shared with `.md3-list-layout`/`.md3-form-layout`. Deleted
+    `detail_sidebar_toggle.js` and its restore-tab buttons/`data-call-change` wiring.
+  - Rewrote `project_detail_print.css`'s force-expand-for-print rules from the stale DaisyUI
+    `.collapse`/`.collapse-content` selectors (dead since the T88 M3 migration) to the current
+    `.md3-disclosure`/`.md3-disclosure__content` ones, so a section a user leaves collapsed on
+    screen still fully expands and prints.
+  - Due to several other automated agent sessions actively committing to this same repo checkout
+    mid-task (one of them silently reverted an uncommitted CSS edit of mine — see git history around
+    `ee7a035`), the final CSS/JS cleanup step was done in an isolated git worktree and merged back
+    once verified, to avoid further collisions.
+- **Testing**: Playwright against a seeded demo instance — verified the disclosure toggle actually
+  changes `:checked`/visibility on both pages; single-column layout confirmed at 1440px and 390px
+  viewports; print-media screenshot confirmed a collapsed section still renders fully. Updated
+  `tests/e2e/test_full.py` (dropped the two-column bounding-box assertion) and
+  `tests/test_printing.py` (updated the stale `.collapse` selector assertions to
+  `.md3-disclosure`). Full non-e2e suite: 292 passed, 1 skipped. `just lint-css`,
+  `just lint-template-js`, `just lint-template-js-format`, `just i18n-check` all pass.
