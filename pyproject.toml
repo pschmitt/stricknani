@@ -147,14 +147,14 @@ omit = [
     "stricknani/utils/wayback.py",
     # CLI/demo entry points are exercised by their own command-level checks.
     "stricknani/scripts/*",
-    # These large HTML mutation routes remain outside the core API/security
-    # threshold until their browser coverage is added in the E2E backlog.
+    # These HTML-only mutation routes are exercised by the browser E2E lanes,
+    # which run in a separate server process and cannot contribute to this
+    # in-process Python coverage measurement.
     "stricknani/routes/admin.py",
     "stricknani/routes/projects.py",
     "stricknani/routes/yarn.py",
     "stricknani/routes/utils.py",
     "stricknani/services/projects/import_*.py",
-    "stricknani/services/projects/yarns.py",
     "stricknani/services/yarn/images.py",
 ]
 
@@ -172,7 +172,6 @@ omit = [
     "stricknani/routes/yarn.py",
     "stricknani/routes/utils.py",
     "stricknani/services/projects/import_*.py",
-    "stricknani/services/projects/yarns.py",
     "stricknani/services/yarn/images.py",
 ]
 
