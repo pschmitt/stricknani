@@ -33,6 +33,7 @@ Execution-oriented backlog for Stricknani.
 | T99 | P3 | todo | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |
 | T100 | P2 | done | web/ux | refactor | Make search box inputs more rounded (pill-shaped) across list pages and the global search modal |
 | T101 | P2 | done | web/ux | feat | Use real Material 3 cards (not plain list rows) consistently on both project/yarn list pages and their detail/view pages |
+| T102 | P1 | done | web/ux | bug | Fix misplaced badges/icons caused by negative-offset utility classes missing from the static CSS bundle (admin shield badge, yarn-search icon, sidebar restore tab, vertical-centering transforms) |
 
 ## Next
 
@@ -1364,3 +1365,45 @@ Execution-oriented backlog for Stricknani.
   - Nested widgets inside a detail card (e.g. "Yarns Used" row, "Linked Projects" row) are
     intentionally plain rows rather than nested elevated cards — stacking two elevated surfaces is
     not idiomatic Material 3, so this was left as-is.
+
+### T102: Fix misplaced badges/icons from negative-offset utility classes missing in static CSS
+
+- **Area**: web/ux
+- **Priority**: P1
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - User reported the admin badge (shield icon overlay) on `admin/users` was misplaced, and suspected
+    more badges/icons elsewhere had the same problem.
+  - Root cause: the T1 migration off runtime Tailwind to a static utility bundle only ported the
+    *positive* offset/margin/transform utilities. Templates still reference several Tailwind-style
+    *negative*-prefixed classes that were never added to `material.css`: `-bottom-1`, `-right-1`,
+    `-mr-4`, and `-translate-y-1/2`. A missing class is simply not applied (silently), so any element
+    relying on one keeps its default/no-op position instead of erroring — which is why this went
+    unnoticed rather than breaking loudly.
+  - Audited every template's `class="..."` attribute for this pattern (any token matching
+    `-(top|bottom|left|right|inset|translate-x|translate-y|m[trblxy]?)-...`); these four were the only
+    negative-prefixed tokens in use anywhere in `stricknani/templates/`.
+- **Implementation** (all in `stricknani/static/css/material.css` unless noted):
+  - Added `.-bottom-1` / `.-right-1` (±0.25rem) — fixes the admin avatar's shield badge
+    (`admin/_user_card.html`), which previously had no offset at all and sat at its default
+    (top-left-ish) position instead of pinned to the avatar's bottom-right corner.
+  - Added `.-translate-y-1\/2` alongside the existing `.translate-y-1\/2` (both `translateY(-50%)`)
+    — fixes vertical centering for: the swipe-nav arrows (`base.html`), and an inline search icon
+    (`projects/form.html`'s yarn picker).
+  - Added `.-mr-4` (`margin-right: -1rem`) — fixes the project/yarn form's collapsed-sidebar "restore
+    details" tab (`projects/form.html`, `yarn/form.html`), which pulls itself half off the viewport
+    edge.
+  - Separately found and fixed a related bug while verifying the yarn-search icon fix in-browser: the
+    input itself (`projects/form.html`'s `#yarn_search`) had no left padding reserved for the icon, so
+    even once vertically centered the magnifier still overlapped the placeholder text horizontally.
+    Added `pl-10` to the input, plus a new `.input.pl-10`/`.textarea.pl-10`/`.md3-text-field.pl-10`
+    rule in `material.css` (two-class selector, so it reliably beats the single-class
+    `padding: 0.75rem 1rem` shorthand on `.md3-text-field`/`.input` regardless of file load order —
+    same specificity trick used for the T100 search-bar fix).
+- **Testing**: Verified all of the above in-browser (Playwright, light + dark, seeded demo data):
+  admin badge now sits correctly on the avatar corner; yarn-search icon is centered with proper
+  spacing. The sidebar restore-tab margin fix was not interactively triggered (requires collapsing
+  the details sidebar via JS) but is a single, low-risk CSS property.
+  `just lint-css` (1 pre-existing unrelated warning only), `pytest tests/test_health.py` (4 passed),
+  `just lint-template-js` pass.
