@@ -12,6 +12,7 @@ import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -401,15 +402,28 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         composeRule
             .onNodeWithTag("e2e-yarn-editor-form")
             .performScrollToNode(hasTextMatcher("Add yarn photos"))
-        // The copy from the picker's content URI into local storage happens asynchronously
-        // (PendingUploadStore.copy, on the IO dispatcher) - if it silently failed or never fired,
-        // printing the semantics tree on failure shows exactly what the photos section actually
-        // rendered instead of another opaque timeout.
-        runCatching { waitForText(fileName) }
+        // The Google Photo Picker does not return our synthetic MediaStore display name: a live
+        // CI run's printed semantics tree showed the row rendered as "1000000018.png" (a
+        // picker-generated name) instead of `fileName`, even though the pick otherwise succeeded.
+        // Assert on the "Remove selected photo" affordance that only renders once a photo is
+        // actually in form.photos, rather than a filename the app never controlled.
+        runCatching { waitForContentDescription("Remove selected photo") }
             .onFailure {
                 composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
                 throw it
             }
+    }
+
+    private fun waitForContentDescription(description: String, timeoutMillis: Long = 30_000) {
+        composeRule.waitUntil(timeoutMillis) {
+            runCatching {
+                    composeRule
+                        .onAllNodesWithContentDescription(description)
+                        .fetchSemanticsNodes()
+                        .isNotEmpty()
+                }
+                .getOrDefault(false)
+        }
     }
 
     private fun waitForForegroundPackageChange(from: String, timeoutMillis: Long): String {
