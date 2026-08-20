@@ -331,6 +331,9 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
     private fun openYarns() {
         composeRule.onNodeWithText("Yarns").performClick()
         waitForText("Search yarns")
+        composeRule
+            .onNodeWithTag("e2e-yarns-list")
+            .performScrollToNode(hasTextMatcher("Riverbend Merino DK"))
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
     }
 
