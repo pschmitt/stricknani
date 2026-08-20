@@ -81,13 +81,20 @@ abstract class StricknaniE2eTest {
     }
 
     private fun hasTag(tag: String): Boolean =
-        composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+        // Momentarily false (rather than propagating) while returning from an external Activity
+        // (e.g. the system photo picker): our Activity has not finished resuming yet, so there is
+        // no Compose hierarchy to query. The caller's waitUntil polls again on the next frame.
+        runCatching { composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
+            .getOrDefault(false)
 
     private fun hasText(text: String): Boolean =
-        composeRule
-            .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
-            .fetchSemanticsNodes()
-            .isNotEmpty()
+        runCatching {
+                composeRule
+                    .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            .getOrDefault(false)
 
     protected fun openProjects() {
         composeRule.onNodeWithText("Projects").performClick()
