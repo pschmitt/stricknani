@@ -43,6 +43,45 @@ async def test_upload_profile_image_updates_avatar(test_client: Any) -> None:
 
 
 @pytest.mark.asyncio
+async def test_upload_profile_image_rejects_non_image(test_client: Any) -> None:
+    """Profile uploads must not retain arbitrary user-controlled extensions."""
+    client, session_factory, user_id, _project_id, _step_id = test_client
+
+    response = await client.post(
+        "/user/profile-image",
+        files={"file": ("avatar.html", b"<html>not an image</html>", "text/html")},
+        headers={"HX-Request": "true"},
+    )
+
+    assert response.status_code == 400
+    async with session_factory() as session:
+        user = await session.get(User, user_id)
+        assert user is not None
+        assert user.profile_image is None
+
+
+@pytest.mark.asyncio
+async def test_upload_profile_image_enforces_size_cap(
+    test_client: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The shared upload reader rejects oversized bodies before writing them."""
+    client, session_factory, user_id, _project_id, _step_id = test_client
+    monkeypatch.setattr(config, "MAX_UPLOAD_BYTES", 16)
+
+    response = await client.post(
+        "/user/profile-image",
+        files={"file": ("avatar.png", _generate_avatar_bytes(), "image/png")},
+        headers={"HX-Request": "true"},
+    )
+
+    assert response.status_code == 413
+    async with session_factory() as session:
+        user = await session.get(User, user_id)
+        assert user is not None
+        assert user.profile_image is None
+
+
+@pytest.mark.asyncio
 async def test_avatar_thumbnail_falls_back_when_thumbnail_missing(
     test_client: Any,
 ) -> None:

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -37,9 +38,9 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,12 +50,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
 
@@ -67,29 +72,45 @@ fun ProjectsListScreen(
 ) {
     val projects by viewModel.projects.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val selectedTag by viewModel.selectedTag.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
-
+    val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
+    val importState by viewModel.importState.collectAsStateWithLifecycle()
     var showAddCategoryDialog by rememberSaveable { mutableStateOf(false) }
+    var showImportDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
 
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.dismissError()
-        }
-    }
+    RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.projects_list_title)) },
+                actions = {
+                    IconButton(
+                        modifier = Modifier.testTag("project-import-open"),
+                        onClick = { showImportDialog = true },
+                    ) {
+                        Icon(
+                            Icons.Filled.FileDownload,
+                            contentDescription =
+                                stringResource(R.string.projects_list_import_description),
+                        )
+                    }
+                },
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddProjectClick,
+                modifier = Modifier.testTag("e2e-new-project"),
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("New project") },
+                text = { Text(stringResource(R.string.project_new_label)) },
                 expanded = !listState.canScrollBackward,
             )
         },
@@ -103,19 +124,20 @@ fun ProjectsListScreen(
                 SearchField(
                     value = searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
-                    placeholder = "Search projects",
+                    placeholder = stringResource(R.string.projects_list_search_placeholder),
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
 
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp),
+                    modifier = Modifier.testTag("projects-list-category-filters"),
                 ) {
                     item {
                         FilterChip(
                             selected = selectedCategory == null,
                             onClick = { viewModel.onCategorySelected(null) },
-                            label = { Text("All") },
+                            label = { Text(stringResource(R.string.projects_list_category_all)) },
                         )
                     }
                     items(categories, key = { it.id }) { category ->
@@ -133,21 +155,59 @@ fun ProjectsListScreen(
                         FilterChip(
                             selected = false,
                             onClick = { showAddCategoryDialog = true },
-                            label = { Icon(Icons.Filled.Add, contentDescription = "Add category") },
+                            label = {
+                                Icon(
+                                    Icons.Filled.Add,
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.projects_list_add_category_description
+                                        ),
+                                )
+                            },
                         )
+                    }
+                }
+                if (tags.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.projects_list_tags_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        modifier = Modifier.testTag("projects-list-tag-filters"),
+                    ) {
+                        items(tags, key = { it }) { tag ->
+                            FilterChip(
+                                selected = selectedTag == tag,
+                                onClick = { viewModel.onTagSelected(tag) },
+                                label = { Text(tag) },
+                            )
+                        }
                     }
                 }
                 Spacer(Modifier.height(8.dp))
 
                 if (projects.isEmpty()) {
-                    EmptyState(
-                        icon = Icons.Filled.Folder,
-                        title = "No projects yet",
-                        subtitle = "Pull to refresh, or adjust your filters.",
-                    )
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize().testTag("e2e-projects-list"),
+                    ) {
+                        item {
+                            EmptyState(
+                                icon = Icons.Filled.Folder,
+                                title = stringResource(R.string.projects_list_empty_title),
+                                subtitle = stringResource(R.string.projects_list_empty_subtitle),
+                                modifier = Modifier.fillMaxWidth().height(400.dp),
+                            )
+                        }
+                    }
                 } else {
                     LazyColumn(
                         state = listState,
+                        modifier = Modifier.testTag("e2e-projects-list"),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
@@ -174,6 +234,18 @@ fun ProjectsListScreen(
             onDismiss = { showAddCategoryDialog = false },
         )
     }
+
+    ProjectImportDialog(
+        visible = showImportDialog,
+        state = importState,
+        onStart = viewModel::startImport,
+        onConfirm = viewModel::confirmImport,
+        onCancel = {
+            showImportDialog = false
+            viewModel.cancelImport()
+        },
+        onRetry = viewModel::retryImport,
+    )
 }
 
 @Composable
@@ -223,7 +295,11 @@ private fun ProjectListCard(
                     imageVector =
                         if (project.isFavorite) Icons.Filled.Favorite
                         else Icons.Filled.FavoriteBorder,
-                    contentDescription = if (project.isFavorite) "Unfavorite" else "Favorite",
+                    contentDescription =
+                        stringResource(
+                            if (project.isFavorite) R.string.common_unfavorite
+                            else R.string.common_favorite
+                        ),
                     tint =
                         if (project.isFavorite) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -238,16 +314,22 @@ private fun AddCategoryDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit
     var name by rememberSaveable { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New category") },
+        title = { Text(stringResource(R.string.projects_list_add_category_dialog_title)) },
         text = {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 singleLine = true,
-                placeholder = { Text("e.g. Sweaters") },
+                placeholder = {
+                    Text(stringResource(R.string.projects_list_add_category_name_placeholder))
+                },
             )
         },
-        confirmButton = { TextButton(onClick = { onConfirm(name) }) { Text("Add") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(name) }) { Text(stringResource(R.string.common_add)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
     )
 }

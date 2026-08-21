@@ -1,6 +1,6 @@
 (() => {
 	document.addEventListener("DOMContentLoaded", () => {
-		const navDropdowns = document.querySelectorAll(".navbar-nav-dropdown");
+		const navDropdowns = document.querySelectorAll(".md3-navbar__title-menu");
 		if (!navDropdowns.length) {
 			return;
 		}

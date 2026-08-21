@@ -20,8 +20,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import blue.anika.wolle.R
 
 /** Shown on the next launch after an uncaught exception (SNA-35) - see `crash/CrashReport.kt`. */
 @Composable
@@ -34,11 +36,11 @@ fun CrashReportDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Warning, contentDescription = null) },
-        title = { Text("The app recovered from a crash") },
+        title = { Text(stringResource(R.string.crash_report_dialog_title)) },
         text = {
             Column {
                 Text(
-                    "A diagnostic report was saved from the previous run. It contains no API token.",
+                    stringResource(R.string.crash_report_dialog_description),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 SelectionContainer {
@@ -58,17 +60,27 @@ fun CrashReportDialog(
             Column(Modifier.fillMaxWidth()) {
                 OutlinedButton(onClick = onCopy, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.ContentCopy, contentDescription = null)
-                    Text("Copy report", modifier = Modifier.padding(start = 8.dp))
+                    Text(
+                        stringResource(R.string.crash_report_dialog_copy_button),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
                 Button(
                     onClick = onRestart,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 ) {
                     Icon(Icons.Default.RestartAlt, contentDescription = null)
-                    Text("Restart app", modifier = Modifier.padding(start = 8.dp))
+                    Text(
+                        stringResource(R.string.crash_report_dialog_restart_button),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Dismiss") } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.crash_report_dialog_dismiss_button))
+            }
+        },
     )
 }

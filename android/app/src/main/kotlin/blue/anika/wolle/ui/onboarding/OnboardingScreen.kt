@@ -26,12 +26,14 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -42,11 +44,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 
-private enum class OnboardingMode(val label: String) {
-    MANUAL("Manual"),
-    QR("QR code"),
-    PASSWORD("Sign in"),
+private enum class OnboardingMode {
+    MANUAL,
+    QR,
+    PASSWORD,
 }
+
+@Composable
+private fun OnboardingMode.label(): String =
+    when (this) {
+        OnboardingMode.MANUAL -> stringResource(R.string.onboarding_mode_manual)
+        OnboardingMode.QR -> stringResource(R.string.onboarding_mode_qr)
+        OnboardingMode.PASSWORD -> stringResource(R.string.onboarding_mode_password)
+    }
 
 /**
  * Server URL + personal access token entry, plus two SNA-13 shortcuts that both end up at the same
@@ -57,9 +67,19 @@ private enum class OnboardingMode(val label: String) {
  * [OnboardingViewModel]. Success flips
  * [blue.anika.wolle.data.settings.SettingsRepository.isConfigured], which `MainActivity` observes
  * to swap to the Home-rooted nav graph; this screen doesn't navigate itself.
+ *
+ * @param pendingScannedText a `stricknani://setup?p=...` URI delivered via the manifest's own
+ *   intent-filter (SNA-61) instead of the in-app scanner - e.g. a generic camera app's own QR
+ *   auto-detection. Fed through [OnboardingViewModel.connectFromScannedText] exactly like a
+ *   [QrScannerDialog] result once, then cleared via [onScannedTextConsumed]. `null` means nothing
+ *   pending.
  */
 @Composable
-fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
+fun OnboardingScreen(
+    viewModel: OnboardingViewModel = hiltViewModel(),
+    pendingScannedText: String? = null,
+    onScannedTextConsumed: () -> Unit = {},
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var mode by remember { mutableStateOf(OnboardingMode.MANUAL) }
     var serverUrl by remember { mutableStateOf("") }
@@ -70,6 +90,17 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
     var passwordVisible by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
     val isValidating = uiState is OnboardingUiState.Validating
+
+    // SNA-61: a stricknani://setup URI delivered by the OS (not the in-app scanner) goes through
+    // the exact same connectFromScannedText path a real scan result does - switching to QR mode
+    // first just keeps the visible UI consistent with what's actually happening.
+    LaunchedEffect(pendingScannedText) {
+        pendingScannedText?.let { text ->
+            mode = OnboardingMode.QR
+            viewModel.connectFromScannedText(text)
+            onScannedTextConsumed()
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
@@ -97,7 +128,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                     selected = mode == candidate,
                     onClick = { mode = candidate },
                     enabled = !isValidating,
-                    label = { Text(candidate.label) },
+                    label = { Text(candidate.label()) },
                 )
             }
         }
@@ -117,7 +148,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
             OnboardingMode.QR ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Scan the setup QR code from Stricknani's web Settings → API Tokens page.",
+                        stringResource(R.string.onboarding_qr_instructions),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -132,7 +163,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                             contentDescription = null,
                             modifier = Modifier.padding(end = 8.dp),
                         )
-                        Text("Scan QR code")
+                        Text(stringResource(R.string.onboarding_qr_scan_button))
                     }
                 }
             OnboardingMode.PASSWORD ->
@@ -180,7 +211,8 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                     )
                 }
                 Text(
-                    if (mode == OnboardingMode.PASSWORD) "Sign in"
+                    if (mode == OnboardingMode.PASSWORD)
+                        stringResource(R.string.onboarding_mode_password)
                     else stringResource(R.string.onboarding_connect_button)
                 )
             }
@@ -216,7 +248,7 @@ private fun ManualOnboardingFields(
         singleLine = true,
         enabled = enabled,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("e2e-onboarding-server-url"),
     )
 
     OutlinedTextField(
@@ -240,7 +272,7 @@ private fun ManualOnboardingFields(
                 )
             }
         },
-        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("e2e-onboarding-api-token"),
     )
 
     Text(
@@ -271,13 +303,13 @@ private fun PasswordOnboardingFields(
         singleLine = true,
         enabled = enabled,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("e2e-onboarding-server-url"),
     )
 
     OutlinedTextField(
         value = email,
         onValueChange = onEmailChange,
-        label = { Text("Email") },
+        label = { Text(stringResource(R.string.onboarding_email_label)) },
         singleLine = true,
         enabled = enabled,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -287,7 +319,7 @@ private fun PasswordOnboardingFields(
     OutlinedTextField(
         value = password,
         onValueChange = onPasswordChange,
-        label = { Text("Password") },
+        label = { Text(stringResource(R.string.onboarding_password_label)) },
         singleLine = true,
         enabled = enabled,
         visualTransformation =
@@ -298,7 +330,11 @@ private fun PasswordOnboardingFields(
                     imageVector =
                         if (passwordVisible) Icons.Filled.VisibilityOff
                         else Icons.Filled.Visibility,
-                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                    contentDescription =
+                        stringResource(
+                            if (passwordVisible) R.string.onboarding_hide_password
+                            else R.string.onboarding_show_password
+                        ),
                 )
             }
         },

@@ -95,3 +95,44 @@ async def test_render_template_uses_request_scoped_i18n() -> None:
 
     # Rendering must not mutate global translator functions per request.
     assert templates.env.globals.get("_") is initial_global_gettext
+
+
+@pytest.mark.asyncio
+async def test_login_prompt_is_translated_for_german_requests() -> None:
+    """The login subtitle must use the request-scoped German catalog."""
+    response = await render_template(
+        "auth/login.html",
+        _make_request(cookie="language=de"),
+        context={
+            "current_user": None,
+            "csrf_token": "test-token",
+            "signup_enabled": False,
+            "is_dev_instance": False,
+        },
+    )
+
+    body = bytes(response.body).decode("utf-8")
+    assert "Bitte melde dich unten an" in body
+    assert "Please sign in below" not in body
+
+
+@pytest.mark.asyncio
+async def test_login_signup_surface_renders_material_controls() -> None:
+    """The optional signup panel must render without legacy button classes."""
+    response = await render_template(
+        "auth/login.html",
+        _make_request(cookie="language=en"),
+        context={
+            "current_user": None,
+            "csrf_token": "test-token",
+            "signup_enabled": True,
+            "is_dev_instance": False,
+        },
+    )
+
+    body = bytes(response.body).decode("utf-8")
+    assert 'id="signup-form"' in body
+    assert 'action="/auth/signup"' in body
+    assert "md3-auth-submit--success" in body
+    main = body[body.index('<main id="main-content"') : body.index("</main>")]
+    assert 'class="btn' not in main

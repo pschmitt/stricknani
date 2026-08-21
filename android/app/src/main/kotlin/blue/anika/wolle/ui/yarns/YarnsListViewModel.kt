@@ -2,12 +2,19 @@ package blue.anika.wolle.ui.yarns
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.RefreshController
+import blue.anika.wolle.ui.common.RefreshState
+import blue.anika.wolle.ui.common.RefreshTrigger
+import blue.anika.wolle.ui.common.isOfflineFailure
+import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.FlowPreview
 import javax.inject.Inject
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -25,6 +33,7 @@ class YarnsListViewModel
 constructor(
     private val yarnRepository: YarnRepository,
     private val mediaUrlResolver: MediaUrlResolver,
+    private val mutationFeedback: MutationFeedback,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -37,11 +46,12 @@ constructor(
     private val _favoritesOnly = MutableStateFlow(false)
     val favoritesOnly: StateFlow<Boolean> = _favoritesOnly.asStateFlow()
 
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    private val refreshController = RefreshController(viewModelScope)
+    val refreshState: StateFlow<RefreshState> = refreshController.state
+    val isRefreshing: StateFlow<Boolean> =
+        refreshState
+            .map { it.isUserInitiatedRefresh() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
 
     val yarns: StateFlow<List<YarnEntity>> =
         combine(yarnRepository.observeAll(), debouncedSearchQuery, favoritesOnly) {
@@ -66,7 +76,7 @@ constructor(
             )
 
     init {
-        refresh()
+        refresh(trigger = RefreshTrigger.Automatic)
     }
 
     fun previewUrl(entity: YarnEntity): String? = mediaUrlResolver.resolve(entity.previewUrl)
@@ -79,32 +89,29 @@ constructor(
         _favoritesOnly.value = favoritesOnly
     }
 
-    fun refresh() {
-        viewModelScope.launch {
-            _isRefreshing.value = true
-            try {
-                yarnRepository.sync()
-            } catch (e: Exception) {
-                _errorMessage.value = "Couldn't sync - showing cached data."
-            } finally {
-                _isRefreshing.value = false
-            }
-        }
+    fun refresh(trigger: RefreshTrigger = RefreshTrigger.UserInitiated) {
+        refreshController.refresh(trigger = trigger) { yarnRepository.sync() }
     }
 
     fun toggleFavorite(entity: YarnEntity) {
+        val wasFavorite = entity.isFavorite
         viewModelScope.launch {
             try {
-                yarnRepository.toggleFavorite(entity, wasFavorite = entity.isFavorite)
+                yarnRepository.toggleFavorite(entity, wasFavorite = wasFavorite)
+                mutationFeedback.show(
+                    if (wasFavorite) R.string.mutation_favorite_removed
+                    else R.string.mutation_favorite_added
+                )
             } catch (e: Exception) {
-                _errorMessage.value = "Couldn't update favorite - try again."
+                mutationFeedback.show(
+                    if (e.isOfflineFailure()) R.string.mutation_favorite_offline
+                    else R.string.error_favorite_failed
+                )
             }
         }
     }
 
-    fun dismissError() {
-        _errorMessage.value = null
-    }
+    fun dismissRefreshFeedback() = refreshController.clearFeedback()
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

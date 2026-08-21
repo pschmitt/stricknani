@@ -28,8 +28,10 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
   interceptors, same shape as nyetbox's `DynamicBaseUrlInterceptor`/`AuthInterceptor`.
 - Sync: delta/incremental (`?since=<cursor>`) sync endpoints on the backend instead of full
   refetch every time, sourcing deletions from the existing `AuditLog` table (already records
-  project/yarn deletes) as a tombstone feed. WorkManager periodic sync + manual pull-to-refresh +
-  best-effort sync on launch.
+  project/yarn deletes) as a tombstone feed. Project/yarn clients may opt into bounded pages with
+  `?limit=1..50`, then follow the response's opaque `next_cursor` via `?cursor=...`; omitting
+  `limit` remains the backward-compatible complete-response form. WorkManager periodic sync +
+  manual pull-to-refresh + best-effort sync on launch.
 - Room schema follows the syncwich pattern: real columns for filter/sort/list fields (name,
   category, tags, favorite, thumbnail path, `updatedAt`), full detail (steps, images, notes,
   materials) stored as a JSON column decoded with kotlinx.serialization at read time - not
@@ -39,10 +41,308 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
-## Next
+## SNA-59: Scheduled backups default to unencrypted and silently include the live API PAT
 
-- SNA-37: German (DE) translations for the Android app's UI strings, plus an in-app language
-  setting (default: device locale, fallback English) rather than relying on system locale alone
+- [x] Enabling scheduled/automatic backup (Settings -> Backup -> toggle) only asked for a
+      destination folder (`folderLauncher.launch(null)` -> `enableScheduledBackup`); it never
+      prompted for a password. `scheduledBackupPassword` (`SettingsRepository`) defaults to null, so
+      `BackupWorker.kt:38-40` calls `backupManager.export(password = null)` ->
+      `BackupCrypto.encode` -> `FLAG_PLAIN`, writing a **plaintext** zip on every scheduled run.
+- [x] That zip's `credentials.json` (`BackupModels.kt:14`, `BackupManager.kt:50`) contains the raw
+      live Stricknani API token (`BackupCredentials(serverUrl, apiToken)`) - the same PAT
+      `SettingsRepository` otherwise keeps in `EncryptedSharedPreferences` specifically because it's
+      a bearer credential.
+- [x] The destination folder is picked via SAF `OpenDocumentTree` - in realistic use this is very
+      often a cloud-synced folder (Drive/Nextcloud/Syncthing), so the live token could leave the
+      device on a recurring schedule with zero prompt or warning at enable time. The only visible
+      indication was a secondary "Password: Not set (unencrypted)" caption a user had to separately
+      go read under the Backup settings' scheduled section.
+- [x] Fix implemented: an explicit, un-skippable gate dialog (`ScheduledBackupPasswordGateDialog`,
+      new composable in `ui/settings/BackupSettingsScreen.kt`) now sits between flipping the
+      "Enable scheduled backups" switch on and the SAF folder picker, whenever no scheduled-backup
+      password is already set (`scheduledBackupPasswordSet` from `SettingsViewModel`). It states
+      plainly that scheduled backups include the live sign-in token and will be a plain, readable
+      file without a password, then offers exactly two explicit actions - "Set password and
+      enable" (a real password field, confirm button disabled while blank) or "Enable without a
+      password" (its own separate, clearly-labelled action, not a generic "OK"/"Continue" that
+      could be tapped through without registering what it means). Dismissing the dialog (back
+      button / tap-outside) leaves scheduled backup off, matching the existing Switch semantics
+      (`scheduledEnabled` is untouched until one of the two explicit paths runs). If a password is
+      already set (e.g. from a previous session, or set via the pre-existing "Change" action under
+      the Password row), toggling on skips straight to the folder picker as before - no re-nagging
+      once the user has already made an informed choice.
+      - Went with the ticket's second suggested direction (explicit un-skippable warning) rather
+        than strictly *requiring* a password, so a user who genuinely wants an unencrypted
+        scheduled backup (e.g. a destination folder they know is local/private) still can - but
+        only via a deliberate, separately-labelled action, never as the silent default.
+      - `BackupWorker`/`BackupCrypto`/`BackupManager` themselves are unchanged - the fix is entirely
+        at the point of consent (enabling the schedule), which is where the actual bug was; the
+        worker correctly honors whatever password (or lack thereof) the user explicitly chose.
+- [x] Regression coverage: `app/src/androidTest/kotlin/blue/anika/wolle/focused/
+      ScheduledBackupPasswordGateDialogTest.kt` (3 Compose UI tests) - asserts the warning copy and
+      both actions are shown, that "Set password and enable" stays disabled until a non-blank
+      password is typed and then reports exactly that password, and that "Enable without a
+      password" is its own distinct action that never also reports a password having been set.
+      This pins down the "can't silently produce an unencrypted export without the user having
+      been warned" behavior the ticket asked for.
+
+Status: **done** (2026-08-21) - verified two ways: (1) `ScheduledBackupPasswordGateDialogTest`'s 3
+new instrumentation tests run on the physical Zenfone 10 (serial `R6AIB700W850L7G`) via `adb shell
+am instrument -e class ...` - `OK (3 tests)`; (2) live manual repro on the same device against a
+real onboarded session - navigated to Settings -> Backup, tapped "Enable scheduled backups" with
+no password set, confirmed the gate dialog renders with the full warning text and both actions,
+confirmed "Set password and enable" is disabled while the password field is blank, and confirmed
+dismissing the dialog leaves the switch off (no silent-enable path). `just check rofl-13.brkn.lol`
+(ktfmt + unit tests + Android Lint) is green with this change in place.
+
+## SNA-60: Home screen's "Sync issue" banner is completely non-interactive
+
+- [x] Live-device repro (Zenfone 10, existing debug install): Home screen shows a "Sync issue - 1
+      change couldn't reach the server yet." card. Tapping it (confirmed via `uiautomator dump`:
+      the card and both its `TextView` children are `clickable="false"`) does nothing - no detail
+      of which change failed, no retry action, no way to dismiss it.
+- [x] The user was left with a permanent, unresolvable-looking warning on the primary screen with
+      no recovery path short of figuring out sync internals themselves.
+- [x] Root cause: `HomeSyncStatusCard` (`ui/home/SyncStatusCard.kt`) - the general-purpose
+      "syncing / issue / changes pending / synced" status summary at the top of Home - is a plain
+      `Card` with no `onClick`/`clickable` modifier at all. It's distinct from the separately
+      already-interactive `SyncIssueBanner` lower on the same screen (added later, for the
+      specific "N failed mutations" case, with its own Retry/View details actions) - `HomeSyncStatusCard`
+      is the one the ticket's live repro actually caught, and it really was a dead end.
+- [x] Fix: the whole card is now tappable (`Modifier.clickable`, `role = Role.Button`,
+      `onClickLabel` matching the action so screen readers announce it) whenever there's actually
+      something to act on - a genuine sync failure or edits still queued. Not clickable while
+      idle/syncing (nothing to act on, and mid-refresh isn't actionable) - same as before in that
+      state, so this doesn't turn the whole card into noise for the common case.
+      - `hasSyncFailures` -> routes to the same sync-issues detail screen `SyncIssueBanner`'s "View
+        details" already opens - `SyncSettingsScreen`, which lists exactly which change failed and
+        why (e.g. "Update project - Conflict resolved - the server kept the latest version") and
+        offers Retry/Dismiss per item. Chose "open details" over "just retry blindly" here on
+        purpose - a mutation already flagged as failed (e.g. a real conflict) usually needs the
+        user to actually look at it, not just get silently re-attempted.
+      - `pendingChangesCount > 0` and not yet flagged failed -> triggers an immediate
+        `SyncScheduler.replayThenSyncNow()` via `HomeViewModel.retryFailedMutations()` (same call
+        `SyncIssueBanner`'s Retry button already used) instead of waiting for the next periodic
+        WorkManager run - satisfies the ticket's "at minimum trigger a manual sync retry" for the
+        case where there's nothing yet to show details about.
+- [x] Test coverage: extended `FocusedComponentSemanticsTest` (`app/src/androidTest/...focused/`)
+      with `assertHasNoClickAction`/`assertHasClickAction` on a new `home-sync-status-card` test
+      tag for the idle-vs-actionable states, plus two new tests asserting a tap on the card routes
+      to `onOpenSyncIssues` for an actual failure and to `onRetrySync` for merely-queued changes -
+      directly the "Compose UI test asserting the sync-issue banner has an onClick/semantics
+      action" the ticket asked for.
+- [x] Incidental fix, same file, found while getting these tests to actually run (not part of this
+      ticket's own scope): `FocusedComponentSemanticsTest` had 3 pre-existing tests
+      (`destructiveDelete...`, `notesCard...`, and the original single `syncStatusExposes...`) that
+      each called `composeRule.setContent { ... }` twice within one test method to exercise two
+      states back-to-back. That pattern throws `IllegalStateException: ... has already set
+      content` under this repo's current Compose test tooling (`androidx.compose.ui.test.junit4.v2`)
+      - confirmed this is a real, currently-broken environment issue affecting many other
+      `androidTest` files too (`CategoriesScreenTest`, `StricknaniE2eTest`, `FocusedAppSemanticsTest`,
+      ...), not something this change introduced; a full-suite `am instrument` run without a class
+      filter still ends in `INSTRUMENTATION_RESULT: shortMsg=Process crashed` today. Fixing the
+      other affected files is out of scope here (worth its own ticket - flagging for a
+      follow-up rather than silently leaving it), but split this file's own 3 double-`setContent`
+      tests into 6 single-`setContent` ones so this file - which SNA-60 touches directly - runs
+      clean. Also fixed a real, separate bug this surfaced: the "1 change couldn't reach the
+      server yet." assertion used a curly `'` (U+2019) while the actual plural string resource
+      escapes a straight ASCII `\'` (U+0027) - the assertion was silently never actually
+      exercised end-to-end before (`just check` only runs JVM unit tests, not `androidTest`).
+- [ ] Not fixed, out of scope: the grey status card's `pendingChangesCount` and the red
+      `SyncIssueBanner`'s failed-mutation count can disagree on this test device (observed live:
+      "0 changes couldn't reach the server yet." right above "1 queued change needs attention.").
+      `HomeViewModel.pendingChangesCount` (`PendingMutationDao.observeCount()`, all queued
+      mutations) and `hasSyncFailures`/`failedMutations` (`observeFailed()`, only those flagged
+      failed/conflicted) are simply two different queries that happened to disagree on this
+      device's leftover test data - plausibly a real minor copy/count-consistency bug, but
+      unrelated to this ticket's actual ask (making the card tappable) and not investigated
+      further here.
+
+Status: **done** (2026-08-21) - verified on the physical Zenfone 10 (serial `R6AIB700W850L7G`):
+`FocusedComponentSemanticsTest`'s 12 tests (`am instrument -e class ...`) all pass, and a live
+repro confirms the fix - tapping the previously-dead "Sync issue" card now navigates straight to
+the Sync settings screen showing the exact queued change and why it failed ("Update project -
+Conflict resolved - the server kept the latest version; this change was not applied"), with a
+working Dismiss action. `just check rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint) is green.
+
+## SNA-61: `stricknani://setup` QR intent-filter is dead - payload is silently dropped
+
+- [x] `AndroidManifest.xml`'s `stricknani://setup` intent-filter comment claims "a generic camera
+      app's own QR auto-detection can hand them back to this app too, not just the in-app scanner."
+      In practice `MainActivity.onCreate`/`onNewIntent` only ever called
+      `DeepLinkParser.parse(intent.dataString)`, and `DeepLinkParser` (`ui/navigation/DeepLink.kt`)
+      only recognizes `/projects/{id}` and `/yarn/{id}` paths - a `stricknani://setup?p=...` URI
+      matched neither regex and was silently discarded. `QrConfigCodec.decode` was only ever
+      invoked from the in-app scanner's `OnboardingViewModel.connectFromScannedText`.
+- [x] So the manifest's advertised capability (finish onboarding by scanning the setup QR with any
+      camera app, not just the built-in scanner) didn't work - the OS handed the URI to
+      `MainActivity`, and it went nowhere.
+- [x] Fix implemented (chose the ticket's first option - route it through, rather than dropping the
+      intent-filter - since the capability is real and worth keeping): `MainActivity` now
+      separately checks `intent.dataString` against `QrConfigCodec.looksLikeQrConfigUri` (alongside
+      the existing `DeepLinkParser.parse` check, which - as before - correctly returns null for
+      this URI shape, added a regression test documenting that split explicitly) in both
+      `onCreate` and `onNewIntent`, storing a match in a new `pendingSetupUri` state field.
+      - Threaded through `StricknaniNavHost` (`pendingSetupUri`/`onSetupUriConsumed` params,
+        mirroring the existing `pendingDeepLinkRoute`/`onDeepLinkConsumed` pair) into a new
+        `OnboardingScreen(pendingScannedText, onScannedTextConsumed)` param pair.
+      - `OnboardingScreen` runs a `LaunchedEffect(pendingScannedText)` that switches the mode
+        `FilterChip`s to "QR code" (so the visible UI matches what's actually happening) and calls
+        `OnboardingViewModel.connectFromScannedText(text)` - the *exact* function the in-app
+        scanner's `QrScannerDialog` result already calls, so QR-onboarding validation/error
+        handling/success path is shared code, not a parallel reimplementation.
+      - Only forwarded while `!isConfigured` (`MainActivity`'s call site) - once already signed in,
+        a stray setup URI (an old QR scanned again, say) has nothing useful to do, matching how the
+        in-app scanner is only reachable from the Onboarding screen in the first place.
+- [x] Test coverage: `DeepLinkParserTest` gained a case documenting that a `stricknani://setup`
+      URI deliberately returns `null` from `DeepLinkParser` (handled separately by
+      `MainActivity`/`QrConfigCodec` now, not silently dropped) - `QrConfigCodecTest` already
+      covered `looksLikeQrConfigUri`/`decode` themselves (SNA-13). Didn't add a full instrumented
+      `OnboardingScreen` test for the `LaunchedEffect` wiring itself - `OnboardingViewModel` needs
+      several real Hilt-injected collaborators (`OnboardingValidator`, `PasswordTokenMinter`,
+      `SettingsRepository`, `SyncScheduler`) with no existing fake/test-double infra for it in this
+      repo, and the live-device repro below exercises the exact same code path end-to-end more
+      convincingly than a hand-mocked unit test would.
+- [x] Verified live on the Zenfone 10, mirroring the ticket's own repro exactly: signed out to
+      reach Onboarding, then `adb shell am start -a android.intent.action.VIEW -d
+      "stricknani://setup?p=<payload>"` (delivered via `onNewIntent` since the activity was already
+      running, `singleTask`). Before this fix the ticket confirmed this "is dropped - no onboarding
+      UI reacts"; now the mode chips visibly switch to "QR code" and the screen shows "Couldn't
+      reach that server. Check the URL and your network connection." - the real
+      `OnboardingValidator` network path actually ran against the payload's (deliberately fake,
+      unreachable) `baseUrl`, proving the full `intent -> QrConfigCodec.decode ->
+      connectFromScannedText -> connect -> OnboardingValidator` chain is now wired end-to-end, not
+      just that the intent-filter matches.
+      - Signing out to reach Onboarding for this repro removed this device's real saved
+        `wolle.anika.blue` session (`EncryptedSharedPreferences`) - the device needs re-onboarding
+        (manual or the dedicated test account's sign-in) before it's usable again; flagging this
+        since it wasn't restored as part of this session (no credentials on hand to redo it).
+
+Status: **done** (2026-08-21) - verified via the live-device repro above (mirroring the ticket's
+own repro method) and `just check rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint), green.
+
+## SNA-62: Backup export dialog's "(optional)" encryption label contradicts its own behavior
+
+- [x] The manual-export password dialog's title is "Encrypt backup? (optional)"
+      (`backup_settings_export_password_dialog_title`), implying encryption can be skipped. But
+      `BackupPasswordDialog`'s confirm button uses `enabled = allowBlankToClear ||
+      password.isNotBlank()`, and the export call site (`BackupSettingsScreen.kt:251-264`) didn't
+      pass `allowBlankToClear = true` - so the Confirm button stayed disabled for a blank password,
+      and Cancel aborted the export entirely (`pendingExportUri = null`). There was no way to
+      actually produce an unencrypted manual export from this dialog, despite the label and despite
+      `BackupCrypto`/`BackupManager.export(null)` supporting it.
+- [x] Not a security bug (forced encryption is the safer outcome) but a real copy/behavior
+      mismatch. Fixed by passing `allowBlankToClear = true` at the export call site - kept the
+      "(optional)" label truthful rather than changing the copy to demand a password, since:
+      - a manual export is a single, deliberate, in-the-moment user action (the user is looking
+        right at the screen when it happens), unlike SNA-59's scheduled/automatic backup case,
+        which forces an explicit choice precisely *because* it happens silently in the background
+        with no one watching:
+      - `viewModel.exportBackup`/`BackupManager.export`/`BackupCrypto.encode` already fully
+        support and correctly handle a null/blank password (`FLAG_PLAIN`) - the capability existed
+        and worked, only the UI path to reach it was broken.
+      - Restore's password dialog (`showRestorePasswordDialog`) is intentionally untouched -
+        `allowBlankToClear` stays `false` there, since that dialog only ever appears when
+        `BackupPasswordRequiredException` fired (the chosen file is genuinely encrypted), where a
+        blank password could never be correct.
+- [x] Test coverage: `BackupPasswordDialogTest` (new, `app/src/androidTest/...focused/`) - 2
+      focused Compose UI tests asserting Confirm stays disabled with `allowBlankToClear = false`
+      (the restore dialog's shape) and becomes enabled/confirmable with a blank password with
+      `allowBlankToClear = true` (now the export dialog's shape, matching its own "(optional)"
+      label). `BackupPasswordDialog` made non-`private` (was already the case for
+      `ScheduledBackupPasswordGateDialog`, SNA-59, for the same reason) so it's directly testable
+      without needing a full `BackupSettingsScreen`/`SettingsViewModel`.
+
+Status: **done** (2026-08-21) - verified via `BackupPasswordDialogTest`'s 2 new instrumentation
+tests on the physical Zenfone 10 (`adb shell am instrument`) - `OK (2 tests)` - and `just check
+rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint), green. Also verified with a full live
+click-through on-device: re-onboarded the Zenfone 10 (server URL + a fresh PAT minted for a new,
+isolated, non-admin test account, `ai@brkn.lol`, created via the admin panel specifically so
+testing never touches any real user's account - credentials saved to Bitwarden as "Stricknani (AI
+Agent)" for reuse), then Settings -> Backup -> Export now -> left the password field blank ->
+confirmed via `uiautomator dump` that the Export button reports `enabled="true"` with a blank
+password (previously it would have stayed disabled) -> tapped Export -> "Backup exported" toast,
+confirming the fix end to end. The previously-flagged gap (device signed out mid-session, no
+credentials on hand) is closed.
+
+## SNA-63: Remote build pipeline (`just build-fetch`) currently fails via `nix develop`
+
+- [x] `cd android && nix develop -c just build-fetch` (the documented `AGENTS.md` workflow for
+      getting a fresh debug APK) currently fails before Gradle ever runs: building the
+      `android-sdk-env` Nix derivation via the remote builder dispatch to `rofl-13.brkn.lol`/
+      `rofl-14.brkn.lol` fails with exit code 127 - `.../bin/android: ... cannot execute:
+      .android-wrapped: required file not found`.
+- [x] Root cause had **two independent layers**, both traced by bisecting `android-nixpkgs`
+      package versions directly on `rofl-13` rather than guessing from nixpkgs-drift alone (the
+      floating-`nixpkgs`/no-`flake.lock` theory from earlier in this session turned out to be a
+      real but secondary issue - see below):
+      1. `android-nixpkgs`'s `cmdline-tools-latest` currently resolves to cmdline-tools **23.0**,
+         which bundles a brand-new native `android` CLI binary (Google's replacement for the old
+         `sdkmanager` script/jar - the build log itself said "Android CLI will be used instead").
+         That binary's ELF interpreter is left at the upstream FHS path
+         (`/lib64/ld-linux-x86-64.so.2`); every `android-nixpkgs` package sets `dontPatchELF =
+         true` unconditionally (`pkgs/android/generic.nix`) - harmless while every SDK tool was a
+         script/jar, fatal for this one native binary inside a Nix build sandbox (no `/lib64`
+         there). `android-nixpkgs`'s own `sdk.nix` composition build runs `sdkmanager --list
+         --verbose` while assembling `android-sdk-env`, which shells out to this unpatched binary
+         and produces exactly this ticket's original symptom.
+      2. Even patched to actually run (confirmed via a manual `patchelf --set-interpreter
+         --set-rpath` + a writable `$HOME` for its `~/.android/bin` cache dir - both needed, and
+         both verified working in isolation), this binary **unconditionally tries to self-download
+         a bundled "Android CLI" payload from `dl.google.com`** on first invocation (live repro
+         outside any sandbox: `Downloading Android CLI... Error: Failed to download from
+         https://dl.google.com/... Temporary failure in name resolution`). That network fetch can
+         never succeed inside Nix's sandboxed, offline build environment - a hard blocker, not a
+         permissions nit. This explains "worked ~1 day before, not at audit time": `android-nixpkgs`
+         auto-updates its channel data roughly daily, and whichever daily bump first pointed
+         `cmdline-tools-latest` at 23.0 is what broke it, independent of the separate
+         no-`flake.lock` nixpkgs-drift issue.
+- [x] The originally-staged fix (committing the auto-generated `android/flake.lock`, previously
+      absent so every build re-resolved `nixpkgs` to whatever was newest at that moment) is real
+      and worth keeping for reproducibility, but on its own **did not** fix the build - re-ran
+      `just build-fetch` against the newly-locked revisions and hit the identical
+      `.android-wrapped` failure, since the lock just pins `android-nixpkgs` to a revision that
+      already had the broken cmdline-tools 23.0 as "latest". Kept the lock file committed anyway
+      (`android/flake.lock`, `git add`ed) - floating `nixpkgs`/`android-nixpkgs` inputs with no
+      lock remains an independent reproducibility bug worth having fixed regardless.
+- [x] Actual fix, in `android/flake.nix`: bisected cmdline-tools versions directly against this
+      pinned `android-nixpkgs` revision (`nix build` against a small probe expression selecting
+      only one cmdline-tools version + `platform-tools` at a time, bypassing the full devShell) -
+      confirmed cmdline-tools **22.0** (one version older, still present in this same revision's
+      channel data) predates the native-CLI switch and builds `android-sdk-env` successfully
+      standalone with **zero** modification. Since the self-download behavior in 23.0 means no
+      amount of ELF-patching can ever make it buildable offline, pinned `cmdline-tools-latest` to
+      22.0 instead of chasing further workarounds on 23.0. Implemented as a transparent wrapper
+      around the `android-nixpkgs` flake input's `sdk.${system}` function (intercepts the
+      `sdkPkgs` attrset handed to the caller's package-selector callback and swaps in
+      `cmdline-tools-22-0`, with only its `.path` metadata overridden back to `"cmdline-tools/
+      latest"` so it still installs at the layout `devshells.nix`'s shellHook `PATH` hardcodes) -
+      done this way specifically so the shared, cross-app `.just/android-app-ci` submodule
+      (`nix/devshells.nix`, used by nyetbox/augh/jollyfin/syncwich too) didn't need to be forked
+      or edited for a fix scoped to this one app's current channel-data bad luck.
+- [x] Verified end-to-end, remotely on `rofl-13.brkn.lol`, exactly via the documented workflow:
+      `just build-fetch debug rofl-13.brkn.lol` - `nix develop` now enters cleanly, Gradle runs,
+      `BUILD SUCCESSFUL in 57s`, and a fresh `dist/app-arm64-v8a-debug.apk` (39.3 MB, timestamped
+      to this session) was fetched back and installed on the Zenfone 10 (`just zenfone-install`,
+      `adb install -r` -> `Success`). Also ran the full documented pre-push check, `just check
+      rofl-13.brkn.lol` (`ktfmtCheck :app:testDebugUnitTest lintDebug`) - green, `BUILD SUCCESSFUL
+      in 1m 11s`, confirming the fix restores the *entire* documented local dev/CI-mirroring
+      workflow, not just a bare APK assemble.
+- [ ] Not filed upstream against `tadfisher/android-nixpkgs` this session (would be the right
+      long-term fix - either the package should keep pinning a working cmdline-tools version as
+      "latest" until the native CLI's offline/sandbox story is sorted, or should patch/opt this
+      one binary out of the `sdkmanager --list --verbose` sanity-check path). Worth doing as a
+      follow-up so this doesn't quietly reappear once someone bumps this repo's own
+      `android-nixpkgs` input past the pinned revision.
+
+Status: **done** (2026-08-21) - verified via `just build-fetch debug rofl-13.brkn.lol` (`BUILD
+SUCCESSFUL`, fresh APK fetched and installed on the Zenfone 10) and `just check rofl-13.brkn.lol`
+(ktfmt + unit tests + Android Lint, all green). Root cause was cmdline-tools 23.0's new
+self-downloading native `android` CLI binary (an upstream `android-nixpkgs` regression, unrelated
+to this repo's own code), not solely the missing `flake.lock` originally suspected - see the
+two-layer writeup above. `android/flake.lock` is committed alongside the `flake.nix` fix.
+
+## Next
 
 ### Backend (`stricknani/`) - JSON API for the app
 
@@ -113,7 +413,8 @@ collection directly so the `delete-orphan` cascade handles it.
 
 - [x] `GET /api/v1/sync/projects?since=<iso8601>` -> `{updated: [...], deleted_ids: [...],
       server_time: <iso8601>, full_resync_required: bool}`; same shape for `/api/v1/sync/yarns`.
-      `since` omitted/absent means "full sync" (all rows, no deletions to report)
+      `since` omitted/absent means "full sync" (all rows, no deletions to report); an optional
+      `limit` can split that full sync into bounded pages
 - [x] `GET /api/v1/sync/categories` - same response shape, but always returns the full current
       list: categories have no `updated_at` and their deletions aren't recorded in `AuditLog`
       (only projects/yarns are audited), so there's no delta to compute; the list is small enough
@@ -128,9 +429,15 @@ collection directly so the `delete-orphan` cascade handles it.
       there's no actual gap to guard against yet). Field is kept in the response shape as a
       forward-compatible hook - see `sync.py`'s module docstring for what a correct future check
       would need (a recorded pruning cutoff, not "oldest row that happens to exist")
-- [x] Tests: `tests/test_api_sync.py` (6 tests: initial full sync, delta returns only
-      recently-updated rows, deletion reporting for both projects and yarns, the ancient-`since`
-      false-positive regression case, category full-list sync)
+- [x] Optional bounded pagination for projects/yarns: `limit=1..50` caps the combined updated
+      and deleted items per response; `has_more` plus an opaque `next_cursor` continues a fixed
+      snapshot using keyset positions across both feeds. The old `since`-only request remains
+      unbounded so existing Android clients cannot silently lose rows they do not know how to
+      request from a subsequent page. Cursors are bound to their entity type and requesting user;
+      categories remain a small full-list sync.
+- [x] Tests: `tests/test_api_sync.py` (11 tests: legacy/full sync, delta updates, deletion
+      reporting, bounded project/yarn pages, mixed update+tombstone pagination, cursor validation,
+      the ancient-`since` false-positive regression case, and category full-list sync)
 
 Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` against a fresh
 (non-locally-migrated) `DATABASE_URL` to match CI's environment (255 passed), `uv run ruff check
@@ -138,6 +445,9 @@ Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` a
 possibly-aware (client sends an offset), but `updated_at`/`created_at` are stored as naive UTC
 (SQLite has no real datetime type and just compares the bound string) - `since` is now normalized
 to naive UTC before use in any query.
+
+Pagination addition verified on 2026-08-19 with the focused sync suite (11 passed), Ruff, and
+mypy; the original Android `since`-only contract remains unchanged.
 
 ## SNA-4: Bearer-auth support on the media route
 
@@ -340,40 +650,42 @@ follow-up push.
       `SyncScheduler.replayThenSyncNow()`), replays strictly in insertion order, reconciles temp
       ids with server-assigned ids via `PendingMutationDao.reassignLocalId` once a queued create
       actually lands
-- [x] A replay failure leaves the mutation queued with `lastErrorMessage` recorded
-      (`PendingMutationDao.observeFailed()` exposed for a future conflict-banner UI - not
-      surfaced anywhere yet, see caveat below) rather than silently dropping the local edit; the
-      worker returns `Result.retry()` when any mutation failed
+- [x] Updates made against a still-local negative temp id omit the optimistic-concurrency
+      timestamp (the server-created row necessarily has a different timestamp), while updates of
+      cached server rows retain their precondition; deterministic project/yarn payload tests cover
+      both branches
+- [x] A replay failure leaves the mutation queued with `lastErrorMessage` recorded and the worker
+      returns `Result.retry()` when any mutation failed; the Home and Settings screens surface
+      queued sync issues and offer retry/dismiss actions rather than hiding a stuck local edit
 
-Status: **mostly done** (2026-08-18), landed together with SNA-10 - see that entry for scope
-(text fields only this pass; step reordering + image/photo upload deferred). **Not done**: no UI
-surfaces `observeFailed()` yet, so a stuck/conflicting queued mutation is currently invisible to
-the user beyond it simply not showing as synced - a conflict-banner UI is a follow-up. **Not
-verified**: an actual end-to-end replay against a running Stricknani server (no reachable test
-server was set up this session, same gap as SNA-6/7/9) - verified so far only via a successful
-remote debug build (`just build debug rofl-13.brkn.lol`, `BUILD SUCCESSFUL`) confirming the outbox
-/worker/DI wiring compiles and Room's schema migration (v1 -> v2, `fallbackToDestructiveMigration`)
-is consistent; not yet installed/exercised on a physical device this session.
+Status: **done** (2026-08-20) - verified with the conflict/sync-issue unit tests, remote `just
+check rofl-13.brkn.lol` (ktfmt, unit tests, and Android Lint), and a live replay against the
+disposable Stricknani fixture: `StricknaniLiveWriteE2eTest.queuedWritesAndUploadsReachTheDisposableFixture`
+creates a yarn (with a photo) and a project while offline, then polls the fixture's REST API
+directly (not just cached UI state) to confirm the queued create, the photo upload, a subsequent
+edit, and a delete all actually reached the server once connectivity returned. Closing the earlier
+"live replay unverified" caveat.
 
 ### Android app screens
 
 ## SNA-9: Core browsing screens
 
 - [x] Home/dashboard: favorites (projects + yarns) and recently-updated projects, pull-to-refresh
-- [x] Projects list: search, category filter chips (+ inline "add category" dialog), favorite
+- [x] Projects list: search, category/tag filter chips (+ inline "add category" dialog), favorite
       toggle, pull-to-refresh
 - [x] Project detail: steps, images, needles/stitch sample/other materials, linked yarns
       (tappable, resolved from `yarn_ids` against the local yarn cache), notes
 - [x] Yarn stash list + detail: search by name/brand/colorway, favorites-only filter, photos
-- [x] Category management: create via the Projects screen's filter row (`CategoriesApi` direct
-      call + `CategoryRepository.sync()`); rename/delete not implemented (categories.py has no
-      such endpoints yet either)
+- [x] Category management: create from the Projects screen's filter row and rename/delete from
+      the Categories screen, with explicit delete confirmation and project reassignment handled by
+      the authenticated JSON API
 - [x] Global search across projects and yarns - client-side over the Room cache, so it works fully
       offline with zero network call
 
-Status: done (2026-08-18), with one caveat below. No dedicated "tag filter chips" UI landed
-(the checklist item was originally "category/tag filter chips") - category filtering is real;
-tag filtering was scoped out to keep this task bounded and can follow as a small addition.
+Status: **done** (2026-08-19) - tag filter chips are derived from the offline Room project cache,
+and category rename/delete are available in the Android Categories screen and authenticated JSON
+API. Focused Android and API tests cover filtering, rename propagation, deletion clearing project
+categories, and duplicate-name rejection; remote `just check rofl-13.brkn.lol` is green.
 
 Favorite toggling (`ProjectsApi`/`YarnsApi` `favorite`/`unfavorite`, wired into
 `ProjectRepository`/`YarnRepository`) is a direct online call with local optimistic-update +
@@ -413,12 +725,11 @@ build, and CI is green on the follow-up push.
 - [x] Project create/edit form (`ui/projects/ProjectEditorScreen.kt`/`ProjectEditorViewModel.kt`):
       name/category/needles/stitch sample/other materials/tags/link/description/notes text
       fields, category suggestion chips (reuses `CategoryRepository`), linked-yarn multi-select
-      via `FilterChip`s. Step reordering and image/attachment picker/upload are **explicitly
-      deferred** to a follow-up (multipart upload is materially more work and doesn't block the
-      outbox mechanism itself being real and testable)
+      via `FilterChip`s, step reordering, queued title/step image uploads, and project attachment
+      picker uploads/deletions
 - [x] Yarn create/edit form (`ui/yarns/YarnEditorScreen.kt`/`YarnEditorViewModel.kt`): same text
-      -field shape as the project form, mirroring `YarnWriteRequest`. Photo picker/upload
-      deferred, same reasoning
+      -field shape as the project form, mirroring `YarnWriteRequest`, plus queued multi-photo
+      uploads
 - [x] All writes go through the offline queue (SNA-8) via
       `ProjectRepository.createProject`/`updateProject`/`deleteProject` (and the yarn
       equivalents) - zero-connectivity create/edit/delete shows up in Room immediately and
@@ -433,21 +744,11 @@ build, and CI is green on the follow-up push.
       project"/"New yarn" `ExtendedFloatingActionButton` on the respective list screens, an edit
       icon in the respective detail screens' `TopAppBar`
 
-Status: **mostly done** (2026-08-18) - verified via a successful remote debug build (`just build
-debug rofl-13.brkn.lol`, `BUILD SUCCESSFUL`) after fixing two real compile errors caught along the
-way: (1) `androidx.compose.material3.ExposedDropdownMenu`/`ExposedDropdownMenuBox` doesn't resolve
-against this project's Material3 1.4.0 (the API this session initially reached for isn't present
-under that name/signature in this version) - replaced the category picker with a plain text field
-plus `FilterChip` suggestion chips instead of chasing the right dropdown API, which is simpler and
-matches the category-filter chip row already used on `ProjectsListScreen`; (2) `Modifier.weight()`
-inside `YarnEditorScreen`'s weight/length `Row` failed because `weight` was (wrongly) imported as a
-top-level symbol - it's a `RowScope`-member extension, not a top-level function, and resolves
-automatically inside a `Row { }` lambda without any import. **Not verified**: installed/exercised
-on a physical device, or an actual live create/edit/delete round-trip against a running Stricknani
-server (no reachable test server was set up this session, same recurring gap noted in
-SNA-6/7/8/9). No unit tests added - `ProjectEditorViewModel`/`YarnEditorViewModel` are mostly
-Android-lifecycle-bound (`SavedStateHandle`, `Flow` collection) with the same "not enough isolable
-pure logic yet" reasoning as SNA-6.
+Status: **done** (2026-08-20) - verified via remote `just check rofl-13.brkn.lol` (ktfmt, unit
+tests, and Android Lint), focused step-reordering and project-attachment mutation tests, API
+regression tests confirming step IDs and attached images survive an update reorder, and a live
+create/edit/delete/upload round-trip against the disposable Stricknani fixture
+(`StricknaniLiveWriteE2eTest`, see SNA-8's status for details).
 
 ## SNA-11: Gauge calculator
 
@@ -518,17 +819,16 @@ change, not that the new screen looks/behaves correctly once opened.
       Mi Pad 4 mostly works but needs occasional wireless-adb reconnects; Pixel 5 has been
       unreachable over wireless adb for this entire session - a Home Assistant/Tasker webhook gap
       outside this app's control, not a deploy-recipe defect).
-- [ ] Play Store publishing workflow: explicitly optional in the ticket, and left undone - it
-      needs a real Play Console account/listing (screenshots, store copy, content rating,
-      data-safety form) and a decision about whether Stricknani should even be on Play Store at
-      all (self-hosted homelab audience, Obtainium/GitHub Releases already covers it) - a product
-      decision for the user, not something to default into.
+- [x] The user decided to pursue Play Store publishing; repository scaffolding and a dry-run-safe,
+      explicitly gated workflow now live in SNA-42. The external Play Console account/listing,
+      screenshots, privacy URL, content-rating/data-safety forms, and service-account credential
+      are configured and verified by the successful internal release/assets workflows.
 
-Status: **mostly done** (2026-08-18) - the release workflow's first-ever run (triggered by its own
-landing commit, since it has no `paths:` filter) succeeded outright: all 9 CI checks green
-including `Release`, and `gh release view latest` confirms a real signed prerelease with all 8 APKs
-(4 ABIs x debug/release) plus `SHA256SUMS`. Play Store publishing deliberately left as a follow-up
-decision (see above).
+Status: **done** (2026-08-19) - the release workflow is green and `gh release view latest` confirms
+a real signed prerelease with all 8 APKs (4 ABIs x debug/release) plus `SHA256SUMS`; Play Console
+internal release code 1 and the reviewed icon, feature graphic, and 24 screenshots were uploaded
+successfully in workflows `32291620107` and `32292338197`. Production promotion remains a manual
+Play Console decision.
 
 ## Stretch / later
 
@@ -613,23 +913,21 @@ list - the full round trip (password → minted token → persisted connection �
       no real delta (`CategoryRepository.sync()` always replaces the whole list; "changed" there
       is meaningless noise, not a signal). `ProjectRepository.sync()`/`YarnRepository.sync()` now
       return `Boolean` (did this pull anything) instead of `Unit`
-- [x] `POST_NOTIFICATIONS` requested once from `HomeScreen` (`RequestNotificationPermissionEffect`,
-      `ui/common/`) rather than at cold start - the prompt appears once the user has actually
-      reached the app's main shell (post-onboarding), not before they've seen any value in it
+- [x] `POST_NOTIFICATIONS` requested once from the configured app shell
+      (`RequestNotificationPermissionEffect`, `ui/common/`) rather than at cold start - the prompt
+      appears once the user has actually reached the main shell (post-onboarding), not before
+      they've seen any value in it
+- [x] Persist the permission-request decision, cover the permission/notification gates
+      deterministically, and update pre-existing periodic WorkManager requests so the notification
+      flag is not stranded behind `ExistingPeriodicWorkPolicy.KEEP`
+- [x] Treat every destination's startup refresh as automatic, including Categories, so repeated
+      navbar navigation stays silent when no data changed
 
-Status: **mostly done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol
-":app:assembleDebug" ":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean -
-including the `POST_NOTIFICATIONS`-gated `NotificationManagerCompat.notify()` call, which lint
-would otherwise flag as a missing-permission call), then `just deploy-all debug` + relaunch on
-Zenfone 10, Mi Pad 4, and Pixel 5 (`ResumedActivity`, no crash in logcat on any of the three).
-**Not verified**: an actual notification firing on-device - that needs a periodic `SyncWorker` run
-that both finds real changes and has connectivity to a real Stricknani server, none of which is
-reachable this session (same recurring gap as every sync-touching ticket since SNA-6/7). No unit
-tests added for `SyncNotifier` itself (Android `NotificationManager`/permission-check-bound, same
-"not enough isolable pure logic" reasoning as SNA-6/7/8/10/18) - the pure boolean-return change to
-`ProjectRepository.sync()`/`YarnRepository.sync()` doesn't have new pure logic worth isolating
-either (it's a one-line derivation already exercised implicitly by the repositories' existing
-behavior).
+Status: **done** (2026-08-19) - verified via remote Android build/lint/unit checks and a real PX5
+instrumentation run of `SyncNotifierTest` after granting `POST_NOTIFICATIONS`; the test observed
+the posted `sync_updates` notification in Android's active notification manager and then cleaned it
+up. The periodic/change policy remains covered by deterministic unit tests, while manual and
+startup syncs remain intentionally silent.
 
 ## SNA-15: Backup/restore support
 
@@ -1341,17 +1639,382 @@ but out of scope for this ticket.
       `remember(detail.steps)`; both detail screens' image/photo carousels now reuse the
       already-`remember`ed `imageUrls`/`photoUrls` list instead of calling `resolveMediaUrl` a
       second time per item.
-- [ ] **Deliberately not done this pass** (noted by the audit, real but larger/riskier): delta-sync
-      has no server-side pagination at all - a first sync or a long-offline device pulls every row
-      (each with its full detail JSON) in one unbounded response. Needs a backend API change
-      (limit/cursor), not just an app-side fix - worth its own ticket rather than folding into a
-      "quick performance pass".
+- [x] **Delta-sync pagination**: the backend now provides the bounded `limit`/`cursor` contract
+      described under SNA-3. It is deliberately opt-in for compatibility with the current Android
+      `since`-only Retrofit calls; adopting pages in the app can be a separate data-layer change,
+      without another server contract migration.
 
-Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-19) - verified via the backend pagination regression tests and
+`uv run mypy .`; the earlier Android performance changes were also verified via `just gradle
+rofl-13.brkn.lol ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`, no warnings), then confirmed for real on the
 Zenfone 10: search still filters correctly (typed "Crash", got the 3 matching test yarns after the
 debounce settles), and a project detail screen with linked yarns + 10 steps still renders correctly
 with steps in the right order and thumbnails intact - the memoization/gating changes are purely
 about *when* work re-runs, not *what* gets computed, so no behavior changed, only frequency.
+
+## SNA-37: German (DE) translations + in-app language picker
+
+- [x] **Full string extraction** (user chose "extract everything" over a partial/infra-only
+      scope): every hardcoded English UI literal across all ~29 Composable files, 2 enums
+      (`TopLevelDestination`/`SettingsCategory`, whose `label`/`title`/`subtitle` fields became
+      `@StringRes` ints + `@Composable` extension functions since enum constructors can't call
+      `stringResource`), and ~9 ViewModels' error/toast messages (needed `@ApplicationContext
+      Context` injected into each, since `getString()` isn't available outside Compose) - 224
+      `<string>` resources total, plus 2 `<plurals>` (sync status's "N change(s)" count).
+      Parallelized across 4 forks by disjoint file list, with `strings.xml` itself reserved for
+      sequential editing to avoid a shared-file race - see below for what went wrong.
+- [x] **Fork coordination failure, caught by verification, not by trust**: 2 of the 4 dispatched
+      forks (each a `fork`-type subagent, which inherits the *entire* parent conversation including
+      the "I just dispatched 4 forks" tool calls) misread their own inherited context and believed
+      *they* were the coordinator - one tried to re-dispatch the other 3 forks (correctly rejected:
+      nested forking isn't allowed), the other burned its whole turn polling `ListAgents` in a
+      loop. Neither touched a single one of its assigned files. Caught by diffing actual file
+      content/`git status` against each fork's *claimed* file list rather than trusting the
+      self-reported summary - both groups' 12 files (`HomeScreen.kt`, `OnboardingScreen.kt`,
+      `QrScannerDialog.kt`, `ProjectDetailScreen.kt`, `ProjectEditorScreen.kt`,
+      `ProjectsListScreen.kt`, `NavigationSettingsScreen.kt`, `SettingsScreen.kt`,
+      `SyncSettingsScreen.kt`, `YarnDetailScreen.kt`, `YarnEditorScreen.kt`, `YarnsListScreen.kt`)
+      were done directly instead of re-dispatching more forks. The other 2 forks (settings screens
+      + search, `MainActivity.kt`) completed correctly.
+- [x] A `general-purpose` research agent (not a fork, so no shared-context confusion) then swept
+      every remaining file - `ui/gauge/GaugeCalculatorScreen.kt` (the whole screen, never in the
+      original 4-way split), `ui/home/SyncStatusCard.kt` (needed Android `<plurals>` for the
+      "N change(s)" count text, not the manual `if (n==1) "" else "s"` string-concat trick),
+      `CrashReportDialog.kt`, `ImageViewerDialog.kt`, `SearchField.kt`, both enums, and the
+      ViewModel-layer error strings - found and reported with exact code snippets rather than
+      silently missed.
+- [x] `android/app/src/main/res/values-de/strings.xml` - hand-translated (not machine-translated)
+      German for all 224 strings; `English`/`Deutsch` labels themselves are deliberately left
+      untranslated (native self-names, standard language-picker convention). Verified
+      `values/strings.xml` and `values-de/strings.xml` declare the exact same `name=` set both
+      directions (`comm -3` on sorted name lists) and that every `R.string.*`/`R.plurals.*`
+      reference in the Kotlin source has a matching definition (and vice versa) before considering
+      extraction complete.
+- [x] In-app language picker: `AppearanceSettingsScreen`'s new "Language" `SettingsGroupCard`
+      (Follow system / English / Deutsch, mirroring the existing Theme card's `RadioButton` list),
+      backed by a new `AppLanguage` enum (`data/settings/AppLanguage.kt`) and
+      `SettingsViewModel.appLanguage`/`setAppLanguage()`.
+- [x] **`AppCompatDelegate.setApplicationLocales()` silently no-ops on a plain `ComponentActivity`**
+      (this app's `MainActivity` isn't `AppCompatActivity`) - confirmed empirically: tapping
+      "Deutsch" updated the picker's own radio-button state (so the click handler and ViewModel
+      state were fine) but `adb shell cmd locale get-app-locales blue.anika.wolle.debug` stayed
+      `[]` and the UI stayed in English even after an explicit `activity.recreate()`. Running the
+      exact same `cmd locale set-app-locales ... --locales de` from the shell worked immediately
+      and rendered the German strings correctly, isolating the bug to the in-app
+      `AppCompatDelegate` call specifically, not the resources/locale-matching. Fixed by calling
+      the platform `LocaleManager.setApplicationLocales()` directly on API 33+ (what the shell
+      command does under the hood) and keeping `AppCompatDelegate` only as the API < 33 fallback
+      (persisted via the manifest's `AppLocalesMetadataHolderService` auto-store opt-in, added
+      alongside `androidx.appcompat` as a new dependency - `androidx-appcompat = "1.7.1"`).
+- [x] `AppearanceSettingsScreen`'s language rows call `activity?.recreate()` (via
+      `LocalActivity.current`, not a raw `LocalContext.current as Activity` cast - the latter is an
+      Android Lint error, `ContextCastToActivity`) after `setAppLanguage()` so already-composed
+      strings actually refresh instead of only affecting the next cold start.
+
+Status: **done** (2026-08-19) - `just check` (ktfmt + unit tests + Android Lint) green after the
+`LocalActivity`/`LocaleManager` fixes. Verified for real on the Zenfone 10: fresh install renders
+in English (device locale) by default with correct singular text ("1 change couldn't reach the
+server yet."); Settings → Appearance → Language → Deutsch flips every screen to German instantly
+(`Erscheinungsbild`, `Design`, `System folgen`, `Sprache`, and the bottom nav labels
+`Start`/`Projekte`/`Wolle`/`Suche`/`Maschenprobe`/`Einstellungen` all confirmed via screenshot);
+`adb shell cmd locale get-app-locales` correctly reports `[de]` while selected and `[]` (no
+override) after switching back to "Follow system" - reset to "Follow system" before finishing so
+the test device is left in its default state.
+
+## SNA-39: Replace the yarn icon with `mdi:sheep`
+
+- [x] Replace the Android yarn icon wherever it is used in navigation, lists, details, and
+      supporting UI with the Material Design Icons sheep icon. Added a local Compose `ImageVector`
+      from the MDI 7.4.47 `mdi:sheep` path and replaced all five yarn-specific `Checkroom` call
+      sites: navigation, home favorites, search results, linked project yarns, and the yarn list.
+- [x] Preserve existing accessibility labels and `Icon` tint behavior so the sheep icon follows the
+      current Material theme in light and dark modes.
+
+Status: **done** (2026-08-19; remotely verified with `just check` on `rofl-13.brkn.lol`: ktfmt,
+unit tests, and `lintDebug` all passed).
+## SNA-38: Pull-to-refresh gestures with user feedback
+
+- [x] Home pull-to-refresh refreshes categories, projects, and yarns.
+- [x] Projects and Yarns list pull-to-refresh refreshes the complete relevant collection (including
+      category metadata for Projects).
+- [x] Project and Yarn detail pull-to-refresh fetches the current item and only its currently
+      linked yarns/projects.
+- [x] Shared foreground feedback reports in-progress, changed, no-change, offline, and error
+      outcomes in English and German; cached Room content remains visible on failures.
+- [x] An atomic refresh guard prevents duplicate concurrent refreshes; unit tests cover duplicate
+      calls and changed/no-change/offline/error outcomes.
+
+Status: **done** (2026-08-19) - verified with remote `just check` on `rofl-13.brkn.lol`:
+`ktfmtCheck`, `:app:testDebugUnitTest`, and `lintDebug` all passed after remote formatting.
+
+## SNA-40: Add snackbar feedback for mutation actions
+
+- [x] Show translated success feedback for actions such as favorite/unfavorite, create, edit, and
+      delete across project and yarn screens.
+- [x] Show clear queued/offline and error feedback when a mutation is stored locally or cannot be
+      applied, while preserving the existing pending-change indicator.
+- [x] Use a shared snackbar/event path so feedback is consistent across screens and does not rely
+      on transient ViewModel state surviving navigation.
+- [x] Add focused UI or ViewModel tests covering success, queued, and failure outcomes for the
+      mutation actions.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the messages in English and German.
+
+Status: **done** (2026-08-19; codex/android-sna40-sna41) - verified with remote `just check` and
+`just e2e-build` on `rofl-13.brkn.lol`; focused tests cover the shared event bus, queued/offline/error
+outcomes, confirmation callbacks, and English/German resources.
+
+## SNA-41: Confirm destructive deletes and style trash actions
+
+- [x] Require an explicit confirmation dialog before deleting projects, yarns, and every other
+      deletable entity exposed by the Android UI.
+- [x] Make the confirmation identify the item being deleted and offer a safe cancel action before
+      any offline mutation is queued or sent to the server.
+- [x] Render the trash/delete icon in each overflow menu with the theme's red destructive color,
+      while preserving its accessible label and touch target.
+- [x] Add focused tests covering cancel, confirm, and red destructive-icon semantics for project
+      and yarn deletion flows.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the behavior in English and German.
+
+Status: **done** (2026-08-19; codex/android-sna40-sna41) - verified with remote `just check` and
+`just e2e-build` on `rofl-13.brkn.lol`; focused journeys cover both project and yarn overflow menus,
+cancel behavior, and item-preserving confirmation flows.
+
+## SNA-42: Publish Android assets and releases to Google Play
+
+- [x] Added Fastlane-compatible en-US store copy and a declaration file covering the privacy
+      policy URL, content-rating completion, and data-safety completion. The checked-in Play icon
+      (512×512) and feature graphic (1024×500) are validated without a network call.
+- [x] Extended the disposable phone/tablet screenshot matrix with an optional review-PR path;
+      successful light-theme captures are consolidated into the three Play screenshot buckets and
+      dark-theme captures remain available as review diagnostics.
+- [x] Added manual `.github/workflows/play-store.yaml` and `play-store-assets.yaml` workflows. A
+      default dispatch only validates/builds; publication requires the explicit input,
+      `PLAY_PUBLISH_ENABLED=true`, and the relevant service-account credential.
+- [x] Reused the existing CI signing keystore/version properties and added a dry-run-safe asset
+      uploader plus structural metadata/PNG/AAB/authentication checks without writing any secret to
+      the repository.
+- [x] Added `android/docs/play-store-release.md` with the staged internal-testing and rollback
+      runbook.
+- [x] Verify the listing and release flow in the Play Console before enabling production release.
+
+Status: **done** (2026-08-19; service-account access, internal release upload, and reviewed asset
+upload verified through workflows `32291620107` and `32292338197`; production promotion remains a
+manual Play Console decision).
+
+## SNA-43: Normalize navbar taps to each destination's root view
+
+- [x] Make tapping a top-level navbar item navigate to that destination's root route, including
+      returning from nested settings categories or other child/detail screens.
+- [x] Keep the action a no-op when the current route is already that destination's root view, with
+      no duplicate back-stack entries or unnecessary state loss.
+- [x] Apply the same behavior consistently to every visible navbar destination, not only Settings,
+      while preserving saved state and deep-link behavior.
+- [x] Add focused navigation tests for root, nested, and repeated navbar taps across all destinations.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the behavior in English and German.
+
+Status: **done** (2026-08-19; remotely verified with `just check rofl-13.brkn.lol`).
+
+## SNA-44: Render Markdown and embedded images in notes and stitch samples
+
+- [x] Investigate why Markdown content and embedded images in project/yarn notes and stitch samples
+      do not render like descriptions and steps.
+- [x] Render the supported Markdown syntax consistently, resolving authorized relative media URLs
+      through the configured server and preserving offline cached images where available.
+- [x] Handle missing/invalid images and plain text safely without blank sections or crashes.
+- [x] Add focused rendering/URL-resolution tests for notes and stitch samples, including embedded
+      images, offline cache behavior, and English/German UI labels.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android screen.
+
+Status: **done** (2026-08-19; remotely verified with `ktfmtCheck`, 45 unit tests, and `lintDebug` on
+`rofl-13.brkn.lol`).
+
+## SNA-45: Scale down Markdown heading styles
+
+- [x] Render Markdown headings at a compact scale that fits the Android card hierarchy; an `h1`
+      must not visually overpower card titles and surrounding content.
+- [x] Keep heading levels distinct and readable across notes, stitch samples, descriptions, and
+      steps, including light/dark themes and accessibility font scaling.
+- [x] Add focused rendering tests or screenshot coverage for heading sizes in the affected content
+      surfaces.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android screen.
+
+Status: **done** (2026-08-19) - compact heading typography and focused tests landed; combined remote
+`just check rofl-13.brkn.lol` passed after integration.
+
+## SNA-46: Use the shared android-app-ci actions
+
+- [x] Audit Android build, lint, E2E, screenshot, signing, and release workflows against the
+      reusable actions exposed by `pschmitt/android-app-ci`.
+- [x] Replace duplicated setup/remote-Gradle/diagnostic shell glue with the shared actions where
+      their contracts fit, while keeping Stricknani-specific fixture and test steps explicit.
+- [x] If the shared actions do not support the required source paths or artifacts, add the smallest
+      compatible upstream fixes and pin/document the consumed action interfaces.
+- [x] Keep local `just` targets as developer-facing wrappers, but make hosted CI exercise the shared
+      action path and verify Android Lint, E2E, screenshots, signing, and release artifacts.
+- [x] Run the affected workflows and `just check` remotely on `rofl-13.brkn.lol` after migration.
+
+Status: **done** (2026-08-19) - workflow migration landed with upstream nested-project/artifact
+support in `pschmitt/android-app-ci`; remote Android check passed.
+
+## SNA-47: Reduce redundant "Already up to date" notifications
+
+- [x] Identify which sync/status events currently emit the "Already up to date" notification,
+      especially repeated navbar taps and destination-root navigation.
+- [x] Suppress duplicate or non-actionable notifications while retaining useful feedback for an
+      explicit user refresh or a completed sync with changed data.
+- [x] Add focused tests covering repeated navigation, explicit refresh, and changed/no-change sync
+      feedback in English and German.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the resulting notification volume
+      on a real Android device.
+
+Status: **done** (2026-08-19) - automatic no-change refreshes are silent while explicit refresh
+feedback remains; combined remote `just check rofl-13.brkn.lol` passed.
+
+## SNA-48: Add a warm yellow tone to the Notes card
+
+- [x] Apply a subtle yellow-toned Material 3 surface/container to Notes cards across the affected
+      project and yarn content screens.
+- [x] Keep text, icons, contrast, dark-theme behavior, and accessibility readable at all supported
+      font scales.
+- [x] Add focused UI or screenshot coverage for the Notes card in light and dark themes.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android
+      device.
+
+Status: **done** (2026-08-19) - shared accessible NotesCard styling, theme coverage, and screenshot
+states landed; combined remote `just check rofl-13.brkn.lol` passed.
+
+## SNA-49: Fix Stitch sample image and HTML entity rendering
+
+- [x] Reproduce the Stitch sample rendering issue against project 3 on `wolle.anika.blue`, including
+      missing images and literal `&nbsp;` text.
+- [x] Normalize or sanitize the sample's HTML/Markdown before rendering so entities display as
+      whitespace and authorized image URLs resolve through the configured server and image cache.
+- [x] Preserve safe handling for malformed content, missing images, and offline cached samples.
+- [x] Add focused rendering/URL-resolution tests and screenshot coverage for a populated Stitch
+      sample in English and German.
+- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android device.
+
+Status: **done** (2026-08-19) - HTML entity decoding, HTML-image normalization, authenticated
+media resolution, fixture data, and screenshot coverage landed; combined remote `just check
+rofl-13.brkn.lol` passed.
+
+## SNA-50: Add an Android categories view
+
+- [x] Add a categories destination reachable from the app's navigation, showing the user's
+      categories with loading, empty, offline, and error states.
+- [x] Load categories through the existing offline-first repository/sync flow and keep the view
+      consistent with the project and yarn list screens.
+- [x] Add focused Compose/navigation coverage for the destination and its states.
+
+Status: **done** (2026-08-19) - offline-first categories destination and state/navigation tests
+landed; combined remote `just check rofl-13.brkn.lol` passed.
+
+## SNA-51: Import projects from Android
+
+- [x] Add an explicit project-import flow in the Android app, including a discoverable entry point
+      and progress/success/error feedback.
+- [x] Reuse the backend's supported project import behavior and preserve offline-first semantics
+      for the resulting project data and images where applicable.
+- [x] Add confirmation and failure handling so a partially completed import is not silently lost.
+- [x] Add focused tests for starting, completing, cancelling, and failing an import.
+
+Status: **done** (2026-08-19) - URL import UI/state machine, Bearer-authenticated backend
+boundary, offline outbox persistence, and project/step image persistence landed; remote
+`just check rofl-13.brkn.lol` passed.
+
+## SNA-52: Make Markdown images interactive and size-aware
+
+- [x] Make images embedded in Markdown cards clickable and open the shared full-screen image
+      viewer, consistently across project and yarn detail content.
+- [x] Show useful image metadata in the viewer for every image (alt text plus context such as
+      title image, stitch sample, step number/title, or yarn photo position).
+- [x] Support Stricknani's `.sn-size-sm/md/lg/xl` image annotations and long-form aliases such as
+      `.sn-size-large`, while using a smaller default Markdown image size and preserving relative
+      annotation sizes.
+- [x] Add focused tests/screenshot coverage and run the remote Android quality checks.
+
+Status: **done** (2026-08-19) - Markdown images are clickable in project/yarn cards, the shared
+viewer shows localized context/alt text/dimensions, and size annotations support short and long
+forms with a smaller default width. Focused Markdown tests, remote `just check`, `just e2e-build`,
+and a real PX5 viewer run passed.
+
+## SNA-53: Standardize primary yarn image display
+
+- [x] Use the yarn's primary/main photo consistently in yarn lists, project links, details, and
+      create/edit recipe yarn pickers.
+- [x] Centralize preview selection so screens do not silently fall back to a different photo or
+      omit the image when the primary photo is available.
+- [x] Add focused coverage for primary-photo selection and the create-project yarn picker, then
+      run the remote Android quality checks.
+
+Status: **done** (2026-08-19) - primary-photo ordering is centralized and the project editor's yarn
+chips now show the authenticated primary thumbnail (or the sheep fallback). Focused ordering tests,
+remote `just check`, and the latest debug APK deployment to PX5 passed.
+
+## SNA-54: Polish Android create/edit screens with Material 3
+
+- [x] Give new project and new yarn flows a stronger Material 3 hierarchy with expressive
+      surfaces, grouped sections, supportive icons, and clearer primary actions.
+- [x] Keep the forms comfortable at phone/tablet widths, accessible at larger font scales, and
+      visually consistent between project and yarn creation/editing.
+- [x] Add focused UI/screenshot coverage and run the remote Android quality checks.
+
+Status: **done** (2026-08-19) - project and yarn editors now use shared expressive Material 3
+section cards, icons, spacing, and grouped fields. Remote `just check` passed and the resulting
+debug APK was installed/launched on PX5.
+
+## SNA-55: Verify every web view on a disposable seeded instance
+
+- [x] Start a proper disposable Stricknani test instance with deterministic seed data and exercise
+      every authenticated and public web route.
+- [x] Check desktop and mobile layouts for unstyled/legacy controls, broken dialogs, incorrect
+      responsive behavior, and Material 3 consistency; capture reviewable screenshots.
+- [x] Fix all discovered web UI regressions and add route-level E2E assertions so they remain
+      covered in CI.
+- [x] Run the complete browser E2E suite and record the instance-backed verification result.
+
+Status: **done** (2026-08-19) - seeded disposable-instance full and smoke browser suites passed;
+Material layout regressions in forms, dialogs, search, detail sidebars, and header navigation were
+fixed and covered by E2E geometry assertions.
+
+## SNA-56: Let users reorder project and yarn detail cards
+
+- [x] Support long-pressing a card title to enter a reorder mode and drag cards into a preferred
+      order on project and yarn detail views.
+- [x] Persist the per-domain card order locally, apply it consistently to all corresponding detail
+      views, and keep a sensible default order for new users.
+- [x] Add a dedicated Settings entry to review/reset the project and yarn card orders, with clear
+      accessibility feedback and sensible behavior at large font scales.
+- [x] Add focused state/UI coverage and run the remote Android quality checks.
+
+Status: **done** (2026-08-19; `2946e71`) - persistent per-domain ordering, long-press drag
+reordering, Settings review/reset controls, and focused unit/Compose coverage landed; remote
+`just check rofl-13.brkn.lol`, `just e2e-build rofl-13.brkn.lol`, and the PX5 focused
+instrumentation run passed.
+
+## SNA-57: Suppress pull-to-refresh animation on automatic navigation refreshes
+
+- [x] Keep pull-to-refresh indicators reserved for an explicit user gesture, not automatic refreshes
+      triggered when switching navbar destinations.
+- [x] Preserve useful loading/progress feedback for explicit refreshes and initial empty-screen
+      loads, without showing a stale spinner on every destination change.
+- [x] Add focused refresh-controller/UI coverage and run the remote Android quality checks.
+
+Status: **done** (2026-08-19) - automatic refreshes retain background sync and initial empty-state
+loading, while the pull-to-refresh indicator is now limited to explicit user gestures; focused
+tests and remote Android checks passed.
+
+## SNA-58: Move categories into Settings by default
+
+- [x] Make Categories a Settings hub entry with a back-navigation affordance, while retaining its
+      existing offline-first list and management actions.
+- [x] Keep Categories out of the default bottom navigation, while allowing users to opt it back
+      into the bar through the existing Navigation settings.
+- [x] Add focused navigation/default-preference coverage and run the remote Android quality checks.
+
+Status: **done** (2026-08-19) - Categories is available from the Settings hub with back
+navigation, hidden from the default navbar but still opt-in through Navigation settings; focused
+preference coverage and remote Android checks passed.
 
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->

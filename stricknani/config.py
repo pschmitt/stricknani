@@ -11,7 +11,9 @@ from dotenv import load_dotenv
 # Look for .env in the repository root (parent of stricknani package)
 _config_dir = Path(__file__).parent.parent
 _env_file = _config_dir / ".env"
-load_dotenv(_env_file, override=True)
+# Explicit environment variables (including the ephemeral keys supplied by
+# `just run`) take precedence over values in `.env`.
+load_dotenv(_env_file, override=False)
 
 # Sentinel default for SECRET_KEY. If the running config still carries this
 # value in production we refuse to start (see Config.validate_secrets).
@@ -52,6 +54,10 @@ class Config:
         os.getenv("IMPORT_TRACE_DIR", str(MEDIA_ROOT / "import-traces"))
     )
     IMPORT_TRACE_MAX_CHARS: int = int(os.getenv("IMPORT_TRACE_MAX_CHARS", "12000"))
+    # Uploaded source files and images are read in bounded chunks. Keep the
+    # default high enough for a pattern PDF while preventing an unbounded
+    # request body from being copied into process memory.
+    MAX_UPLOAD_BYTES: int = int(os.getenv("MAX_UPLOAD_BYTES", str(25 * 1024 * 1024)))
 
     # Security
     ALLOWED_HOSTS: list[str] = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(
@@ -124,6 +130,27 @@ class Config:
     )
     RATE_LIMIT_SIGNUP_WINDOW_SECONDS: int = int(
         os.getenv("RATE_LIMIT_SIGNUP_WINDOW_SECONDS", "3600")
+    )
+
+    # API token minting rate limiting (T107): per-user cap so a compromised
+    # or malicious session can't mint an unbounded number of long-lived
+    # bearer credentials.
+    RATE_LIMIT_API_TOKEN_MAX_ATTEMPTS: int = int(
+        os.getenv("RATE_LIMIT_API_TOKEN_MAX_ATTEMPTS", "10")
+    )
+    RATE_LIMIT_API_TOKEN_WINDOW_SECONDS: int = int(
+        os.getenv("RATE_LIMIT_API_TOKEN_WINDOW_SECONDS", "3600")
+    )
+
+    # URL-import fetch rate limiting (T107): per-user cap on how often the
+    # server will fetch an attacker-influenced remote URL on a user's
+    # behalf, on top of the SSRF guard (T52) that restricts *where* it can
+    # fetch from.
+    RATE_LIMIT_IMPORT_MAX_ATTEMPTS: int = int(
+        os.getenv("RATE_LIMIT_IMPORT_MAX_ATTEMPTS", "20")
+    )
+    RATE_LIMIT_IMPORT_WINDOW_SECONDS: int = int(
+        os.getenv("RATE_LIMIT_IMPORT_WINDOW_SECONDS", "3600")
     )
 
     # Initial admin bootstrap

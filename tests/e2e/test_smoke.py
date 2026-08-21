@@ -1,4 +1,4 @@
-"""Critical browser journeys for the web application."""
+"""Fast, deterministic browser coverage for pull requests."""
 
 from __future__ import annotations
 
@@ -29,8 +29,8 @@ def wait_for_path(page: Page, pattern: str) -> None:
     page.wait_for_url(re.compile(rf"{re.escape(BASE_URL)}{pattern}"))
 
 
-def test_core_user_journey() -> None:
-    """Exercise authentication and the primary project/yarn CRUD paths."""
+def test_pr_smoke_journey() -> None:
+    """Cover login, list/detail navigation, account settings, and logout."""
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
@@ -44,53 +44,118 @@ def test_core_user_journey() -> None:
         try:
             page.goto(f"{BASE_URL}/login")
             page.locator("#login-form").wait_for()
+            page.locator("footer").wait_for()
+            assert page.evaluate(
+                "document.documentElement.scrollHeight <= window.innerHeight"
+            )
             page.locator("#login-email").fill(EMAIL)
             page.locator("#login-password").fill(PASSWORD)
             page.locator('form[action="/auth/login"] button[type="submit"]').click()
             wait_for_path(page, r"/projects(?:\?.*)?")
-            screenshot(page, "01-projects-list.png")
+
+            page.locator("#projects-list").wait_for()
+            assert page.locator(".md3-list-toolbar").is_visible()
+            assert page.locator('#projects-list [class~="btn"]').count() == 0
+            screenshot(page, "smoke-01-projects-list.png")
 
             page.locator('a[href="/projects/new"]').first.click()
-            page.locator("#projectForm #name").fill("CI E2E Project")
+            page.locator("#projectForm .md3-disclosure").first.wait_for()
+            assert page.locator("#projectForm .md3-disclosure").count() >= 1
+            assert page.locator('#projectForm [class~="btn"]').count() == 0
+            page.locator("#projectForm #name").fill("PR Smoke Project")
             page.locator('button[form="projectForm"][type="submit"]').first.click()
             wait_for_path(page, r"/projects/\d+\?toast=project_created")
-            page.get_by_text("CI E2E Project", exact=True).first.wait_for()
-            screenshot(page, "02-project-detail.png")
+            page.get_by_text("PR Smoke Project", exact=True).first.wait_for()
+            page.locator(".md3-detail-main").wait_for()
+            assert page.locator(".md3-disclosure").count() >= 1
+            assert page.locator('#main-content [class~="collapse"]').count() == 0
+            screenshot(page, "smoke-02-project-detail.png")
 
-            page.locator('a[href^="/projects/"][href$="/edit"]').click()
-            page.locator("#projectForm #name").fill("CI E2E Project Updated")
-            page.locator('button[form="projectForm"][type="submit"]').first.click()
-            wait_for_path(page, r"/projects/\d+\?toast=project_updated")
-            page.get_by_text("CI E2E Project Updated", exact=True).first.wait_for()
-            screenshot(page, "03-project-edit-result.png")
+            page.goto(f"{BASE_URL}/projects/")
+            page.locator("#projects-list .md3-feature-card").first.wait_for()
+            assert page.locator('#projects-list [class~="badge"]').count() == 0
 
-            page.goto(f"{BASE_URL}/yarn")
-            page.locator('a[href="/yarn/new"]').first.click()
-            page.locator("#yarnForm #name").fill("CI E2E Yarn")
-            page.locator('#yarnForm input[name="brand"]').first.fill("CI Brand")
-            page.locator('#yarnForm input[name="colorway"]').first.fill("CI Blue")
-            page.locator('button[form="yarnForm"][type="submit"]').first.click()
-            wait_for_path(page, r"/yarn/\d+\?toast=yarn_created")
-            page.get_by_text("CI E2E Yarn", exact=True).first.wait_for()
-            screenshot(page, "04-yarn-detail.png")
+            page.locator("button.md3-navbar__account-trigger").click()
+            page.get_by_text("Language", exact=True).wait_for()
+            page.get_by_text("Appearance", exact=True).wait_for()
+            page.locator('a[href="/user/api-tokens"]').click()
+            wait_for_path(page, r"/user/api-tokens")
+            page.get_by_text("API Tokens", exact=True).first.wait_for()
+            screenshot(page, "smoke-03-account-settings.png")
 
-            page.locator('a[href^="/yarn/"][href$="/edit"]').click()
-            page.locator("#yarnForm #name").fill("CI E2E Yarn Updated")
-            page.locator('button[form="yarnForm"][type="submit"]').first.click()
-            wait_for_path(page, r"/yarn/\d+\?toast=yarn_updated")
-            page.get_by_text("CI E2E Yarn Updated", exact=True).first.wait_for()
-            screenshot(page, "05-yarn-edit-result.png")
-
-            page.locator("button.avatar").click()
+            page.locator("button.md3-navbar__account-trigger").click()
             page.locator('form[action="/auth/logout"] button[type="submit"]').evaluate(
                 "button => button.click()"
             )
             wait_for_path(page, r"/login(?:\?.*)?")
             page.locator("#login-form").wait_for()
-            screenshot(page, "06-logged-out.png")
+            screenshot(page, "smoke-04-logged-out.png")
         except BaseException:
-            screenshot(page, "failure.png")
+            screenshot(page, "smoke-failure.png")
             raise
+        finally:
+            context.close()
+            browser.close()
+
+
+def test_material_dark_login_surface() -> None:
+    """Verify the shared Material theme responds to a dark system preference."""
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        context = browser.new_context(
+            color_scheme="dark",
+            locale="en-US",
+            viewport={"width": 390, "height": 844},
+        )
+        page = context.new_page()
+
+        try:
+            page.goto(f"{BASE_URL}/login")
+            page.locator("#login-form").wait_for()
+            assert page.locator("html").get_attribute("data-theme") == "dark"
+            assert page.locator(".md3-top-app-bar").is_visible()
+            assert page.locator(".md3-footer").is_visible()
+            assert page.evaluate(
+                "document.documentElement.scrollHeight <= window.innerHeight"
+            )
+            assert page.locator('#main-content [class~="btn"]').count() == 0
+            assert page.locator('link[href*="/static/css/material.css"]').count() == 1
+            assert page.locator('link[href*="/static/css/tailwind.css"]').count() == 0
+            assert page.locator('link[href*="/static/vendor/daisyui/"]').count() == 0
+            assert (
+                page.locator("#login-form .md3-button--filled").evaluate(
+                    "element => getComputedStyle(element).borderRadius"
+                )
+                == "999px"
+            )
+            screenshot(page, "smoke-dark-01-login.png")
+        except BaseException:
+            screenshot(page, "smoke-dark-failure.png")
+            raise
+        finally:
+            context.close()
+            browser.close()
+
+
+def test_public_privacy_policy() -> None:
+    """Verify the policy is public, translated, and linked from login."""
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        context = browser.new_context(
+            locale="de-DE", viewport={"width": 1280, "height": 900}
+        )
+        page = context.new_page()
+
+        try:
+            page.goto(f"{BASE_URL}/privacy")
+            page.get_by_role("heading", name="Datenschutzerklärung").wait_for()
+            page.get_by_text("Android-App und Offline-Daten", exact=True).wait_for()
+
+            page.goto(f"{BASE_URL}/login")
+            page.locator('a[href="/privacy"]').first.wait_for()
+            assert page.locator('footer a[href="/privacy"]').is_visible()
         finally:
             context.close()
             browser.close()

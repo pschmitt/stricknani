@@ -18,6 +18,9 @@
 		document
 			.querySelector('meta[name="csrf-token"]')
 			?.getAttribute("content") || "";
+	// Exposed so other static/js/features/*.js files that need to send a
+	// CSRF header don't each re-implement the same meta-tag lookup.
+	window.getCsrfToken = getCsrfToken;
 
 	const toastVariants = {
 		success:
@@ -135,6 +138,13 @@
 		} finally {
 			document.body.removeChild(textArea);
 		}
+	};
+
+	// Select an input's text on click via `data-call="selectInputText"` -
+	// a plain `onclick="this.select()"` is dead under the strict CSP (no
+	// `'unsafe-inline'`).
+	window.selectInputText = (el) => {
+		el?.select?.();
 	};
 
 	window.copyToClipboard = async (text, btn) => {
@@ -377,6 +387,75 @@
 		dialog.removeAttribute("open");
 		dialog.style.display = "none";
 		return true;
+	};
+
+	// Shared confirm-delete flow for the project/yarn delete dialogs
+	// (`projects/_delete_dialog.html`, `yarn/_delete_dialog.html`) - the two
+	// used to be near-byte-identical per-entity JS files differing only in
+	// dialog id, API path, redirect toast key, and error message.
+	const deleteEntityConfig = {
+		project: {
+			dialogButtonSelector: "#deleteProjectDialog .md3-button--destructive",
+			apiPath: (id) => `/projects/${id}`,
+			redirectUrl: "/projects?toast=project_deleted",
+			failI18nKey: "failedToDeleteProject",
+			failFallback: "Failed to delete project",
+		},
+		yarn: {
+			dialogButtonSelector: "#deleteYarnDialog .md3-button--destructive",
+			apiPath: (id) => `/yarn/${id}`,
+			redirectUrl: "/yarn?toast=yarn_deleted",
+			failI18nKey: "failedToDeleteYarn",
+			failFallback: "Failed to delete yarn",
+		},
+	};
+
+	window.deleteEntity = async (kind, id) => {
+		const entityConfig = deleteEntityConfig[kind];
+		if (!entityConfig || !id) {
+			return;
+		}
+
+		const btn = document.querySelector(entityConfig.dialogButtonSelector);
+		if (btn) {
+			btn.disabled = true;
+			const originalHtml = btn.innerHTML;
+			btn.innerHTML = `<span class="loading loading-spinner loading-sm"></span> ${btn.textContent.trim()}`;
+			btn.dataset.originalHtml = originalHtml;
+		}
+
+		const resetButton = () => {
+			if (!btn) {
+				return;
+			}
+			btn.disabled = false;
+			btn.innerHTML = btn.dataset.originalHtml;
+		};
+		const showFailureToast = () => {
+			window.showToast?.(
+				getI18n(entityConfig.failI18nKey, entityConfig.failFallback),
+				"error",
+			);
+		};
+
+		try {
+			const response = await fetch(entityConfig.apiPath(id), {
+				method: "DELETE",
+				headers: { "X-CSRF-Token": getCsrfToken() },
+			});
+
+			if (response.ok) {
+				window.location.href = entityConfig.redirectUrl;
+				return;
+			}
+
+			showFailureToast();
+			resetButton();
+		} catch (error) {
+			console.error(`Delete ${kind} failed`, error);
+			showFailureToast();
+			resetButton();
+		}
 	};
 
 	window.printProject = (id) => {
@@ -668,9 +747,21 @@
 					contentDiv.innerHTML = html;
 					dialog.showModal();
 				}
+			} else {
+				window.showToast?.(
+					getI18n(
+						"somethingWentWrong",
+						"Something went wrong. Please try again",
+					),
+					"error",
+				);
 			}
 		} catch (error) {
 			console.error("Preview failed", error);
+			window.showToast?.(
+				getI18n("somethingWentWrong", "Something went wrong. Please try again"),
+				"error",
+			);
 		}
 	};
 

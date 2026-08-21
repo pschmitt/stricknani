@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
+import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
@@ -11,15 +12,17 @@ import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.util.DateTimeUtils
+import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.RefreshController
+import blue.anika.wolle.ui.common.RefreshState
+import blue.anika.wolle.ui.common.RefreshTrigger
+import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 private const val SECTION_LIMIT = 10
 
@@ -38,13 +41,15 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     syncStateDao: SyncStateDao,
     pendingMutationDao: PendingMutationDao,
+    private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
 
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    private val refreshController = RefreshController(viewModelScope)
+    val refreshState: StateFlow<RefreshState> = refreshController.state
+    val isRefreshing: StateFlow<Boolean> =
+        refreshState
+            .map { it.isUserInitiatedRefresh() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
 
     /** Most recent of the per-entity-type sync cursors, or null if nothing has synced yet. */
     val lastSyncedMillis: StateFlow<Long?> =
@@ -59,9 +64,17 @@ constructor(
             .observeCount()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), 0)
 
-    val hasSyncFailures: StateFlow<Boolean> =
+    val failedMutations: StateFlow<List<PendingMutationEntity>> =
         pendingMutationDao
             .observeFailed()
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
+
+    val hasSyncFailures: StateFlow<Boolean> =
+        failedMutations
             .map { it.isNotEmpty() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
 
@@ -96,29 +109,23 @@ constructor(
             )
 
     init {
-        refresh()
+        refresh(trigger = RefreshTrigger.Automatic)
     }
 
     fun previewUrl(path: String?): String? = mediaUrlResolver.resolve(path)
 
-    fun refresh() {
-        viewModelScope.launch {
-            _isRefreshing.value = true
-            try {
-                categoryRepository.sync()
-                projectRepository.sync()
-                yarnRepository.sync()
-            } catch (e: Exception) {
-                _errorMessage.value = "Couldn't sync - showing cached data."
-            } finally {
-                _isRefreshing.value = false
-            }
+    fun refresh(trigger: RefreshTrigger = RefreshTrigger.UserInitiated) {
+        refreshController.refresh(trigger = trigger) {
+            categoryRepository.sync()
+            val projectsChanged = projectRepository.sync()
+            val yarnsChanged = yarnRepository.sync()
+            projectsChanged || yarnsChanged
         }
     }
 
-    fun dismissError() {
-        _errorMessage.value = null
-    }
+    fun dismissRefreshFeedback() = refreshController.clearFeedback()
+
+    fun retryFailedMutations() = syncScheduler.replayThenSyncNow()
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

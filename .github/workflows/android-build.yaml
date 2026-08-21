@@ -1,8 +1,8 @@
 name: Android Build
 
-# Hand-written rather than delegating to pschmitt/android-app-ci's reusable build.yaml - see
-# android-lint.yaml's header comment for why (repo-root Gradle-project assumption doesn't hold in
-# this monorepo).
+# The shared build workflow owns the checkout, JDK/Gradle setup, unit test, ABI APK build, and
+# artifact contract. `project-directory` is required because Android lives below this repository's
+# unrelated Python web application.
 on:
   push:
     branches:
@@ -18,37 +18,13 @@ on:
 
 jobs:
   assemble:
-    name: Assemble
-    runs-on: ubuntu-24.04
+    uses: pschmitt/android-app-ci/.github/workflows/build.yaml@main
+    with:
+      project-directory: android
+      unit-test-task: :app:testDebugUnitTest
+      gradle-task: :app:assembleDebug
+      apk-dir: app/build/outputs/apk/debug
+      artifact-prefix: app
+    secrets: inherit
     permissions:
       contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
-      - name: Run unit tests
-        working-directory: android
-        run: ./gradlew :app:testDebugUnitTest
-      - name: Build debug APK
-        working-directory: android
-        run: ./gradlew :app:assembleDebug
-      - name: Upload artifact app-arm64-v8a-debug.apk
-        uses: actions/upload-artifact@v7
-        with:
-          name: app-arm64-v8a-debug.apk
-          path: android/app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
-      - name: Upload artifact app-armeabi-v7a-debug.apk
-        uses: actions/upload-artifact@v7
-        with:
-          name: app-armeabi-v7a-debug.apk
-          path: android/app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk
-      - name: Upload artifact app-x86_64-debug.apk
-        uses: actions/upload-artifact@v7
-        with:
-          name: app-x86_64-debug.apk
-          path: android/app/build/outputs/apk/debug/app-x86_64-debug.apk
-      - name: Upload artifact app-x86-debug.apk
-        uses: actions/upload-artifact@v7
-        with:
-          name: app-x86-debug.apk
-          path: android/app/build/outputs/apk/debug/app-x86-debug.apk

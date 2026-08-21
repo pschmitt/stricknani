@@ -11,7 +11,8 @@ import org.junit.Test
  * [WriteReplayWorker]'s conflict handling. The rest (catching `HttpException`, calling the
  * repositories' adopt/drop methods) needs a live Retrofit/Room stack this module doesn't currently
  * mock for unit tests, so it's covered instead by the backend's own conflict tests
- * (`tests/test_api_v1.py`) plus manual on-device verification - see `android/TODO.md`'s SNA-33 note.
+ * (`tests/test_api_v1.py`) plus manual on-device verification - see `android/TODO.md`'s SNA-33
+ * note.
  */
 class WriteReplayWorkerTest {
     private val json = Json { ignoreUnknownKeys = true }

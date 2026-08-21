@@ -10,11 +10,12 @@ import blue.anika.wolle.data.settings.NavbarItemPreference
 object NavbarCustomization {
 
     /**
-     * `null`/empty/corrupt input falls back to every destination visible in declared order.
+     * `null`/empty/corrupt input falls back to the destinations' declared defaults and order.
      * [TopLevelDestination.SETTINGS] is always forced visible - it's the only way back to this
      * customization UI, so hiding it would lock the user out of un-hiding anything. Unknown ids are
      * dropped (e.g. a destination removed in a later release); destinations missing from a saved
-     * preference (e.g. one added in a later release) are appended as visible, at the end.
+     * preference (e.g. one added in a later release) are appended with their declared default
+     * visibility.
      */
     fun sanitize(raw: List<NavbarItemPreference>?): List<NavbarItemPreference> {
         val known =
@@ -32,9 +33,14 @@ object NavbarCustomization {
         val missing =
             TopLevelDestination.entries
                 .filterNot { destination -> known.any { it.id == destination.name } }
-                .map { NavbarItemPreference(it.name, visible = true) }
+                .map { NavbarItemPreference(it.name, visible = it.defaultVisible) }
         return known + missing
     }
+
+    fun defaultPreferences(): List<NavbarItemPreference> =
+        TopLevelDestination.entries.map { destination ->
+            NavbarItemPreference(destination.name, visible = destination.defaultVisible)
+        }
 
     fun toDestinations(items: List<NavbarItemPreference>): List<TopLevelDestination> =
         items.mapNotNull { pref ->

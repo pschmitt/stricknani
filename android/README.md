@@ -1,4 +1,8 @@
-# Stricknani
+<p align="center">
+  <img src="../branding/icon.svg" alt="Stricknani icon" width="128">
+</p>
+
+<h1 align="center">Stricknani</h1>
 
 **A Material You, offline-first Android client for your own [Stricknani](../README.md) server.**
 
@@ -21,10 +25,14 @@ status (`SNA-N` entries).
 
 ## Installation
 
-Stricknani isn't published on Google Play, Amazon Appstore, F-Droid, or IzzyOnDroid. Instead,
-install and auto-update it via [Obtainium](https://obtainium.imranr.dev/) pointed at this
-repository, or grab an APK directly from the
-[Releases page](https://github.com/pschmitt/stricknani/releases).
+Stricknani is not published on Google Play yet. Until the Play Console listing is completed, install
+and auto-update it via [Obtainium](https://obtainium.imranr.dev/) pointed at this repository, or
+grab an APK directly from the [Releases page](https://github.com/pschmitt/stricknani/releases).
+
+The repository contains a manual, gated Play Store release and asset workflow. Its default mode only
+validates the listing and builds a signed AAB; it cannot upload anything. See
+[the Play Store release runbook](docs/play-store-release.md) for the one-time Console setup,
+metadata checklist, staged internal-testing flow, and rollback procedure.
 
 [<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="60">][obtainium-link]
 
@@ -72,6 +80,14 @@ builds remotely and copies the debug APK to `./dist`. The debug application id i
 
 `just deploy-all [variant]` builds, fetches, and installs on the fleet's shared physical test
 devices (Zenfone 10, Mi Pad 4, Pixel 5) - see [AGENTS.md](AGENTS.md).
+
+Hosted Android CI uses thin wrappers around the shared
+[`pschmitt/android-app-ci`](https://github.com/pschmitt/android-app-ci) workflows for build, lint,
+signed release, and Play bundle publication. Since this is a monorepo, those callers pass
+`project-directory: android`; APK/AAB/report paths remain relative to that directory. E2E and
+screenshot capture stay local because their disposable Stricknani fixture and emulator journeys
+are app-specific. See [the Android CI notes](docs/android-ci.md) for the lane boundaries and
+artifact contracts.
 
 See [AGENTS.md](AGENTS.md) for the full dev environment, build, and contribution conventions, and
 the fleet-wide shared doc it references (`.just/android-app-ci/AGENTS-shared.md`).

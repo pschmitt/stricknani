@@ -103,6 +103,29 @@
 	max-width: 900px;
 }
 
+/* Keep setup QR codes square without distorting sources with unusual dimensions. */
+.qr-code-frame {
+	display: flex;
+	width: min(16rem, 100%);
+	aspect-ratio: 1;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	border-radius: var(--md-sys-shape-corner-large);
+	background: #fff;
+}
+
+.qr-code-image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.qr-code-url {
+	max-width: 100%;
+}
+
 /* PhotoSwipe crop dialog styles */
 #pswpCropDialog .modal-box {
 	max-width: 95vw;
@@ -989,4 +1012,612 @@ textarea::placeholder {
 .checkerboard-bg {
 	background-image: radial-gradient(#000 1px, transparent 1px);
 	background-size: 20px 20px;
+}
+
+/* Material 3 Expressive foundation (T88).
+ *
+ * Templates currently use DaisyUI-compatible component names. Keeping those
+ * names as a compatibility layer lets the visual system migrate incrementally
+ * while Projects and Yarns share one token set and interaction treatment. */
+:root,
+[data-theme="light"] {
+	--md-sys-color-primary: oklch(46% 0.16 264);
+	--md-sys-color-on-primary: oklch(99% 0.01 264);
+	--md-sys-color-primary-container: oklch(91% 0.06 264);
+	--md-sys-color-on-primary-container: oklch(25% 0.09 264);
+	--md-sys-color-secondary: oklch(45% 0.08 315);
+	--md-sys-color-on-secondary: oklch(99% 0.01 315);
+	--md-sys-color-secondary-container: oklch(92% 0.05 315);
+	--md-sys-color-on-secondary-container: oklch(25% 0.06 315);
+	--md-sys-color-tertiary: oklch(45% 0.1 175);
+	--md-sys-color-on-tertiary: oklch(99% 0.01 175);
+	--md-sys-color-tertiary-container: oklch(90% 0.08 175);
+	--md-sys-color-on-tertiary-container: oklch(23% 0.07 175);
+	--md-sys-color-error: oklch(50% 0.16 27);
+	--md-sys-color-on-error: oklch(99% 0.01 27);
+	--md-sys-color-surface: oklch(98% 0.006 264);
+	--md-sys-color-surface-container-low: oklch(96% 0.01 264);
+	--md-sys-color-surface-container: oklch(94% 0.012 264);
+	--md-sys-color-surface-container-high: oklch(91% 0.016 264);
+	--md-sys-color-on-surface: oklch(20% 0.025 264);
+	--md-sys-color-on-surface-variant: oklch(42% 0.025 264);
+	--md-sys-color-outline: oklch(50% 0.02 264);
+	--md-sys-color-outline-variant: oklch(78% 0.025 264);
+	--md-sys-color-scrim: oklch(0% 0 0 / 0.32);
+	--md-sys-color-background: var(--md-sys-color-surface);
+	--md-sys-color-on-background: var(--md-sys-color-on-surface);
+	--md-sys-typescale-display: 2.75rem;
+	--md-sys-typescale-headline: 2rem;
+	--md-sys-typescale-title: 1.5rem;
+	--md-sys-typescale-body: 1rem;
+	--md-sys-typescale-label: 0.875rem;
+	--md-sys-typescale-line-height: 1.4;
+	--md-sys-shape-corner-extra-small: 0.25rem;
+	--md-sys-shape-corner-small: 0.5rem;
+	--md-sys-shape-corner-medium: 0.75rem;
+	--md-sys-shape-corner-large: 1rem;
+	--md-sys-shape-corner-extra-large: 1.75rem;
+	--md-sys-elevation-level-0: none;
+	--md-sys-elevation-level-1: 0 1px 3px 1px
+		color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+	--md-sys-elevation-level-2: 0 2px 6px 2px
+		color-mix(in srgb, var(--md-sys-color-on-surface) 14%, transparent);
+	--md-sys-motion-duration-short: 160ms;
+	--md-sys-motion-duration-medium: 280ms;
+	--md-sys-motion-easing: cubic-bezier(0.2, 0, 0, 1);
+
+	/* DaisyUI semantic aliases used by the existing utility classes. */
+	--color-base-100: var(--md-sys-color-surface);
+	--color-base-200: var(--md-sys-color-surface-container);
+	--color-base-300: var(--md-sys-color-surface-container-high);
+	--color-base-content: var(--md-sys-color-on-surface);
+	--color-primary: var(--md-sys-color-primary);
+	--color-primary-content: var(--md-sys-color-on-primary);
+	--color-secondary: var(--md-sys-color-secondary);
+	--color-secondary-content: var(--md-sys-color-on-secondary);
+	--color-accent: var(--md-sys-color-tertiary);
+	--color-accent-content: var(--md-sys-color-on-tertiary);
+	--color-neutral: var(--md-sys-color-on-surface);
+	--color-neutral-content: var(--md-sys-color-surface);
+	--color-info: oklch(52% 0.13 245);
+	--color-info-content: oklch(99% 0.01 245);
+	--color-success: oklch(48% 0.12 150);
+	--color-success-content: oklch(99% 0.01 150);
+	--color-warning: oklch(62% 0.14 78);
+	--color-warning-content: oklch(22% 0.06 78);
+	--color-error: var(--md-sys-color-error);
+	--color-error-content: var(--md-sys-color-on-error);
+	--radius-selector: 0.75rem;
+	--radius-field: 0.75rem;
+	--radius-box: 1rem;
+	--md-focus-ring: 0 0 0 3px
+		color-mix(in srgb, var(--md-sys-color-primary) 32%, transparent);
+}
+
+[data-theme="dark"] {
+	--md-sys-color-primary: oklch(79% 0.12 264);
+	--md-sys-color-on-primary: oklch(24% 0.08 264);
+	--md-sys-color-primary-container: oklch(36% 0.1 264);
+	--md-sys-color-on-primary-container: oklch(91% 0.06 264);
+	--md-sys-color-secondary: oklch(79% 0.08 315);
+	--md-sys-color-on-secondary: oklch(24% 0.06 315);
+	--md-sys-color-secondary-container: oklch(36% 0.06 315);
+	--md-sys-color-on-secondary-container: oklch(91% 0.05 315);
+	--md-sys-color-tertiary: oklch(78% 0.1 175);
+	--md-sys-color-on-tertiary: oklch(22% 0.07 175);
+	--md-sys-color-tertiary-container: oklch(35% 0.07 175);
+	--md-sys-color-on-tertiary-container: oklch(90% 0.08 175);
+	--md-sys-color-error: oklch(80% 0.12 27);
+	--md-sys-color-on-error: oklch(25% 0.08 27);
+	--md-sys-color-surface: oklch(18% 0.018 264);
+	--md-sys-color-surface-container-low: oklch(20% 0.02 264);
+	--md-sys-color-surface-container: oklch(23% 0.022 264);
+	--md-sys-color-surface-container-high: oklch(27% 0.024 264);
+	--md-sys-color-on-surface: oklch(91% 0.018 264);
+	--md-sys-color-on-surface-variant: oklch(75% 0.025 264);
+	--md-sys-color-outline: oklch(72% 0.02 264);
+	--md-sys-color-outline-variant: oklch(45% 0.025 264);
+	--color-info: oklch(77% 0.1 245);
+	--color-info-content: oklch(22% 0.06 245);
+	--color-success: oklch(75% 0.1 150);
+	--color-success-content: oklch(22% 0.05 150);
+	--color-warning: oklch(82% 0.12 78);
+	--color-warning-content: oklch(24% 0.06 78);
+	--md-sys-color-background: var(--md-sys-color-surface);
+	--md-sys-color-on-background: var(--md-sys-color-on-surface);
+}
+
+html,
+body {
+	background: var(--md-sys-color-surface);
+	color: var(--md-sys-color-on-surface);
+	font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+	line-height: var(--md-sys-typescale-line-height);
+}
+
+.md3-app-surface {
+	background:
+		radial-gradient(
+			circle at 100% 0%,
+			color-mix(
+				in srgb,
+				var(--md-sys-color-primary-container) 28%,
+				transparent
+			),
+			transparent 24rem
+		), var(--md-sys-color-background);
+}
+
+.md3-top-app-bar {
+	background: color-mix(in srgb, var(--md-sys-color-surface) 94%, transparent);
+	border-bottom: 1px solid
+		color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
+	box-shadow: none;
+}
+
+.md3-top-app-bar .navbar-nav-dropdown > button {
+	min-height: 3rem;
+	padding: 0.5rem 0.75rem;
+	border-radius: var(--md-sys-shape-corner-extra-large);
+	font-size: var(--md-sys-typescale-title);
+	line-height: 1.2;
+	transition: background-color var(--md-sys-motion-duration-short)
+		var(--md-sys-motion-easing);
+}
+
+.md3-top-app-bar .navbar-nav-dropdown > button:hover {
+	background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+}
+
+.md3-top-app-bar .dropdown-content {
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+/* DaisyUI gives navbar buttons a positioned stacking context. Restore the
+ * FAB's M3 fixed placement explicitly and keep it out of the desktop app bar. */
+.md3-top-app-bar .md3-mobile-fab {
+	position: fixed !important;
+	top: auto !important;
+	right: 1.5rem !important;
+	bottom: 1.5rem !important;
+	left: auto !important;
+	z-index: 50 !important;
+}
+
+@media (min-width: 768px) {
+	.md3-top-app-bar .md3-mobile-fab {
+		display: none !important;
+	}
+}
+
+.md3-footer {
+	background: color-mix(
+		in srgb,
+		var(--md-sys-color-surface-container-low) 90%,
+		transparent
+	);
+	border-top-color: var(--md-sys-color-outline-variant);
+}
+
+:where(button, a, input, textarea, select):focus-visible {
+	outline: none;
+	box-shadow: var(--md-focus-ring);
+}
+
+.btn {
+	min-height: 2.5rem;
+	border: 0;
+	border-radius: var(--md-sys-shape-corner-extra-large);
+	font-weight: 650;
+	letter-spacing: 0.01em;
+	box-shadow: none;
+	transition:
+		background-color var(--md-sys-motion-duration-short)
+		var(--md-sys-motion-easing),
+		box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing),
+		transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing);
+}
+
+.btn:hover {
+	box-shadow: 0 1px 3px
+		color-mix(in srgb, var(--md-sys-color-on-surface) 18%, transparent);
+}
+
+.btn:active {
+	transform: scale(0.98);
+}
+
+.btn-primary {
+	background: var(--md-sys-color-primary);
+	color: var(--md-sys-color-on-primary);
+}
+
+.btn-secondary {
+	background: var(--md-sys-color-secondary);
+	color: var(--md-sys-color-on-secondary);
+}
+
+.btn-accent {
+	background: var(--md-sys-color-tertiary);
+	color: var(--md-sys-color-on-tertiary);
+}
+
+.btn-outline {
+	border: 1px solid var(--md-sys-color-outline);
+	background: transparent;
+	color: var(--md-sys-color-primary);
+}
+
+.btn-ghost {
+	background: transparent;
+	color: var(--md-sys-color-on-surface-variant);
+}
+
+.btn-ghost:hover {
+	background: color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent);
+	color: var(--md-sys-color-on-surface);
+}
+
+.btn-error {
+	background: var(--md-sys-color-error);
+	color: var(--md-sys-color-on-primary);
+}
+
+.btn-warning {
+	background: var(--color-warning);
+	color: var(--color-warning-content);
+}
+
+.btn-sm {
+	min-height: 2rem;
+	border-radius: 1rem;
+}
+
+.btn-xs {
+	min-height: 1.75rem;
+	border-radius: 0.875rem;
+}
+
+.input,
+.textarea,
+.select,
+.file-input {
+	border: 1px solid var(--md-sys-color-outline);
+	border-radius: var(--radius-field);
+	background: var(--md-sys-color-surface-container-low);
+	color: var(--md-sys-color-on-surface);
+	box-shadow: none;
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+	border-color: var(--md-sys-color-primary);
+	box-shadow: var(--md-focus-ring);
+	outline: none;
+}
+
+.input-bordered,
+.textarea-bordered,
+.select-bordered {
+	border-color: var(--md-sys-color-outline);
+}
+
+.card,
+.modal-box,
+.dropdown-content,
+.menu {
+	border-radius: var(--md-sys-shape-corner-large);
+	border-color: var(--md-sys-color-outline-variant);
+	background: var(--md-sys-color-surface-container-low);
+	box-shadow: var(--md-sys-elevation-level-1);
+}
+
+.card.bg-base-200,
+.bg-base-200 {
+	background: var(--md-sys-color-surface-container);
+}
+
+.alert {
+	border: 0;
+	border-radius: var(--radius-box);
+	box-shadow: none;
+}
+
+.badge {
+	border: 0;
+	border-radius: 0.5rem;
+	font-weight: 650;
+}
+
+.navbar {
+	min-height: 4rem;
+	background: var(--md-sys-color-surface-container-low);
+	border-color: var(--md-sys-color-outline-variant);
+	box-shadow: 0 1px 3px
+		color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+}
+
+.tabs-boxed {
+	border-radius: var(--md-sys-shape-corner-extra-large);
+	background: var(--md-sys-color-surface-container);
+}
+
+.tab {
+	border-radius: 1rem;
+	font-weight: 650;
+}
+
+.tab-active {
+	background: var(--md-sys-color-secondary-container);
+	color: var(--md-sys-color-on-secondary-container);
+}
+
+.divider {
+	border-color: var(--md-sys-color-outline-variant);
+}
+
+.md3-section-title {
+	color: var(--md-sys-color-on-surface);
+	font-size: var(--md-sys-typescale-title);
+	font-weight: 700;
+	line-height: 1.25;
+}
+
+.md3-page-frame {
+	color: var(--md-sys-color-on-surface);
+}
+
+.md3-elevated-surface {
+	border-color: var(--md-sys-color-outline-variant);
+	box-shadow: var(--md-sys-elevation-level-1);
+}
+
+.md3-tonal-surface {
+	background: var(--md-sys-color-secondary-container);
+	color: var(--md-sys-color-on-secondary-container);
+	border-radius: var(--md-sys-shape-corner-large);
+}
+
+.md3-outlined-surface {
+	background: transparent;
+	border: 1px solid var(--md-sys-color-outline-variant);
+	border-radius: var(--md-sys-shape-corner-large);
+}
+
+.md3-empty-state {
+	border-color: var(--md-sys-color-outline-variant);
+	box-shadow: var(--md-sys-elevation-level-0);
+}
+
+.md3-empty-icon {
+	background: var(--md-sys-color-primary-container);
+	color: var(--md-sys-color-on-primary-container);
+}
+
+.md3-dialog-surface {
+	border-radius: var(--md-sys-shape-corner-extra-large);
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.btn {
+		transition: none;
+	}
+
+	.btn:active {
+		transform: none;
+	}
+}
+
+/*
+ * Material 3 component layer.
+ *
+ * Keep the legacy utility classes for compatibility with existing pages, but
+ * give shared components explicit roles. This makes the design system
+ * inspectable in the markup and prevents DaisyUI's generic component rules
+ * from deciding the visual language of the application.
+ */
+.md3-button {
+	position: relative;
+	isolation: isolate;
+	min-height: 2.5rem;
+	border-radius: 999px;
+	font: inherit;
+	font-weight: 650;
+	letter-spacing: 0.01em;
+	line-height: 1.25;
+	transition:
+		box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing),
+		background-color var(--md-sys-motion-duration-short)
+		var(--md-sys-motion-easing),
+		color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing),
+		transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing);
+}
+
+.md3-button::before {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: inherit;
+	background: currentColor;
+	content: "";
+	opacity: 0;
+	transition: opacity var(--md-sys-motion-duration-short)
+		var(--md-sys-motion-easing);
+}
+
+.md3-button:hover::before,
+.md3-button:focus-visible::before {
+	opacity: 0.08;
+}
+
+.md3-button:active::before {
+	opacity: 0.12;
+}
+
+.md3-button--filled {
+	background: var(--md-sys-color-primary);
+	color: var(--md-sys-color-on-primary);
+	box-shadow: var(--md-sys-elevation-level-1);
+}
+
+.md3-button--filled:hover {
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+.md3-button--outlined {
+	border: 1px solid var(--md-sys-color-outline);
+	background: transparent;
+	color: var(--md-sys-color-primary);
+}
+
+.md3-button--text {
+	background: transparent;
+	color: var(--md-sys-color-primary);
+}
+
+.md3-button--text:hover {
+	box-shadow: none;
+}
+
+.md3-button--destructive {
+	background: var(--md-sys-color-error);
+	color: var(--md-sys-color-on-error);
+}
+
+.md3-button--favorite {
+	border-color: color-mix(
+		in srgb,
+		var(--md-sys-color-error) 42%,
+		var(--md-sys-color-outline)
+	);
+	color: var(--md-sys-color-error);
+}
+
+.md3-button--icon {
+	width: 2.5rem;
+	min-width: 2.5rem;
+	padding: 0;
+}
+
+.md3-button--fab {
+	width: 3.5rem;
+	min-width: 3.5rem;
+	height: 3.5rem;
+	min-height: 3.5rem;
+	border-radius: 1rem;
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+.md3-card {
+	border-radius: var(--md-sys-shape-corner-large);
+	color: var(--md-sys-color-on-surface);
+	transition:
+		box-shadow var(--md-sys-motion-duration-medium) var(--md-sys-motion-easing),
+		border-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing),
+		transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing);
+}
+
+.md3-card--elevated {
+	background: var(--md-sys-color-surface-container-low);
+	border-color: var(--md-sys-color-outline-variant);
+	box-shadow: var(--md-sys-elevation-level-1);
+}
+
+.md3-card--elevated:hover {
+	border-color: color-mix(
+		in srgb,
+		var(--md-sys-color-primary) 45%,
+		var(--md-sys-color-outline-variant)
+	);
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+.md3-card--outlined {
+	background: var(--md-sys-color-surface);
+	border: 1px solid var(--md-sys-color-outline-variant);
+	box-shadow: none;
+}
+
+.md3-filter-surface {
+	background: var(--md-sys-color-surface-container);
+	border-radius: var(--md-sys-shape-corner-extra-large);
+	box-shadow: none;
+}
+
+.md3-text-field {
+	min-height: 3.5rem;
+	border: 1px solid var(--md-sys-color-outline);
+	border-radius: 0.25rem 0.25rem 0 0;
+	background: var(--md-sys-color-surface-container-high);
+	color: var(--md-sys-color-on-surface);
+	box-shadow: inset 0 -2px 0 var(--md-sys-color-outline);
+}
+
+.md3-text-field:hover {
+	border-color: var(--md-sys-color-on-surface);
+}
+
+.md3-text-field:focus {
+	border-color: var(--md-sys-color-primary);
+	box-shadow:
+		inset 0 -2px 0 var(--md-sys-color-primary),
+		var(--md-focus-ring);
+}
+
+.md3-navigation-menu {
+	min-width: 14rem;
+	padding: 0.5rem;
+	background: var(--md-sys-color-surface-container);
+	border: 0;
+	border-radius: var(--md-sys-shape-corner-large);
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+.md3-navigation-menu li > a,
+.md3-navigation-menu li > button {
+	min-height: 2.75rem;
+	border-radius: 999px;
+	color: var(--md-sys-color-on-surface-variant);
+	font-weight: 600;
+}
+
+.md3-navigation-menu li > a:hover,
+.md3-navigation-menu li > button:hover {
+	background: color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent);
+	color: var(--md-sys-color-on-surface);
+}
+
+.md3-navigation-menu li > a.bg-primary\/10 {
+	background: var(--md-sys-color-secondary-container);
+	color: var(--md-sys-color-on-secondary-container);
+}
+
+.md3-login-card {
+	background: var(--md-sys-color-surface-container-low);
+	border-color: var(--md-sys-color-outline-variant);
+	box-shadow: var(--md-sys-elevation-level-2);
+}
+
+.md3-login-card .input {
+	min-height: 3.5rem;
+	border: 1px solid var(--md-sys-color-outline);
+	border-radius: 0.25rem 0.25rem 0 0;
+	background: var(--md-sys-color-surface-container-high);
+	box-shadow: inset 0 -2px 0 var(--md-sys-color-outline);
+}
+
+.md3-login-card .input:focus {
+	border-color: var(--md-sys-color-primary);
+	box-shadow:
+		inset 0 -2px 0 var(--md-sys-color-primary),
+		var(--md-focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.md3-button,
+	.md3-card {
+		transition: none;
+	}
 }

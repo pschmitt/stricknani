@@ -1,12 +1,17 @@
 package blue.anika.wolle.ui.yarns
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.uploads.PendingUpload
+import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -30,6 +35,7 @@ data class YarnEditorFormState(
     val notes: String = "",
     val link: String = "",
     val isAiEnhanced: Boolean = false,
+    val photos: List<PendingUpload> = emptyList(),
 )
 
 @HiltViewModel
@@ -39,6 +45,8 @@ constructor(
     savedStateHandle: SavedStateHandle,
     private val yarnRepository: YarnRepository,
     private val syncScheduler: SyncScheduler,
+    private val mutationFeedback: MutationFeedback,
+    private val pendingUploadStore: PendingUploadStore,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.YarnEditor>()
@@ -55,9 +63,6 @@ constructor(
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     init {
         val id = route.yarnId
@@ -91,10 +96,28 @@ constructor(
         _form.value = transform(_form.value)
     }
 
+    fun addPhotos(uris: List<Uri>) {
+        viewModelScope.launch {
+            uris.forEach { uri ->
+                runCatching { pendingUploadStore.copy(uri) }
+                    .onSuccess { upload -> updateForm { it.copy(photos = it.photos + upload) } }
+                    .onFailure { mutationFeedback.show(R.string.editor_image_select_failed) }
+            }
+        }
+    }
+
+    fun removePhoto(index: Int) {
+        val upload = _form.value.photos.getOrNull(index) ?: return
+        updateForm {
+            it.copy(photos = it.photos.filterIndexed { position, _ -> position != index })
+        }
+        viewModelScope.launch { pendingUploadStore.delete(upload) }
+    }
+
     fun save() {
         val current = _form.value
         if (current.name.isBlank()) {
-            _errorMessage.value = "Name is required"
+            mutationFeedback.show(R.string.error_name_required)
             return
         }
         viewModelScope.launch {
@@ -117,12 +140,22 @@ constructor(
                         isAiEnhanced = current.isAiEnhanced,
                     )
                 val id = route.yarnId
-                if (id != null) yarnRepository.updateYarn(id, request)
-                else yarnRepository.createYarn(request)
+                val yarnId =
+                    if (id != null) {
+                        yarnRepository.updateYarn(id, request)
+                        id
+                    } else {
+                        yarnRepository.createYarn(request)
+                    }
+                current.photos.forEach { upload -> yarnRepository.queuePhotoUpload(yarnId, upload) }
                 syncScheduler.replayThenSyncNow()
+                mutationFeedback.show(
+                    if (id == null) R.string.mutation_yarn_created_queued
+                    else R.string.mutation_yarn_updated_queued
+                )
                 _saved.value = true
             } catch (e: Exception) {
-                _errorMessage.value = "Couldn't save - try again."
+                mutationFeedback.show(R.string.error_save_failed)
             } finally {
                 _isSaving.value = false
             }
@@ -136,16 +169,13 @@ constructor(
             try {
                 yarnRepository.deleteYarn(id)
                 syncScheduler.replayThenSyncNow()
+                mutationFeedback.show(R.string.mutation_yarn_deleted_queued)
                 _deleted.value = true
             } catch (e: Exception) {
-                _errorMessage.value = "Couldn't delete - try again."
+                mutationFeedback.show(R.string.error_delete_failed)
             } finally {
                 _isSaving.value = false
             }
         }
-    }
-
-    fun dismissError() {
-        _errorMessage.value = null
     }
 }

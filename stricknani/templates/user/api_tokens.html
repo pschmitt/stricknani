@@ -38,12 +38,12 @@
                     readonly
                     value="{{ new_token }}"
                     id="new-api-token-value"
-                    class="input input-bordered join-item w-full font-mono text-sm"
-                    onclick="this.select()"
+                    class="md3-text-field w-full font-mono text-sm"
+                    data-call="selectInputText"
                 >
                 <button
                     type="button"
-                    class="btn btn-neutral join-item gap-2"
+                    class="md3-button md3-button--filled"
                     data-call="copyToClipboard"
                     data-call-args='["$value:#new-api-token-value","$this"]'
                 >
@@ -63,10 +63,14 @@
             <p class="text-sm">
                 {{ _("This code is only shown once - it lets a device scanning it sign in immediately. Treat it like a password until it's scanned.") }}
             </p>
-            <div class="flex justify-center bg-white p-4 rounded-lg">
-                <img src="{{ qr_setup.qr_data_uri }}" alt="{{ _('Stricknani setup QR code') }}" class="w-64 h-64">
+            <div class="qr-code-frame">
+                <img
+                    src="{{ qr_setup.qr_data_uri }}"
+                    alt="{{ _('Stricknani setup QR code') }}"
+                    class="qr-code-image"
+                >
             </div>
-            <p class="text-xs font-mono opacity-60 break-all">{{ qr_setup.uri }}</p>
+            <p class="qr-code-url text-xs font-mono opacity-60 break-all">{{ qr_setup.uri }}</p>
         </div>
         {% endif %}
 

@@ -14,6 +14,8 @@ import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.uploads.PendingAttachmentDelete
+import blue.anika.wolle.data.uploads.PendingUpload
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
@@ -52,7 +54,10 @@ constructor(
 
     override suspend fun doWork(): Result {
         var anyFailure = false
-        for (mutation in pendingMutationDao.getAll()) {
+        // Re-read each row after the previous mutation. A CREATE can reassign the local temp id on
+        // all later mutations, so replaying the initial snapshot would still target the old id.
+        for (queuedMutation in pendingMutationDao.getAll()) {
+            val mutation = pendingMutationDao.getById(queuedMutation.id) ?: continue
             try {
                 replay(mutation)
                 pendingMutationDao.delete(mutation.id)
@@ -71,6 +76,11 @@ constructor(
                 )
                 pendingMutationDao.setError(mutation.id, failure.message ?: "Sync failed")
                 anyFailure = true
+                // Later mutations may depend on this one (most notably an UPDATE/DELETE or media
+                // upload following an offline CREATE). Keep insertion order meaningful by leaving
+                // the remainder untouched for the next retry rather than sending them with a
+                // stale temporary id.
+                break
             }
         }
         return if (anyFailure) Result.retry() else Result.success()
@@ -80,6 +90,7 @@ constructor(
         when (mutation.entityType) {
             MutationEntityType.PROJECT -> replayProject(mutation)
             MutationEntityType.YARN -> replayYarn(mutation)
+            else -> error("Unknown mutation entity type: ${mutation.entityType}")
         }
     }
 
@@ -87,12 +98,7 @@ constructor(
         when (mutation.operation) {
             MutationOperation.CREATE -> {
                 val request = json.decodeFromString<ProjectWriteRequest>(mutation.payloadJson!!)
-                val realId = projectRepository.replayCreate(mutation.localId, request)
-                pendingMutationDao.reassignLocalId(
-                    MutationEntityType.PROJECT,
-                    mutation.localId,
-                    realId,
-                )
+                projectRepository.replayCreate(mutation.localId, request)
             }
             MutationOperation.UPDATE -> {
                 val request = json.decodeFromString<ProjectWriteRequest>(mutation.payloadJson!!)
@@ -119,6 +125,24 @@ constructor(
                 }
             }
             MutationOperation.DELETE -> projectRepository.replayDelete(mutation.localId)
+            MutationOperation.PROJECT_TITLE_IMAGE_UPLOAD -> {
+                val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
+                projectRepository.replayTitleImageUpload(mutation.localId, upload)
+            }
+            MutationOperation.PROJECT_STEP_IMAGE_UPLOAD -> {
+                val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
+                projectRepository.replayStepImageUpload(mutation.localId, upload)
+            }
+            MutationOperation.PROJECT_ATTACHMENT_UPLOAD -> {
+                val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
+                projectRepository.replayAttachmentUpload(mutation.localId, upload)
+            }
+            MutationOperation.PROJECT_ATTACHMENT_DELETE -> {
+                val deletion =
+                    json.decodeFromString<PendingAttachmentDelete>(mutation.payloadJson!!)
+                projectRepository.replayAttachmentDelete(mutation.localId, deletion.attachmentId)
+            }
+            else -> error("Unknown project mutation operation: ${mutation.operation}")
         }
     }
 
@@ -126,12 +150,7 @@ constructor(
         when (mutation.operation) {
             MutationOperation.CREATE -> {
                 val request = json.decodeFromString<YarnWriteRequest>(mutation.payloadJson!!)
-                val realId = yarnRepository.replayCreate(mutation.localId, request)
-                pendingMutationDao.reassignLocalId(
-                    MutationEntityType.YARN,
-                    mutation.localId,
-                    realId,
-                )
+                yarnRepository.replayCreate(mutation.localId, request)
             }
             MutationOperation.UPDATE -> {
                 val request = json.decodeFromString<YarnWriteRequest>(mutation.payloadJson!!)
@@ -146,7 +165,9 @@ constructor(
                             )
                         }
                         409 -> {
-                            decodeConflictBody<YarnDto>(e)?.let { yarnRepository.adoptRemoteYarn(it) }
+                            decodeConflictBody<YarnDto>(e)?.let {
+                                yarnRepository.adoptRemoteYarn(it)
+                            }
                             throw ConflictException(
                                 "This yarn was edited elsewhere - your change was discarded and the latest version is now shown."
                             )
@@ -156,6 +177,11 @@ constructor(
                 }
             }
             MutationOperation.DELETE -> yarnRepository.replayDelete(mutation.localId)
+            MutationOperation.YARN_PHOTO_UPLOAD -> {
+                val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
+                yarnRepository.replayPhotoUpload(mutation.localId, upload)
+            }
+            else -> error("Unknown yarn mutation operation: ${mutation.operation}")
         }
     }
 
@@ -166,18 +192,18 @@ constructor(
 }
 
 /**
- * FastAPI wraps a 409's body as `{"detail": <the entity's current server state>}` (SNA-33) -
- * decode that inner object, tolerating a missing/malformed body (network proxies, older server
- * versions) by returning null rather than failing the whole conflict-resolution path. A top-level
- * function (not a class member) so it's unit-testable against a raw JSON string, without needing to
- * mock a Retrofit `HttpException`.
+ * FastAPI wraps a 409's body as `{"detail": <the entity's current server state>}` (SNA-33) - decode
+ * that inner object, tolerating a missing/malformed body (network proxies, older server versions)
+ * by returning null rather than failing the whole conflict-resolution path. A top-level function
+ * (not a class member) so it's unit-testable against a raw JSON string, without needing to mock a
+ * Retrofit `HttpException`.
  */
 internal inline fun <reified T> parseConflictDetail(json: Json, errorBody: String): T? =
     runCatching {
         val detail = json.parseToJsonElement(errorBody).jsonObject["detail"] ?: return null
         json.decodeFromJsonElement<T>(detail)
     }
-        .getOrNull()
+    .getOrNull()
 
 /** Thrown when a replay hits a resolved SNA-33 conflict - see [WriteReplayWorker]'s kdoc. */
 private class ConflictException(message: String) : Exception(message)

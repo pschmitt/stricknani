@@ -17,11 +17,7 @@
         <form method="dialog">
             {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
         </form>
-        {{ dialogs.dialog_danger(_('Delete Project'), attrs='data-call="deleteProject" data-call-args="[%s]"' % (project.id if project else '')) }}
+        {{ dialogs.dialog_danger(_('Delete Project'), attrs='data-call="deleteEntity" data-call-args=\'["project", %s]\'' % (project.id if project else 'null')) }}
     </div>
 </div>
 {% endcall %}
-
-<script nonce="{{ csp_nonce }}">
-{% include "projects/_delete_dialog.js" %}
-</script>

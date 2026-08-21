@@ -26,8 +26,14 @@ class SyncNotifier @Inject constructor(@ApplicationContext private val context: 
     fun ensureChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel =
-            NotificationChannel(CHANNEL_ID, "Sync updates", NotificationManager.IMPORTANCE_LOW)
-                .apply { description = "New changes found during a background sync" }
+            NotificationChannel(
+                    CHANNEL_ID,
+                    context.getString(R.string.sync_notification_channel_name),
+                    NotificationManager.IMPORTANCE_LOW,
+                )
+                .apply {
+                    description = context.getString(R.string.sync_notification_channel_description)
+                }
         context
             .getSystemService(NotificationManager::class.java)
             ?.createNotificationChannel(channel)
@@ -38,24 +44,29 @@ class SyncNotifier @Inject constructor(@ApplicationContext private val context: 
      * this at runtime; `MainActivity` requests it once, but the user can always deny it).
      */
     fun notifySyncFoundChanges() {
-        if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        val permissionGranted =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 ContextCompat.checkSelfPermission(
                     context,
                     Manifest.permission.POST_NOTIFICATIONS,
-                ) != PackageManager.PERMISSION_GRANTED
-        ) {
+                ) == PackageManager.PERMISSION_GRANTED
+        val notificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+        if (!canPostNotifications(Build.VERSION.SDK_INT, permissionGranted, notificationsEnabled)) {
             return
         }
         val notification =
             NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_monochrome)
                 .setContentTitle(context.getString(R.string.app_name))
-                .setContentText("New changes synced from your server")
+                .setContentText(context.getString(R.string.sync_notification_content))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setAutoCancel(true)
                 .build()
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+        } catch (_: SecurityException) {
+            // Permission can be revoked between the check above and notify().
+        }
     }
 
     private companion object {
@@ -63,3 +74,9 @@ class SyncNotifier @Inject constructor(@ApplicationContext private val context: 
         const val NOTIFICATION_ID = 1001
     }
 }
+
+internal fun canPostNotifications(
+    sdkInt: Int,
+    permissionGranted: Boolean,
+    notificationsEnabled: Boolean,
+): Boolean = (sdkInt < Build.VERSION_CODES.TIRAMISU || permissionGranted) && notificationsEnabled

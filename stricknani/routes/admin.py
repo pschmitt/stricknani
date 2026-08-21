@@ -22,9 +22,10 @@ from stricknani.utils.auth import (
     validate_password_policy,
 )
 from stricknani.utils.files import (
+    UploadTooLargeError,
     create_thumbnail,
     delete_file,
-    save_uploaded_file,
+    save_uploaded_image,
 )
 from stricknani.utils.gravatar import gravatar_url
 from stricknani.utils.i18n import gettext, language_context
@@ -353,9 +354,15 @@ async def profile_image_upload_admin(
         )
 
     try:
-        filename, _ = await save_uploaded_file(file, user.id, subdir="users")
+        filename, _ = await save_uploaded_image(file, user.id, subdir="users")
         file_path = config.MEDIA_ROOT / "users" / str(user.id) / filename
         await create_thumbnail(file_path, user.id, subdir="users")
+    except UploadTooLargeError:
+        return _admin_error_response(
+            request,
+            "upload_failed",
+            "Uploaded file is too large.",
+        )
     except Exception as exc:  # noqa: BLE001
         return _admin_error_response(
             request,

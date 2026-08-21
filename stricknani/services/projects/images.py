@@ -14,10 +14,12 @@ from stricknani.models import Image, ImageType
 from stricknani.services.images import get_image_dimensions
 from stricknani.utils.files import (
     InvalidImageError,
+    UploadTooLargeError,
     compute_checksum,
     create_thumbnail,
     get_file_url,
     get_thumbnail_url,
+    read_upload_content,
     save_bytes,
     validate_image_upload,
 )
@@ -39,6 +41,17 @@ def _validate_image_or_400(content: bytes) -> str:
     return extension
 
 
+async def _read_image_content(file: UploadFile) -> bytes:
+    """Read an image upload and translate the shared size cap to HTTP 413."""
+    try:
+        return await read_upload_content(file)
+    except UploadTooLargeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Uploaded file is too large",
+        ) from exc
+
+
 def _save_image_bytes(
     content: bytes, original_filename: str, project_id: int, extension: str
 ) -> tuple[str, str]:
@@ -57,7 +70,7 @@ async def upload_title_image(
     file: UploadFile,
     alt_text: str = "",
 ) -> dict[str, object]:
-    content = await file.read()
+    content = await _read_image_content(file)
     safe_extension = _validate_image_or_400(content)
     checksum = compute_checksum(content)
 
@@ -137,7 +150,7 @@ async def upload_stitch_sample_image(
     file: UploadFile,
     alt_text: str = "",
 ) -> dict[str, object]:
-    content = await file.read()
+    content = await _read_image_content(file)
     safe_extension = _validate_image_or_400(content)
     checksum = compute_checksum(content)
 
@@ -208,7 +221,7 @@ async def upload_step_image(
     file: UploadFile,
     alt_text: str = "",
 ) -> dict[str, object]:
-    content = await file.read()
+    content = await _read_image_content(file)
     safe_extension = _validate_image_or_400(content)
     checksum = compute_checksum(content)
 

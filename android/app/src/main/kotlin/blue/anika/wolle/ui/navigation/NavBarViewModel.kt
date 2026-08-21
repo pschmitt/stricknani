@@ -27,6 +27,6 @@ class NavBarViewModel @Inject constructor(appPreferencesRepository: AppPreferenc
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5_000L),
-                TopLevelDestination.entries.toList(),
+                NavbarCustomization.visibleDestinations(NavbarCustomization.defaultPreferences()),
             )
 }

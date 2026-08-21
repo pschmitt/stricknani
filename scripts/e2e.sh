@@ -3,6 +3,15 @@
 
 set -Eeuo pipefail
 
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [smoke|full] [pytest options]
+
+Run a browser suite against a disposable local Stricknani fixture.
+Defaults to the fast smoke suite.
+EOF
+}
+
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly script_dir
 repo_root="$(cd -- "${script_dir}/.." && pwd)"
@@ -12,6 +21,7 @@ readonly artifact_dir="${E2E_ARTIFACT_DIR:-${repo_root}/e2e-artifacts}"
 temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/stricknani-e2e.XXXXXX")"
 readonly temp_dir
 server_pid=""
+suite_artifact_dir=""
 
 cleanup() {
   local status=$?
@@ -21,9 +31,9 @@ cleanup() {
     wait "${server_pid}" 2>/dev/null || true
   fi
 
-  mkdir -p "${artifact_dir}"
+  mkdir -p "${suite_artifact_dir:-${artifact_dir}}"
   if [[ -f "${temp_dir}/server.log" ]]; then
-    cp "${temp_dir}/server.log" "${artifact_dir}/server.log"
+    cp "${temp_dir}/server.log" "${suite_artifact_dir:-${artifact_dir}}/server.log"
   fi
   rm -rf "${temp_dir}"
   trap - EXIT
@@ -55,14 +65,48 @@ wait_for_health() {
   return 1
 }
 
+configure_runtime_library_path() {
+  # The local Nix/uv Python environment may load binary wheels (for example NumPy) that need the
+  # host's libstdc++. Keep CI's existing loader path intact and only add the common local path when
+  # it exists.
+  if [[ -d /usr/lib64 ]]
+  then
+    export LD_LIBRARY_PATH="/usr/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+  fi
+}
+
 main() {
+  local suite="${1:-smoke}"
+  local test_file
+
+  case "${suite}" in
+    -h|--help)
+      usage
+      return 0
+      ;;
+    smoke)
+      test_file="tests/e2e/test_smoke.py"
+      ;;
+    full)
+      test_file="tests/e2e/test_full.py"
+      ;;
+    *)
+      printf 'Unknown E2E suite: %s\n' "${suite}" >&2
+      usage >&2
+      return 2
+      ;;
+  esac
+  shift
+
+  suite_artifact_dir="${artifact_dir}/${suite}"
   trap cleanup EXIT
 
-  mkdir -p "${artifact_dir}/screenshots" "${temp_dir}/media"
+  mkdir -p "${suite_artifact_dir}/screenshots" "${temp_dir}/media"
   export E2E_BASE_URL="http://127.0.0.1:${port}"
   export E2E_EMAIL="${E2E_EMAIL:-e2e@example.invalid}"
   export E2E_PASSWORD="${E2E_PASSWORD:-ci-e2e-password}"
-  export E2E_SCREENSHOT_DIR="${artifact_dir}/screenshots"
+  export E2E_SCREENSHOT_DIR="${suite_artifact_dir}/screenshots"
+  export E2E_SUITE="${suite}"
   export BIND_HOST=127.0.0.1
   export BIND_PORT="${port}"
   export DATABASE_URL="sqlite:///${temp_dir}/stricknani.db"
@@ -76,6 +120,8 @@ main() {
   export FEATURE_AI_IMPORT_ENABLED=false
   export DEFAULT_LANGUAGE=en
 
+  configure_runtime_library_path
+
   uv run uvicorn stricknani.main:app \
     --host "${BIND_HOST}" \
     --port "${BIND_PORT}" \
@@ -86,8 +132,8 @@ main() {
   wait_for_health
   uv run pytest -q \
     -o addopts="" \
-    --junitxml="${artifact_dir}/e2e-results.xml" \
-    tests/e2e "$@"
+    --junitxml="${suite_artifact_dir}/e2e-results.xml" \
+    "${test_file}" "$@"
 }
 
 main "$@"

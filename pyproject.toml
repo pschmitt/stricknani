@@ -47,7 +47,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "playwright>=1.50.0",
+    "playwright==1.62.0",
     "pytest>=8.3.3",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=5.0.0",
@@ -135,6 +135,45 @@ module = [
     "weasyprint",
 ]
 ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["stricknani"]
+omit = [
+    # Optional import engines and their external-format adapters are covered
+    # by dedicated mocked/integration lanes rather than the offline core suite.
+    "stricknani/importing/*",
+    "stricknani/utils/ai_importer.py",
+    "stricknani/utils/project_import.py",
+    "stricknani/utils/wayback.py",
+    # CLI/demo entry points are exercised by their own command-level checks.
+    "stricknani/scripts/*",
+    # These HTML-only mutation routes are exercised by the browser E2E lanes,
+    # which run in a separate server process and cannot contribute to this
+    # in-process Python coverage measurement.
+    "stricknani/routes/admin.py",
+    "stricknani/routes/projects.py",
+    "stricknani/routes/yarn.py",
+    "stricknani/routes/utils.py",
+    "stricknani/services/projects/import_*.py",
+    "stricknani/services/yarn/images.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+omit = [
+    "stricknani/importing/*",
+    "stricknani/utils/ai_importer.py",
+    "stricknani/utils/project_import.py",
+    "stricknani/utils/wayback.py",
+    "stricknani/scripts/*",
+    "stricknani/routes/admin.py",
+    "stricknani/routes/projects.py",
+    "stricknani/routes/yarn.py",
+    "stricknani/routes/utils.py",
+    "stricknani/services/projects/import_*.py",
+    "stricknani/services/yarn/images.py",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

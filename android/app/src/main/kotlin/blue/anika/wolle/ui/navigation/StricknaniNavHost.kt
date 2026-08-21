@@ -6,6 +6,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,11 +18,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import blue.anika.wolle.ui.categories.CategoriesScreen
+import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.MutationFeedbackEffect
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
@@ -36,6 +42,32 @@ import blue.anika.wolle.ui.yarns.YarnDetailScreen
 import blue.anika.wolle.ui.yarns.YarnEditorScreen
 import blue.anika.wolle.ui.yarns.YarnsListScreen
 
+internal fun shouldNavigateToTopLevelRoot(isAlreadyAtRoot: Boolean): Boolean = !isAlreadyAtRoot
+
+internal fun shouldOpenFreshTopLevelRoot(didPopToRoot: Boolean): Boolean = !didPopToRoot
+
+/**
+ * Returns to a bottom-navigation destination's root without adding duplicate roots. If the root is
+ * already in the back stack, popping is enough. If a detail route was reached directly (for example
+ * from Home) and no root exists yet, clear that nested stack before opening a fresh root.
+ */
+internal fun navigateToTopLevelRoot(
+    navController: NavHostController,
+    destination: TopLevelDestination,
+) {
+    if (
+        shouldOpenFreshTopLevelRoot(
+            navController.popBackStack(destination.route, inclusive = false)
+        )
+    ) {
+        navController.navigate(destination.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+}
+
 /**
  * The app's main scaffold: a Material 3 bottom navigation bar switching between the top-level
  * destinations the user has kept visible (`NavBarViewModel`, SNA-16 - defaults to all five in
@@ -49,6 +81,12 @@ import blue.anika.wolle.ui.yarns.YarnsListScreen
  * @param pendingDeepLinkRoute a project/yarn link the user tapped (SNA-17,
  *   `MainActivity`/`DeepLinkParser`), navigated to once and then cleared via [onDeepLinkConsumed] -
  *   `null` means there's nothing pending.
+ * @param pendingSetupUri a `stricknani://setup?p=...` URI delivered via the manifest's own
+ *   intent-filter (SNA-61, `MainActivity`) - e.g. a generic camera app's QR auto-detection handing
+ *   it back to us instead of the in-app scanner. Forwarded once to [OnboardingScreen], which feeds
+ *   it through the same [blue.anika.wolle.ui.onboarding.OnboardingViewModel.connectFromScannedText]
+ *   path the in-app scanner uses, then cleared via [onSetupUriConsumed]. `null` means nothing
+ *   pending - only meaningful pre-onboarding, see [MainActivity]'s call site.
  */
 @Composable
 fun StricknaniNavHost(
@@ -57,8 +95,14 @@ fun StricknaniNavHost(
     navBarViewModel: NavBarViewModel = hiltViewModel(),
     pendingDeepLinkRoute: Route? = null,
     onDeepLinkConsumed: () -> Unit = {},
+    pendingSetupUri: String? = null,
+    onSetupUriConsumed: () -> Unit = {},
+    mutationFeedback: MutationFeedback,
 ) {
     val navController = rememberNavController()
+    val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
+
+    MutationFeedbackEffect(mutationFeedback, snackbarHostState)
 
     LaunchedEffect(pendingDeepLinkRoute) {
         pendingDeepLinkRoute?.let { route ->
@@ -69,6 +113,7 @@ fun StricknaniNavHost(
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         // Each destination owns its content scaffold and applies the status-bar inset alongside
         // its own top app bar (or, for Onboarding, its own padding). Applying the outer scaffold's
         // default system-bar insets here would offset that whole destination a second time -
@@ -87,23 +132,25 @@ fun StricknaniNavHost(
                     visibleDestinations.forEach { destination ->
                         val selected =
                             currentDestination?.hierarchy?.any {
-                                it.hasRoute(destination.route::class)
+                                destination.routeTypes.any { routeType -> it.hasRoute(routeType) }
                             } ?: false
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
-                                navController.navigate(destination.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                if (
+                                    !shouldNavigateToTopLevelRoot(
+                                        currentDestination?.hasRoute(destination.route::class) ==
+                                            true
+                                    )
+                                ) {
+                                    return@NavigationBarItem
                                 }
+                                navigateToTopLevelRoot(navController, destination)
                             },
                             icon = {
-                                Icon(destination.icon, contentDescription = destination.label)
+                                Icon(destination.icon, contentDescription = destination.label())
                             },
-                            label = { Text(destination.label) },
+                            label = { Text(destination.label()) },
                         )
                     }
                 }
@@ -115,12 +162,22 @@ fun StricknaniNavHost(
             startDestination = startDestination,
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable<Route.Onboarding> { OnboardingScreen() }
+            composable<Route.Onboarding> {
+                OnboardingScreen(
+                    pendingScannedText = pendingSetupUri,
+                    onScannedTextConsumed = onSetupUriConsumed,
+                )
+            }
             composable<Route.Home> {
                 HomeScreen(
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                     onGaugeClick = { navController.navigate(Route.Gauge) },
+                    onOpenSyncIssues = {
+                        navController.navigate(
+                            Route.SettingsCategoryRoute(SettingsCategory.Sync.name)
+                        )
+                    },
                 )
             }
             composable<Route.Projects> {
@@ -129,6 +186,7 @@ fun StricknaniNavHost(
                     onAddProjectClick = { navController.navigate(Route.ProjectEditor()) },
                 )
             }
+            composable<Route.Categories> { CategoriesScreen() }
             composable<Route.Yarns> {
                 YarnsListScreen(
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
@@ -162,6 +220,11 @@ fun StricknaniNavHost(
                     onBack = { navController.navigateUp() },
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                     onEditClick = { id -> navController.navigate(Route.ProjectEditor(id)) },
+                    onDeleted = {
+                        navController.navigate(Route.Projects) {
+                            popUpTo(Route.Projects) { inclusive = true }
+                        }
+                    },
                 )
             }
             composable<Route.YarnDetail> {
@@ -169,6 +232,11 @@ fun StricknaniNavHost(
                     onBack = { navController.navigateUp() },
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     onEditClick = { id -> navController.navigate(Route.YarnEditor(id)) },
+                    onDeleted = {
+                        navController.navigate(Route.Yarns) {
+                            popUpTo(Route.Yarns) { inclusive = true }
+                        }
+                    },
                 )
             }
             composable<Route.ProjectEditor> {

@@ -14,7 +14,7 @@ project.yarn_names|join(', ')} %}
 {% set card_attrs = 'data-project-card data-project-id="%s" title="%s"' % (project.id, tooltip_text) %}
 {% call(section) cards.list_card(data_attrs=card_attrs) %}
 {% if section == 'media' %}
-<a href="/projects/{{ project.id }}" class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
+<a href="/projects/{{ project.id }}" class="md3-card-media-link"
     title="{{ tooltip_text }}">
     {% if project.preview_images %}
     {% if project.preview_images|length == 1 %}
@@ -61,7 +61,7 @@ project.yarn_names|join(', ')} %}
 <div class="absolute top-3 right-3 z-10">
     <div class="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
         <a href="/projects/{{ project.id }}/edit"
-           class="btn btn-circle bg-black/20 backdrop-blur-md border-white/20 text-white hover:bg-white hover:text-primary transition-all h-9 w-9 min-h-0 text-lg shadow-sm"
+           class="md3-icon-button md3-card-edit-action"
            title="{{ _('Edit %(name)s') % {'name': project.name} }}">
             <span class="mdi mdi-pencil" aria-hidden="true"></span>
             <span class="sr-only">{{ _('Edit') }}</span>
@@ -69,9 +69,9 @@ project.yarn_names|join(', ')} %}
     </div>
 </div>
 {% elif section == 'body' %}
-<div class="flex flex-col h-full">
-    <div class="flex justify-between items-start mb-3">
-        <h3 class="card-title min-w-0 flex-1 flex items-center gap-2">
+<div class="md3-feature-card__content">
+    <div class="md3-feature-card__title">
+        <h3 class="md3-feature-card__heading">
             <a href="/projects/{{ project.id }}" class="hover:text-primary block truncate" title="{{ project.name }}">
                 {{ project.name }}
             </a>
@@ -81,27 +81,27 @@ project.yarn_names|join(', ')} %}
                 {% endif %}
             </span>
             {% if project.is_ai_enhanced %}
-            <span class="badge badge-ghost border-primary/20 text-primary/70 font-black text-[8px] tracking-tighter uppercase px-1.5 h-4 min-h-0 shrink-0" title="{{ _('AI Enhanced') }}">AI</span>
+            <span class="md3-chip md3-chip--ai md3-chip--compact" title="{{ _('AI Enhanced') }}">AI</span>
             {% endif %}
         </h3>
         {% if project.category and project.category != 'None' %}
         <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
-           class="badge border {{ project.category|category_color }} shrink-0 ml-2 font-medium py-2.5">
+           class="md3-chip md3-chip--compact">
             {{ _(project.category) }}
         </a>
         {% endif %}
     </div>
     {% if project.tags %}
-    <div class="mb-4 flex flex-wrap gap-2 -ml-2">
+    <div class="md3-feature-card__chips">
         {% for tag in project.tags %}
         <a href="/projects?search={{ ('#' ~ tag)|urlencode }}"
-           class="badge badge-sm border-base-300 bg-base-200/50 text-base-content/70 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all duration-200">#{{ tag }}</a>
+           class="md3-chip md3-chip--compact">#{{ tag }}</a>
         {% endfor %}
     </div>
     {% endif %}
 </div>
 {% elif section == 'context_menu' %}
-<ul class="menu p-2 bg-base-100 rounded-box border border-base-200 shadow-xl">
+<ul class="md3-menu">
     <li id="project-{{ project.id }}-favorite-toggle" data-favorite-toggle>
         {% with project_id=project.id, is_favorite=project.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
         {% include "projects/_favorite_toggle.html" %}

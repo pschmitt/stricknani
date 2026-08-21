@@ -23,7 +23,7 @@ attrs='data-call="openCreateUserDialog"') }}
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold flex items-center gap-2">
                 {{ _('Users') }}
-                <span class="badge badge-lg badge-neutral" id="user-count">{{ users|length }}</span>
+                <span class="md3-chip" id="user-count">{{ users|length }}</span>
             </h1>
         </div>
 
@@ -49,14 +49,14 @@ attrs='data-call="openCreateUserDialog"') }}
             <span class=" font-medium">{{ _('Email') }}</span>
         </label>
         <input id="edit-user-email" name="email" type="email" required autocomplete="email"
-            class="input  w-full" />
+            class="md3-text-field w-full" />
     </div>
 
     <div class="mb-4 w-full">
         <label class="block mb-1">
             <span class=" font-medium">{{ _('Profile Image') }}</span>
         </label>
-        <button type="button" class="btn btn-outline gap-2" data-call="triggerEditUserImageUpload">
+        <button type="button" class="md3-button md3-button--outlined md3-button--small" data-call="triggerEditUserImageUpload">
             <span class="mdi mdi-camera"></span>
             {{ _('Change Photo') }}
         </button>
@@ -82,7 +82,7 @@ attrs='data-call="openCreateUserDialog"') }}
             <span class=" font-medium">{{ _('New password') }}</span>
         </label>
         <input id="reset-password-input" name="password" type="password" autocomplete="new-password"
-            class="input  w-full" required />
+            class="md3-text-field w-full" required />
     </div>
     <div class="modal-action">
         {{ dialogs.dialog_cancel(_('Cancel'), attrs='data-action="close-dialog" data-dialog-id="resetPasswordDialog"') }}
@@ -102,19 +102,18 @@ attrs='data-call="openCreateUserDialog"') }}
             <span class=" font-medium">{{ _('Email') }}</span>
         </label>
         <input id="create-user-email" name="email" type="email" required autocomplete="email"
-            class="input  w-full" placeholder="user@example.com" />
+            class="md3-text-field w-full" placeholder="user@example.com" />
     </div>
     <div class="mb-4 w-full">
         <label class="block mb-1">
             <span class=" font-medium">{{ _('Password') }}</span>
         </label>
         <input id="create-user-password" name="password" type="password" required autocomplete="new-password"
-            class="input  w-full" />
+            class="md3-text-field w-full" />
     </div>
     <div class="mb-4">
-        <label
-            class="label cursor-pointer justify-start gap-4 p-4 border border-base-200 rounded-lg bg-base-100 hover:bg-base-200 transition-colors">
-            <input type="checkbox" name="is_admin" class="checkbox checkbox-primary" />
+        <label class="md3-checkbox-field cursor-pointer">
+            <input type="checkbox" name="is_admin" />
             <div class="flex-1">
                 <span class=" font-bold block">{{ _('Grant admin access') }}</span>
                 <span class="text-xs opacity-70 block">{{ _('Allow this user to manage accounts and settings.')

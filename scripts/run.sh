@@ -20,35 +20,6 @@ Options:
 EOF
 }
 
-CSS_WATCH_PID=""
-
-stop_css_watch() {
-  if [[ -n "$CSS_WATCH_PID" ]]
-  then
-    kill "$CSS_WATCH_PID" 2>/dev/null || true
-  fi
-}
-
-# Build the static Tailwind CSS bundle once up front, then keep it fresh in
-# the background as templates/JS change (there's no runtime/browser Tailwind
-# JIT anymore, see T1).
-watch_css() {
-  if ! command -v tailwindcss &>/dev/null
-  then
-    echo "WARNING: tailwindcss not found; static/css/tailwind.css will not be (re)built. Run 'just build-css' manually." >&2
-    return 0
-  fi
-
-  local input="${REPO_ROOT}/stricknani/static/css/tailwind.input.css"
-  local output="${REPO_ROOT}/stricknani/static/css/tailwind.css"
-
-  tailwindcss -i "$input" -o "$output" --minify
-
-  tailwindcss -i "$input" -o "$output" --minify --watch &
-  CSS_WATCH_PID=$!
-  trap stop_css_watch EXIT
-}
-
 wait_for_health() {
   local health_url="http://localhost:${PORT}/healthz"
   local timeout_seconds=20
@@ -74,6 +45,8 @@ wait_for_health() {
 
 run_dev_server() {
   local -a nix_args
+  local secret_key
+  local csrf_secret_key
 
   cd "$REPO_ROOT" || return 1
 
@@ -118,8 +91,6 @@ run_dev_server() {
     fi
   fi
 
-  watch_css
-
   if [[ -z "$DONT_OPEN_BROWSER" ]]
   then
     (
@@ -129,6 +100,26 @@ run_dev_server() {
       fi
     ) &
   fi
+
+  # A plain `just run` is a disposable development instance. Generate
+  # process-local signing keys when the caller did not provide them, so the
+  # development server is usable without copying production secrets into a
+  # shell or `.env` file. Production startup still rejects missing secrets.
+  if [[ -z "${SECRET_KEY:-}" ]]
+  then
+    secret_key="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+  else
+    secret_key="$SECRET_KEY"
+  fi
+
+  if [[ -z "${CSRF_SECRET_KEY:-}" ]]
+  then
+    csrf_secret_key="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+  else
+    csrf_secret_key="$CSRF_SECRET_KEY"
+  fi
+
+  env_vars+=("SECRET_KEY=${secret_key}" "CSRF_SECRET_KEY=${csrf_secret_key}")
 
   env "${env_vars[@]}" "${cmd[@]}"
 }

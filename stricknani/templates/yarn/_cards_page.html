@@ -21,7 +21,7 @@
 {% set card_attrs = 'data-yarn-card data-yarn-id="%s" title="%s"' % (yarn.id, tooltip_text) %}
 {% call(section) cards.list_card(data_attrs=card_attrs) %}
 {% if section == 'media' %}
-<a href="/yarn/{{ yarn.id }}" class="block aspect-[4/3] bg-base-300 transition-transform hover:scale-[1.01]"
+<a href="/yarn/{{ yarn.id }}" class="md3-card-media-link"
     title="{{ tooltip_text }}">
     {% if card.preview_url %}
     <img src="{{ card.preview_url }}" alt="{{ _('Photo for %(name)s', name=yarn.name) }}"
@@ -45,7 +45,7 @@
 <div class="absolute top-3 right-3 z-10">
     <div class="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
         <a href="/yarn/{{ yarn.id }}/edit"
-           class="btn btn-circle bg-black/20 backdrop-blur-md border-white/20 text-white hover:bg-white hover:text-primary transition-all h-9 w-9 min-h-0 text-lg shadow-sm"
+           class="md3-icon-button md3-card-edit-action"
            title="{{ _('Edit %(name)s') % {'name': yarn.name} }}">
             <span class="mdi mdi-pencil" aria-hidden="true"></span>
             <span class="sr-only">{{ _('Edit') }}</span>
@@ -53,8 +53,8 @@
     </div>
 </div>
 {% elif section == 'body' %}
-<div class="flex justify-between items-start mb-3">
-    <h3 class="card-title flex items-center gap-2 min-w-0">
+<div class="md3-feature-card__title">
+    <h3 class="md3-feature-card__heading">
         <a href="/yarn/{{ yarn.id }}" class="hover:text-primary truncate">
             {{ yarn.name }}
         </a>
@@ -64,7 +64,7 @@
             {% endif %}
         </span>
         {% if yarn.is_ai_enhanced %}
-        <span class="badge badge-ghost border-primary/20 text-primary/70 font-black text-[8px] tracking-tighter uppercase px-1.5 h-4 min-h-0 shrink-0" title="{{ _('AI Enhanced') }}">AI</span>
+        <span class="md3-chip md3-chip--ai md3-chip--compact" title="{{ _('AI Enhanced') }}">AI</span>
         {% endif %}
     </h3>
 </div>
@@ -115,7 +115,7 @@
 
 <p class="line-clamp-2 text-sm opacity-70 mb-4">{{ yarn.description or _('No description yet.') }}</p>
 {% elif section == 'context_menu' %}
-<ul class="menu p-2 bg-base-100 rounded-box border border-base-200 shadow-xl">
+<ul class="md3-menu">
     <li id="yarn-{{ yarn.id }}-favorite-toggle" data-favorite-toggle>
         {% with yarn_id=yarn.id, is_favorite=yarn.is_favorite, variant='detail', extra_classes='flex justify-start gap-2' %}
         {% include "yarn/_favorite_toggle.html" %}

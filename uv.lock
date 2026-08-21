@@ -2160,7 +2160,7 @@ requires-dist = [
     { name = "nh3", specifier = ">=0.2.18" },
     { name = "openai", specifier = ">=1.57.0" },
     { name = "pillow", specifier = ">=10.4.0" },
-    { name = "playwright", marker = "extra == 'dev'", specifier = ">=1.50.0" },
+    { name = "playwright", marker = "extra == 'dev'", specifier = "==1.62.0" },
     { name = "pymupdf", specifier = ">=1.26.4" },
     { name = "pypdf", specifier = ">=5.1.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.3" },

@@ -1,7 +1,9 @@
 package blue.anika.wolle.ui.onboarding
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import blue.anika.wolle.R
 import blue.anika.wolle.data.onboarding.OnboardingError
 import blue.anika.wolle.data.onboarding.OnboardingValidationException
 import blue.anika.wolle.data.onboarding.OnboardingValidator
@@ -10,6 +12,7 @@ import blue.anika.wolle.data.onboarding.QrConfigCodec
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +37,7 @@ constructor(
     private val passwordTokenMinter: PasswordTokenMinter,
     private val settingsRepository: SettingsRepository,
     private val syncScheduler: SyncScheduler,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<OnboardingUiState>(OnboardingUiState.Idle)
@@ -41,7 +45,10 @@ constructor(
 
     fun connect(serverUrl: String, apiToken: String) {
         if (serverUrl.isBlank() || apiToken.isBlank()) {
-            _uiState.value = OnboardingUiState.Error("Enter both the server URL and the API token")
+            _uiState.value =
+                OnboardingUiState.Error(
+                    context.getString(R.string.onboarding_error_missing_url_token)
+                )
             return
         }
         _uiState.value = OnboardingUiState.Validating
@@ -64,7 +71,10 @@ constructor(
      */
     fun signInWithPassword(serverUrl: String, email: String, password: String) {
         if (serverUrl.isBlank() || email.isBlank() || password.isBlank()) {
-            _uiState.value = OnboardingUiState.Error("Enter the server URL, email, and password")
+            _uiState.value =
+                OnboardingUiState.Error(
+                    context.getString(R.string.onboarding_error_missing_password_fields)
+                )
             return
         }
         _uiState.value = OnboardingUiState.Validating
@@ -88,7 +98,7 @@ constructor(
         val payload = QrConfigCodec.decode(scannedText)
         if (payload == null) {
             _uiState.value =
-                OnboardingUiState.Error("That doesn't look like a Stricknani setup code")
+                OnboardingUiState.Error(context.getString(R.string.onboarding_error_invalid_qr))
             return
         }
         connect(payload.baseUrl, payload.token)
@@ -108,18 +118,20 @@ constructor(
             is OnboardingValidationException ->
                 when (val e = error) {
                     OnboardingError.MalformedUrl ->
-                        "Enter a valid server URL, e.g. https://stricknani.example.com"
+                        context.getString(R.string.onboarding_error_malformed_url)
                     is OnboardingError.NotAStricknaniServer ->
-                        "That doesn't look like a Stricknani server (HTTP ${e.code})."
+                        context.getString(R.string.onboarding_error_not_a_server, e.code)
                     OnboardingError.Unauthorized ->
-                        "That server rejected the API token. Generate a new one in Stricknani " +
-                            "under your account menu → API Tokens and try again."
-                    OnboardingError.InvalidCredentials -> "Incorrect email or password."
+                        context.getString(R.string.onboarding_error_unauthorized)
+                    OnboardingError.InvalidCredentials ->
+                        context.getString(R.string.onboarding_error_invalid_credentials)
                     OnboardingError.Unreachable ->
-                        "Couldn't reach that server. Check the URL and your network connection."
+                        context.getString(R.string.onboarding_error_unreachable)
                     is OnboardingError.ServerError ->
-                        "The server responded with an error (HTTP ${e.code})."
+                        context.getString(R.string.onboarding_error_server_error, e.code)
                 }
-            else -> message?.takeIf { it.isNotBlank() } ?: "Couldn't connect to that server."
+            else ->
+                message?.takeIf { it.isNotBlank() }
+                    ?: context.getString(R.string.onboarding_error_generic)
         }
 }

@@ -53,4 +53,14 @@ class DeepLinkParserTest {
         assertNull(DeepLinkParser.parse(null))
         assertNull(DeepLinkParser.parse(""))
     }
+
+    @Test
+    fun `returns null for a stricknani setup QR URI - handled separately by QrConfigCodec`() {
+        // SNA-61: this is deliberate, not a gap - a `stricknani://setup?p=...` URI matches neither
+        // the project nor yarn path regex, so it must fall through to null here. It used to just
+        // get silently discarded at that point; MainActivity now separately checks
+        // `QrConfigCodec.looksLikeQrConfigUri` on the same `intent.dataString` and routes a match
+        // into `OnboardingViewModel.connectFromScannedText` instead of relying on this parser.
+        assertNull(DeepLinkParser.parse("stricknani://setup?p=eyJhIjoxfQ"))
+    }
 }

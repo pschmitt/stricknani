@@ -64,6 +64,24 @@ import '.just/android-app-ci/just/single-module.just'
 # ktfmtCheck + unit tests + Android Lint, remotely - the full local pre-push check.
 check host=remote_host: (gradle host "ktfmtCheck :app:testDebugUnitTest lintDebug")
 
+# Compile the app and instrumentation APKs remotely. The emulator itself belongs to the CI
+# workflow; keeping this recipe remote preserves the repository rule that Gradle never runs on the
+# developer workstation. The workflow builds the same two tasks on its GitHub runner before booting
+# its API-34 emulator.
+e2e-build host=remote_host: (gradle host "assembleDebug assembleDebugAndroidTest")
+
+# Validate Play Store listing text, declarations, and committed icon/feature-graphic assets without
+# contacting Google Play. Screenshot buckets are populated by the manual Android screenshots
+# workflow and reviewed before the explicit upload recipe is ever used.
+play-store-validate:
+    python3 scripts/validate-play-store-metadata.py --root ..
+
+# Upload reviewed Play Store assets only when the caller supplies the exact confirmation string and
+# has already authenticated gpc. The script itself performs the final validation and refuses to
+# upload when the listing declarations are still draft.
+play-store-assets-upload:
+    PLAY_PACKAGE={{play_package}} scripts/upload-play-store-assets.sh --upload
+
 # --- Shared recipes (pschmitt/android-app-ci) -------------------------------
 
 # Advance the .just/android-app-ci submodule to the tip of its tracked branch (main) and stage the

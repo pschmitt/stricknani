@@ -6,6 +6,7 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from PIL import Image
 
@@ -104,7 +105,7 @@ async def test_import_url_extracts_steps_and_images(
     </html>
     """
 
-    async def _mock_get(url: str, **kwargs: Any) -> MagicMock:
+    def _mock_response(url: str) -> MagicMock:
         # Create a unique valid JPEG for each URL based on its hash
         import hashlib
 
@@ -124,6 +125,25 @@ async def test_import_url_extracts_steps_and_images(
         }
         return mock_resp
 
+    class _StreamResponse:
+        def __init__(self, response: MagicMock) -> None:
+            self._response = response
+
+        async def __aenter__(self) -> MagicMock:
+            self._response.request = httpx.Request("GET", "https://example.com")
+
+            async def _aiter_bytes(chunk_size: int) -> Any:
+                yield self._response.content
+
+            self._response.aiter_bytes = _aiter_bytes
+            return self._response
+
+        async def __aexit__(self, *args: Any) -> bool:
+            return False
+
+    def _mock_stream(method: str, url: str, **kwargs: Any) -> _StreamResponse:
+        return _StreamResponse(_mock_response(url))
+
     async def _mock_page(*args: Any, **kwargs: Any) -> MagicMock:
         # The page fetch goes through curl_cffi (fetch_url); image downloads
         # still go through httpx (_mock_get above).
@@ -134,7 +154,7 @@ async def test_import_url_extracts_steps_and_images(
 
     with (
         patch("stricknani.importing.fetch.fetch_url", side_effect=_mock_page),
-        patch("httpx.AsyncClient.get", side_effect=_mock_get),
+        patch("httpx.AsyncClient.stream", side_effect=_mock_stream),
     ):
         response = await client.post(
             "/projects/import",
@@ -499,10 +519,15 @@ async def test_import_requires_auth(test_client: "TestClientFixture") -> None:
 
     # Temporarily clear auth override to test auth requirement
     from stricknani.main import app
-    from stricknani.routes.auth import get_current_user, require_auth
+    from stricknani.routes.auth import (
+        get_current_user,
+        require_auth,
+        require_auth_or_api_token,
+    )
 
     original_overrides = app.dependency_overrides.copy()
     app.dependency_overrides.pop(require_auth, None)
+    app.dependency_overrides.pop(require_auth_or_api_token, None)
     app.dependency_overrides.pop(get_current_user, None)
 
     response = await client.post(
@@ -646,3 +671,37 @@ async def test_import_trace_written(
         config.IMPORT_TRACE_ENABLED = original_enabled
         config.IMPORT_TRACE_DIR = original_dir
         config.IMPORT_TRACE_MAX_CHARS = original_max
+
+
+async def test_import_pattern_from_url_is_rate_limited(
+    test_client: "TestClientFixture",
+) -> None:
+    """T107: URL imports had no cap, letting a user make the server fetch an
+    attacker-influenced remote URL on their behalf as often as they like -
+    the SSRF guard (T52) restricts *where* it fetches from, not *how often*."""
+    client, *_ = test_client
+
+    original_max = config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS
+    config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS = 1
+    try:
+        with patch("stricknani.importing.fetch.fetch_url") as mock_get:
+            mock_response = MagicMock()
+            mock_response.text = "<html></html>"
+            mock_response.status_code = 200
+            mock_get.return_value = mock_response
+
+            first = await client.post(
+                "/projects/import",
+                data={"type": "url", "url": "https://example.com/pattern"},
+            )
+            assert first.status_code == 200
+
+            blocked = await client.post(
+                "/projects/import",
+                data={"type": "url", "url": "https://example.com/pattern"},
+            )
+    finally:
+        config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS = original_max
+
+    assert blocked.status_code == 429
+    assert "Retry-After" in blocked.headers

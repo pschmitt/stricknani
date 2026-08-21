@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.common
 
 import android.os.SystemClock
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -9,7 +10,10 @@ import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -20,7 +24,11 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,16 +45,32 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import coil3.compose.AsyncImage
+import blue.anika.wolle.R
+import coil3.compose.AsyncImagePainter
+import coil3.compose.rememberAsyncImagePainter
 import kotlin.math.abs
 import kotlinx.coroutines.launch
 
 private val DismissThreshold = 120.dp
 private const val MIN_SCALE = 1f
 private const val MAX_SCALE = 5f
+
+/** An image shown in [ImageViewerDialog], with context for the current detail screen. */
+data class ImageViewerImage(
+    val url: String,
+    val title: String,
+    val sourceLabel: String,
+    val altText: String? = null,
+)
+
+internal data class ImageDimensions(val width: Int, val height: Int)
 
 private fun targetIndex(currentPage: Int, pageCount: Int, step: Int): Int? {
     if (pageCount <= 0 || step == 0) return null
@@ -55,20 +79,19 @@ private fun targetIndex(currentPage: Int, pageCount: Int, step: Int): Int? {
 
 /**
  * Full-screen swipe-to-dismiss image viewer (SNA-23) - pinch-to-zoom/pan on the current image,
- * horizontal swipe between [imageUrls] via [HorizontalPager], vertical drag-down dismisses (an
+ * horizontal swipe between [images] via [HorizontalPager], vertical drag-down dismisses (an
  * explicit close button is also shown for discoverability). Shown as a plain [Dialog], not a
  * navigation route. Ported from nyetbox's `ImageViewerDialog` (no third-party zoom/pager dependency
  * needed - `HorizontalPager` is core Compose Foundation).
  */
 @Composable
-fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () -> Unit) {
-    if (imageUrls.isEmpty()) return
+fun ImageViewerDialog(images: List<ImageViewerImage>, initialIndex: Int, onDismiss: () -> Unit) {
+    if (images.isEmpty()) return
     val pagerState =
-        rememberPagerState(initialPage = initialIndex.coerceIn(0, imageUrls.lastIndex)) {
-            imageUrls.size
-        }
+        rememberPagerState(initialPage = initialIndex.coerceIn(0, images.lastIndex)) { images.size }
     val dismissOffsetY = remember { Animatable(0f) }
     var isZoomed by remember { mutableStateOf(false) }
+    var loadedDimensions by remember { mutableStateOf<Map<String, ImageDimensions>>(emptyMap()) }
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val thresholdPx = with(density) { DismissThreshold.toPx() }
@@ -115,17 +138,24 @@ fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () 
                     userScrollEnabled = !isZoomed,
                 ) { page ->
                     ZoomableImagePage(
-                        url = imageUrls[page],
+                        image = images[page],
+                        page = page,
+                        pageCount = images.size,
                         onZoomChanged = { zoomed ->
                             if (page == pagerState.currentPage) isZoomed = zoomed
+                        },
+                        onDimensionsLoaded = { url, dimensions ->
+                            if (dimensions != null) {
+                                loadedDimensions = loadedDimensions + (url to dimensions)
+                            }
                         },
                     )
                 }
             }
-            if (imageUrls.size > 1) {
-                val currentPage = pagerState.currentPage.coerceIn(0, imageUrls.lastIndex)
-                val previousPage = targetIndex(currentPage, imageUrls.size, -1)
-                val nextPage = targetIndex(currentPage, imageUrls.size, 1)
+            val currentPage = pagerState.currentPage.coerceIn(0, images.lastIndex)
+            if (images.size > 1) {
+                val previousPage = targetIndex(currentPage, images.size, -1)
+                val nextPage = targetIndex(currentPage, images.size, 1)
                 IconButton(
                     onClick = {
                         previousPage?.let { target ->
@@ -140,7 +170,7 @@ fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () 
                 ) {
                     Icon(
                         Icons.Filled.ChevronLeft,
-                        contentDescription = "Previous image",
+                        contentDescription = stringResource(R.string.image_viewer_previous_image),
                         tint = Color.White.copy(alpha = if (previousPage == null) 0.35f else 1f),
                     )
                 }
@@ -158,7 +188,7 @@ fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () 
                 ) {
                     Icon(
                         Icons.Filled.ChevronRight,
-                        contentDescription = "Next image",
+                        contentDescription = stringResource(R.string.image_viewer_next_image),
                         tint = Color.White.copy(alpha = if (nextPage == null) 0.35f else 1f),
                     )
                 }
@@ -167,8 +197,17 @@ fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () 
                 onClick = onDismiss,
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
             ) {
-                Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.White)
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = stringResource(R.string.common_close),
+                    tint = Color.White,
+                )
             }
+            ImageMetadataPanel(
+                image = images[currentPage],
+                dimensions = loadedDimensions[images[currentPage].url],
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }
@@ -179,38 +218,62 @@ fun ImageViewerDialog(imageUrls: List<String>, initialIndex: Int, onDismiss: () 
  * receive them.
  */
 @Composable
-private fun ZoomableImagePage(url: String, onZoomChanged: (Boolean) -> Unit) {
-    var scale by remember(url) { mutableFloatStateOf(1f) }
-    var offset by remember(url) { mutableStateOf(Offset.Zero) }
+private fun ZoomableImagePage(
+    image: ImageViewerImage,
+    page: Int,
+    pageCount: Int,
+    onZoomChanged: (Boolean) -> Unit,
+    onDimensionsLoaded: (String, ImageDimensions?) -> Unit,
+) {
+    var scale by remember(image.url) { mutableFloatStateOf(1f) }
+    var offset by remember(image.url) { mutableStateOf(Offset.Zero) }
+    val painter = rememberAsyncImagePainter(model = image.url)
+    val painterState by painter.state.collectAsState()
+    val dimensions =
+        (painterState as? AsyncImagePainter.State.Success)?.result?.image?.let {
+            ImageDimensions(width = it.width, height = it.height)
+        }
+    val accessibilityDescription =
+        stringResource(
+            R.string.image_viewer_image_description,
+            image.title,
+            image.sourceLabel,
+            page + 1,
+            pageCount,
+        )
+
+    LaunchedEffect(image.url, dimensions) { onDimensionsLoaded(image.url, dimensions) }
 
     Box(
         modifier =
-            Modifier.fillMaxSize().pointerInput(url) {
-                detectZoomPan(
-                    isZoomed = { scale > MIN_SCALE },
-                    onGesture = { pan, zoom ->
-                        val newScale = (scale * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
-                        val maxOffsetX = (size.width * (newScale - 1)) / 2f
-                        val maxOffsetY = (size.height * (newScale - 1)) / 2f
-                        offset =
-                            Offset(
-                                x = (offset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX),
-                                y = (offset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY),
-                            )
-                        scale = newScale
-                        onZoomChanged(newScale > MIN_SCALE)
-                    },
-                    onDoubleTap = {
-                        scale = if (scale > MIN_SCALE) MIN_SCALE else 2.5f
-                        offset = Offset.Zero
-                        onZoomChanged(scale > MIN_SCALE)
-                    },
-                )
-            },
+            Modifier.fillMaxSize()
+                .pointerInput(image.url) {
+                    detectZoomPan(
+                        isZoomed = { scale > MIN_SCALE },
+                        onGesture = { pan, zoom ->
+                            val newScale = (scale * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
+                            val maxOffsetX = (size.width * (newScale - 1)) / 2f
+                            val maxOffsetY = (size.height * (newScale - 1)) / 2f
+                            offset =
+                                Offset(
+                                    x = (offset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX),
+                                    y = (offset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY),
+                                )
+                            scale = newScale
+                            onZoomChanged(newScale > MIN_SCALE)
+                        },
+                        onDoubleTap = {
+                            scale = if (scale > MIN_SCALE) MIN_SCALE else 2.5f
+                            offset = Offset.Zero
+                            onZoomChanged(scale > MIN_SCALE)
+                        },
+                    )
+                }
+                .semantics { contentDescription = accessibilityDescription },
         contentAlignment = Alignment.Center,
     ) {
-        AsyncImage(
-            model = url,
+        Image(
+            painter = painter,
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier =
@@ -222,6 +285,60 @@ private fun ZoomableImagePage(url: String, onZoomChanged: (Boolean) -> Unit) {
                 },
         )
     }
+}
+
+@Composable
+private fun ImageMetadataPanel(
+    image: ImageViewerImage,
+    dimensions: ImageDimensions?,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(Color.Black.copy(alpha = 0.72f))
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Text(
+            text = image.title,
+            color = Color.White,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        imageMetadataRows(image, dimensions).forEach { (label, value) ->
+            val localizedLabel =
+                stringResource(
+                    when (label) {
+                        "context" -> R.string.image_viewer_context_label
+                        "description" -> R.string.image_viewer_description_label
+                        else -> R.string.image_viewer_dimensions_label
+                    }
+                )
+            Row(modifier = Modifier.padding(top = 3.dp)) {
+                Text(
+                    text = "$localizedLabel: ",
+                    color = Color.White.copy(alpha = 0.85f),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    text = value,
+                    color = Color.White.copy(alpha = 0.85f),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+    }
+}
+
+private fun imageMetadataRows(
+    image: ImageViewerImage,
+    dimensions: ImageDimensions?,
+): List<Pair<String, String>> = buildList {
+    add("context" to image.sourceLabel)
+    image.altText?.takeIf(String::isNotBlank)?.let { add("description" to it) }
+    dimensions?.let { add("dimensions" to "${it.width} × ${it.height} px") }
 }
 
 /**

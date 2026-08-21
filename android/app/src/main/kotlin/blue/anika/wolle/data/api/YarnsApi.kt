@@ -2,19 +2,23 @@ package blue.anika.wolle.data.api
 
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.YarnPageDto
+import blue.anika.wolle.data.api.dto.YarnPhotoDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
+import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
  * `stricknani/routes/api/yarns.py`. Read (list/detail), favorite toggle (see `ProjectsApi`'s kdoc
  * for why it doesn't wait on the offline write queue), and create/update/delete (queued through the
- * write queue - SNA-8). Photo upload is a later follow-up (multipart, deferred).
+ * write queue - SNA-8). Photo uploads use the same queued multipart replay path as project images.
  */
 interface YarnsApi {
     @GET("api/v1/yarns")
@@ -37,4 +41,11 @@ interface YarnsApi {
 
     @DELETE("api/v1/yarns/{yarnId}/favorite")
     suspend fun unfavoriteYarn(@Path("yarnId") yarnId: Int): YarnDto
+
+    @Multipart
+    @POST("api/v1/yarns/{yarnId}/photos")
+    suspend fun uploadPhoto(
+        @Path("yarnId") yarnId: Int,
+        @Part file: MultipartBody.Part,
+    ): YarnPhotoDto
 }

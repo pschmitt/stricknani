@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
@@ -35,19 +34,23 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
 
@@ -62,24 +65,20 @@ fun YarnsListScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
 
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.dismissError()
-        }
-    }
+    RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddYarnClick,
+                modifier = Modifier.testTag("e2e-new-yarn"),
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("New yarn") },
+                text = { Text(stringResource(R.string.yarns_list_new_yarn_fab)) },
                 expanded = !listState.canScrollBackward,
             )
         },
@@ -93,27 +92,36 @@ fun YarnsListScreen(
                 SearchField(
                     value = searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
-                    placeholder = "Search yarns",
+                    placeholder = stringResource(R.string.yarns_list_search_placeholder),
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
                 Row(modifier = Modifier.padding(horizontal = 16.dp)) {
                     FilterChip(
                         selected = favoritesOnly,
                         onClick = { viewModel.onFavoritesOnlyChange(!favoritesOnly) },
-                        label = { Text("Favorites only") },
+                        label = { Text(stringResource(R.string.yarns_list_favorites_only)) },
                     )
                 }
                 Spacer(Modifier.height(8.dp))
 
                 if (yarns.isEmpty()) {
-                    EmptyState(
-                        icon = Icons.Filled.Checkroom,
-                        title = "No yarns yet",
-                        subtitle = "Pull to refresh, or adjust your filters.",
-                    )
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize().testTag("e2e-yarns-list"),
+                    ) {
+                        item {
+                            EmptyState(
+                                icon = MdiIcons.Sheep,
+                                title = stringResource(R.string.yarns_list_empty_title),
+                                subtitle = stringResource(R.string.projects_list_empty_subtitle),
+                                modifier = Modifier.fillMaxWidth().height(400.dp),
+                            )
+                        }
+                    }
                 } else {
                     LazyColumn(
                         state = listState,
+                        modifier = Modifier.testTag("e2e-yarns-list"),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
@@ -154,7 +162,7 @@ private fun YarnListCard(
                         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Filled.Checkroom, contentDescription = null)
+                        Icon(MdiIcons.Sheep, contentDescription = null)
                     }
                 }
             }
@@ -179,7 +187,11 @@ private fun YarnListCard(
                 Icon(
                     imageVector =
                         if (yarn.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = if (yarn.isFavorite) "Unfavorite" else "Favorite",
+                    contentDescription =
+                        stringResource(
+                            if (yarn.isFavorite) R.string.common_unfavorite
+                            else R.string.common_favorite
+                        ),
                     tint =
                         if (yarn.isFavorite) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,

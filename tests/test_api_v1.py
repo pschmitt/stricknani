@@ -3,6 +3,7 @@
 import io
 from collections.abc import AsyncGenerator
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -91,6 +92,27 @@ async def test_meta_does_not_require_auth() -> None:
     assert "build_id" in body
 
 
+@pytest.mark.asyncio
+async def test_project_import_accepts_api_token(api_client: ClientFixture) -> None:
+    """The Android importer uses the same Bearer token as the JSON API."""
+    client, _session_factory, _user_id = api_client
+    page = MagicMock()
+    page.text = (
+        "<html><head><title>Imported scarf</title></head>"
+        "<body>Cast on 20 stitches.</body></html>"
+    )
+    page.status_code = 200
+
+    with patch("stricknani.importing.fetch.fetch_url", return_value=page):
+        response = await client.post(
+            "/projects/import",
+            data={"type": "url", "url": "https://example.com/scarf"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["link"] == "https://example.com/scarf"
+
+
 async def test_api_requires_bearer_token() -> None:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -110,17 +132,57 @@ async def test_api_rejects_invalid_bearer_token(api_client: ClientFixture) -> No
     assert response.status_code == 401
 
 
-async def test_category_list_and_create(api_client: ClientFixture) -> None:
+async def test_category_crud_updates_and_clears_projects(
+    api_client: ClientFixture,
+) -> None:
     client, _session_factory, _user_id = api_client
 
     create_response = await client.post("/api/v1/categories", json={"name": "Socks"})
     assert create_response.status_code == 201
-    assert create_response.json()["name"] == "Socks"
+    category = create_response.json()
+    assert category["name"] == "Socks"
+
+    project_response = await client.post(
+        "/api/v1/projects", json={"name": "Category project", "category": "Socks"}
+    )
+    assert project_response.status_code == 201
+    project_id = project_response.json()["id"]
+
+    rename_response = await client.put(
+        f"/api/v1/categories/{category['id']}", json={"name": "Knitting"}
+    )
+    assert rename_response.status_code == 200
+    assert rename_response.json() == {"id": category["id"], "name": "Knitting"}
+
+    renamed_project = await client.get(f"/api/v1/projects/{project_id}")
+    assert renamed_project.json()["category"] == "Knitting"
+
+    delete_response = await client.delete(f"/api/v1/categories/{category['id']}")
+    assert delete_response.status_code == 204
+
+    cleared_project = await client.get(f"/api/v1/projects/{project_id}")
+    assert cleared_project.json()["category"] is None
 
     list_response = await client.get("/api/v1/categories")
     assert list_response.status_code == 200
     names = [c["name"] for c in list_response.json()]
-    assert "Socks" in names
+    assert "Knitting" not in names
+
+
+async def test_category_rename_rejects_duplicate_names(
+    api_client: ClientFixture,
+) -> None:
+    client, _session_factory, _user_id = api_client
+
+    first = await client.post("/api/v1/categories", json={"name": "Socks"})
+    second = await client.post("/api/v1/categories", json={"name": "Scarves"})
+
+    response = await client.put(
+        f"/api/v1/categories/{second.json()['id']}", json={"name": "sOcKs"}
+    )
+
+    assert response.status_code == 409
+    assert first.json()["name"] == "Socks"
 
 
 async def test_yarn_crud_and_favorite(api_client: ClientFixture) -> None:
@@ -223,6 +285,30 @@ async def test_yarn_photo_upload_and_delete(api_client: ClientFixture) -> None:
     assert detail_after.json()["photos"] == []
 
 
+async def test_yarn_photo_upload_rejects_non_image(api_client: ClientFixture) -> None:
+    """All direct yarn-photo paths must validate bytes before persisting them."""
+    client, _session_factory, _user_id = api_client
+
+    create_response = await client.post("/api/v1/yarns", json={"name": "Safe Yarn"})
+    yarn_id = create_response.json()["id"]
+
+    upload_response = await client.post(
+        f"/api/v1/yarns/{yarn_id}/photos",
+        files={
+            "file": (
+                "not-an-image.html",
+                b"<html>not an image</html>",
+                "text/html",
+            )
+        },
+    )
+    assert upload_response.status_code == 400
+    assert upload_response.json()["detail"] == "Uploaded file is not a supported image"
+
+    detail = await client.get(f"/api/v1/yarns/{yarn_id}")
+    assert detail.json()["photos"] == []
+
+
 async def test_project_crud_with_steps_and_yarn_links(
     api_client: ClientFixture,
 ) -> None:
@@ -252,6 +338,8 @@ async def test_project_crud_with_steps_and_yarn_links(
     assert project["yarn_ids"] == [yarn_id]
     assert len(project["steps"]) == 2
     project_id = project["id"]
+    first_step_id = project["steps"][0]["id"]
+    second_step_id = project["steps"][1]["id"]
 
     get_response = await client.get(f"/api/v1/projects/{project_id}")
     assert get_response.status_code == 200
@@ -268,14 +356,25 @@ async def test_project_crud_with_steps_and_yarn_links(
             "name": "Striped Socks v2",
             "tags": ["socks"],
             "yarn_ids": [],
-            "steps": [{"title": "Cast on", "step_number": 1}],
+            "steps": [
+                {
+                    "id": second_step_id,
+                    "title": "Knit heel first",
+                    "step_number": 1,
+                },
+                {"id": first_step_id, "title": "Cast on", "step_number": 2},
+            ],
         },
     )
     assert update_response.status_code == 200
     updated = update_response.json()
     assert updated["name"] == "Striped Socks v2"
     assert updated["yarn_ids"] == []
-    assert len(updated["steps"]) == 1
+    assert [step["id"] for step in updated["steps"]] == [
+        second_step_id,
+        first_step_id,
+    ]
+    assert [step["step_number"] for step in updated["steps"]] == [1, 2]
 
     fav_response = await client.post(f"/api/v1/projects/{project_id}/favorite")
     assert fav_response.status_code == 200
@@ -383,6 +482,19 @@ async def test_project_title_image_step_image_and_attachment(
     assert step_image_response.status_code == 201
     step_image = step_image_response.json()
     assert step_image["step_id"] == step_id
+
+    reordered_response = await client.put(
+        f"/api/v1/projects/{project_id}",
+        json={
+            "name": "Media Project",
+            "steps": [{"id": step_id, "title": "Step one", "step_number": 1}],
+        },
+    )
+    assert reordered_response.status_code == 200
+    assert reordered_response.json()["steps"][0]["id"] == step_id
+    assert any(
+        image["step_id"] == step_id for image in reordered_response.json()["images"]
+    )
 
     attachment_response = await client.post(
         f"/api/v1/projects/{project_id}/attachments",

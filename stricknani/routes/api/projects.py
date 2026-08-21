@@ -36,6 +36,10 @@ from stricknani.services.audit import create_audit_log
 from stricknani.services.projects.attachments import store_project_attachment
 from stricknani.services.projects.categories import ensure_category
 from stricknani.services.projects.images import upload_step_image, upload_title_image
+from stricknani.services.projects.import_images import (
+    import_project_images_from_urls,
+    import_step_images_from_urls,
+)
 from stricknani.services.projects.tags import (
     deserialize_tags,
     normalize_tags,
@@ -144,7 +148,7 @@ def _serialize_project(project: Project, *, is_favorite: bool) -> ProjectRespons
                 description=step.description,
                 step_number=step.step_number,
             )
-            for step in project.steps
+            for step in sorted(project.steps, key=lambda step: step.step_number)
         ],
         images=[_serialize_image(image, project.id) for image in project.images],
         attachments=[
@@ -242,14 +246,25 @@ async def create_project(
     db.add(project)
     await db.flush()
 
+    created_steps: list[Step] = []
     for step_payload in payload.steps:
-        db.add(
-            Step(
-                title=step_payload.title,
-                description=step_payload.description,
-                step_number=step_payload.step_number,
-                project_id=project.id,
-            )
+        step = Step(
+            title=step_payload.title,
+            description=step_payload.description,
+            step_number=step_payload.step_number,
+            project_id=project.id,
+        )
+        db.add(step)
+        created_steps.append(step)
+
+    await db.flush()
+    imported_images = await import_project_images_from_urls(
+        db, project, payload.image_urls
+    )
+    imported_step_images = 0
+    for step_payload, step in zip(payload.steps, created_steps, strict=True):
+        imported_step_images += await import_step_images_from_urls(
+            db, step, step_payload.image_urls
         )
 
     await create_audit_log(
@@ -263,6 +278,7 @@ async def create_project(
             "category": project.category,
             "yarn_count": len(project.yarns),
             "step_count": len(payload.steps),
+            "image_count": imported_images + imported_step_images,
         },
     )
     await db.commit()
@@ -317,20 +333,31 @@ async def update_project(
     project.yarns = list(await load_owned_yarns(db, current_user.id, payload.yarn_ids))
     project.yarn = project.yarns[0].name if project.yarns else None
 
-    # Steps are fully replaced on update - the app sends the complete
-    # current step list (matching how the web form's steps editor works).
-    # Mutating the relationship collection (rather than a raw DELETE query)
-    # lets the "all, delete-orphan" cascade on Project.steps clean up the
-    # removed rows (and their images) correctly at flush time.
-    project.steps.clear()
-    for step_payload in payload.steps:
-        project.steps.append(
-            Step(
-                title=step_payload.title,
-                description=step_payload.description,
-                step_number=step_payload.step_number,
-            )
+    # Preserve existing step rows when the client supplies their ids.  Besides
+    # making reordering cheap, this keeps images attached to their step.  A
+    # missing id still creates a new step; omitted existing ids are removed with
+    # the relationship's delete-orphan cascade.
+    existing_steps = {step.id: step for step in project.steps}
+    retained_ids = {
+        step_payload.id
+        for step_payload in payload.steps
+        if step_payload.id is not None and step_payload.id in existing_steps
+    }
+    for step in list(project.steps):
+        if step.id not in retained_ids:
+            project.steps.remove(step)
+
+    for step_number, step_payload in enumerate(payload.steps, start=1):
+        step = (
+            existing_steps[step_payload.id]
+            if step_payload.id is not None and step_payload.id in existing_steps
+            else Step(project_id=project.id)
         )
+        step.title = step_payload.title
+        step.description = step_payload.description
+        step.step_number = step_payload.step_number or step_number
+        if step not in project.steps:
+            project.steps.append(step)
 
     await create_audit_log(
         db,

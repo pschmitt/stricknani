@@ -16,11 +16,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import blue.anika.wolle.R
 
 /**
  * Settings hub (SNA-21): a card of category rows, each navigating to its own dedicated screen
@@ -32,7 +34,9 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onCategoryClick: (SettingsCategory) -> Unit) {
-    Scaffold(topBar = { TopAppBar(title = { Text("Settings") }) }) { innerPadding ->
+    Scaffold(
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_root_title)) }) }
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding).testTag("settings-list"),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
@@ -51,16 +55,18 @@ fun SettingsScreen(onCategoryClick: (SettingsCategory) -> Unit) {
 
 @Composable
 private fun SettingsCategoryRow(category: SettingsCategory, onClick: (SettingsCategory) -> Unit) {
+    val title = category.title()
+    val subtitle = category.subtitle()
     SettingsListItem(
         modifier =
             Modifier.clickable(role = Role.Button) { onClick(category) }
                 .semantics {
-                    contentDescription = "${category.title}: ${category.subtitle}"
+                    contentDescription = "$title: $subtitle"
                     role = Role.Button
                 },
         leadingContent = { Icon(category.icon, contentDescription = null) },
-        headlineContent = { Text(category.title) },
-        supportingContent = { Text(category.subtitle) },
+        headlineContent = { Text(title) },
+        supportingContent = { Text(subtitle) },
         trailingContent = {
             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
         },

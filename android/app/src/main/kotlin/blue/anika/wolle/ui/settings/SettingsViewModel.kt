@@ -1,11 +1,17 @@
 package blue.anika.wolle.ui.settings
 
+import android.app.LocaleManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.LocaleList
 import android.os.SystemClock
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import blue.anika.wolle.R
 import blue.anika.wolle.data.api.MetaApi
 import blue.anika.wolle.data.api.dto.MetaDto
 import blue.anika.wolle.data.backup.BackupFrequency
@@ -13,7 +19,10 @@ import blue.anika.wolle.data.backup.BackupManager
 import blue.anika.wolle.data.backup.BackupPasswordRequiredException
 import blue.anika.wolle.data.backup.BackupScheduler
 import blue.anika.wolle.data.db.AppDatabase
+import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
+import blue.anika.wolle.data.db.entity.PendingMutationEntity
+import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.NavbarItemPreference
 import blue.anika.wolle.data.settings.SettingsRepository
@@ -45,6 +54,7 @@ constructor(
     private val appPreferencesRepository: AppPreferencesRepository,
     private val database: AppDatabase,
     syncStateDao: SyncStateDao,
+    private val pendingMutationDao: PendingMutationDao,
     private val metaApi: MetaApi,
     private val backupManager: BackupManager,
     private val backupScheduler: BackupScheduler,
@@ -74,6 +84,15 @@ constructor(
             .map { states -> states.maxOfOrNull { DateTimeUtils.parseToEpochMillis(it.cursor) } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
+    val failedMutations: StateFlow<List<PendingMutationEntity>> =
+        pendingMutationDao
+            .observeFailed()
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
+
     private val _serverMeta = MutableStateFlow<MetaDto?>(null)
     val serverMeta: StateFlow<MetaDto?> = _serverMeta.asStateFlow()
 
@@ -83,6 +102,58 @@ constructor(
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { appPreferencesRepository.setThemeMode(mode) }
+    }
+
+    fun retryFailedMutations() = syncScheduler.replayThenSyncNow()
+
+    /** Removes a conflict notice after the replay worker has already adopted the server version. */
+    fun dismissSyncIssue(id: Long) {
+        viewModelScope.launch { pendingMutationDao.dismissConflict(id) }
+    }
+
+    // --- SNA-37: in-app language picker -----------------------------------------------------
+
+    private val _appLanguage = MutableStateFlow(currentAppLanguage())
+    val appLanguage: StateFlow<AppLanguage> = _appLanguage.asStateFlow()
+
+    /**
+     * On API 33+, `AppCompatDelegate.setApplicationLocales()` silently no-ops for a plain
+     * `ComponentActivity` (its static locale storage only actually reaches the platform
+     * `LocaleManager` when an `AppCompatDelegate` has been installed on an `AppCompatActivity`) -
+     * verified empirically via `adb shell cmd locale get-app-locales` staying empty after calling
+     * it. Call `LocaleManager` directly instead; keep the `AppCompatDelegate` fallback (persisted
+     * via the manifest's `AppLocalesMetadataHolderService` auto-store opt-in) for API < 33, where
+     * there's no platform `LocaleManager` to call. The caller is still responsible for recreating
+     * the activity so already-composed strings actually refresh.
+     */
+    fun setAppLanguage(language: AppLanguage) {
+        _appLanguage.value = language
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.getSystemService(LocaleManager::class.java)?.applicationLocales =
+                language.tag?.let { LocaleList.forLanguageTags(it) }
+                    ?: LocaleList.getEmptyLocaleList()
+        } else {
+            AppCompatDelegate.setApplicationLocales(
+                language.tag?.let { LocaleListCompat.forLanguageTags(it) }
+                    ?: LocaleListCompat.getEmptyLocaleList()
+            )
+        }
+    }
+
+    private fun currentAppLanguage(): AppLanguage {
+        val tag =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context
+                    .getSystemService(LocaleManager::class.java)
+                    ?.applicationLocales
+                    ?.toLanguageTags()
+                    ?.takeIf { it.isNotBlank() }
+            } else {
+                AppCompatDelegate.getApplicationLocales().toLanguageTags().takeIf {
+                    it.isNotBlank()
+                }
+            }
+        return AppLanguage.entries.firstOrNull { it.tag == tag } ?: AppLanguage.SYSTEM
     }
 
     // --- SNA-34: developer mode easter egg ------------------------------------------------
@@ -116,10 +187,15 @@ constructor(
                 )
         ) {
             DeveloperModeTapAction.AlreadyDeveloper ->
-                _developerModeToast.tryEmit("You are already a developer")
+                _developerModeToast.tryEmit(
+                    context.getString(R.string.settings_dev_mode_already_developer)
+                )
             is DeveloperModeTapAction.Progress ->
                 _developerModeToast.tryEmit(
-                    "${action.remainingTaps} more taps to become a developer"
+                    context.getString(
+                        R.string.settings_dev_mode_taps_remaining,
+                        action.remainingTaps,
+                    )
                 )
             DeveloperModeTapAction.Unlock -> {
                 developerModeUnlockInProgress = true
@@ -128,7 +204,9 @@ constructor(
                     try {
                         appPreferencesRepository.setDeveloperMode(true)
                         enabled = true
-                        _developerModeToast.tryEmit("Developer mode enabled")
+                        _developerModeToast.tryEmit(
+                            context.getString(R.string.settings_dev_mode_enabled)
+                        )
                     } finally {
                         if (enabled) developerModeUnlocked = true
                         developerModeUnlockInProgress = false
@@ -222,11 +300,15 @@ constructor(
                     val bytes = backupManager.export(password?.takeIf { it.isNotBlank() })
                     withContext(Dispatchers.IO) {
                         context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
-                            ?: error("Could not open the selected file for writing")
+                            ?: error(context.getString(R.string.backup_error_open_file_write))
                     }
-                    BackupOperationState.Success("Backup exported")
+                    BackupOperationState.Success(
+                        context.getString(R.string.backup_success_exported)
+                    )
                 } catch (e: Exception) {
-                    BackupOperationState.Error(e.message ?: "Export failed")
+                    BackupOperationState.Error(
+                        e.message ?: context.getString(R.string.backup_error_export_failed)
+                    )
                 }
         }
     }
@@ -239,17 +321,21 @@ constructor(
                     val bytes =
                         withContext(Dispatchers.IO) {
                             context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                                ?: error("Could not open the selected file for reading")
+                                ?: error(context.getString(R.string.backup_error_open_file_read))
                         }
                     backupManager.import(bytes, password?.takeIf { it.isNotBlank() })
                     pendingRestoreUri = null
                     syncScheduler.syncNow()
-                    BackupOperationState.Success("Backup restored - syncing latest data now")
+                    BackupOperationState.Success(
+                        context.getString(R.string.backup_success_restored)
+                    )
                 } catch (e: BackupPasswordRequiredException) {
                     pendingRestoreUri = uri
                     BackupOperationState.PasswordRequired
                 } catch (e: Exception) {
-                    BackupOperationState.Error(e.message ?: "Restore failed")
+                    BackupOperationState.Error(
+                        e.message ?: context.getString(R.string.backup_error_restore_failed)
+                    )
                 }
         }
     }

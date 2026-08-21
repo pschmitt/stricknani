@@ -13,15 +13,15 @@
 {% set hide_page_title_on_mobile = page_title_mobile_hidden if page_title_mobile_hidden is defined else false %}
 {% set display_title = page_title if page_title else _('Stricknani') %}
 
-<nav aria-label="{{ _('Main navigation') }}" class="navbar bg-base-100 shadow-sm border-b border-base-300 sticky top-0 z-[80] min-h-12">
-    <div class="max-w-none mx-auto px-4 md:px-8 lg:px-10 w-full">
-        <div class="flex items-center justify-between h-12 w-full gap-4">
+<nav aria-label="{{ _('Main navigation') }}" class="md3-top-app-bar md3-navbar">
+    <div class="md3-navbar__container">
+        <div class="md3-navbar__row">
             {# Left side: Back button OR Favicon + Title with dropdown #}
-            <div class="flex items-center gap-3 md:gap-8 min-w-0 flex-1">
+            <div class="md3-navbar__leading">
                 {% if has_back_button %}
                 {% if back_url %}
-                <div class="w-8 h-8 flex items-center justify-center shrink-0">
-                    <a href="{{ back_url }}" class="btn btn-circle btn-ghost btn-sm text-base-content/60"
+                <div class="md3-navbar__back">
+                    <a href="{{ back_url }}" class="md3-button md3-button--icon md3-button--text md3-button--small md3-navbar__back-link"
                         aria-label="{{ back_label or _('Back') }}" data-unsaved-confirm="true">
                         <span class="mdi mdi-arrow-left text-xl"></span>
                     </a>
@@ -30,65 +30,61 @@
                 {# Extract and show just the back button from page_actions using split #}
                 {% set parts = page_actions.split('</a>', 1) %}
                 {% if parts|length > 1 %}
-                <div class="w-8 h-8 flex items-center justify-center shrink-0">
+                <div class="md3-navbar__back">
                     {{ parts[0]|safe }}</a>
                 </div>
                 {% endif %}
                 {% endif %}
 
                 {# Page Title - hidden on mobile when back button exists #}
-                <div class="dropdown dropdown-start md:dropdown-start navbar-nav-dropdown">
+                <div class="dropdown dropdown-start md3-dropdown md3-navbar__title-menu">
                     <button tabindex="0" role="button"
-                        class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
+                        class="md3-navbar__title-trigger">
                         {% if '<' in current_icon %}
-                            <div class="flex items-center {% if hide_page_title_on_mobile %}hidden md:flex{% endif %}">{{ current_icon|safe }}</div>
+                            <div class="md3-navbar__title-icon {% if hide_page_title_on_mobile %}md3-navbar__title-icon--mobile-hidden{% endif %}">{{ current_icon|safe }}</div>
                         {% else %}
-                            <span class="mdi {{ current_icon }} text-primary {% if hide_page_title_on_mobile %}hidden md:inline-block{% endif %}"></span>
+                            <span class="mdi {{ current_icon }} md3-navbar__title-icon {% if hide_page_title_on_mobile %}md3-navbar__title-icon--mobile-hidden{% endif %}"></span>
                         {% endif %}
-                        <span class="truncate {% if hide_page_title_on_mobile %}hidden md:inline{% endif %}">
+                        <span class="md3-navbar__title {% if hide_page_title_on_mobile %}md3-navbar__title--mobile-hidden{% endif %}">
                             {{ display_title|truncate(40, True, '...') }}
                         </span>
                         <span
-                            class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity {% if hide_page_title_on_mobile %}hidden md:inline{% endif %}"></span>
+                            class="md3-navbar__title-chevron {% if hide_page_title_on_mobile %}md3-navbar__title-chevron--mobile-hidden{% endif %}"
+                            aria-hidden="true"></span>
                     </button>
                     <ul tabindex="0"
-                        class="dropdown-content navbar-dropdown-content navbar-dropdown-nav z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
+                        class="md3-navigation-menu md3-menu md3-navbar__menu dropdown-content">
                         {% if current_user %}
                         <li>
-                            <a href="/projects"
-                                class="{% if current_path.startswith('/projects') %}bg-primary/10 text-primary font-medium{% endif %}">
-                                <span class="mdi mdi-folder-outline text-lg"></span>
+                            <a href="/projects" class="md3-navbar__menu-link{% if current_path.startswith('/projects') %} is-active{% endif %}">
+                                <span class="mdi mdi-folder-outline md3-navbar__menu-icon"></span>
                                 {{ _('Projects') }}
                             </a>
                         </li>
                         <li>
-                            <a href="/yarn"
-                                class="{% if current_path.startswith('/yarn') %}bg-primary/10 text-primary font-medium{% endif %}">
-                                <span class="mdi mdi-sheep text-lg"></span>
+                            <a href="/yarn" class="md3-navbar__menu-link{% if current_path.startswith('/yarn') %} is-active{% endif %}">
+                                <span class="mdi mdi-sheep md3-navbar__menu-icon"></span>
                                 {{ _('Yarns') }}
                             </a>
                         </li>
                         {% else %}
                         <li>
-                            <a href="/login"
-                                class="{% if current_path.startswith('/login') %}bg-primary/10 text-primary font-medium{% endif %}">
-                                <span class="mdi mdi-login text-lg"></span>
+                            <a href="/login" class="md3-navbar__menu-link{% if current_path.startswith('/login') %} is-active{% endif %}">
+                                <span class="mdi mdi-login md3-navbar__menu-icon"></span>
                                 {{ _('Login') }}
                             </a>
                         </li>
                         {% endif %}
                         <li>
-                            <a href="/gauge"
-                                class="{% if current_path.startswith('/gauge') %}bg-primary/10 text-primary font-medium{% endif %}">
-                                <span class="mdi mdi-ruler text-lg"></span>
+                            <a href="/gauge" class="md3-navbar__menu-link{% if current_path.startswith('/gauge') %} is-active{% endif %}">
+                                <span class="mdi mdi-ruler md3-navbar__menu-icon"></span>
                                 {{ _('Gauge Calculator') }}
                             </a>
                         </li>
                         {% if current_user and current_user.is_admin %}
                         <li>
-                            <a href="/admin/users"
-                                class="{% if current_path.startswith('/admin') %}bg-primary/10 text-primary font-medium{% endif %}">
-                                <span class="mdi mdi-shield-account text-lg"></span>
+                            <a href="/admin/users" class="md3-navbar__menu-link{% if current_path.startswith('/admin') %} is-active{% endif %}">
+                                <span class="mdi mdi-shield-account md3-navbar__menu-icon"></span>
                                 {{ _('Admin') }}
                             </a>
                         </li>
@@ -97,66 +93,62 @@
                 </div>
                 {% else %}
                 {# Favicon - links to home #}
-                <div class="w-8 h-8 flex items-center justify-center shrink-0">
-                    <a href="/" class="block hover:opacity-80 transition-opacity" aria-label="{{ _('Home') }}">
+                <div class="md3-app-logo">
+                    <a href="/" class="md3-app-logo__link" aria-label="{{ _('Home') }}">
                         <img src="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}"
-                            alt="" class="h-8 w-8" />
+                            alt="" class="md3-app-logo__image" />
                     </a>
                 </div>
 
                 {# Page Title with Navigation Dropdown #}
-                <div class="dropdown dropdown-start md:dropdown-start navbar-nav-dropdown">
+                <div class="dropdown dropdown-start md3-dropdown md3-navbar__title-menu">
                     <button tabindex="0" role="button"
-                        class="flex items-center gap-2 text-xl md:text-2xl font-extrabold text-base-content hover:text-primary transition-colors cursor-pointer group">
+                        class="md3-navbar__title-trigger">
                         {% if '<' in current_icon %}
-                            <div class="flex items-center {% if hide_page_title_on_mobile %}hidden md:flex{% endif %}">{{ current_icon|safe }}</div>
+                            <div class="md3-navbar__title-icon {% if hide_page_title_on_mobile %}md3-navbar__title-icon--mobile-hidden{% endif %}">{{ current_icon|safe }}</div>
                         {% else %}
-                            <span class="mdi {{ current_icon }} text-primary {% if hide_page_title_on_mobile %}hidden md:inline-block{% endif %}"></span>
+                            <span class="mdi {{ current_icon }} md3-navbar__title-icon {% if hide_page_title_on_mobile %}md3-navbar__title-icon--mobile-hidden{% endif %}"></span>
                         {% endif %}
-                        <span class="truncate {% if hide_page_title_on_mobile %}hidden md:inline{% endif %}">
+                        <span class="md3-navbar__title {% if hide_page_title_on_mobile %}md3-navbar__title--mobile-hidden{% endif %}">
                             {{ display_title|truncate(40, True, '...') }}
                         </span>
                         <span
-                            class="mdi mdi-chevron-down text-base opacity-60 group-hover:opacity-100 transition-opacity {% if hide_page_title_on_mobile %}hidden md:inline{% endif %}"></span>
+                            class="md3-navbar__title-chevron {% if hide_page_title_on_mobile %}md3-navbar__title-chevron--mobile-hidden{% endif %}"
+                            aria-hidden="true"></span>
                     </button>
                     <ul tabindex="0"
-                        class="dropdown-content navbar-dropdown-content navbar-dropdown-nav z-[90] menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-200 gap-1 mt-2">
+                        class="md3-navigation-menu md3-menu md3-navbar__menu dropdown-content">
                         {% if current_user %}
                         <li>
-                            <a href="/projects"
-                                class="{% if current_path.startswith('/projects') %}bg-primary/10 text-primary font-medium{% endif %}">
-                                <span class="mdi mdi-folder-outline text-lg"></span>
+                            <a href="/projects" class="md3-navbar__menu-link{% if current_path.startswith('/projects') %} is-active{% endif %}">
+                                <span class="mdi mdi-folder-outline md3-navbar__menu-icon"></span>
                                 {{ _('Projects') }}
                             </a>
                         </li>
                         <li>
-                            <a href="/yarn"
-                                class="{% if current_path.startswith('/yarn') %}bg-primary/10 text-primary font-medium{% endif %}">
-                                <span class="mdi mdi-sheep text-lg"></span>
+                            <a href="/yarn" class="md3-navbar__menu-link{% if current_path.startswith('/yarn') %} is-active{% endif %}">
+                                <span class="mdi mdi-sheep md3-navbar__menu-icon"></span>
                                 {{ _('Yarns') }}
                             </a>
                         </li>
                         {% else %}
                         <li>
-                            <a href="/login"
-                                class="{% if current_path.startswith('/login') %}bg-primary/10 text-primary font-medium{% endif %}">
-                                <span class="mdi mdi-login text-lg"></span>
+                            <a href="/login" class="md3-navbar__menu-link{% if current_path.startswith('/login') %} is-active{% endif %}">
+                                <span class="mdi mdi-login md3-navbar__menu-icon"></span>
                                 {{ _('Login') }}
                             </a>
                         </li>
                         {% endif %}
                         <li>
-                            <a href="/gauge"
-                                class="{% if current_path.startswith('/gauge') %}bg-primary/10 text-primary font-medium{% endif %}">
-                                <span class="mdi mdi-ruler text-lg"></span>
+                            <a href="/gauge" class="md3-navbar__menu-link{% if current_path.startswith('/gauge') %} is-active{% endif %}">
+                                <span class="mdi mdi-ruler md3-navbar__menu-icon"></span>
                                 {{ _('Gauge Calculator') }}
                             </a>
                         </li>
                         {% if current_user and current_user.is_admin %}
                         <li>
-                            <a href="/admin/users"
-                                class="{% if current_path.startswith('/admin') %}bg-primary/10 text-primary font-medium{% endif %}">
-                                <span class="mdi mdi-shield-account text-lg"></span>
+                            <a href="/admin/users" class="md3-navbar__menu-link{% if current_path.startswith('/admin') %} is-active{% endif %}">
+                                <span class="mdi mdi-shield-account md3-navbar__menu-icon"></span>
                                 {{ _('Admin') }}
                             </a>
                         </li>
@@ -166,16 +158,16 @@
                 {% endif %}
             </div>
 
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="md3-navbar__actions">
                 <button
                     type="button"
-                    class="btn btn-ghost btn-sm gap-2 normal-case hidden"
+                    class="md3-button md3-button--text md3-button--small md3-navbar__install hidden"
                     data-pwa-install="1"
                     aria-label="{{ _('Install App') }}"
                     title="{{ _('Install App') }}"
                 >
-                    <span class="mdi mdi-download-box-outline text-lg"></span>
-                    <span class="hidden sm:inline">{{ _('Install App') }}</span>
+                    <span class="mdi mdi-download-box-outline md3-navbar__action-icon"></span>
+                    <span class="md3-navbar__install-label">{{ _('Install App') }}</span>
                 </button>
                 {% if page_actions %}
                 {% if back_url %}
@@ -196,24 +188,24 @@
             </div>
 
             {# Right side: User menu or Login #}
-            <div class="flex items-center shrink-0">
+            <div class="md3-navbar__account">
                 {% if current_user %}
-                <div class="dropdown dropdown-end">
-                    <button tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+                <div class="dropdown dropdown-end md3-dropdown">
+                    <button tabindex="0" role="button" class="md3-button md3-button--icon md3-button--text md3-navbar__account-trigger">
                         {% if current_user_avatar_thumbnail %}
-                        <div class="w-10 rounded-full">
+                        <div class="md3-navbar__avatar">
                             <img src="{{ current_user_avatar_thumbnail }}"
                                 alt="{{ _('Profile picture for %(email)s') % {'email': current_user.email} }}" />
                         </div>
                         {% else %}
-                        <span class="mdi mdi-account-circle text-3xl"></span>
+                        <span class="mdi mdi-account-circle md3-navbar__avatar-icon"></span>
                         {% endif %}
                     </button>
-                    <div tabindex="0" class="dropdown-content navbar-dropdown-content menu bg-base-100 rounded-box z-[90] w-72 p-0 shadow-xl border border-base-300 mt-2">
-                        <div class="flex items-center gap-3 border-b border-base-300 px-4 py-3">
-                            <div class="avatar">
+                    <div tabindex="0" class="dropdown-content md3-menu md3-navbar__account-menu">
+                        <div class="md3-account-summary">
+                            <div class="md3-account-summary__avatar">
 	                                <button type="button"
-	                                    class="w-12 rounded-full cursor-pointer hover:ring-2 hover:ring-primary transition-all group relative overflow-hidden"
+                                    class="md3-account-summary__avatar-button"
 	                                    data-action="click-target"
 	                                    data-target-id="profile-image-input"
 	                                    aria-label="{{ _('Change profile picture') }}">
@@ -221,63 +213,60 @@
                                     <img src="{{ current_user_avatar_thumbnail }}"
                                         alt="{{ _('Profile picture for %(email)s') % {'email': current_user.email} }}" />
                                     {% else %}
-                                    <div class="flex h-full w-full items-center justify-center bg-base-300">
-                                        <span class="mdi mdi-account text-2xl"></span>
+                                    <div class="md3-account-summary__avatar-fallback">
+                                        <span class="mdi mdi-account"></span>
                                     </div>
                                     {% endif %}
-                                    <div
-                                        class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span class="mdi mdi-camera text-white text-lg"></span>
+                                    <div class="md3-account-summary__avatar-overlay">
+                                        <span class="mdi mdi-camera"></span>
                                     </div>
                                 </button>
                             </div>
-                            <div>
-                                <p class="text-sm font-semibold truncate max-w-[12rem]">{{ current_user.email }}</p>
-                                <p class="text-xs opacity-60">{{ _('Signed in') }}</p>
+                            <div class="md3-account-summary__identity">
+                                <p class="md3-account-summary__email">{{ current_user.email }}</p>
+                                <p class="md3-account-summary__status">{{ _('Signed in') }}</p>
                             </div>
                         </div>
-                        <div class="space-y-4 border-b border-base-300 px-4 py-4">
-                            <div class="space-y-2">
-                                <label class="block mb-1 px-1">
-                                    <span
-                                        class="text-[10px] font-bold uppercase tracking-[0.1em] opacity-50 flex items-center gap-2">
-                                        <span class="mdi mdi-translate text-xs"></span>
+                        <div class="md3-account-settings">
+                            <div class="md3-account-setting">
+                                <label class="md3-account-setting__label">
+                                    <span>
+                                        <span class="mdi mdi-translate"></span>
                                         {{ _('Language') }}
                                     </span>
                                 </label>
                                 {% include "shared/_language_selector.html" %}
                             </div>
-                            <div class="space-y-2">
-                                <label class="block mb-1 px-1">
-                                    <span
-                                        class="text-[10px] font-bold uppercase tracking-[0.1em] opacity-50 flex items-center gap-2">
-                                        <span class="mdi mdi-palette-swatch text-xs"></span>
+                            <div class="md3-account-setting">
+                                <label class="md3-account-setting__label">
+                                    <span>
+                                        <span class="mdi mdi-palette-swatch"></span>
                                         {{ _('Appearance') }}
                                     </span>
                                 </label>
-	                                <div class="join w-full bg-base-200 p-1 rounded-xl">
+		                                <div class="md3-theme-selector">
 	                                    <button type="button" id="theme-btn-light" data-call="setTheme" data-call-args='["light"]'
-	                                        class="btn btn-sm flex-1 border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold gap-2">
+		                                    class="md3-theme-selector__button">
 	                                        <span class="mdi mdi-weather-sunny"></span>
 	                                        {{ _('Light') }}
 	                                    </button>
 	                                    <button type="button" id="theme-btn-dark" data-call="setTheme" data-call-args='["dark"]'
-	                                        class="btn btn-sm flex-1 border-none join-item rounded-lg transition-all h-8 min-h-8 text-xs font-bold gap-2">
+		                                    class="md3-theme-selector__button">
 	                                        <span class="mdi mdi-weather-night"></span>
 	                                        {{ _('Dark') }}
 	                                    </button>
 	                                </div>
                             </div>
                         </div>
-                        <div class="space-y-2 px-4 py-4">
-                            <a href="/user/api-tokens" class="btn btn-ghost w-full justify-start">
-                                <span class="mdi mdi-key-chain-variant text-lg"></span>
+                        <div class="md3-account-actions">
+                            <a href="/user/api-tokens" class="md3-account-action">
+                                <span class="mdi mdi-key-chain-variant md3-account-action__icon"></span>
                                 {{ _('API Tokens') }}
                             </a>
                             <form action="/auth/logout" method="post">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                <button type="submit" class="btn btn-ghost w-full justify-start text-error">
-                                    <span class="mdi mdi-logout text-lg"></span>
+                                <button type="submit" class="md3-account-action md3-account-action--danger">
+                                    <span class="mdi mdi-logout md3-account-action__icon"></span>
                                     {{ _('Logout') }}
                                 </button>
                             </form>
@@ -285,24 +274,24 @@
                     </div>
                 </div>
                 {% else %}
-                <div class="flex items-center gap-1 sm:gap-2">
-	                    <button type="button" data-call="toggleTheme" class="btn btn-ghost btn-circle hover:bg-base-300 transition-all duration-300"
+                <div class="md3-navbar__public-controls">
+		                    <button type="button" data-call="toggleTheme" class="md3-button md3-button--icon md3-button--text"
 	                        title="{{ _('Toggle theme') }}" aria-label="{{ _('Toggle theme') }}">
-	                        <span id="theme-icon-public" class="mdi mdi-weather-night text-xl"></span>
+	                        <span id="theme-icon-public" class="mdi mdi-weather-night"></span>
 	                    </button>
 
-                    <div class="hidden sm:block min-w-32">
-                        {% set container_class = "bg-base-300/50 border border-base-300 rounded-full" %}
+                    <div class="md3-navbar__public-language">
+                        {% set container_class = "md3-language-selector--public" %}
                         {% include "shared/_language_selector.html" %}
                     </div>
 
-                    <div class="dropdown dropdown-end sm:hidden">
-                        <button tabindex="0" role="button" class="btn btn-ghost btn-circle btn-sm"
+                    <div class="dropdown dropdown-end md3-dropdown md3-navbar__mobile-language">
+                        <button tabindex="0" role="button" class="md3-button md3-button--icon md3-button--text md3-button--small"
                             title="{{ _('Change language') }}" aria-label="{{ _('Change language') }}">
-                            <span class="mdi mdi-translate text-lg"></span>
+                            <span class="mdi mdi-translate"></span>
                         </button>
                         <div tabindex="0"
-                            class="dropdown-content p-2 shadow-xl bg-base-100 rounded-box w-48 border border-base-300 mt-2 z-[90]">
+                            class="dropdown-content md3-menu md3-navbar__mobile-language-menu">
                             {% include "shared/_language_selector.html" %}
                         </div>
                     </div>

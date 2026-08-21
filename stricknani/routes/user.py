@@ -24,15 +24,17 @@ from stricknani.models import ApiToken, User
 from stricknani.routes.auth import require_auth
 from stricknani.utils.auth import generate_api_token
 from stricknani.utils.files import (
+    UploadTooLargeError,
     create_thumbnail,
     delete_file,
-    save_uploaded_file,
+    save_uploaded_image,
 )
 from stricknani.utils.qr_setup import (
     build_setup_uri,
     render_qr_data_uri,
     request_base_url,
 )
+from stricknani.utils.rate_limit import is_rate_limited, record_attempt
 from stricknani.web.middleware import _is_secure_request
 from stricknani.web.templating import render_template
 
@@ -82,6 +84,19 @@ async def create_api_token(
     The raw token is only ever available in this response - it's shown once
     and only its hash is persisted, so it cannot be recovered afterwards.
     """
+    rate_limit_key = f"api_token:user:{current_user.id}"
+    if is_rate_limited(
+        rate_limit_key,
+        config.RATE_LIMIT_API_TOKEN_MAX_ATTEMPTS,
+        config.RATE_LIMIT_API_TOKEN_WINDOW_SECONDS,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many tokens created recently. Please try again later.",
+            headers={"Retry-After": str(config.RATE_LIMIT_API_TOKEN_WINDOW_SECONDS)},
+        )
+    record_attempt(rate_limit_key)
+
     display_name = name.strip() or "Stricknani Android"
     raw_token, token_hash = generate_api_token()
     db.add(ApiToken(user_id=current_user.id, name=display_name, token_hash=token_hash))
@@ -112,6 +127,19 @@ async def create_qr_setup_token(
     packaged as a `stricknani://setup` QR so onboarding a new device doesn't
     require manually copying a server URL and pasting a token.
     """
+    rate_limit_key = f"api_token:user:{current_user.id}"
+    if is_rate_limited(
+        rate_limit_key,
+        config.RATE_LIMIT_API_TOKEN_MAX_ATTEMPTS,
+        config.RATE_LIMIT_API_TOKEN_WINDOW_SECONDS,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many tokens created recently. Please try again later.",
+            headers={"Retry-After": str(config.RATE_LIMIT_API_TOKEN_WINDOW_SECONDS)},
+        )
+    record_attempt(rate_limit_key)
+
     raw_token, token_hash = generate_api_token()
     db.add(ApiToken(user_id=current_user.id, name="QR setup", token_hash=token_hash))
     await db.commit()
@@ -179,10 +207,19 @@ async def upload_profile_image(
         )
 
     try:
-        filename, _ = await save_uploaded_file(file, user.id, subdir="users")
+        filename, _ = await save_uploaded_image(file, user.id, subdir="users")
     except ValueError as exc:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+            status_code=(
+                status.HTTP_413_CONTENT_TOO_LARGE
+                if isinstance(exc, UploadTooLargeError)
+                else status.HTTP_400_BAD_REQUEST
+            ),
+            detail=(
+                "Uploaded file is too large"
+                if isinstance(exc, UploadTooLargeError)
+                else str(exc)
+            ),
         ) from exc
 
     file_path = config.MEDIA_ROOT / "users" / str(user.id) / filename

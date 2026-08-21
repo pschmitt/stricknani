@@ -1,6 +1,6 @@
 {% import "macros/buttons.html" as buttons %}
 
-<div class="bg-base-100 rounded-xl shadow-sm border border-base-200 p-4 transition hover:border-base-300" data-user-card
+<div class="md3-card md3-card--outlined p-4 transition" data-user-card
     id="user-card-{{ user.id }}">
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div class="flex items-center gap-4">
@@ -20,7 +20,7 @@
                 <div class="flex items-center gap-2 mb-0.5 w-full">
                     <p class="font-bold text-base text-base-content truncate">{{ user.email }}</p>
                     {% if user.id == current_user.id %}
-                    <span class="badge badge-xs badge-info">{{ _('You') }}</span>
+                    <span class="md3-chip md3-chip--compact">{{ _('You') }}</span>
                     {% endif %}
                 </div>
                 <div class="flex items-center gap-3 text-xs text-base-content/60">
@@ -37,12 +37,12 @@
                 </div>
             </div>
 
-            <div class="dropdown dropdown-end md:hidden ml-auto">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
+            <div class="md3-dropdown md3-dropdown--end md:hidden ml-auto">
+                <div tabindex="0" role="button" class="md3-button md3-button--icon md3-button--text md3-button--small">
                     <span class="mdi mdi-dots-vertical text-lg"></span>
                 </div>
                 <ul tabindex="0"
-                    class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200 mt-2">
+                    class="md3-menu md3-menu--end ellipsis-dropdown-content z-[1] mt-2">
                     <li class="{% if user.id == current_user.id %}menu-disabled opacity-50{% endif %}">
                         <form method="post" action="/admin/users/{{ user.id }}/toggle-active"
                             hx-post="/admin/users/{{ user.id }}/toggle-active" hx-target="#user-card-{{ user.id }}"
@@ -113,20 +113,19 @@
                 data-toast-variant="success" class="hidden md:block">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 {% if user.is_active %}
-                {{ buttons.secondary(_('Disable'), type='submit', icon='mdi-account-off', class='btn-xs sm:btn-sm',
+                {{ buttons.secondary(_('Disable'), type='submit', icon='mdi-account-off', class='md3-button--small',
                 attrs='disabled' if user.id == current_user.id else '') }}
                 {% else %}
-                {{ buttons.secondary(_('Enable'), type='submit', icon='mdi-account-check', class='btn-xs sm:btn-sm
-                text-success hover:text-success-content hover:bg-success hover:border-success') }}
+                {{ buttons.secondary(_('Enable'), type='submit', icon='mdi-account-check', class='md3-button--small') }}
                 {% endif %}
             </form>
 
-            <div class="dropdown dropdown-end hidden md:block">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
+            <div class="md3-dropdown md3-dropdown--end hidden md:block">
+                <div tabindex="0" role="button" class="md3-button md3-button--icon md3-button--text md3-button--small">
                     <span class="mdi mdi-dots-vertical text-lg"></span>
                 </div>
                 <ul tabindex="0"
-                    class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200 mt-2">
+                    class="md3-menu md3-menu--end ellipsis-dropdown-content z-[1] mt-2">
                     <li>
                         <button type="button" data-call="openEditUserDialog" data-user-id="{{ user.id }}"
                             data-user-email="{{ user.email }}">

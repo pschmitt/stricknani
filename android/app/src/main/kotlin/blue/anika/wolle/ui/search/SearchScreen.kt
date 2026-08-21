@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -29,10 +28,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
 
@@ -50,22 +53,22 @@ fun SearchScreen(
             SearchField(
                 value = query,
                 onValueChange = viewModel::onQueryChange,
-                placeholder = "Search projects and yarns",
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                placeholder = stringResource(R.string.search_placeholder),
+                modifier = Modifier.fillMaxWidth().padding(16.dp).testTag("e2e-search-field"),
             )
 
             when {
                 query.isBlank() ->
                     EmptyState(
                         icon = Icons.Filled.Search,
-                        title = "Search your stash",
-                        subtitle = "Find projects and yarns already synced to this device.",
+                        title = stringResource(R.string.search_empty_title),
+                        subtitle = stringResource(R.string.search_empty_subtitle),
                     )
                 results.isEmpty() ->
                     EmptyState(
                         icon = Icons.Filled.Search,
-                        title = "No matches",
-                        subtitle = "Try a different search term.",
+                        title = stringResource(R.string.search_no_matches_title),
+                        subtitle = stringResource(R.string.search_no_matches_subtitle),
                     )
                 else ->
                     LazyColumn(
@@ -100,7 +103,7 @@ fun SearchScreen(
                                                 .joinToString(" · ")
                                                 .ifBlank { null },
                                         previewUrl = viewModel.previewUrl(result.entity.previewUrl),
-                                        fallbackIcon = Icons.Filled.Checkroom,
+                                        fallbackIcon = MdiIcons.Sheep,
                                         onClick = { onYarnClick(result.entity.id) },
                                     )
                             }

@@ -16,10 +16,13 @@ import androidx.core.content.getSystemService
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.crash.CrashReportStore
+import blue.anika.wolle.data.onboarding.QrConfigCodec
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.ui.common.CrashReportDialog
+import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
 import blue.anika.wolle.ui.navigation.DeepLinkParser
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.navigation.StricknaniNavHost
@@ -41,8 +44,16 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var appPreferencesRepository: AppPreferencesRepository
+    @Inject lateinit var mutationFeedback: MutationFeedback
 
     private var pendingDeepLink by mutableStateOf<Route?>(null)
+    // SNA-61: `stricknani://setup?p=...` (the manifest's own registered intent-filter, so a
+    // generic camera app's QR auto-detection can hand this back to us too, not just the in-app
+    // scanner) used to just fall through DeepLinkParser (which only recognizes /projects/{id} and
+    // /yarn/{id} paths) and get silently discarded. Route it into the same
+    // QrConfigCodec.decode -> OnboardingViewModel.connectFromScannedText path the in-app scanner
+    // already uses instead - see `StricknaniNavHost`/`OnboardingScreen`.
+    private var pendingSetupUri by mutableStateOf<String?>(null)
     private var pendingCrashReport by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,6 +62,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         pendingDeepLink = DeepLinkParser.parse(intent?.dataString)
+        pendingSetupUri = intent?.dataString?.takeIf(QrConfigCodec::looksLikeQrConfigUri)
         pendingCrashReport = CrashReportStore(applicationContext).takePending()
 
         setContent {
@@ -71,7 +83,15 @@ class MainActivity : ComponentActivity() {
                     // isConfigured flips anyway (see its kdoc).
                     pendingDeepLinkRoute = pendingDeepLink.takeIf { isConfigured },
                     onDeepLinkConsumed = { pendingDeepLink = null },
+                    // Only meaningful pre-onboarding - once configured, a stray setup URI (an old
+                    // QR scanned again, say) has nothing useful to do.
+                    pendingSetupUri = pendingSetupUri.takeIf { !isConfigured },
+                    onSetupUriConsumed = { pendingSetupUri = null },
+                    mutationFeedback = mutationFeedback,
                 )
+                if (isConfigured) {
+                    RequestNotificationPermissionEffect(appPreferencesRepository)
+                }
                 pendingCrashReport?.let { report ->
                     CrashReportDialog(
                         report = report,
@@ -88,12 +108,20 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         pendingDeepLink = DeepLinkParser.parse(intent.dataString)
+        pendingSetupUri = intent.dataString?.takeIf(QrConfigCodec::looksLikeQrConfigUri)
     }
 
     private fun copyCrashReport(report: String) {
         getSystemService<ClipboardManager>()
-            ?.setPrimaryClip(ClipData.newPlainText("Crash report", report))
-        Toast.makeText(this, "Crash report copied", Toast.LENGTH_SHORT).show()
+            ?.setPrimaryClip(
+                ClipData.newPlainText(getString(R.string.main_activity_crash_report_label), report)
+            )
+        Toast.makeText(
+                this,
+                getString(R.string.main_activity_crash_report_copied),
+                Toast.LENGTH_SHORT,
+            )
+            .show()
     }
 
     private fun restartApplication() {

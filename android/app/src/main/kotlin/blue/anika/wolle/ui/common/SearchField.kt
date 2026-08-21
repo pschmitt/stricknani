@@ -13,9 +13,11 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import blue.anika.wolle.R
 
 /**
  * A pill-shaped search field (SNA-26 - matches syncwich's `SearchField`/nyetbox's
@@ -37,7 +39,10 @@ fun SearchField(
         trailingIcon = {
             if (value.isNotEmpty()) {
                 IconButton(onClick = { onValueChange("") }) {
-                    Icon(Icons.Filled.Clear, contentDescription = "Clear search")
+                    Icon(
+                        Icons.Filled.Clear,
+                        contentDescription = stringResource(R.string.search_field_clear),
+                    )
                 }
             }
         },

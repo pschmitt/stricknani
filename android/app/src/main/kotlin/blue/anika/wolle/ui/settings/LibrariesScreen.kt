@@ -22,12 +22,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import blue.anika.wolle.R
 
 internal data class Library(val name: String, val license: String, val url: String)
 
@@ -99,10 +101,13 @@ fun LibrariesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Libraries") },
+                title = { Text(stringResource(R.string.libraries_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.settings_nav_back),
+                        )
                     }
                 },
             )
@@ -115,7 +120,7 @@ fun LibrariesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         ) {
             item {
                 SettingsGroupCard(
-                    title = "Open-source dependencies",
+                    title = stringResource(R.string.libraries_open_source_title),
                     icon = Icons.AutoMirrored.Filled.LibraryBooks,
                 ) {
                     LIBRARIES.forEach { library ->
@@ -146,7 +151,11 @@ private fun LibraryRow(context: Context, library: Library) {
         headlineContent = { Text(library.name) },
         supportingContent = { Text(library.license) },
         trailingContent = {
-            Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Open ${library.name}")
+            Icon(
+                Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription =
+                    stringResource(R.string.libraries_open_content_description, library.name),
+            )
         },
     )
 }

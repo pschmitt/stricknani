@@ -1,6 +1,6 @@
 """Regression test for /static Cache-Control headers.
 
-Static assets under /static (app.js, app.css, the built Tailwind bundle,
+Static assets under /static (app.js, Material CSS,
 vendored libraries) are not content-addressed -- their filenames stay stable
 across deploys. A long-lived `immutable` Cache-Control (as opposed to /media,
 whose filenames genuinely are unique per upload) would make browsers keep

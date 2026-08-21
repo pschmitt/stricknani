@@ -5,9 +5,12 @@ import blue.anika.wolle.data.api.AuthInterceptor
 import blue.anika.wolle.data.api.CategoriesApi
 import blue.anika.wolle.data.api.DynamicBaseUrlInterceptor
 import blue.anika.wolle.data.api.MetaApi
+import blue.anika.wolle.data.api.ProjectImportApi
 import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
+import blue.anika.wolle.data.repository.ApiProjectImporter
+import blue.anika.wolle.data.repository.ProjectImporter
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -118,6 +121,15 @@ object NetworkModule {
     @Singleton
     fun provideProjectsApi(retrofit: Retrofit): ProjectsApi =
         retrofit.create(ProjectsApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideProjectImportApi(retrofit: Retrofit): ProjectImportApi =
+        retrofit.create(ProjectImportApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideProjectImporter(api: ProjectImportApi): ProjectImporter = ApiProjectImporter(api)
 
     @Provides
     @Singleton

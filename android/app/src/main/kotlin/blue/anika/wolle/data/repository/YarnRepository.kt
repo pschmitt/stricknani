@@ -1,9 +1,11 @@
 package blue.anika.wolle.data.repository
 
+import androidx.room.withTransaction
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
+import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.dao.YarnDao
@@ -12,6 +14,8 @@ import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
+import blue.anika.wolle.data.uploads.PendingUpload
+import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.data.util.DateTimeUtils
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -24,16 +28,20 @@ import retrofit2.HttpException
 
 private const val ENTITY_TYPE = "yarn"
 
+data class YarnRefreshResult(val detail: YarnDto, val changed: Boolean)
+
 /** Cache-first access to yarns, delta-synced against `/api/v1/sync/yarns`. */
 @Singleton
 class YarnRepository
 @Inject
 constructor(
+    private val database: AppDatabase,
     private val yarnDao: YarnDao,
     private val syncStateDao: SyncStateDao,
     private val syncApi: SyncApi,
     private val yarnsApi: YarnsApi,
     private val pendingMutationDao: PendingMutationDao,
+    private val pendingUploadStore: PendingUploadStore,
     private val json: Json,
 ) {
     fun observeAll(): Flow<List<YarnEntity>> = yarnDao.observeAll()
@@ -41,6 +49,15 @@ constructor(
     fun observeById(id: Int): Flow<YarnEntity?> = yarnDao.observeById(id)
 
     fun decodeDetail(entity: YarnEntity): YarnDto = json.decodeFromString(entity.detailJson)
+
+    /** Refreshes one yarn and returns its detail so a detail screen can refresh linked projects. */
+    suspend fun refreshOne(id: Int): YarnRefreshResult {
+        val detail = yarnsApi.getYarn(id)
+        val refreshed = detail.toEntity(json)
+        val changed = yarnDao.getById(id)?.let { it != refreshed } ?: true
+        yarnDao.upsertAll(listOf(refreshed))
+        return YarnRefreshResult(detail = detail, changed = changed)
+    }
 
     /** See `ProjectRepository.toggleFavorite`'s kdoc - same optimistic-with-rollback pattern. */
     suspend fun toggleFavorite(entity: YarnEntity, wasFavorite: Boolean) {
@@ -62,67 +79,121 @@ constructor(
     suspend fun sync(): Boolean {
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)
         val response = syncApi.syncYarns(since = cursor)
-        if (response.updated.isNotEmpty()) {
-            yarnDao.upsertAll(response.updated.map { it.toEntity(json) })
-        }
-        if (response.deletedIds.isNotEmpty()) {
-            yarnDao.deleteByIds(response.deletedIds)
-        }
+        val pendingUpdatedIds =
+            response.updated
+                .map { it.id }
+                .takeIf { it.isNotEmpty() }
+                ?.let { pendingMutationDao.getReplayableLocalIds(ENTITY_TYPE, it).toSet() }
+                ?: emptySet()
+        val pendingDeletedIds =
+            response.deletedIds
+                .takeIf { it.isNotEmpty() }
+                ?.let { pendingMutationDao.getReplayableLocalIds(ENTITY_TYPE, it).toSet() }
+                ?: emptySet()
+        response.updated
+            .filterNot { it.id in pendingUpdatedIds }
+            .takeIf { it.isNotEmpty() }
+            ?.let { yarnDao.upsertAll(it.map { yarn -> yarn.toEntity(json) }) }
+        response.deletedIds
+            .filterNot { it in pendingDeletedIds }
+            .takeIf { it.isNotEmpty() }
+            ?.let { yarnDao.deleteByIds(it) }
         syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, response.serverTime))
         return response.updated.isNotEmpty() || response.deletedIds.isNotEmpty()
     }
 
     /** See `ProjectRepository.createProject`'s kdoc - same placeholder-row-plus-queue pattern. */
     suspend fun createYarn(request: YarnWriteRequest): Int {
-        val tempId = minOf(yarnDao.minId() ?: 0, 0) - 1
-        yarnDao.upsertAll(listOf(request.toPlaceholderEntity(tempId, json)))
-        pendingMutationDao.insert(
-            PendingMutationEntity(
-                entityType = MutationEntityType.YARN,
-                operation = MutationOperation.CREATE,
-                localId = tempId,
-                payloadJson = json.encodeToString(request),
-                createdAt = System.currentTimeMillis(),
+        return database.withTransaction {
+            val tempId = minOf(yarnDao.minId() ?: 0, 0) - 1
+            yarnDao.upsertAll(listOf(request.toPlaceholderEntity(tempId, json)))
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.YARN,
+                    operation = MutationOperation.CREATE,
+                    localId = tempId,
+                    payloadJson = json.encodeToString(request),
+                    createdAt = System.currentTimeMillis(),
+                )
             )
-        )
-        return tempId
+            tempId
+        }
     }
 
-    /** See `ProjectRepository.updateProject`'s kdoc - same `expectedUpdatedAt` stamping (SNA-33). */
+    /**
+     * See `ProjectRepository.updateProject`'s kdoc - same `expectedUpdatedAt` stamping (SNA-33).
+     */
     suspend fun updateYarn(id: Int, request: YarnWriteRequest) {
-        val existing = yarnDao.getById(id) ?: return
-        yarnDao.upsertAll(listOf(request.applyTo(existing, json)))
-        val baseUpdatedAt = json.decodeFromString<YarnDto>(existing.detailJson).updatedAt
-        pendingMutationDao.insert(
-            PendingMutationEntity(
-                entityType = MutationEntityType.YARN,
-                operation = MutationOperation.UPDATE,
-                localId = id,
-                payloadJson =
-                    json.encodeToString(request.copy(expectedUpdatedAt = baseUpdatedAt)),
-                createdAt = System.currentTimeMillis(),
-            )
-        )
+        database.withTransaction {
+            val existing = yarnDao.getById(id) ?: return@withTransaction
+            yarnDao.upsertAll(listOf(request.applyTo(existing, json)))
+            pendingMutationDao.deleteResolvedConflicts(MutationEntityType.YARN, id)
+            val queued =
+                pendingMutationDao.getReplayable(
+                    MutationEntityType.YARN,
+                    MutationOperation.UPDATE,
+                    id,
+                )
+            val payload =
+                json.encodeToString(
+                    request
+                        .withExpectedUpdatedAt(id, existing.detailJson, json)
+                        .coalesceExpectedUpdatedAt(queued?.payloadJson, json)
+                )
+            if (queued == null) {
+                pendingMutationDao.insert(
+                    PendingMutationEntity(
+                        entityType = MutationEntityType.YARN,
+                        operation = MutationOperation.UPDATE,
+                        localId = id,
+                        payloadJson = payload,
+                        createdAt = System.currentTimeMillis(),
+                    )
+                )
+            } else {
+                pendingMutationDao.replacePayload(queued.id, payload)
+            }
+        }
     }
 
     suspend fun deleteYarn(id: Int) {
-        yarnDao.deleteByIds(listOf(id))
-        pendingMutationDao.insert(
-            PendingMutationEntity(
-                entityType = MutationEntityType.YARN,
-                operation = MutationOperation.DELETE,
-                localId = id,
-                payloadJson = null,
-                createdAt = System.currentTimeMillis(),
+        database.withTransaction {
+            yarnDao.deleteByIds(listOf(id))
+            pendingMutationDao.deleteResolvedConflicts(MutationEntityType.YARN, id)
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.YARN,
+                    operation = MutationOperation.DELETE,
+                    localId = id,
+                    payloadJson = null,
+                    createdAt = System.currentTimeMillis(),
+                )
             )
-        )
+        }
+    }
+
+    suspend fun queuePhotoUpload(yarnId: Int, upload: PendingUpload) {
+        database.withTransaction {
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.YARN,
+                    operation = MutationOperation.YARN_PHOTO_UPLOAD,
+                    localId = yarnId,
+                    payloadJson = json.encodeToString(upload),
+                    createdAt = System.currentTimeMillis(),
+                )
+            )
+        }
     }
 
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */
     suspend fun replayCreate(tempId: Int, request: YarnWriteRequest): Int {
         val created = yarnsApi.createYarn(request)
-        yarnDao.deleteByIds(listOf(tempId))
-        yarnDao.upsertAll(listOf(created.toEntity(json)))
+        database.withTransaction {
+            yarnDao.deleteByIds(listOf(tempId))
+            yarnDao.upsertAll(listOf(created.toEntity(json)))
+            pendingMutationDao.reassignLocalId(MutationEntityType.YARN, tempId, created.id)
+        }
         return created.id
     }
 
@@ -149,6 +220,13 @@ constructor(
         } catch (e: HttpException) {
             if (e.code() != 404) throw e
         }
+    }
+
+    /** Called only by [blue.anika.wolle.sync.WriteReplayWorker]. */
+    suspend fun replayPhotoUpload(id: Int, upload: PendingUpload) {
+        yarnsApi.uploadPhoto(id, pendingUploadStore.multipart(upload))
+        pendingUploadStore.delete(upload)
+        runCatching { refreshOne(id) }
     }
 }
 
@@ -224,3 +302,31 @@ private fun YarnWriteRequest.applyTo(existing: YarnEntity, json: Json): YarnEnti
         )
     return updated.toEntity(json)
 }
+
+/** See [ProjectWriteRequest.withExpectedUpdatedAt] for why temporary ids omit the precondition. */
+internal fun YarnWriteRequest.withExpectedUpdatedAt(
+    localId: Int,
+    existingDetailJson: String,
+    json: Json,
+): YarnWriteRequest =
+    copy(
+        expectedUpdatedAt =
+            localId
+                .takeIf { it > 0 }
+                ?.let { json.decodeFromString<YarnDto>(existingDetailJson).updatedAt }
+    )
+
+/** Keeps the original server snapshot when several local edits are coalesced before replay. */
+internal fun YarnWriteRequest.coalesceExpectedUpdatedAt(
+    previousPayloadJson: String?,
+    json: Json,
+): YarnWriteRequest =
+    copy(
+        expectedUpdatedAt =
+            previousPayloadJson?.let { payload ->
+                runCatching {
+                    json.decodeFromString<YarnWriteRequest>(payload).expectedUpdatedAt
+                }
+                    .getOrNull()
+            } ?: expectedUpdatedAt
+    )

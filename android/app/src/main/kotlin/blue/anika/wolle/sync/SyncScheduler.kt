@@ -39,7 +39,9 @@ class SyncScheduler @Inject constructor(private val workManager: WorkManager) {
                 .build()
         workManager.enqueueUniquePeriodicWork(
             SYNC_PERIODIC_WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            // UPDATE is important for installs that already had the periodic request before
+            // SNA-14: KEEP would preserve that old request without the notification input flag.
+            ExistingPeriodicWorkPolicy.UPDATE,
             syncRequest,
         )
 

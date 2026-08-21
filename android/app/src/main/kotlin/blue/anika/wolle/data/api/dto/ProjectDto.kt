@@ -15,9 +15,12 @@ data class StepDto(
 /** `stricknani/routes/api/schemas.py`'s `StepWriteRequest`. */
 @Serializable
 data class StepWriteRequest(
+    /** Existing ids are preserved during reorder/update so step images survive. */
+    val id: Int? = null,
     val title: String,
     val description: String? = null,
     @SerialName("step_number") val stepNumber: Int = 0,
+    @SerialName("image_urls") val imageUrls: List<String> = emptyList(),
 )
 
 /** `stricknani/routes/api/schemas.py`'s `ImageResponse`. */
@@ -99,6 +102,7 @@ data class ProjectWriteRequest(
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean = false,
     @SerialName("yarn_ids") val yarnIds: List<Int> = emptyList(),
     val steps: List<StepWriteRequest> = emptyList(),
+    @SerialName("image_urls") val imageUrls: List<String> = emptyList(),
     /**
      * SNA-33: the `updatedAt` this edit was based on. When set, the server rejects the write with
      * 409 (current server state in the body) if the project has since changed - see

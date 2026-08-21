@@ -2,8 +2,7 @@
   "$schema": "https://biomejs.dev/schemas/2.3.0/schema.json",
   "files": {
     "includes": [
-      "**",
-      "!**/static/css/tailwind.css"
+      "**"
     ]
   },
   "linter": {
@@ -12,17 +11,5 @@
         "noImportantStyles": "off"
       }
     }
-  },
-  "overrides": [
-    {
-      "includes": ["**/tailwind.input.css"],
-      "linter": {
-        "rules": {
-          "suspicious": {
-            "noUnknownAtRules": "off"
-          }
-        }
-      }
-    }
-  ]
+  }
 }

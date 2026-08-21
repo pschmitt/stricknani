@@ -71,7 +71,8 @@ async def test_service_worker_implements_offline_caching_strategies(
     assert "/offline" in text
     # base.html links this for core styling; a cold-offline install must not
     # render unstyled just because it was missing from the precache list.
-    assert "/static/css/tailwind.css" in text
+    assert "/static/css/material.css" in text
+    assert "/static/css/tailwind.css" not in text
 
 
 @pytest.mark.anyio

@@ -72,7 +72,6 @@
               tesseract
               vendir
               biome
-              tailwindcss_4
               # Only needed to regenerate stricknani/static/vendor-tiptap/
               # (`just vendor-tiptap`) when bumping TipTap's pinned version;
               # the committed bundle is what actually ships at runtime.
@@ -84,7 +83,9 @@
 
               # Ensure prebuilt binary wheels (greenlet, numpy, ...) in the uv
               # venv can load libstdc++.so.6 from the Nix C++ stdlib.
-              export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+              export LD_LIBRARY_PATH="${
+                pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]
+              }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
             '';
           };
 
