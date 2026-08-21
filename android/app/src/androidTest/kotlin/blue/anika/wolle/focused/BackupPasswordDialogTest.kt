@@ -15,13 +15,13 @@ import org.junit.runner.RunWith
 
 /**
  * SNA-62 regression coverage: the manual-export password dialog's title says "Encrypt backup?
- * (optional)", but the export call site didn't pass `allowBlankToClear = true` - so Confirm
- * stayed disabled for a blank password and there was no way to actually produce the unencrypted
- * export the label promised. Pins down [BackupPasswordDialog]'s two relevant modes directly: with
+ * (optional)", but the export call site didn't pass `allowBlankToClear = true` - so Confirm stayed
+ * disabled for a blank password and there was no way to actually produce the unencrypted export the
+ * label promised. Pins down [BackupPasswordDialog]'s two relevant modes directly: with
  * `allowBlankToClear = false` (the restore-from-backup dialog's shape, where a blank password
  * genuinely doesn't make sense) Confirm must stay disabled until something is typed; with
- * `allowBlankToClear = true` (now also the export dialog's shape, matching its "(optional)"
- * label) a blank password must be a legitimate, confirmable choice.
+ * `allowBlankToClear = true` (now also the export dialog's shape, matching its "(optional)" label)
+ * a blank password must be a legitimate, confirmable choice.
  */
 @RunWith(AndroidJUnit4::class)
 class BackupPasswordDialogTest {

@@ -22,10 +22,10 @@ import org.junit.runner.RunWith
  * SNA-59 regression coverage: enabling scheduled backup used to jump straight to the SAF folder
  * picker with zero password prompt, producing an unencrypted, token-bearing export on every
  * scheduled run with no warning at all. [ScheduledBackupPasswordGateDialog] is the fix - an
- * un-skippable choice shown before scheduled backup can be enabled without a password already
- * set. These tests pin down that its two explicit actions ("set a password" vs "continue without
- * one") behave correctly and that there is no way to reach either callback with a stale/blank
- * password silently accepted as if it were a real one.
+ * un-skippable choice shown before scheduled backup can be enabled without a password already set.
+ * These tests pin down that its two explicit actions ("set a password" vs "continue without one")
+ * behave correctly and that there is no way to reach either callback with a stale/blank password
+ * silently accepted as if it were a real one.
  */
 @RunWith(AndroidJUnit4::class)
 class ScheduledBackupPasswordGateDialogTest {
