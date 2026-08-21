@@ -7,17 +7,99 @@
  * styling that has not yet moved here remains in app.css for now.
  */
 
+/* Space Grotesk (vendored via vendir.yml) - display face for headings, nav
+   brand, and card titles. Latin + latin-ext (covers German umlauts/ß)
+   only; unicode-range values copied from the upstream fontsource package
+   so the browser still only fetches the subset it needs. */
+@font-face {
+	font-family: "Space Grotesk";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url("../vendor/fonts/space-grotesk/space-grotesk-latin-500-normal.woff2")
+		format("woff2");
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+		U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+		U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Space Grotesk";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url("../vendor/fonts/space-grotesk/space-grotesk-latin-ext-500-normal.woff2")
+		format("woff2");
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+		U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+		U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Space Grotesk";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url("../vendor/fonts/space-grotesk/space-grotesk-latin-600-normal.woff2")
+		format("woff2");
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+		U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+		U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Space Grotesk";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url("../vendor/fonts/space-grotesk/space-grotesk-latin-ext-600-normal.woff2")
+		format("woff2");
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+		U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+		U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Space Grotesk";
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url("../vendor/fonts/space-grotesk/space-grotesk-latin-700-normal.woff2")
+		format("woff2");
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+		U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+		U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Space Grotesk";
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url("../vendor/fonts/space-grotesk/space-grotesk-latin-ext-700-normal.woff2")
+		format("woff2");
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+		U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+		U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
-	--md-sys-color-primary: oklch(46% 0.16 264);
+	--font-display:
+		"Space Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+		"Segoe UI", sans-serif;
+	--md-sys-color-primary: oklch(44% 0.2 264);
 	--md-sys-color-on-primary: oklch(99% 0.01 264);
-	--md-sys-color-primary-container: oklch(91% 0.06 264);
-	--md-sys-color-on-primary-container: oklch(25% 0.09 264);
-	--md-sys-color-secondary: oklch(45% 0.08 315);
+	--md-sys-color-primary-container: oklch(88% 0.09 264);
+	--md-sys-color-on-primary-container: oklch(22% 0.11 264);
+	--md-sys-color-secondary: oklch(42% 0.15 315);
 	--md-sys-color-on-secondary: oklch(99% 0.01 315);
-	--md-sys-color-secondary-container: oklch(92% 0.05 315);
-	--md-sys-color-on-secondary-container: oklch(25% 0.06 315);
-	--md-sys-color-tertiary: oklch(45% 0.1 175);
+	--md-sys-color-secondary-container: oklch(89% 0.08 315);
+	--md-sys-color-on-secondary-container: oklch(24% 0.1 315);
+	--md-sys-color-tertiary: oklch(42% 0.14 175);
 	--md-sys-color-on-tertiary: oklch(99% 0.01 175);
+	--md-sys-color-tertiary-container: oklch(89% 0.07 175);
+	--md-sys-color-on-tertiary-container: oklch(24% 0.08 175);
 	--md-sys-color-error: oklch(50% 0.16 27);
 	--md-sys-color-on-error: oklch(99% 0.01 27);
 	--md-sys-color-error-container: oklch(91% 0.06 27);
@@ -69,14 +151,18 @@
 }
 
 html[data-theme="dark"] {
-	--md-sys-color-primary: oklch(79% 0.12 264);
-	--md-sys-color-on-primary: oklch(24% 0.08 264);
-	--md-sys-color-primary-container: oklch(36% 0.1 264);
+	--md-sys-color-primary: oklch(78% 0.16 264);
+	--md-sys-color-on-primary: oklch(22% 0.09 264);
+	--md-sys-color-primary-container: oklch(34% 0.13 264);
 	--md-sys-color-on-primary-container: oklch(91% 0.06 264);
-	--md-sys-color-secondary: oklch(79% 0.08 315);
-	--md-sys-color-on-secondary: oklch(24% 0.06 315);
-	--md-sys-color-secondary-container: oklch(36% 0.06 315);
+	--md-sys-color-secondary: oklch(78% 0.14 315);
+	--md-sys-color-on-secondary: oklch(22% 0.08 315);
+	--md-sys-color-secondary-container: oklch(34% 0.11 315);
 	--md-sys-color-on-secondary-container: oklch(91% 0.05 315);
+	--md-sys-color-tertiary: oklch(78% 0.13 175);
+	--md-sys-color-on-tertiary: oklch(22% 0.07 175);
+	--md-sys-color-tertiary-container: oklch(34% 0.1 175);
+	--md-sys-color-on-tertiary-container: oklch(91% 0.05 175);
 	--md-sys-color-error: oklch(80% 0.12 27);
 	--md-sys-color-on-error: oklch(25% 0.08 27);
 	--md-sys-color-error-container: oklch(36% 0.08 27);
@@ -1559,7 +1645,8 @@ svg {
 	background: transparent;
 	color: var(--md-sys-color-primary);
 	cursor: pointer;
-	font-weight: 650;
+	font-family: var(--font-display);
+	font-weight: 600;
 	line-height: 1.25;
 	text-decoration: none;
 	transition:
@@ -1643,12 +1730,23 @@ svg {
 	right: 1.5rem;
 	bottom: 1.5rem;
 	z-index: 50;
-	width: 3.5rem;
-	min-width: 3.5rem;
-	height: 3.5rem;
+	width: 3.75rem;
+	min-width: 3.75rem;
+	height: 3.75rem;
 	padding: 0;
-	border-radius: 1rem;
+	border-radius: var(--md-sys-shape-extra-large);
 	box-shadow: var(--md-sys-elevation-2);
+	transition:
+		background var(--md-motion-short),
+		box-shadow var(--md-motion-short),
+		transform var(--md-motion-short);
+}
+.md3-button--fab:hover,
+.md3-button--fab:focus-visible {
+	box-shadow:
+		var(--md-sys-elevation-2),
+		0 0 0 6px color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent);
+	transform: translateY(-2px) scale(1.04);
 }
 .btn-circle,
 .btn-square,
@@ -1885,8 +1983,10 @@ svg {
 	background: transparent;
 	color: var(--md-sys-color-on-surface);
 	cursor: pointer;
-	font-size: 1.25rem;
-	font-weight: 800;
+	font-family: var(--font-display);
+	font-size: 1.3rem;
+	font-weight: 700;
+	letter-spacing: -0.01em;
 	line-height: 1.2;
 	transition:
 		background-color var(--md-motion-short),
@@ -2477,12 +2577,20 @@ svg {
 
 @media (prefers-reduced-motion: reduce) {
 	.btn,
-	.md3-button {
+	.md3-button,
+	.md3-feature-card {
 		transition: none;
 	}
 	.btn:active,
-	.md3-button:active {
+	.md3-button:active,
+	.md3-button--fab:hover,
+	.md3-button--fab:focus-visible,
+	.md3-feature-card:hover,
+	.md3-feature-card:focus-within {
 		transform: none;
+	}
+	.md3-card-grid > .md3-feature-card {
+		animation: none;
 	}
 }
 
@@ -2578,6 +2686,43 @@ svg {
 	gap: 1.5rem;
 }
 
+@keyframes md3-card-rise {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+.md3-card-grid > .md3-feature-card {
+	animation: md3-card-rise 420ms cubic-bezier(0.2, 0, 0, 1) backwards;
+}
+/* Stagger the first dozen cards; anything past that starts together rather
+   than making a long list wait its turn. */
+.md3-card-grid > .md3-feature-card:nth-child(1) {
+	animation-delay: 0ms;
+}
+.md3-card-grid > .md3-feature-card:nth-child(2) {
+	animation-delay: 40ms;
+}
+.md3-card-grid > .md3-feature-card:nth-child(3) {
+	animation-delay: 80ms;
+}
+.md3-card-grid > .md3-feature-card:nth-child(4) {
+	animation-delay: 120ms;
+}
+.md3-card-grid > .md3-feature-card:nth-child(5) {
+	animation-delay: 160ms;
+}
+.md3-card-grid > .md3-feature-card:nth-child(6) {
+	animation-delay: 200ms;
+}
+.md3-card-grid > .md3-feature-card:nth-child(n + 7) {
+	animation-delay: 240ms;
+}
+
 .md3-feature-card {
 	display: flex;
 	min-width: 0;
@@ -2601,7 +2746,7 @@ svg {
 		var(--md-sys-color-outline-variant)
 	);
 	box-shadow: var(--md-sys-elevation-2);
-	transform: translateY(-1px);
+	transform: translateY(-4px) scale(1.015);
 }
 
 .md3-feature-card__media {
@@ -2658,8 +2803,9 @@ svg {
 	justify-content: space-between;
 	gap: 0.75rem;
 	margin: 0;
-	font-size: 1.125rem;
-	font-weight: 700;
+	font-family: var(--font-display);
+	font-size: 1.2rem;
+	font-weight: 600;
 }
 
 .md3-feature-card__title :where(a) {
@@ -2730,6 +2876,21 @@ svg {
 .md3-chip--ai {
 	background: var(--md-sys-color-primary-container);
 	color: var(--md-sys-color-on-primary-container);
+}
+/* Category chips cycle through these three (see the `category_color` Jinja
+   filter in stricknani/web/templating.py) so a list/grid of mixed
+   categories reads with more color rhythm than one flat tone everywhere. */
+.md3-chip--variant-primary {
+	background: var(--md-sys-color-primary-container);
+	color: var(--md-sys-color-on-primary-container);
+}
+.md3-chip--variant-secondary {
+	background: var(--md-sys-color-secondary-container);
+	color: var(--md-sys-color-on-secondary-container);
+}
+.md3-chip--variant-tertiary {
+	background: var(--md-sys-color-tertiary-container);
+	color: var(--md-sys-color-on-tertiary-container);
 }
 .md3-chip--danger {
 	background: color-mix(in srgb, var(--md-sys-color-error) 12%, transparent);

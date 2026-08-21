@@ -2017,4 +2017,26 @@ Status: **done** (2026-08-19) - Categories is available from the Settings hub wi
 navigation, hidden from the default navbar but still opt-in through Navigation settings; focused
 preference coverage and remote Android checks passed.
 
+## SNA-64: PR smoke suite's `onboardingSyncDetailAndSettings` silently broken (missing scroll)
+
+- [x] `android-e2e.yaml` only triggers on `pull_request`, and this repo works directly on `main`
+      with no PRs except bot-authored dependency bumps - so this suite has effectively never run
+      against a real code change, the same blind spot as the web smoke suite (see repo-root
+      `TODO.md`, discovered the same way: every open Renovate PR failing this check uniformly
+      after a rebase onto current `main`).
+- [x] Root cause: `StricknaniSmokeTest.onboardingSyncDetailAndSettings` clicked into "Heirloom Baby
+      Blanket" and called `waitForText("Description")` directly, with no scroll. The detail screen
+      (`ProjectDetailScreen.kt`) renders its cards in a `LazyColumn`, so an item outside the
+      initial viewport is never composed and never found by `hasText` - it only ever "worked" by
+      luck of the fixture's card order fitting on screen. `openHeirloomProject()` (used by the full
+      suite, right above this test in the same file) already had the correct
+      `performScrollToNode(hasTextMatcher("Description"))` pattern.
+- [x] Fix: replaced the smoke test's duplicated, scroll-less inline sequence with a call to the
+      already-correct `openHeirloomProject()` helper - fixes the bug and removes the duplication in
+      one move.
+
+Status: **done** (2026-08-21) - fix verified via a live CI run on a rebased Renovate PR (the
+`Disposable Stricknani + Android emulator` check, previously failing uniformly across every open
+PR after a rebase onto current `main`).
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
