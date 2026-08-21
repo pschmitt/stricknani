@@ -3,7 +3,7 @@ android-plugin = "9.3.1"
 androidx-activity = "1.13.0"
 # Per-app language picker (SNA-37) - AppCompatDelegate.setApplicationLocales works with a plain
 # ComponentActivity (no AppCompatActivity needed) and auto-persists the choice across API levels.
-androidx-appcompat = "1.7.1"
+androidx-appcompat = "1.8.0"
 # QR scanning for SNA-13's onboarding flow - same versions as the sibling apps' scanners
 # (nyetbox/jollyfin), so the fleet stays on one known-good CameraX/ZXing combination.
 androidx-camera = "1.6.1"
