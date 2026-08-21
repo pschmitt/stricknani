@@ -66,7 +66,7 @@ def test_pr_smoke_journey() -> None:
             page.locator('button[form="projectForm"][type="submit"]').first.click()
             wait_for_path(page, r"/projects/\d+\?toast=project_created")
             page.get_by_text("PR Smoke Project", exact=True).first.wait_for()
-            page.locator(".md3-detail-main").wait_for()
+            page.locator("#project-grid.md3-detail-layout").wait_for()
             assert page.locator(".md3-disclosure").count() >= 1
             assert page.locator('#main-content [class~="collapse"]').count() == 0
             screenshot(page, "smoke-02-project-detail.png")

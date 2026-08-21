@@ -30,7 +30,7 @@ Execution-oriented backlog for Stricknani.
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T52 | P0 | done | security | bug | Add SSRF guard to import fetch layer (block private/loopback/link-local, re-validate redirects) |
 | T54 | P0 | done | import | bug | Return friendly 4xx/502 on import fetch failures instead of 500 with raw error text |
-| T99 | P3 | blocked | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |
+| T99 | P3 | done | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |
 | T100 | P2 | done | web/ux | refactor | Make search box inputs more rounded (pill-shaped) across list pages and the global search modal |
 | T101 | P2 | done | web/ux | feat | Use real Material 3 cards (not plain list rows) consistently on both project/yarn list pages and their detail/view pages |
 | T102 | P1 | done | web/ux | bug | Fix misplaced badges/icons caused by negative-offset utility classes missing from the static CSS bundle (admin shield badge, yarn-search icon, sidebar restore tab, vertical-centering transforms) |
@@ -1858,3 +1858,52 @@ Execution-oriented backlog for Stricknani.
     to Dependabot too would risk both bots opening duplicate/conflicting PRs for the same
     dependency.
 - **Resolution**: Confirmed with the user - the split is intentional. Left as-is; no code change.
+
+### T99: Overhaul the web UI look and feel further
+
+- **Area**: web/ux
+- **Priority**: P3
+- **Status**: done
+- **Category**: refactor
+- **Description**:
+  - User felt the T88 Material 3 migration, while structurally sound, still didn't "look like a
+    modern app" - flagged layout/density, color/theme, and motion/polish specifically.
+  - Explored 3 genuinely different directions as a design canvas (built from the app's real
+    tokens/data, not from scratch): A - Warm Craft Editorial (terracotta/cream, serif display,
+    asymmetric grid), B - Bold Expressive Material 3 (evolves the existing M3 token system: bolder
+    color-container blocks, distinctive display type, richer motion), C - Minimal Dark Gallery
+    (dark-first, photo-forward masonry). User picked **B**.
+- **Implementation**:
+  - **Type**: Vendored Space Grotesk (`@fontsource/space-grotesk` via `vendir.yml`, latin +
+    latin-ext only - covers German umlauts/ß - woff2 only) as `--font-display`, applied to the nav
+    brand trigger, `.md3-button`, and `.md3-feature-card__title` (`stricknani/static/css/
+    material.css`). No CDN link (AGENTS.md) - self-hosted like every other vendored asset.
+  - **Color**: Pushed primary/secondary/tertiary chroma up in both light and dark `:root` blocks
+    for a bolder, more saturated palette; added the previously-missing
+    `--md-sys-color-tertiary-container`/`on-tertiary-container` pair (light *and* dark - dark mode
+    had no tertiary override at all before this, silently reusing the light-mode value).
+  - **Category chip color variety**: repurposed `category_color_filter`
+    (`stricknani/web/templating.py`) - dead code left over from before the T1 Tailwind removal,
+    used nowhere in any template, still returning Tailwind utility classes for a framework that no
+    longer exists - into a 3-way deterministic hash over `.md3-chip--variant-{primary,secondary,
+    tertiary}` (new classes in `material.css`). Applied to the project category chip
+    (`projects/_cards_page.html`) and, for project/yarn parity (AGENTS.md), promoted yarn's plain
+    brand text into a matching chip (`yarn/_cards_page.html`) using the same filter.
+  - **Shape/motion**: card hover lift increased (`translateY(-1px)` -> `translateY(-4px)
+    scale(1.015)`), FAB (`.md3-button--fab`) rounded to the same extra-large shape token as cards
+    with a bouncier hover, and a staggered fade/rise entrance added to `.md3-card-grid` children
+    (`@keyframes md3-card-rise`, first ~12 cards staggered by 40ms). Extended the existing
+    `prefers-reduced-motion` block to cover all of this (the card hover transform wasn't guarded
+    before this change either - pre-existing gap, fixed as part of touching the same rule).
+  - Deliberately did *not* touch the list-page grid's column-count breakpoints (already responsive
+    1/2/3-column via `.md3-card-grid`'s existing media queries - initial impression of a "broken
+    single-column layout" from a screenshot turned out to be a 3-column grid with only one seeded
+    item, not a bug) or restructure detail-page layout/IA - kept the change to the visual system
+    (type/color/shape/motion) and the card-grid components the mockup actually covered, not a
+    full site rewrite.
+- **Testing**: Seeded a scratch local dev server (`just demo-data` against a throwaway sqlite db)
+  and screenshotted projects list, yarn list, and a project detail page in both light and dark
+  mode, plus a mobile viewport for the FAB, via headless Playwright - confirmed the font loads
+  (`document.fonts` reports `Space Grotesk 700` loaded), chip color variety renders correctly in
+  both themes, and existing accordion/layout behavior on the detail page is unaffected. `just
+  lint-css`/`ruff check`/`mypy`/`i18n-check` all clean; full suite 303 passed, 1 skipped.

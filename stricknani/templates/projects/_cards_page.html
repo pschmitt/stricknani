@@ -86,7 +86,7 @@ project.yarn_names|join(', ')} %}
         </h3>
         {% if project.category and project.category != 'None' %}
         <a href="/projects?search={{ ('cat:' ~ project.category)|urlencode }}"
-           class="md3-chip md3-chip--compact">
+           class="md3-chip md3-chip--compact {{ project.category|category_color }}">
             {{ _(project.category) }}
         </a>
         {% endif %}
