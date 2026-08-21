@@ -4,6 +4,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -32,7 +34,7 @@ class FocusedComponentSemanticsTest {
     @get:Rule val composeRule = createComposeRule()
 
     @Test
-    fun syncStatusExposesLoadingAndErrorFeedback() {
+    fun syncStatusExposesLoadingFeedbackAndStaysNonInteractiveWithNothingToActOn() {
         composeRule.setContent {
             StricknaniTheme {
                 HomeSyncStatusCard(
@@ -40,13 +42,24 @@ class FocusedComponentSemanticsTest {
                     lastSyncedMillis = null,
                     pendingChangesCount = 0,
                     hasSyncFailures = false,
+                    onOpenSyncIssues = {},
+                    onRetrySync = {},
                 )
             }
         }
 
         composeRule.onNodeWithText("Syncing…").assertIsDisplayed()
         composeRule.onNodeWithText("Pulling the latest projects and yarns.").assertIsDisplayed()
+        // SNA-60: nothing to act on while a refresh is already in flight - the card stays a plain
+        // status display in that state.
+        composeRule.onNodeWithTag("home-sync-status-card").assertHasNoClickAction()
+    }
 
+    @Test
+    fun syncStatusExposesErrorFeedbackAndAClickAction() {
+        // SNA-60 regression: the card used to be a permanent, unresolvable-looking dead end
+        // (uiautomator confirmed clickable="false" on both the card and its text). It must now
+        // expose a real onClick/semantics action for a genuine sync failure.
         composeRule.setContent {
             StricknaniTheme {
                 HomeSyncStatusCard(
@@ -54,12 +67,63 @@ class FocusedComponentSemanticsTest {
                     lastSyncedMillis = null,
                     pendingChangesCount = 1,
                     hasSyncFailures = true,
+                    onOpenSyncIssues = {},
+                    onRetrySync = {},
                 )
             }
         }
 
         composeRule.onNodeWithText("Sync issue").assertIsDisplayed()
-        composeRule.onNodeWithText("1 change couldn’t reach the server yet.").assertIsDisplayed()
+        composeRule.onNodeWithText("1 change couldn't reach the server yet.").assertIsDisplayed()
+        composeRule.onNodeWithTag("home-sync-status-card").assertHasClickAction()
+    }
+
+    @Test
+    fun syncStatusCardTapOpensSyncIssuesWhenThereIsAnActualFailure() {
+        // SNA-60: tapping a genuine sync-failure state must route to the same detail screen
+        // SyncIssueBanner's "View details" does (per-change retry/discard) - not a bare retry,
+        // since a plain re-sync can't fix a failure that already needs the user's attention.
+        var openedSyncIssues = false
+        var retriedSync = false
+        composeRule.setContent {
+            StricknaniTheme {
+                HomeSyncStatusCard(
+                    isRefreshing = false,
+                    lastSyncedMillis = null,
+                    pendingChangesCount = 1,
+                    hasSyncFailures = true,
+                    onOpenSyncIssues = { openedSyncIssues = true },
+                    onRetrySync = { retriedSync = true },
+                )
+            }
+        }
+        composeRule.onNodeWithTag("home-sync-status-card").performClick()
+        assertTrue(openedSyncIssues)
+        assertFalse(retriedSync)
+    }
+
+    @Test
+    fun syncStatusCardTapRetriesSyncWhenChangesAreOnlyQueuedNotFailedYet() {
+        // SNA-60: changes still queued but not yet marked failed get an immediate retry instead -
+        // there's nothing to "view details" about yet, just a queue worth flushing now rather than
+        // waiting for the next periodic run.
+        var openedSyncIssues = false
+        var retriedSync = false
+        composeRule.setContent {
+            StricknaniTheme {
+                HomeSyncStatusCard(
+                    isRefreshing = false,
+                    lastSyncedMillis = null,
+                    pendingChangesCount = 1,
+                    hasSyncFailures = false,
+                    onOpenSyncIssues = { openedSyncIssues = true },
+                    onRetrySync = { retriedSync = true },
+                )
+            }
+        }
+        composeRule.onNodeWithTag("home-sync-status-card").performClick()
+        assertTrue(retriedSync)
+        assertFalse(openedSyncIssues)
     }
 
     @Test
@@ -83,7 +147,7 @@ class FocusedComponentSemanticsTest {
     }
 
     @Test
-    fun destructiveDeleteDialogRequiresCancelOrExplicitConfirmation() {
+    fun destructiveDeleteDialogCancelDismissesWithoutConfirming() {
         var confirmed = false
         var dismissed = false
         composeRule.setContent {
@@ -102,7 +166,11 @@ class FocusedComponentSemanticsTest {
         composeRule.onNodeWithText("Cancel").performClick()
         assertFalse(confirmed)
         assertTrue(dismissed)
+    }
 
+    @Test
+    fun destructiveDeleteDialogConfirmsExplicitly() {
+        var confirmed = false
         composeRule.setContent {
             StricknaniTheme {
                 DestructiveDeleteDialog(
@@ -172,7 +240,7 @@ class FocusedComponentSemanticsTest {
     }
 
     @Test
-    fun notesCardKeepsItsTitleAndContentAccessibleInBothThemes() {
+    fun notesCardKeepsItsTitleAndContentAccessibleInLightTheme() {
         composeRule.setContent {
             StricknaniTheme(darkTheme = false) {
                 NotesCard(title = "Notes") { Text("Add a sewn label after blocking.") }
@@ -181,7 +249,10 @@ class FocusedComponentSemanticsTest {
         composeRule.onNodeWithTag("notes-card").assertIsDisplayed()
         composeRule.onNodeWithText("Notes").assertIsDisplayed()
         composeRule.onNodeWithText("Add a sewn label after blocking.").assertIsDisplayed()
+    }
 
+    @Test
+    fun notesCardKeepsItsContentAccessibleInDarkTheme() {
         composeRule.setContent {
             StricknaniTheme(darkTheme = true) {
                 NotesCard(title = "Notes") { Text("Add a sewn label after blocking.") }

@@ -107,6 +107,8 @@ fun HomeScreen(
                             lastSyncedMillis = lastSyncedMillis,
                             pendingChangesCount = pendingChangesCount,
                             hasSyncFailures = hasSyncFailures,
+                            onOpenSyncIssues = onOpenSyncIssues,
+                            onRetrySync = viewModel::retryFailedMutations,
                             modifier = Modifier.padding(16.dp),
                         )
                     }
@@ -139,6 +141,8 @@ fun HomeScreen(
                             lastSyncedMillis = lastSyncedMillis,
                             pendingChangesCount = pendingChangesCount,
                             hasSyncFailures = hasSyncFailures,
+                            onOpenSyncIssues = onOpenSyncIssues,
+                            onRetrySync = viewModel::retryFailedMutations,
                             modifier = Modifier.padding(horizontal = 16.dp),
                         )
                     }

@@ -97,19 +97,73 @@ dismissing the dialog leaves the switch off (no silent-enable path). `just check
 
 ## SNA-60: Home screen's "Sync issue" banner is completely non-interactive
 
-- [ ] Live-device repro (Zenfone 10, existing debug install): Home screen shows a "Sync issue - 1
+- [x] Live-device repro (Zenfone 10, existing debug install): Home screen shows a "Sync issue - 1
       change couldn't reach the server yet." card. Tapping it (confirmed via `uiautomator dump`:
       the card and both its `TextView` children are `clickable="false"`) does nothing - no detail
       of which change failed, no retry action, no way to dismiss it.
-- [ ] The user is left with a permanent, unresolvable warning on the primary screen with no
-      recovery path short of figuring out sync internals themselves.
-- [ ] Fix: make the banner tappable - at minimum trigger a manual sync retry; ideally show which
-      pending local change failed to sync and let the user retry or discard it.
-- [ ] Add a Compose UI test asserting the sync-issue banner has an `onClick`/semantics action once
-      fixed, so this can't silently regress back to non-interactive.
+- [x] The user was left with a permanent, unresolvable-looking warning on the primary screen with
+      no recovery path short of figuring out sync internals themselves.
+- [x] Root cause: `HomeSyncStatusCard` (`ui/home/SyncStatusCard.kt`) - the general-purpose
+      "syncing / issue / changes pending / synced" status summary at the top of Home - is a plain
+      `Card` with no `onClick`/`clickable` modifier at all. It's distinct from the separately
+      already-interactive `SyncIssueBanner` lower on the same screen (added later, for the
+      specific "N failed mutations" case, with its own Retry/View details actions) - `HomeSyncStatusCard`
+      is the one the ticket's live repro actually caught, and it really was a dead end.
+- [x] Fix: the whole card is now tappable (`Modifier.clickable`, `role = Role.Button`,
+      `onClickLabel` matching the action so screen readers announce it) whenever there's actually
+      something to act on - a genuine sync failure or edits still queued. Not clickable while
+      idle/syncing (nothing to act on, and mid-refresh isn't actionable) - same as before in that
+      state, so this doesn't turn the whole card into noise for the common case.
+      - `hasSyncFailures` -> routes to the same sync-issues detail screen `SyncIssueBanner`'s "View
+        details" already opens - `SyncSettingsScreen`, which lists exactly which change failed and
+        why (e.g. "Update project - Conflict resolved - the server kept the latest version") and
+        offers Retry/Dismiss per item. Chose "open details" over "just retry blindly" here on
+        purpose - a mutation already flagged as failed (e.g. a real conflict) usually needs the
+        user to actually look at it, not just get silently re-attempted.
+      - `pendingChangesCount > 0` and not yet flagged failed -> triggers an immediate
+        `SyncScheduler.replayThenSyncNow()` via `HomeViewModel.retryFailedMutations()` (same call
+        `SyncIssueBanner`'s Retry button already used) instead of waiting for the next periodic
+        WorkManager run - satisfies the ticket's "at minimum trigger a manual sync retry" for the
+        case where there's nothing yet to show details about.
+- [x] Test coverage: extended `FocusedComponentSemanticsTest` (`app/src/androidTest/...focused/`)
+      with `assertHasNoClickAction`/`assertHasClickAction` on a new `home-sync-status-card` test
+      tag for the idle-vs-actionable states, plus two new tests asserting a tap on the card routes
+      to `onOpenSyncIssues` for an actual failure and to `onRetrySync` for merely-queued changes -
+      directly the "Compose UI test asserting the sync-issue banner has an onClick/semantics
+      action" the ticket asked for.
+- [x] Incidental fix, same file, found while getting these tests to actually run (not part of this
+      ticket's own scope): `FocusedComponentSemanticsTest` had 3 pre-existing tests
+      (`destructiveDelete...`, `notesCard...`, and the original single `syncStatusExposes...`) that
+      each called `composeRule.setContent { ... }` twice within one test method to exercise two
+      states back-to-back. That pattern throws `IllegalStateException: ... has already set
+      content` under this repo's current Compose test tooling (`androidx.compose.ui.test.junit4.v2`)
+      - confirmed this is a real, currently-broken environment issue affecting many other
+      `androidTest` files too (`CategoriesScreenTest`, `StricknaniE2eTest`, `FocusedAppSemanticsTest`,
+      ...), not something this change introduced; a full-suite `am instrument` run without a class
+      filter still ends in `INSTRUMENTATION_RESULT: shortMsg=Process crashed` today. Fixing the
+      other affected files is out of scope here (worth its own ticket - flagging for a
+      follow-up rather than silently leaving it), but split this file's own 3 double-`setContent`
+      tests into 6 single-`setContent` ones so this file - which SNA-60 touches directly - runs
+      clean. Also fixed a real, separate bug this surfaced: the "1 change couldn't reach the
+      server yet." assertion used a curly `'` (U+2019) while the actual plural string resource
+      escapes a straight ASCII `\'` (U+0027) - the assertion was silently never actually
+      exercised end-to-end before (`just check` only runs JVM unit tests, not `androidTest`).
+- [ ] Not fixed, out of scope: the grey status card's `pendingChangesCount` and the red
+      `SyncIssueBanner`'s failed-mutation count can disagree on this test device (observed live:
+      "0 changes couldn't reach the server yet." right above "1 queued change needs attention.").
+      `HomeViewModel.pendingChangesCount` (`PendingMutationDao.observeCount()`, all queued
+      mutations) and `hasSyncFailures`/`failedMutations` (`observeFailed()`, only those flagged
+      failed/conflicted) are simply two different queries that happened to disagree on this
+      device's leftover test data - plausibly a real minor copy/count-consistency bug, but
+      unrelated to this ticket's actual ask (making the card tappable) and not investigated
+      further here.
 
-Status: not started (2026-08-21) - found via live-device audit (Zenfone 10, serial
-R6AIB700W850L7G), verified with `uiautomator dump`.
+Status: **done** (2026-08-21) - verified on the physical Zenfone 10 (serial `R6AIB700W850L7G`):
+`FocusedComponentSemanticsTest`'s 12 tests (`am instrument -e class ...`) all pass, and a live
+repro confirms the fix - tapping the previously-dead "Sync issue" card now navigates straight to
+the Sync settings screen showing the exact queued change and why it failed ("Update project -
+Conflict resolved - the server kept the latest version; this change was not applied"), with a
+working Dismiss action. `just check rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint) is green.
 
 ## SNA-61: `stricknani://setup` QR intent-filter is dead - payload is silently dropped
 
