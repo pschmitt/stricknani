@@ -132,6 +132,27 @@ class Config:
         os.getenv("RATE_LIMIT_SIGNUP_WINDOW_SECONDS", "3600")
     )
 
+    # API token minting rate limiting (T107): per-user cap so a compromised
+    # or malicious session can't mint an unbounded number of long-lived
+    # bearer credentials.
+    RATE_LIMIT_API_TOKEN_MAX_ATTEMPTS: int = int(
+        os.getenv("RATE_LIMIT_API_TOKEN_MAX_ATTEMPTS", "10")
+    )
+    RATE_LIMIT_API_TOKEN_WINDOW_SECONDS: int = int(
+        os.getenv("RATE_LIMIT_API_TOKEN_WINDOW_SECONDS", "3600")
+    )
+
+    # URL-import fetch rate limiting (T107): per-user cap on how often the
+    # server will fetch an attacker-influenced remote URL on a user's
+    # behalf, on top of the SSRF guard (T52) that restricts *where* it can
+    # fetch from.
+    RATE_LIMIT_IMPORT_MAX_ATTEMPTS: int = int(
+        os.getenv("RATE_LIMIT_IMPORT_MAX_ATTEMPTS", "20")
+    )
+    RATE_LIMIT_IMPORT_WINDOW_SECONDS: int = int(
+        os.getenv("RATE_LIMIT_IMPORT_WINDOW_SECONDS", "3600")
+    )
+
     # Initial admin bootstrap
     INITIAL_ADMIN_EMAIL: str | None = os.getenv(
         "INITIAL_ADMIN_EMAIL", os.getenv("INITIAL_ADMIN_USERNAME")

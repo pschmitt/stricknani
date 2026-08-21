@@ -272,3 +272,31 @@ async def test_post_with_bearer_header_skips_csrf(
     )
 
     assert response.status_code != 403
+
+
+async def test_api_token_creation_is_rate_limited(
+    test_client: tuple[
+        AsyncClient,
+        async_sessionmaker[AsyncSession],
+        int,
+        int,
+        int,
+    ],
+) -> None:
+    """T107: minting tokens has no cap by default, letting a compromised or
+    malicious session mint an unbounded number of long-lived credentials."""
+    client, *_ = test_client
+
+    original_max = config.RATE_LIMIT_API_TOKEN_MAX_ATTEMPTS
+    config.RATE_LIMIT_API_TOKEN_MAX_ATTEMPTS = 2
+    try:
+        for _ in range(2):
+            response = await client.post("/user/api-tokens", data={"name": "Device"})
+            assert response.status_code == 200
+
+        blocked = await client.post("/user/api-tokens", data={"name": "Device"})
+    finally:
+        config.RATE_LIMIT_API_TOKEN_MAX_ATTEMPTS = original_max
+
+    assert blocked.status_code == 429
+    assert "Retry-After" in blocked.headers

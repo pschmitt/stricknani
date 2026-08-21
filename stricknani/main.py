@@ -18,6 +18,8 @@ from stricknani import __version__
 from stricknani.config import config
 from stricknani.database import init_db
 from stricknani.logging_config import configure_logging
+from stricknani.models import User
+from stricknani.routes.auth import require_auth
 from stricknani.utils.auth import ensure_initial_admin
 from stricknani.utils.markdown import render_markdown
 from stricknani.web.middleware import SecurityHeadersMiddleware
@@ -280,15 +282,31 @@ async def log_requests(
     return response
 
 
-# Health check endpoint
+# Markdown preview length cap (T106): bounds the cost of nh3 sanitization +
+# python-markdown parsing per request. Comfortably above any legitimate
+# project/yarn description or notes field a user would type.
+MAX_MARKDOWN_PREVIEW_CHARS = 50_000
+
+
 @app.post("/utils/preview/markdown", response_class=HTMLResponse)
 async def preview_markdown(
     request: Request,
     content: Annotated[str, Form()] = "",
+    _current_user: User = Depends(require_auth),
 ) -> HTMLResponse:
-    """Render markdown content for preview."""
+    """Render markdown content for preview.
+
+    Requires authentication (T106): this endpoint is only ever called from
+    the wysiwyg editor on authenticated project/yarn forms, but had no auth
+    check of its own, letting anonymous callers hit python-markdown/nh3
+    sanitization (real CPU/memory cost) for free, repeatedly.
+    """
     if not content:
         return HTMLResponse("")
+    if len(content) > MAX_MARKDOWN_PREVIEW_CHARS:
+        raise HTTPException(
+            status_code=413, detail="Markdown content too large to preview"
+        )
     return HTMLResponse(render_markdown(content))
 
 

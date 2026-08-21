@@ -61,6 +61,7 @@ from stricknani.utils.importer import (
 )
 from stricknani.utils.markdown import render_markdown
 from stricknani.utils.ocr import is_ocr_available, precompute_ocr_for_media_file
+from stricknani.utils.rate_limit import is_rate_limited, record_attempt
 from stricknani.utils.search_tokens import (
     extract_search_token,
     parse_import_image_urls,
@@ -176,6 +177,25 @@ async def import_yarn(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid URL format",
                 )
+
+            # Rate limit outbound import fetches per user (T107), on top of
+            # the SSRF guard (T52) that restricts *where* we're willing to
+            # fetch from - this bounds *how often* a user can make the
+            # server fetch an attacker-influenced remote URL on their behalf.
+            import_rate_limit_key = f"import:user:{current_user.id}"
+            if is_rate_limited(
+                import_rate_limit_key,
+                config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS,
+                config.RATE_LIMIT_IMPORT_WINDOW_SECONDS,
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Too many imports recently. Please try again later.",
+                    headers={
+                        "Retry-After": str(config.RATE_LIMIT_IMPORT_WINDOW_SECONDS)
+                    },
+                )
+            record_attempt(import_rate_limit_key)
 
             source_url = url
             importer: PatternImporter
@@ -1118,6 +1138,9 @@ async def toggle_favorite(
     yarn = result.scalar_one_or_none()
     if not yarn:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     # Check if already favorited
     stmt = select(user_favorite_yarns).where(

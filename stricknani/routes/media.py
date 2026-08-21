@@ -43,6 +43,17 @@ router: APIRouter = APIRouter(tags=["media"])
 # uuid), so a given URL always maps to the same bytes.
 _IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable"
 
+# T107: project attachments keep the client-supplied extension verbatim (no
+# allowlist at upload time, unlike images - see stricknani/services/projects/
+# attachments.py), so a browser-renderable extension like .svg/.html/.htm can
+# end up stored as-is. Only serve extensions we know are safe to render in
+# the browser as `inline`; everything else is forced to download instead, so
+# an attacker who uploads e.g. `evil.svg` as an "attachment" can't get it
+# rendered (and any embedded script executed) from the app's own origin.
+_INLINE_SAFE_EXTENSIONS: frozenset[str] = frozenset(
+    {".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf"}
+)
+
 
 async def _project_owner_id(entity_id: int, db: AsyncSession) -> int | None:
     result = await db.execute(select(Project.owner_id).where(Project.id == entity_id))
@@ -137,11 +148,14 @@ async def _authorize(
 def _file_response(file_path: Path | None) -> FileResponse:
     if file_path is None or not file_path.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    disposition = "inline"
+    if file_path.suffix.lower() not in _INLINE_SAFE_EXTENSIONS:
+        disposition = f'attachment; filename="{file_path.name}"'
     return FileResponse(
         file_path,
         headers={
             "X-Content-Type-Options": "nosniff",
-            "Content-Disposition": "inline",
+            "Content-Disposition": disposition,
             "Cache-Control": _IMMUTABLE_CACHE_CONTROL,
         },
     )

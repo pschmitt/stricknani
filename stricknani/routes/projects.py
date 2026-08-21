@@ -128,6 +128,7 @@ from stricknani.utils.importer import (
     trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
+from stricknani.utils.rate_limit import is_rate_limited, record_attempt
 from stricknani.utils.search_tokens import extract_search_token, parse_import_image_urls
 from stricknani.utils.wayback import (
     _should_request_archive,
@@ -708,6 +709,25 @@ async def import_pattern(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid URL format",
                 )
+
+            # Rate limit outbound import fetches per user (T107), on top of
+            # the SSRF guard (T52) that restricts *where* we're willing to
+            # fetch from - this bounds *how often* a user can make the
+            # server fetch an attacker-influenced remote URL on their behalf.
+            import_rate_limit_key = f"import:user:{current_user.id}"
+            if is_rate_limited(
+                import_rate_limit_key,
+                config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS,
+                config.RATE_LIMIT_IMPORT_WINDOW_SECONDS,
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Too many imports recently. Please try again later.",
+                    headers={
+                        "Retry-After": str(config.RATE_LIMIT_IMPORT_WINDOW_SECONDS)
+                    },
+                )
+            record_attempt(import_rate_limit_key)
 
             source_url = url
             if trace:

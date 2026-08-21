@@ -671,3 +671,37 @@ async def test_import_trace_written(
         config.IMPORT_TRACE_ENABLED = original_enabled
         config.IMPORT_TRACE_DIR = original_dir
         config.IMPORT_TRACE_MAX_CHARS = original_max
+
+
+async def test_import_pattern_from_url_is_rate_limited(
+    test_client: "TestClientFixture",
+) -> None:
+    """T107: URL imports had no cap, letting a user make the server fetch an
+    attacker-influenced remote URL on their behalf as often as they like -
+    the SSRF guard (T52) restricts *where* it fetches from, not *how often*."""
+    client, *_ = test_client
+
+    original_max = config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS
+    config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS = 1
+    try:
+        with patch("stricknani.importing.fetch.fetch_url") as mock_get:
+            mock_response = MagicMock()
+            mock_response.text = "<html></html>"
+            mock_response.status_code = 200
+            mock_get.return_value = mock_response
+
+            first = await client.post(
+                "/projects/import",
+                data={"type": "url", "url": "https://example.com/pattern"},
+            )
+            assert first.status_code == 200
+
+            blocked = await client.post(
+                "/projects/import",
+                data={"type": "url", "url": "https://example.com/pattern"},
+            )
+    finally:
+        config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS = original_max
+
+    assert blocked.status_code == 429
+    assert "Retry-After" in blocked.headers

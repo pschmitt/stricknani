@@ -108,6 +108,10 @@ async def media_authz_client(
     project_dir = config.MEDIA_ROOT / "projects" / str(project_id)
     project_dir.mkdir(parents=True, exist_ok=True)
     (project_dir / "20260101_000000_aaaaaaaa.jpg").write_bytes(b"fake-jpeg-bytes")
+    (project_dir / "20260101_000000_cccccccc.pdf").write_bytes(b"fake-pdf-bytes")
+    (project_dir / "20260101_000000_dddddddd.svg").write_bytes(
+        b"<svg onload='alert(1)'></svg>"
+    )
 
     project_thumb_dir = config.MEDIA_ROOT / "thumbnails" / "projects" / str(project_id)
     project_thumb_dir.mkdir(parents=True, exist_ok=True)
@@ -174,6 +178,39 @@ async def test_owner_can_access_own_project_image(
     assert response.content == b"fake-jpeg-bytes"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["content-disposition"] == "inline"
+
+
+async def test_pdf_attachment_served_inline(
+    media_authz_client: dict[str, Any],
+) -> None:
+    client = media_authz_client["client"]
+    _as(client, media_authz_client["owner_token"])
+
+    response = await client.get(
+        f"/media/projects/{media_authz_client['project_id']}/20260101_000000_cccccccc.pdf"
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == "inline"
+
+
+async def test_non_renderable_attachment_forced_to_download(
+    media_authz_client: dict[str, Any],
+) -> None:
+    """T107: an attachment with a browser-renderable-but-unvalidated extension
+    (e.g. .svg, which can carry a <script>/onload payload) must never be
+    served `inline` - that would execute it in the app's own origin."""
+    client = media_authz_client["client"]
+    _as(client, media_authz_client["owner_token"])
+
+    response = await client.get(
+        f"/media/projects/{media_authz_client['project_id']}/20260101_000000_dddddddd.svg"
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == (
+        'attachment; filename="20260101_000000_dddddddd.svg"'
+    )
 
 
 async def test_owner_can_access_own_project_thumbnail(
