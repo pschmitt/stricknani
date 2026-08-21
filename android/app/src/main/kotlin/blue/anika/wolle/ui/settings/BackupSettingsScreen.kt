@@ -272,6 +272,15 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
         BackupPasswordDialog(
             title = stringResource(R.string.backup_settings_export_password_dialog_title),
             confirmLabel = stringResource(R.string.backup_settings_export_confirm),
+            // SNA-62: the title above says "(optional)", but without this the Confirm button
+            // stayed disabled for a blank password and Cancel aborted the export entirely - there
+            // was no way to actually produce the unencrypted export the label promised. A manual
+            // export is a deliberate, in-the-moment user action (unlike the scheduled/automatic
+            // backup case fixed in SNA-59, which forces an explicit choice precisely because it
+            // isn't), so honoring "optional" here rather than silently requiring a password is the
+            // right fix - `viewModel.exportBackup` already treats a blank password as "no
+            // password" (`BackupManager.export`/`BackupCrypto.encode`).
+            allowBlankToClear = true,
             onDismiss = {
                 showExportPasswordDialog = false
                 pendingExportUri = null
@@ -390,7 +399,7 @@ fun ScheduledBackupPasswordGateDialog(
 }
 
 @Composable
-private fun BackupPasswordDialog(
+fun BackupPasswordDialog(
     title: String,
     confirmLabel: String,
     allowBlankToClear: Boolean = false,
@@ -408,13 +417,14 @@ private fun BackupPasswordDialog(
                 label = { Text(stringResource(R.string.backup_settings_password_field_label)) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("backup-password-dialog-field"),
             )
         },
         confirmButton = {
             TextButton(
                 onClick = { onConfirm(password) },
                 enabled = allowBlankToClear || password.isNotBlank(),
+                modifier = Modifier.testTag("backup-password-dialog-confirm"),
             ) {
                 Icon(Icons.Filled.Save, contentDescription = null)
                 Text(confirmLabel)

@@ -223,20 +223,47 @@ own repro method) and `just check rofl-13.brkn.lol` (ktfmt + unit tests + Androi
 
 ## SNA-62: Backup export dialog's "(optional)" encryption label contradicts its own behavior
 
-- [ ] The manual-export password dialog's title is "Encrypt backup? (optional)"
+- [x] The manual-export password dialog's title is "Encrypt backup? (optional)"
       (`backup_settings_export_password_dialog_title`), implying encryption can be skipped. But
       `BackupPasswordDialog`'s confirm button uses `enabled = allowBlankToClear ||
-      password.isNotBlank()`, and the export call site (`BackupSettingsScreen.kt:251-264`) doesn't
-      pass `allowBlankToClear = true` - so the Confirm button stays disabled for a blank password,
-      and Cancel aborts the export entirely (`pendingExportUri = null`). There is no way to actually
-      produce an unencrypted manual export from this dialog, despite the label and despite
+      password.isNotBlank()`, and the export call site (`BackupSettingsScreen.kt:251-264`) didn't
+      pass `allowBlankToClear = true` - so the Confirm button stayed disabled for a blank password,
+      and Cancel aborted the export entirely (`pendingExportUri = null`). There was no way to
+      actually produce an unencrypted manual export from this dialog, despite the label and despite
       `BackupCrypto`/`BackupManager.export(null)` supporting it.
-- [ ] Not a security bug (forced encryption is the safer outcome) but a real copy/behavior
-      mismatch - fix by either passing `allowBlankToClear = true` here (if unencrypted manual
-      export should stay possible, matching the label) or changing the title/copy to reflect that a
-      password is actually required.
+- [x] Not a security bug (forced encryption is the safer outcome) but a real copy/behavior
+      mismatch. Fixed by passing `allowBlankToClear = true` at the export call site - kept the
+      "(optional)" label truthful rather than changing the copy to demand a password, since:
+      - a manual export is a single, deliberate, in-the-moment user action (the user is looking
+        right at the screen when it happens), unlike SNA-59's scheduled/automatic backup case,
+        which forces an explicit choice precisely *because* it happens silently in the background
+        with no one watching:
+      - `viewModel.exportBackup`/`BackupManager.export`/`BackupCrypto.encode` already fully
+        support and correctly handle a null/blank password (`FLAG_PLAIN`) - the capability existed
+        and worked, only the UI path to reach it was broken.
+      - Restore's password dialog (`showRestorePasswordDialog`) is intentionally untouched -
+        `allowBlankToClear` stays `false` there, since that dialog only ever appears when
+        `BackupPasswordRequiredException` fired (the chosen file is genuinely encrypted), where a
+        blank password could never be correct.
+- [x] Test coverage: `BackupPasswordDialogTest` (new, `app/src/androidTest/...focused/`) - 2
+      focused Compose UI tests asserting Confirm stays disabled with `allowBlankToClear = false`
+      (the restore dialog's shape) and becomes enabled/confirmable with a blank password with
+      `allowBlankToClear = true` (now the export dialog's shape, matching its own "(optional)"
+      label). `BackupPasswordDialog` made non-`private` (was already the case for
+      `ScheduledBackupPasswordGateDialog`, SNA-59, for the same reason) so it's directly testable
+      without needing a full `BackupSettingsScreen`/`SettingsViewModel`.
 
-Status: not started (2026-08-21) - found via static audit (`ui/settings/BackupSettingsScreen.kt`).
+Status: **done** (2026-08-21) - verified via `BackupPasswordDialogTest`'s 2 new instrumentation
+tests on the physical Zenfone 10 (`adb shell am instrument`) - `OK (2 tests)` - and `just check
+rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint), green. **Not verified**: a full live
+click-through of Settings -> Backup -> Export on-device with a blank password - this session's
+device was signed out mid-session for SNA-61's live repro (which needed the Onboarding screen) and
+no credentials were on hand to re-onboard it back onto the real server before reaching this
+ticket. The instrumentation test above renders and interacts with the exact same
+`BackupPasswordDialog` composable using the exact real call site's `allowBlankToClear = true`
+configuration, which is the entire fix - the app not being signed in on this device doesn't affect
+that composable's behavior, but a true click-through remains a gap for a future session with
+working credentials.
 
 ## SNA-63: Remote build pipeline (`just build-fetch`) currently fails via `nix develop`
 
