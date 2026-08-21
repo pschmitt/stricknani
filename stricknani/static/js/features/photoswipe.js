@@ -279,9 +279,7 @@
 					setLoading(true, t("pswpExtractingText", "Extracting text..."));
 					renderResult("", "");
 
-					const csrfToken = document
-						.querySelector('meta[name="csrf-token"]')
-						?.getAttribute("content");
+					const csrfToken = window.getCsrfToken?.();
 					const headers = {
 						"Content-Type": "application/json",
 						...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
@@ -775,9 +773,7 @@
 				return;
 			}
 
-			const csrfToken = document
-				.querySelector('meta[name="csrf-token"]')
-				?.getAttribute("content");
+			const csrfToken = window.getCsrfToken?.();
 
 			let canvas;
 			try {
