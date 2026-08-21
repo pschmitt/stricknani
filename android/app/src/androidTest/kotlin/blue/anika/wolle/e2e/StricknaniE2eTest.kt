@@ -149,9 +149,7 @@ class StricknaniSmokeTest : StricknaniE2eTest() {
         connectToFixture()
         captureE2eScreenshot("smoke-01-home")
 
-        openProjects()
-        composeRule.onNodeWithText("Heirloom Baby Blanket").performClick()
-        waitForText("Description")
+        openHeirloomProject()
         captureE2eScreenshot("smoke-02-project-detail")
 
         composeRule.onNodeWithContentDescription("Back").performClick()
