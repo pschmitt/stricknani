@@ -1018,37 +1018,22 @@ textarea::placeholder {
  *
  * Templates currently use DaisyUI-compatible component names. Keeping those
  * names as a compatibility layer lets the visual system migrate incrementally
- * while Projects and Yarns share one token set and interaction treatment. */
+ * while Projects and Yarns share one token set and interaction treatment.
+ *
+ * T99: the --md-sys-color-*, --color-*, --radius-*, and --md-focus-ring
+ * tokens material.css also defines used to be duplicated here too. Both files load
+ * on every page (material.css first, then this one - see base.html), so for
+ * any token defined in both, this file's copy silently won (same CSS
+ * specificity, later in source order) - meaning every color/shape value
+ * material.css's `:root` and `html[data-theme="dark"]` blocks define was
+ * completely shadowed by this file's stale duplicates. Only the tokens
+ * material.css does NOT define stay here now; everything else falls through
+ * to material.css, the single source of truth for the color/shape system. */
 :root,
 [data-theme="light"] {
-	--md-sys-color-primary: oklch(46% 0.16 264);
-	--md-sys-color-on-primary: oklch(99% 0.01 264);
-	--md-sys-color-primary-container: oklch(91% 0.06 264);
-	--md-sys-color-on-primary-container: oklch(25% 0.09 264);
-	--md-sys-color-secondary: oklch(45% 0.08 315);
-	--md-sys-color-on-secondary: oklch(99% 0.01 315);
-	--md-sys-color-secondary-container: oklch(92% 0.05 315);
-	--md-sys-color-on-secondary-container: oklch(25% 0.06 315);
-	--md-sys-color-tertiary: oklch(45% 0.1 175);
-	--md-sys-color-on-tertiary: oklch(99% 0.01 175);
-	--md-sys-color-tertiary-container: oklch(90% 0.08 175);
-	--md-sys-color-on-tertiary-container: oklch(23% 0.07 175);
-	--md-sys-color-error: oklch(50% 0.16 27);
-	--md-sys-color-on-error: oklch(99% 0.01 27);
-	--md-sys-color-surface: oklch(98% 0.006 264);
-	--md-sys-color-surface-container-low: oklch(96% 0.01 264);
-	--md-sys-color-surface-container: oklch(94% 0.012 264);
-	--md-sys-color-surface-container-high: oklch(91% 0.016 264);
-	--md-sys-color-on-surface: oklch(20% 0.025 264);
-	--md-sys-color-on-surface-variant: oklch(42% 0.025 264);
-	--md-sys-color-outline: oklch(50% 0.02 264);
-	--md-sys-color-outline-variant: oklch(78% 0.025 264);
 	--md-sys-color-scrim: oklch(0% 0 0 / 0.32);
-	--md-sys-color-background: var(--md-sys-color-surface);
-	--md-sys-color-on-background: var(--md-sys-color-on-surface);
 	--md-sys-typescale-display: 2.75rem;
 	--md-sys-typescale-headline: 2rem;
-	--md-sys-typescale-title: 1.5rem;
 	--md-sys-typescale-body: 1rem;
 	--md-sys-typescale-label: 0.875rem;
 	--md-sys-typescale-line-height: 1.4;
@@ -1058,73 +1043,24 @@ textarea::placeholder {
 	--md-sys-shape-corner-large: 1rem;
 	--md-sys-shape-corner-extra-large: 1.75rem;
 	--md-sys-elevation-level-0: none;
-	--md-sys-elevation-level-1: 0 1px 3px 1px
-		color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
-	--md-sys-elevation-level-2: 0 2px 6px 2px
-		color-mix(in srgb, var(--md-sys-color-on-surface) 14%, transparent);
 	--md-sys-motion-duration-short: 160ms;
 	--md-sys-motion-duration-medium: 280ms;
 	--md-sys-motion-easing: cubic-bezier(0.2, 0, 0, 1);
 
-	/* DaisyUI semantic aliases used by the existing utility classes. */
-	--color-base-100: var(--md-sys-color-surface);
-	--color-base-200: var(--md-sys-color-surface-container);
-	--color-base-300: var(--md-sys-color-surface-container-high);
-	--color-base-content: var(--md-sys-color-on-surface);
-	--color-primary: var(--md-sys-color-primary);
-	--color-primary-content: var(--md-sys-color-on-primary);
-	--color-secondary: var(--md-sys-color-secondary);
-	--color-secondary-content: var(--md-sys-color-on-secondary);
+	/* DaisyUI semantic aliases used by the existing utility classes - only
+	   the ones material.css doesn't already alias itself. */
 	--color-accent: var(--md-sys-color-tertiary);
 	--color-accent-content: var(--md-sys-color-on-tertiary);
 	--color-neutral: var(--md-sys-color-on-surface);
 	--color-neutral-content: var(--md-sys-color-surface);
 	--color-info: oklch(52% 0.13 245);
 	--color-info-content: oklch(99% 0.01 245);
-	--color-success: oklch(48% 0.12 150);
-	--color-success-content: oklch(99% 0.01 150);
-	--color-warning: oklch(62% 0.14 78);
-	--color-warning-content: oklch(22% 0.06 78);
-	--color-error: var(--md-sys-color-error);
-	--color-error-content: var(--md-sys-color-on-error);
 	--radius-selector: 0.75rem;
-	--radius-field: 0.75rem;
-	--radius-box: 1rem;
-	--md-focus-ring: 0 0 0 3px
-		color-mix(in srgb, var(--md-sys-color-primary) 32%, transparent);
 }
 
 [data-theme="dark"] {
-	--md-sys-color-primary: oklch(79% 0.12 264);
-	--md-sys-color-on-primary: oklch(24% 0.08 264);
-	--md-sys-color-primary-container: oklch(36% 0.1 264);
-	--md-sys-color-on-primary-container: oklch(91% 0.06 264);
-	--md-sys-color-secondary: oklch(79% 0.08 315);
-	--md-sys-color-on-secondary: oklch(24% 0.06 315);
-	--md-sys-color-secondary-container: oklch(36% 0.06 315);
-	--md-sys-color-on-secondary-container: oklch(91% 0.05 315);
-	--md-sys-color-tertiary: oklch(78% 0.1 175);
-	--md-sys-color-on-tertiary: oklch(22% 0.07 175);
-	--md-sys-color-tertiary-container: oklch(35% 0.07 175);
-	--md-sys-color-on-tertiary-container: oklch(90% 0.08 175);
-	--md-sys-color-error: oklch(80% 0.12 27);
-	--md-sys-color-on-error: oklch(25% 0.08 27);
-	--md-sys-color-surface: oklch(18% 0.018 264);
-	--md-sys-color-surface-container-low: oklch(20% 0.02 264);
-	--md-sys-color-surface-container: oklch(23% 0.022 264);
-	--md-sys-color-surface-container-high: oklch(27% 0.024 264);
-	--md-sys-color-on-surface: oklch(91% 0.018 264);
-	--md-sys-color-on-surface-variant: oklch(75% 0.025 264);
-	--md-sys-color-outline: oklch(72% 0.02 264);
-	--md-sys-color-outline-variant: oklch(45% 0.025 264);
 	--color-info: oklch(77% 0.1 245);
 	--color-info-content: oklch(22% 0.06 245);
-	--color-success: oklch(75% 0.1 150);
-	--color-success-content: oklch(22% 0.05 150);
-	--color-warning: oklch(82% 0.12 78);
-	--color-warning-content: oklch(24% 0.06 78);
-	--md-sys-color-background: var(--md-sys-color-surface);
-	--md-sys-color-on-background: var(--md-sys-color-on-surface);
 }
 
 html,

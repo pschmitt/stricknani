@@ -1879,9 +1879,10 @@ Execution-oriented backlog for Stricknani.
     brand trigger, `.md3-button`, and `.md3-feature-card__title` (`stricknani/static/css/
     material.css`). No CDN link (AGENTS.md) - self-hosted like every other vendored asset.
   - **Color**: Pushed primary/secondary/tertiary chroma up in both light and dark `:root` blocks
-    for a bolder, more saturated palette; added the previously-missing
-    `--md-sys-color-tertiary-container`/`on-tertiary-container` pair (light *and* dark - dark mode
-    had no tertiary override at all before this, silently reusing the light-mode value).
+    for a bolder, more saturated palette; added `--md-sys-color-tertiary-container`/
+    `on-tertiary-container` to `material.css` (correcting the initial writeup here: `material.css`
+    itself had no tertiary-container pair before this, but `app.css` already had one - see the
+    T99 follow-up below, this file's own token duplication masked that at the time).
   - **Category chip color variety**: repurposed `category_color_filter`
     (`stricknani/web/templating.py`) - dead code left over from before the T1 Tailwind removal,
     used nowhere in any template, still returning Tailwind utility classes for a framework that no
@@ -1907,3 +1908,43 @@ Execution-oriented backlog for Stricknani.
   (`document.fonts` reports `Space Grotesk 700` loaded), chip color variety renders correctly in
   both themes, and existing accordion/layout behavior on the detail page is unaffected. `just
   lint-css`/`ruff check`/`mypy`/`i18n-check` all clean; full suite 303 passed, 1 skipped.
+
+### T99 follow-up: `app.css` was silently shadowing every material.css token this changed
+
+- **Area**: web/ux
+- **Priority**: P1
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - User reported the deployed redesign "looks the same" after the deploy. Root cause:
+    `stricknani/static/css/app.css` (loaded *after* `material.css` in `base.html`) had its own
+    complete, byte-for-byte-named copy of the entire `--md-sys-color-*` palette, `--md-focus-ring`,
+    `--radius-field`/`--radius-box`, and the `--color-*` DaisyUI aliases - a leftover "compatibility
+    layer" from the original T88 migration that was never cleaned up. Since both files define these
+    same custom-property names at the same selector specificity (`:root`), CSS's last-rule-wins
+    tiebreak meant `app.css`'s stale, pre-redesign values won on every page, for every one of this
+    session's color/shape/focus-ring changes - completely invisibly, since nothing errors when a
+    later rule shadows an earlier one.
+  - Confirmed the deployed *server* was correct throughout (direct SSH read of the deployed Nix
+    store path, and repeated fresh `curl` requests, both showed the new values) - this was a pure
+    client-side CSS cascade bug, not a caching or deployment problem. Dark mode was only partially
+    affected: `material.css`'s dark selector (`html[data-theme="dark"]`) has higher specificity
+    than `app.css`'s (`[data-theme="dark"]`), so specificity - not source order - decided dark mode,
+    and it happened to go the other way.
+- **Implementation** (`stricknani/static/css/app.css`): removed every token from the `:root,
+  [data-theme="light"]` and `[data-theme="dark"]` blocks that `material.css` also defines (the
+  full color palette, `--md-focus-ring`, `--radius-field`/`--radius-box`, and the DaisyUI aliases
+  material.css already aliases itself), so those now resolve to material.css's values unshadowed.
+  Kept the tokens unique to `app.css` that other rules in the same file still reference
+  (`--md-sys-shape-corner-*`, `--md-sys-typescale-{display,headline,body,label,line-height}`,
+  `--md-sys-elevation-level-0`, `--md-sys-motion-duration-*`/`-easing`, `--md-sys-color-scrim`,
+  `--color-info`/`-content` with its own dark override, `--color-accent`/`-neutral` aliases,
+  `--radius-selector`) - confirmed each via a repo-wide grep before deciding to keep vs. drop.
+  Also caught and fixed an unrelated authoring bug in my own new explanatory comment while doing
+  this: a literal `*/` inside token-name shorthand (`--color-*/--radius-*`) prematurely closed the
+  CSS comment, which `just lint-css` caught immediately as 117 bogus "unknown selector" errors.
+- **Testing**: Re-verified via the same scratch-server + Playwright approach as the original T99
+  entry - `getComputedStyle(document.documentElement).getPropertyValue('--md-sys-color-primary')`
+  now correctly returns the new value in both themes; re-screenshotted light/dark and confirmed
+  against the pre-fix screenshots that button/chip colors visibly shifted. `just lint-css` clean
+  (same 2 pre-existing warnings only); full suite 303 passed, 1 skipped.
