@@ -13,13 +13,15 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi_csrf_protect.flexible import CsrfProtect as FlexibleCsrfProtect
+from itsdangerous import BadData, SignatureExpired, URLSafeTimedSerializer
 
 from stricknani.config import config
-from stricknani.utils.i18n import install_i18n
+from stricknani.utils.i18n import install_i18n, language_context
 
 templates_path = Path(__file__).resolve().parents[1] / "templates"
 templates = Jinja2Templates(directory=str(templates_path))
 templates.env.add_extension("jinja2.ext.do")
+install_i18n(templates.env)
 
 templates.env.globals["sentry_frontend_dsn"] = config.SENTRY_DSN_FRONTEND
 templates.env.globals["sentry_frontend_env"] = config.SENTRY_ENVIRONMENT
@@ -107,7 +109,6 @@ async def render_template(
         context = {}
 
     language = get_language(request)
-    install_i18n(templates.env, language)
 
     context["request"] = request
     context["current_language"] = language
@@ -115,20 +116,36 @@ async def render_template(
         "is_dev_instance",
         request.url.hostname in {"localhost", "127.0.0.1"} or config.DEBUG,
     )
+    context.setdefault("auto_reload_enabled", config.AUTO_RELOAD)
     context.setdefault("feature_wayback_enabled", config.FEATURE_WAYBACK_ENABLED)
+    # Set by SecurityHeadersMiddleware (T71) before the route handler runs;
+    # inline <script> tags must echo this back via nonce="{{ csp_nonce }}"
+    # to satisfy the nonce-based script-src CSP directive.
+    context.setdefault("csp_nonce", getattr(request.state, "csp_nonce", ""))
 
     csrf = FlexibleCsrfProtect()
-    csrf_token, signed_token = csrf.generate_csrf_tokens()
+    csrf_token: str | None = None
+    signed_token = request.cookies.get(csrf._cookie_key)
+    should_set_cookie = False
+    if signed_token:
+        serializer = URLSafeTimedSerializer(
+            config.CSRF_SECRET_KEY,
+            salt="fastapi-csrf-token",
+        )
+        try:
+            csrf_token = serializer.loads(signed_token, max_age=csrf._max_age)
+        except (BadData, SignatureExpired):
+            csrf_token = None
+            signed_token = None
+
+    if csrf_token is None or signed_token is None:
+        csrf_token, signed_token = csrf.generate_csrf_tokens()
+        should_set_cookie = True
+
     context["csrf_token"] = csrf_token
 
     if "current_user" not in context:
-        from stricknani.database import get_db
-        from stricknani.routes.auth import get_current_user
-
-        session_token = request.cookies.get("session_token")
-        async for db in get_db():
-            context["current_user"] = await get_current_user(session_token, db)
-            break
+        raise ValueError("render_template requires explicit `current_user` in context")
 
     current_user = context.get("current_user")
     avatar_url = None
@@ -140,12 +157,14 @@ async def render_template(
     context.setdefault("current_user_avatar_url", avatar_url)
     context.setdefault("current_user_avatar_thumbnail", avatar_thumb)
 
-    response = templates.TemplateResponse(
-        request=request,
-        name=template_name,
-        context=context,
-        status_code=status_code,
-    )
+    with language_context(language):
+        response = templates.TemplateResponse(
+            request=request,
+            name=template_name,
+            context=context,
+            status_code=status_code,
+        )
 
-    csrf.set_csrf_cookie(signed_token, response)
+    if should_set_cookie:
+        csrf.set_csrf_cookie(signed_token, response)
     return response

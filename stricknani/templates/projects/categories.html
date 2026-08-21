@@ -31,44 +31,42 @@
 
 {% block list_content %}
 <!-- New Category Input -->
-<div class="card bg-base-100 shadow-sm border border-base-200 mb-6">
-    <div class="card-body p-4 sm:p-6">
-        <h2 class="card-title text-base mb-4">{{ _('Add New Category') }}</h2>
-        <form action="/projects/categories" method="post" class="flex flex-col sm:flex-row gap-4">
+<div class="md3-category-editor">
+    <div class="md3-category-editor__body">
+        <h2 class="md3-category-editor__title">{{ _('Add New Category') }}</h2>
+        <form action="/projects/categories" method="post" class="md3-category-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <div class="flex-grow">
+            <div class="md3-category-form__field">
                 <label for="new-category-name" class="sr-only">{{ _('Category Name') }}</label>
                 <input type="text" id="new-category-name" name="name" required
-                    placeholder="{{ _('e.g., Socks, Shawl, Amigurumi') }}" class="input  w-full">
+                    placeholder="{{ _('e.g., Socks, Shawl, Amigurumi') }}" class="md3-text-field">
             </div>
-            {{ buttons.primary(_('Create'), type='submit', icon='mdi-plus', class='flex-none') }}
+            {{ buttons.primary(_('Create'), type='submit', icon='mdi-plus', class='md3-button--small') }}
         </form>
     </div>
 </div>
 
 <!-- Category List -->
-<div class="grid gap-2">
+<div class="md3-category-list">
     {% for category in categories %}
-    <div class="card bg-base-100 shadow-sm border border-base-200 group hover:border-base-300 transition-colors">
-        <div class="card-body p-4">
-            <form action="/projects/categories/{{ category.id }}" method="post" class="flex items-center gap-4">
+    <div class="md3-category-card">
+        <div class="md3-category-card__body">
+            <form action="/projects/categories/{{ category.id }}" method="post" class="md3-category-form md3-category-form--existing">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <div class="flex-grow">
+                <div class="md3-category-form__field">
                     <label for="category-{{ category.id }}" class="sr-only">{{ _('Category Name') }}</label>
                     <input type="text" id="category-{{ category.id }}" name="name" value="{{ category.name }}" required
-                        class="input input-ghost w-full font-medium focus: text-lg px-2 -ml-2 h-auto py-1">
-                    <p class="text-xs text-base-content/60 mt-1 px-2">
+                        class="md3-category-name">
+                    <p class="md3-category-count">
                         {{ ngettext('%(num)d project', '%(num)d projects', category.project_count) % {'num':
                         category.project_count} }}
                     </p>
                 </div>
 
-                <div
-                    class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity focus-within:opacity-100">
-                    {{ buttons.secondary(_('Save'), type='submit', icon='mdi-content-save-outline', class='btn-sm
-                    btn-ghost gap-2', attrs='title="' + _('Save changes') + '"') }}
+                <div class="md3-category-actions">
+                    {{ buttons.secondary(_('Save'), type='submit', icon='mdi-content-save-outline', class='md3-button--small md3-button--text', attrs='title="' + _('Save changes') + '"') }}
 
-                    <button type="button" class="btn btn-sm btn-ghost text-error" data-category-id="{{ category.id }}"
+                    <button type="button" class="md3-button md3-button--small md3-button--icon md3-button--destructive" data-category-id="{{ category.id }}"
                         data-category-name="{{ category.name }}" data-project-count="{{ category.project_count }}"
                         title="{{ _('Delete category') }}" aria-label="{{ _('Delete category') }}">
                         <span class="mdi mdi-trash-can-outline text-lg"></span>
@@ -82,8 +80,8 @@
         </div>
     </div>
     {% else %}
-    <div class="text-center py-12 text-base-content/50">
-        <span class="mdi mdi-shape-plus text-5xl mb-3 block opacity-20"></span>
+    <div class="md3-category-empty">
+        <span class="mdi mdi-shape-plus md3-category-empty__icon"></span>
         <p>{{ _('You have no custom categories yet.') }}</p>
     </div>
     {% endfor %}
@@ -91,7 +89,7 @@
 {% endblock %}
 
 {% block page_scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
     document.addEventListener('DOMContentLoaded', () => {
         {% if error %}
         window.showToast?.({{ error | tojson }}, 'error');

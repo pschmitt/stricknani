@@ -106,6 +106,105 @@ async def test_admin_create_user(test_client: Any) -> None:
 
 
 @pytest.mark.asyncio
+async def test_admin_create_user_rejects_short_password(test_client: Any) -> None:
+    """The admin create-user form must enforce the T69 password policy too."""
+    client, session_factory, user_id, _project_id, _step_id = test_client
+
+    async def override_admin() -> AdminUser:
+        return AdminUser(user_id, "tester@example.com")
+
+    app.dependency_overrides[require_auth] = override_admin
+    app.dependency_overrides[get_current_user] = override_admin
+
+    response = await client.post(
+        "/admin/users/create",
+        data={"email": "weak@example.com", "password": "short1"},
+    )
+
+    assert response.status_code == 303
+    assert "password_too_weak" in response.headers["location"]
+
+    async with session_factory() as session:
+        created = await session.execute(
+            select(User).where(User.email == "weak@example.com")
+        )
+        assert created.scalar_one_or_none() is None
+
+
+@pytest.mark.asyncio
+async def test_admin_reset_password_revokes_existing_sessions(
+    test_client: Any,
+) -> None:
+    """Resetting a user's password (T69) must bump token_version so any
+    outstanding JWT for that user is rejected, even before it expires."""
+    client, session_factory, user_id, _project_id, _step_id = test_client
+
+    async with session_factory() as session:
+        other = User(
+            email="reset-me@example.com",
+            hashed_password=get_password_hash("original-pass"),
+        )
+        session.add(other)
+        await session.commit()
+        await session.refresh(other)
+        other_id = other.id
+        original_version = other.token_version
+
+    async def override_admin() -> AdminUser:
+        return AdminUser(user_id, "tester@example.com")
+
+    app.dependency_overrides[require_auth] = override_admin
+    app.dependency_overrides[get_current_user] = override_admin
+
+    response = await client.post(
+        f"/admin/users/{other_id}/reset-password",
+        data={"password": "brand-new-pass"},
+    )
+
+    assert response.status_code == 303
+
+    async with session_factory() as session:
+        updated = await session.get(User, other_id)
+        assert updated is not None
+        assert updated.token_version == original_version + 1
+
+
+@pytest.mark.asyncio
+async def test_admin_reset_password_rejects_short_password(test_client: Any) -> None:
+    client, session_factory, user_id, _project_id, _step_id = test_client
+
+    async with session_factory() as session:
+        other = User(
+            email="weak-reset@example.com",
+            hashed_password=get_password_hash("original-pass"),
+        )
+        session.add(other)
+        await session.commit()
+        await session.refresh(other)
+        other_id = other.id
+        original_version = other.token_version
+
+    async def override_admin() -> AdminUser:
+        return AdminUser(user_id, "tester@example.com")
+
+    app.dependency_overrides[require_auth] = override_admin
+    app.dependency_overrides[get_current_user] = override_admin
+
+    response = await client.post(
+        f"/admin/users/{other_id}/reset-password",
+        data={"password": "short1"},
+    )
+
+    assert response.status_code == 303
+    assert "password_too_weak" in response.headers["location"]
+
+    async with session_factory() as session:
+        unchanged = await session.get(User, other_id)
+        assert unchanged is not None
+        assert unchanged.token_version == original_version
+
+
+@pytest.mark.asyncio
 async def test_admin_delete_user_cascades(test_client: Any) -> None:
     client, session_factory, user_id, _project_id, _step_id = test_client
 

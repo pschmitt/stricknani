@@ -1,0 +1,133 @@
+name: Android E2E
+
+# Pull requests run the short smoke journey. The longer cache/search/settings lane is deliberately
+# manual because a disposable server plus an emulator is expensive and can take several minutes on
+# a cold GitHub runner. Neither lane can reach a production Stricknani instance.
+on:
+  pull_request:
+    paths:
+      - "android/**"
+      - "ci/stricknani/**"
+      - ".github/workflows/android-e2e.yaml"
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: Instrumentation journey to run
+        required: true
+        default: full
+        type: choice
+        options:
+          - smoke
+          - full
+          - focused
+
+concurrency:
+  group: android-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Disposable Stricknani + Android emulator
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      COMPOSE_FILE: ci/stricknani/docker-compose.yml
+      E2E_IMAGE: stricknani:e2e
+      E2E_LANE: ${{ github.event_name == 'pull_request' && 'smoke' || inputs.lane }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # Use the same Android SDK/JDK setup as the checked-in Android build and
+      # lint workflows; the emulator runner only owns the emulator lifecycle.
+      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+
+      - name: Build disposable Stricknani image
+        run: docker build --tag "$E2E_IMAGE" .
+
+      - name: Start disposable Stricknani fixture
+        run: docker compose -f "$COMPOSE_FILE" up --detach --wait --wait-timeout 180
+
+      - name: Seed deterministic fixture data and mint an API token
+        run: |
+          docker compose -f "$COMPOSE_FILE" exec -T stricknani \
+            python -m stricknani.scripts.seed_demo --reset
+          token="$(python3 ci/stricknani/seed.py \
+            --base-url http://127.0.0.1:7674)"
+          echo "::add-mask::$token"
+          printf 'E2E_TOKEN=%s\n' "$token" >> "$GITHUB_ENV"
+
+      # Compile before booting the emulator. The emulator is much more reliable when Gradle is
+      # not competing with it for CPU and memory; the connected test task below reuses these APKs.
+      - name: Build debug and instrumentation APKs
+        run: ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace
+        working-directory: android
+
+      - uses: pschmitt/android-app-ci/.github/actions/enable-kvm@main
+
+      - name: Run Android instrumentation journey
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_2
+          target: google_apis
+          force-avd-creation: true
+          emulator-boot-timeout: 1800
+          disable-animations: true
+          ram-size: 4096M
+          heap-size: 512M
+          cores: 4
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
+          working-directory: android
+          script: |
+            curl -fsSL https://raw.githubusercontent.com/pschmitt/android-app-ci/main/scripts/wait-for-android-emulator.sh | bash
+            adb reverse tcp:7674 tcp:7674
+            ./scripts/run-e2e-tests.sh
+
+      - name: Capture emulator diagnostics
+        if: ${{ always() }}
+        run: |
+          {
+            echo "--- adb devices ---"
+            timeout 10s adb devices -l
+            echo "--- host memory ---"
+            free -h
+            echo "--- host disk ---"
+            df -h
+          } > e2e-host-diagnostics.txt 2>&1 || true
+          timeout 60s adb logcat -d > e2e-logcat.txt || true
+          timeout 20s adb exec-out screencap -p > e2e-screenshot.png || true
+
+      - name: Collect named E2E screenshots
+        if: ${{ always() }}
+        run: |
+          mkdir -p e2e-screenshots
+          adb pull /sdcard/Android/data/blue.anika.wolle.debug/files/e2e-screenshots/. \
+            e2e-screenshots/ || true
+
+      - name: Capture Stricknani fixture logs
+        if: ${{ always() }}
+        run: docker compose -f "$COMPOSE_FILE" logs --no-color > e2e-stricknani.log || true
+
+      - name: Upload Android E2E reports and diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-e2e-artifacts-${{ github.run_id }}
+          if-no-files-found: warn
+          path: |
+            e2e-host-diagnostics.txt
+            e2e-logcat.txt
+            e2e-screenshot.png
+            e2e-screenshots/
+            e2e-stricknani.log
+            android/app/build/reports/androidTests/connected/
+            android/app/build/outputs/androidTest-results/connected/
+
+      - name: Tear down disposable Stricknani fixture
+        if: ${{ always() }}
+        run: docker compose -f "$COMPOSE_FILE" down --volumes --remove-orphans

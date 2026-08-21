@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pale blue (the icon's own highlight tone, branding/icon.svg's #EAF3FF ellipse) rather
+         than pure white or the saturated brand blue (#2F6FED, still used for
+         manifest.webmanifest theme_color) - blue-on-blue flattened the ball's detail on the
+         Android home screen, and plain white read as too stark/bright next to it. -->
+    <color name="icon_background">#EAF3FF</color>
+</resources>

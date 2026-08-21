@@ -1,0 +1,93 @@
+# Stricknani (Android) task runner.
+#
+# Gradle must never run on this machine directly - every build/test/lint recipe here shells out to
+# a remote host (rofl-13.brkn.lol or rofl-14.brkn.lol) over SSH instead. See AGENTS.md.
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+application_id := "blue.anika.wolle"
+play_package := "blue.anika.wolle"
+
+remote_host := env_var_or_default("STRICKNANI_ANDROID_REMOTE_HOST", "rofl-13.brkn.lol")
+
+# Empty for the main checkout; "-<worktree-dirname>" when run from a linked git worktree (e.g. one
+# of Claude's isolated agent worktrees under .claude/worktrees/). Keeps parallel worktree agents
+# from clobbering each other's remote sync directory mid-build.
+#
+# Both paths are resolved to absolute form before comparing - unlike the sibling apps (whose
+# Gradle project sits at the repo root), this justfile runs from android/, a subdirectory of the
+# repo root; `git rev-parse --git-dir` returns an absolute path but `--git-common-dir` returns one
+# relative to cwd, so a naive string comparison of the two falsely treated every normal (non-
+# worktree) checkout as a worktree here, aliasing every agent's remote build directory together.
+worktree_suffix := `gd=$(git rev-parse --absolute-git-dir); gcd=$(cd "$(git rev-parse --git-common-dir)" && pwd); if [ "$gd" != "$gcd" ]; then basename "$(git rev-parse --show-toplevel)" | sed 's/^/-/'; fi`
+
+remote_path := env_var_or_default("STRICKNANI_ANDROID_REMOTE_PATH", "~/build/stricknani-android" + worktree_suffix)
+local_dist := env_var_or_default("STRICKNANI_ANDROID_DIST_DIR", "./dist")
+
+default_abi := env_var_or_default("STRICKNANI_ANDROID_ABI", "arm64-v8a")
+gradle_extra_props := ""
+
+# Same physical fleet hardware the sibling apps deploy to (see AGENTS-shared.md) - confirmed
+# working here 2026-08-18 (just deploy-all installed blue.anika.wolle.debug, labeled "Stricknani",
+# on all three).
+zenfone_serial := env_var_or_default("ZENFONE_SERIAL", "R6AIB700W850L7G")
+mipad_host := env_var_or_default("MIPAD_HOST", "mi-pad-4.lan")
+mipad_ssh_port := env_var_or_default("MIPAD_SSH_PORT", "8022")
+mipad_adb_port := env_var_or_default("MIPAD_ADB_PORT", "5555")
+px5_host := env_var_or_default("PX5_HOST", "px5.lan")
+
+# Release builds are signed with the persistent CI keystore (SNA-12), fetched from the rbw entry
+# below and staged on the build host only for the duration of the build - matches the sibling
+# apps' pattern exactly (see e.g. syncwich's justfile).
+enable_release_signing := "true"
+rbw_keystore_entry := "Stricknani Android CI Signing Keystore"
+keystore_jks_attachment := "stricknani-android-ci.jks"
+keystore_env_attachment := "stricknani-android-ci-keystore.env"
+ci_tmp_dir_name := ".stricknani-android-ci-tmp"
+
+# List all available recipes. Must stay the first recipe in this file (not just the first line
+# overall) - `just` only considers recipes written directly here, not ones pulled in via the
+# import below, when deciding what a bare `just` invocation runs.
+default:
+    @just --list
+
+# Recipes shared across the app fleet: format/nix-fmt/nix-lint/screenshots-upload (common.just)
+# and the remote sync/build/deploy pipeline - sync/gradle/build/fetch/build-fetch/clean/lint/test
+# plus the zenfone-*/mipad-*/px5-*/deploy-all device recipes (single-module.just). Pulled in via a
+# git submodule at .just/android-app-ci (tracking that repo's main branch); `just update-common`
+# (defined at the bottom of this file) refreshes it. The devShell's shellHook auto-runs
+# `git submodule update --init` on every `nix develop` entry, so a fresh git worktree never needs
+# a manual `--init` step before `just` works.
+import '.just/android-app-ci/just/common.just'
+import '.just/android-app-ci/just/single-module.just'
+
+# ktfmtCheck + unit tests + Android Lint, remotely - the full local pre-push check.
+check host=remote_host: (gradle host "ktfmtCheck :app:testDebugUnitTest lintDebug")
+
+# Compile the app and instrumentation APKs remotely. The emulator itself belongs to the CI
+# workflow; keeping this recipe remote preserves the repository rule that Gradle never runs on the
+# developer workstation. The workflow builds the same two tasks on its GitHub runner before booting
+# its API-34 emulator.
+e2e-build host=remote_host: (gradle host "assembleDebug assembleDebugAndroidTest")
+
+# Validate Play Store listing text, declarations, and committed icon/feature-graphic assets without
+# contacting Google Play. Screenshot buckets are populated by the manual Android screenshots
+# workflow and reviewed before the explicit upload recipe is ever used.
+play-store-validate:
+    python3 scripts/validate-play-store-metadata.py --root ..
+
+# Upload reviewed Play Store assets only when the caller supplies the exact confirmation string and
+# has already authenticated gpc. The script itself performs the final validation and refuses to
+# upload when the listing declarations are still draft.
+play-store-assets-upload:
+    PLAY_PACKAGE={{play_package}} scripts/upload-play-store-assets.sh --upload
+
+# --- Shared recipes (pschmitt/android-app-ci) -------------------------------
+
+# Advance the .just/android-app-ci submodule to the tip of its tracked branch (main) and stage the
+# result - review the diff like any other dependency bump before committing it.
+update-common:
+    git submodule update --remote .just/android-app-ci
+    git add .just/android-app-ci
+
+# vim: set ft=sh et ts=2 sw=2 :

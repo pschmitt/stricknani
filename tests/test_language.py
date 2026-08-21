@@ -2,10 +2,12 @@
 
 from pathlib import Path
 
+import pytest
 from babel.messages.pofile import read_po
 from starlette.requests import Request
 
-from stricknani.web.templating import get_language
+from stricknani.main import app
+from stricknani.web.templating import get_language, render_template, templates
 
 LOCALES_DIR = Path(__file__).resolve().parents[1] / "stricknani" / "locales"
 
@@ -26,6 +28,8 @@ def _make_request(
         "headers": headers,
         "server": ("test", 80),
         "client": ("test", 1234),
+        "app": app,
+        "router": app.router,
     }
     return Request(scope)
 
@@ -64,3 +68,71 @@ def test_de_translations_have_no_missing_entries() -> None:
         if message.id and (message.string is None or not str(message.string).strip())
     ]
     assert missing == []
+
+
+@pytest.mark.asyncio
+async def test_render_template_uses_request_scoped_i18n() -> None:
+    initial_global_gettext = templates.env.globals.get("_")
+
+    en_request = _make_request(cookie="language=en")
+    de_request = _make_request(cookie="language=de")
+
+    en_response = await render_template(
+        "errors/404.html",
+        en_request,
+        context={"current_user": None},
+    )
+    de_response = await render_template(
+        "errors/404.html",
+        de_request,
+        context={"current_user": None},
+    )
+
+    en_body = bytes(en_response.body).decode("utf-8")
+    de_body = bytes(de_response.body).decode("utf-8")
+    assert "Page Not Found" in en_body
+    assert "Seite nicht gefunden" in de_body
+
+    # Rendering must not mutate global translator functions per request.
+    assert templates.env.globals.get("_") is initial_global_gettext
+
+
+@pytest.mark.asyncio
+async def test_login_prompt_is_translated_for_german_requests() -> None:
+    """The login subtitle must use the request-scoped German catalog."""
+    response = await render_template(
+        "auth/login.html",
+        _make_request(cookie="language=de"),
+        context={
+            "current_user": None,
+            "csrf_token": "test-token",
+            "signup_enabled": False,
+            "is_dev_instance": False,
+        },
+    )
+
+    body = bytes(response.body).decode("utf-8")
+    assert "Bitte melde dich unten an" in body
+    assert "Please sign in below" not in body
+
+
+@pytest.mark.asyncio
+async def test_login_signup_surface_renders_material_controls() -> None:
+    """The optional signup panel must render without legacy button classes."""
+    response = await render_template(
+        "auth/login.html",
+        _make_request(cookie="language=en"),
+        context={
+            "current_user": None,
+            "csrf_token": "test-token",
+            "signup_enabled": True,
+            "is_dev_instance": False,
+        },
+    )
+
+    body = bytes(response.body).decode("utf-8")
+    assert 'id="signup-form"' in body
+    assert 'action="/auth/signup"' in body
+    assert "md3-auth-submit--success" in body
+    main = body[body.index('<main id="main-content"') : body.index("</main>")]
+    assert 'class="btn' not in main

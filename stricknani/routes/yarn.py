@@ -2,67 +2,66 @@
 
 import asyncio
 import logging
-import os
-from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
 from datetime import UTC, datetime
-from io import BytesIO
-from pathlib import Path
 from typing import Annotated, Any
+from urllib.parse import urlencode
 
 import anyio
-import httpx
 from fastapi import (
     APIRouter,
     Depends,
     File,
     Form,
     HTTPException,
+    Query,
     Request,
     Response,
     UploadFile,
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from PIL import Image as PilImage
-from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy import and_, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from stricknani.config import config
 from stricknani.database import get_db
+from stricknani.importing.fetch import FetchError, import_fetch_http_error
+from stricknani.importing.ssrf import SSRFError
 from stricknani.models import Project, User, Yarn, YarnImage, user_favorite_yarns
 from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.services.audit import (
+    build_field_changes,
+    create_audit_log,
+    list_audit_logs,
+    serialize_audit_log,
+)
+from stricknani.services.yarn import (
+    get_yarn_photo_dimensions,
+    import_yarn_images_from_urls,
+    resolve_project_preview,
+    resolve_yarn_preview,
+    serialize_yarn_cards,
+    serialize_yarn_photos,
+)
+from stricknani.utils.ai_provider import has_ai_api_key
 from stricknani.utils.files import (
-    build_import_filename,
-    compute_checksum,
-    compute_file_checksum,
+    InvalidImageError,
+    UploadTooLargeError,
     create_thumbnail,
     delete_file,
     get_file_url,
     get_thumbnail_url,
-    save_bytes,
-    save_uploaded_file,
-)
-from stricknani.utils.image_similarity import (
-    SimilarityImage,
-    build_similarity_image,
-    compute_similarity_score,
+    read_upload_content,
+    save_uploaded_image,
 )
 from stricknani.utils.importer import (
-    IMPORT_IMAGE_HEADERS,
-    IMPORT_IMAGE_MAX_BYTES,
-    IMPORT_IMAGE_MAX_COUNT,
-    IMPORT_IMAGE_MIN_DIMENSION,
-    IMPORT_IMAGE_SSIM_THRESHOLD,
-    IMPORT_IMAGE_TIMEOUT,
     filter_import_image_urls,
-    is_allowed_import_image,
-    is_valid_import_url,
     trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
 from stricknani.utils.ocr import is_ocr_available, precompute_ocr_for_media_file
+from stricknani.utils.rate_limit import is_rate_limited, record_attempt
 from stricknani.utils.search_tokens import (
     extract_search_token,
     parse_import_image_urls,
@@ -76,195 +75,11 @@ from stricknani.utils.wayback import (
 from stricknani.web.templating import render_template
 
 router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
+logger = logging.getLogger(__name__)
 
-
-@dataclass
-class _ImportedSimilarity:
-    similarity: SimilarityImage
-    image: YarnImage
-    filename: str
-    is_primary: bool
-
-
-async def _load_existing_yarn_checksums(
-    db: AsyncSession, yarn_id: int
-) -> dict[str, YarnImage]:
-    """Return existing image checksums for a yarn."""
-    result = await db.execute(select(YarnImage).where(YarnImage.yarn_id == yarn_id))
-    images = result.scalars().all()
-    checksums: dict[str, YarnImage] = {}
-    for image in images:
-        file_path = config.MEDIA_ROOT / "yarns" / str(yarn_id) / image.filename
-        checksum = compute_file_checksum(file_path)
-        if checksum:
-            checksums.setdefault(checksum, image)
-    return checksums
-
-
-async def _import_yarn_images_from_urls(
-    db: AsyncSession,
-    yarn: Yarn,
-    image_urls: Sequence[str],
-    *,
-    primary_url: str | None = None,
-) -> int:
-    """Download and attach imported images to a yarn."""
-    if not image_urls:
-        return 0
-
-    logger = logging.getLogger("stricknani.imports")
-    imported = 0
-    existing_checksums = await _load_existing_yarn_checksums(db, yarn.id)
-    seen_checksums: set[str] = set()
-    imported_similarities: list[_ImportedSimilarity] = []
-
-    headers = dict(IMPORT_IMAGE_HEADERS)
-    if yarn.link:
-        headers["Referer"] = yarn.link
-
-    async with httpx.AsyncClient(
-        timeout=IMPORT_IMAGE_TIMEOUT,
-        follow_redirects=True,
-        headers=headers,
-    ) as client:
-        for image_url in image_urls:
-            if imported >= IMPORT_IMAGE_MAX_COUNT:
-                break
-            if not is_valid_import_url(image_url):
-                logger.info("Skipping invalid image URL: %s", image_url)
-                continue
-
-            try:
-                response = await client.get(image_url)
-                response.raise_for_status()
-            except httpx.HTTPError as exc:
-                logger.warning("Failed to download image %s: %s", image_url, exc)
-                continue
-
-            content_type = response.headers.get("content-type")
-            if not is_allowed_import_image(content_type, image_url):
-                logger.info("Skipping non-image URL: %s", image_url)
-                continue
-
-            if not response.content or len(response.content) > IMPORT_IMAGE_MAX_BYTES:
-                logger.info("Skipping empty or large image %s", image_url)
-                continue
-
-            checksum = compute_checksum(response.content)
-            if checksum in existing_checksums or checksum in seen_checksums:
-                logger.info("Skipping duplicate image %s", image_url)
-                if primary_url and image_url == primary_url:
-                    existing = existing_checksums.get(checksum)
-                    if existing and not existing.is_primary:
-                        existing.is_primary = True
-                continue
-
-            try:
-
-                def _inspect_image(
-                    content: bytes,
-                ) -> tuple[int, int, SimilarityImage | None]:
-                    with PilImage.open(BytesIO(content)) as img:
-                        width, height = img.size
-                        width_i = int(width)
-                        height_i = int(height)
-                        if (
-                            width_i < IMPORT_IMAGE_MIN_DIMENSION
-                            or height_i < IMPORT_IMAGE_MIN_DIMENSION
-                        ):
-                            return width_i, height_i, None
-                        return width_i, height_i, build_similarity_image(img)
-
-                width, height, similarity = await anyio.to_thread.run_sync(
-                    _inspect_image,
-                    response.content,
-                )
-                if similarity is None:
-                    logger.info(
-                        "Skipping small image %s (%sx%s)",
-                        image_url,
-                        width,
-                        height,
-                    )
-                    continue
-            except Exception as exc:
-                logger.info("Skipping unreadable image %s: %s", image_url, exc)
-                continue
-
-            skip_thumbnail = False
-            to_remove: list[_ImportedSimilarity] = []
-            for candidate in imported_similarities:
-                score = compute_similarity_score(candidate.similarity, similarity)
-                if score is None or score < IMPORT_IMAGE_SSIM_THRESHOLD:
-                    continue
-                if similarity.pixels <= candidate.similarity.pixels:
-                    logger.info(
-                        "Skipping thumbnail image %s (ssim %.3f)",
-                        image_url,
-                        score,
-                    )
-                    skip_thumbnail = True
-                    break
-                to_remove.append(candidate)
-
-            if skip_thumbnail:
-                continue
-
-            removed_primary = any(entry.is_primary for entry in to_remove)
-            for entry in to_remove:
-                await db.delete(entry.image)
-                delete_file(entry.filename, yarn.id, subdir="yarns")
-                imported_similarities.remove(entry)
-                imported = max(0, imported - 1)
-
-            original_filename = build_import_filename(image_url, content_type)
-            filename = ""
-            try:
-                filename, original_filename = await anyio.to_thread.run_sync(
-                    save_bytes,
-                    response.content,
-                    original_filename,
-                    yarn.id,
-                    "yarns",
-                )
-                file_path = config.MEDIA_ROOT / "yarns" / str(yarn.id) / filename
-                await create_thumbnail(file_path, yarn.id, subdir="yarns")
-            except Exception as exc:
-                if filename:
-                    delete_file(filename, yarn.id, subdir="yarns")
-                logger.warning("Failed to store image %s: %s", image_url, exc)
-                continue
-
-            if primary_url:
-                is_primary = image_url == primary_url
-            else:
-                # If no primary_url is provided, the first imported photo becomes
-                # primary if there are no existing photos.
-                is_primary = imported == 0 and not yarn.photos
-
-            if removed_primary:
-                is_primary = True
-
-            photo = YarnImage(
-                filename=filename,
-                original_filename=original_filename,
-                alt_text=yarn.name or original_filename,
-                yarn_id=yarn.id,
-                is_primary=is_primary,
-            )
-            db.add(photo)
-            imported += 1
-            seen_checksums.add(checksum)
-            imported_similarities.append(
-                _ImportedSimilarity(
-                    similarity=similarity,
-                    image=photo,
-                    filename=filename,
-                    is_primary=is_primary,
-                )
-            )
-
-    return imported
+# Number of cards fetched per page for the list view / HTMX infinite scroll.
+# 24 divides evenly across the 1/2/3-column responsive grid.
+LIST_PAGE_SIZE = 24
 
 
 def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
@@ -298,139 +113,23 @@ def _parse_optional_int(field_name: str, value: str | None) -> int | None:
         ) from exc
 
 
-def _resolve_preview(yarn: Yarn) -> str | None:
-    """Return the thumbnail URL for the first photo, if any."""
-
-    if not yarn.photos:
-        return None
-    first = yarn.photos[0]
-    return get_thumbnail_url(first.filename, yarn.id, subdir="yarns")
-
-
-def _resolve_project_preview(project: Project) -> dict[str, str | None]:
-    """Return preview image data for a project if any images exist."""
-
-    candidates = [img for img in project.images if img.is_title_image]
-    if not candidates and project.images:
-        candidates = [project.images[0]]
-    if not candidates:
-        return {"preview_url": None, "preview_alt": None}
-
-    image = candidates[0]
-    thumb_name = f"thumb_{Path(image.filename).stem}.jpg"
-    thumb_path = (
-        config.MEDIA_ROOT / "thumbnails" / "projects" / str(project.id) / thumb_name
-    )
-    url = None
-    if thumb_path.exists():
-        url = get_thumbnail_url(
-            image.filename,
-            project.id,
-            subdir="projects",
-        )
-    file_path = config.MEDIA_ROOT / "projects" / str(project.id) / image.filename
-    if file_path.exists():
-        url = get_file_url(
-            image.filename,
-            project.id,
-            subdir="projects",
-        )
-
-    return {"preview_url": url, "preview_alt": image.alt_text or project.name}
-
-
-def _get_photo_dimensions(yarn_id: int, filename: str) -> tuple[int | None, int | None]:
-    image_path = config.MEDIA_ROOT / "yarns" / str(yarn_id) / filename
-    if not image_path.exists():
-        return None, None
-    try:
-        with PilImage.open(image_path) as img:
-            width, height = img.size
-            return int(width), int(height)
-    except (OSError, ValueError):
-        return None, None
-
-
-def _serialize_photos(yarn: Yarn) -> list[dict[str, object]]:
-    """Prepare photo metadata for templates."""
-
-    payload: list[dict[str, object]] = []
-    has_seen_primary = False
-
-    # Sort photos: primary first, then by ID
-    sorted_photos = sorted(yarn.photos, key=lambda p: (not p.is_primary, p.id))
-
-    for photo in sorted_photos:
-        width, height = _get_photo_dimensions(yarn.id, photo.filename)
-
-        is_primary = photo.is_primary
-        if is_primary:
-            if has_seen_primary:
-                is_primary = False
-            else:
-                has_seen_primary = True
-
-        payload.append(
-            {
-                "id": photo.id,
-                "thumbnail_url": get_thumbnail_url(
-                    photo.filename,
-                    yarn.id,
-                    subdir="yarns",
-                ),
-                "full_url": get_file_url(
-                    photo.filename,
-                    yarn.id,
-                    subdir="yarns",
-                ),
-                "alt_text": photo.alt_text,
-                "is_primary": is_primary,
-                "width": width,
-                "height": height,
-            }
-        )
-
-    # If no primary photo seen but we have photos, mark the first as primary
-    if not has_seen_primary and payload:
-        payload[0]["is_primary"] = True
-
-    return payload
-
-
-def _serialize_yarn_cards(
-    yarns: Iterable[Yarn],
-    current_user: User | None = None,
-) -> list[dict[str, object]]:
-    """Prepare yarn entries for list rendering with preview URLs."""
-
-    favorites = set()
-    if current_user:
-        favorites = {y.id for y in current_user.favorite_yarns}
-
-    return [
-        {
-            "yarn": {
-                "id": yarn.id,
-                "name": yarn.name,
-                "brand": yarn.brand,
-                "colorway": yarn.colorway,
-                "dye_lot": yarn.dye_lot,
-                "fiber_content": yarn.fiber_content,
-                "weight_category": yarn.weight_category,
-                "weight_grams": yarn.weight_grams,
-                "length_meters": yarn.length_meters,
-                "description": yarn.description,
-                "notes": yarn.notes,
-                "created_at": yarn.created_at.isoformat() if yarn.created_at else None,
-                "updated_at": yarn.updated_at.isoformat() if yarn.updated_at else None,
-                "project_count": len(yarn.projects),
-                "is_favorite": yarn.id in favorites,
-                "is_ai_enhanced": yarn.is_ai_enhanced,
-            },
-            "preview_url": _resolve_preview(yarn),
-        }
-        for yarn in yarns
-    ]
+def _yarn_audit_snapshot(yarn: Yarn) -> dict[str, object]:
+    return {
+        "name": yarn.name,
+        "description": yarn.description,
+        "brand": yarn.brand,
+        "colorway": yarn.colorway,
+        "dye_lot": yarn.dye_lot,
+        "fiber_content": yarn.fiber_content,
+        "weight_category": yarn.weight_category,
+        "recommended_needles": yarn.recommended_needles,
+        "weight_grams": yarn.weight_grams,
+        "length_meters": yarn.length_meters,
+        "notes": yarn.notes,
+        "link": yarn.link,
+        "is_ai_enhanced": yarn.is_ai_enhanced,
+        "photo_count": len(yarn.photos),
+    }
 
 
 @router.post("/import")
@@ -438,13 +137,13 @@ async def import_yarn(
     import_type: Annotated[str, Form(alias="type")] = "url",
     url: Annotated[str | None, Form()] = None,
     text: Annotated[str | None, Form()] = None,
-    file: UploadFile | None = None,
+    file: UploadFile | None = File(default=None),
+    files: Annotated[list[UploadFile] | None, File()] = None,
     use_ai: Annotated[bool, Form()] = False,
     current_user: User = Depends(require_auth),
 ) -> JSONResponse:
     """Import yarn data from URL, file, or text."""
     import logging
-    import os
 
     from stricknani.utils.importer import (
         GarnstudioPatternImporter,
@@ -457,6 +156,13 @@ async def import_yarn(
     try:
         data: dict[str, Any] = {}
         source_url = None
+
+        selected_file = file
+        if files:
+            selected_file = files[0]
+
+        if import_type == "url" and selected_file is not None:
+            import_type = "file"
 
         if import_type == "url":
             if not url or not url.strip():
@@ -472,6 +178,25 @@ async def import_yarn(
                     detail="Invalid URL format",
                 )
 
+            # Rate limit outbound import fetches per user (T107), on top of
+            # the SSRF guard (T52) that restricts *where* we're willing to
+            # fetch from - this bounds *how often* a user can make the
+            # server fetch an attacker-influenced remote URL on their behalf.
+            import_rate_limit_key = f"import:user:{current_user.id}"
+            if is_rate_limited(
+                import_rate_limit_key,
+                config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS,
+                config.RATE_LIMIT_IMPORT_WINDOW_SECONDS,
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Too many imports recently. Please try again later.",
+                    headers={
+                        "Retry-After": str(config.RATE_LIMIT_IMPORT_WINDOW_SECONDS)
+                    },
+                )
+            record_attempt(import_rate_limit_key)
+
             source_url = url
             importer: PatternImporter
             if is_garnstudio_url(url):
@@ -482,36 +207,40 @@ async def import_yarn(
             data = await importer.fetch_and_parse()
 
         elif import_type == "file":
-            if not file:
+            if not selected_file:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="File is required",
                 )
 
-            # Read file content
-            content_bytes = await file.read()
-            filename = file.filename or "unknown"
+            # Read file content under the shared request-body cap.
+            try:
+                content_bytes = await read_upload_content(selected_file)
+            except UploadTooLargeError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                    detail="Uploaded file is too large",
+                ) from exc
+            filename = selected_file.filename or "unknown"
 
             from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
             from stricknani.importing.models import ContentType, RawContent
 
-            use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
-                os.getenv("OPENAI_API_KEY")
-            )
+            use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
             if not use_ai_enabled or not OPENAI_AVAILABLE:
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="AI analysis requires OpenAI API key",
+                    detail="AI analysis requires a configured AI provider API key",
                 )
 
             content_type = ContentType.UNKNOWN
-            if file.content_type:
-                if file.content_type.startswith("image/"):
+            if selected_file.content_type:
+                if selected_file.content_type.startswith("image/"):
                     content_type = ContentType.IMAGE
-                elif file.content_type == "application/pdf":
+                elif selected_file.content_type == "application/pdf":
                     content_type = ContentType.PDF
-                elif file.content_type.startswith("text/"):
+                elif selected_file.content_type.startswith("text/"):
                     content_type = ContentType.TEXT
 
             if content_type == ContentType.UNKNOWN:
@@ -564,9 +293,7 @@ async def import_yarn(
             from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
             from stricknani.importing.models import ContentType, RawContent
 
-            use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
-                os.getenv("OPENAI_API_KEY")
-            )
+            use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
             if use_ai_enabled and OPENAI_AVAILABLE:
                 raw_content = RawContent(
@@ -650,6 +377,10 @@ async def import_yarn(
 
     except HTTPException:
         raise
+    except (FetchError, SSRFError) as e:
+        logger.warning("Yarn import fetch failed: %s", e)
+        error_status, detail = import_fetch_http_error(e)
+        raise HTTPException(status_code=error_status, detail=detail) from e
     except Exception as e:
         logger.error(f"Yarn import failed: {e}", exc_info=True)
         raise HTTPException(
@@ -691,20 +422,38 @@ async def list_yarns(
     current_user: User | None = Depends(get_current_user),
     search: str | None = None,
     brand: str | None = None,
+    page: int = Query(1, ge=1),
 ) -> Response:
     """List yarn stash for the current user."""
 
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Eager load favorites for the current user
-    await db.refresh(current_user, ["favorite_yarns"])
+    # Load the owner (with favorites eagerly loaded) as a mapped instance so
+    # serialize_yarn_cards can compute favorite state without mutating the
+    # injected auth dependency.
+    owner_result = await db.execute(
+        select(User)
+        .where(User.id == current_user.id)
+        .options(selectinload(User.favorite_yarns))
+    )
+    owner = owner_result.scalar_one()
 
+    # Favorites-first ordering is pushed into SQL via a LEFT JOIN against the
+    # favorites association so that ORDER BY and LIMIT/OFFSET pagination are
+    # honoured by the database (no Python re-sort that would defeat both).
+    favorite_marker = user_favorite_yarns.c.user_id
     query = (
         select(Yarn)
+        .outerjoin(
+            user_favorite_yarns,
+            and_(
+                user_favorite_yarns.c.yarn_id == Yarn.id,
+                user_favorite_yarns.c.user_id == current_user.id,
+            ),
+        )
         .where(Yarn.owner_id == current_user.id)
         .options(selectinload(Yarn.photos), selectinload(Yarn.projects))
-        .order_by(Yarn.created_at.desc())
     )
 
     if search:
@@ -727,41 +476,75 @@ async def list_yarns(
             | Yarn.fiber_content.ilike(ilike)
         )
 
-    result = await db.execute(query)
-    yarns = result.scalars().unique().all()
-    favorite_ids = {yarn.id for yarn in current_user.favorite_yarns}
-    yarns = sorted(
-        yarns,
-        key=lambda yarn: (yarn.id not in favorite_ids, (yarn.name or "").casefold()),
+    offset = (page - 1) * LIST_PAGE_SIZE
+    query = (
+        query.order_by(
+            favorite_marker.is_(None),
+            func.lower(Yarn.name),
+            Yarn.id,
+        )
+        .offset(offset)
+        .limit(LIST_PAGE_SIZE + 1)
     )
 
+    result = await db.execute(query)
+    yarns = result.scalars().unique().all()
+    has_more = len(yarns) > LIST_PAGE_SIZE
+    yarns = yarns[:LIST_PAGE_SIZE]
+
+    next_page_url: str | None = None
+    if has_more:
+        params: dict[str, str] = {}
+        if search:
+            params["search"] = search
+        if brand:
+            params["brand"] = brand
+        params["page"] = str(page + 1)
+        next_page_url = f"/yarn/?{urlencode(params)}"
+
+    yarn_cards = serialize_yarn_cards(yarns, owner)
+
+    # HTMX infinite scroll: subsequent pages return only the card fragment
+    # (cards plus the next-page sentinel), swapped in-place after the last row.
+    if request.headers.get("HX-Request") and page > 1:
+        return await render_template(
+            "yarn/_cards_page.html",
+            request,
+            {
+                "current_user": current_user,
+                "yarns": yarn_cards,
+                "next_page_url": next_page_url,
+            },
+        )
+
+    # HTMX search/filter: return the reset list (grid + first page).
     if request.headers.get("HX-Request"):
         return await render_template(
             "yarn/_list_partial.html",
             request,
             {
                 "current_user": current_user,
-                "yarns": _serialize_yarn_cards(yarns, current_user),
+                "yarns": yarn_cards,
                 "search": search or "",
                 "selected_brand": brand,
+                "next_page_url": next_page_url,
             },
         )
 
     if request.headers.get("accept") == "application/json":
-        return JSONResponse(_serialize_yarn_cards(yarns, current_user))
+        return JSONResponse(yarn_cards)
 
-    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
-        os.getenv("OPENAI_API_KEY")
-    )
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
     return await render_template(
         "yarn/list.html",
         request,
         {
             "current_user": current_user,
-            "yarns": _serialize_yarn_cards(yarns, current_user),
+            "yarns": yarn_cards,
             "search": search or "",
             "selected_brand": brand,
+            "next_page_url": next_page_url,
             "has_openai_key": has_openai_key,
         },
     )
@@ -774,9 +557,7 @@ async def new_yarn(
 ) -> HTMLResponse:
     """Show creation form."""
 
-    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
-        os.getenv("OPENAI_API_KEY")
-    )
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
     return await render_template(
         "yarn/form.html",
@@ -801,11 +582,22 @@ async def _handle_photo_uploads(
             continue
         if not upload.filename:
             continue
-        saved_name, original = await save_uploaded_file(
-            upload,
-            yarn.id,
-            subdir="yarns",
-        )
+        try:
+            saved_name, original = await save_uploaded_image(
+                upload,
+                yarn.id,
+                subdir="yarns",
+            )
+        except UploadTooLargeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                detail="Uploaded file is too large",
+            ) from exc
+        except InvalidImageError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file is not a supported image",
+            ) from exc
         source_path = config.MEDIA_ROOT / "yarns" / str(yarn.id) / saved_name
         await create_thumbnail(source_path, yarn.id, subdir="yarns")
         if is_ocr_available():
@@ -876,15 +668,38 @@ async def create_yarn(
 
     await _handle_photo_uploads(photos, yarn, db)
 
+    deferred_deletions: list[str] = []
     # Handle imported image URLs
     if import_image_urls:
         urls = _parse_import_image_urls(import_image_urls)
         if urls:
-            await _import_yarn_images_from_urls(
-                db, yarn, urls, primary_url=import_primary_image_url
+            await import_yarn_images_from_urls(
+                db,
+                yarn,
+                urls,
+                primary_url=import_primary_image_url,
+                deferred_deletions=deferred_deletions,
             )
 
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="yarn",
+        entity_id=yarn.id,
+        action="created",
+        details={
+            "name": yarn.name,
+            "brand": yarn.brand,
+            "colorway": yarn.colorway,
+            "photo_count": len(yarn.photos),
+        },
+    )
     await db.commit()
+    for filename in deferred_deletions:
+        try:
+            delete_file(filename, yarn.id, subdir="yarns")
+        except OSError as exc:
+            logger.warning("Failed to remove replaced yarn image %s: %s", filename, exc)
     await db.refresh(yarn)
 
     if (
@@ -977,6 +792,16 @@ async def yarn_detail(
             # Retry the snapshot request
             asyncio.create_task(store_wayback_snapshot(Yarn, yarn.id, yarn.link))
 
+    audit_entries = [
+        serialize_audit_log(entry)
+        for entry in await list_audit_logs(
+            db,
+            entity_type="yarn",
+            entity_id=yarn.id,
+            limit=200,
+        )
+    ]
+
     return await render_template(
         "yarn/detail.html",
         request,
@@ -991,14 +816,14 @@ async def yarn_detail(
             if yarn.description
             else None,
             "notes_html": render_markdown(yarn.notes) if yarn.notes else None,
-            "preview_url": _resolve_preview(yarn),
-            "photos": await anyio.to_thread.run_sync(_serialize_photos, yarn),
+            "preview_url": resolve_yarn_preview(yarn),
+            "photos": await anyio.to_thread.run_sync(serialize_yarn_photos, yarn),
             "linked_projects": [
                 {
                     "id": project.id,
                     "name": project.name,
                     "category": project.category,
-                    **_resolve_project_preview(project),
+                    **resolve_project_preview(project),
                 }
                 for project in yarn.projects
             ],
@@ -1011,6 +836,7 @@ async def yarn_detail(
             "link_archive_fallback": (
                 build_wayback_fallback_url(yarn.link) if yarn.link else None
             ),
+            "audit_entries": audit_entries,
         },
     )
 
@@ -1042,9 +868,7 @@ async def edit_yarn(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
-        os.getenv("OPENAI_API_KEY")
-    )
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
     return await render_template(
         "yarn/form.html",
@@ -1052,7 +876,7 @@ async def edit_yarn(
         {
             "current_user": current_user,
             "yarn": yarn,
-            "photos": await anyio.to_thread.run_sync(_serialize_photos, yarn),
+            "photos": await anyio.to_thread.run_sync(serialize_yarn_photos, yarn),
             "is_ai_enhanced": yarn.is_ai_enhanced,
             "has_openai_key": has_openai_key,
         },
@@ -1105,6 +929,8 @@ async def update_yarn(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
+    before_snapshot = _yarn_audit_snapshot(yarn)
+
     yarn.name = name.strip()
     yarn.description = description.strip() if description else None
     yarn.brand = brand.strip() if brand else None
@@ -1123,15 +949,35 @@ async def update_yarn(
 
     await _handle_photo_uploads(new_photos, yarn, db)
 
+    deferred_deletions: list[str] = []
     # Handle imported image URLs
     if import_image_urls:
         urls = _parse_import_image_urls(import_image_urls)
         if urls:
-            await _import_yarn_images_from_urls(
-                db, yarn, urls, primary_url=import_primary_image_url
+            await import_yarn_images_from_urls(
+                db,
+                yarn,
+                urls,
+                primary_url=import_primary_image_url,
+                deferred_deletions=deferred_deletions,
             )
 
+    changes = build_field_changes(before_snapshot, _yarn_audit_snapshot(yarn))
+    if changes:
+        await create_audit_log(
+            db,
+            actor_user_id=current_user.id,
+            entity_type="yarn",
+            entity_id=yarn.id,
+            action="updated",
+            details={"changes": changes},
+        )
     await db.commit()
+    for filename in deferred_deletions:
+        try:
+            delete_file(filename, yarn.id, subdir="yarns")
+        except OSError as exc:
+            logger.warning("Failed to remove replaced yarn image %s: %s", filename, exc)
     await db.refresh(yarn)
 
     if (
@@ -1167,7 +1013,18 @@ async def upload_yarn_photo(
         )
 
     # Save file
-    saved_name, original = await save_uploaded_file(file, yarn_id, subdir="yarns")
+    try:
+        saved_name, original = await save_uploaded_image(file, yarn_id, subdir="yarns")
+    except UploadTooLargeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Uploaded file is too large",
+        ) from exc
+    except InvalidImageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is not a supported image",
+        ) from exc
 
     # Create thumbnail
     source_path = config.MEDIA_ROOT / "yarns" / str(yarn_id) / saved_name
@@ -1199,10 +1056,24 @@ async def upload_yarn_photo(
         is_primary=not has_primary,
     )
     db.add(photo)
+    await db.flush()
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="yarn",
+        entity_id=yarn_id,
+        action="photo_uploaded",
+        details={
+            "photo_id": photo.id,
+            "filename": photo.filename,
+            "original_filename": photo.original_filename,
+            "is_primary": photo.is_primary,
+        },
+    )
     await db.commit()
     await db.refresh(photo)
 
-    width, height = _get_photo_dimensions(yarn_id, saved_name)
+    width, height = get_yarn_photo_dimensions(yarn_id, saved_name)
 
     return JSONResponse(
         {
@@ -1267,6 +1138,9 @@ async def toggle_favorite(
     yarn = result.scalar_one_or_none()
     if not yarn:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     # Check if already favorited
     stmt = select(user_favorite_yarns).where(
@@ -1333,6 +1207,16 @@ async def promote_yarn_photo(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
+    target_result = await db.execute(
+        select(YarnImage).where(
+            YarnImage.id == photo_id,
+            YarnImage.yarn_id == yarn_id,
+        )
+    )
+    target = target_result.scalar_one_or_none()
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
     # Set all photos for this yarn to non-primary
     await db.execute(
         update(YarnImage).where(YarnImage.yarn_id == yarn_id).values(is_primary=False)
@@ -1345,6 +1229,14 @@ async def promote_yarn_photo(
         .values(is_primary=True)
     )
 
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="yarn",
+        entity_id=yarn_id,
+        action="photo_promoted",
+        details={"photo_id": photo_id},
+    )
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -1371,10 +1263,26 @@ async def delete_yarn(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    for photo in list(yarn.photos):
-        delete_file(photo.filename, yarn.id, subdir="yarns")
+    filenames = [photo.filename for photo in yarn.photos]
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="yarn",
+        entity_id=yarn.id,
+        action="deleted",
+        details={
+            "name": yarn.name,
+            "brand": yarn.brand,
+            "photo_count": len(yarn.photos),
+        },
+    )
     await db.delete(yarn)
     await db.commit()
+    for filename in filenames:
+        try:
+            delete_file(filename, yarn.id, subdir="yarns")
+        except OSError as exc:
+            logger.warning("Failed to remove yarn image file %s: %s", filename, exc)
 
     if request.headers.get("HX-Request"):
         # Check if any yarns remain
@@ -1428,9 +1336,38 @@ async def delete_yarn_photo(
     if target is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    delete_file(target.filename, yarn.id, subdir="yarns")
+    filename = target.filename
+    details = {
+        "photo_id": target.id,
+        "filename": target.filename,
+        "original_filename": target.original_filename,
+        "is_primary": target.is_primary,
+    }
     await db.delete(target)
+    await db.flush()
+    if target.is_primary:
+        replacement_result = await db.execute(
+            select(YarnImage)
+            .where(YarnImage.yarn_id == yarn_id)
+            .order_by(YarnImage.id.asc())
+            .limit(1)
+        )
+        replacement = replacement_result.scalar_one_or_none()
+        if replacement is not None:
+            replacement.is_primary = True
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="yarn",
+        entity_id=yarn_id,
+        action="photo_deleted",
+        details=details,
+    )
     await db.commit()
+    try:
+        delete_file(filename, yarn.id, subdir="yarns")
+    except OSError as exc:
+        logger.warning("Failed to remove yarn image file %s: %s", filename, exc)
 
     if (
         request.headers.get("accept") == "application/json"

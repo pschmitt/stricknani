@@ -8,6 +8,74 @@ let
   cfg = config.services.stricknani;
   user = "stricknani";
   group = user;
+  backupScript = pkgs.writeShellScript "stricknani-backup" ''
+    set -euo pipefail
+    umask 0077
+
+    BACKUP_DIR='${cfg.backup.dir}'
+    MEDIA_DIR="${cfg.dataDir}/media"
+    DB_URL='${cfg.databaseUrl}'
+    RETENTION='${toString cfg.backup.retention}'
+    TIMESTAMP="$(date -u +%Y%m%d-%H%M%S)"
+    ARCHIVE_TMP="$BACKUP_DIR/stricknani-$TIMESTAMP.tar.gz.tmp"
+    ARCHIVE_FILE="$BACKUP_DIR/stricknani-$TIMESTAMP.tar.gz"
+
+    mkdir -p "$BACKUP_DIR"
+
+    TMP_DIR="$(mktemp -d "$BACKUP_DIR/.stricknani-backup-$TIMESTAMP.XXXXXX")"
+
+    cleanup() {
+      rm -rf -- "$TMP_DIR"
+      rm -f -- "$ARCHIVE_TMP"
+    }
+
+    trap cleanup EXIT
+
+    if [[ "$DB_URL" == sqlite:///* ]]
+    then
+      DB_PATH="''${DB_URL#sqlite:///}"
+
+      if [[ ! -f "$DB_PATH" ]]
+      then
+        echo "stricknani-backup: sqlite database not found at '$DB_PATH'" >&2
+        exit 2
+      fi
+
+      DB_SNAPSHOT="database.sqlite3"
+      sqlite3 "$DB_PATH" ".backup $TMP_DIR/$DB_SNAPSHOT"
+    elif [[ "$DB_URL" == postgresql://* || "$DB_URL" == postgres://* ]]
+    then
+      DB_SNAPSHOT="database.sql"
+      pg_dump "$DB_URL" > "$TMP_DIR/$DB_SNAPSHOT"
+    else
+      echo "stricknani-backup: unsupported DATABASE_URL scheme in '$DB_URL'" >&2
+      exit 2
+    fi
+
+    if [[ -d "$MEDIA_DIR" ]]
+    then
+      tar -czf "$ARCHIVE_TMP" -C "$TMP_DIR" "$DB_SNAPSHOT" -C "${cfg.dataDir}" media
+    else
+      echo "stricknani-backup: media directory missing at '$MEDIA_DIR'" >&2
+      tar -czf "$ARCHIVE_TMP" -C "$TMP_DIR" "$DB_SNAPSHOT"
+    fi
+
+    mv "$ARCHIVE_TMP" "$ARCHIVE_FILE"
+
+    trap - EXIT
+
+    rm -rf -- "$TMP_DIR"
+
+    mapfile -t BACKUPS < <(ls -1dt "$BACKUP_DIR"/stricknani-* 2>/dev/null || true)
+
+    if (( ''${#BACKUPS[@]} > RETENTION ))
+    then
+      for OLD_BACKUP in "''${BACKUPS[@]:RETENTION}"
+      do
+        rm -f -- "$OLD_BACKUP"
+      done
+    fi
+  '';
 
   stricknaniCliWrapper = pkgs.writeShellScriptBin "stricknani-cli" ''
     exec sudo -u "${user}" -- env \
@@ -70,6 +138,32 @@ in
       description = "The database connection string.";
     };
 
+    backup = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Enable scheduled Stricknani database backups.";
+      };
+
+      dir = lib.mkOption {
+        type = lib.types.str;
+        default = "${cfg.dataDir}/backups";
+        description = "Directory where backup archives are stored.";
+      };
+
+      schedule = lib.mkOption {
+        type = lib.types.str;
+        default = "daily";
+        description = "Backup schedule (systemd OnCalendar expression).";
+      };
+
+      retention = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 7;
+        description = "How many recent backups to keep.";
+      };
+    };
+
     nginx = {
       enable = lib.mkEnableOption "Nginx virtual host for Stricknani";
       forceSSL = lib.mkOption {
@@ -92,49 +186,93 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    systemd.services.stricknani = {
-      description = "Stricknani knitting project manager";
-      after = [ "network-online.target" ];
-      wants = [ "network-online.target" ];
-      wantedBy = [ "multi-user.target" ];
+    systemd = {
+      services.stricknani = {
+        description = "Stricknani knitting project manager";
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
 
-      environment = {
-        PORT = toString cfg.port;
-        BIND_HOST = cfg.bindHost;
-        DATABASE_URL = cfg.databaseUrl;
-        MEDIA_ROOT = "${cfg.dataDir}/media";
-        ALLOWED_HOSTS = lib.concatStringsSep "," (
-          lib.optional (cfg.hostName != null) cfg.hostName
-          ++ cfg.serverAliases
-          ++ [
-            "127.0.0.1"
-            "localhost"
-          ]
-        );
-      } // cfg.extraConfig;
+        environment = {
+          PORT = toString cfg.port;
+          BIND_HOST = cfg.bindHost;
+          DATABASE_URL = cfg.databaseUrl;
+          MEDIA_ROOT = "${cfg.dataDir}/media";
+          ALLOWED_HOSTS = lib.concatStringsSep "," (
+            lib.optional (cfg.hostName != null) cfg.hostName
+            ++ cfg.serverAliases
+            ++ [
+              "127.0.0.1"
+              "localhost"
+            ]
+          );
+        }
+        // cfg.extraConfig;
 
-      serviceConfig = {
-        ExecStart = lib.getExe cfg.package;
-        WorkingDirectory = cfg.dataDir;
-        StateDirectory = "stricknani";
-        StateDirectoryMode = "0750";
-        User = user;
-        Group = group;
-        Restart = "on-failure";
-        RestartSec = 10;
-        UMask = "0077";
+        serviceConfig = {
+          ExecStart = lib.getExe cfg.package;
+          WorkingDirectory = cfg.dataDir;
+          StateDirectory = "stricknani";
+          StateDirectoryMode = "0750";
+          User = user;
+          Group = group;
+          Restart = "on-failure";
+          RestartSec = 10;
+          UMask = "0077";
 
-        # Security hardening
-        CapabilityBoundingSet = "";
-        NoNewPrivileges = true;
-        PrivateDevices = true;
-        PrivateTmp = true;
-        ProtectHome = true;
-        ProtectSystem = "strict";
-        ReadOnlyPaths = [ "/" ];
-        ReadWritePaths = [ cfg.dataDir ];
-        EnvironmentFile = lib.optional (cfg.secretKeyFile != null) cfg.secretKeyFile;
+          # Security hardening
+          CapabilityBoundingSet = "";
+          NoNewPrivileges = true;
+          PrivateDevices = true;
+          PrivateTmp = true;
+          ProtectHome = true;
+          ProtectSystem = "strict";
+          ReadOnlyPaths = [ "/" ];
+          ReadWritePaths = [ cfg.dataDir ];
+          EnvironmentFile = lib.optional (cfg.secretKeyFile != null) cfg.secretKeyFile;
+        };
       };
+
+      services.stricknani-backup = lib.mkIf cfg.backup.enable {
+        description = "Stricknani database backup";
+        after = [ "stricknani.service" ];
+        wants = [ "stricknani.service" ];
+
+        path = with pkgs; [
+          coreutils
+          gzip
+          gnutar
+          postgresql
+          sqlite
+        ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = backupScript;
+          User = user;
+          Group = group;
+          UMask = "0077";
+          ReadOnlyPaths = [ "/" ];
+          ReadWritePaths = [
+            cfg.dataDir
+            cfg.backup.dir
+          ];
+        };
+      };
+
+      timers.stricknani-backup = lib.mkIf cfg.backup.enable {
+        description = "Run Stricknani database backups";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = cfg.backup.schedule;
+          Persistent = true;
+          RandomizedDelaySec = "15m";
+        };
+      };
+
+      tmpfiles.rules = lib.mkIf cfg.backup.enable [
+        "d ${cfg.backup.dir} 0750 ${user} ${group} -"
+      ];
     };
 
     services.nginx.virtualHosts = lib.mkIf (cfg.nginx.enable && cfg.hostName != null) {
@@ -149,18 +287,28 @@ in
       };
     };
 
-    services.monit.config = lib.mkIf (cfg.hostName != null && config.services.monit.enable) (lib.mkAfter ''
-      check host "stricknani" with address "${cfg.hostName}"
-        group services
-        restart program = "${pkgs.systemd}/bin/systemctl restart stricknani"
-        if failed
-          port 443
-          protocol https
-          request "/healthz"
-          with timeout 15 seconds
-        then restart
-        if 5 restarts within 10 cycles then alert
-    '');
+    services.monit.config = lib.mkIf (cfg.hostName != null && config.services.monit.enable) (
+      lib.mkAfter ''
+        check host "stricknani" with address "${cfg.hostName}"
+          group services
+          restart program = "${pkgs.systemd}/bin/systemctl restart stricknani"
+          # Startup takes ~15-25s (scikit-image/pymupdf/weasyprint imports), so a
+          # deploy-triggered restart routinely fails one healthcheck cycle before
+          # the app is ready. Requiring 2 consecutive failed cycles (~2 minutes)
+          # avoids monit firing its own concurrent `systemctl restart stricknani`
+          # while nixos-rebuild switch's restart of the same unit is still in
+          # flight -- that race left the service bound to the pre-switch build
+          # at least twice (T105).
+          if failed
+            port 443
+            protocol https
+            request "/healthz"
+            with timeout 15 seconds
+          for 2 cycles
+          then restart
+          if 5 restarts within 10 cycles then alert
+      ''
+    );
 
     users.users."${user}" = {
       isSystemUser = true;

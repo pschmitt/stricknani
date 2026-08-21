@@ -1,6 +1,7 @@
 """File management utilities."""
 
 import hashlib
+import io
 import mimetypes
 import shutil
 import subprocess
@@ -15,18 +16,156 @@ from PIL import Image
 
 from stricknani.config import config
 
+# Cap the number of pixels Pillow will decode to defuse decompression bombs.
+# Pillow raises Image.DecompressionBombError once an image exceeds twice this
+# value; we also enforce the cap explicitly in validate_image_upload().
+Image.MAX_IMAGE_PIXELS = 64_000_000  # ~64 megapixels
 
-def generate_unique_filename(original_filename: str) -> str:
+# Canonical extension for each supported image MIME type.
+IMAGE_MIME_TO_EXTENSION: dict[str, str] = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+}
+
+# Extensions we are willing to persist for uploaded images.
+ALLOWED_IMAGE_EXTENSIONS: frozenset[str] = frozenset(
+    {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+)
+
+
+class InvalidImageError(ValueError):
+    """Raised when uploaded content is not a supported/valid image."""
+
+
+class UploadTooLargeError(ValueError):
+    """Raised when an uploaded request body exceeds the configured cap."""
+
+
+async def read_upload_content(upload_file: UploadFile) -> bytes:
+    """Read an upload in bounded chunks and enforce ``MAX_UPLOAD_BYTES``.
+
+    ``UploadFile.read()`` without a size argument eagerly copies the complete
+    request body into memory. Reading one byte beyond the cap lets us reject an
+    oversized body without allocating an unbounded buffer.
+    """
+    max_bytes = config.MAX_UPLOAD_BYTES
+    if max_bytes < 1:
+        raise UploadTooLargeError("Uploaded files are disabled")
+
+    chunks: list[bytes] = []
+    total = 0
+    chunk_size = min(1024 * 1024, max_bytes + 1)
+    while True:
+        chunk = await upload_file.read(chunk_size)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise UploadTooLargeError(
+                f"Uploaded file exceeds the {max_bytes} byte limit"
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _save_validated_image(
+    content: bytes,
+    original_filename: str,
+    entity_id: int,
+    subdir: str,
+) -> tuple[str, str]:
+    """Validate image bytes and persist them with a canonical extension."""
+    _content_type, extension = validate_image_upload(content)
+    return save_bytes(
+        content,
+        original_filename,
+        entity_id,
+        subdir=subdir,
+        extension=extension,
+    )
+
+
+async def save_uploaded_image(
+    upload_file: UploadFile,
+    entity_id: int,
+    subdir: str = "projects",
+) -> tuple[str, str]:
+    """Validate, cap, and save an uploaded image."""
+    if not upload_file.filename:
+        raise ValueError("No filename provided")
+    content = await read_upload_content(upload_file)
+    return await anyio.to_thread.run_sync(
+        _save_validated_image,
+        content,
+        upload_file.filename,
+        entity_id,
+        subdir,
+    )
+
+
+def detect_image_content_type(content: bytes) -> str | None:
+    """Detect an image MIME type from magic bytes.
+
+    Returns the MIME type (e.g. ``image/png``) or ``None`` if the content does
+    not match any supported image signature.
+    """
+    if content.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if content.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if content[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if content[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
+def validate_image_upload(content: bytes) -> tuple[str, str]:
+    """Validate that ``content`` is a supported, decodable image.
+
+    Verifies the real content type via magic bytes (not the client-supplied
+    filename or content-type), that Pillow can open it, and that it stays
+    within the decompression-bomb pixel cap.
+
+    Returns a ``(content_type, canonical_extension)`` tuple. Raises
+    :class:`InvalidImageError` when the content is not an allowed image.
+    """
+    content_type = detect_image_content_type(content)
+    if content_type is None:
+        raise InvalidImageError("Unsupported or unrecognized image format")
+
+    try:
+        with Image.open(io.BytesIO(content)) as img:
+            width, height = img.size
+    except Image.DecompressionBombError as exc:
+        raise InvalidImageError("Image exceeds the maximum allowed size") from exc
+    except Exception as exc:  # noqa: BLE001 - any decode failure means invalid
+        raise InvalidImageError("Corrupt or unreadable image data") from exc
+
+    if width * height > Image.MAX_IMAGE_PIXELS:
+        raise InvalidImageError("Image exceeds the maximum allowed size")
+
+    return content_type, IMAGE_MIME_TO_EXTENSION[content_type]
+
+
+def generate_unique_filename(
+    original_filename: str, *, extension: str | None = None
+) -> str:
     """Generate a unique filename to prevent overwrites.
 
     Args:
         original_filename: Original filename from upload
+        extension: Optional extension override (e.g. ``.png``). When provided,
+            it replaces the extension derived from ``original_filename``. Use
+            this to force a validated, safe extension for stored files.
 
     Returns:
         Unique filename with timestamp and UUID
     """
-    # Get file extension
-    ext = Path(original_filename).suffix.lower()
+    # Get file extension (an explicit override wins over the original name).
+    ext = extension.lower() if extension else Path(original_filename).suffix.lower()
 
     # Generate unique name with timestamp and short UUID
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
@@ -103,7 +242,7 @@ async def save_uploaded_file(
 
     # Save file
     file_path = project_dir / filename
-    content = await upload_file.read()
+    content = await read_upload_content(upload_file)
     # Avoid blocking the event loop on disk IO.
     await anyio.to_thread.run_sync(file_path.write_bytes, content)
 
@@ -111,13 +250,22 @@ async def save_uploaded_file(
 
 
 def save_bytes(
-    content: bytes, original_filename: str, entity_id: int, subdir: str = "projects"
+    content: bytes,
+    original_filename: str,
+    entity_id: int,
+    subdir: str = "projects",
+    *,
+    extension: str | None = None,
 ) -> tuple[str, str]:
-    """Save raw bytes to the media directory with a generated filename."""
+    """Save raw bytes to the media directory with a generated filename.
+
+    When ``extension`` is provided, the stored file uses that (validated)
+    extension instead of the one derived from ``original_filename``.
+    """
     if not original_filename:
         raise ValueError("No filename provided")
 
-    filename = generate_unique_filename(original_filename)
+    filename = generate_unique_filename(original_filename, extension=extension)
 
     target_dir = config.MEDIA_ROOT / subdir / str(entity_id)
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -148,7 +296,11 @@ async def create_thumbnail(
 
     def _create() -> str:
         # Open and resize image (Pillow is CPU-bound; keep it off the event loop).
-        with Image.open(source_path) as img:
+        try:
+            opened = Image.open(source_path)
+        except Image.DecompressionBombError as exc:
+            raise InvalidImageError("Image exceeds the maximum allowed size") from exc
+        with opened as img:
             # Convert RGBA to RGB if necessary
             if img.mode in ("RGBA", "LA", "P"):
                 background = Image.new("RGB", img.size, (255, 255, 255))

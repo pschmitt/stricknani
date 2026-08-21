@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Privacy Policy') }} - {{ _('Stricknani') }}{% endblock %}
+
+{% block navbar %}
+{% include "shared/unified_navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="w-full px-4 py-8 sm:px-6 lg:px-8">
+    <article class="mx-auto max-w-4xl rounded-3xl border border-base-300 bg-base-100 p-6 shadow-sm sm:p-10">
+        <header class="mb-10 border-b border-base-300 pb-8">
+            <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+                <span class="mdi mdi-shield-check-outline"></span>
+                {{ _('Privacy') }}
+            </div>
+            <h1 class="text-3xl font-black tracking-tight sm:text-4xl">{{ _('Privacy Policy') }}</h1>
+            <p class="mt-3 text-sm text-base-content/60">
+                {{ _('Effective date: 19 August 2026') }}
+            </p>
+        </header>
+
+        <div class="space-y-10 leading-relaxed text-base-content/80">
+            <section>
+                <h2 class="mb-3 text-2xl font-bold text-base-content">{{ _('About this policy') }}</h2>
+                <p>{{ _('This policy explains how Stricknani handles information when you use a Stricknani web instance or the companion Android app.') }}</p>
+                <p class="mt-3">{{ _('Stricknani is self-hosted software. The operator of the instance you use is responsible for its deployment, configuration, backups, and legal obligations. This page describes the default behavior of the software and is not a promise about every deployment.') }}</p>
+            </section>
+
+            <section>
+                <h2 class="mb-3 text-2xl font-bold text-base-content">{{ _('Who is responsible for your data?') }}</h2>
+                <p>{{ _('For a self-hosted installation, the person or organization operating that installation is the controller of the data stored there. The Stricknani project does not receive data from independent self-hosted instances.') }}</p>
+                <p class="mt-3">{{ _('If you use an instance operated by somebody else, contact that operator about access, deletion, retention, or other privacy requests. Questions about the Stricknani software can be reported through the') }} <a class="link link-primary" href="https://github.com/pschmitt/stricknani/issues" target="_blank" rel="noopener noreferrer">{{ _('GitHub issue tracker') }}</a>.</p>
+            </section>
+
+            <section>
+                <h2 class="mb-3 text-2xl font-bold text-base-content">{{ _('Information handled by the web app') }}</h2>
+                <ul class="list-disc space-y-2 pl-6">
+                    <li>{{ _('Account information: your email address, a password hash, and account security state such as token version.') }}</li>
+                    <li>{{ _('Knitting content: projects, yarn entries, notes, instructions, categories, steps, attachments, profile images, and other information you choose to store.') }}</li>
+                    <li>{{ _('Authentication information: a session cookie for browser login and personal access tokens for API or Android access. Token values are shown only when they are created; the server stores a hash for later verification.') }}</li>
+                    <li>{{ _('Operational information: application and import logs may contain timestamps, routes, status information, error details, and identifiers needed to operate and troubleshoot the instance. The operator chooses log destinations and retention.') }}</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="mb-3 text-2xl font-bold text-base-content">{{ _('Why this information is used') }}</h2>
+                <p>{{ _('The web app uses this information to authenticate you, provide project and yarn management, synchronize API clients, serve your authorized media, process imports, protect the service, and diagnose failures. It does not sell your information or use it for advertising.') }}</p>
+            </section>
+
+            <section>
+                <h2 class="mb-3 text-2xl font-bold text-base-content">{{ _('Android app and offline data') }}</h2>
+                <p>{{ _('The Android app connects only to the Stricknani server URL that you configure. It stores that URL and your personal access token locally, encrypted at rest, and does not ask for or store your Stricknani account password.') }}</p>
+                <p class="mt-3">{{ _('Projects, yarn entries, and their photos are cached on the device so the app can work offline. Offline edits may be queued locally and are sent to your configured server when synchronization resumes. Removing the app or clearing its application data removes the local cache according to Android behavior.') }}</p>
+                <p class="mt-3">{{ _('The Android app has no analytics, advertising, tracking, or crash-reporting service of its own. Data sent during synchronization goes to the server you configured.') }}</p>
+            </section>
+
+            <section>
+                <h2 class="mb-3 text-2xl font-bold text-base-content">{{ _('Optional external services') }}</h2>
+                <p>{{ _('A deployment may enable integrations that send limited information outside the Stricknani instance. For example, an AI provider may receive material submitted for AI-assisted pattern import, an archive service may receive a URL when you request an archive snapshot, and Sentry may receive diagnostic events when an operator configures it.') }}</p>
+                <p class="mt-3">{{ _('These integrations are optional and controlled by the instance operator. Their providers process information under their own terms and privacy policies; review those policies before enabling or using the related feature.') }}</p>
+                <p class="mt-3">{{ _('The web interface itself uses locally served assets and does not require an analytics or advertising network.') }}</p>
+            </section>
+
+            <section>
+                <h2 class="mb-3 text-2xl font-bold text-base-content">{{ _('Storage, retention, and deletion') }}</h2>
+                <p>{{ _('The instance stores account data and content in its configured database and media storage. There is no universal retention period: the operator determines retention, backups, log rotation, and whether deleted data remains in backups for a time.') }}</p>
+                <p class="mt-3">{{ _('You can manage your content and revoke personal access tokens through the available features. To request deletion or an export of account data, contact the instance operator. Deleting content or an account does not necessarily remove copies already retained in backups, logs, or external services.') }}</p>
+            </section>
+
+            <section>
+                <h2 class="mb-3 text-2xl font-bold text-base-content">{{ _('Security') }}</h2>
+                <p>{{ _('Stricknani uses password hashing, access checks, CSRF protection, upload validation, and security response headers. Operators should use HTTPS, protect application secrets, restrict access to the database and media volume, keep the software and host updated, and configure backups securely.') }}</p>
+                <p class="mt-3">{{ _('No software can guarantee absolute security. The security and confidentiality of a self-hosted installation also depend on the operator, hosting environment, network, integrations, and devices used to access it.') }}</p>
+            </section>
+
+            <section>
+                <h2 class="mb-3 text-2xl font-bold text-base-content">{{ _('Your choices and contact') }}</h2>
+                <p>{{ _('You may choose what to enter, upload, synchronize, or send to optional integrations. You may stop using the Android app, clear its local data, revoke API tokens, and contact the relevant instance operator about your rights under applicable law.') }}</p>
+                <p class="mt-3">{{ _('For software questions or privacy concerns that relate to the project, use the') }} <a class="link link-primary" href="https://github.com/pschmitt/stricknani/issues" target="_blank" rel="noopener noreferrer">{{ _('GitHub issue tracker') }}</a>.</p>
+            </section>
+
+            <section>
+                <h2 class="mb-3 text-2xl font-bold text-base-content">{{ _('Changes to this policy') }}</h2>
+                <p>{{ _('This policy may be updated when Stricknani behavior or integrations change. The current version is published at this URL. Check the effective date above for the latest revision.') }}</p>
+            </section>
+        </div>
+    </article>
+</div>
+{% endblock %}

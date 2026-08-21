@@ -37,12 +37,6 @@
 
               # Nix
               statix.enable = true;
-
-              # JS/CSS
-              prettier = {
-                enable = true;
-                settings.binPath = "${pkgs.nodePackages.prettier}/bin/prettier";
-              };
             };
           };
         in
@@ -76,15 +70,22 @@
               statix
               poppler-utils
               tesseract
-              nodePackages.prettier
               vendir
+              biome
+              # Only needed to regenerate stricknani/static/vendor-tiptap/
+              # (`just vendor-tiptap`) when bumping TipTap's pinned version;
+              # the committed bundle is what actually ships at runtime.
+              nodejs
             ];
 
             shellHook = ''
               ${pre-commit-check.shellHook}
-              echo "Stricknani development environment"
-              echo "Run 'just setup' to initialize the project"
-              echo "Run 'just run' to start the development server"
+
+              # Ensure prebuilt binary wheels (greenlet, numpy, ...) in the uv
+              # venv can load libstdc++.so.6 from the Nix C++ stdlib.
+              export LD_LIBRARY_PATH="${
+                pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]
+              }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
             '';
           };
 

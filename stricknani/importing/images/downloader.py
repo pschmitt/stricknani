@@ -10,6 +10,7 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
+from urllib.parse import urljoin
 
 import httpx
 
@@ -23,17 +24,24 @@ from stricknani.importing.images.deduplicator import (
     ImageInspectionResult,
     async_inspect_image_content,
     is_duplicate_by_checksum,
+    is_duplicate_by_similarity,
     should_skip_as_thumbnail,
 )
 from stricknani.importing.images.validator import (
     is_allowed_import_image,
     is_valid_import_url,
 )
+from stricknani.importing.ssrf import SSRFError, validate_public_url
 
 if TYPE_CHECKING:
     from stricknani.utils.image_similarity import SimilarityImage
 
 logger = logging.getLogger("stricknani.imports")
+
+# HTTP status codes that indicate a redirect (with a Location header).
+_REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+# Cap manual redirect following to avoid loops / redirect chains.
+_MAX_REDIRECTS = 5
 
 
 @dataclass
@@ -128,15 +136,17 @@ class ImageDownloader:
         """
         result = ImageDownloadResult()
         seen_checksums: set[str] = set()
-        accepted_similarities: list[SimilarityImage] = []
+        accepted_images: list[DownloadedImage] = []
         max_images = limit or self.max_count
 
         checksums = existing_checksums or set()
         similarities = list(existing_similarities or [])
 
+        # Redirects are followed manually (see :meth:`_fetch_with_guard`) so the
+        # SSRF guard can re-validate every hop; disable httpx's own handling.
         async with httpx.AsyncClient(
             timeout=self.timeout,
-            follow_redirects=True,
+            follow_redirects=False,
             headers=self._headers,
         ) as client:
             for url in image_urls:
@@ -148,19 +158,30 @@ class ImageDownloader:
                     continue
 
                 try:
-                    downloaded = await self._download_single(
+                    downloaded, removed = await self._download_single(
                         client,
                         url,
                         checksums,
                         seen_checksums,
                         similarities,
-                        accepted_similarities,
+                        accepted_images,
                     )
 
                     if downloaded:
+                        for removed_image in removed:
+                            if removed_image in accepted_images:
+                                accepted_images.remove(removed_image)
+                            if removed_image in result.images:
+                                result.images.remove(removed_image)
+
+                        accepted_images.append(downloaded)
                         result.images.append(downloaded)
                         seen_checksums.add(downloaded.inspection.checksum)
-                        accepted_similarities.append(downloaded.similarity)
+
+                except SSRFError as exc:
+                    logger.debug("Blocked SSRF image URL %s: %s", url, exc)
+                    result.skipped.append((url, "blocked host"))
+                    continue
 
                 except Exception as exc:
                     error_msg = str(exc)
@@ -169,6 +190,64 @@ class ImageDownloader:
 
         return result
 
+    async def _fetch_with_guard(
+        self,
+        client: httpx.AsyncClient,
+        url: str,
+        *,
+        max_bytes: int,
+    ) -> httpx.Response:
+        """GET ``url`` following redirects manually with an SSRF check per hop.
+
+        httpx's automatic redirect handling would connect to a redirect target
+        before we could inspect it, so redirects are followed here and every hop
+        is re-validated through :func:`validate_public_url`.
+
+        Raises:
+            SSRFError: If the URL or a redirect target resolves to a
+                non-public address.
+            httpx.HTTPError: On transport errors or too many redirects.
+        """
+        current_url = url
+        for _ in range(_MAX_REDIRECTS + 1):
+            validate_public_url(current_url)
+            async with client.stream("GET", current_url) as response:
+                location = response.headers.get("location")
+                if response.status_code in _REDIRECT_STATUSES and location:
+                    current_url = urljoin(current_url, location)
+                    continue
+
+                content_length = response.headers.get("content-length")
+                if content_length:
+                    try:
+                        if int(content_length) > max_bytes:
+                            raise httpx.HTTPError(
+                                f"Response exceeds the {max_bytes} byte limit"
+                            )
+                    except ValueError:
+                        pass
+
+                chunks: list[bytes] = []
+                total = 0
+                async for chunk in response.aiter_bytes(64 * 1024):
+                    total += len(chunk)
+                    if total > max_bytes:
+                        raise httpx.HTTPError(
+                            f"Response exceeds the {max_bytes} byte limit"
+                        )
+                    chunks.append(chunk)
+
+                # The streamed response is closed by the context manager, so
+                # return a regular in-memory response containing only the
+                # bounded payload needed by the image validator.
+                return httpx.Response(
+                    response.status_code,
+                    headers=response.headers,
+                    content=b"".join(chunks),
+                    request=response.request,
+                )
+        raise httpx.HTTPError(f"Too many redirects for {url}")
+
     async def _download_single(
         self,
         client: httpx.AsyncClient,
@@ -176,26 +255,28 @@ class ImageDownloader:
         existing_checksums: set[str],
         seen_checksums: set[str],
         existing_similarities: Sequence[SimilarityImage],
-        accepted_similarities: list[SimilarityImage],
-    ) -> DownloadedImage | None:
+        accepted_images: list[DownloadedImage],
+    ) -> tuple[DownloadedImage | None, list[DownloadedImage]]:
         """Download and validate a single image.
 
         Returns:
             DownloadedImage if successful, None if skipped/failed
         """
-        # Download
+        # Download (SSRF guard + manual redirect handling in _fetch_with_guard).
         try:
-            response = await client.get(url)
+            response = await self._fetch_with_guard(
+                client, url, max_bytes=self.max_bytes
+            )
             response.raise_for_status()
         except httpx.HTTPError as exc:
             logger.debug("HTTP error for %s: %s", url, exc)
-            return None
+            return None, []
 
         # Check content type
         content_type = response.headers.get("content-type")
         if not is_allowed_import_image(content_type, url):
             logger.debug("Skipping non-image URL: %s", url)
-            return None
+            return None, []
 
         # Check content length header
         content_length = response.headers.get("content-length")
@@ -203,53 +284,74 @@ class ImageDownloader:
             try:
                 if int(content_length) > self.max_bytes:
                     logger.debug("Skipping large image %s (header)", url)
-                    return None
+                    return None, []
             except ValueError:
                 pass
 
         # Check content
         if not response.content:
             logger.debug("Skipping empty image response: %s", url)
-            return None
+            return None, []
 
         if len(response.content) > self.max_bytes:
             logger.debug("Skipping large image %s (content)", url)
-            return None
+            return None, []
 
         # Inspect image
         inspection = await async_inspect_image_content(response.content)
         if inspection is None:
             logger.debug("Skipping unreadable or too small image: %s", url)
-            return None
+            return None, []
 
         # Check checksum duplicates
         if is_duplicate_by_checksum(inspection.checksum, existing_checksums):
             logger.debug("Skipping already imported image %s", url)
-            return None
+            return None, []
 
         if is_duplicate_by_checksum(inspection.checksum, seen_checksums):
             logger.debug("Skipping duplicate image in batch %s", url)
-            return None
+            return None, []
+
+        # Check similarity duplicates against existing stored images.
+        is_duplicate, score = is_duplicate_by_similarity(
+            inspection.similarity,
+            existing_similarities,
+        )
+        if is_duplicate:
+            if score is None:
+                logger.debug("Skipping similar existing image %s", url)
+            else:
+                logger.debug(
+                    "Skipping similar existing image %s (ssim %.3f)",
+                    url,
+                    score,
+                )
+            return None, []
 
         # Check similarity duplicates
+        accepted_similarities = [img.similarity for img in accepted_images]
         skip, to_remove = should_skip_as_thumbnail(
             inspection.similarity,
             accepted_similarities,
         )
         if skip:
             logger.debug("Skipping thumbnail image %s", url)
-            return None
+            return None, []
 
         # Remove thumbnails that this image supersedes
-        for sim in to_remove:
-            accepted_similarities.remove(sim)
+        removed_images = [
+            accepted for accepted in accepted_images if accepted.similarity in to_remove
+        ]
 
-        return DownloadedImage(
-            url=url,
-            content=response.content,
-            content_type=content_type,
-            inspection=inspection,
-            similarity=inspection.similarity,
+        return (
+            DownloadedImage(
+                url=url,
+                content=response.content,
+                content_type=content_type,
+                inspection=inspection,
+                similarity=inspection.similarity,
+            ),
+            removed_images,
         )
 
     async def download_single(

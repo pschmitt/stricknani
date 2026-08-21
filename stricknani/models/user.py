@@ -12,6 +12,7 @@ from stricknani.models.associations import user_favorite_yarns, user_favorites
 from stricknani.models.base import Base
 
 if TYPE_CHECKING:
+    from stricknani.models.api_token import ApiToken
     from stricknani.models.category import Category
     from stricknani.models.project import Project
     from stricknani.models.yarn import Yarn
@@ -27,6 +28,10 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Bumped on password change and logout to invalidate outstanding JWTs
+    # server-side (T69). Sessions carry the version they were issued with;
+    # a mismatch against the current value means the session is revoked.
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC)
     )
@@ -51,23 +56,45 @@ class User(Base):
     categories: Mapped[list[Category]] = relationship(
         "Category", back_populates="owner", cascade="all, delete-orphan"
     )
+    api_tokens: Mapped[list[ApiToken]] = relationship(
+        "ApiToken", back_populates="owner", cascade="all, delete-orphan"
+    )
 
     @property
     def avatar_url(self) -> str:
         """Get the user's avatar URL."""
+        from stricknani.config import config
         from stricknani.utils.files import get_file_url
         from stricknani.utils.gravatar import gravatar_url
 
         if self.profile_image:
+            media_path = config.MEDIA_ROOT / "users" / str(self.id) / self.profile_image
+            if not media_path.exists():
+                return gravatar_url(self.email)
             return get_file_url(self.profile_image, self.id, subdir="users")
         return gravatar_url(self.email)
 
     @property
     def avatar_thumbnail_url(self) -> str:
         """Get the user's avatar thumbnail URL."""
+        from pathlib import Path
+
+        from stricknani.config import config
         from stricknani.utils.files import get_thumbnail_url
         from stricknani.utils.gravatar import gravatar_url
 
         if self.profile_image:
-            return get_thumbnail_url(self.profile_image, self.id, subdir="users")
+            thumb_name = f"thumb_{Path(self.profile_image).stem}.jpg"
+            thumb_path = (
+                config.MEDIA_ROOT / "thumbnails" / "users" / str(self.id) / thumb_name
+            )
+            if thumb_path.exists():
+                return get_thumbnail_url(self.profile_image, self.id, subdir="users")
+
+            media_path = config.MEDIA_ROOT / "users" / str(self.id) / self.profile_image
+            if media_path.exists():
+                from stricknani.utils.files import get_file_url
+
+                return get_file_url(self.profile_image, self.id, subdir="users")
+            return gravatar_url(self.email, size=96)
         return gravatar_url(self.email, size=96)

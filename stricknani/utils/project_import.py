@@ -193,7 +193,8 @@ async def import_images_from_urls(
 
             for entry in to_remove:
                 await db.delete(entry.image)
-                delete_file(entry.filename, project.id)
+                # Keep file cleanup out of pre-commit path; deleting here can
+                # irreversibly remove files even if DB transaction later rolls back.
                 imported_similarities.remove(entry)
 
             parsed = urlparse(image_url)

@@ -1,10 +1,12 @@
 """Database models for Stricknani."""
 
+from stricknani.models.api_token import ApiToken
 from stricknani.models.associations import (
     project_yarns,
     user_favorite_yarns,
     user_favorites,
 )
+from stricknani.models.audit import AuditLog
 from stricknani.models.base import Base
 from stricknani.models.category import Category
 from stricknani.models.enums import ImageType, ProjectCategory
@@ -13,7 +15,9 @@ from stricknani.models.user import User
 from stricknani.models.yarn import Yarn, YarnImage
 
 __all__ = [
+    "ApiToken",
     "Attachment",
+    "AuditLog",
     "Base",
     "Category",
     "Image",

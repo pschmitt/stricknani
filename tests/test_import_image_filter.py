@@ -17,9 +17,28 @@ from stricknani.utils.importer import filter_import_image_urls
 class _FakeResponse:
     content: bytes
     headers: dict[str, str]
+    status_code: int = 200
+    request: httpx.Request | None = None
 
     def raise_for_status(self) -> None:
         return
+
+
+class _FakeStream:
+    def __init__(self, response: _FakeResponse) -> None:
+        self._response = response
+
+    async def __aenter__(self) -> _FakeResponse:
+        self._response.request = httpx.Request("GET", "https://example.com")
+
+        async def _aiter_bytes(chunk_size: int) -> Any:
+            yield self._response.content
+
+        self._response.aiter_bytes = _aiter_bytes  # type: ignore[attr-defined]
+        return self._response
+
+    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> bool:
+        return False
 
 
 class _FakeAsyncClient:
@@ -32,18 +51,27 @@ class _FakeAsyncClient:
     async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
         return
 
-    async def get(self, url: str) -> _FakeResponse:
+    def stream(self, method: str, url: str) -> _FakeStream:
         if url not in self._url_to_payload:
             raise httpx.HTTPError("not found")
         content, content_type = self._url_to_payload[url]
-        return _FakeResponse(
-            content=content,
-            headers={"content-type": content_type},
+        return _FakeStream(
+            _FakeResponse(
+                content=content,
+                headers={"content-type": content_type},
+            )
         )
 
 
 def _png_bytes(color: tuple[int, int, int]) -> bytes:
     img = PilImage.new("RGB", (64, 64), color)
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _png_bytes_size(color: tuple[int, int, int], size: tuple[int, int]) -> bytes:
+    img = PilImage.new("RGB", size, color)
     buf = BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
@@ -116,3 +144,28 @@ async def test_filter_import_image_urls_skips_similar_existing_images(
     )
 
     assert res == [url2]
+
+
+@pytest.mark.asyncio
+async def test_filter_import_image_urls_prefers_larger_duplicate_variant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    small = "https://example.com/small.png"
+    large = "https://example.com/large.png"
+
+    small_png = _png_bytes_size((255, 0, 0), (64, 64))
+    large_png = _png_bytes_size((255, 0, 0), (128, 128))
+
+    url_to_payload = {
+        small: (small_png, "image/png"),
+        large: (large_png, "image/png"),
+    }
+    monkeypatch.setattr(
+        httpx,
+        "AsyncClient",
+        lambda **kwargs: _FakeAsyncClient(url_to_payload),
+    )
+
+    res = await filter_import_image_urls([small, large])
+
+    assert res == [large]

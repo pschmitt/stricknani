@@ -5,87 +5,88 @@
  * strings via `window.STRICKNANI.i18n`.
  */
 
-(function () {
-  "use strict";
+(() => {
+	const config = window.STRICKNANI || {};
+	const i18n = config.i18n || {};
 
-  const config = window.STRICKNANI || {};
-  const i18n = config.i18n || {};
+	const getI18n = (key, fallback) => {
+		const value = i18n[key];
+		return typeof value === "string" && value.trim() ? value : fallback;
+	};
 
-  const getI18n = (key, fallback) => {
-    const value = i18n[key];
-    return typeof value === "string" && value.trim() ? value : fallback;
-  };
+	const getCsrfToken = () =>
+		document
+			.querySelector('meta[name="csrf-token"]')
+			?.getAttribute("content") || "";
+	// Exposed so other static/js/features/*.js files that need to send a
+	// CSRF header don't each re-implement the same meta-tag lookup.
+	window.getCsrfToken = getCsrfToken;
 
-  const getCsrfToken = () =>
-    document
-      .querySelector('meta[name="csrf-token"]')
-      ?.getAttribute("content") || "";
+	const toastVariants = {
+		success:
+			"bg-emerald-500/90 text-white border border-emerald-200/30 shadow-[0_14px_30px_-18px_rgba(16,185,129,0.8)]",
+		error:
+			"bg-red-600/90 text-white border border-red-200/30 shadow-[0_14px_30px_-18px_rgba(239,68,68,0.8)]",
+		info: "bg-slate-900/90 text-white border border-slate-500/20 shadow-[0_14px_30px_-18px_rgba(15,23,42,0.8)]",
+	};
+	const toastAccents = {
+		success: "bg-emerald-200/70",
+		error: "bg-rose-200/70",
+		info: "bg-slate-200/50",
+	};
+	const toastDurations = {
+		success: 2400,
+		error: 6200,
+		info: 3600,
+	};
 
-  const toastVariants = {
-    success:
-      "bg-emerald-500/90 text-white border border-emerald-200/30 shadow-[0_14px_30px_-18px_rgba(16,185,129,0.8)]",
-    error:
-      "bg-red-600/90 text-white border border-red-200/30 shadow-[0_14px_30px_-18px_rgba(239,68,68,0.8)]",
-    info: "bg-slate-900/90 text-white border border-slate-500/20 shadow-[0_14px_30px_-18px_rgba(15,23,42,0.8)]",
-  };
-  const toastAccents = {
-    success: "bg-emerald-200/70",
-    error: "bg-rose-200/70",
-    info: "bg-slate-200/50",
-  };
-  const toastDurations = {
-    success: 2400,
-    error: 6200,
-    info: 3600,
-  };
+	const getBaseToastContainer = () => document.getElementById("toastContainer");
 
-  const getBaseToastContainer = () => document.getElementById("toastContainer");
+	const getToastContainer = () => {
+		const openDialogs = Array.from(document.querySelectorAll("dialog[open]"));
+		const activeDialog = openDialogs.length
+			? openDialogs[openDialogs.length - 1]
+			: null;
+		if (!activeDialog) {
+			return getBaseToastContainer();
+		}
 
-  const getToastContainer = () => {
-    const openDialogs = Array.from(document.querySelectorAll("dialog[open]"));
-    const activeDialog = openDialogs.length
-      ? openDialogs[openDialogs.length - 1]
-      : null;
-    if (!activeDialog) {
-      return getBaseToastContainer();
-    }
+		let container = activeDialog.querySelector('[data-toast-container="1"]');
+		if (!container) {
+			container = document.createElement("div");
+			container.setAttribute("data-toast-container", "1");
+			container.className =
+				"fixed inset-x-4 top-[4.5rem] z-[2147483647] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-[4.5rem] sm:w-80";
+			container.setAttribute("aria-live", "polite");
+			container.setAttribute("aria-atomic", "true");
+			activeDialog.appendChild(container);
+		}
+		return container;
+	};
 
-    let container = activeDialog.querySelector('[data-toast-container="1"]');
-    if (!container) {
-      container = document.createElement("div");
-      container.setAttribute("data-toast-container", "1");
-      container.className =
-        "fixed inset-x-4 top-[4.5rem] z-[2147483647] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-[4.5rem] sm:w-80";
-      container.setAttribute("aria-live", "polite");
-      container.setAttribute("aria-atomic", "true");
-      activeDialog.appendChild(container);
-    }
-    return container;
-  };
+	window.showToast = (message, variant = "info") => {
+		const container = getToastContainer();
+		if (!container || !message) {
+			return;
+		}
 
-  window.showToast = (message, variant = "info") => {
-    const container = getToastContainer();
-    if (!container || !message) {
-      return;
-    }
+		container.replaceChildren();
+		const toast = document.createElement("div");
+		toast.className = `relative overflow-hidden rounded-2xl px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 translate-x-4 hover:translate-y-1 cursor-pointer ${
+			toastVariants[variant] || toastVariants.info
+		}`;
+		toast.setAttribute("role", "status");
+		const accentClass = toastAccents[variant] || toastAccents.info;
 
-    container.replaceChildren();
-    const toast = document.createElement("div");
-    toast.className = `relative overflow-hidden rounded-2xl px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 translate-x-4 hover:translate-y-1 cursor-pointer ${
-      toastVariants[variant] || toastVariants.info
-    }`;
-    toast.setAttribute("role", "status");
-    const accentClass = toastAccents[variant] || toastAccents.info;
+		const dismissLabel = getI18n("dismissMessage", "Dismiss message");
+		const iconClass =
+			variant === "success"
+				? "mdi-check-circle"
+				: variant === "error"
+					? "mdi-alert-circle"
+					: "mdi-information";
 
-    const dismissLabel = getI18n("dismissMessage", "Dismiss message");
-    const iconClass =
-      variant === "success"
-        ? "mdi-check-circle"
-        : variant === "error"
-          ? "mdi-alert-circle"
-          : "mdi-information";
-
-    toast.innerHTML = `
+		toast.innerHTML = `
       <span class="pointer-events-none absolute inset-y-0 left-0 w-1 ${accentClass}"></span>
       <div class="flex items-center gap-3">
         <span class="mdi ${iconClass} text-lg"></span>
@@ -95,826 +96,1659 @@
         </button>
       </div>
     `;
-    toast.querySelector("p")?.append(document.createTextNode(String(message)));
-
-    const dismiss = () => {
-      toast.classList.add("opacity-0", "translate-y-2", "translate-x-4");
-      setTimeout(() => toast.remove(), 200);
-    };
-
-    toast.addEventListener("click", dismiss);
-    container.appendChild(toast);
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        toast.classList.remove("opacity-0", "translate-y-2", "translate-x-4");
-      });
-    });
-
-    const duration = toastDurations[variant] || toastDurations.info;
-    setTimeout(() => {
-      if (!toast.isConnected) {
-        return;
-      }
-      dismiss();
-    }, duration);
-  };
-
-  const execCommandCopyFallback = (text) => {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-9999px";
-    textArea.style.top = "0";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      const successful = document.execCommand("copy");
-      if (!successful) {
-        throw new Error("execCommand copy failed");
-      }
-    } finally {
-      document.body.removeChild(textArea);
-    }
-  };
-
-  window.copyToClipboard = async (text, btn) => {
-    if (typeof text !== "string" || !text) {
-      console.warn("copyToClipboard called with invalid text:", text);
-      return;
-    }
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        try {
-          await navigator.clipboard.writeText(text);
-        } catch {
-          execCommandCopyFallback(text);
-        }
-      } else {
-        execCommandCopyFallback(text);
-      }
-
-      const originalContent = btn ? btn.innerHTML : "";
-      if (btn) {
-        btn.innerHTML = '<span class="mdi mdi-check text-success"></span>';
-        btn.classList.add("btn-success", "bg-success/10");
-      }
-
-      window.showToast?.(
-        getI18n("copiedToClipboard", "Copied to clipboard"),
-        "success",
-      );
-
-      setTimeout(() => {
-        if (!btn) {
-          return;
-        }
-        btn.innerHTML = originalContent;
-        btn.classList.remove("btn-success", "bg-success/10");
-      }, 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-      window.showToast?.(getI18n("failedToCopy", "Failed to copy"), "error");
-    }
-  };
-
-  const extractErrorMessage = async (response, fallback) => {
-    const defaultMessage =
-      fallback ||
-      getI18n("somethingWentWrong", "Something went wrong. Please try again");
-    if (!response) {
-      return defaultMessage;
-    }
-
-    const isFetchResponse = typeof response.clone === "function";
-    const contentType = isFetchResponse
-      ? response.headers?.get("content-type") || ""
-      : typeof response.getResponseHeader === "function"
-        ? response.getResponseHeader("content-type") || ""
-        : "";
-
-    try {
-      if (contentType.includes("application/json")) {
-        if (isFetchResponse) {
-          const data = await response.clone().json();
-          if (typeof data?.detail === "string" && data.detail.trim()) {
-            return data.detail;
-          }
-          if (typeof data?.message === "string" && data.message.trim()) {
-            return data.message;
-          }
-        } else if (response.responseText) {
-          const data = JSON.parse(response.responseText);
-          if (typeof data?.detail === "string" && data.detail.trim()) {
-            return data.detail;
-          }
-          if (typeof data?.message === "string" && data.message.trim()) {
-            return data.message;
-          }
-        }
-      } else if (isFetchResponse) {
-        const text = await response.clone().text();
-        if (text.trim()) {
-          return text.trim();
-        }
-      } else if (response.responseText) {
-        const text = response.responseText;
-        if (text && text.trim()) {
-          return text.trim();
-        }
-      }
-    } catch (error) {
-      console.error("Failed to parse error response", error);
-    }
-
-    return defaultMessage;
-  };
-
-  const resolveDialog = (dialogOrId) => {
-    if (typeof dialogOrId === "string") {
-      return document.getElementById(dialogOrId);
-    }
-    return dialogOrId;
-  };
-
-  window.openDialog = (dialogOrId) => {
-    const dialog = resolveDialog(dialogOrId);
-    if (!dialog) {
-      return false;
-    }
-    if (typeof dialog.showModal === "function") {
-      if (!dialog.open) {
-        dialog.showModal();
-      }
-      return true;
-    }
-    dialog.setAttribute("open", "");
-    dialog.style.display = "block";
-    dialog.setAttribute("aria-modal", "true");
-    return true;
-  };
-
-  window.closeDialog = (dialogOrId) => {
-    const dialog = resolveDialog(dialogOrId);
-    if (!dialog) {
-      return false;
-    }
-    if (typeof dialog.close === "function") {
-      dialog.close();
-      return true;
-    }
-    dialog.removeAttribute("open");
-    dialog.style.display = "none";
-    return true;
-  };
-
-  window.printProject = (id) => {
-    if (!id) {
-      window.print();
-      return;
-    }
-    const printUrl = `/projects/${id}#print`;
-    const win = window.open(printUrl, "_blank");
-    win?.focus();
-  };
-
-  const setButtonTextPreservingIcon = (button, text) => {
-    if (!button) {
-      return;
-    }
-    const icon = button.querySelector(".mdi");
-    button.replaceChildren();
-    if (icon) {
-      button.appendChild(icon);
-      button.appendChild(document.createTextNode(" "));
-    }
-    button.appendChild(document.createTextNode(text));
-  };
-
-  window.confirmAction = (
-    title,
-    message,
-    onConfirm,
-    onCancel = null,
-    options = {},
-  ) => {
-    const dialog = document.getElementById("confirmationDialog");
-    const titleEl = document.getElementById("confirmationTitle");
-    const messageEl = document.getElementById("confirmationMessage");
-    const confirmBtn = document.getElementById("confirmationConfirm");
-    const cancelBtn = document.getElementById("confirmationCancel");
-
-    if (!dialog || !titleEl || !messageEl || !confirmBtn || !cancelBtn) {
-      return;
-    }
-
-    titleEl.textContent = title;
-    messageEl.textContent = message;
-
-    const confirmText = options.confirmText || getI18n("confirm", "Confirm");
-    const cancelText = options.cancelText || getI18n("cancel", "Cancel");
-
-    setButtonTextPreservingIcon(confirmBtn, confirmText);
-    setButtonTextPreservingIcon(cancelBtn, cancelText);
-
-    // Remove old listeners to avoid stacking.
-    const newConfirmBtn = confirmBtn.cloneNode(true);
-    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-    const newCancelBtn = cancelBtn.cloneNode(true);
-    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-
-    newConfirmBtn.addEventListener("click", () => {
-      if (onConfirm) {
-        onConfirm();
-      }
-      dialog.close();
-    });
-
-    newCancelBtn.addEventListener("click", () => {
-      if (onCancel) {
-        onCancel();
-      }
-    });
-
-    dialog.showModal();
-  };
-
-  window.openPdfViewer = (url, filename) => {
-    const dialog = document.getElementById("pdfViewerDialog");
-    const frame = document.getElementById("pdfViewerFrame");
-    const download = document.getElementById("pdfViewerDownload");
-    const nameEl = document.getElementById("pdfViewerFilename");
-
-    if (!dialog || !frame || !download || !nameEl || !url) {
-      return;
-    }
-
-    nameEl.textContent = filename || "";
-    download.href = url;
-    frame.src = url;
-    dialog.showModal();
-  };
-
-  window.openImageViewer = (url, filename) => {
-    const dialog = document.getElementById("imageViewerDialog");
-    const image = document.getElementById("imageViewerImage");
-    const download = document.getElementById("imageViewerDownload");
-    const nameEl = document.getElementById("imageViewerFilename");
-
-    if (!dialog || !image || !download || !nameEl || !url) {
-      return;
-    }
-
-    nameEl.textContent = filename || "";
-    download.href = url;
-    image.src = url;
-    image.alt = filename || "";
-    dialog.showModal();
-  };
-
-  window.openPhotoSwipeIndex = (trigger) => {
-    if (!trigger) {
-      return;
-    }
-    const gallery = trigger.closest("[data-pswp-gallery]");
-    if (!gallery) {
-      return;
-    }
-    const raw = trigger.getAttribute("data-pswp-open-index") || "0";
-    const index = Number.parseInt(raw, 10);
-    const targetIndex = Number.isNaN(index) ? 0 : index;
-    const anchors = Array.from(gallery.querySelectorAll("a[data-pswp-width]"));
-    const target = anchors[targetIndex];
-    if (target) {
-      target.click();
-    }
-  };
-
-  window.setupImageUploadWidget = (input, dropzone, onUpload) => {
-    if (!input || !dropzone || dropzone.dataset.initialized === "true") {
-      return;
-    }
-
-    dropzone.dataset.initialized = "true";
-    const instructions = dropzone.querySelector(".upload-instructions");
-    const getEnabledText = () =>
-      instructions?.dataset.enabledText || instructions?.textContent || "";
-    const uploadingMessage = getI18n("uploading", "Uploading...");
-
-    const setUploadingState = (isUploading) => {
-      dropzone.classList.toggle("opacity-70", isUploading);
-      dropzone.classList.toggle("pointer-events-none", isUploading);
-      dropzone.classList.toggle("cursor-wait", isUploading);
-      dropzone.setAttribute("aria-busy", String(Boolean(isUploading)));
-      if (instructions) {
-        instructions.textContent = isUploading
-          ? uploadingMessage
-          : getEnabledText();
-      }
-    };
-
-    const handleFiles = async (files) => {
-      const fileList = Array.from(files || []);
-      if (!fileList.length) {
-        return;
-      }
-
-      const accept = (input.getAttribute("accept") || "").trim();
-      const requiresImages =
-        accept.includes("image/") &&
-        !accept.includes("*/*") &&
-        !accept.split(",").some((item) => item.trim() === "*/*");
-      const acceptedFiles = requiresImages
-        ? fileList.filter((file) => file.type.startsWith("image/"))
-        : fileList;
-      if (!acceptedFiles.length) {
-        window.showToast?.(
-          getI18n("onlyImages", "Only image files are supported"),
-          "error",
-        );
-        return;
-      }
-
-      setUploadingState(true);
-      try {
-        for (const file of acceptedFiles) {
-          await onUpload(file);
-        }
-      } finally {
-        setUploadingState(false);
-      }
-    };
-
-    input.addEventListener("change", async (e) => {
-      await handleFiles(e.target.files);
-      input.value = "";
-    });
-
-    ["dragover", "dragleave", "drop"].forEach((name) => {
-      dropzone.addEventListener(name, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (name === "dragover") {
-          dropzone.classList.add("border-primary");
-        } else {
-          dropzone.classList.remove("border-primary");
-        }
-      });
-    });
-
-    dropzone.addEventListener("drop", async (e) => {
-      const files = e.dataTransfer?.files;
-      if (files && files.length > 0) {
-        await handleFiles(files);
-      }
-    });
-  };
-
-  window.previewMarkdown = async (source) => {
-    const textarea =
-      typeof source === "string" ? document.getElementById(source) : source;
-    if (!textarea) {
-      return;
-    }
-
-    const content = textarea.value;
-    if (!content.trim()) {
-      window.showToast?.(
-        getI18n("nothingToPreview", "Nothing to preview"),
-        "info",
-      );
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("content", content);
-
-    try {
-      const csrfToken = getCsrfToken();
-      const response = await fetch("/utils/preview/markdown", {
-        method: "POST",
-        headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {},
-        body: formData,
-      });
-
-      if (response.ok) {
-        const html = await response.text();
-        const dialog = document.getElementById("previewDialog");
-        const contentDiv = document.getElementById("previewContent");
-        if (dialog && contentDiv) {
-          contentDiv.innerHTML = html;
-          dialog.showModal();
-        }
-      }
-    } catch (error) {
-      console.error("Preview failed", error);
-    }
-  };
-
-  window.setTheme = (newTheme) => {
-    const html = document.documentElement;
-    html.setAttribute("data-theme", newTheme);
-    localStorage.setItem("theme", newTheme);
-
-    if (newTheme === "dark") {
-      html.classList.add("dark");
-    } else {
-      html.classList.remove("dark");
-    }
-
-    window.updateThemeUI?.(newTheme);
-  };
-
-  window.toggleTheme = () => {
-    const currentTheme =
-      document.documentElement.getAttribute("data-theme") || "light";
-    const newTheme = currentTheme === "dark" ? "light" : "dark";
-    window.setTheme(newTheme);
-  };
-
-  window.updateThemeUI = (theme) => {
-    const isDark = theme === "dark";
-    const label = document.getElementById("theme-label");
-    const icon = document.getElementById("theme-icon");
-    const iconPublic = document.getElementById("theme-icon-public");
-
-    const lightBtn = document.getElementById("theme-btn-light");
-    const darkBtn = document.getElementById("theme-btn-dark");
-
-    if (label) {
-      label.textContent = isDark
-        ? getI18n("darkMode", "Dark Mode")
-        : getI18n("lightMode", "Light Mode");
-    }
-
-    const iconClass = isDark ? "mdi-weather-night" : "mdi-weather-sunny";
-    const iconColor = isDark ? "text-blue-400" : "text-amber-500";
-
-    if (icon) {
-      icon.className = `mdi ${iconClass} text-xl transition-all duration-300 ${iconColor}`;
-    }
-
-    if (iconPublic) {
-      iconPublic.className = `mdi ${iconClass} text-xl transition-all duration-300 ${iconColor}`;
-    }
-
-    if (lightBtn && darkBtn) {
-      if (isDark) {
-        darkBtn.classList.add("bg-base-100", "shadow-sm", "text-primary");
-        darkBtn.classList.remove("btn-ghost", "opacity-60");
-        lightBtn.classList.remove("bg-base-100", "shadow-sm", "text-primary");
-        lightBtn.classList.add("btn-ghost", "opacity-60");
-      } else {
-        lightBtn.classList.add("bg-base-100", "shadow-sm", "text-primary");
-        lightBtn.classList.remove("btn-ghost", "opacity-60");
-        darkBtn.classList.remove("bg-base-100", "shadow-sm", "text-primary");
-        darkBtn.classList.add("btn-ghost", "opacity-60");
-      }
-    }
-  };
-
-  window.toggleAuthForms = (showId, hideId) => {
-    const showEl = showId ? document.getElementById(showId) : null;
-    const hideEl = hideId ? document.getElementById(hideId) : null;
-    hideEl?.classList.add("hidden");
-    showEl?.classList.remove("hidden");
-  };
-
-  document.addEventListener("DOMContentLoaded", () => {
-    // Theme UI init.
-    const currentTheme =
-      document.documentElement.getAttribute("data-theme") || "light";
-    window.updateThemeUI?.(currentTheme);
-
-    // Toast via query param.
-    const urlParams = new URLSearchParams(window.location.search);
-    const toastKey = urlParams.get("toast");
-    if (toastKey) {
-      const toastMessages = config.toastMessages || {};
-      const entry = toastMessages[toastKey];
-      const message = typeof entry === "string" ? entry : entry?.message;
-      if (message) {
-        const variant =
-          typeof entry === "string" ? "success" : entry?.variant || "success";
-        window.showToast?.(message, variant);
-
-        const url = new URL(window.location.href);
-        url.searchParams.delete("toast");
-        window.history.replaceState({}, "", url.toString());
-      }
-    }
-
-    // Attachment open handlers.
-    document.addEventListener("click", (event) => {
-      const row = event.target.closest('[data-action="open-attachment"]');
-      if (!row) {
-        return;
-      }
-      if (event.target.closest("a,button,input,select,textarea")) {
-        return;
-      }
-      event.preventDefault();
-
-      const kind = row.dataset.attachmentKind;
-      const url = row.dataset.attachmentUrl;
-      const name = row.dataset.attachmentName;
-
-      if (kind === "pdf") {
-        window.openPdfViewer(url, name);
-      } else if (kind === "image") {
-        if (
-          row.hasAttribute("data-pswp-open-index") &&
-          window.openPhotoSwipeIndex
-        ) {
-          window.openPhotoSwipeIndex(row);
-        } else {
-          window.openImageViewer(url, name);
-        }
-      } else if (url) {
-        window.open(url, "_blank", "noopener,noreferrer");
-      }
-    });
-
-    // Generic actions: keep templates free of inline event handlers.
-    document.addEventListener("click", (event) => {
-      const actionEl = event.target.closest("[data-action]");
-      if (!actionEl) {
-        return;
-      }
-
-      const action = actionEl.getAttribute("data-action") || "";
-      if (action === "open-dialog") {
-        const dialogId = actionEl.getAttribute("data-dialog-id") || "";
-        if (dialogId) {
-          event.preventDefault();
-          window.openDialog?.(dialogId);
-        }
-      } else if (action === "close-dialog") {
-        const dialogId = actionEl.getAttribute("data-dialog-id") || "";
-        if (dialogId) {
-          event.preventDefault();
-          window.closeDialog?.(dialogId);
-        }
-      } else if (action === "reload") {
-        event.preventDefault();
-        window.location.reload();
-      } else if (action === "click-target") {
-        const targetId = actionEl.getAttribute("data-target-id") || "";
-        if (targetId) {
-          const target = document.getElementById(targetId);
-          if (target && typeof target.click === "function") {
-            event.preventDefault();
-            target.click();
-          }
-        }
-      }
-    });
-
-    const resolveCallArg = (arg, element, eventObj) => {
-      if (arg === "$this") {
-        return element;
-      }
-      if (arg === "$event") {
-        return eventObj;
-      }
-      if (arg === "$value") {
-        return element?.value;
-      }
-      if (arg === "$checked") {
-        return element?.checked;
-      }
-      if (typeof arg === "string" && arg.startsWith("$value:")) {
-        const selector = arg.slice("$value:".length);
-        const target = selector ? document.querySelector(selector) : null;
-        return target?.value;
-      }
-      if (typeof arg === "string" && arg.startsWith("$text:")) {
-        const selector = arg.slice("$text:".length);
-        const target = selector ? document.querySelector(selector) : null;
-        return target?.textContent || "";
-      }
-      if (typeof arg === "string" && arg.startsWith("$dataset:")) {
-        const key = arg.slice("$dataset:".length);
-        return key ? element?.dataset?.[key] : undefined;
-      }
-      return arg;
-    };
-
-    const parseCallArgs = (raw) => {
-      if (!raw) {
-        return null;
-      }
-      try {
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : null;
-      } catch {
-        return null;
-      }
-    };
-
-    const invokeCall = (element, eventObj, fnName, rawArgs) => {
-      if (!fnName) {
-        return;
-      }
-      const fn = window[fnName];
-      if (typeof fn !== "function") {
-        return;
-      }
-
-      const args = parseCallArgs(rawArgs);
-      if (args) {
-        const resolvedArgs = args.map((arg) =>
-          resolveCallArg(arg, element, eventObj),
-        );
-        fn(...resolvedArgs);
-      } else {
-        if (rawArgs) {
-          console.warn(`Failed to parse call args for ${fnName}:`, rawArgs);
-        }
-        fn(element);
-      }
-    };
-
-    // Generic function calls for click/input/change.
-    document.addEventListener("click", (event) => {
-      const el = event.target.closest("[data-call]");
-      if (!el) {
-        return;
-      }
-      event.preventDefault();
-      invokeCall(
-        el,
-        event,
-        el.getAttribute("data-call"),
-        el.getAttribute("data-call-args"),
-      );
-    });
-
-    document.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") {
-        return;
-      }
-      const el = event.target.closest?.("[data-call]");
-      if (!el) {
-        return;
-      }
-
-      // Avoid hijacking typing in form controls.
-      if (event.target.closest("input,textarea,select")) {
-        return;
-      }
-
-      // Let native elements handle their own key behavior.
-      const tag = el.tagName.toLowerCase();
-      if (tag === "button" || tag === "a") {
-        return;
-      }
-
-      event.preventDefault();
-      invokeCall(
-        el,
-        event,
-        el.getAttribute("data-call"),
-        el.getAttribute("data-call-args"),
-      );
-    });
-
-    document.addEventListener("input", (event) => {
-      const el = event.target.closest("[data-call-input]");
-      if (!el) {
-        return;
-      }
-      invokeCall(
-        el,
-        event,
-        el.getAttribute("data-call-input"),
-        el.getAttribute("data-call-input-args"),
-      );
-    });
-
-    document.addEventListener("change", (event) => {
-      const el = event.target.closest("[data-call-change]");
-      if (!el) {
-        return;
-      }
-      invokeCall(
-        el,
-        event,
-        el.getAttribute("data-call-change"),
-        el.getAttribute("data-call-change-args"),
-      );
-    });
-
-    document.addEventListener("keydown", (event) => {
-      const row = document.activeElement?.closest?.(
-        '[data-action="open-attachment"]',
-      );
-      if (!row) {
-        return;
-      }
-      if (event.key !== "Enter" && event.key !== " ") {
-        return;
-      }
-      event.preventDefault();
-
-      const kind = row.dataset.attachmentKind;
-      const url = row.dataset.attachmentUrl;
-      const name = row.dataset.attachmentName;
-
-      if (kind === "pdf") {
-        window.openPdfViewer(url, name);
-      } else if (kind === "image") {
-        if (
-          row.hasAttribute("data-pswp-open-index") &&
-          window.openPhotoSwipeIndex
-        ) {
-          window.openPhotoSwipeIndex(row);
-        } else {
-          window.openImageViewer(url, name);
-        }
-      } else if (url) {
-        window.open(url, "_blank", "noopener,noreferrer");
-      }
-    });
-
-    document
-      .getElementById("pdfViewerDialog")
-      ?.addEventListener("close", () => {
-        const frame = document.getElementById("pdfViewerFrame");
-        if (frame) {
-          frame.src = "about:blank";
-        }
-      });
-
-    document
-      .getElementById("imageViewerDialog")
-      ?.addEventListener("close", () => {
-        const image = document.getElementById("imageViewerImage");
-        if (image) {
-          image.src = "about:blank";
-          image.alt = "";
-        }
-      });
-
-    // Close daisyUI dropdowns on Escape and on outside click.
-    const closeDropdowns = () => {
-      document.querySelectorAll(".dropdown").forEach((d) => d.blur());
-
-      if (document.activeElement instanceof HTMLElement) {
-        const activeDropdown = document.activeElement.closest(".dropdown");
-        if (activeDropdown) {
-          document.activeElement.blur();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        closeDropdowns();
-      }
-    });
-
-    document.addEventListener("click", (e) => {
-      if (!e.target.closest(".dropdown")) {
-        closeDropdowns();
-      }
-    });
-
-    // HTMX toast integration (errors + declarative success toasts).
-    document.body.addEventListener("htmx:responseError", async (event) => {
-      const message = await extractErrorMessage(event.detail.xhr, null);
-      window.showToast?.(message, "error");
-    });
-
-    document.body.addEventListener("htmx:afterRequest", (event) => {
-      const element = event.detail?.requestConfig?.elt || event.detail?.elt;
-      if (!element) {
-        return;
-      }
-      const status = event.detail?.xhr?.status ?? 200;
-      if (status >= 400) {
-        return;
-      }
-
-      const toastElement =
-        element.getAttribute("data-toast-message") !== null
-          ? element
-          : element.querySelector?.("[data-toast-message]");
-      if (!toastElement) {
-        return;
-      }
-      const message = toastElement.getAttribute("data-toast-message");
-      if (!message) {
-        return;
-      }
-      const variant = toastElement.getAttribute("data-toast-variant") || "info";
-      window.showToast?.(message, variant);
-
-      const dialogId = element.getAttribute("data-dialog-close");
-      if (dialogId) {
-        window.closeDialog?.(dialogId);
-      }
-    });
-  });
+		toast.querySelector("p")?.append(document.createTextNode(String(message)));
+
+		const dismiss = () => {
+			toast.classList.add("opacity-0", "translate-y-2", "translate-x-4");
+			setTimeout(() => toast.remove(), 200);
+		};
+
+		toast.addEventListener("click", dismiss);
+		container.appendChild(toast);
+
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				toast.classList.remove("opacity-0", "translate-y-2", "translate-x-4");
+			});
+		});
+
+		const duration = toastDurations[variant] || toastDurations.info;
+		setTimeout(() => {
+			if (!toast.isConnected) {
+				return;
+			}
+			dismiss();
+		}, duration);
+	};
+
+	const execCommandCopyFallback = (text) => {
+		const textArea = document.createElement("textarea");
+		textArea.value = text;
+		textArea.style.position = "fixed";
+		textArea.style.left = "-9999px";
+		textArea.style.top = "0";
+		document.body.appendChild(textArea);
+		textArea.focus();
+		textArea.select();
+		try {
+			const successful = document.execCommand("copy");
+			if (!successful) {
+				throw new Error("execCommand copy failed");
+			}
+		} finally {
+			document.body.removeChild(textArea);
+		}
+	};
+
+	// Select an input's text on click via `data-call="selectInputText"` -
+	// a plain `onclick="this.select()"` is dead under the strict CSP (no
+	// `'unsafe-inline'`).
+	window.selectInputText = (el) => {
+		el?.select?.();
+	};
+
+	window.copyToClipboard = async (text, btn) => {
+		if (typeof text !== "string" || !text) {
+			console.warn("copyToClipboard called with invalid text:", text);
+			return;
+		}
+		try {
+			if (navigator.clipboard?.writeText) {
+				try {
+					await navigator.clipboard.writeText(text);
+				} catch {
+					execCommandCopyFallback(text);
+				}
+			} else {
+				execCommandCopyFallback(text);
+			}
+
+			const originalContent = btn ? btn.innerHTML : "";
+			if (btn) {
+				btn.innerHTML = '<span class="mdi mdi-check text-success"></span>';
+				btn.classList.add("btn-success", "bg-success/10");
+			}
+
+			window.showToast?.(
+				getI18n("copiedToClipboard", "Copied to clipboard"),
+				"success",
+			);
+
+			setTimeout(() => {
+				if (!btn) {
+					return;
+				}
+				btn.innerHTML = originalContent;
+				btn.classList.remove("btn-success", "bg-success/10");
+			}, 2000);
+		} catch (err) {
+			console.error("Failed to copy:", err);
+			window.showToast?.(getI18n("failedToCopy", "Failed to copy"), "error");
+		}
+	};
+
+	const extractErrorMessage = async (response, fallback) => {
+		const defaultMessage =
+			fallback ||
+			getI18n("somethingWentWrong", "Something went wrong. Please try again");
+		if (!response) {
+			return defaultMessage;
+		}
+
+		const isFetchResponse = typeof response.clone === "function";
+		const contentType = isFetchResponse
+			? response.headers?.get("content-type") || ""
+			: typeof response.getResponseHeader === "function"
+				? response.getResponseHeader("content-type") || ""
+				: "";
+
+		try {
+			if (contentType.includes("application/json")) {
+				if (isFetchResponse) {
+					const data = await response.clone().json();
+					if (typeof data?.detail === "string" && data.detail.trim()) {
+						return data.detail;
+					}
+					if (typeof data?.message === "string" && data.message.trim()) {
+						return data.message;
+					}
+				} else if (response.responseText) {
+					const data = JSON.parse(response.responseText);
+					if (typeof data?.detail === "string" && data.detail.trim()) {
+						return data.detail;
+					}
+					if (typeof data?.message === "string" && data.message.trim()) {
+						return data.message;
+					}
+				}
+			} else if (isFetchResponse) {
+				const text = await response.clone().text();
+				if (text.trim()) {
+					return text.trim();
+				}
+			} else if (response.responseText) {
+				const text = response.responseText;
+				if (text?.trim()) {
+					return text.trim();
+				}
+			}
+		} catch (error) {
+			console.error("Failed to parse error response", error);
+		}
+
+		return defaultMessage;
+	};
+
+	const setupPwaInstall = () => {
+		if (!("serviceWorker" in navigator)) {
+			return;
+		}
+
+		const installButtons = () =>
+			Array.from(document.querySelectorAll('[data-pwa-install="1"]'));
+
+		const showButtons = () => {
+			installButtons().forEach((btn) => {
+				btn.classList.remove("hidden");
+			});
+		};
+
+		const hideButtons = () => {
+			installButtons().forEach((btn) => {
+				btn.classList.add("hidden");
+			});
+		};
+
+		let deferredPrompt = null;
+
+		// Register the root-scoped service worker (required for installability).
+		navigator.serviceWorker.register("/sw.js").catch((err) => {
+			console.debug("Service worker registration failed:", err);
+		});
+
+		window.addEventListener("beforeinstallprompt", (event) => {
+			// Stash the prompt so we can trigger it from our own button.
+			event.preventDefault();
+			deferredPrompt = event;
+			showButtons();
+		});
+
+		window.addEventListener("appinstalled", () => {
+			deferredPrompt = null;
+			hideButtons();
+			window.showToast?.(getI18n("appInstalled", "App installed."), "success");
+		});
+
+		document.addEventListener("click", async (event) => {
+			const button = event.target.closest?.('[data-pwa-install="1"]');
+			if (!button) {
+				return;
+			}
+
+			if (!deferredPrompt) {
+				window.showToast?.(
+					getI18n(
+						"installAppUnavailable",
+						"App installation is not available.",
+					),
+					"info",
+				);
+				return;
+			}
+
+			try {
+				deferredPrompt.prompt();
+				const { outcome } = await deferredPrompt.userChoice;
+				deferredPrompt = null;
+				hideButtons();
+				if (outcome === "accepted") {
+					window.showToast?.(
+						getI18n("appInstalled", "App installed."),
+						"success",
+					);
+				}
+			} catch (err) {
+				console.debug("Install prompt failed:", err);
+			}
+		});
+
+		// Tell the service worker to drop its cache of authenticated pages on
+		// logout, so a later user on a shared device/browser profile can't see
+		// this session's cached content offline. Logout is a plain form POST
+		// (full navigation), so this just needs to fire before the browser
+		// follows through with it.
+		document.addEventListener("submit", (event) => {
+			const form = event.target;
+			if (
+				form instanceof HTMLFormElement &&
+				form.getAttribute("action") === "/auth/logout" &&
+				navigator.serviceWorker.controller
+			) {
+				navigator.serviceWorker.controller.postMessage({
+					type: "CLEAR_RUNTIME_CACHE",
+				});
+			}
+		});
+	};
+
+	// Offline/online status banner (`#offlineBanner` in base.html). Looks up
+	// the element lazily on each event so it works regardless of whether the
+	// body has finished parsing yet when this script runs.
+	const setupOfflineIndicator = () => {
+		const updateStatus = () => {
+			const banner = document.getElementById("offlineBanner");
+			if (!banner) {
+				return;
+			}
+			const isOnline = navigator.onLine;
+			banner.classList.toggle("hidden", isOnline);
+			banner.setAttribute("aria-hidden", String(isOnline));
+		};
+
+		window.addEventListener("online", updateStatus);
+		window.addEventListener("offline", updateStatus);
+		document.addEventListener("DOMContentLoaded", updateStatus);
+		updateStatus();
+	};
+
+	const resolveDialog = (dialogOrId) => {
+		if (typeof dialogOrId === "string") {
+			return document.getElementById(dialogOrId);
+		}
+		return dialogOrId;
+	};
+
+	window.openDialog = (dialogOrId) => {
+		const dialog = resolveDialog(dialogOrId);
+		if (!dialog) {
+			return false;
+		}
+		if (typeof dialog.showModal === "function") {
+			if (!dialog.open) {
+				dialog.showModal();
+			}
+			return true;
+		}
+		dialog.setAttribute("open", "");
+		dialog.style.display = "block";
+		dialog.setAttribute("aria-modal", "true");
+		return true;
+	};
+
+	window.closeDialog = (dialogOrId) => {
+		const dialog = resolveDialog(dialogOrId);
+		if (!dialog) {
+			return false;
+		}
+		if (typeof dialog.close === "function") {
+			dialog.close();
+			return true;
+		}
+		dialog.removeAttribute("open");
+		dialog.style.display = "none";
+		return true;
+	};
+
+	// Shared confirm-delete flow for the project/yarn delete dialogs
+	// (`projects/_delete_dialog.html`, `yarn/_delete_dialog.html`) - the two
+	// used to be near-byte-identical per-entity JS files differing only in
+	// dialog id, API path, redirect toast key, and error message.
+	const deleteEntityConfig = {
+		project: {
+			dialogButtonSelector: "#deleteProjectDialog .md3-button--destructive",
+			apiPath: (id) => `/projects/${id}`,
+			redirectUrl: "/projects?toast=project_deleted",
+			failI18nKey: "failedToDeleteProject",
+			failFallback: "Failed to delete project",
+		},
+		yarn: {
+			dialogButtonSelector: "#deleteYarnDialog .md3-button--destructive",
+			apiPath: (id) => `/yarn/${id}`,
+			redirectUrl: "/yarn?toast=yarn_deleted",
+			failI18nKey: "failedToDeleteYarn",
+			failFallback: "Failed to delete yarn",
+		},
+	};
+
+	window.deleteEntity = async (kind, id) => {
+		const entityConfig = deleteEntityConfig[kind];
+		if (!entityConfig || !id) {
+			return;
+		}
+
+		const btn = document.querySelector(entityConfig.dialogButtonSelector);
+		if (btn) {
+			btn.disabled = true;
+			const originalHtml = btn.innerHTML;
+			btn.innerHTML = `<span class="loading loading-spinner loading-sm"></span> ${btn.textContent.trim()}`;
+			btn.dataset.originalHtml = originalHtml;
+		}
+
+		const resetButton = () => {
+			if (!btn) {
+				return;
+			}
+			btn.disabled = false;
+			btn.innerHTML = btn.dataset.originalHtml;
+		};
+		const showFailureToast = () => {
+			window.showToast?.(
+				getI18n(entityConfig.failI18nKey, entityConfig.failFallback),
+				"error",
+			);
+		};
+
+		try {
+			const response = await fetch(entityConfig.apiPath(id), {
+				method: "DELETE",
+				headers: { "X-CSRF-Token": getCsrfToken() },
+			});
+
+			if (response.ok) {
+				window.location.href = entityConfig.redirectUrl;
+				return;
+			}
+
+			showFailureToast();
+			resetButton();
+		} catch (error) {
+			console.error(`Delete ${kind} failed`, error);
+			showFailureToast();
+			resetButton();
+		}
+	};
+
+	window.printProject = (id) => {
+		if (!id) {
+			window.print();
+			return;
+		}
+		const printUrl = `/projects/${id}#print`;
+		const win = window.open(printUrl, "_blank");
+		win?.focus();
+	};
+
+	const setButtonTextPreservingIcon = (button, text) => {
+		if (!button) {
+			return;
+		}
+		const icon = button.querySelector(".mdi");
+		button.replaceChildren();
+		if (icon) {
+			button.appendChild(icon);
+			button.appendChild(document.createTextNode(" "));
+		}
+		button.appendChild(document.createTextNode(text));
+	};
+
+	window.confirmAction = (
+		title,
+		message,
+		onConfirm,
+		onCancel = null,
+		options = {},
+	) => {
+		const dialog = document.getElementById("confirmationDialog");
+		const headerEl = document.getElementById("confirmationHeader");
+		const titleEl = document.getElementById("confirmationTitle");
+		const messageEl = document.getElementById("confirmationMessage");
+		const contentEl = document.getElementById("confirmationContent");
+		const confirmBtn = document.getElementById("confirmationConfirm");
+		const cancelBtn = document.getElementById("confirmationCancel");
+
+		if (!dialog || !titleEl || !messageEl || !confirmBtn || !cancelBtn) {
+			return;
+		}
+
+		titleEl.textContent = title;
+
+		if (options.content) {
+			messageEl.classList.add("hidden");
+			contentEl.innerHTML = options.content;
+			contentEl.classList.remove("hidden");
+		} else {
+			messageEl.textContent = message;
+			messageEl.classList.remove("hidden");
+			contentEl.innerHTML = "";
+			contentEl.classList.add("hidden");
+		}
+
+		// Configure dialog style based on variant
+		const variant = options.variant || "warning"; // warning, error, info
+
+		// Reset header classes
+		headerEl.className =
+			"p-6 flex items-center gap-4 transition-colors duration-200";
+
+		// Reset button classes
+		confirmBtn.className = "btn gap-2 transition-colors duration-200";
+
+		let iconClass = "mdi-alert-circle-outline";
+
+		if (variant === "error") {
+			headerEl.classList.add("bg-error/10", "text-error");
+			confirmBtn.classList.add("btn-error", "text-white");
+			iconClass = "mdi-alert-circle";
+		} else if (variant === "warning") {
+			headerEl.classList.add("bg-warning/10", "text-warning");
+			confirmBtn.classList.add("btn-warning");
+			iconClass = "mdi-alert-outline";
+		} else {
+			headerEl.classList.add("bg-info/10", "text-info");
+			confirmBtn.classList.add("btn-info", "text-white");
+			iconClass = "mdi-information-outline";
+		}
+
+		// Update header icon
+		const iconEl = headerEl.querySelector(".mdi");
+		if (iconEl) {
+			iconEl.className = `mdi ${iconClass} text-3xl`;
+		}
+
+		const confirmText = options.confirmText || getI18n("confirm", "Confirm");
+		const cancelText = options.cancelText || getI18n("cancel", "Cancel");
+
+		setButtonTextPreservingIcon(confirmBtn, confirmText);
+		setButtonTextPreservingIcon(cancelBtn, cancelText);
+
+		// Set icon for confirm button
+		const btnIconClass =
+			variant === "error" ? "mdi-delete-outline" : "mdi-check";
+		const btnIcon = confirmBtn.querySelector(".mdi");
+		if (btnIcon) {
+			btnIcon.className = `mdi ${btnIconClass}`;
+		}
+
+		// Remove old listeners to avoid stacking.
+		const newConfirmBtn = confirmBtn.cloneNode(true);
+		confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+		const newCancelBtn = cancelBtn.cloneNode(true);
+		cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+		newConfirmBtn.addEventListener("click", () => {
+			if (onConfirm) {
+				onConfirm();
+			}
+			dialog.close();
+		});
+
+		newCancelBtn.addEventListener("click", () => {
+			if (onCancel) {
+				onCancel();
+			}
+		});
+
+		dialog.showModal();
+	};
+
+	window.openPdfViewer = (url, filename) => {
+		const dialog = document.getElementById("pdfViewerDialog");
+		const frame = document.getElementById("pdfViewerFrame");
+		const download = document.getElementById("pdfViewerDownload");
+		const nameEl = document.getElementById("pdfViewerFilename");
+
+		if (!dialog || !frame || !download || !nameEl || !url) {
+			return;
+		}
+
+		nameEl.textContent = filename || "";
+		download.href = url;
+		frame.src = url;
+		dialog.showModal();
+	};
+
+	window.openImageViewer = (url, filename) => {
+		const dialog = document.getElementById("imageViewerDialog");
+		const image = document.getElementById("imageViewerImage");
+		const download = document.getElementById("imageViewerDownload");
+		const nameEl = document.getElementById("imageViewerFilename");
+
+		if (!dialog || !image || !download || !nameEl || !url) {
+			return;
+		}
+
+		nameEl.textContent = filename || "";
+		download.href = url;
+		image.src = url;
+		image.alt = filename || "";
+		dialog.showModal();
+	};
+
+	window.openPhotoSwipeIndex = (trigger) => {
+		if (!trigger) {
+			return;
+		}
+		const gallery = trigger.closest("[data-pswp-gallery]");
+		if (!gallery) {
+			return;
+		}
+		const raw = trigger.getAttribute("data-pswp-open-index") || "0";
+		const index = Number.parseInt(raw, 10);
+		const targetIndex = Number.isNaN(index) ? 0 : index;
+		const anchors = Array.from(gallery.querySelectorAll("a[data-pswp-width]"));
+		const target = anchors[targetIndex];
+		if (target) {
+			target.click();
+		}
+	};
+
+	window.setupImageUploadWidget = (input, dropzone, onUpload) => {
+		if (!input || !dropzone || dropzone.dataset.initialized === "true") {
+			return;
+		}
+
+		dropzone.dataset.initialized = "true";
+		const instructions = dropzone.querySelector(".upload-instructions");
+		const getEnabledText = () =>
+			instructions?.dataset.enabledText || instructions?.textContent || "";
+		const uploadingMessage = getI18n("uploading", "Uploading...");
+
+		const setUploadingState = (isUploading) => {
+			dropzone.classList.toggle("opacity-70", isUploading);
+			dropzone.classList.toggle("pointer-events-none", isUploading);
+			dropzone.classList.toggle("cursor-wait", isUploading);
+			dropzone.setAttribute("aria-busy", String(Boolean(isUploading)));
+			if (instructions) {
+				instructions.textContent = isUploading
+					? uploadingMessage
+					: getEnabledText();
+			}
+		};
+
+		const handleFiles = async (files) => {
+			const fileList = Array.from(files || []);
+			if (!fileList.length) {
+				return;
+			}
+
+			const accept = (input.getAttribute("accept") || "").trim();
+			const requiresImages =
+				accept.includes("image/") &&
+				!accept.includes("*/*") &&
+				!accept.split(",").some((item) => item.trim() === "*/*");
+			const acceptedFiles = requiresImages
+				? fileList.filter((file) => file.type.startsWith("image/"))
+				: fileList;
+			if (!acceptedFiles.length) {
+				window.showToast?.(
+					getI18n("onlyImages", "Only image files are supported"),
+					"error",
+				);
+				return;
+			}
+
+			setUploadingState(true);
+			try {
+				for (const file of acceptedFiles) {
+					await onUpload(file);
+				}
+			} finally {
+				setUploadingState(false);
+			}
+		};
+
+		input.addEventListener("change", async (e) => {
+			await handleFiles(e.target.files);
+			input.value = "";
+		});
+
+		["dragover", "dragleave", "drop"].forEach((name) => {
+			dropzone.addEventListener(name, (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				if (name === "dragover") {
+					dropzone.classList.add("border-primary");
+				} else {
+					dropzone.classList.remove("border-primary");
+				}
+			});
+		});
+
+		dropzone.addEventListener("drop", async (e) => {
+			const files = e.dataTransfer?.files;
+			if (files && files.length > 0) {
+				await handleFiles(files);
+			}
+		});
+	};
+
+	window.previewMarkdown = async (source) => {
+		const textarea =
+			typeof source === "string" ? document.getElementById(source) : source;
+		if (!textarea) {
+			return;
+		}
+
+		const content = textarea.value;
+		if (!content.trim()) {
+			window.showToast?.(
+				getI18n("nothingToPreview", "Nothing to preview"),
+				"info",
+			);
+			return;
+		}
+
+		const formData = new FormData();
+		formData.append("content", content);
+
+		try {
+			const csrfToken = getCsrfToken();
+			const response = await fetch("/utils/preview/markdown", {
+				method: "POST",
+				headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {},
+				body: formData,
+			});
+
+			if (response.ok) {
+				const html = await response.text();
+				const dialog = document.getElementById("previewDialog");
+				const contentDiv = document.getElementById("previewContent");
+				if (dialog && contentDiv) {
+					contentDiv.innerHTML = html;
+					dialog.showModal();
+				}
+			} else {
+				window.showToast?.(
+					getI18n(
+						"somethingWentWrong",
+						"Something went wrong. Please try again",
+					),
+					"error",
+				);
+			}
+		} catch (error) {
+			console.error("Preview failed", error);
+			window.showToast?.(
+				getI18n("somethingWentWrong", "Something went wrong. Please try again"),
+				"error",
+			);
+		}
+	};
+
+	window.setTheme = (newTheme) => {
+		const html = document.documentElement;
+		html.setAttribute("data-theme", newTheme);
+		localStorage.setItem("theme", newTheme);
+
+		if (newTheme === "dark") {
+			html.classList.add("dark");
+		} else {
+			html.classList.remove("dark");
+		}
+
+		window.updateThemeUI?.(newTheme);
+	};
+
+	window.toggleTheme = () => {
+		const currentTheme =
+			document.documentElement.getAttribute("data-theme") || "light";
+		const newTheme = currentTheme === "dark" ? "light" : "dark";
+		window.setTheme(newTheme);
+	};
+
+	window.updateThemeUI = (theme) => {
+		const isDark = theme === "dark";
+		const label = document.getElementById("theme-label");
+		const icon = document.getElementById("theme-icon");
+		const iconPublic = document.getElementById("theme-icon-public");
+
+		const lightBtn = document.getElementById("theme-btn-light");
+		const darkBtn = document.getElementById("theme-btn-dark");
+
+		if (label) {
+			label.textContent = isDark
+				? getI18n("darkMode", "Dark Mode")
+				: getI18n("lightMode", "Light Mode");
+		}
+
+		const iconClass = isDark ? "mdi-weather-night" : "mdi-weather-sunny";
+		const iconColor = isDark ? "text-blue-400" : "text-amber-500";
+
+		if (icon) {
+			icon.className = `mdi ${iconClass} text-xl transition-all duration-300 ${iconColor}`;
+		}
+
+		if (iconPublic) {
+			iconPublic.className = `mdi ${iconClass} text-xl transition-all duration-300 ${iconColor}`;
+		}
+
+		if (lightBtn && darkBtn) {
+			if (isDark) {
+				darkBtn.classList.add("bg-base-100", "shadow-sm", "text-primary");
+				darkBtn.classList.remove("btn-ghost", "opacity-60");
+				lightBtn.classList.remove("bg-base-100", "shadow-sm", "text-primary");
+				lightBtn.classList.add("btn-ghost", "opacity-60");
+			} else {
+				lightBtn.classList.add("bg-base-100", "shadow-sm", "text-primary");
+				lightBtn.classList.remove("btn-ghost", "opacity-60");
+				darkBtn.classList.remove("bg-base-100", "shadow-sm", "text-primary");
+				darkBtn.classList.add("btn-ghost", "opacity-60");
+			}
+		}
+	};
+
+	window.toggleAuthForms = (showId, hideId) => {
+		const showEl = showId ? document.getElementById(showId) : null;
+		const hideEl = hideId ? document.getElementById(hideId) : null;
+		hideEl?.classList.add("hidden");
+		showEl?.classList.remove("hidden");
+	};
+
+	document.addEventListener("DOMContentLoaded", () => {
+		// Theme UI init.
+		const currentTheme =
+			document.documentElement.getAttribute("data-theme") || "light";
+		window.updateThemeUI?.(currentTheme);
+
+		// Toast via query param.
+		const urlParams = new URLSearchParams(window.location.search);
+		const toastKey = urlParams.get("toast");
+		if (toastKey) {
+			const toastMessages = config.toastMessages || {};
+			const entry = toastMessages[toastKey];
+			const message = typeof entry === "string" ? entry : entry?.message;
+			if (message) {
+				const variant =
+					typeof entry === "string" ? "success" : entry?.variant || "success";
+				window.showToast?.(message, variant);
+
+				const url = new URL(window.location.href);
+				url.searchParams.delete("toast");
+				window.history.replaceState({}, "", url.toString());
+			}
+		}
+
+		// Attachment open handlers.
+		document.addEventListener("click", (event) => {
+			const row = event.target.closest('[data-action="open-attachment"]');
+			if (!row) {
+				return;
+			}
+			if (event.target.closest("a,button,input,select,textarea")) {
+				return;
+			}
+			event.preventDefault();
+
+			const kind = row.dataset.attachmentKind;
+			const url = row.dataset.attachmentUrl;
+			const name = row.dataset.attachmentName;
+
+			if (kind === "pdf") {
+				window.openPdfViewer(url, name);
+			} else if (kind === "image") {
+				if (
+					row.hasAttribute("data-pswp-open-index") &&
+					window.openPhotoSwipeIndex
+				) {
+					// Prevent opening if clicking an interactive element inside the row
+					if (
+						event.target.closest("button, .btn, a, input, select, textarea")
+					) {
+						return;
+					}
+					window.openPhotoSwipeIndex(row);
+				} else {
+					if (
+						event.target.closest("button, .btn, a, input, select, textarea")
+					) {
+						return;
+					}
+					window.openImageViewer(url, name);
+				}
+			} else if (url) {
+				if (event.target.closest("button, .btn, a, input, select, textarea")) {
+					return;
+				}
+				window.open(url, "_blank", "noopener,noreferrer");
+			}
+		});
+
+		// Generic actions: keep templates free of inline event handlers.
+		document.addEventListener("click", (event) => {
+			const actionEl = event.target.closest("[data-action]");
+			if (!actionEl) {
+				return;
+			}
+
+			const action = actionEl.getAttribute("data-action") || "";
+			if (action === "open-dialog") {
+				const dialogId = actionEl.getAttribute("data-dialog-id") || "";
+				if (dialogId) {
+					event.preventDefault();
+					window.openDialog?.(dialogId);
+				}
+			} else if (action === "close-dialog") {
+				const dialogId = actionEl.getAttribute("data-dialog-id") || "";
+				if (dialogId) {
+					event.preventDefault();
+					window.closeDialog?.(dialogId);
+				}
+			} else if (action === "reload") {
+				event.preventDefault();
+				window.location.reload();
+			} else if (action === "click-target") {
+				const targetId = actionEl.getAttribute("data-target-id") || "";
+				if (targetId) {
+					const target = document.getElementById(targetId);
+					if (target && typeof target.click === "function") {
+						event.preventDefault();
+						target.click();
+					}
+				}
+			}
+		});
+
+		const resolveCallArg = (arg, element, eventObj) => {
+			if (arg === "$this") {
+				return element;
+			}
+			if (arg === "$event") {
+				return eventObj;
+			}
+			if (arg === "$value") {
+				return element?.value;
+			}
+			if (arg === "$checked") {
+				return element?.checked;
+			}
+			if (typeof arg === "string" && arg.startsWith("$value:")) {
+				const selector = arg.slice("$value:".length);
+				const target = selector ? document.querySelector(selector) : null;
+				return target?.value;
+			}
+			if (typeof arg === "string" && arg.startsWith("$text:")) {
+				const selector = arg.slice("$text:".length);
+				const target = selector ? document.querySelector(selector) : null;
+				return target?.textContent || "";
+			}
+			if (typeof arg === "string" && arg.startsWith("$dataset:")) {
+				const key = arg.slice("$dataset:".length);
+				return key ? element?.dataset?.[key] : undefined;
+			}
+			return arg;
+		};
+
+		const parseCallArgs = (raw) => {
+			if (!raw) {
+				return null;
+			}
+			try {
+				const parsed = JSON.parse(raw);
+				return Array.isArray(parsed) ? parsed : null;
+			} catch {
+				return null;
+			}
+		};
+
+		const invokeCall = (element, eventObj, fnName, rawArgs) => {
+			if (!fnName) {
+				return;
+			}
+			const fn = window[fnName];
+			if (typeof fn !== "function") {
+				return;
+			}
+
+			const args = parseCallArgs(rawArgs);
+			if (args) {
+				const resolvedArgs = args.map((arg) =>
+					resolveCallArg(arg, element, eventObj),
+				);
+				fn(...resolvedArgs);
+			} else {
+				if (rawArgs) {
+					console.warn(`Failed to parse call args for ${fnName}:`, rawArgs);
+				}
+				fn(element);
+			}
+		};
+
+		// Generic function calls for click/input/change.
+		document.addEventListener("click", (event) => {
+			const el = event.target.closest("[data-call]");
+			if (!el) {
+				return;
+			}
+			event.preventDefault();
+			invokeCall(
+				el,
+				event,
+				el.getAttribute("data-call"),
+				el.getAttribute("data-call-args"),
+			);
+		});
+
+		document.addEventListener("keydown", (event) => {
+			if (event.key !== "Enter" && event.key !== " ") {
+				return;
+			}
+			const el = event.target.closest?.("[data-call]");
+			if (!el) {
+				return;
+			}
+
+			// Avoid hijacking typing in form controls and contenteditable editors.
+			if (
+				event.target.closest(
+					'input,textarea,select,[contenteditable="true"],.ProseMirror',
+				)
+			) {
+				return;
+			}
+
+			// Let native elements handle their own key behavior.
+			const tag = el.tagName.toLowerCase();
+			if (tag === "button" || tag === "a") {
+				return;
+			}
+
+			event.preventDefault();
+			invokeCall(
+				el,
+				event,
+				el.getAttribute("data-call"),
+				el.getAttribute("data-call-args"),
+			);
+		});
+
+		document.addEventListener("input", (event) => {
+			const el = event.target.closest("[data-call-input]");
+			if (!el) {
+				return;
+			}
+			invokeCall(
+				el,
+				event,
+				el.getAttribute("data-call-input"),
+				el.getAttribute("data-call-input-args"),
+			);
+		});
+
+		document.addEventListener("change", (event) => {
+			const el = event.target.closest("[data-call-change]");
+			if (!el) {
+				return;
+			}
+			invokeCall(
+				el,
+				event,
+				el.getAttribute("data-call-change"),
+				el.getAttribute("data-call-change-args"),
+			);
+		});
+
+		// Drag-and-drop image handlers (e.g. dragging a gallery image into a
+		// markdown textarea). `dragstart` needs the live event object (it reads
+		// `event.target`/`event.dataTransfer`), so callers pass `"$event"` via
+		// data-call-dragstart-args.
+		document.addEventListener("dragstart", (event) => {
+			const el = event.target.closest?.("[data-call-dragstart]");
+			if (!el) {
+				return;
+			}
+			invokeCall(
+				el,
+				event,
+				el.getAttribute("data-call-dragstart"),
+				el.getAttribute("data-call-dragstart-args"),
+			);
+		});
+
+		document.addEventListener("keydown", (event) => {
+			const row = document.activeElement?.closest?.(
+				'[data-action="open-attachment"]',
+			);
+			if (!row) {
+				return;
+			}
+			if (event.key !== "Enter" && event.key !== " ") {
+				return;
+			}
+			event.preventDefault();
+
+			const kind = row.dataset.attachmentKind;
+			const url = row.dataset.attachmentUrl;
+			const name = row.dataset.attachmentName;
+
+			if (kind === "pdf") {
+				window.openPdfViewer(url, name);
+			} else if (kind === "image") {
+				if (
+					row.hasAttribute("data-pswp-open-index") &&
+					window.openPhotoSwipeIndex
+				) {
+					window.openPhotoSwipeIndex(row);
+				} else {
+					window.openImageViewer(url, name);
+				}
+			} else if (url) {
+				window.open(url, "_blank", "noopener,noreferrer");
+			}
+		});
+
+		document
+			.getElementById("pdfViewerDialog")
+			?.addEventListener("close", () => {
+				const frame = document.getElementById("pdfViewerFrame");
+				if (frame) {
+					frame.src = "about:blank";
+				}
+			});
+
+		document
+			.getElementById("imageViewerDialog")
+			?.addEventListener("close", () => {
+				const image = document.getElementById("imageViewerImage");
+				if (image) {
+					image.src = "about:blank";
+					image.alt = "";
+				}
+			});
+
+		// Close daisyUI dropdowns on Escape and on outside click.
+		const closeDropdowns = () => {
+			document.querySelectorAll(".dropdown").forEach((d) => {
+				d.blur();
+			});
+
+			if (document.activeElement instanceof HTMLElement) {
+				const activeDropdown = document.activeElement.closest(".dropdown");
+				if (activeDropdown) {
+					document.activeElement.blur();
+				}
+			}
+		};
+
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Escape") {
+				closeDropdowns();
+			}
+		});
+
+		document.addEventListener("click", (e) => {
+			if (!e.target.closest(".dropdown")) {
+				closeDropdowns();
+			}
+		});
+
+		const isTypingTarget = (target) => {
+			if (!(target instanceof Element)) {
+				return false;
+			}
+			if (target.closest('input, textarea, select, [contenteditable="true"]')) {
+				return true;
+			}
+			return target.closest("[data-shortcuts-ignore]") !== null;
+		};
+
+		const hasOpenBlockingUi = () => {
+			if (document.querySelector("dialog[open]")) {
+				return true;
+			}
+			return !!document.querySelector(".pswp.pswp--open");
+		};
+
+		const navigateTo = (href) => {
+			if (!href) {
+				return false;
+			}
+			window.location.href = href;
+			return true;
+		};
+
+		const getMainShortcutConfig = () => {
+			const main = document.querySelector("main");
+			if (!main) {
+				return null;
+			}
+			return {
+				scope: main.dataset.shortcutsScope || "",
+				createHref: main.dataset.shortcutCreateHref || "",
+				editHref: main.dataset.shortcutEditHref || "",
+				importDialogId: main.dataset.shortcutImportDialog || "",
+				deleteDialogId: main.dataset.shortcutDeleteDialog || "",
+				prevHref: main.dataset.swipePrevHref || "",
+				nextHref: main.dataset.swipeNextHref || "",
+			};
+		};
+
+		const openDeleteDialog = (dialogId) => {
+			const trigger = dialogId
+				? document.querySelector(
+						`[data-action="open-dialog"][data-dialog-id="${dialogId}"]`,
+					)
+				: document.querySelector(
+						'[data-action="open-dialog"][data-dialog-id^="delete"]',
+					);
+
+			if (trigger && typeof trigger.click === "function") {
+				trigger.click();
+				return true;
+			}
+
+			if (dialogId) {
+				return window.openDialog?.(dialogId) || false;
+			}
+
+			return false;
+		};
+
+		document.addEventListener("keydown", (event) => {
+			if (event.defaultPrevented) {
+				return;
+			}
+			if (event.metaKey || event.ctrlKey || event.altKey) {
+				return;
+			}
+			if (isTypingTarget(event.target)) {
+				return;
+			}
+			if (hasOpenBlockingUi()) {
+				return;
+			}
+
+			const shortcutConfig = getMainShortcutConfig();
+			if (!shortcutConfig?.scope) {
+				return;
+			}
+
+			if (shortcutConfig.scope === "list") {
+				if (event.key === "c") {
+					if (navigateTo(shortcutConfig.createHref)) {
+						event.preventDefault();
+					}
+					return;
+				}
+				if (event.key === "i") {
+					if (
+						shortcutConfig.importDialogId &&
+						window.openDialog?.(shortcutConfig.importDialogId)
+					) {
+						event.preventDefault();
+					}
+				}
+				return;
+			}
+
+			if (shortcutConfig.scope !== "detail") {
+				return;
+			}
+
+			if (event.key === "D") {
+				if (openDeleteDialog(shortcutConfig.deleteDialogId)) {
+					event.preventDefault();
+				}
+				return;
+			}
+
+			if (event.key === "e") {
+				if (navigateTo(shortcutConfig.editHref)) {
+					event.preventDefault();
+				}
+				return;
+			}
+
+			if (event.key === "n") {
+				if (navigateTo(shortcutConfig.nextHref)) {
+					event.preventDefault();
+				}
+				return;
+			}
+
+			if (event.key === "p") {
+				if (navigateTo(shortcutConfig.prevHref)) {
+					event.preventDefault();
+				}
+			}
+		});
+
+		// HTMX toast integration (errors + declarative success toasts).
+		document.body.addEventListener("htmx:responseError", async (event) => {
+			const message = await extractErrorMessage(event.detail.xhr, null);
+			window.showToast?.(message, "error");
+		});
+
+		document.body.addEventListener("htmx:afterRequest", (event) => {
+			const element = event.detail?.requestConfig?.elt || event.detail?.elt;
+			if (!element) {
+				return;
+			}
+			const status = event.detail?.xhr?.status ?? 200;
+			if (status >= 400) {
+				return;
+			}
+
+			const toastElement =
+				element.getAttribute("data-toast-message") !== null
+					? element
+					: element.querySelector?.("[data-toast-message]");
+			if (!toastElement) {
+				return;
+			}
+			const message = toastElement.getAttribute("data-toast-message");
+			if (!message) {
+				return;
+			}
+			const variant = toastElement.getAttribute("data-toast-variant") || "info";
+			window.showToast?.(message, variant);
+
+			const dialogId = element.getAttribute("data-dialog-close");
+			if (dialogId) {
+				window.closeDialog?.(dialogId);
+			}
+		});
+
+		// Markdown image autocomplete for textareas
+		setupMarkdownImageAutocomplete();
+	});
+
+	// Markdown Image Autocomplete
+	// Shows image suggestions when typing "!" in markdown-enabled textareas
+	const setupMarkdownImageAutocomplete = () => {
+		const AUTOCOMPLETE_TRIGGER = "!";
+		let currentAutocomplete = null;
+
+		const createAutocompleteDropdown = (textarea, images) => {
+			const dropdown = document.createElement("div");
+			dropdown.className =
+				"markdown-image-autocomplete absolute z-50 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-64 overflow-y-auto w-72";
+			dropdown.setAttribute("role", "listbox");
+			dropdown.setAttribute(
+				"aria-label",
+				getI18n("selectImage", "Select image"),
+			);
+
+			if (images.length === 0) {
+				const emptyItem = document.createElement("div");
+				emptyItem.className = "p-3 text-sm text-base-content/60 italic";
+				emptyItem.textContent = getI18n(
+					"noImagesAvailable",
+					"No images available",
+				);
+				dropdown.appendChild(emptyItem);
+			} else {
+				images.forEach((image, index) => {
+					const item = document.createElement("div");
+					item.className =
+						"markdown-image-item flex items-center gap-3 p-2 hover:bg-base-200 cursor-pointer transition-colors";
+					item.setAttribute("role", "option");
+					item.setAttribute("data-index", index);
+					item.setAttribute("data-url", image.url);
+					item.setAttribute("data-alt", image.alt_text || "");
+
+					const img = document.createElement("img");
+					img.src = image.thumbnail_url || image.url;
+					img.alt = "";
+					img.className = "w-12 h-12 object-cover rounded flex-shrink-0";
+
+					const info = document.createElement("div");
+					info.className = "flex-1 min-w-0";
+
+					const altText = document.createElement("div");
+					altText.className = "text-sm font-medium truncate";
+					altText.textContent =
+						image.alt_text || getI18n("untitledImage", "Untitled image");
+
+					const urlText = document.createElement("div");
+					urlText.className = "text-xs text-base-content/50 truncate";
+					urlText.textContent = image.url.split("/").pop() || image.url;
+
+					info.appendChild(altText);
+					info.appendChild(urlText);
+					item.appendChild(img);
+					item.appendChild(info);
+
+					item.addEventListener("click", () => {
+						insertMarkdownImage(textarea, image);
+						closeAutocomplete();
+					});
+
+					item.addEventListener("mouseenter", () => {
+						setSelectedIndex(index);
+					});
+
+					dropdown.appendChild(item);
+				});
+			}
+
+			return dropdown;
+		};
+
+		const positionDropdown = (textarea, dropdown) => {
+			const rect = textarea.getBoundingClientRect();
+			const scrollTop =
+				window.pageYOffset || document.documentElement.scrollTop;
+			const scrollLeft =
+				window.pageXOffset || document.documentElement.scrollLeft;
+
+			dropdown.style.left = `${rect.left + scrollLeft}px`;
+			dropdown.style.top = `${rect.bottom + scrollTop + 4}px`;
+		};
+
+		const insertMarkdownImage = (textarea, image) => {
+			const start = textarea.selectionStart;
+			const end = textarea.selectionEnd;
+			const value = textarea.value;
+
+			// Find the position of the trigger character
+			let triggerPos = start - 1;
+			while (triggerPos >= 0 && value[triggerPos] !== AUTOCOMPLETE_TRIGGER) {
+				triggerPos--;
+			}
+
+			if (triggerPos < 0) return;
+
+			const beforeTrigger = value.substring(0, triggerPos);
+			const afterCursor = value.substring(end);
+			const altText = image.alt_text || getI18n("image", "Image");
+			const markdown = `![${altText}](${image.url})`;
+
+			textarea.value = beforeTrigger + markdown + afterCursor;
+			textarea.selectionStart = textarea.selectionEnd =
+				triggerPos + markdown.length;
+			textarea.focus();
+			textarea.dispatchEvent(new Event("input", { bubbles: true }));
+		};
+
+		const closeAutocomplete = () => {
+			if (currentAutocomplete) {
+				currentAutocomplete.dropdown.remove();
+				currentAutocomplete = null;
+			}
+		};
+
+		const setSelectedIndex = (index, { scroll = false } = {}) => {
+			if (!currentAutocomplete) return;
+
+			const items = currentAutocomplete.dropdown.querySelectorAll(
+				".markdown-image-item",
+			);
+			if (items.length === 0) {
+				currentAutocomplete.selectedIndex = 0;
+				return;
+			}
+
+			// Normalize to a valid index so callers don't have to.
+			const normalizedIndex =
+				((index % items.length) + items.length) % items.length;
+			items.forEach((item, i) => {
+				if (i === normalizedIndex) {
+					item.classList.add("bg-base-200");
+					item.setAttribute("aria-selected", "true");
+				} else {
+					item.classList.remove("bg-base-200");
+					item.setAttribute("aria-selected", "false");
+				}
+			});
+
+			currentAutocomplete.selectedIndex = normalizedIndex;
+
+			if (scroll) {
+				const selectedItem = items[normalizedIndex];
+				if (!selectedItem) return;
+
+				const dropdown = currentAutocomplete.dropdown;
+				const viewTop = dropdown.scrollTop;
+				const viewBottom = viewTop + dropdown.clientHeight;
+
+				const getOffsetTopWithin = (container, el) => {
+					let top = 0;
+					let node = el;
+					while (node && node !== container) {
+						top += node.offsetTop || 0;
+						node = node.offsetParent;
+					}
+					return top;
+				};
+
+				const itemTop = getOffsetTopWithin(dropdown, selectedItem);
+				const itemBottom = itemTop + selectedItem.offsetHeight;
+				const padding = 4;
+
+				// Ensure the selected item is visible inside the dropdown without
+				// scrolling the main page.
+				currentAutocomplete.isScrolling = true;
+				if (itemTop < viewTop + padding) {
+					dropdown.scrollTop = Math.max(0, itemTop - padding);
+				} else if (itemBottom > viewBottom - padding) {
+					dropdown.scrollTop = Math.max(
+						0,
+						itemBottom - dropdown.clientHeight + padding,
+					);
+				}
+				setTimeout(() => {
+					if (currentAutocomplete) currentAutocomplete.isScrolling = false;
+				}, 100);
+			}
+		};
+
+		const handleKeydown = (event) => {
+			if (!currentAutocomplete) return;
+
+			const items = currentAutocomplete.dropdown.querySelectorAll(
+				".markdown-image-item",
+			);
+			if (items.length === 0) return;
+
+			switch (event.key) {
+				case "ArrowDown":
+					event.preventDefault();
+					setSelectedIndex(currentAutocomplete.selectedIndex + 1, {
+						scroll: true,
+					});
+					break;
+				case "ArrowUp":
+					event.preventDefault();
+					setSelectedIndex(currentAutocomplete.selectedIndex - 1, {
+						scroll: true,
+					});
+					break;
+				case "Enter":
+					event.preventDefault();
+					if (items[currentAutocomplete.selectedIndex]) {
+						const item = items[currentAutocomplete.selectedIndex];
+						const image = {
+							url: item.getAttribute("data-url"),
+							alt_text: item.getAttribute("data-alt"),
+						};
+						insertMarkdownImage(currentAutocomplete.textarea, image);
+						closeAutocomplete();
+					}
+					break;
+				case "Escape":
+					event.preventDefault();
+					closeAutocomplete();
+					break;
+			}
+		};
+
+		const collectAvailableImages = (_textarea) => {
+			const images = [];
+
+			// Collect title images from project gallery
+			document
+				.querySelectorAll("#titleImagesContainer [data-image-id]")
+				.forEach((el) => {
+					const anchor = el.querySelector("a[data-pswp-width]");
+					const img = el.querySelector("img");
+					if (anchor && img) {
+						images.push({
+							url: anchor.getAttribute("href"),
+							thumbnail_url: img.src,
+							alt_text:
+								img.alt || anchor.getAttribute("data-pswp-caption") || "",
+						});
+					}
+				});
+
+			// Collect stitch sample images
+			document
+				.querySelectorAll("#stitchSampleImagesContainer [data-image-id]")
+				.forEach((el) => {
+					const anchor = el.querySelector("a[data-pswp-width]");
+					const img = el.querySelector("img");
+					if (anchor && img) {
+						images.push({
+							url: anchor.getAttribute("href"),
+							thumbnail_url: img.src,
+							alt_text:
+								img.alt || anchor.getAttribute("data-pswp-caption") || "",
+						});
+					}
+				});
+
+			// Collect step images
+			document
+				.querySelectorAll(".step-images [data-image-id]")
+				.forEach((el) => {
+					const anchor = el.querySelector("a[data-pswp-width]");
+					const img = el.querySelector("img");
+					if (anchor && img) {
+						images.push({
+							url: anchor.getAttribute("href"),
+							thumbnail_url: img.src,
+							alt_text:
+								img.alt || anchor.getAttribute("data-pswp-caption") || "",
+						});
+					}
+				});
+
+			// Collect yarn photos
+			document
+				.querySelectorAll("#existing-photos-grid [id^='photo-card-']")
+				.forEach((el) => {
+					const anchor = el.querySelector("a[data-pswp-width]");
+					const img = el.querySelector("img");
+					if (anchor && img) {
+						images.push({
+							url: anchor.getAttribute("href"),
+							thumbnail_url: img.src,
+							alt_text:
+								img.alt || anchor.getAttribute("data-pswp-caption") || "",
+						});
+					}
+				});
+
+			// Collect pending/import images
+			document.querySelectorAll("[data-pending-url]").forEach((el) => {
+				const url = el.getAttribute("data-pending-url");
+				const img = el.querySelector("img");
+				if (url) {
+					images.push({
+						url: url,
+						thumbnail_url: img?.src || url,
+						alt_text: img?.alt || getI18n("pendingImage", "Pending image"),
+					});
+				}
+			});
+
+			// Deduplicate by URL
+			const seen = new Set();
+			return images.filter((img) => {
+				if (seen.has(img.url)) return false;
+				seen.add(img.url);
+				return true;
+			});
+		};
+
+		const handleInput = (event) => {
+			const textarea = event.target;
+			// WYSIWYG uses hidden textareas as backing stores; ignore those to avoid
+			// double autocomplete menus (TipTap shows its own picker).
+			if (textarea?.classList?.contains("hidden")) return;
+			if (!textarea.matches("[data-markdown-images='true']")) return;
+
+			const value = textarea.value;
+			const cursorPos = textarea.selectionStart;
+
+			// Check if the character before cursor is the trigger
+			if (value[cursorPos - 1] !== AUTOCOMPLETE_TRIGGER) {
+				closeAutocomplete();
+				return;
+			}
+
+			// Check if trigger is at start or preceded by whitespace/newline
+			const charBeforeTrigger = value[cursorPos - 2];
+			if (charBeforeTrigger && !/\s/.test(charBeforeTrigger)) {
+				closeAutocomplete();
+				return;
+			}
+
+			closeAutocomplete();
+
+			const images = collectAvailableImages(textarea);
+			const dropdown = createAutocompleteDropdown(textarea, images);
+			document.body.appendChild(dropdown);
+			positionDropdown(textarea, dropdown);
+
+			currentAutocomplete = {
+				textarea,
+				dropdown,
+				selectedIndex: 0,
+			};
+
+			if (images.length > 0) {
+				setSelectedIndex(0);
+			}
+		};
+
+		// Event listeners
+		document.addEventListener("input", handleInput);
+		document.addEventListener("keydown", handleKeydown);
+
+		// Close autocomplete when clicking outside
+		document.addEventListener("click", (event) => {
+			if (
+				currentAutocomplete &&
+				!currentAutocomplete.dropdown.contains(event.target)
+			) {
+				closeAutocomplete();
+			}
+		});
+
+		// Close autocomplete on scroll, but do not close when the dropdown itself
+		// scrolls (keyboard navigation adjusts dropdown.scrollTop).
+		document.addEventListener(
+			"scroll",
+			(event) => {
+				if (!currentAutocomplete) return;
+				if (currentAutocomplete.isScrolling) return;
+
+				// `scroll` doesn't bubble, but it can be captured. When the dropdown is
+				// the scroll container, the event target is inside the dropdown.
+				if (currentAutocomplete.dropdown.contains(event.target)) {
+					return;
+				}
+
+				closeAutocomplete();
+			},
+			true,
+		);
+	};
+
+	// Broken-image fallback: swap a thumbnail for its sibling
+	// `[data-fallback-icon]` placeholder when it fails to load. `error`
+	// events don't bubble, so this must be a capturing listener on
+	// `document` rather than a normal delegated one.
+	document.addEventListener(
+		"error",
+		(event) => {
+			const img = event.target;
+			if (
+				!(img instanceof HTMLImageElement) ||
+				!img.hasAttribute("data-img-fallback")
+			) {
+				return;
+			}
+			const fallback = img.parentElement?.querySelector("[data-fallback-icon]");
+			if (fallback) {
+				img.replaceWith(fallback.cloneNode(true));
+				fallback.classList.remove("hidden");
+			}
+		},
+		true,
+	);
+
+	setupPwaInstall();
+	setupOfflineIndicator();
 })();

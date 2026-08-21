@@ -3,13 +3,12 @@
 import asyncio
 import json
 import logging
-import re
+import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
-from urllib.parse import urlparse
+from urllib.parse import urlencode
 
-import httpx
 from fastapi import (
     APIRouter,
     Depends,
@@ -23,12 +22,14 @@ from fastapi import (
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy import and_, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from stricknani.config import config
 from stricknani.database import get_db
+from stricknani.importing.fetch import FetchError, import_fetch_http_error
+from stricknani.importing.ssrf import SSRFError
 from stricknani.models import (
     Attachment,
     Category,
@@ -36,16 +37,24 @@ from stricknani.models import (
     Project,
     Step,
     User,
-    project_yarns,
     user_favorites,
 )
 from stricknani.models import (
     Yarn as YarnModel,
 )
-from stricknani.routes.auth import get_current_user, require_auth
+from stricknani.routes.auth import (
+    get_current_user,
+    require_auth,
+    require_auth_or_api_token,
+)
+from stricknani.services.audit import (
+    build_field_changes,
+    create_audit_log,
+    list_audit_logs,
+    serialize_audit_log,
+)
 from stricknani.services.images import get_image_dimensions
 from stricknani.services.projects.attachments import (
-    consume_pending_project_import_attachment,
     store_pending_project_import_attachment_bytes,
     store_project_attachment,
     store_project_attachment_bytes,
@@ -54,6 +63,11 @@ from stricknani.services.projects.categories import (
     ensure_category,
     get_user_categories,
     sync_project_categories,
+)
+from stricknani.services.projects.helpers import (
+    build_ai_hints,
+    dedupe_project_attachments,
+    localize_garnstudio_symbol_images,
 )
 from stricknani.services.projects.images import (
     upload_step_image as service_upload_step_image,
@@ -65,11 +79,17 @@ from stricknani.services.projects.images import (
     upload_title_image as service_upload_title_image,
 )
 from stricknani.services.projects.import_images import (
-    import_project_images_from_urls,
-    import_step_images_from_urls,
-    import_yarn_images_from_urls,
     load_existing_image_checksums,
     load_existing_image_similarities,
+)
+from stricknani.services.projects.import_workflows import (
+    PendingImportTokenResolver,
+    import_project_images_from_mixed_sources,
+    import_step_images_from_mixed_sources,
+    parse_token_count,
+    parse_yarn_details,
+    parse_yarn_ids,
+    persist_remaining_import_tokens,
 )
 from stricknani.services.projects.steps import (
     create_step as service_create_step,
@@ -83,31 +103,32 @@ from stricknani.services.projects.tags import (
     serialize_tags,
 )
 from stricknani.services.projects.yarns import (
+    ensure_yarns_by_text,
+    get_exclusive_yarns,
     get_user_yarns,
     load_owned_yarns,
     resolve_yarn_preview,
 )
+from stricknani.utils.ai_provider import has_ai_api_key
 from stricknani.utils.files import (
-    build_import_filename,
-    compute_checksum,
+    UploadTooLargeError,
     delete_file,
     get_file_url,
     get_thumbnail_url,
+    read_upload_content,
 )
-from stricknani.utils.i18n import install_i18n
+from stricknani.utils.i18n import language_context
 from stricknani.utils.image_similarity import (
     SimilarityImage,
 )
 from stricknani.utils.import_trace import ImportTrace
 from stricknani.utils.importer import (
-    IMPORT_IMAGE_HEADERS,
-    IMPORT_IMAGE_MAX_BYTES,
-    IMPORT_IMAGE_TIMEOUT,
     filter_import_image_urls,
     is_garnstudio_url,
     trim_import_strings,
 )
 from stricknani.utils.markdown import render_markdown
+from stricknani.utils.rate_limit import is_rate_limited, record_attempt
 from stricknani.utils.search_tokens import extract_search_token, parse_import_image_urls
 from stricknani.utils.wayback import (
     _should_request_archive,
@@ -118,90 +139,15 @@ from stricknani.web.templating import get_language, render_template, templates
 
 logger = logging.getLogger(__name__)
 
+# Number of cards fetched per page for the list view / HTMX infinite scroll.
+# 24 divides evenly across the 1/2/3-column responsive grid.
+LIST_PAGE_SIZE = 24
+
 router = APIRouter(
     prefix="/projects",
     tags=["projects"],
     responses={404: {"description": "Not found"}},
 )
-
-
-_GARNSTUDIO_SYMBOL_URL_RE = re.compile(
-    r"(https?://[^\s)\"'>]+?/drops/symbols/[^\s)\"'>]+)",
-    re.IGNORECASE,
-)
-
-
-async def _localize_garnstudio_symbol_images(
-    project_id: int,
-    description: str | None,
-    *,
-    referer: str | None = None,
-) -> str | None:
-    if not description or "/drops/symbols/" not in description:
-        return description
-
-    urls = sorted(set(_GARNSTUDIO_SYMBOL_URL_RE.findall(description)))
-    if not urls:
-        return description
-
-    symbol_dir = (
-        config.MEDIA_ROOT
-        / "projects"
-        / str(project_id)
-        / "inline"
-        / "garnstudio-symbols"
-    )
-    symbol_dir.mkdir(parents=True, exist_ok=True)
-
-    headers = dict(IMPORT_IMAGE_HEADERS)
-    if referer:
-        headers["Referer"] = referer
-
-    replacements: dict[str, str] = {}
-    async with httpx.AsyncClient(
-        timeout=IMPORT_IMAGE_TIMEOUT,
-        follow_redirects=True,
-        headers=headers,
-    ) as client:
-        for url in urls:
-            try:
-                response = await client.get(url)
-                response.raise_for_status()
-            except httpx.HTTPError:
-                continue
-
-            if not response.content:
-                continue
-
-            # These are tiny symbol images; we still guard against abuse.
-            if len(response.content) > min(IMPORT_IMAGE_MAX_BYTES, 512 * 1024):
-                continue
-
-            content_type = response.headers.get("content-type")
-            if content_type and not content_type.lower().startswith("image/"):
-                continue
-
-            parsed = urlparse(url)
-            ext = Path(parsed.path).suffix.lower()
-            if not ext:
-                ext = Path(build_import_filename(url, content_type)).suffix.lower()
-            if not ext:
-                ext = ".gif"
-
-            checksum = compute_checksum(response.content)
-            filename = f"{checksum[:16]}{ext}"
-            target_path = symbol_dir / filename
-            if not target_path.exists():
-                target_path.write_bytes(response.content)
-
-            replacements[url] = (
-                f"/media/projects/{project_id}/inline/garnstudio-symbols/{filename}"
-            )
-
-    localized = description
-    for src, dst in replacements.items():
-        localized = localized.replace(src, dst)
-    return localized
 
 
 def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
@@ -212,37 +158,28 @@ def _extract_search_token(search: str, prefix: str) -> tuple[str | None, str]:
     return extract_search_token(search, prefix)
 
 
-def _build_ai_hints(data: dict[str, Any]) -> dict[str, Any]:
-    """Prepare lightweight hints for the AI importer."""
-    hints: dict[str, Any] = {}
-    for key in [
-        "title",
-        "name",
-        "needles",
-        "yarn",
-        "brand",
-        "category",
-        "notes",
-        "link",
-    ]:
-        value = data.get(key)
-        if value:
-            hints[key] = value
-
-    steps = data.get("steps")
-    if isinstance(steps, list) and steps:
-        hints["steps"] = steps[:5]
-
-    image_urls = data.get("image_urls")
-    if isinstance(image_urls, list) and image_urls:
-        hints["image_urls"] = image_urls[:5]
-
-    return hints
+_ensure_yarns_by_text = ensure_yarns_by_text
+_get_exclusive_yarns = get_exclusive_yarns
 
 
-def _normalize_for_comparison(text: str) -> str:
-    """Normalize text for fuzzy comparison by removing non-alphanumeric chars."""
-    return re.sub(r"\W+", "", text).lower()
+def _project_audit_snapshot(project: Project) -> dict[str, object]:
+    return {
+        "name": project.name,
+        "category": project.category,
+        "yarn": project.yarn,
+        "needles": project.needles,
+        "stitch_sample": project.stitch_sample,
+        "description": project.description,
+        "notes": project.notes,
+        "other_materials": project.other_materials,
+        "link": project.link,
+        "tags": sorted(project.tag_list(), key=str.casefold),
+        "yarn_ids": sorted([yarn.id for yarn in project.yarns]),
+        "step_count": len(project.steps),
+        "image_count": len(project.images),
+        "attachment_count": len(project.attachments),
+        "is_ai_enhanced": project.is_ai_enhanced,
+    }
 
 
 def _render_favorite_toggle(
@@ -252,17 +189,17 @@ def _render_favorite_toggle(
     variant: str,
 ) -> HTMLResponse:
     language = get_language(request)
-    install_i18n(templates.env, language)
-    return templates.TemplateResponse(
-        "projects/_favorite_toggle.html",
-        {
-            "request": request,
-            "project_id": project_id,
-            "is_favorite": is_favorite,
-            "variant": variant,
-            "current_language": language,
-        },
-    )
+    with language_context(language):
+        return templates.TemplateResponse(
+            "projects/_favorite_toggle.html",
+            {
+                "request": request,
+                "project_id": project_id,
+                "is_favorite": is_favorite,
+                "variant": variant,
+                "current_language": language,
+            },
+        )
 
 
 @router.get("/search-suggestions")
@@ -301,12 +238,11 @@ async def list_projects(
     category: str | None = None,
     tag: str | None = None,
     search: str | None = None,
+    page: int = Query(1, ge=1),
 ) -> Response:
     """List all projects for the current user."""
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-
-    query = select(Project).where(Project.owner_id == current_user.id)
 
     if search:
         category_token, remaining = _extract_search_token(search, "cat:")
@@ -322,6 +258,22 @@ async def list_projects(
             tag = hash_token
             search = remaining or None
 
+    # Favorites-first ordering is pushed into SQL via a LEFT JOIN against the
+    # favorites association so that ORDER BY and LIMIT/OFFSET pagination are
+    # honoured by the database (no Python re-sort that would defeat both).
+    favorite_marker = user_favorites.c.user_id
+    query = (
+        select(Project, favorite_marker.isnot(None))
+        .outerjoin(
+            user_favorites,
+            and_(
+                user_favorites.c.project_id == Project.id,
+                user_favorites.c.user_id == current_user.id,
+            ),
+        )
+        .where(Project.owner_id == current_user.id)
+    )
+
     if category:
         query = query.where(Project.category == category)
 
@@ -331,26 +283,39 @@ async def list_projects(
     if search:
         query = query.where(Project.name.ilike(f"%{search}%"))
 
-    query = query.options(
-        selectinload(Project.images).selectinload(Image.step),
-        selectinload(Project.yarns),
-    ).order_by(Project.created_at.desc())
-
-    favorite_rows = await db.execute(
-        select(user_favorites.c.project_id).where(
-            user_favorites.c.user_id == current_user.id
+    offset = (page - 1) * LIST_PAGE_SIZE
+    query = (
+        query.options(
+            selectinload(Project.images).selectinload(Image.step),
+            selectinload(Project.yarns),
         )
+        .order_by(
+            favorite_marker.is_(None),
+            func.lower(Project.name),
+            Project.id,
+        )
+        .offset(offset)
+        .limit(LIST_PAGE_SIZE + 1)
     )
-    favorite_ids = {row[0] for row in favorite_rows}
+
     result = await db.execute(query)
-    projects = result.scalars().unique().all()
-    projects = sorted(
-        projects,
-        key=lambda project: (
-            project.id not in favorite_ids,
-            project.name.casefold(),
-        ),
-    )
+    rows = result.all()
+    has_more = len(rows) > LIST_PAGE_SIZE
+    rows = rows[:LIST_PAGE_SIZE]
+    projects = [row[0] for row in rows]
+    favorite_ids = {row[0].id for row in rows if row[1]}
+
+    next_page_url: str | None = None
+    if has_more:
+        params: dict[str, str] = {}
+        if search:
+            params["search"] = search
+        if category:
+            params["category"] = category
+        if tag:
+            params["tag"] = tag
+        params["page"] = str(page + 1)
+        next_page_url = f"/projects/?{urlencode(params)}"
 
     def _serialize_project(project: Project) -> dict[str, object]:
         # Get all title images (or first image if no title image set)
@@ -409,24 +374,39 @@ async def list_projects(
             "tags": project.tag_list(),
         }
 
-    # If this is an HTMX request, only return the projects list
-    if request.headers.get("HX-Request"):
-        projects_data = [_serialize_project(p) for p in projects]
-        language = get_language(request)
-        install_i18n(templates.env, language)
-        return templates.TemplateResponse(
-            "projects/_list_partial.html",
-            {
-                "request": request,
-                "projects": projects_data,
-                "current_language": language,
-                "search": search or "",
-                "selected_category": category,
-                "selected_tag": tag,
-            },
-        )
-
     projects_data = [_serialize_project(p) for p in projects]
+
+    # HTMX infinite scroll: subsequent pages return only the card fragment
+    # (cards plus the next-page sentinel), swapped in-place after the last row.
+    if request.headers.get("HX-Request") and page > 1:
+        language = get_language(request)
+        with language_context(language):
+            return templates.TemplateResponse(
+                "projects/_cards_page.html",
+                {
+                    "request": request,
+                    "projects": projects_data,
+                    "current_language": language,
+                    "next_page_url": next_page_url,
+                },
+            )
+
+    # HTMX search/filter: return the reset list (grid + first page).
+    if request.headers.get("HX-Request"):
+        language = get_language(request)
+        with language_context(language):
+            return templates.TemplateResponse(
+                "projects/_list_partial.html",
+                {
+                    "request": request,
+                    "projects": projects_data,
+                    "current_language": language,
+                    "search": search or "",
+                    "selected_category": category,
+                    "selected_tag": tag,
+                    "next_page_url": next_page_url,
+                },
+            )
 
     categories = await get_user_categories(db, current_user.id)
 
@@ -443,8 +423,8 @@ async def list_projects(
             "selected_category": category,
             "selected_tag": tag,
             "search": search,
-            "has_openai_key": config.FEATURE_AI_IMPORT_ENABLED
-            and bool(config.OPENAI_API_KEY),
+            "next_page_url": next_page_url,
+            "has_openai_key": config.FEATURE_AI_IMPORT_ENABLED and has_ai_api_key(),
         },
     )
 
@@ -456,8 +436,6 @@ async def new_project_form(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Show new project form."""
-    import os
-
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -465,10 +443,8 @@ async def new_project_form(
     yarn_options = await get_user_yarns(db, current_user.id)
     tag_suggestions = await get_user_tags(db, current_user.id)
 
-    # Check if OpenAI API key is available for AI import
-    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(
-        os.getenv("OPENAI_API_KEY")
-    )
+    # Check if an AI provider API key is available for AI import
+    has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
     return await render_template(
         "projects/form.html",
@@ -494,7 +470,7 @@ async def import_pattern(
     use_ai: Annotated[bool, Form()] = False,
     project_id: Annotated[int | None, Form()] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
+    current_user: User = Depends(require_auth_or_api_token),
 ) -> JSONResponse:
     """Import pattern data from URL, file, or text.
 
@@ -504,13 +480,11 @@ async def import_pattern(
         text: Plain text to parse (when type='text')
         files: Uploaded files (when type='file')
         attachment_ids: IDs of existing attachments to import
-        use_ai: If True, use AI-powered extraction (requires OPENAI_API_KEY)
+        use_ai: If True, use AI-powered extraction (requires AI provider key)
         project_id: Optional project ID to import into
         db: Database session
         current_user: Authenticated user
     """
-    import os
-
     files = files or []
     attachment_ids = attachment_ids or []
 
@@ -550,7 +524,13 @@ async def import_pattern(
 
         # Collect uploaded files
         for f in files or []:
-            content = await f.read()
+            try:
+                content = await read_upload_content(f)
+            except UploadTooLargeError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                    detail="Uploaded file is too large",
+                ) from exc
             c_type = get_content_type(f.content_type, f.filename)
             source_contents.append(
                 {
@@ -593,8 +573,8 @@ async def import_pattern(
                         }
                     )
 
-        use_ai_enabled = config.FEATURE_AI_IMPORT_ENABLED and bool(
-            os.getenv("OPENAI_API_KEY")
+        use_ai_enabled = (
+            bool(use_ai) and config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
         )
 
         async def store_source_files_for_import() -> dict[str, Any]:
@@ -730,6 +710,25 @@ async def import_pattern(
                     detail="Invalid URL format",
                 )
 
+            # Rate limit outbound import fetches per user (T107), on top of
+            # the SSRF guard (T52) that restricts *where* we're willing to
+            # fetch from - this bounds *how often* a user can make the
+            # server fetch an attacker-influenced remote URL on their behalf.
+            import_rate_limit_key = f"import:user:{current_user.id}"
+            if is_rate_limited(
+                import_rate_limit_key,
+                config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS,
+                config.RATE_LIMIT_IMPORT_WINDOW_SECONDS,
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Too many imports recently. Please try again later.",
+                    headers={
+                        "Retry-After": str(config.RATE_LIMIT_IMPORT_WINDOW_SECONDS)
+                    },
+                )
+            record_attempt(import_rate_limit_key)
+
             source_url = url
             if trace:
                 trace.add_event("source_url", {"url": source_url})
@@ -776,7 +775,7 @@ async def import_pattern(
 
                     ai_importer = AIPatternImporter(
                         url,
-                        hints=_build_ai_hints(basic_data),
+                        hints=build_ai_hints(basic_data),
                         trace=trace,
                     )
                     ai_data = await ai_importer.fetch_and_parse()
@@ -948,7 +947,7 @@ async def import_pattern(
 
             if use_ai_enabled and not OPENAI_AVAILABLE:
                 # If user requested AI but it's not installed/configured
-                # (Though earlier check might have handled OPENAI_API_KEY)
+                # (Though earlier check might have handled missing AI API key)
                 # If files are images/PDF, we generally need AI.
                 # If pure text, we might survive.
                 pass
@@ -1173,6 +1172,12 @@ async def import_pattern(
 
     except HTTPException:
         raise
+    except (FetchError, SSRFError) as e:
+        logger.warning("Import fetch failed: %s", e)
+        if trace:
+            trace.record_error("import_fetch_failure", e)
+        error_status, detail = import_fetch_http_error(e)
+        raise HTTPException(status_code=error_status, detail=detail) from e
     except Exception as e:
         logger.error(f"Import failed: {e}", exc_info=True)
         if trace:
@@ -1354,249 +1359,6 @@ async def delete_category(
     )
 
 
-async def _ensure_yarns_by_text(
-    db: AsyncSession,
-    user_id: int,
-    yarn_text: str | None,
-    current_yarn_ids: list[int],
-    yarn_brand: str | None = None,
-    yarn_details: list[dict[str, Any]] | None = None,
-) -> list[int]:
-    """Link against a real yarn, or create a new one when there is no match."""
-    updated_ids = list(current_yarn_ids)
-
-    # 1. Handle structured yarn details first (highest quality)
-    if yarn_details:
-        for detail in yarn_details:
-            name = detail.get("name")
-            link = detail.get("link")
-            if not name and not link:
-                continue
-
-            # Try to find match in DB
-            db_yarn_obj = None
-            if link:
-                res_match = await db.execute(
-                    select(YarnModel).where(
-                        YarnModel.owner_id == user_id,
-                        YarnModel.link == link,
-                    )
-                )
-                db_yarn_obj = res_match.scalar_one_or_none()
-
-            if not db_yarn_obj and name:
-                res_match = await db.execute(
-                    select(YarnModel).where(
-                        YarnModel.owner_id == user_id,
-                        func.lower(YarnModel.name) == name.lower(),
-                    )
-                )
-                db_yarn_obj = res_match.scalar_one_or_none()
-
-            if not db_yarn_obj:
-                # Create new yarn with all available details
-                db_yarn_obj = YarnModel(
-                    name=name or "Unknown Yarn",
-                    owner_id=user_id,
-                    brand=detail.get("brand") or yarn_brand,
-                    colorway=detail.get("colorway"),
-                    link=link,
-                )
-                db.add(db_yarn_obj)
-                await db.flush()
-
-                # If we have a link, follow it to get more data
-                if db_yarn_obj.link:
-                    try:
-                        from stricknani.utils.importer import (
-                            GarnstudioPatternImporter,
-                            PatternImporter,
-                            is_garnstudio_url,
-                        )
-
-                        im_ptr: PatternImporter
-                        if is_garnstudio_url(db_yarn_obj.link):
-                            im_ptr = GarnstudioPatternImporter(db_yarn_obj.link)
-                        else:
-                            im_ptr = PatternImporter(db_yarn_obj.link)
-
-                        yarn_data = await im_ptr.fetch_and_parse()
-
-                        # Update name if importer found a better one
-                        imported_name = yarn_data.get("yarn") or yarn_data.get("title")
-                        if imported_name and len(imported_name) > len(db_yarn_obj.name):
-                            db_yarn_obj.name = imported_name
-
-                        # Populate more fields if they are missing
-                        if yarn_data.get("brand") and not db_yarn_obj.brand:
-                            db_yarn_obj.brand = yarn_data.get("brand")
-                        if yarn_data.get("colorway") and not db_yarn_obj.colorway:
-                            db_yarn_obj.colorway = yarn_data.get("colorway")
-                        if yarn_data.get("fiber_content"):
-                            db_yarn_obj.fiber_content = yarn_data.get("fiber_content")
-                        if yarn_data.get("weight_grams"):
-                            db_yarn_obj.weight_grams = yarn_data.get("weight_grams")
-                        if yarn_data.get("length_meters"):
-                            db_yarn_obj.length_meters = yarn_data.get("length_meters")
-                        if yarn_data.get("weight_category"):
-                            db_yarn_obj.weight_category = yarn_data.get(
-                                "weight_category"
-                            )
-                        if yarn_data.get("needles"):
-                            db_yarn_obj.recommended_needles = yarn_data.get("needles")
-                        if not db_yarn_obj.description:
-                            db_yarn_obj.description = yarn_data.get(
-                                "notes"
-                            ) or yarn_data.get("comment")
-
-                        # Import images
-                        img_urls = yarn_data.get("image_urls")
-                        if img_urls:
-                            await import_yarn_images_from_urls(
-                                db,
-                                db_yarn_obj,
-                                img_urls,
-                            )
-
-                        # Handle Wayback archival for the yarn link
-                        if config.FEATURE_WAYBACK_ENABLED and db_yarn_obj.link:
-                            db_yarn_obj.link_archive_requested_at = datetime.now(UTC)
-                            await db.flush()
-                            asyncio.create_task(
-                                store_wayback_snapshot(
-                                    YarnModel, db_yarn_obj.id, db_yarn_obj.link
-                                )
-                            )
-
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to auto-import yarn from {db_yarn_obj.link}: {e}"
-                        )
-
-            if db_yarn_obj.id not in updated_ids:
-                updated_ids.append(db_yarn_obj.id)
-
-        # If we had structured details, we consider them exhaustive for the text
-        return updated_ids
-
-    # 2. Fallback to raw text parsing
-    if not yarn_text:
-        return updated_ids
-
-    # Normalize yarn names from text.
-    # Garnstudio uses newlines for multiple yarns, and commas for color info.
-    # We should prefer newline splitting if multiple lines exist.
-    if "\n" in yarn_text.strip():
-        # Split by newlines and handle "Oder:" (alternative yarn)
-        raw_names = []
-        for line in yarn_text.splitlines():
-            line = line.strip()
-            if not line or line.lower() == "oder:":
-                continue
-            if line.lower().startswith("oder:"):
-                line = line[5:].strip()
-            if line:
-                raw_names.append(line)
-        yarn_names = raw_names
-    else:
-        # Fallback to comma splitting if it's a single line but avoid splitting
-        # on commas that are likely part of a color spec (Garnstudio style)
-        if re.search(r"(?:farbe|color|colour)\s*\d+\s*,\s*", yarn_text, re.I):
-            yarn_names = [yarn_text.strip()]
-        else:
-            yarn_names = [n.strip() for n in yarn_text.split(",") if n.strip()]
-
-    if not yarn_names:
-        return updated_ids
-
-    # Pre-load already linked yarns names to avoid double linking
-    existing_linked_yarns = []
-    if updated_ids:
-        res = await db.execute(
-            select(YarnModel.name).where(YarnModel.id.in_(updated_ids))
-        )
-        existing_linked_yarns = [row[0].lower() for row in res]
-
-    for name in yarn_names:
-        if name.lower() in existing_linked_yarns:
-            continue
-
-        # Try to find match in DB
-        res_match = await db.execute(
-            select(YarnModel).where(
-                YarnModel.owner_id == user_id,
-                func.lower(YarnModel.name) == name.lower(),
-            )
-        )
-        db_yarn_obj = res_match.scalar_one_or_none()
-
-        if not db_yarn_obj:
-            # Create new yarn
-            db_yarn_obj = YarnModel(name=name, owner_id=user_id, brand=yarn_brand)
-            db.add(db_yarn_obj)
-            await db.flush()
-
-        if db_yarn_obj.id not in updated_ids:
-            updated_ids.append(db_yarn_obj.id)
-
-    return updated_ids
-
-
-async def _get_exclusive_yarns(db: AsyncSession, project: Project) -> list[YarnModel]:
-    """Return yarns linked ONLY to this project."""
-    exclusive = []
-    # Project needs to have yarns loaded
-    for y in project.yarns:
-        # We need to count how many projects this yarn belongs to
-        # Since project_yarns is a secondary table, we check it directly
-        res = await db.execute(
-            select(func.count()).where(project_yarns.c.yarn_id == y.id)
-        )
-        count = res.scalar() or 0
-        if count == 1:
-            exclusive.append(y)
-    return exclusive
-
-
-def _dedupe_project_attachments(
-    attachments: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Deduplicate attachment dicts for display.
-
-    We prefer `pdf_page_N.*` over `pdf_image_N.*` when both exist.
-    """
-    out: list[dict[str, Any]] = []
-    index_by_key: dict[tuple[object, ...], int] = {}
-    priority_by_key: dict[tuple[object, ...], int] = {}
-
-    for att in attachments:
-        original = str(att.get("original_filename") or "")
-        content_type = str(att.get("content_type") or "")
-        size_bytes = int(att.get("size_bytes") or 0)
-
-        m = re.match(r"^(pdf_page|pdf_image)_(\d+)\.[a-z0-9]+$", original, re.I)
-        if m:
-            kind = m.group(1).lower()
-            idx = int(m.group(2))
-            key: tuple[object, ...] = ("pdf_page_idx", idx)
-            prio = 2 if kind == "pdf_page" else 1
-        else:
-            key = ("exact", content_type, original, size_bytes)
-            prio = 0
-
-        if key not in index_by_key:
-            index_by_key[key] = len(out)
-            priority_by_key[key] = prio
-            out.append(att)
-            continue
-
-        if prio > priority_by_key.get(key, 0):
-            out[index_by_key[key]] = att
-            priority_by_key[key] = prio
-
-    return out
-
-
 @router.get("/{project_id}", response_class=HTMLResponse)
 async def get_project(
     request: Request,
@@ -1667,7 +1429,7 @@ async def get_project(
                 "created_at": att.created_at.isoformat(),
             }
         )
-    project_attachments = _dedupe_project_attachments(project_attachments)
+    project_attachments = dedupe_project_attachments(project_attachments)
 
     # Prepare project-level images (exclude step images)
     title_images = []
@@ -1778,7 +1540,7 @@ async def get_project(
         swipe_prev_href = f"/projects/{nav_ids[idx - 1]}"
     if idx != -1 and idx < len(nav_ids) - 1:
         swipe_next_href = f"/projects/{nav_ids[idx + 1]}"
-    exclusive_yarns = await _get_exclusive_yarns(db, project)
+    exclusive_yarns = await get_exclusive_yarns(db, project)
 
     # Check for stale archive request (self-healing)
     if (
@@ -1880,6 +1642,15 @@ async def get_project(
             for yarn in exclusive_yarns
         ],
     }
+    audit_entries = [
+        serialize_audit_log(entry)
+        for entry in await list_audit_logs(
+            db,
+            entity_type="project",
+            entity_id=project.id,
+            limit=200,
+        )
+    ]
 
     return await render_template(
         "projects/detail.html",
@@ -1890,6 +1661,7 @@ async def get_project(
             "is_ai_enhanced": project.is_ai_enhanced,
             "swipe_prev_href": swipe_prev_href,
             "swipe_next_href": swipe_next_href,
+            "audit_entries": audit_entries,
         },
     )
 
@@ -1964,7 +1736,7 @@ async def edit_project_form(
                 "created_at": att.created_at.isoformat(),
             }
         )
-    project_attachments = _dedupe_project_attachments(project_attachments)
+    project_attachments = dedupe_project_attachments(project_attachments)
 
     title_images = []
     stitch_sample_images = []
@@ -2032,7 +1804,7 @@ async def edit_project_form(
             }
         )
 
-    exclusive_yarns = await _get_exclusive_yarns(db, project)
+    exclusive_yarns = await get_exclusive_yarns(db, project)
     project_data = {
         "id": project.id,
         "name": project.name,
@@ -2083,7 +1855,7 @@ async def edit_project_form(
             "yarns": yarn_options,
             "tag_suggestions": tag_suggestions,
             "is_ai_enhanced": project.is_ai_enhanced,
-            "has_openai_key": bool(config.OPENAI_API_KEY),
+            "has_openai_key": has_ai_api_key(),
         },
     )
 
@@ -2114,26 +1886,11 @@ async def create_project(
     current_user: User = Depends(require_auth),
 ) -> Response:
     """Create a new project."""
-    # Parse comma-separated yarn IDs
-    parsed_yarn_ids = []
-    if yarn_ids:
-        try:
-            parsed_yarn_ids = [
-                int(id.strip()) for id in yarn_ids.split(",") if id.strip()
-            ]
-        except ValueError:
-            pass
-
-    # Parse structured yarn details if available
-    parsed_yarn_details = None
-    if yarn_details:
-        try:
-            parsed_yarn_details = json.loads(yarn_details)
-        except json.JSONDecodeError:
-            pass
+    parsed_yarn_ids = parse_yarn_ids(yarn_ids)
+    parsed_yarn_details = parse_yarn_details(yarn_details)
 
     # Ensure yarn matches or creates
-    parsed_yarn_ids = await _ensure_yarns_by_text(
+    parsed_yarn_ids = await ensure_yarns_by_text(
         db,
         current_user.id,
         yarn_text,
@@ -2165,16 +1922,9 @@ async def create_project(
     db.add(project)
     await db.flush()  # Get project ID
 
-    # Cache for consumed tokens to allow same image in multiple places
-    token_cache: dict[str, tuple[bytes, str, str]] = {}
+    resolver = PendingImportTokenResolver(current_user)
     permanently_saved_tokens: set[str] = set()
-
-    async def get_token_data(t: str) -> tuple[bytes, str, str]:
-        if t in token_cache:
-            return token_cache[t]
-        data = await consume_pending_project_import_attachment(current_user.id, token=t)
-        token_cache[t] = data
-        return data
+    post_commit_file_deletes: list[str] = []
 
     # Create steps if provided
     if steps_data:
@@ -2182,7 +1932,7 @@ async def create_project(
         for step_data in steps_list:
             step_description = step_data.get("description")
             if isinstance(step_description, str):
-                step_data["description"] = await _localize_garnstudio_symbol_images(
+                step_data["description"] = await localize_garnstudio_symbol_images(
                     project.id,
                     step_description,
                     referer=project.link,
@@ -2196,210 +1946,75 @@ async def create_project(
             db.add(step)
             step_images = step_data.get("image_urls") or step_data.get("images")
             if step_images:
-                # Handle both regular URLs and temporary pdf_image URLs
-                regular_urls = []
-                for url in step_images:
-                    if "/media/imports/projects/" in url:
-                        # Extract token from URL
-                        # Format: /media/imports/projects/{user_id}/{token}{ext}
-                        match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
-                        if match:
-                            token = match.group(1)
-                            try:
-                                (
-                                    pending_bytes,
-                                    original_filename,
-                                    content_type,
-                                ) = await get_token_data(token)
-                                # Mock UploadFile for the service
-                                import io
-
-                                from fastapi import UploadFile
-                                from starlette.datastructures import Headers
-
-                                from stricknani.services.projects.images import (
-                                    upload_step_image,
-                                )
-
-                                mock_file = UploadFile(
-                                    filename=original_filename,
-                                    file=io.BytesIO(pending_bytes),
-                                    headers=Headers({"content-type": content_type}),
-                                )
-                                await upload_step_image(
-                                    db,
-                                    step_id=step.id,
-                                    project_id=project.id,
-                                    file=mock_file,
-                                )
-                                permanently_saved_tokens.add(token)
-                            except FileNotFoundError:
-                                logger.warning(
-                                    "Could not find pending image for token %s", token
-                                )
-                    else:
-                        regular_urls.append(url)
-
-                if regular_urls:
-                    await import_step_images_from_urls(
-                        db,
-                        step,
-                        regular_urls,
-                        permanently_saved_tokens=permanently_saved_tokens,
-                    )
+                await import_step_images_from_mixed_sources(
+                    db,
+                    project=project,
+                    step=step,
+                    step_images=step_images,
+                    resolver=resolver,
+                    permanently_saved_tokens=permanently_saved_tokens,
+                    deferred_deletions=post_commit_file_deletes,
+                )
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
-        # Handle both regular URLs and temporary import URLs
-        regular_project_urls = []
-        for url in image_urls:
-            if "/media/imports/projects/" in url:
-                # Extract token from URL
-                match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
-                if match:
-                    token = match.group(1)
-                    try:
-                        (
-                            pending_bytes,
-                            original_filename,
-                            content_type,
-                        ) = await get_token_data(token)
-
-                        # Skip if it was already saved to a step
-                        if token in permanently_saved_tokens:
-                            continue
-
-                        # Guard: Skip rendered PDF pages in the gallery
-                        # (embedded images are allowed in the gallery).
-                        if original_filename.startswith("pdf_page_"):
-                            continue
-
-                        # Mock UploadFile for the service
-                        import io
-
-                        from fastapi import UploadFile
-                        from starlette.datastructures import Headers
-
-                        from stricknani.services.projects.images import (
-                            upload_title_image,
-                        )
-
-                        mock_file = UploadFile(
-                            filename=original_filename,
-                            file=io.BytesIO(pending_bytes),
-                            headers=Headers({"content-type": content_type}),
-                        )
-                        # Check if this should be the title image
-                        is_title = url == import_title_image_url
-                        upload_result = await upload_title_image(
-                            db,
-                            project_id=project.id,
-                            file=mock_file,
-                            alt_text=original_filename,
-                        )
-                        permanently_saved_tokens.add(token)
-                        if is_title and "id" in upload_result:
-                            # Force this one as title image
-                            await db.execute(
-                                update(Image)
-                                .where(Image.project_id == project.id)
-                                .values(is_title_image=False)
-                            )
-                            await db.execute(
-                                update(Image)
-                                .where(Image.id == int(str(upload_result["id"])))
-                                .values(is_title_image=True)
-                            )
-                    except FileNotFoundError:
-                        # Might have been consumed by a step
-                        pass
-            else:
-                regular_project_urls.append(url)
-
-        if regular_project_urls:
-            await import_project_images_from_urls(
-                db,
-                project,
-                regular_project_urls,
-                title_url=import_title_image_url,
-                permanently_saved_tokens=permanently_saved_tokens,
-            )
+        await import_project_images_from_mixed_sources(
+            db,
+            project=project,
+            image_urls=image_urls,
+            title_url=import_title_image_url,
+            resolver=resolver,
+            permanently_saved_tokens=permanently_saved_tokens,
+            deferred_deletions=post_commit_file_deletes,
+        )
 
     # Attach imported source files that were uploaded before the project existed.
     # This also handles any remaining PDF images not already consumed by steps
     # or gallery.
-    if import_attachment_tokens:
+    await persist_remaining_import_tokens(
+        db,
+        project=project,
+        raw_tokens=import_attachment_tokens,
+        resolver=resolver,
+        permanently_saved_tokens=permanently_saved_tokens,
+    )
+
+    step_count = 0
+    if steps_data:
         try:
-            raw_tokens = json.loads(import_attachment_tokens)
+            parsed_steps = json.loads(steps_data)
         except json.JSONDecodeError:
-            raw_tokens = []
+            parsed_steps = []
+        if isinstance(parsed_steps, list):
+            step_count = len(parsed_steps)
 
-        tokens: list[str] = [
-            t for t in raw_tokens if isinstance(t, str) and len(t) == 32
-        ]
-        for token in tokens:
-            if token in permanently_saved_tokens:
-                continue
+    attachment_count = parse_token_count(import_attachment_tokens)
 
-            try:
-                (
-                    pending_bytes,
-                    original_filename,
-                    content_type,
-                ) = await get_token_data(token)
-            except FileNotFoundError:
-                # Might have been consumed by a step or gallery loop above
-                continue
-
-            # Save as a regular attachment if it's NOT a gallery image
-            # or it's a rendered PDF page.
-            is_pdf_asset = original_filename.startswith("pdf_page_")
-            if (
-                is_pdf_asset
-                or not content_type
-                or not content_type.startswith("image/")
-            ):
-                stored = await store_project_attachment_bytes(
-                    project.id,
-                    content=pending_bytes,
-                    original_filename=original_filename,
-                    content_type=content_type,
-                )
-                db.add(
-                    Attachment(
-                        filename=stored.filename,
-                        original_filename=stored.original_filename,
-                        content_type=stored.content_type,
-                        size_bytes=stored.size_bytes,
-                        project_id=project.id,
-                    )
-                )
-                permanently_saved_tokens.add(token)
-            else:
-                # It's a general image (not from PDF pages) - save to gallery
-                # but ONLY if we haven't saved it yet (dedupe)
-                import io
-
-                from fastapi import UploadFile
-                from starlette.datastructures import Headers
-
-                from stricknani.services.projects.images import upload_title_image
-
-                mock_file = UploadFile(
-                    filename=original_filename,
-                    file=io.BytesIO(pending_bytes),
-                    headers=Headers({"content-type": content_type}),
-                )
-                # upload_title_image now has internal checksum deduplication
-                await upload_title_image(
-                    db,
-                    project_id=project.id,
-                    file=mock_file,
-                    alt_text=original_filename,
-                )
-                permanently_saved_tokens.add(token)
-
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project.id,
+        action="created",
+        details={
+            "name": project.name,
+            "category": project.category,
+            "yarn_count": len(project.yarns),
+            "step_count": step_count,
+            "image_count": len(image_urls),
+            "attachment_count": attachment_count,
+        },
+    )
     await db.commit()
+    for filename in post_commit_file_deletes:
+        try:
+            delete_file(filename, project.id)
+        except OSError as exc:
+            logger.warning(
+                "Failed to remove replaced project image file %s: %s",
+                filename,
+                exc,
+            )
     await db.refresh(project)
 
     if (
@@ -2451,26 +2066,11 @@ async def update_project(
     current_user: User = Depends(require_auth),
 ) -> RedirectResponse:
     """Update a project."""
-    # Parse comma-separated yarn IDs
-    parsed_yarn_ids = []
-    if yarn_ids:
-        try:
-            parsed_yarn_ids = [
-                int(id.strip()) for id in yarn_ids.split(",") if id.strip()
-            ]
-        except ValueError:
-            pass
-
-    # Parse structured yarn details if available
-    parsed_yarn_details = None
-    if yarn_details:
-        try:
-            parsed_yarn_details = json.loads(yarn_details)
-        except json.JSONDecodeError:
-            pass
+    parsed_yarn_ids = parse_yarn_ids(yarn_ids)
+    parsed_yarn_details = parse_yarn_details(yarn_details)
 
     # Ensure yarn matches or creates
-    parsed_yarn_ids = await _ensure_yarns_by_text(
+    parsed_yarn_ids = await ensure_yarns_by_text(
         db,
         current_user.id,
         yarn_text,
@@ -2482,7 +2082,12 @@ async def update_project(
     result = await db.execute(
         select(Project)
         .where(Project.id == project_id)
-        .options(selectinload(Project.steps), selectinload(Project.yarns))
+        .options(
+            selectinload(Project.steps),
+            selectinload(Project.yarns),
+            selectinload(Project.images),
+            selectinload(Project.attachments),
+        )
     )
     project = result.scalar_one_or_none()
 
@@ -2495,6 +2100,8 @@ async def update_project(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
+
+    before_snapshot = _project_audit_snapshot(project)
 
     project.name = name.strip()
     project.category = await ensure_category(db, current_user.id, category)
@@ -2512,94 +2119,27 @@ async def update_project(
     if project.link and _should_request_archive(archive_on_save):
         project.link_archive_requested_at = datetime.now(UTC)
 
-    # Cache for consumed tokens to allow same image in multiple places
-    token_cache: dict[str, tuple[bytes, str, str]] = {}
+    resolver = PendingImportTokenResolver(current_user)
     permanently_saved_tokens: set[str] = set()
-
-    async def get_token_data(t: str) -> tuple[bytes, str, str]:
-        if t in token_cache:
-            return token_cache[t]
-        data = await consume_pending_project_import_attachment(current_user.id, token=t)
-        token_cache[t] = data
-        return data
+    post_commit_file_deletes: list[str] = []
 
     image_urls = _parse_import_image_urls(import_image_urls)
     if image_urls:
-        # Handle both regular URLs and temporary import URLs
-        regular_project_urls = []
-        for url in image_urls:
-            if "/media/imports/projects/" in url:
-                # Extract token from URL
-                match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
-                if match:
-                    token = match.group(1)
-                    try:
-                        (
-                            pending_bytes,
-                            original_filename,
-                            content_type,
-                        ) = await get_token_data(token)
-
-                        # Skip if it was already saved to a step
-                        if token in permanently_saved_tokens:
-                            continue
-
-                        # Guard: Skip PDF assets in the gallery
-                        # they should be attachments only.
-                        if original_filename.startswith(
-                            "pdf_image_"
-                        ) or original_filename.startswith("pdf_page_"):
-                            continue
-
-                        # Mock UploadFile for the service
-                        import io
-
-                        from fastapi import UploadFile
-                        from starlette.datastructures import Headers
-
-                        from stricknani.services.projects.images import (
-                            upload_title_image,
-                        )
-
-                        mock_file = UploadFile(
-                            filename=original_filename,
-                            file=io.BytesIO(pending_bytes),
-                            headers=Headers({"content-type": content_type}),
-                        )
-                        # Check if this should be the title image
-                        is_title = url == import_title_image_url
-                        upload_result = await upload_title_image(
-                            db,
-                            project_id=project.id,
-                            file=mock_file,
-                            alt_text=original_filename,
-                        )
-                        permanently_saved_tokens.add(token)
-                        if is_title and "id" in upload_result:
-                            # Force this one as title image
-                            await db.execute(
-                                update(Image)
-                                .where(Image.project_id == project.id)
-                                .values(is_title_image=False)
-                            )
-                            await db.execute(
-                                update(Image)
-                                .where(Image.id == int(str(upload_result["id"])))
-                                .values(is_title_image=True)
-                            )
-                    except FileNotFoundError:
-                        # Might have been consumed by a step
-                        pass
-            else:
-                regular_project_urls.append(url)
-
-        if regular_project_urls:
-            await import_project_images_from_urls(db, project, regular_project_urls)
+        await import_project_images_from_mixed_sources(
+            db,
+            project=project,
+            image_urls=image_urls,
+            title_url=import_title_image_url,
+            resolver=resolver,
+            permanently_saved_tokens=permanently_saved_tokens,
+            deferred_deletions=post_commit_file_deletes,
+        )
 
     # Update steps
     if steps_data:
         steps_list = json.loads(steps_data)
-        existing_step_ids = {step.id for step in project.steps}
+        existing_steps_by_id = {step.id: step for step in project.steps}
+        existing_step_ids = set(existing_steps_by_id.keys())
 
         def _coerce_step_id(raw: object) -> int | None:
             try:
@@ -2618,12 +2158,29 @@ async def update_project(
         # Delete removed steps
         steps_to_delete = existing_step_ids - new_step_ids
         if steps_to_delete:
+            for step_id in sorted(steps_to_delete):
+                step = existing_steps_by_id.get(step_id)
+                if not step:
+                    continue
+                await create_audit_log(
+                    db,
+                    actor_user_id=current_user.id,
+                    entity_type="project",
+                    entity_id=project.id,
+                    action="step_deleted",
+                    details={
+                        "step_id": step.id,
+                        "title": step.title,
+                        "step_number": step.step_number,
+                    },
+                )
+
             # Fetch images for these steps to delete files from disk
             images_to_delete_result = await db.execute(
                 select(Image).where(Image.step_id.in_(steps_to_delete))
             )
             for img in images_to_delete_result.scalars():
-                delete_file(img.filename, project_id)
+                post_commit_file_deletes.append(img.filename)
 
             # Explicitly delete image records from DB since bulk Step delete
             # doesn't trigger ORM cascades
@@ -2634,19 +2191,53 @@ async def update_project(
         for step_data in steps_list:
             step_description = step_data.get("description")
             if isinstance(step_description, str):
-                step_data["description"] = await _localize_garnstudio_symbol_images(
+                step_data["description"] = await localize_garnstudio_symbol_images(
                     project.id,
                     step_description,
                     referer=project.link,
                 )
+
             step_id = _coerce_step_id(step_data.get("id"))
             if step_id and step_id in existing_step_ids:
                 # Update existing step
-                step_result = await db.execute(select(Step).where(Step.id == step_id))
-                step = step_result.scalar_one()
+                step = existing_steps_by_id.get(step_id)
+                if not step:
+                    # Should not happen but keep behavior safe if DB state changed.
+                    step_result = await db.execute(
+                        select(Step).where(Step.id == step_id)
+                    )
+                    step = step_result.scalar_one()
+
+                before_details: dict[str, object] = {
+                    "title": step.title,
+                    "description": step.description,
+                    "step_number": step.step_number,
+                }
                 step.title = step_data.get("title", "")
                 step.description = step_data.get("description")
                 step.step_number = step_data.get("step_number", 0)
+
+                changes = build_field_changes(
+                    before_details,
+                    {
+                        "title": step.title,
+                        "description": step.description,
+                        "step_number": step.step_number,
+                    },
+                )
+                if changes:
+                    await create_audit_log(
+                        db,
+                        actor_user_id=current_user.id,
+                        entity_type="project",
+                        entity_id=project.id,
+                        action="step_updated",
+                        details={
+                            "step_id": step.id,
+                            "step_number": step.step_number,
+                            "changes": changes,
+                        },
+                    )
             else:
                 # Create new step
                 step = Step(
@@ -2657,140 +2248,59 @@ async def update_project(
                 )
                 db.add(step)
                 await db.flush()
+                await create_audit_log(
+                    db,
+                    actor_user_id=current_user.id,
+                    entity_type="project",
+                    entity_id=project.id,
+                    action="step_created",
+                    details={
+                        "step_id": step.id,
+                        "title": step.title,
+                        "step_number": step.step_number,
+                    },
+                )
 
             step_images = step_data.get("image_urls") or step_data.get("images")
             if step_images:
-                # Handle both regular URLs and temporary pdf_image URLs
-                regular_urls = []
-                for url in step_images:
-                    if "/media/imports/projects/" in url:
-                        # Extract token from URL
-                        match = re.search(r"/([a-f0-9]{32})\.[a-z]{3,4}$", url)
-                        if match:
-                            token = match.group(1)
-                            try:
-                                (
-                                    pending_bytes,
-                                    original_filename,
-                                    content_type,
-                                ) = await get_token_data(token)
-                                # Mock UploadFile for the service
-                                import io
-
-                                from fastapi import UploadFile
-                                from starlette.datastructures import Headers
-
-                                from stricknani.services.projects.images import (
-                                    upload_step_image,
-                                )
-
-                                mock_file = UploadFile(
-                                    filename=original_filename,
-                                    file=io.BytesIO(pending_bytes),
-                                    headers=Headers({"content-type": content_type}),
-                                )
-                                await upload_step_image(
-                                    db,
-                                    step_id=step.id,
-                                    project_id=project.id,
-                                    file=mock_file,
-                                )
-                                permanently_saved_tokens.add(token)
-                            except FileNotFoundError:
-                                logger.warning(
-                                    "Could not find pending image for token %s", token
-                                )
-                    else:
-                        regular_urls.append(url)
-
-                if regular_urls:
-                    await import_step_images_from_urls(
-                        db,
-                        step,
-                        regular_urls,
-                        permanently_saved_tokens=permanently_saved_tokens,
-                    )
+                await import_step_images_from_mixed_sources(
+                    db,
+                    project=project,
+                    step=step,
+                    step_images=step_images,
+                    resolver=resolver,
+                    permanently_saved_tokens=permanently_saved_tokens,
+                    deferred_deletions=post_commit_file_deletes,
+                )
 
     # Attach imported source files that were uploaded before the project existed.
     # This also handles any remaining PDF images not already consumed by steps
     # or gallery.
-    if import_attachment_tokens:
-        try:
-            raw_tokens = json.loads(import_attachment_tokens)
-        except json.JSONDecodeError:
-            raw_tokens = []
+    await persist_remaining_import_tokens(
+        db,
+        project=project,
+        raw_tokens=import_attachment_tokens,
+        resolver=resolver,
+        permanently_saved_tokens=permanently_saved_tokens,
+    )
 
-        tokens: list[str] = [
-            t for t in raw_tokens if isinstance(t, str) and len(t) == 32
-        ]
-        for token in tokens:
-            if token in permanently_saved_tokens:
-                continue
-
-            try:
-                (
-                    pending_bytes,
-                    original_filename,
-                    content_type,
-                ) = await get_token_data(token)
-            except FileNotFoundError:
-                # Might have been consumed by a step or gallery loop above
-                continue
-
-            # Save as a regular attachment if it's NOT a gallery image
-            # or it's a rendered PDF page.
-            is_pdf_asset = original_filename.startswith("pdf_page_")
-            if (
-                is_pdf_asset
-                or not content_type
-                or not content_type.startswith("image/")
-            ):
-                from stricknani.models import Attachment
-                from stricknani.services.projects.attachments import (
-                    store_project_attachment_bytes,
-                )
-
-                stored = await store_project_attachment_bytes(
-                    project.id,
-                    content=pending_bytes,
-                    original_filename=original_filename,
-                    content_type=content_type,
-                )
-                db.add(
-                    Attachment(
-                        filename=stored.filename,
-                        original_filename=stored.original_filename,
-                        content_type=stored.content_type,
-                        size_bytes=stored.size_bytes,
-                        project_id=project.id,
-                    )
-                )
-                permanently_saved_tokens.add(token)
-            else:
-                # It's a general image (not from PDF pages) - save to gallery
-                # but ONLY if we haven't saved it yet (dedupe)
-                import io
-
-                from fastapi import UploadFile
-                from starlette.datastructures import Headers
-
-                from stricknani.services.projects.images import upload_title_image
-
-                mock_file = UploadFile(
-                    filename=original_filename,
-                    file=io.BytesIO(pending_bytes),
-                    headers=Headers({"content-type": content_type}),
-                )
-                # upload_title_image now has internal checksum deduplication
-                await upload_title_image(
-                    db,
-                    project_id=project.id,
-                    file=mock_file,
-                    alt_text=original_filename,
-                )
-                permanently_saved_tokens.add(token)
+    changes = build_field_changes(before_snapshot, _project_audit_snapshot(project))
+    if changes:
+        await create_audit_log(
+            db,
+            actor_user_id=current_user.id,
+            entity_type="project",
+            entity_id=project.id,
+            action="updated",
+            details={"changes": changes},
+        )
 
     await db.commit()
+    for filename in post_commit_file_deletes:
+        try:
+            delete_file(filename, project_id)
+        except OSError as exc:
+            logger.warning("Failed to remove step image file %s: %s", filename, exc)
 
     if (
         config.FEATURE_WAYBACK_ENABLED
@@ -2873,41 +2383,59 @@ async def delete_project(
     # Handle exclusive yarn deletion
     exclusive_yarns_to_delete: list[YarnModel] = []
     if delete_yarn_ids:
-        exclusive_yarns = await _get_exclusive_yarns(db, project)
+        exclusive_yarns = await get_exclusive_yarns(db, project)
         exclusive_by_id = {yarn.id: yarn for yarn in exclusive_yarns}
         for yarn_id in delete_yarn_ids:
             yarn = exclusive_by_id.get(yarn_id)
             if yarn:
                 exclusive_yarns_to_delete.append(yarn)
     elif delete_yarns:
-        exclusive_yarns_to_delete = await _get_exclusive_yarns(db, project)
+        exclusive_yarns_to_delete = await get_exclusive_yarns(db, project)
 
+    yarn_dirs_to_cleanup: list[tuple[Path, Path]] = []
     if exclusive_yarns_to_delete:
         for yarn in exclusive_yarns_to_delete:
-            # Delete yarn media if any
             yarn_media_dir = config.MEDIA_ROOT / "yarns" / str(yarn.id)
             yarn_thumb_dir = config.MEDIA_ROOT / "thumbnails" / "yarns" / str(yarn.id)
-            import shutil
-
-            if yarn_media_dir.exists():
-                shutil.rmtree(yarn_media_dir)
-            if yarn_thumb_dir.exists():
-                shutil.rmtree(yarn_thumb_dir)
+            yarn_dirs_to_cleanup.append((yarn_media_dir, yarn_thumb_dir))
             await db.delete(yarn)
-
-    # Delete all project assets before deleting the database record
-    import shutil
 
     project_media_dir = config.MEDIA_ROOT / "projects" / str(project_id)
     project_thumb_dir = config.MEDIA_ROOT / "thumbnails" / "projects" / str(project_id)
 
-    if project_media_dir.exists():
-        shutil.rmtree(project_media_dir)
-    if project_thumb_dir.exists():
-        shutil.rmtree(project_thumb_dir)
-
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project.id,
+        action="deleted",
+        details={
+            "name": project.name,
+            "image_count": len(project.images),
+            "step_count": len(project.steps),
+            "yarn_count": len(project.yarns),
+            "deleted_yarn_ids": [yarn.id for yarn in exclusive_yarns_to_delete],
+        },
+    )
     await db.delete(project)
     await db.commit()
+
+    for media_dir, thumb_dir in yarn_dirs_to_cleanup:
+        try:
+            if media_dir.exists():
+                shutil.rmtree(media_dir)
+            if thumb_dir.exists():
+                shutil.rmtree(thumb_dir)
+        except OSError as exc:
+            logger.warning("Failed to remove yarn media directories: %s", exc)
+
+    try:
+        if project_media_dir.exists():
+            shutil.rmtree(project_media_dir)
+        if project_thumb_dir.exists():
+            shutil.rmtree(project_thumb_dir)
+    except OSError as exc:
+        logger.warning("Failed to remove project media directories: %s", exc)
 
     if request.headers.get("HX-Request"):
         # Check if any projects remain
@@ -3053,6 +2581,18 @@ async def upload_title_image(
         file=file,
         alt_text=alt_text,
     )
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="title_image_uploaded",
+        details={
+            "image_id": payload.get("id"),
+            "filename": payload.get("filename"),
+            "alt_text": payload.get("alt_text"),
+        },
+    )
     await db.commit()
     return JSONResponse(payload)
 
@@ -3078,6 +2618,18 @@ async def upload_stitch_sample_image(
         project_id=project_id,
         file=file,
         alt_text=alt_text,
+    )
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="stitch_sample_image_uploaded",
+        details={
+            "image_id": payload.get("id"),
+            "filename": payload.get("filename"),
+            "alt_text": payload.get("alt_text"),
+        },
     )
     await db.commit()
     return JSONResponse(payload)
@@ -3114,6 +2666,19 @@ async def upload_step_image(
         file=file,
         alt_text=alt_text,
     )
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="step_image_uploaded",
+        details={
+            "step_id": step_id,
+            "image_id": payload.get("id"),
+            "filename": payload.get("filename"),
+            "alt_text": payload.get("alt_text"),
+        },
+    )
     await db.commit()
     return JSONResponse(payload)
 
@@ -3137,12 +2702,28 @@ async def delete_image(
     if not image or image.project.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    # Delete file from disk
-    delete_file(image.filename, project_id)
-
-    # Delete database record
+    filename = image.filename
+    image_details = {
+        "image_id": image.id,
+        "filename": image.filename,
+        "alt_text": image.alt_text,
+        "step_id": image.step_id,
+        "is_title_image": image.is_title_image,
+    }
     await db.delete(image)
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="image_deleted",
+        details=image_details,
+    )
     await db.commit()
+    try:
+        delete_file(filename, project_id)
+    except OSError as exc:
+        logger.warning("Failed to remove project image file %s: %s", filename, exc)
 
     return {"message": "Image deleted"}
 
@@ -3178,6 +2759,14 @@ async def promote_project_image(
         .values(is_title_image=True)
     )
 
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="title_image_promoted",
+        details={"image_id": image_id},
+    )
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -3210,6 +2799,21 @@ async def upload_attachment(
         project_id=project_id,
     )
     db.add(attachment)
+    await db.flush()
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="attachment_uploaded",
+        details={
+            "attachment_id": attachment.id,
+            "filename": attachment.filename,
+            "original_filename": attachment.original_filename,
+            "content_type": attachment.content_type,
+            "size_bytes": attachment.size_bytes,
+        },
+    )
     await db.commit()
     await db.refresh(attachment)
 
@@ -3248,11 +2852,32 @@ async def delete_attachment(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
 
-    # Delete file from storage
-    delete_file(attachment.filename, project_id)
-
+    filename = attachment.filename
+    attachment_details = {
+        "attachment_id": attachment.id,
+        "filename": attachment.filename,
+        "original_filename": attachment.original_filename,
+        "content_type": attachment.content_type,
+        "size_bytes": attachment.size_bytes,
+    }
     await db.delete(attachment)
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="attachment_deleted",
+        details=attachment_details,
+    )
     await db.commit()
+    try:
+        delete_file(filename, project_id)
+    except OSError as exc:
+        logger.warning(
+            "Failed to remove project attachment file %s: %s",
+            filename,
+            exc,
+        )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -3302,6 +2927,19 @@ async def create_step(
         description=description if isinstance(description, str) else None,
         step_number=_coerce_step_number(step_number, 1),
     )
+    await create_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        entity_type="project",
+        entity_id=project_id,
+        action="step_created",
+        details={
+            "step_id": step.id,
+            "title": step.title,
+            "step_number": step.step_number,
+        },
+    )
+    await db.commit()
 
     return {
         "id": step.id,
@@ -3355,6 +2993,11 @@ async def update_step(
             pass
         return default
 
+    before_details: dict[str, object] = {
+        "title": step.title,
+        "description": step.description,
+        "step_number": step.step_number,
+    }
     await service_update_step(
         db,
         step=step,
@@ -3364,6 +3007,28 @@ async def update_step(
         if step_number is not None
         else None,
     )
+    changes = build_field_changes(
+        before_details,
+        {
+            "title": step.title,
+            "description": step.description,
+            "step_number": step.step_number,
+        },
+    )
+    if changes:
+        await create_audit_log(
+            db,
+            actor_user_id=current_user.id,
+            entity_type="project",
+            entity_id=project_id,
+            action="step_updated",
+            details={
+                "step_id": step.id,
+                "step_number": step.step_number,
+                "changes": changes,
+            },
+        )
+        await db.commit()
 
     return {
         "id": step.id,

@@ -13,12 +13,12 @@
 {{ buttons.primary(_('New Project'), icon='mdi-plus-circle-outline', href='/projects/new', class='hidden
 md:inline-flex') }}
 
-<div class="dropdown dropdown-end dropdown-bottom">
-    <button tabindex="0" role="button" class="btn btn-square btn-ghost" aria-label="{{ _('More options') }}">
+<div class="md3-dropdown md3-dropdown--end">
+    <button tabindex="0" role="button" class="md3-icon-button" aria-label="{{ _('More options') }}">
         <span class="mdi mdi-dots-vertical text-xl"></span>
     </button>
 	    <ul tabindex="0"
-	        class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow-lg bg-base-100 rounded-box border border-base-200">
+	        class="md3-menu md3-menu--end">
 	        <li>
 	            <button type="button" data-action="open-dialog" data-dialog-id="importDialog">
 	                <span class="mdi mdi-download"></span>
@@ -45,6 +45,7 @@ md:inline-flex') }}
 
 {% block list_title %}{{ _('Projects') }}{% endblock %}
 
+{% block main_attrs %}data-shortcuts-scope="list" data-shortcut-create-href="/projects/new" data-shortcut-import-dialog="importDialog"{% endblock %}
 
 {% block list_filters %}
 {% set search_id = "search" %}
@@ -72,7 +73,7 @@ or ('#' ~ selected_tag if selected_tag else '') %}
 
 {% block page_scripts %}
 {{ super() }}
-<script>
+<script nonce="{{ csp_nonce }}">
     document.addEventListener('DOMContentLoaded', () => {
         const toastKey = new URLSearchParams(window.location.search).get('toast');
         if (toastKey === 'project_deleted') {

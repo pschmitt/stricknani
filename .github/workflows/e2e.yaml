@@ -1,0 +1,71 @@
+name: Web E2E
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/e2e.yaml"
+      - "justfile"
+      - "pyproject.toml"
+      - "scripts/e2e.sh"
+      - "stricknani/**"
+      - "tests/e2e/**"
+      - "uv.lock"
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Browser suite to run
+        required: true
+        default: full
+        type: choice
+        options:
+          - smoke
+          - full
+
+concurrency:
+  group: web-e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    name: Chromium ${{ github.event_name == 'pull_request' && 'PR smoke' || inputs.suite }} suite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      E2E_SUITE: ${{ github.event_name == 'pull_request' && 'smoke' || inputs.suite }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.0.1
+        with:
+          version: "0.12.5"
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install application dependencies
+        run: just ci-setup-py
+
+      - name: Install Chromium
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run browser ${{ env.E2E_SUITE }} suite
+        run: just e2e-${{ env.E2E_SUITE }}
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-e2e-${{ env.E2E_SUITE }}-artifacts
+          path: e2e-artifacts/
+          if-no-files-found: warn

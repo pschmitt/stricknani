@@ -3,7 +3,6 @@
 import inspect
 import json as json_module
 import logging
-import os
 import re
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
@@ -11,6 +10,13 @@ from urllib.parse import urlparse
 import httpx
 from bs4 import BeautifulSoup, Tag
 from sqlalchemy import Integer, String, Text
+
+from stricknani.utils.ai_provider import (
+    get_ai_api_key,
+    get_ai_base_url,
+    get_default_ai_model,
+    resolve_ai_provider,
+)
 
 # Check if OpenAI is available
 try:
@@ -346,7 +352,10 @@ class AIPatternImporter:
         """Initialize with URL to import."""
         self.url = url
         self.timeout = timeout
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.provider = resolve_ai_provider()
+        self.api_key = get_ai_api_key(provider=self.provider)
+        self.base_url = get_ai_base_url(provider=self.provider)
+        self.model = get_default_ai_model(provider=self.provider, api_style="chat")
         self.hints = hints
         self.trace = trace
 
@@ -354,8 +363,8 @@ class AIPatternImporter:
         """Fetch URL and extract pattern data using AI."""
         if not self.api_key or not OPENAI_AVAILABLE:
             raise ValueError(
-                "OpenAI API key not configured or openai package not installed. "
-                "Set OPENAI_API_KEY environment variable."
+                "AI API key not configured or openai package not installed. "
+                "Set AI_API_KEY or provider-specific API key environment variable."
             )
 
         # Fetch the page
@@ -797,7 +806,7 @@ class AIPatternImporter:
         """Use OpenAI to extract pattern information."""
         from stricknani.models import Project
 
-        client = AsyncOpenAI(api_key=self.api_key)
+        client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
 
         # Build schema dynamically from Project model
         schema = _build_schema_from_model(Project)
@@ -815,7 +824,7 @@ class AIPatternImporter:
 
         try:
             response = await client.chat.completions.create(
-                model="gpt-4o-mini",  # Fast and cheap
+                model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},

@@ -110,6 +110,7 @@ async def global_search(
         "shared/_global_search_results.html",
         request,
         {
+            "current_user": current_user,
             "results": results,
             "query": q,
         },

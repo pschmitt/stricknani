@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Provisioned for the SNA-7 periodic sync worker. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- API 33+ runtime permission for optional background sync result notifications (SNA-14).
+         Sync never depends on it being granted. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- QR-code onboarding scanner (SNA-13) - requested at scan time, not on launch. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    <application
+        android:name=".StricknaniApp"
+        android:allowBackup="false"
+        tools:ignore="DataExtractionRules"
+        android:enableOnBackInvokedCallback="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Stricknani"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="34">
+
+        <!-- usesCleartextTraffic=true: self-hosted Stricknani instances are frequently plain
+             HTTP on a local network (this app's whole audience is homelab/self-hosted users). -->
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.Stricknani.Splash"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Project/yarn web links (SNA-17). No android:autoVerify: every self-hosted
+                 Stricknani instance runs on a different, user-chosen domain, so a single APK
+                 can't declare one verified host the way a single-tenant app would (see
+                 android/TODO.md's SNA-17 entry) - android:host="*" plus the OS's normal
+                 "Open with" chooser is the same tradeoff nyetbox makes for NetBox's self-hosted
+                 URLs. -->
+            <intent-filter tools:ignore="AppLinkWarning,IntentFilterUniqueDataAttributes">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="*" android:pathPattern="/projects/.*" />
+                <data android:scheme="https" android:host="*" android:pathPattern="/yarn/.*" />
+            </intent-filter>
+            <!-- Self-hosted Stricknani instances are frequently plain HTTP (see
+                 usesCleartextTraffic above) - keep the same portable chooser behavior for those. -->
+            <intent-filter tools:ignore="AppLinkWarning,IntentFilterUniqueDataAttributes">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" android:host="*" android:pathPattern="/projects/.*" />
+                <data android:scheme="http" android:host="*" android:pathPattern="/yarn/.*" />
+            </intent-filter>
+            <!-- Setup QR payloads (SNA-13) are self-identifying custom-scheme URIs, so a generic
+                 camera app's own QR auto-detection can hand them back to this app too, not just
+                 the in-app scanner - matches nyetbox's `nyetbox://setup` registration. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="stricknani" android:host="setup" />
+            </intent-filter>
+        </activity>
+
+        <!-- Per-app language picker (SNA-37): opts into AppCompat's own SharedPreferences-backed
+             storage for the chosen locale on API < 33 (the platform's LocaleManager already
+             persists it natively on API 33+). Without this, setApplicationLocales() would still
+             apply immediately but wouldn't survive an app restart on older devices. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data android:name="autoStoreLocales" android:value="true" />
+        </service>
+
+        <!-- WorkManager will be initialized manually (Configuration.Provider) once SNA-7 adds
+             HiltWorkerFactory injection - disable the default ContentProvider-based auto-init
+             now so that doesn't require another manifest change later. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+    </application>
+
+</manifest>

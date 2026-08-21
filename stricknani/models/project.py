@@ -6,7 +6,7 @@ import json
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from stricknani.models.associations import project_yarns, user_favorites
@@ -115,7 +115,9 @@ class Step(Base):
         DateTime, default=lambda: datetime.now(UTC)
     )
 
-    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id"))
+    project_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("projects.id"), index=True
+    )
 
     project: Mapped[Project] = relationship("Project", back_populates="steps")
     images: Mapped[list[Image]] = relationship(
@@ -127,6 +129,9 @@ class Image(Base):
     """Image model."""
 
     __tablename__ = "images"
+    __table_args__ = (
+        Index("ix_images_project_id_is_title_image", "project_id", "is_title_image"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     filename: Mapped[str] = mapped_column(String(255))
@@ -137,13 +142,17 @@ class Image(Base):
     is_stitch_sample: Mapped[bool | None] = mapped_column(
         Boolean, default=False, nullable=True
     )
+    width: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    height: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC)
     )
 
-    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id"))
+    project_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("projects.id"), index=True
+    )
     step_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("steps.id"), nullable=True
+        Integer, ForeignKey("steps.id"), nullable=True, index=True
     )
 
     project: Mapped[Project] = relationship("Project", back_populates="images")
@@ -164,6 +173,8 @@ class Attachment(Base):
         DateTime, default=lambda: datetime.now(UTC)
     )
 
-    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id"))
+    project_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("projects.id"), index=True
+    )
 
     project: Mapped[Project] = relationship("Project", back_populates="attachments")

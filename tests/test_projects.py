@@ -1,7 +1,9 @@
 import json
 from io import BytesIO
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any
+from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 from httpx import AsyncClient
 from PIL import Image as PILImage
@@ -9,7 +11,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from stricknani.config import config
-from stricknani.models import Attachment, Image, ProjectCategory, Step
+from stricknani.models import (
+    Attachment,
+    AuditLog,
+    Image,
+    Project,
+    ProjectCategory,
+    Step,
+    Yarn,
+)
 
 
 async def _fetch_steps(
@@ -41,6 +51,23 @@ async def _fetch_attachments(
     async with session_factory() as session:
         result = await session.execute(
             select(Attachment).where(Attachment.project_id == project_id)
+        )
+    return list(result.scalars())
+
+
+async def _fetch_audit_logs(
+    session_factory: async_sessionmaker[AsyncSession],
+    entity_type: str,
+    entity_id: int,
+) -> list[AuditLog]:
+    async with session_factory() as session:
+        result = await session.execute(
+            select(AuditLog)
+            .where(
+                AuditLog.entity_type == entity_type,
+                AuditLog.entity_id == entity_id,
+            )
+            .order_by(AuditLog.id.asc())
         )
         return list(result.scalars())
 
@@ -151,6 +178,112 @@ async def test_upload_title_image_creates_image_record(
     assert thumb_path.exists()
     assert any(thumb_path.iterdir())
 
+    audit_entries = await _fetch_audit_logs(session_factory, "project", project_id)
+    assert any(entry.action == "title_image_uploaded" for entry in audit_entries)
+
+
+@pytest.mark.asyncio
+async def test_project_create_and_update_write_audit_logs(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, _user_id, _project_id, _step_id = test_client
+
+    create_response = await client.post(
+        "/projects/",
+        data={"name": "Audit Project", "category": ProjectCategory.SCHAL.value},
+        follow_redirects=False,
+    )
+    assert create_response.status_code == 303
+    location = create_response.headers["location"]
+    project_id = int(location.split("?")[0].strip("/").split("/")[1])
+
+    update_response = await client.post(
+        f"/projects/{project_id}",
+        data={
+            "name": "Audit Project Updated",
+            "category": ProjectCategory.SCHAL.value,
+            "notes": "Now with notes",
+        },
+        follow_redirects=False,
+    )
+    assert update_response.status_code == 303
+
+    audit_entries = await _fetch_audit_logs(session_factory, "project", project_id)
+    actions = [entry.action for entry in audit_entries]
+    assert "created" in actions
+    assert "updated" in actions
+
+    updated_entry = next(entry for entry in audit_entries if entry.action == "updated")
+    assert updated_entry.details is not None
+    details = json.loads(updated_entry.details)
+    changes = details.get("changes", {})
+    assert "name" in changes
+
+
+@pytest.mark.asyncio
+async def test_project_create_with_new_yarn_text_writes_yarn_creation_audit_log(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, session_factory, user_id, _project_id, _step_id = test_client
+
+    create_response = await client.post(
+        "/projects/",
+        data={
+            "name": "Project With New Yarn",
+            "category": ProjectCategory.SCHAL.value,
+            "yarn_text": "Audit Created Yarn",
+            "yarn_brand": "Audit Brand",
+        },
+        follow_redirects=False,
+    )
+    assert create_response.status_code == 303
+
+    async with session_factory() as session:
+        yarn_result = await session.execute(
+            select(Yarn).where(
+                Yarn.owner_id == user_id,
+                Yarn.name == "Audit Created Yarn",
+            )
+        )
+        yarn = yarn_result.scalar_one()
+
+    audit_entries = await _fetch_audit_logs(session_factory, "yarn", yarn.id)
+    created_entry = next(entry for entry in audit_entries if entry.action == "created")
+    assert created_entry.actor_user_id == user_id
+    assert created_entry.details is not None
+    details = json.loads(created_entry.details)
+    assert details.get("name") == "Audit Created Yarn"
+    assert details.get("source") == "project_yarn_resolution"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("other_materials", "visible"),
+    [
+        (None, False),
+        (" \n\t", False),
+        ("![Buttons](https://example.invalid/buttons.png)", True),
+        ("4 buttons", True),
+    ],
+)
+async def test_project_detail_hides_only_empty_other_materials(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+    other_materials: str | None,
+    visible: bool,
+) -> None:
+    client, session_factory, _user_id, project_id, _step_id = test_client
+
+    async with session_factory() as session:
+        project = await session.get(Project, project_id)
+        assert project is not None
+        project.other_materials = other_materials
+        await session.commit()
+
+    response = await client.get(f"/projects/{project_id}")
+
+    assert response.status_code == 200
+    assert ("mdi-package-variant-closed" in response.text) is visible
+
 
 @pytest.mark.asyncio
 async def test_create_project_imports_images(
@@ -172,12 +305,28 @@ async def test_create_project_imports_images(
         response.raise_for_status = MagicMock()
         return response
 
-    with patch(
-        "httpx.AsyncClient.get",
-        new=AsyncMock(
-            side_effect=[_mock_response(image_one), _mock_response(image_two)]
-        ),
-    ):
+    class _StreamResponse:
+        def __init__(self, response: MagicMock) -> None:
+            self._response = response
+
+        async def __aenter__(self) -> MagicMock:
+            self._response.request = httpx.Request("GET", "https://example.com")
+
+            async def _aiter_bytes(chunk_size: int) -> Any:
+                yield self._response.content
+
+            self._response.aiter_bytes = _aiter_bytes
+            return self._response
+
+        async def __aexit__(self, *args: Any) -> bool:
+            return False
+
+    responses = iter([_mock_response(image_one), _mock_response(image_two)])
+
+    def _mock_stream(method: str, url: str, **kwargs: Any) -> _StreamResponse:
+        return _StreamResponse(next(responses))
+
+    with patch("httpx.AsyncClient.stream", side_effect=_mock_stream):
         response = await client.post(
             "/projects/",
             data={

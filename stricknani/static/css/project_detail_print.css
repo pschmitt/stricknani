@@ -1,78 +1,260 @@
 @media print {
-  /* Hide UI elements */
-  .navbar,
-  .footer,
-  .btn,
-  .dropdown,
-  .toast-container,
-  .mdi-arrow-left,
-  .mdi-dots-vertical,
-  nav,
-  header,
-  aside,
-  button,
-  input,
-  .no-print,
-  #stitch-sample-photos {
-    display: none !important;
-  }
+	/* Hide UI elements */
+	.navbar,
+	.footer,
+	footer,
+	.btn,
+	.dropdown,
+	.toast-container,
+	.mdi-arrow-left,
+	.mdi-dots-vertical,
+	nav,
+	header,
+	aside,
+	button,
+	input,
+	.no-print,
+	#project-audit-log-section {
+		display: none !important;
+	}
 
-  /* Reset background and text colors */
-  body {
-    background: white !important;
-    color: black !important;
-  }
+	/* Hide Wayback / archive links (even if not tagged). */
+	a[href*="web.archive.org"],
+	a[href*="archive.org"] {
+		display: none !important;
+	}
 
-  /* Main layout linearization */
-  .grid {
-    display: block !important;
-  }
+	/* Reset background and text colors */
+	body {
+		background: white !important;
+		color: black !important;
+	}
 
-  .col-span-2,
-  .lg\:col-span-3,
-  .lg\:col-span-2 {
-    width: 100% !important;
-  }
+	/* Make the layout compact and linear */
+	.max-w-7xl {
+		max-width: none !important;
+		padding: 0 !important;
+		margin: 0 !important;
+	}
 
-  /* Force mobile details view, hide sidebar */
-  .lg\:hidden {
-    display: block !important;
-  }
+	/* Main layout linearization (single column already, but drop any gap). */
+	#project-grid {
+		display: block !important;
+	}
 
-  .hidden.lg\:block {
-    display: none !important;
-  }
+	/* Expand disclosures and remove decorative chrome */
+	.md3-disclosure {
+		display: block !important;
+		border: none !important;
+		box-shadow: none !important;
+		background: transparent !important;
+	}
 
-  /* Gallery tweaks */
-  .pswp-gallery {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 1rem !important;
-  }
+	.md3-disclosure__title {
+		padding: 0.5rem 0 !important;
+		min-height: 0 !important;
+	}
 
-  .pswp-gallery > div,
-  .pswp-gallery > a {
-    display: block !important;
-    aspect-ratio: auto !important;
-    height: auto !important;
-    break-inside: avoid;
-  }
+	/*
+	Force collapsed sections to print expanded, regardless of the checkbox
+	state the user left them in on screen.
+	*/
+	.md3-disclosure > input:not(:checked) ~ .md3-disclosure__content,
+	.md3-disclosure > input:checked ~ .md3-disclosure__content {
+		display: block !important;
+		visibility: visible !important;
+		opacity: 1 !important;
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
+		padding: 0.25rem 0 0.75rem 0 !important;
+	}
 
-  .pswp-gallery img {
-    object-fit: contain !important;
-    height: auto !important;
-    max-height: 400px !important;
-    width: 100% !important;
-    border-radius: 4px !important;
-  }
+	.md3-disclosure__title::after {
+		display: none !important;
+	}
 
-  /* Expand text */
-  .prose {
-    max-width: none !important;
-  }
+	/* Make project details much more compact in print. */
+	.project-details-card > input ~ .md3-disclosure__content {
+		padding: 0 !important;
+	}
 
-  /* Hide the "more images" overlay */
-  .absolute.inset-0.bg-slate-900\\/60 {
-    display: none !important;
-  }
+	.project-details-print-table {
+		border-collapse: collapse !important;
+		width: 100% !important;
+		font-size: 9pt !important;
+		line-height: 1.2 !important;
+	}
+
+	.project-details-print-table th,
+	.project-details-print-table td {
+		padding: 0.1rem 0 !important;
+		vertical-align: top !important;
+	}
+
+	.project-details-print-table th {
+		width: 9rem !important;
+		text-align: left !important;
+		font-weight: 700 !important;
+		color: #444 !important;
+		text-transform: uppercase !important;
+		letter-spacing: 0.04em !important;
+		font-size: 8pt !important;
+	}
+
+	.project-details-print-table td {
+		word-break: break-word !important;
+	}
+
+	.technical-specs-print-table {
+		border-collapse: collapse !important;
+		width: 100% !important;
+		font-size: 9pt !important;
+		line-height: 1.2 !important;
+	}
+
+	.technical-specs-print-table th,
+	.technical-specs-print-table td {
+		padding: 0.1rem 0 !important;
+		vertical-align: top !important;
+	}
+
+	.technical-specs-print-table th {
+		width: 9rem !important;
+		text-align: left !important;
+		font-weight: 700 !important;
+		color: #444 !important;
+		text-transform: uppercase !important;
+		letter-spacing: 0.04em !important;
+		font-size: 8pt !important;
+	}
+
+	.technical-specs-print-table td {
+		word-break: break-word !important;
+	}
+
+	.project-details-card .divider {
+		display: none !important;
+	}
+
+	.project-details-card .pt-2 {
+		padding-top: 0 !important;
+	}
+
+	.project-details-card .py-1 {
+		padding-top: 0.1rem !important;
+		padding-bottom: 0.1rem !important;
+	}
+
+	.project-details-card .mb-4,
+	.project-details-card .sm\:mb-6 {
+		margin-bottom: 0.4rem !important;
+	}
+
+	.project-details-card .mb-2 {
+		margin-bottom: 0.2rem !important;
+	}
+
+	.project-details-card .mb-1 {
+		margin-bottom: 0.1rem !important;
+	}
+
+	.project-details-card .text-base {
+		font-size: 10pt !important;
+		line-height: 1.25 !important;
+	}
+
+	.project-details-card .text-sm {
+		font-size: 9pt !important;
+		line-height: 1.25 !important;
+	}
+
+	.project-details-card .text-xs {
+		font-size: 8pt !important;
+		line-height: 1.2 !important;
+	}
+
+	.project-details-card .badge {
+		padding: 0.1rem 0.35rem !important;
+		min-height: 0 !important;
+		height: auto !important;
+		line-height: 1.2 !important;
+		font-size: 8pt !important;
+	}
+
+	.project-details-card .mdi {
+		display: none !important;
+	}
+
+	.step-card {
+		break-inside: avoid;
+		page-break-inside: avoid;
+	}
+
+	/* Start instructions on a fresh page for readability. */
+	.instructions-section {
+		break-before: page !important;
+		page-break-before: always !important;
+	}
+
+	/* Make headings a bit smaller in print */
+	h1 {
+		font-size: 18pt !important;
+	}
+
+	h2 {
+		font-size: 14pt !important;
+	}
+
+	h3 {
+		font-size: 12pt !important;
+	}
+
+	/* Reduce Tailwind spacing utilities for print density. */
+	.space-y-8 > :not([hidden]) ~ :not([hidden]) {
+		margin-top: 1rem !important;
+	}
+
+	.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+		margin-top: 0.75rem !important;
+	}
+
+	.p-5 {
+		padding: 0.75rem !important;
+	}
+
+	.p-4 {
+		padding: 0.5rem !important;
+	}
+
+	.p-3 {
+		padding: 0.5rem !important;
+	}
+
+	/* Expand text */
+	.prose {
+		max-width: none !important;
+	}
+
+	/* Print-friendly image layout. */
+	img {
+		max-width: 100% !important;
+		height: auto !important;
+	}
+
+	.pswp-gallery {
+		display: grid !important;
+		grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+		gap: 0.35rem !important;
+	}
+
+	.pswp-gallery > * {
+		break-inside: avoid;
+		page-break-inside: avoid;
+	}
+
+	/* Hide the "more images" overlay */
+	.absolute.inset-0.bg-slate-900\/60 {
+		display: none !important;
+	}
 }

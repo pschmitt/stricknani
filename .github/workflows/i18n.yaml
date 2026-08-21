@@ -3,28 +3,43 @@ name: i18n
 on:
   push:
     branches: [ main ]
+    paths:
+      - "stricknani/**"
+      - "babel.cfg"
+      - "pyproject.toml"
+      - "justfile"
+      - ".github/workflows/i18n.yaml"
   pull_request:
     branches: [ main ]
+    paths:
+      - "stricknani/**"
+      - "babel.cfg"
+      - "pyproject.toml"
+      - "justfile"
+      - ".github/workflows/i18n.yaml"
 
 jobs:
   i18n:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
+
+      - name: Install just
+        uses: extractions/setup-just@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.0.1
         with:
-          version: "latest"
+          version: "0.12.5"
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.x"
+          python-version: "3.14"
 
       - name: Install dependencies
-        run: |
-          uv sync --extra dev
+        run: just ci-setup-py
 
       - name: Check translations
-        run: uv run python -m stricknani.scripts.check_translations
+        run: just i18n-check

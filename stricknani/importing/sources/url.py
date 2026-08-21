@@ -8,13 +8,13 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-import httpx
-
 from stricknani.importing.models import ContentType, ImportSourceType, RawContent
 from stricknani.importing.sources import ImportSource, ImportSourceError
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+
+    from stricknani.importing.fetch import FetchResponse
 
 logger = logging.getLogger("stricknani.imports")
 
@@ -82,21 +82,24 @@ class URLSource(ImportSource):
 
         logger.info("Fetching content from %s", self.url)
 
-        try:
-            async with httpx.AsyncClient(
-                timeout=self.timeout,
-                follow_redirects=self.follow_redirects,
-                headers=self.headers,
-            ) as client:
-                response = await client.get(self.url)
-                response.raise_for_status()
+        # Use curl_cffi (via fetch_url) with a browser TLS fingerprint so that
+        # Cloudflare-protected sites (e.g. garnstudio.com) are not blocked with
+        # an HTTP 403 "Just a moment..." interstitial.
+        from stricknani.importing.fetch import FetchError, fetch_url
 
-        except httpx.HTTPStatusError as exc:
-            raise ImportSourceError(
-                f"HTTP {exc.response.status_code} for {self.url}",
-                source_type=self.source_type,
-            ) from exc
-        except httpx.RequestError as exc:
+        try:
+            response = await fetch_url(
+                self.url,
+                timeout=self.timeout,
+                headers=self.headers,
+                follow_redirects=self.follow_redirects,
+            )
+        except FetchError as exc:
+            if exc.status_code is not None:
+                raise ImportSourceError(
+                    f"HTTP {exc.status_code} for {self.url}",
+                    source_type=self.source_type,
+                ) from exc
             raise ImportSourceError(
                 f"Failed to fetch {self.url}: {exc}",
                 source_type=self.source_type,
@@ -129,7 +132,7 @@ class URLSource(ImportSource):
             },
         )
 
-    def _detect_content_type(self, response: httpx.Response) -> ContentType:
+    def _detect_content_type(self, response: FetchResponse) -> ContentType:
         """Detect content type from response headers and URL."""
         content_type_header = response.headers.get("content-type", "").lower()
 

@@ -16,14 +16,19 @@ from stricknani.config import config
 from stricknani.database import get_db
 from stricknani.models import User
 from stricknani.routes.auth import require_admin
-from stricknani.utils.auth import get_password_hash
+from stricknani.utils.auth import (
+    PasswordPolicyError,
+    get_password_hash,
+    validate_password_policy,
+)
 from stricknani.utils.files import (
+    UploadTooLargeError,
     create_thumbnail,
     delete_file,
-    save_uploaded_file,
+    save_uploaded_image,
 )
 from stricknani.utils.gravatar import gravatar_url
-from stricknani.utils.i18n import gettext, install_i18n
+from stricknani.utils.i18n import gettext, language_context
 from stricknani.web.templating import get_language, render_template, templates
 
 router: APIRouter = APIRouter(prefix="/admin", tags=["admin"])
@@ -46,6 +51,23 @@ def _admin_error_response(request: Request, toast_key: str, message: str) -> Res
     return _admin_users_redirect(toast_key)
 
 
+def _password_policy_error_response(
+    request: Request, exc: PasswordPolicyError
+) -> Response:
+    """Render a password-policy violation (T69) the same way as the other
+    admin form errors above."""
+    language = get_language(request)
+    if exc.reason == "too_short":
+        message = gettext("Password must be at least 8 characters long.", language)
+    else:
+        message = gettext(
+            "This password is too common. Please choose a stronger one.", language
+        )
+    if request.headers.get("HX-Request"):
+        return PlainTextResponse(message, status_code=status.HTTP_400_BAD_REQUEST)
+    return _admin_users_redirect("password_too_weak")
+
+
 def _render_user_card_response(
     request: Request,
     user: User,
@@ -53,7 +75,6 @@ def _render_user_card_response(
     user_count: int,
 ) -> HTMLResponse:
     language = get_language(request)
-    install_i18n(templates.env, language)
     context = {
         "request": request,
         "current_user": current_user,
@@ -61,8 +82,9 @@ def _render_user_card_response(
         "gravatar_url": gravatar_url,
         "user_count": user_count,
     }
-    card_html = templates.get_template("admin/_user_card.html").render(**context)
-    count_html = templates.get_template("admin/_user_count.html").render(**context)
+    with language_context(language):
+        card_html = templates.get_template("admin/_user_card.html").render(**context)
+        count_html = templates.get_template("admin/_user_count.html").render(**context)
     return HTMLResponse(card_html + count_html)
 
 
@@ -72,11 +94,11 @@ def _render_user_deleted_response(
     user_count: int,
 ) -> HTMLResponse:
     language = get_language(request)
-    install_i18n(templates.env, language)
-    count_html = templates.get_template("admin/_user_count.html").render(
-        request=request,
-        user_count=user_count,
-    )
+    with language_context(language):
+        count_html = templates.get_template("admin/_user_count.html").render(
+            request=request,
+            user_count=user_count,
+        )
     placeholder = f'<div id="user-card-{user_id}" data-user-card class="hidden"></div>'
     return HTMLResponse(placeholder + count_html)
 
@@ -251,7 +273,16 @@ async def reset_password(
             "Password cannot be empty.",
         )
 
+    try:
+        validate_password_policy(password)
+    except PasswordPolicyError as exc:
+        return _password_policy_error_response(request, exc)
+
     user.hashed_password = get_password_hash(password)
+    # Revoke any outstanding sessions for this user (T69): a password reset
+    # is a password-change event, so the old JWT must stop working even
+    # though it hasn't expired yet.
+    user.token_version += 1
     user.is_active = True
     await db.commit()
     if request and request.headers.get("HX-Request"):
@@ -323,9 +354,15 @@ async def profile_image_upload_admin(
         )
 
     try:
-        filename, _ = await save_uploaded_file(file, user.id, subdir="users")
+        filename, _ = await save_uploaded_image(file, user.id, subdir="users")
         file_path = config.MEDIA_ROOT / "users" / str(user.id) / filename
         await create_thumbnail(file_path, user.id, subdir="users")
+    except UploadTooLargeError:
+        return _admin_error_response(
+            request,
+            "upload_failed",
+            "Uploaded file is too large.",
+        )
     except Exception as exc:  # noqa: BLE001
         return _admin_error_response(
             request,
@@ -371,6 +408,11 @@ async def create_user_admin(
             "password_empty",
             "Password cannot be empty.",
         )
+
+    try:
+        validate_password_policy(password)
+    except PasswordPolicyError as exc:
+        return _password_policy_error_response(request, exc)
 
     existing = await db.execute(select(User.id).where(User.email == normalized_email))
     if existing.scalar_one_or_none() is not None:
