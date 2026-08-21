@@ -1,3 +1,6 @@
+# Claude Code agent worktrees
+.claude/worktrees/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -37,13 +40,14 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+e2e-artifacts/
 
 # Database
 *.db
 *.db-journal
 
-# Media files
-media/
+# Media files (uploaded content directory, repo root only - not android/**/data/media/ etc.)
+/media/
 
 # Environment
 .env*
@@ -67,3 +71,15 @@ ingest/
 .direnv
 .pre-commit-config.yaml
 *.log
+
+# Android (android/) - Gradle/Android Studio local build state, never built locally anyway
+# (AGENTS.md: Gradle always runs on rofl-13/rofl-14), so this is purely IDE/remote-build noise.
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/*/build/
+android/*/*/build/
+android/captures/
+android/.cxx/
+*.jks
+*.keystore

@@ -137,7 +137,22 @@ todo-todo:
 # Run tests
 [group: 'test']
 test:
-  uv run pytest -v
+  uv run pytest -v --cov=stricknani --cov-report=term-missing --cov-report=xml
+
+# Run the fast browser smoke suite against a disposable local database.
+[group: 'test']
+e2e-smoke:
+  ./scripts/e2e.sh smoke
+
+# Run the longer browser suite against a disposable local database.
+[group: 'test']
+e2e-full:
+  ./scripts/e2e.sh full
+
+# Backwards-compatible alias for the pull-request smoke suite.
+[group: 'test']
+e2e *args:
+  ./scripts/e2e.sh {{ args }}
 
 # Sync vendored assets
 alias vendor-sync := vendir-sync
@@ -150,6 +165,19 @@ alias vendor-check := vendir-check
 [group: 'vendir']
 vendir-check: vendir-sync
   git diff --exit-code -- vendir.lock.yml stricknani/static/vendor
+
+# Rebuild the vendored TipTap bundle (stricknani/static/vendor-tiptap/tiptap-bundle.min.js).
+# TipTap's npm packages pull in ~30 transitive modules (prosemirror-*, etc.)
+# that reference each other via bare specifiers, so vendir alone can't vendor
+# them; esbuild bundles the pinned versions in package.json into one
+# self-contained file instead. Lives outside stricknani/static/vendor/ (not
+# .../vendor/tiptap/) because that directory is exclusively managed by
+# `vendir sync`, which would delete anything under it not declared in
+# vendir.yml. Run after bumping versions in package.json and commit the
+# regenerated bundle + package-lock.json.
+[group: 'vendir']
+vendor-tiptap:
+  cd stricknani/static/vendor-tiptap && npm install && npm run build
 
 # Run all checks (lint + test)
 check: lint lint-nix test i18n-check

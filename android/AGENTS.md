@@ -1,0 +1,89 @@
+# AGENTS.md
+
+Repository instructions for AI coding agents working in `android/` - the Stricknani Android app, a
+native offline-first client for the Stricknani web app (`stricknani/`, one directory up).
+
+See `.just/android-app-ci/AGENTS-shared.md` for the fleet-wide task-tracking convention, dev
+environment (`nix develop`/`git-hooks.nix`), CI-is-the-sole-lint-authority rule, and physical test
+device docs (this app shares the fleet's devices - see "Physical test devices" below) - read it
+alongside this file, not instead of it.
+
+## Project shape
+
+The Stricknani Android app is a Kotlin/Jetpack Compose app: a Material You, **offline-first**
+client for a self-hosted [Stricknani](../README.md) server (knitting projects and yarn stash).
+Package `blue.anika.wolle` (a separate, personal namespace predating this repo - not renamed to
+match the app/product name), debug applicationId `blue.anika.wolle.debug`, GPL-3.0 (matches the
+repo-root `LICENSE`). Single `:app` Gradle module - this app doesn't need a multi-module split.
+
+**Unlike the sibling apps (syncwich, nyetbox, jollyfin, augh), this one lives inside the backend's
+own repo** (`stricknani.git/android/`) rather than a dedicated repo of its own - see root
+`AGENTS.md`'s Documentation Layout section. Backend API work the app depends on lands in
+`stricknani/` (Python/FastAPI), tracked in the repo-root `TODO.md` (`T-N` prefix), not here.
+
+## Task tracking
+
+- This project's `TODO.md` prefix is `SNA-N`. It lives at `android/TODO.md`, not the repo-root
+  `TODO.md` (that one's for the web app, `T-N` prefix) - see that file's own header for how the
+  two relate (a handful of `SNA-N` entries are backend work with a matching `T-N` counterpart).
+- Any user message that starts with `todo: ` (case-insensitive) is a direct instruction to add a
+  new `SNA-N` entry to `android/TODO.md` for whatever follows the prefix, rather than acting on it
+  immediately - file the backlog entry (`not started`, with a checklist inferred from the ask) and
+  confirm back to the user, instead of implementing it in that turn.
+- Keep `android/README.md` aligned with current user-facing behavior, setup instructions, and
+  release process, the same way the repo-root `README.md` works for the web app.
+
+## Dev environment
+
+See the shared doc for the `nix develop`/`git-hooks.nix` basics, run from within `android/`
+(`cd android && nix develop`). The repo-root `flake.nix` covers the Python web app only - Android
+tooling (JDK, Android SDK, `just`, `ktfmt`) is deliberately a separate devShell scoped to this
+directory, not mixed into the root one.
+
+## Builds
+
+- **Never run Gradle builds locally on this machine** - always build on `rofl-13.brkn.lol` or
+  `rofl-14.brkn.lol` instead (`just sync`, `just gradle`, `just build [variant]`, `just lint`,
+  `just test`, `just check`, `just fetch`, `just build-fetch`, run from `android/`). Remote build
+  directory: `~/build/stricknani-android` (see `android/justfile`).
+- **`just build` does NOT copy the APK back** - it only builds remotely. If you then run
+  `just <device>-install "./dist/..."` without an intervening `just fetch`, you reinstall
+  whatever stale APK already happened to be in the local `./dist/` directory, with no error or
+  warning that anything is wrong - `adb install -r` reports "Success" either way. Confirmed the
+  hard way (2026-08-18): iterating on a real layout bug this way produced two "the fix had zero
+  visual effect" false negatives in a row, burning a real debugging detour before the stale-APK
+  explanation was found. Use `just build-fetch` (or `just deploy-zenfone`/`just deploy-all`, which
+  call it) whenever you need the on-device result to reflect the latest source - never bare
+  `just build` followed by a manual install step.
+- See the shared doc for the CI-lint-authority rule and `ktfmt-diff-patch` retrieval procedure.
+  **Confirmed unreliable here, twice**: running `ktfmtCheck` via `nix develop --command ./gradlew`
+  on `rofl-13`/`rofl-14` reports `ktfmtCheckMain NO-SOURCE` (i.e. "nothing to check") even when
+  real files under `src/main/kotlin` have genuine formatting violations that CI's `ktfmtCheck`
+  (GitHub Actions runner, system JDK, no nix) catches immediately - root cause not identified. Do
+  not treat a clean local `ktfmtCheck`/`ktfmtFormat` run as proof of formatting correctness; push
+  and let CI's `Android Lint` workflow be the actual check, and if it fails, fetch that run's
+  `ktfmt-diff-patch` artifact and apply it rather than re-attempting a local check.
+- CI workflows here are thin callers (`android/.github` doesn't exist - see repo-root
+  `.github/workflows/android-*.yaml`). The build, lint, signed release, and Play bundle lanes call
+  the fleet's reusable `pschmitt/android-app-ci` workflows with `project-directory: android`,
+  while E2E and screenshot capture retain their fixture-specific emulator/test orchestration. The
+  shared screenshot-PR tail, JDK/Gradle setup, keystore decoding, KVM setup, and emulator wait
+  helper are reused directly. All callers remain path-filtered to `android/**` (plus their fixture
+  inputs where applicable) so Python-only changes don't trigger an Android CI run and vice versa.
+
+## Physical test devices
+
+Same fleet hardware as the sibling apps - Zenfone 10 / Mi Pad 4 / Pixel 5, see the shared doc for
+connection details/gotchas. `android/justfile` has the same device identifiers committed as
+defaults (`zenfone_serial`, `mipad_host`, `px5_host`); `just deploy-all [variant]` builds, fetches,
+and installs on all three. Confirmed working live 2026-08-18. Release-build signing and Play Store
+parity are still deferred (SNA-12) - this only covers debug-build device installs.
+
+## Architecture
+
+See `android/TODO.md`'s "Architecture summary" section for the current state of: offline-first
+data flow, PAT auth (backend: `T74`/`stricknani/routes/api/`), delta-sync (`T77`), Room schema
+approach, and Material 3 Expressive theming. That section is kept up to date as the app is built
+out - treat it as the living architecture doc, this file as the operational/workflow one.
+
+# vim: set ft=markdown et ts=2 sw=2 :

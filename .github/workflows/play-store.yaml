@@ -1,0 +1,105 @@
+name: Play Store Release
+
+# Validation remains local because it checks Stricknani's declarations, privacy-policy URL, and
+# production confirmation. The shared workflow owns the signed AAB build, artifact hand-off, and
+# explicitly gated Play publication.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "Positive, never-used Google Play version code"
+        required: true
+        type: string
+      version_name:
+        description: "Human-readable Android version name, e.g. 0.1.0"
+        required: true
+        type: string
+      track:
+        description: "Play track (internal is the safe first destination)"
+        required: true
+        default: internal
+        type: string
+      production_confirmation:
+        description: "Required only for a production track: type I_UNDERSTAND_PRODUCTION_UPLOAD"
+        required: false
+        default: ""
+        type: string
+      publish:
+        description: "Upload the signed AAB (also requires PLAY_PUBLISH_ENABLED=true)"
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: play-store-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate listing and release parameters
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate version and track
+        env:
+          VERSION_CODE: ${{ inputs.version_code }}
+          VERSION_NAME: ${{ inputs.version_name }}
+          TRACK: ${{ inputs.track }}
+          PRODUCTION_CONFIRMATION: ${{ inputs.production_confirmation }}
+        run: |
+          [[ "$VERSION_CODE" =~ ^[1-9][0-9]*$ ]] || {
+            echo "version_code must be a positive integer" >&2
+            exit 1
+          }
+          (( VERSION_CODE <= 2100000000 )) || {
+            echo "version_code exceeds Google Play's maximum" >&2
+            exit 1
+          }
+          [[ "$VERSION_NAME" =~ ^[0-9A-Za-z][0-9A-Za-z.+_-]*$ ]] || {
+            echo "version_name contains unsupported characters" >&2
+            exit 1
+          }
+          [[ "$TRACK" =~ ^(internal|alpha|beta|production)$ ]] || {
+            echo "track must be internal, alpha, beta, or production" >&2
+            exit 1
+          }
+          if [[ "$TRACK" == production && "$PRODUCTION_CONFIRMATION" != I_UNDERSTAND_PRODUCTION_UPLOAD ]]
+          then
+            echo "production requires the exact production_confirmation value" >&2
+            exit 1
+          fi
+
+      - name: Validate Play Store metadata and committed assets
+        env:
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          args=(--root .)
+          if [[ "$PUBLISH" == true ]]
+          then
+            args+=(--require-ready)
+          fi
+          python3 android/scripts/validate-play-store-metadata.py "${args[@]}"
+
+  play-store:
+    name: Build and publish signed Android App Bundle
+    needs: validate
+    uses: pschmitt/android-app-ci/.github/workflows/play-store.yaml@main
+    with:
+      application-id: blue.anika.wolle
+      artifact-label: stricknani
+      project-directory: android
+      keystore-file-name: stricknani-ci.jks
+      unit-test-task: :app:testDebugUnitTest
+      gradle-bundle-task: :app:bundleRelease
+      aab-path: app/build/outputs/bundle/release/app-release.aab
+      version-code: ${{ inputs.version_code }}
+      version-name: ${{ inputs.version_name }}
+      publish: ${{ inputs.publish }}
+      track: ${{ inputs.track }}
+    secrets: inherit

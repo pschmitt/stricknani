@@ -159,9 +159,7 @@
 				return;
 			}
 
-			const csrfToken = document
-				.querySelector('meta[name="csrf-token"]')
-				?.getAttribute("content");
+			const csrfToken = window.getCsrfToken?.();
 
 			getCroppedCanvas()
 				.then((canvas) => {

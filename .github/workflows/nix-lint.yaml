@@ -14,10 +14,10 @@ jobs:
   statix:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -25,4 +25,4 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Run statix
-        run: just lint-nix
+        run: nix develop --command just lint-nix

@@ -17,9 +17,28 @@ from stricknani.utils.importer import filter_import_image_urls
 class _FakeResponse:
     content: bytes
     headers: dict[str, str]
+    status_code: int = 200
+    request: httpx.Request | None = None
 
     def raise_for_status(self) -> None:
         return
+
+
+class _FakeStream:
+    def __init__(self, response: _FakeResponse) -> None:
+        self._response = response
+
+    async def __aenter__(self) -> _FakeResponse:
+        self._response.request = httpx.Request("GET", "https://example.com")
+
+        async def _aiter_bytes(chunk_size: int) -> Any:
+            yield self._response.content
+
+        self._response.aiter_bytes = _aiter_bytes  # type: ignore[attr-defined]
+        return self._response
+
+    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> bool:
+        return False
 
 
 class _FakeAsyncClient:
@@ -32,13 +51,15 @@ class _FakeAsyncClient:
     async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
         return
 
-    async def get(self, url: str) -> _FakeResponse:
+    def stream(self, method: str, url: str) -> _FakeStream:
         if url not in self._url_to_payload:
             raise httpx.HTTPError("not found")
         content, content_type = self._url_to_payload[url]
-        return _FakeResponse(
-            content=content,
-            headers={"content-type": content_type},
+        return _FakeStream(
+            _FakeResponse(
+                content=content,
+                headers={"content-type": content_type},
+            )
         )
 
 

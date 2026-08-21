@@ -30,23 +30,6 @@ directories:
         includePaths:
           - package/dist/cropper.min.js
 
-      # renovate: datasource=npm depName=daisyui
-      - path: daisyui
-        http:
-          url: https://registry.npmjs.org/daisyui/-/daisyui-5.5.18.tgz
-        newRootPath: package
-        includePaths:
-          - package/daisyui.css
-          - package/themes.css
-
-      # renovate: datasource=npm depName=@tailwindcss/browser
-      - path: tailwindcss-browser
-        http:
-          url: https://registry.npmjs.org/@tailwindcss/browser/-/browser-4.1.18.tgz
-        newRootPath: package/dist
-        includePaths:
-          - package/dist/index.global.js
-
       # renovate: datasource=npm depName=htmx.org
       - path: htmx
         http:

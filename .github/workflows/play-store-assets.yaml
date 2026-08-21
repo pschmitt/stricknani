@@ -1,0 +1,101 @@
+name: Play Store Assets
+
+# Asset publication is separate from release publication. It is manual and validates the checked
+# in listing first. The default dispatch is a dry run; an upload additionally needs the explicit
+# input and repository-level gate, so merging a screenshot PR can never mutate Play Console.
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Upload reviewed screenshots, icon, and feature graphic to Play Console"
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: play-store-assets-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Play Store assets
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate metadata and images
+        env:
+          UPLOAD: ${{ inputs.upload }}
+        run: |
+          args=(--root .)
+          if [[ "$UPLOAD" == true ]]
+          then
+            args+=(--require-ready --require-screenshots)
+          fi
+          python3 android/scripts/validate-play-store-metadata.py "${args[@]}"
+
+  upload-gate:
+    name: Require explicit asset publication gate
+    needs: validate
+    if: ${{ inputs.upload }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check repository publication gate
+        run: |
+          if [[ "${{ vars.PLAY_PUBLISH_ENABLED }}" != true ]]
+          then
+            echo "Asset upload was requested, but PLAY_PUBLISH_ENABLED is not true." >&2
+            exit 1
+          fi
+          echo "Explicit Play asset publication gate is enabled for this dispatch."
+
+  upload:
+    name: Upload reviewed listing assets
+    needs: [validate, upload-gate]
+    if: ${{ inputs.upload && vars.PLAY_PUBLISH_ENABLED == 'true' }}
+    runs-on: ubuntu-24.04
+    env:
+      PLAY_PACKAGE: blue.anika.wolle
+      GPC_VERSION: 0.5.15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Check Play service-account credential
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          test -n "$PLAY_SERVICE_ACCOUNT_JSON" || {
+            echo "PLAY_SERVICE_ACCOUNT_JSON is required when asset upload is enabled." >&2
+            exit 1
+          }
+
+      - name: Install pinned playconsole-cli
+        run: |
+          curl -fsSL \
+            "https://github.com/AndroidPoet/playconsole-cli/releases/download/v${GPC_VERSION}/playconsole-cli_${GPC_VERSION}_linux_amd64.tar.gz" \
+            -o /tmp/playconsole-cli.tar.gz
+          tar -xzf /tmp/playconsole-cli.tar.gz -C /tmp playconsole-cli
+          sudo install -m 755 /tmp/playconsole-cli /usr/local/bin/gpc
+
+      - name: Authenticate playconsole-cli without printing the secret
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          credentials_file="$RUNNER_TEMP/play-service-account.json"
+          umask 077
+          printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > "$credentials_file"
+          gpc auth login \
+            --name default \
+            --credentials "$credentials_file" \
+            --default-package "$PLAY_PACKAGE"
+
+      - name: Upload reviewed assets
+        env:
+          PLAY_STORE_UPLOAD_CONFIRMATION: I_UNDERSTAND_THIS_UPLOADS_TO_GOOGLE_PLAY
+        run: android/scripts/upload-play-store-assets.sh --upload

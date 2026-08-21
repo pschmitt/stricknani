@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from stricknani.config import config
+
 
 @pytest.mark.asyncio
 async def test_import_yarn_wolle_roedel(test_client: Any) -> None:
@@ -40,7 +42,7 @@ async def test_import_yarn_wolle_roedel(test_client: Any) -> None:
     </html>
     """
 
-    with patch("httpx.AsyncClient.get") as mock_get:
+    with patch("stricknani.importing.fetch.fetch_url") as mock_get:
         mock_response = MagicMock()
         mock_response.text = mock_html
         mock_response.status_code = 200
@@ -63,3 +65,34 @@ async def test_import_yarn_wolle_roedel(test_client: Any) -> None:
     assert data["length_meters"] == 300
     assert data["fiber_content"] == "42% Alpaka, 40% Polyacryl, 18% Wolle"
     assert data["recommended_needles"] == "4-4,5mm"
+
+
+@pytest.mark.asyncio
+async def test_import_yarn_from_url_is_rate_limited(test_client: Any) -> None:
+    """T107: URL imports had no cap, letting a user make the server fetch an
+    attacker-influenced remote URL on their behalf as often as they like -
+    the SSRF guard (T52) restricts *where* it fetches from, not *how often*."""
+    client, _, _, _, _ = test_client
+
+    original_max = config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS
+    config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS = 1
+    try:
+        with patch("stricknani.importing.fetch.fetch_url") as mock_get:
+            mock_response = MagicMock()
+            mock_response.text = "<html></html>"
+            mock_response.status_code = 200
+            mock_get.return_value = mock_response
+
+            first = await client.post(
+                "/yarn/import", data={"url": "https://example.com/pattern"}
+            )
+            assert first.status_code == 200
+
+            blocked = await client.post(
+                "/yarn/import", data={"url": "https://example.com/pattern"}
+            )
+    finally:
+        config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS = original_max
+
+    assert blocked.status_code == 429
+    assert "Retry-After" in blocked.headers

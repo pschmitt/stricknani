@@ -1,0 +1,15 @@
+<resources>
+    <!-- Plain platform theme - Compose (see ui/theme/Theme.kt) owns all real styling. This only
+         covers the brief native window chrome (background/status bar) before Compose draws. -->
+    <style name="Theme.Stricknani" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/icon_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.Stricknani.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/icon_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Stricknani</item>
+    </style>
+</resources>

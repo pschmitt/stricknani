@@ -17,6 +17,7 @@ let
     beautifulsoup4
     nh3
     cryptography
+    curl-cffi
     fastapi
     fastapi-csrf-protect
     httpx
@@ -30,6 +31,7 @@ let
     python-dotenv
     python-jose
     python-multipart
+    qrcode
     rich
     scikit-image
     sentry-sdk
@@ -50,19 +52,40 @@ python.pkgs.buildPythonApplication {
 
   src = lib.cleanSource ./..;
 
-  nativeBuildInputs = with python.pkgs; [
-    hatchling
-  ] ++ [
-    makeWrapper
-  ];
+  nativeBuildInputs =
+    with python.pkgs;
+    [
+      hatchling
+      babel
+    ]
+    ++ [
+      makeWrapper
+    ];
 
   propagatedBuildInputs = pythonDeps;
 
+  # Compile gettext catalogs (.mo) at build time so they are shipped in
+  # the store output and never lazily compiled into the read-only store at
+  # request time.
+  preBuild = ''
+    ${python.pkgs.babel}/bin/pybabel compile -d stricknani/locales
+  '';
+
   postFixup = ''
     wrapProgram "$out/bin/stricknani" \
-      --prefix PATH : ${lib.makeBinPath [ poppler-utils tesseract ]}
+      --prefix PATH : ${
+        lib.makeBinPath [
+          poppler-utils
+          tesseract
+        ]
+      }
     wrapProgram "$out/bin/stricknani-cli" \
-      --prefix PATH : ${lib.makeBinPath [ poppler-utils tesseract ]}
+      --prefix PATH : ${
+        lib.makeBinPath [
+          poppler-utils
+          tesseract
+        ]
+      }
   '';
 
   meta = {

@@ -17,11 +17,7 @@
         <form method="dialog">
             {{ dialogs.dialog_cancel(_('Cancel'), type='submit') }}
         </form>
-        {{ dialogs.dialog_danger(_('Delete Yarn'), attrs='data-call="deleteYarn" data-call-args="[]"') }}
+        {{ dialogs.dialog_danger(_('Delete Yarn'), attrs='data-call="deleteEntity" data-call-args=\'["yarn", null]\'') }}
     </div>
 </div>
 {% endcall %}
-
-<script>
-{% include "yarn/_delete_dialog.js" %}
-</script>

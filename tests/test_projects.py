@@ -1,7 +1,9 @@
 import json
 from io import BytesIO
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any
+from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 from httpx import AsyncClient
 from PIL import Image as PILImage
@@ -9,7 +11,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from stricknani.config import config
-from stricknani.models import Attachment, AuditLog, Image, ProjectCategory, Step, Yarn
+from stricknani.models import (
+    Attachment,
+    AuditLog,
+    Image,
+    Project,
+    ProjectCategory,
+    Step,
+    Yarn,
+)
 
 
 async def _fetch_steps(
@@ -247,6 +257,35 @@ async def test_project_create_with_new_yarn_text_writes_yarn_creation_audit_log(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("other_materials", "visible"),
+    [
+        (None, False),
+        (" \n\t", False),
+        ("![Buttons](https://example.invalid/buttons.png)", True),
+        ("4 buttons", True),
+    ],
+)
+async def test_project_detail_hides_only_empty_other_materials(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+    other_materials: str | None,
+    visible: bool,
+) -> None:
+    client, session_factory, _user_id, project_id, _step_id = test_client
+
+    async with session_factory() as session:
+        project = await session.get(Project, project_id)
+        assert project is not None
+        project.other_materials = other_materials
+        await session.commit()
+
+    response = await client.get(f"/projects/{project_id}")
+
+    assert response.status_code == 200
+    assert ("mdi-package-variant-closed" in response.text) is visible
+
+
+@pytest.mark.asyncio
 async def test_create_project_imports_images(
     test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
 ) -> None:
@@ -266,12 +305,28 @@ async def test_create_project_imports_images(
         response.raise_for_status = MagicMock()
         return response
 
-    with patch(
-        "httpx.AsyncClient.get",
-        new=AsyncMock(
-            side_effect=[_mock_response(image_one), _mock_response(image_two)]
-        ),
-    ):
+    class _StreamResponse:
+        def __init__(self, response: MagicMock) -> None:
+            self._response = response
+
+        async def __aenter__(self) -> MagicMock:
+            self._response.request = httpx.Request("GET", "https://example.com")
+
+            async def _aiter_bytes(chunk_size: int) -> Any:
+                yield self._response.content
+
+            self._response.aiter_bytes = _aiter_bytes
+            return self._response
+
+        async def __aexit__(self, *args: Any) -> bool:
+            return False
+
+    responses = iter([_mock_response(image_one), _mock_response(image_two)])
+
+    def _mock_stream(method: str, url: str, **kwargs: Any) -> _StreamResponse:
+        return _StreamResponse(next(responses))
+
+    with patch("httpx.AsyncClient.stream", side_effect=_mock_stream):
         response = await client.post(
             "/projects/",
             data={

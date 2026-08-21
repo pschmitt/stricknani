@@ -6,8 +6,8 @@ def test_project_print_css_overrides_daisyui_collapse() -> None:
     content = open(css, encoding="utf-8").read()
 
     # Ensure collapsed sections print expanded, regardless of the checkbox state.
-    assert ".collapse > input:not(:checked) ~ .collapse-content" in content
-    assert ".collapse > input:checked ~ .collapse-content" in content
+    assert ".md3-disclosure > input:not(:checked) ~ .md3-disclosure__content" in content
+    assert ".md3-disclosure > input:checked ~ .md3-disclosure__content" in content
     # Ensure images are not hidden in print.
     assert "#project-gallery-section," not in content
     assert "#stitch-sample-photos," not in content

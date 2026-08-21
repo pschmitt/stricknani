@@ -9,20 +9,20 @@
 {% set page_title %}{{ yarn.name }}{% endset %}
 {% set page_title_mobile_hidden = true %}
 {% set page_actions %}
-<a href="/yarn" class="btn btn-ghost btn-circle" aria-label="{{ _('Back to yarn') }}">
+<a href="/yarn" class="md3-icon-button" aria-label="{{ _('Back to yarn') }}">
     <span class="mdi mdi-arrow-left text-xl"></span>
 </a>
-<a href="/yarn/{{ yarn.id }}/edit" class="btn btn-primary gap-2">
+<a href="/yarn/{{ yarn.id }}/edit" class="md3-button md3-button--filled">
     <span class="mdi mdi-pencil"></span>
     {{ _('Edit') }}
 </a>
 
-<div class="dropdown dropdown-end dropdown-bottom">
-    <div tabindex="0" role="button" class="btn btn-ghost btn-circle" aria-label="{{ _('More actions') }}">
+<div class="md3-dropdown md3-dropdown--end">
+    <div tabindex="0" role="button" class="md3-icon-button" aria-label="{{ _('More actions') }}">
         <span class="mdi mdi-dots-vertical text-xl"></span>
     </div>
     <ul tabindex="0"
-        class="dropdown-content ellipsis-dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box border border-base-200">
+        class="md3-menu md3-menu--end">
         <li data-favorite-toggle>
             {% with yarn_id=yarn.id, is_favorite=is_favorite, variant='detail', extra_classes='flex justify-start gap-2'
             %}
@@ -63,26 +63,24 @@ data-shortcut-delete-dialog="deleteYarnDialog"
 {% block head %}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
+<div class="md3-page-frame">
     <h1 class="text-2xl font-bold mb-4 md:hidden flex items-center gap-2">
         <span class="mdi mdi-sheep text-primary text-2xl"></span>
         {{ yarn.name }}
     </h1>
 
-    <div id="yarn-grid" class="relative grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 transition-all duration-300">
-        <!-- Main Content Column -->
-        <div id="main-column" class="lg:col-span-2 space-y-8 transition-all duration-300">
+    <div id="yarn-grid" class="md3-detail-layout">
             <!-- Gallery Section -->
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
-                <input type="checkbox" checked />
-                <div class="collapse-title p-4 flex items-center justify-between">
+            <div class="md3-disclosure">
+                <input type="checkbox" id="gallery-toggle" checked />
+                <label for="gallery-toggle" class="md3-disclosure__title">
                     <h2 class="font-bold text-lg flex items-center gap-2">
                         <span class="mdi mdi-image-multiple text-primary"></span>
                         {{ _('Gallery') }}
                     </h2>
                     <span class="text-xs font-medium text-base-content/50 mr-8">{{ photos|length }} {{ _('photos') }}</span>
-                </div>
-                <div class="collapse-content p-0">
+                </label>
+                <div class="md3-disclosure__content">
                     <div class="p-2 bg-base-200/50">
                         {% if photos %}
                         {% set photo_count = photos|length %}
@@ -125,238 +123,15 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                 </div>
             </div>
 
-            <!-- Description -->
-            {% if yarn.description %}
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
-                <input type="checkbox" checked />
-                <div class="collapse-title p-4 flex items-center justify-between">
-                    <h2 class="font-bold text-lg flex items-center gap-2">
-                        <span class="mdi mdi-text-box-outline text-primary"></span>
-                        {{ _('Description') }}
-                    </h2>
-                </div>
-                <div class="collapse-content relative">
-                    <button class="btn btn-ghost btn-xs gap-1 absolute top-2 right-2"
-                        onclick='copyToClipboard({{ (yarn.description or '')|tojson }}, this)'
-                        title="{{ _('Copy Description') }}">
-                        <span class="mdi mdi-content-copy"></span>
-                    </button>
-                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
-                        {% if description_html %}
-                        {{ description_html | safe }}
-                        {% else %}
-                        {{ yarn.description }}
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+            <!-- Yarn Details -->
+            <div class="md3-disclosure">
+                <input type="checkbox" id="details-toggle" checked />
+                <label for="details-toggle" class="md3-disclosure__title">
+                    <span class="mdi mdi-information-outline"></span>
+                    {{ _('Yarn Details') }}
+                </label>
 
-            <!-- Notes -->
-            {% if yarn.notes %}
-            <div class="collapse collapse-arrow bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl shadow-sm border border-yellow-100 dark:border-yellow-900/30">
-                <input type="checkbox" checked />
-                <div class="collapse-title font-bold text-base text-yellow-800 dark:text-yellow-500 uppercase tracking-widest flex items-center justify-between gap-2 text-xs">
-                    <div class="flex items-center gap-2">
-                        <span class="mdi mdi-notebook-outline"></span>
-                        {{ _('Notes') }}
-                    </div>
-                </div>
-                <div class="collapse-content relative">
-                    <button class="btn btn-ghost btn-xs gap-1 hover:bg-yellow-800/10 dark:hover:bg-yellow-500/20 absolute top-2 right-2"
-                        onclick='copyToClipboard({{ (yarn.notes or '')|tojson }}, this)'
-                        title="{{ _('Copy Notes') }}">
-                        <span class="mdi mdi-content-copy"></span>
-                    </button>
-                    <div class="prose prose-sm prose-compact max-w-none text-base-content/90">
-                        {% if notes_html %}
-                        {{ notes_html | safe }}
-                        {% else %}
-                        {{ yarn.notes }}
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
-                <input type="checkbox" />
-                <div class="collapse-title p-4 flex items-center justify-between">
-                    <h2 class="font-bold text-lg flex items-center gap-2">
-                        <span class="mdi mdi-history text-primary"></span>
-                        {{ _('Audit Log') }}
-                    </h2>
-                    <span class="text-xs font-medium text-base-content/50 mr-8">{{ audit_entries|length }}</span>
-                </div>
-                <div class="collapse-content p-0">
-                    {% if audit_entries %}
-                    <div class="p-4">
-                        <!-- Mobile-first activity list (single UI for all breakpoints) -->
-                        <div class="space-y-3">
-                            {% for entry in audit_entries %}
-                            {% set details = entry.details or {} %}
-                            {% set action = entry.action or '' %}
-                            {% set is_delete = action.endswith('_deleted') or action == 'image_deleted' %}
-                            {% set is_create = action.endswith('_created') %}
-                            {% set is_update = action.endswith('_updated') %}
-                            {% set is_upload = action.endswith('_uploaded') %}
-                            <div class="flex items-start gap-3">
-                                <div class="mt-1 shrink-0 w-7 h-7 rounded-full border border-base-200 bg-base-100 grid place-items-center">
-                                    {% if is_delete %}
-                                    <span class="mdi mdi-trash-can-outline text-error"></span>
-                                    {% elif is_create %}
-                                    <span class="mdi mdi-plus-circle-outline text-success"></span>
-                                    {% elif is_update %}
-                                    <span class="mdi mdi-pencil-outline text-warning"></span>
-                                    {% elif is_upload %}
-                                    <span class="mdi mdi-upload-outline text-info"></span>
-                                    {% else %}
-                                    <span class="mdi mdi-history text-base-content/60"></span>
-                                    {% endif %}
-                                </div>
-                                <div class="w-full rounded-2xl border border-base-200 bg-base-100 shadow-sm p-4 md:p-5">
-                                    <div class="flex flex-col gap-2 mb-4">
-                                        <div class="flex flex-wrap items-start justify-between gap-2">
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <span class="text-sm font-semibold text-base-content">{{ action.replace('_', ' ')|title }}</span>
-                                                <span class="badge badge-ghost font-semibold tracking-wide uppercase text-[10px]">{{ action.replace('_', ' ') }}</span>
-                                                {% if details.get('step_number') is not none %}
-                                                <span class="badge badge-ghost text-[10px]">{{ _('Step') }} {{ details.get('step_number') }}</span>
-                                                {% endif %}
-                                                {% if details.get('step_id') is not none and details.get('step_number') is none %}
-                                                <span class="badge badge-ghost text-[10px]">{{ _('Step') }} #{{ details.get('step_id') }}</span>
-                                                {% endif %}
-                                            </div>
-                                            <time class="text-[11px] font-mono text-base-content/40 whitespace-nowrap">{{ entry.created_at[:19].replace('T', ' ') }}</time>
-                                        </div>
-                                        <div class="text-xs text-base-content/60">
-                                            {{ entry.actor_email or ('User #' ~ entry.actor_user_id) }}
-                                        </div>
-                                    </div>
-
-                                    {% if details %}
-                                    {% if action == 'image_deleted' %}
-                                    <div class="grid gap-2 sm:grid-cols-2 text-xs">
-                                        {% if details.get('filename') %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
-                                            <span class="font-semibold text-base-content/60">{{ _('Filename') }}</span>
-                                            <span class="font-mono text-base-content break-all">{{ details.get('filename') }}</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if details.get('alt_text') %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
-                                            <span class="font-semibold text-base-content/60">{{ _('Alt text') }}</span>
-                                            <span class="text-base-content break-words">{{ details.get('alt_text') }}</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if details.get('image_id') is not none %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
-                                            <span class="font-semibold text-base-content/60">{{ _('Image ID') }}</span>
-                                            <span class="font-mono text-base-content break-all">{{ details.get('image_id') }}</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if details.get('step_id') is not none %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
-                                            <span class="font-semibold text-base-content/60">{{ _('Step ID') }}</span>
-                                            <span class="font-mono text-base-content break-all">{{ details.get('step_id') }}</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if details.get('is_title_image') is not none %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
-                                            <span class="font-semibold text-base-content/60">{{ _('Title image') }}</span>
-                                            <span class="font-mono text-base-content break-all">{{ details.get('is_title_image') }}</span>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    {% elif action == 'attachment_deleted' %}
-                                    <div class="grid gap-2 sm:grid-cols-2 text-xs">
-                                        {% if details.get('filename') %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
-                                            <span class="font-semibold text-base-content/60">{{ _('Filename') }}</span>
-                                            <span class="font-mono text-base-content break-all">{{ details.get('filename') }}</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if details.get('original_filename') %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
-                                            <span class="font-semibold text-base-content/60">{{ _('Original filename') }}</span>
-                                            <span class="text-base-content break-words">{{ details.get('original_filename') }}</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if details.get('attachment_id') is not none %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
-                                            <span class="font-semibold text-base-content/60">{{ _('Attachment ID') }}</span>
-                                            <span class="font-mono text-base-content break-all">{{ details.get('attachment_id') }}</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if details.get('content_type') %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
-                                            <span class="font-semibold text-base-content/60">{{ _('Content type') }}</span>
-                                            <span class="font-mono text-base-content break-all">{{ details.get('content_type') }}</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if details.get('size_bytes') is not none %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
-                                            <span class="font-semibold text-base-content/60">{{ _('Size (bytes)') }}</span>
-                                            <span class="font-mono text-base-content break-all">{{ details.get('size_bytes') }}</span>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    {% elif action in ['step_created', 'step_deleted'] %}
-                                    <div class="text-xs rounded-xl bg-base-200/30 px-3 py-2 flex flex-wrap items-center gap-2">
-                                        {% if details.get('title') %}
-                                        <span class="text-base-content/80">{{ details.get('title') }}</span>
-                                        {% endif %}
-                                    </div>
-                                    {% elif details.get('changes') %}
-                                    <div class="space-y-2 text-xs">
-                                        {% for field, diff in details['changes'].items() %}
-                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 flex flex-wrap items-center gap-2">
-                                            <span class="badge badge-ghost text-[10px] uppercase">{{ field }}</span>
-                                            <span class="text-base-content/60">{{ diff.old }} → {{ diff.new }}</span>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                    {% endif %}
-
-                                    <details class="mt-4">
-                                        <summary class="cursor-pointer text-xs text-base-content/40 hover:text-base-content/60">{{ _('Raw details') }}</summary>
-                                        <pre class="text-xs bg-base-200/30 rounded-xl p-3 overflow-x-auto mt-2 leading-relaxed">{{ details | tojson(indent=2) }}</pre>
-                                    </details>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="p-4 text-sm text-base-content/60">{{ _('No audit entries yet') }}</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Sidebar Column -->
-        <div class="hidden lg:block z-30">
-	            <button type="button" id="details-restore-button"
-	                class="lg:fixed lg:top-20 lg:right-0 flex h-16 w-8 items-center justify-center rounded-l-full bg-base-100/90 backdrop-blur border border-base-200 shadow-lg text-base-content/50 transition-all duration-200 opacity-0 pointer-events-none translate-x-2 scale-95 hover:text-primary hover:border-primary/40"
-	                data-call="restoreSidebarDetails" title="{{ _('Yarn Details') }}" aria-label="{{ _('Yarn Details') }}">
-	                <span class="mdi mdi-chevron-left text-lg"></span>
-	                <span class="sr-only">{{ _('Yarn Details') }}</span>
-	            </button>
-        </div>
-
-        <div id="sidebar-column" class="space-y-6 lg:col-start-3 lg:row-start-1 lg:sticky lg:top-20 lg:self-start transition-all duration-300">
-            <!-- Details Card -->
-            <div class="collapse collapse-right collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
-	                <input type="checkbox" id="details-toggle-sidebar" checked data-call-change="toggleSidebarExpansion" />
-                <div class="collapse-title w-full font-bold text-base text-base-content/40 uppercase tracking-widest text-sm">
-                    <span class="flex items-center gap-2">
-                        <span class="mdi mdi-information-outline"></span>
-                        {{ _('Yarn Details') }}
-                    </span>
-                </div>
-
-                <div class="collapse-content space-y-4 text-base">
+                <div class="md3-disclosure__content">
                     <div class="pt-2">
                         <!-- Badge Info -->
                         {% if yarn.brand %}
@@ -383,7 +158,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                         {% if yarn.is_ai_enhanced %}
                         <div class="py-1">
                             <span class="text-xs font-bold uppercase text-base-content/50 block mb-1">{{ _('Data Source') }}</span>
-                            <span class="badge badge-primary font-black text-[10px] tracking-tighter uppercase h-5 min-h-0" title="{{ _('AI Enhanced') }}">AI</span>
+                            <span class="md3-chip md3-chip--ai md3-chip--compact" title="{{ _('AI Enhanced') }}">AI</span>
                         </div>
                         {% endif %}
 
@@ -477,9 +252,9 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                     <span class="mdi mdi-link-variant group-hover:rotate-45 transition-transform"></span>
                                     {{ yarn.link }}
                                 </a>
-	                                <button type="button" data-call="copyToClipboard" data-call-args='[{{ yarn.link|tojson }},"$this"]'
-	                                    class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover/link:opacity-100 transition-opacity"
-	                                    title="{{ _('Copy URL') }}">
+                                <button type="button" data-call="copyToClipboard" data-call-args='[{{ yarn.link|tojson }},"$this"]'
+                                    class="md3-icon-button md3-button--small opacity-0 group-hover/link:opacity-100 transition-opacity"
+                                    title="{{ _('Copy URL') }}">
                                     <span class="mdi mdi-content-copy text-xs"></span>
                                 </button>
                             </div>
@@ -492,7 +267,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                 </a>
                                 <form action="/yarn/{{ yarn.id }}/retry-archive" method="post" class="inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                    <button type="submit" class="md3-button md3-button--text md3-button--small">
                                         <span class="mdi mdi-refresh"></span>
                                         {{ _('Request new snapshot') }}
                                     </button>
@@ -507,7 +282,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                 </div>
                                 <form action="/yarn/{{ yarn.id }}/retry-archive" method="post" class="inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                    <button type="submit" class="md3-button md3-button--text md3-button--small">
                                         <span class="mdi mdi-refresh"></span>
                                         {{ _('Retry') }}
                                     </button>
@@ -523,7 +298,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                 </a>
                                 <form action="/yarn/{{ yarn.id }}/retry-archive" method="post" class="inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <button type="submit" class="btn btn-xs btn-ghost gap-1 normal-case">
+                                    <button type="submit" class="md3-button md3-button--text md3-button--small">
                                         <span class="mdi mdi-refresh"></span>
                                         {{ _('Request snapshot') }}
                                     </button>
@@ -532,20 +307,75 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                             {% endif %}
                         </div>
                         {% endif %}
-        </div>
-
-    </div>
-</div>
-
-            <!-- Linked Projects Card -->
-            <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm border border-base-200">
-                <input type="checkbox" checked />
-                <div class="collapse-title font-bold text-base text-base-content/40 uppercase tracking-widest flex items-center gap-2 text-xs">
-                    <span class="mdi mdi-folder-outline"></span>
-                    {{ _('Linked Projects') }}
+                    </div>
                 </div>
+            </div>
 
-                <div class="collapse-content">
+            <!-- Description -->
+            {% if yarn.description %}
+            <div class="md3-disclosure">
+                <input type="checkbox" id="description-toggle" checked />
+                <label for="description-toggle" class="md3-disclosure__title">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <span class="mdi mdi-text-box-outline text-primary"></span>
+                        {{ _('Description') }}
+                    </h2>
+                </label>
+                <div class="md3-disclosure__content">
+                    <button type="button" class="md3-button md3-button--text md3-button--small absolute top-2 right-2"
+                        data-call="copyToClipboard"
+                        data-call-args='[{{ (yarn.description or "")|tojson }}, "$this"]'
+                        title="{{ _('Copy Description') }}">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                    <div class="md3-content-prose">
+                        {% if description_html %}
+                        {{ description_html | safe }}
+                        {% else %}
+                        {{ yarn.description }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Notes -->
+            {% if yarn.notes %}
+            <div class="md3-disclosure md3-content-card--notes">
+                <input type="checkbox" id="notes-toggle" checked />
+                <label for="notes-toggle" class="md3-disclosure__title">
+                    <span class="mdi mdi-notebook-outline"></span>
+                    {{ _('Notes') }}
+                </label>
+                <div class="md3-disclosure__content">
+                    <button type="button" class="md3-button md3-button--text md3-button--small absolute top-2 right-2"
+                        data-call="copyToClipboard"
+                        data-call-args='[{{ (yarn.notes or "")|tojson }}, "$this"]'
+                        title="{{ _('Copy Notes') }}">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                    <div class="md3-content-prose">
+                        {% if notes_html %}
+                        {{ notes_html | safe }}
+                        {% else %}
+                        {{ yarn.notes }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Linked Projects -->
+            <div class="md3-disclosure">
+                <input type="checkbox" id="linked-projects-toggle" checked />
+                <label for="linked-projects-toggle" class="md3-disclosure__title">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <span class="mdi mdi-folder-outline text-primary"></span>
+                        {{ _('Linked Projects') }}
+                    </h2>
+                </label>
+
+                <div class="md3-disclosure__content">
                     {% if linked_projects %}
                     <div class="space-y-3">
                         {% for project in linked_projects %}
@@ -568,7 +398,7 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                                     project.name }}</div>
                                 {% if project.category %}
                                 <div class="mt-0.5">
-                                    <span class="badge badge-xs border {{ project.category|category_color }} font-medium">
+                                    <span class="md3-chip md3-chip--compact">
                                         {{ _(project.category) }}
                                     </span>
                                 </div>
@@ -587,13 +417,166 @@ data-shortcut-delete-dialog="deleteYarnDialog"
                     {% endif %}
                 </div>
             </div>
-        </div>
 
+            <div class="md3-disclosure">
+                <input type="checkbox" id="audit-log-toggle" />
+                <label for="audit-log-toggle" class="md3-disclosure__title">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <span class="mdi mdi-history text-primary"></span>
+                        {{ _('Audit Log') }}
+                    </h2>
+                    <span class="text-xs font-medium text-base-content/50 mr-8">{{ audit_entries|length }}</span>
+                </label>
+                <div class="md3-disclosure__content">
+                    {% if audit_entries %}
+                    <div class="p-4">
+                        <!-- Mobile-first activity list (single UI for all breakpoints) -->
+                        <div class="space-y-3">
+                            {% for entry in audit_entries %}
+                            {% set details = entry.details or {} %}
+                            {% set action = entry.action or '' %}
+                            {% set is_delete = action.endswith('_deleted') or action == 'image_deleted' %}
+                            {% set is_create = action.endswith('_created') %}
+                            {% set is_update = action.endswith('_updated') %}
+                            {% set is_upload = action.endswith('_uploaded') %}
+                            <div class="flex items-start gap-3">
+                                <div class="mt-1 shrink-0 w-7 h-7 rounded-full border border-base-200 bg-base-100 grid place-items-center">
+                                    {% if is_delete %}
+                                    <span class="mdi mdi-trash-can-outline text-error"></span>
+                                    {% elif is_create %}
+                                    <span class="mdi mdi-plus-circle-outline text-success"></span>
+                                    {% elif is_update %}
+                                    <span class="mdi mdi-pencil-outline text-warning"></span>
+                                    {% elif is_upload %}
+                                    <span class="mdi mdi-upload-outline text-info"></span>
+                                    {% else %}
+                                    <span class="mdi mdi-history text-base-content/60"></span>
+                                    {% endif %}
+                                </div>
+                                <div class="w-full rounded-2xl border border-base-200 bg-base-100 shadow-sm p-4 md:p-5">
+                                    <div class="flex flex-col gap-2 mb-4">
+                                        <div class="flex flex-wrap items-start justify-between gap-2">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="text-sm font-semibold text-base-content">{{ action.replace('_', ' ')|title }}</span>
+                                                <span class="md3-chip md3-chip--compact">{{ action.replace('_', ' ') }}</span>
+                                                {% if details.get('step_number') is not none %}
+                                                <span class="md3-chip md3-chip--compact">{{ _('Step') }} {{ details.get('step_number') }}</span>
+                                                {% endif %}
+                                                {% if details.get('step_id') is not none and details.get('step_number') is none %}
+                                                <span class="md3-chip md3-chip--compact">{{ _('Step') }} #{{ details.get('step_id') }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <time class="text-[11px] font-mono text-base-content/40 whitespace-nowrap">{{ entry.created_at[:19].replace('T', ' ') }}</time>
+                                        </div>
+                                        <div class="text-xs text-base-content/60">
+                                            {{ entry.actor_email or ('User #' ~ entry.actor_user_id) }}
+                                        </div>
+                                    </div>
+
+                                    {% if details %}
+                                    {% if action == 'image_deleted' %}
+                                    <div class="grid gap-2 sm:grid-cols-2 text-xs">
+                                        {% if details.get('filename') %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
+                                            <span class="font-semibold text-base-content/60">{{ _('Filename') }}</span>
+                                            <span class="font-mono text-base-content break-all">{{ details.get('filename') }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if details.get('alt_text') %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
+                                            <span class="font-semibold text-base-content/60">{{ _('Alt text') }}</span>
+                                            <span class="text-base-content break-words">{{ details.get('alt_text') }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if details.get('image_id') is not none %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
+                                            <span class="font-semibold text-base-content/60">{{ _('Image ID') }}</span>
+                                            <span class="font-mono text-base-content break-all">{{ details.get('image_id') }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if details.get('step_id') is not none %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
+                                            <span class="font-semibold text-base-content/60">{{ _('Step ID') }}</span>
+                                            <span class="font-mono text-base-content break-all">{{ details.get('step_id') }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if details.get('is_title_image') is not none %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
+                                            <span class="font-semibold text-base-content/60">{{ _('Title image') }}</span>
+                                            <span class="font-mono text-base-content break-all">{{ details.get('is_title_image') }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% elif action == 'attachment_deleted' %}
+                                    <div class="grid gap-2 sm:grid-cols-2 text-xs">
+                                        {% if details.get('filename') %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
+                                            <span class="font-semibold text-base-content/60">{{ _('Filename') }}</span>
+                                            <span class="font-mono text-base-content break-all">{{ details.get('filename') }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if details.get('original_filename') %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
+                                            <span class="font-semibold text-base-content/60">{{ _('Original filename') }}</span>
+                                            <span class="text-base-content break-words">{{ details.get('original_filename') }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if details.get('attachment_id') is not none %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
+                                            <span class="font-semibold text-base-content/60">{{ _('Attachment ID') }}</span>
+                                            <span class="font-mono text-base-content break-all">{{ details.get('attachment_id') }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if details.get('content_type') %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
+                                            <span class="font-semibold text-base-content/60">{{ _('Content type') }}</span>
+                                            <span class="font-mono text-base-content break-all">{{ details.get('content_type') }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if details.get('size_bytes') is not none %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 grid grid-cols-1 sm:grid-cols-[10rem,1fr] gap-1 sm:gap-3">
+                                            <span class="font-semibold text-base-content/60">{{ _('Size (bytes)') }}</span>
+                                            <span class="font-mono text-base-content break-all">{{ details.get('size_bytes') }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% elif action in ['step_created', 'step_deleted'] %}
+                                    <div class="text-xs rounded-xl bg-base-200/30 px-3 py-2 flex flex-wrap items-center gap-2">
+                                        {% if details.get('title') %}
+                                        <span class="text-base-content/80">{{ details.get('title') }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% elif details.get('changes') %}
+                                    <div class="space-y-2 text-xs">
+                                        {% for field, diff in details['changes'].items() %}
+                                        <div class="rounded-xl bg-base-200/30 px-3 py-2 flex flex-wrap items-center gap-2">
+                                            <span class="md3-chip md3-chip--compact">{{ field }}</span>
+                                            <span class="text-base-content/60">{{ diff.old }} → {{ diff.new }}</span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+
+                                    <details class="mt-4">
+                                        <summary class="cursor-pointer text-xs text-base-content/40 hover:text-base-content/60">{{ _('Raw details') }}</summary>
+                                        <pre class="text-xs bg-base-200/30 rounded-xl p-3 overflow-x-auto mt-2 leading-relaxed">{{ details | tojson(indent=2) }}</pre>
+                                    </details>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-sm text-base-content/60">{{ _('No audit entries yet') }}</div>
+                    {% endif %}
+                </div>
+            </div>
     </div>
 </div>
 
-<dialog id="deleteYarnDialog" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box p-0 overflow-hidden">
+<dialog id="deleteYarnDialog" class="md3-dialog">
+    <div class="md3-dialog-surface p-0 overflow-hidden">
         <div class="bg-error/10 p-6 flex items-center gap-4 text-error">
             <span class="mdi mdi-alert-circle text-4xl"></span>
             <div>
@@ -618,6 +601,4 @@ data-shortcut-delete-dialog="deleteYarnDialog"
     </div>
     {{ dialogs.modal_backdrop() }}
 </dialog>
-
-<script src="{{ url_for('static', path='js/features/detail_sidebar_toggle.js') }}"></script>
 {% endblock %}

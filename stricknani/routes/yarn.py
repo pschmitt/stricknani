@@ -4,6 +4,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import Annotated, Any
+from urllib.parse import urlencode
 
 import anyio
 from fastapi import (
@@ -12,18 +13,21 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Query,
     Request,
     Response,
     UploadFile,
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy import and_, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from stricknani.config import config
 from stricknani.database import get_db
+from stricknani.importing.fetch import FetchError, import_fetch_http_error
+from stricknani.importing.ssrf import SSRFError
 from stricknani.models import Project, User, Yarn, YarnImage, user_favorite_yarns
 from stricknani.routes.auth import get_current_user, require_auth
 from stricknani.services.audit import (
@@ -42,11 +46,14 @@ from stricknani.services.yarn import (
 )
 from stricknani.utils.ai_provider import has_ai_api_key
 from stricknani.utils.files import (
+    InvalidImageError,
+    UploadTooLargeError,
     create_thumbnail,
     delete_file,
     get_file_url,
     get_thumbnail_url,
-    save_uploaded_file,
+    read_upload_content,
+    save_uploaded_image,
 )
 from stricknani.utils.importer import (
     filter_import_image_urls,
@@ -54,6 +61,7 @@ from stricknani.utils.importer import (
 )
 from stricknani.utils.markdown import render_markdown
 from stricknani.utils.ocr import is_ocr_available, precompute_ocr_for_media_file
+from stricknani.utils.rate_limit import is_rate_limited, record_attempt
 from stricknani.utils.search_tokens import (
     extract_search_token,
     parse_import_image_urls,
@@ -68,6 +76,10 @@ from stricknani.web.templating import render_template
 
 router: APIRouter = APIRouter(prefix="/yarn", tags=["yarn"])
 logger = logging.getLogger(__name__)
+
+# Number of cards fetched per page for the list view / HTMX infinite scroll.
+# 24 divides evenly across the 1/2/3-column responsive grid.
+LIST_PAGE_SIZE = 24
 
 
 def _parse_import_image_urls(raw: list[str] | str | None) -> list[str]:
@@ -166,6 +178,25 @@ async def import_yarn(
                     detail="Invalid URL format",
                 )
 
+            # Rate limit outbound import fetches per user (T107), on top of
+            # the SSRF guard (T52) that restricts *where* we're willing to
+            # fetch from - this bounds *how often* a user can make the
+            # server fetch an attacker-influenced remote URL on their behalf.
+            import_rate_limit_key = f"import:user:{current_user.id}"
+            if is_rate_limited(
+                import_rate_limit_key,
+                config.RATE_LIMIT_IMPORT_MAX_ATTEMPTS,
+                config.RATE_LIMIT_IMPORT_WINDOW_SECONDS,
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Too many imports recently. Please try again later.",
+                    headers={
+                        "Retry-After": str(config.RATE_LIMIT_IMPORT_WINDOW_SECONDS)
+                    },
+                )
+            record_attempt(import_rate_limit_key)
+
             source_url = url
             importer: PatternImporter
             if is_garnstudio_url(url):
@@ -182,8 +213,14 @@ async def import_yarn(
                     detail="File is required",
                 )
 
-            # Read file content
-            content_bytes = await selected_file.read()
+            # Read file content under the shared request-body cap.
+            try:
+                content_bytes = await read_upload_content(selected_file)
+            except UploadTooLargeError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                    detail="Uploaded file is too large",
+                ) from exc
             filename = selected_file.filename or "unknown"
 
             from stricknani.importing.extractors.ai import OPENAI_AVAILABLE, AIExtractor
@@ -340,6 +377,10 @@ async def import_yarn(
 
     except HTTPException:
         raise
+    except (FetchError, SSRFError) as e:
+        logger.warning("Yarn import fetch failed: %s", e)
+        error_status, detail = import_fetch_http_error(e)
+        raise HTTPException(status_code=error_status, detail=detail) from e
     except Exception as e:
         logger.error(f"Yarn import failed: {e}", exc_info=True)
         raise HTTPException(
@@ -381,20 +422,38 @@ async def list_yarns(
     current_user: User | None = Depends(get_current_user),
     search: str | None = None,
     brand: str | None = None,
+    page: int = Query(1, ge=1),
 ) -> Response:
     """List yarn stash for the current user."""
 
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Eager load favorites for the current user
-    await db.refresh(current_user, ["favorite_yarns"])
+    # Load the owner (with favorites eagerly loaded) as a mapped instance so
+    # serialize_yarn_cards can compute favorite state without mutating the
+    # injected auth dependency.
+    owner_result = await db.execute(
+        select(User)
+        .where(User.id == current_user.id)
+        .options(selectinload(User.favorite_yarns))
+    )
+    owner = owner_result.scalar_one()
 
+    # Favorites-first ordering is pushed into SQL via a LEFT JOIN against the
+    # favorites association so that ORDER BY and LIMIT/OFFSET pagination are
+    # honoured by the database (no Python re-sort that would defeat both).
+    favorite_marker = user_favorite_yarns.c.user_id
     query = (
         select(Yarn)
+        .outerjoin(
+            user_favorite_yarns,
+            and_(
+                user_favorite_yarns.c.yarn_id == Yarn.id,
+                user_favorite_yarns.c.user_id == current_user.id,
+            ),
+        )
         .where(Yarn.owner_id == current_user.id)
         .options(selectinload(Yarn.photos), selectinload(Yarn.projects))
-        .order_by(Yarn.created_at.desc())
     )
 
     if search:
@@ -417,28 +476,63 @@ async def list_yarns(
             | Yarn.fiber_content.ilike(ilike)
         )
 
-    result = await db.execute(query)
-    yarns = result.scalars().unique().all()
-    favorite_ids = {yarn.id for yarn in current_user.favorite_yarns}
-    yarns = sorted(
-        yarns,
-        key=lambda yarn: (yarn.id not in favorite_ids, (yarn.name or "").casefold()),
+    offset = (page - 1) * LIST_PAGE_SIZE
+    query = (
+        query.order_by(
+            favorite_marker.is_(None),
+            func.lower(Yarn.name),
+            Yarn.id,
+        )
+        .offset(offset)
+        .limit(LIST_PAGE_SIZE + 1)
     )
 
+    result = await db.execute(query)
+    yarns = result.scalars().unique().all()
+    has_more = len(yarns) > LIST_PAGE_SIZE
+    yarns = yarns[:LIST_PAGE_SIZE]
+
+    next_page_url: str | None = None
+    if has_more:
+        params: dict[str, str] = {}
+        if search:
+            params["search"] = search
+        if brand:
+            params["brand"] = brand
+        params["page"] = str(page + 1)
+        next_page_url = f"/yarn/?{urlencode(params)}"
+
+    yarn_cards = serialize_yarn_cards(yarns, owner)
+
+    # HTMX infinite scroll: subsequent pages return only the card fragment
+    # (cards plus the next-page sentinel), swapped in-place after the last row.
+    if request.headers.get("HX-Request") and page > 1:
+        return await render_template(
+            "yarn/_cards_page.html",
+            request,
+            {
+                "current_user": current_user,
+                "yarns": yarn_cards,
+                "next_page_url": next_page_url,
+            },
+        )
+
+    # HTMX search/filter: return the reset list (grid + first page).
     if request.headers.get("HX-Request"):
         return await render_template(
             "yarn/_list_partial.html",
             request,
             {
                 "current_user": current_user,
-                "yarns": serialize_yarn_cards(yarns, current_user),
+                "yarns": yarn_cards,
                 "search": search or "",
                 "selected_brand": brand,
+                "next_page_url": next_page_url,
             },
         )
 
     if request.headers.get("accept") == "application/json":
-        return JSONResponse(serialize_yarn_cards(yarns, current_user))
+        return JSONResponse(yarn_cards)
 
     has_openai_key = config.FEATURE_AI_IMPORT_ENABLED and bool(has_ai_api_key())
 
@@ -447,9 +541,10 @@ async def list_yarns(
         request,
         {
             "current_user": current_user,
-            "yarns": serialize_yarn_cards(yarns, current_user),
+            "yarns": yarn_cards,
             "search": search or "",
             "selected_brand": brand,
+            "next_page_url": next_page_url,
             "has_openai_key": has_openai_key,
         },
     )
@@ -487,11 +582,22 @@ async def _handle_photo_uploads(
             continue
         if not upload.filename:
             continue
-        saved_name, original = await save_uploaded_file(
-            upload,
-            yarn.id,
-            subdir="yarns",
-        )
+        try:
+            saved_name, original = await save_uploaded_image(
+                upload,
+                yarn.id,
+                subdir="yarns",
+            )
+        except UploadTooLargeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                detail="Uploaded file is too large",
+            ) from exc
+        except InvalidImageError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file is not a supported image",
+            ) from exc
         source_path = config.MEDIA_ROOT / "yarns" / str(yarn.id) / saved_name
         await create_thumbnail(source_path, yarn.id, subdir="yarns")
         if is_ocr_available():
@@ -907,7 +1013,18 @@ async def upload_yarn_photo(
         )
 
     # Save file
-    saved_name, original = await save_uploaded_file(file, yarn_id, subdir="yarns")
+    try:
+        saved_name, original = await save_uploaded_image(file, yarn_id, subdir="yarns")
+    except UploadTooLargeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Uploaded file is too large",
+        ) from exc
+    except InvalidImageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is not a supported image",
+        ) from exc
 
     # Create thumbnail
     source_path = config.MEDIA_ROOT / "yarns" / str(yarn_id) / saved_name
@@ -1021,6 +1138,9 @@ async def toggle_favorite(
     yarn = result.scalar_one_or_none()
     if not yarn:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if yarn.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     # Check if already favorited
     stmt = select(user_favorite_yarns).where(

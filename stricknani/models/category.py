@@ -23,7 +23,7 @@ class Category(Base):
         DateTime, default=lambda: datetime.now(UTC), nullable=False
     )
     user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE")
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
 
     owner: Mapped["User"] = relationship("User", back_populates="categories")

@@ -3,19 +3,15 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
-
-import httpx
 
 from stricknani.config import config
-from stricknani.utils.files import build_import_filename, compute_checksum
-from stricknani.utils.importer import (
-    IMPORT_IMAGE_HEADERS,
+from stricknani.importing.images import (
     IMPORT_IMAGE_MAX_BYTES,
     IMPORT_IMAGE_TIMEOUT,
+    ImageDownloader,
 )
+from stricknani.utils.files import compute_checksum, validate_image_upload
 
 _GARNSTUDIO_SYMBOL_URL_RE = re.compile(
     r"(https?://[^\s)\"'>]+?/drops/symbols/[^\s)\"'>]+)",
@@ -46,49 +42,35 @@ async def localize_garnstudio_symbol_images(
     )
     symbol_dir.mkdir(parents=True, exist_ok=True)
 
-    headers = dict(IMPORT_IMAGE_HEADERS)
-    if referer:
-        headers["Referer"] = referer
-
     replacements: dict[str, str] = {}
-    async with httpx.AsyncClient(
+    downloader = ImageDownloader(
+        referer=referer,
         timeout=IMPORT_IMAGE_TIMEOUT,
-        follow_redirects=True,
-        headers=headers,
-    ) as client:
-        for url in urls:
-            try:
-                response = await client.get(url)
-                response.raise_for_status()
-            except httpx.HTTPError:
-                continue
+        max_bytes=min(IMPORT_IMAGE_MAX_BYTES, 512 * 1024),
+        max_count=len(urls),
+    )
+    for url in urls:
+        downloaded = await downloader.download_single(url)
+        if downloaded is None:
+            continue
 
-            if not response.content:
-                continue
+        content = downloaded.content
+        if not content:
+            continue
 
-            if len(response.content) > min(IMPORT_IMAGE_MAX_BYTES, 512 * 1024):
-                continue
-
-            content_type = response.headers.get("content-type")
-            if content_type and not content_type.lower().startswith("image/"):
-                continue
-
-            parsed = urlparse(url)
-            ext = Path(parsed.path).suffix.lower()
-            if not ext:
-                ext = Path(build_import_filename(url, content_type)).suffix.lower()
-            if not ext:
-                ext = ".gif"
-
-            checksum = compute_checksum(response.content)
-            filename = f"{checksum[:16]}{ext}"
+        try:
+            _content_type, extension = validate_image_upload(content)
+            checksum = compute_checksum(content)
+            filename = f"{checksum[:16]}{extension}"
             target_path = symbol_dir / filename
             if not target_path.exists():
-                target_path.write_bytes(response.content)
+                target_path.write_bytes(content)
 
             replacements[url] = (
                 f"/media/projects/{project_id}/inline/garnstudio-symbols/{filename}"
             )
+        except OSError:
+            continue
 
     localized = description
     for src, dst in replacements.items():

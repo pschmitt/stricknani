@@ -1,0 +1,18 @@
+Stricknani is an offline-first Android client for your own self-hosted Stricknani server.
+
+Connect the app to any Stricknani instance with its server URL and a personal access token. Your
+account password is never stored in the app. Once connected, projects and yarn stash entries stay
+available on your device when you are offline and synchronize with your configured server when a
+connection is available.
+
+Features:
+• Browse and search knitting projects and yarn stash entries
+• View descriptions, notes, steps, tags, photos, and linked yarns
+• Create and edit projects and yarn entries, including while offline
+• Keep changes in a local queue until the configured server is reachable
+• Use the gauge calculator without a network connection
+• Choose light, dark, or system appearance and configure the navigation bar
+
+Stricknani does not provide a hosted account or server. You choose the Stricknani server that the
+app connects to and remain responsible for that server, its data, and its privacy policy. The app
+contains no advertising or analytics service.

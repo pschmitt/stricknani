@@ -1,5 +1,6 @@
 """Database models for Stricknani."""
 
+from stricknani.models.api_token import ApiToken
 from stricknani.models.associations import (
     project_yarns,
     user_favorite_yarns,
@@ -14,6 +15,7 @@ from stricknani.models.user import User
 from stricknani.models.yarn import Yarn, YarnImage
 
 __all__ = [
+    "ApiToken",
     "Attachment",
     "AuditLog",
     "Base",

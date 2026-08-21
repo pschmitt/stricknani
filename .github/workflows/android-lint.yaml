@@ -1,0 +1,29 @@
+name: Android Lint
+
+# The shared lint workflow owns ktfmt, the diff-patch diagnostic, Android Lint, and the report
+# artifact. `project-directory` is required because Android lives below this repository's unrelated
+# Python web application. Auto-fix PRs remain disabled here; this repository has not opted into
+# workflow-authored formatting commits.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-lint.yaml'
+  pull_request:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-lint.yaml'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    uses: pschmitt/android-app-ci/.github/workflows/lint.yaml@main
+    with:
+      project-directory: android
+      lint-baseline-path: ''
+      enable-auto-fix: false
+    secrets: inherit
+    permissions:
+      contents: read

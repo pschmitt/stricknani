@@ -10,14 +10,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import anyio
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile, status
 
 from stricknani.config import config
 from stricknani.services.images import get_image_dimensions
 from stricknani.utils.files import (
+    UploadTooLargeError,
     create_pdf_thumbnail,
     create_thumbnail,
     get_thumbnail_url,
+    read_upload_content,
     save_bytes,
 )
 
@@ -39,7 +41,13 @@ async def store_project_attachment(
     project_id: int,
     upload_file: UploadFile,
 ) -> StoredAttachment:
-    content = await upload_file.read()
+    try:
+        content = await read_upload_content(upload_file)
+    except UploadTooLargeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Uploaded file is too large",
+        ) from exc
     return await store_project_attachment_bytes(
         project_id,
         content=content,
