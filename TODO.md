@@ -30,13 +30,25 @@ Execution-oriented backlog for Stricknani.
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T52 | P0 | done | security | bug | Add SSRF guard to import fetch layer (block private/loopback/link-local, re-validate redirects) |
 | T54 | P0 | done | import | bug | Return friendly 4xx/502 on import fetch failures instead of 500 with raw error text |
-| T99 | P3 | todo | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |
+| T99 | P3 | blocked | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |
 | T100 | P2 | done | web/ux | refactor | Make search box inputs more rounded (pill-shaped) across list pages and the global search modal |
 | T101 | P2 | done | web/ux | feat | Use real Material 3 cards (not plain list rows) consistently on both project/yarn list pages and their detail/view pages |
 | T102 | P1 | done | web/ux | bug | Fix misplaced badges/icons caused by negative-offset utility classes missing from the static CSS bundle (admin shield badge, yarn-search icon, sidebar restore tab, vertical-centering transforms) |
 | T103 | P1 | done | web/ux | bug | Fix project/yarn detail pages: sections couldn't actually be collapsed, and drop the two-column sidebar layout in favor of a single content column |
 | T104 | P3 | done | web/ux | refactor | Replace the app logo's hover animation (flat blue circle + slight grow) with a cuter squash-and-stretch "boing" wobble fitting the yarn-ball mascot |
 | T105 | P1 | done | deploy | bug | Fix stricknani.service ending up on the pre-deploy build after `nixos-rebuild switch`: monit's healthcheck raced its own `systemctl restart` against the deploy's restart of the same unit |
+| T106 | P1 | done | security | bug | Fix IDOR in yarn `toggle_favorite` (`routes/yarn.py:1107-1122`): unlike `favorite_project`/`unfavorite_project`, it never checks `yarn.owner_id != current_user.id`, so any authenticated user can favorite/unfavorite another user's yarn and use the 404-vs-200 response as an existence oracle for private yarn IDs |
+| T107 | P2 | done | security | feat | Add rate limiting to API token creation (`routes/user.py` `create_api_token`/`create_qr_setup_token`) and the import-from-URL fetchers (`routes/projects.py`, `routes/yarn.py`) - `utils/rate_limit.py` currently only guards `/auth/login` and `/auth/signup` |
+| T108 | P2 | done | security | bug | Require auth (and cap payload size) on `/utils/preview/markdown` (`main.py:284-291`) - unlike every other route in `routes/utils.py`, this one has no `Depends(require_auth)` and no rate limit, making it an open, unauthenticated CPU-work (markdown parse + sanitize) endpoint reachable by anyone |
+| T109 | P3 | done | web/ux | bug | Remove/replace the inline `onclick="this.select()"` handler in `templates/user/api_tokens.html:36-43` - dead under T71's strict nonce-based CSP (no `'unsafe-inline'`), so clicking the new-token field silently does nothing instead of selecting the text |
+| T110 | P2 | done | security | bug | Escape suggestion text before interpolating into `innerHTML` in `static/js/features/search_bar.js:134-142` - `suggestions` come straight from user-editable `Category.name`/tag/`Yarn.brand` fields, so a value containing markup renders live in the search dropdown (HTML injection) |
+| T111 | P3 | done | web/ux | refactor | Consolidate `templates/{yarn,projects}/_delete_dialog.js` into one shared `deleteEntity(kind, id)` helper - the two files are byte-identical logic differing only in URL path/toast key/dialog id |
+| T112 | P2 | done | ci | refactor | Add `paths:` filters to `lint.yaml`/`test.yaml`/`i18n.yaml`/`container.yaml`/`nix.yaml`/`vendor.yaml` (currently trigger on every push/PR unfiltered) so Android-only or docs-only changes don't run the full Python CI matrix, mirroring `nix-lint.yaml`/`e2e.yaml`/`android-*.yaml`'s existing scoping |
+| T113 | P3 | done | ci | refactor | Pin `pschmitt/android-app-ci` reusable workflow/action refs (10 occurrences across `android-*.yaml`/`release.yaml`/`play-store.yaml`) to a tag or SHA instead of floating `@main` |
+| T114 | P3 | done | ci | refactor | Align `actions/checkout` (`v6` vs `v7`) and `actions/upload-artifact` (`v4` vs `v7`) versions across all workflow files - no functional bug, just unexplained drift |
+| T115 | P3 | done | ci | refactor | Add `npm` (`stricknani/static/vendor-tiptap/package.json`) and `gradle` (`android/`) ecosystems to `.github/dependabot.yml`, which currently only tracks `github-actions`/`pip`/`docker` |
+| T116 | P2 | done | security | bug | Force `Content-Disposition: attachment` for project attachments served with a non-image/PDF extension (`routes/media.py`) - attachment uploads keep the client-supplied extension verbatim with no allowlist, so an `evil.svg`/`evil.html` "attachment" was previously served `inline` and would render/execute in the browser (self-XSS; the per-object media authz means only the uploader could trigger it) |
+| T117 | P3 | done | web/ux | refactor | Deduplicate the CSRF-token meta-tag lookup: `static/js/app.js` already defined `getCsrfToken()` but three other call sites (`photoswipe.js` x2, `profile_cropper.js`) each re-implemented the same `document.querySelector('meta[name="csrf-token"]')` lookup instead of reusing it |
 
 ## Next
 
@@ -1522,3 +1534,327 @@ Execution-oriented backlog for Stricknani.
   nix/module.nix` both pass; `pytest tests/test_health.py` passes (no test references this file).
   Full end-to-end confirmation (a deploy that doesn't race) happens on the next `just deploy
   rofl-10`.
+
+### T108: Require authentication and cap payload size on the markdown-preview endpoint
+
+- **Area**: security
+- **Priority**: P2
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - `POST /utils/preview/markdown` (`stricknani/main.py`) had no `Depends(require_auth)` and no
+    length cap, unlike every other user-input surface in the app. It's only ever called from the
+    wysiwyg editor on authenticated project/yarn forms, but the route itself didn't enforce that -
+    an anonymous caller could POST arbitrarily large/pathological markdown bodies repeatedly for
+    free CPU/memory cost (python-markdown parse + `nh3` sanitization scale with input size). Found
+    during a full-repo security/UX/DRY audit.
+- **Implementation** (`stricknani/main.py`):
+  - Added `_current_user: User = Depends(require_auth)` to `preview_markdown`.
+  - Added a `MAX_MARKDOWN_PREVIEW_CHARS = 50_000` cap, returning `413` when exceeded - comfortably
+    above any legitimate project/yarn description or notes field.
+  - `static/js/app.js`'s `previewMarkdown()` previously swallowed any non-2xx response silently;
+    added a `showToast` error on both the `!response.ok` and `catch` paths (reusing the existing
+    `somethingWentWrong` i18n string) since 401/413 are now realistically reachable (session expiry
+    mid-edit, oversized paste).
+- **Testing**: New `tests/test_markdown_preview.py` (4 tests: authenticated render, empty content,
+  oversized-content 413, unauthenticated 401 - the last one drops both the `require_auth` and
+  `get_current_user` dependency overrides the `test_client` fixture installs, since `require_auth`
+  alone still resolves through the still-overridden `get_current_user`). Full suite: 298 passed, 1
+  skipped, 81.18% coverage (>=80% threshold). `ruff check .`, `mypy .`, `just lint-js` all clean.
+
+### T112: Add path filters to unfiltered Python CI workflows; enable uv caching
+
+- **Area**: ci
+- **Priority**: P2
+- **Status**: done
+- **Category**: refactor
+- **Description**:
+  - `lint.yaml`, `test.yaml`, `container.yaml`, `vendor.yaml`, `nix.yaml`, `i18n.yaml` had no
+    `paths:` filter and ran on every push/PR unconditionally - unlike `nix-lint.yaml`, `e2e.yaml`,
+    and every `android-*.yaml` workflow, which are all correctly path-scoped. Net effect: an
+    Android-only PR touching only `android/**` triggered the entire web CI suite (ruff, mypy,
+    template-js/js/css lint, full pytest run, container build, vendor check, nix build, i18n check)
+    for no reason. Separately, `lint.yaml`/`test.yaml`/`i18n.yaml`'s `astral-sh/setup-uv@v7` steps
+    ran `just ci-setup-py` (a full `uv sync`, including heavy packages like scikit-image/pymupdf/
+    weasyprint) with no `enable-cache: true`, unlike `e2e.yaml`'s already-proven pattern.
+- **Implementation**:
+  - Added matching `paths:` filters (push and pull_request) to all six workflows, scoped to the
+    files each one's jobs actually depend on (e.g. `lint.yaml`: `stricknani/**`, `tests/**`,
+    `pyproject.toml`, `uv.lock`, `justfile`, `biome.json`, its own workflow file; `nix.yaml` adds
+    `nix/**`, `flake.nix`, `flake.lock`, `Dockerfile`; `vendor.yaml` scoped tightly to
+    `vendir.yml`/`vendir.lock.yml`/`stricknani/static/vendor/**`).
+  - Added `enable-cache: true` to every `setup-uv@v7` step in `lint.yaml`/`test.yaml`/`i18n.yaml`.
+  - Confirmed via `gh api repos/.../branches/main/protection` that `main` has no branch protection
+    (no required status checks), so path-filtered workflows never running on an unrelated PR can't
+    strand a required check in "pending" - the usual gotcha with this pattern doesn't apply here.
+- **Testing**: Validated all six edited workflow files parse as valid YAML (`python -c "import
+  yaml; yaml.safe_load(...)"`). No functional web-app code changed by this ticket.
+
+### T116: Force attachment downloads for non-image/PDF media, closing a stored self-XSS gap
+
+- **Area**: security
+- **Priority**: P2
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - Project attachment uploads (`services/projects/attachments.py`) have no extension/content-type
+    allowlist, unlike images: `store_project_attachment_bytes` calls `save_bytes()` without an
+    `extension=` override, so a file keeps its client-supplied extension verbatim. `/media` (T70)
+    served every object with `Content-Disposition: inline` regardless of extension, and the
+    response `Content-Type` is inferred by Starlette from that extension. Uploading e.g. `evil.svg`
+    or `evil.html` as an "attachment" got it served inline as `image/svg+xml`/`text/html` from the
+    app's own origin - stored XSS. Bounded to self-XSS only (T70's ownership-gated media route
+    means only the uploader, or an admin for user avatars only, can ever fetch it), so not P0/P1,
+    but a real gap versus T59's changelog claim of an "upload extension allowlist". Found during a
+    full-repo security/UX/DRY audit.
+- **Implementation** (`stricknani/routes/media.py`):
+  - Added `_INLINE_SAFE_EXTENSIONS` (the same set images/thumbnails/PDFs already use:
+    `.jpg`/`.jpeg`/`.png`/`.gif`/`.webp`/`.pdf`). `_file_response` now forces
+    `Content-Disposition: attachment; filename="..."` for any served file whose extension isn't in
+    that set, instead of always serving `inline`.
+  - Deliberately doesn't touch the upload/storage path (`services/projects/attachments.py`): that
+    would either force an extension allowlist (breaking legitimate non-image/PDF attachments like
+    patterns in other document formats) or need a real content-type-sniffing rewrite. Enforcing
+    safe disposition at serve time closes the actual rendering/execution vector with a much smaller
+    change, and doesn't affect the existing thumbnail route (thumbnails are always
+    `create_thumbnail`/`create_pdf_thumbnail`-generated `.jpg`, already in the safe set).
+- **Testing**: `tests/test_media_authz.py` - added `test_pdf_attachment_served_inline` (unchanged
+  behavior) and `test_non_renderable_attachment_forced_to_download` (a `.svg` file with an
+  `onload` payload must come back `Content-Disposition: attachment`). Full suite: 298 passed (prior
+  T108 run already covers this file), `ruff check .`/`mypy .` clean.
+
+### T117: Deduplicate the CSRF-token meta-tag lookup across static/js
+
+- **Area**: web/ux
+- **Priority**: P3
+- **Status**: done
+- **Category**: refactor
+- **Description**:
+  - `static/js/app.js` already defined `getCsrfToken()` as a closure-local const (used once, at its
+    own `previewMarkdown` call site), while `photoswipe.js` (two call sites) and
+    `profile_cropper.js` (one call site) each re-implemented the identical
+    `document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")` lookup inline
+    instead of reusing it. Found during a full-repo security/UX/DRY audit.
+- **Implementation**:
+  - Exposed the existing helper as `window.getCsrfToken` in `app.js` (loaded first in
+    `base.html`, before any `static/js/features/*.js` file), and replaced the three duplicated
+    inline lookups with `window.getCsrfToken?.()`.
+- **Testing**: `just lint-js` (biome) passes on all 15 `static/js` files with no findings.
+
+### T106: Fix IDOR in yarn favorite/unfavorite toggle
+
+- **Area**: security
+- **Priority**: P1
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - `POST /yarn/{yarn_id}/favorite` (`routes/yarn.py`, `toggle_favorite`) checked that the yarn
+    existed but never that the current user owned it - unlike `favorite_project`/`unfavorite_project`
+    in `routes/projects.py`, which both check `project.owner_id != current_user.id`. Any
+    authenticated user could favorite/unfavorite another user's yarn, and use the 404-vs-200
+    response as an existence oracle for private yarn ids. The JSON API v1 equivalents
+    (`routes/api/yarns.py` `favorite_yarn`/`unfavorite_yarn`) were already correctly scoped via
+    `_get_owned_yarn` - the gap was isolated to this one HTML route. Found during a full-repo
+    security/UX/DRY audit.
+- **Implementation** (`stricknani/routes/yarn.py`):
+  - Added `if yarn.owner_id != current_user.id: raise HTTPException(403)` immediately after the
+    existence check, mirroring `favorite_project`'s pattern exactly.
+- **Testing**: `tests/test_yarn.py` - added `test_toggle_favorite_on_own_yarn_succeeds` (unchanged
+  behavior for the owner) and `test_toggle_favorite_on_other_users_yarn_is_forbidden` (403, and the
+  favorite table is left untouched). Full suite green, `ruff check .`/`mypy .` clean.
+
+### T107: Rate limit API token creation and URL-import fetches
+
+- **Area**: security
+- **Priority**: P2
+- **Status**: done
+- **Category**: feat
+- **Description**:
+  - `utils/rate_limit.py` (T69) only guarded `/auth/login` and `/auth/signup`. Two other
+    state-changing, authenticated actions had no cap: minting personal access tokens
+    (`routes/user.py` `create_api_token`/`create_qr_setup_token` - a compromised or malicious
+    session could mint unlimited long-lived bearer credentials) and URL-based pattern/yarn imports
+    (`routes/projects.py`/`routes/yarn.py` - a user could make the server fetch an
+    attacker-influenced remote URL on their behalf as often as they liked; the SSRF guard, T52,
+    restricts *where* it fetches from, not *how often*). Found during a full-repo security/UX/DRY
+    audit.
+- **Implementation**:
+  - Added `RATE_LIMIT_API_TOKEN_MAX_ATTEMPTS`/`_WINDOW_SECONDS` (default 10/hour) and
+    `RATE_LIMIT_IMPORT_MAX_ATTEMPTS`/`_WINDOW_SECONDS` (default 20/hour) to `config.py`, following
+    the existing login/signup constant naming and env-var-overridable pattern.
+  - `routes/user.py`: both `create_api_token` and `create_qr_setup_token` now check/record against
+    a shared `api_token:user:{id}` key before minting (their limits are cumulative - both endpoints
+    mint the same underlying credential type).
+  - `routes/projects.py`/`routes/yarn.py`: the URL-import branch of `import_pattern`/`import_yarn`
+    checks/records against an `import:user:{id}` key right after URL format validation, before any
+    outbound fetch. File/text imports are unaffected (no outbound fetch to bound).
+  - All four call sites return `429` with a `Retry-After` header, matching the existing
+    login/signup rate-limit response shape.
+- **Testing**: `tests/test_api_tokens.py::test_api_token_creation_is_rate_limited`,
+  `tests/test_yarn_import.py::test_import_yarn_from_url_is_rate_limited`,
+  `tests/test_imports.py::test_import_pattern_from_url_is_rate_limited` - each temporarily lowers
+  the relevant config max (mirroring `tests/test_auth.py`'s existing rate-limit test pattern),
+  exhausts it, and asserts `429`. Full suite: 300 passed, 1 skipped, 81.19% coverage.
+  `ruff check .`/`mypy .` clean.
+
+### T109: Fix dead inline onclick handler under strict CSP
+
+- **Area**: web/ux
+- **Priority**: P3
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - `templates/user/api_tokens.html`'s newly-created-token field used `onclick="this.select()"` -
+    a real inline event handler, dead under T71's strict nonce-based CSP (`script-src 'self'
+    'nonce-...'`, no `'unsafe-inline'`). Clicking the field silently did nothing instead of
+    selecting its text for copying. Repo-wide grep confirmed this was the only real inline
+    handler left in `templates/` (two other `onclick=`/`onchange=` hits are macro *parameter*
+    names in `macros/image_upload.html`/`yarn/form.html` that the macro itself already
+    translates into the CSP-safe `data-call-change` pattern - not actual inline handlers). Found
+    during a full-repo security/UX/DRY audit.
+- **Implementation**:
+  - Added `window.selectInputText = (el) => el?.select?.();` to `static/js/app.js`, and replaced
+    the inline handler with `data-call="selectInputText"` (the existing generic `data-call` click
+    delegation in `app.js` calls `fn(element)` directly when no `data-call-args` is present, so no
+    extra attribute is needed).
+- **Testing**: `just lint-js`/`lint-template-js`/`lint-template-js-format` all pass;
+  `tests/test_api_tokens.py` (unaffected by this change) still green.
+
+### T110: Fix HTML injection in search suggestion dropdown
+
+- **Area**: security
+- **Priority**: P2
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - `static/js/features/search_bar.js`'s suggestion-list rendering built each `<li>` via a
+    template-string interpolating the raw suggestion value (`<span>${s}</span>`) and assigned the
+    joined result to `suggestionList.innerHTML`. Suggestions come straight from
+    `GET /projects/search-suggestions`/`GET /yarn/search-suggestions`, which return the current
+    user's own `Category.name`, tags, or `Yarn.brand` values verbatim - user-editable fields. A
+    category/brand name containing markup (e.g. `<img src=x onerror=...>`) would render live,
+    unescaped, in the dropdown. Confirmed both suggestion endpoints are scoped to the current
+    user's own rows (`Category.user_id`/`Yarn.owner_id == current_user.id`), so this was
+    self-XSS-only, not cross-account - still a real HTML-injection bug worth closing. Found during
+    a full-repo security/UX/DRY audit.
+- **Implementation** (`static/js/features/search_bar.js`):
+  - Replaced the `.map(...).join("")` + `.innerHTML =` construction with building real DOM nodes
+    (`document.createElement`) and setting `label.textContent = s` for the untrusted suggestion
+    text, then `suggestionList.replaceChildren(...)`. `match.icon` (used for the icon `className`)
+    stays a template literal since it's sourced from the internal, developer-controlled `prefixes`
+    config array, never user input. Event delegation (`data-suggestion-index` + click listener
+    reading `lastSuggestions[index]`) is unaffected since it only depends on the attribute being
+    present, not on how the markup was built.
+- **Testing**: `just lint-js` (biome) passes. No JS unit-test harness exists in this repo (JS is
+  otherwise only covered by lint + Playwright E2E, which is expensive to spin up); verified by
+  code inspection that `.textContent` assignment can never be interpreted as markup, and that the
+  click-delegation logic doesn't depend on the DOM-construction method.
+
+### T111: Consolidate the project/yarn delete-dialog JS into one shared helper
+
+- **Area**: web/ux
+- **Priority**: P3
+- **Status**: done
+- **Category**: refactor
+- **Description**:
+  - `templates/projects/_delete_dialog.js` and `templates/yarn/_delete_dialog.js` were
+    near-byte-identical (`deleteProject(id)`/`deleteYarn(id)`), differing only in dialog id, API
+    path, redirect toast key, and error message - each templated (Jinja-rendered inline
+    `<script>`) purely to interpolate one `{{ _("Failed to delete ...") }}` i18n string. Found
+    during a full-repo security/UX/DRY audit.
+  - Investigating the call sites surfaced the full picture needed to consolidate safely: both
+    `projects/list.html` and `yarn/list.html` include the shared `_delete_dialog.html` partial,
+    whose confirm button's `data-call-args` gets dynamically overwritten at click time by
+    `static/js/features/context_menu.js` (the long-press/context-menu delete flow on list pages
+    patches in the correct id/name right before opening the dialog) - the template-rendered
+    `data-call-args` value is just an inert placeholder. `projects/detail.html` reuses the same
+    partial with its own real `project.id` baked in via Jinja. `yarn/detail.html`, by contrast,
+    has a completely separate, non-JS delete flow (a plain `<form method="post"
+    action="/yarn/{id}/delete">` with a hidden CSRF field) - pre-existing asymmetry with
+    `projects/detail.html`, left untouched as out of scope for this ticket.
+- **Implementation**:
+  - Added `window.deleteEntity(kind, id)` to `static/js/app.js`, driven by a small
+    `deleteEntityConfig` map (`project`/`yarn` -> dialog button selector, API path builder,
+    redirect URL, i18n failure key/fallback). Uses `getCsrfToken()` (T117) instead of the old
+    unguarded `document.querySelector(...).content` access.
+  - Added two new i18n keys to `base.html`'s JS i18n dict: `failedToDeleteProject`,
+    `failedToDeleteYarn` (same source strings the two deleted files already used, so translations
+    were recoverable, not new copy).
+  - Updated both `_delete_dialog.html` templates to call `data-call="deleteEntity"` with
+    `data-call-args='["project"/"yarn", <id-or-null>]'`, and deleted their now-unused `.js`
+    siblings and `<script>{% include ... %}</script>` wrappers.
+  - Updated `context_menu.js`'s delete-dialog patching to write `["kind", id]` via
+    `JSON.stringify` (also fixing a latent issue: the old code interpolated the raw id into a
+    template literal unescaped rather than JSON-encoding it) and consolidated the two
+    near-identical `if (dialogId === "deleteProjectDialog") {...} else if (... ===
+    "deleteYarnDialog") {...}` branches into one, driven by a `deleteDialogConfig` map.
+  - Ran `just i18n-update`/`i18n-compile`/`i18n-check`: babel's fuzzy-matching mis-mapped the two
+    new msgids to unrelated existing strings (button labels, not error messages) - corrected both
+    `de`/`en` `.po` entries by hand. Also found and fixed one unrelated pre-existing fuzzy entry
+    (`"Sign in"` in the `de` catalog, from a stale/never-regenerated catalog predating this
+    session) that `i18n-check` surfaced once the catalogs were regenerated - not caused by this
+    ticket's changes, but left broken it would have blocked `i18n-check` regardless.
+- **Testing**: `just lint-js`/`lint-template-js`/`lint-template-js-format` all pass;
+  `just i18n-check` passes. Full suite: 303 passed, 1 skipped, 81.22% coverage. No test referenced
+  the old `deleteProject`/`deleteYarn` global function names. Attempted a live headless-Playwright
+  click-through (signup -> create project/yarn -> delete via both the detail-page dialog and the
+  list-page context menu) against a disposable local dev server, but hit an unrelated local
+  dev-environment issue (the disposable sqlite db ended up empty/tableless despite migrations
+  reportedly running, root cause not identified - likely an interaction between `scripts/run.sh`'s
+  re-exec-into-`nix-develop` path and env var propagation) and dropped it rather than keep
+  debugging infrastructure unrelated to this change. Verification instead rests on the full test
+  suite, lint, and a careful hand-trace of the dynamic `data-call-args` wiring across
+  `context_menu.js`/`app.js`/both templates.
+
+### T114: Align `actions/checkout`/`actions/upload-artifact` versions across workflows
+
+- **Area**: ci
+- **Priority**: P3
+- **Status**: done
+- **Category**: refactor
+- **Description**:
+  - The Android-related workflows (`android-e2e.yaml`, `android-screenshots.yaml`,
+    `release.yaml`, `play-store*.yaml`) already used `actions/checkout@v7` and
+    `actions/upload-artifact@v7`, while the older web-app workflows (`test.yaml`, `i18n.yaml`,
+    `nix.yaml`, `nix-lint.yaml`, `lint.yaml`, `vendor.yaml`, `container.yaml`, `e2e.yaml`) were
+    still on `@v6`/`@v4` - unexplained drift within the same repo, not a functional bug. Found
+    during a full-repo security/UX/DRY audit.
+- **Implementation**: Bumped `actions/checkout@v6` -> `@v7` and `actions/upload-artifact@v4` ->
+  `@v7` across the eight web workflow files, matching what the Android workflows already use.
+- **Testing**: Validated all eight edited files as valid YAML. No functional change (both are
+  well-established, backward-compatible major-version actions).
+
+### T113: `pschmitt/android-app-ci@main` pinning - confirmed intentional, no change
+
+- **Area**: ci
+- **Priority**: P3
+- **Status**: done
+- **Category**: refactor
+- **Description**:
+  - The audit flagged 10 occurrences of `pschmitt/android-app-ci/...@main` (across
+    `android-*.yaml`/`release.yaml`/`play-store.yaml`) as a floating-ref supply-chain risk, the
+    usual concern with unpinned third-party actions.
+  - `pschmitt/android-app-ci` is not a third party here - it's the user's own shared reusable-CI
+    repo, used identically across their whole Android app fleet (syncwich, nyetbox, jollyfin,
+    augh, this app), and `android/AGENTS.md` documents `@main`-tracking as the deliberate
+    fleet-wide convention: fixes/improvements to the shared CI logic should propagate to every app
+    automatically, without a manual pin bump in each of ~5 repos.
+- **Resolution**: Confirmed with the user - `@main` tracking is intentional, not an oversight.
+  Left as-is; no code change.
+
+### T115: `.github/dependabot.yml` ecosystem coverage - confirmed intentional, no change
+
+- **Area**: ci
+- **Priority**: P3
+- **Status**: done
+- **Category**: refactor
+- **Description**:
+  - The audit flagged `.github/dependabot.yml` as only covering `github-actions`/`pip`/`docker`,
+    missing `npm` (`stricknani/static/vendor-tiptap/package.json`) and `gradle` (`android/`).
+  - `renovate.json` is also present in this repo, using `config:recommended` (which auto-discovers
+    and covers npm/gradle/etc. repo-wide without per-ecosystem declaration, unlike Dependabot) plus
+    custom regex managers specifically for `vendir.yml`'s vendored JS pins. Renovate already owns
+    npm/gradle updates; Dependabot's narrower scope is intentional, not a gap - adding npm/gradle
+    to Dependabot too would risk both bots opening duplicate/conflicting PRs for the same
+    dependency.
+- **Resolution**: Confirmed with the user - the split is intentional. Left as-is; no code change.

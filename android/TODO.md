@@ -255,15 +255,15 @@ own repro method) and `just check rofl-13.brkn.lol` (ktfmt + unit tests + Androi
 
 Status: **done** (2026-08-21) - verified via `BackupPasswordDialogTest`'s 2 new instrumentation
 tests on the physical Zenfone 10 (`adb shell am instrument`) - `OK (2 tests)` - and `just check
-rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint), green. **Not verified**: a full live
-click-through of Settings -> Backup -> Export on-device with a blank password - this session's
-device was signed out mid-session for SNA-61's live repro (which needed the Onboarding screen) and
-no credentials were on hand to re-onboard it back onto the real server before reaching this
-ticket. The instrumentation test above renders and interacts with the exact same
-`BackupPasswordDialog` composable using the exact real call site's `allowBlankToClear = true`
-configuration, which is the entire fix - the app not being signed in on this device doesn't affect
-that composable's behavior, but a true click-through remains a gap for a future session with
-working credentials.
+rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint), green. Also verified with a full live
+click-through on-device: re-onboarded the Zenfone 10 (server URL + a fresh PAT minted for a new,
+isolated, non-admin test account, `ai@brkn.lol`, created via the admin panel specifically so
+testing never touches any real user's account - credentials saved to Bitwarden as "Stricknani (AI
+Agent)" for reuse), then Settings -> Backup -> Export now -> left the password field blank ->
+confirmed via `uiautomator dump` that the Export button reports `enabled="true"` with a blank
+password (previously it would have stayed disabled) -> tapped Export -> "Backup exported" toast,
+confirming the fix end to end. The previously-flagged gap (device signed out mid-session, no
+credentials on hand) is closed.
 
 ## SNA-63: Remote build pipeline (`just build-fetch`) currently fails via `nix develop`
 
