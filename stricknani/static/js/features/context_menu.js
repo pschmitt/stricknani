@@ -138,7 +138,11 @@
 		// with the specific project/yarn the context menu was opened on before showing it -
 		// both dialogs share the same `deleteEntity(kind, id)` confirm handler.
 		const deleteDialogConfig = {
-			deleteProjectDialog: { kind: "project", idKey: "projectId", nameKey: "projectName" },
+			deleteProjectDialog: {
+				kind: "project",
+				idKey: "projectId",
+				nameKey: "projectName",
+			},
 			deleteYarnDialog: { kind: "yarn", idKey: "yarnId", nameKey: "yarnName" },
 		};
 
