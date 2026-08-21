@@ -45,6 +45,8 @@ wait_for_health() {
 
 run_dev_server() {
   local -a nix_args
+  local secret_key
+  local csrf_secret_key
 
   cd "$REPO_ROOT" || return 1
 
@@ -98,6 +100,26 @@ run_dev_server() {
       fi
     ) &
   fi
+
+  # A plain `just run` is a disposable development instance. Generate
+  # process-local signing keys when the caller did not provide them, so the
+  # development server is usable without copying production secrets into a
+  # shell or `.env` file. Production startup still rejects missing secrets.
+  if [[ -z "${SECRET_KEY:-}" ]]
+  then
+    secret_key="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+  else
+    secret_key="$SECRET_KEY"
+  fi
+
+  if [[ -z "${CSRF_SECRET_KEY:-}" ]]
+  then
+    csrf_secret_key="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+  else
+    csrf_secret_key="$CSRF_SECRET_KEY"
+  fi
+
+  env_vars+=("SECRET_KEY=${secret_key}" "CSRF_SECRET_KEY=${csrf_secret_key}")
 
   env "${env_vars[@]}" "${cmd[@]}"
 }

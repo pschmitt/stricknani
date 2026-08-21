@@ -135,30 +135,37 @@
 		});
 
 		// Special handling for delete dialogs since they need to update the dialog content
+		// with the specific project/yarn the context menu was opened on before showing it -
+		// both dialogs share the same `deleteEntity(kind, id)` confirm handler.
+		const deleteDialogConfig = {
+			deleteProjectDialog: {
+				kind: "project",
+				idKey: "projectId",
+				nameKey: "projectName",
+			},
+			deleteYarnDialog: { kind: "yarn", idKey: "yarnId", nameKey: "yarnName" },
+		};
+
 		menu.querySelectorAll('[data-action="open-dialog"]').forEach((el) => {
 			el.addEventListener("click", (_e) => {
 				const dialogId = el.dataset.dialogId;
 				const dialog = document.getElementById(dialogId);
 				if (dialog) {
 					// Update dialog with data from the button if needed
-					if (dialogId === "deleteProjectDialog") {
-						const pid = el.dataset.projectId;
-						const pname = el.dataset.projectName;
+					const entityConfig = deleteDialogConfig[dialogId];
+					if (entityConfig) {
 						const nameEl = dialog.querySelector("strong.text-base-content");
-						if (nameEl) nameEl.textContent = pname;
+						if (nameEl) nameEl.textContent = el.dataset[entityConfig.nameKey];
 
 						const confirmBtn = dialog.querySelector(
-							'[data-call="deleteProject"]',
+							'[data-call="deleteEntity"]',
 						);
-						if (confirmBtn) confirmBtn.dataset.callArgs = `[${pid}]`;
-					} else if (dialogId === "deleteYarnDialog") {
-						const yid = el.dataset.yarnId;
-						const yname = el.dataset.yarnName;
-						const nameEl = dialog.querySelector("strong.text-base-content");
-						if (nameEl) nameEl.textContent = yname;
-
-						const confirmBtn = dialog.querySelector('[data-call="deleteYarn"]');
-						if (confirmBtn) confirmBtn.dataset.callArgs = `[${yid}]`;
+						if (confirmBtn) {
+							confirmBtn.dataset.callArgs = JSON.stringify([
+								entityConfig.kind,
+								el.dataset[entityConfig.idKey],
+							]);
+						}
 					}
 
 					if (typeof dialog.showModal === "function") {

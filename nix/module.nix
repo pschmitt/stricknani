@@ -206,7 +206,8 @@ in
               "localhost"
             ]
           );
-        } // cfg.extraConfig;
+        }
+        // cfg.extraConfig;
 
         serviceConfig = {
           ExecStart = lib.getExe cfg.package;
@@ -286,18 +287,28 @@ in
       };
     };
 
-    services.monit.config = lib.mkIf (cfg.hostName != null && config.services.monit.enable) (lib.mkAfter ''
-      check host "stricknani" with address "${cfg.hostName}"
-        group services
-        restart program = "${pkgs.systemd}/bin/systemctl restart stricknani"
-        if failed
-          port 443
-          protocol https
-          request "/healthz"
-          with timeout 15 seconds
-        then restart
-        if 5 restarts within 10 cycles then alert
-    '');
+    services.monit.config = lib.mkIf (cfg.hostName != null && config.services.monit.enable) (
+      lib.mkAfter ''
+        check host "stricknani" with address "${cfg.hostName}"
+          group services
+          restart program = "${pkgs.systemd}/bin/systemctl restart stricknani"
+          # Startup takes ~15-25s (scikit-image/pymupdf/weasyprint imports), so a
+          # deploy-triggered restart routinely fails one healthcheck cycle before
+          # the app is ready. Requiring 2 consecutive failed cycles (~2 minutes)
+          # avoids monit firing its own concurrent `systemctl restart stricknani`
+          # while nixos-rebuild switch's restart of the same unit is still in
+          # flight -- that race left the service bound to the pre-switch build
+          # at least twice (T105).
+          if failed
+            port 443
+            protocol https
+            request "/healthz"
+            with timeout 15 seconds
+          for 2 cycles
+          then restart
+          if 5 restarts within 10 cycles then alert
+      ''
+    );
 
     users.users."${user}" = {
       isSystemUser = true;

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ _('Stricknani') }}{% endblock %}</title>
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#2f6fed">
     {% block head %}{% endblock %}
     <link rel="icon" type="image/svg+xml"
         href="{% if is_dev_instance %}/static/favicon-dev.svg{% else %}/static/favicon.svg{% endif %}">
@@ -14,8 +14,7 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', path='icons/icon-192.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='vendor/mdi/css/materialdesignicons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='vendor/photoswipe/photoswipe.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
-    <script>
+    <script nonce="{{ csp_nonce }}">
         window.STRICKNANI = window.STRICKNANI || {};
         window.STRICKNANI.i18n = {{
             {
@@ -25,6 +24,8 @@
                             'darkMode': _('Dark Mode'),
                                 'dismissMessage': _('Dismiss message'),
                                     'failedToCopy': _('Failed to copy'),
+                                        'failedToDeleteProject': _('Failed to delete project'),
+                                            'failedToDeleteYarn': _('Failed to delete yarn'),
                                         'failedToUploadImage': _('Failed to upload image'),
                                             'imageCropperFailedToLoad': _('Image cropper failed to load'),
                                                 'lightMode': _('Light Mode'),
@@ -79,7 +80,7 @@
     </script>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
     <script src="{{ url_for('static', path='vendor/cropperjs/cropper.min.js') }}"></script>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         // Theme initialization - MUST run before page renders
         (function () {
             let theme = localStorage.getItem('theme');
@@ -91,7 +92,7 @@
                 }
             }
             document.documentElement.setAttribute('data-theme', theme);
-            // Also set dark class for Tailwind dark mode
+            // Keep the legacy class for feature styles while Material uses data-theme.
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
             }
@@ -99,9 +100,8 @@
     </script>
 
 
-    <link href="{{ url_for('static', path='vendor/daisyui/daisyui.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ url_for('static', path='vendor/daisyui/themes.css') }}" rel="stylesheet" type="text/css" />
-    <script src="{{ url_for('static', path='vendor/tailwindcss-browser/index.global.js') }}"></script>
+    <link href="{{ url_for('static', path='css/material.css') }}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
     <script src="{{ url_for('static', path='vendor/htmx/htmx.min.js') }}"></script>
     <script src="{{ url_for('static', path='js/htmx/csrf.js') }}"></script>
     {% if auto_reload_enabled %}
@@ -109,20 +109,33 @@
     {% endif %}
 </head>
 
-<body class="min-h-screen bg-base-300 flex flex-col">
+<body class="min-h-screen bg-base-100 flex flex-col md3-app-surface">
     {% import "macros/dialogs.html" as dialogs %}
+
+    <a href="#main-content"
+        class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-base-100 focus:px-4 focus:py-2 focus:shadow-lg focus:ring focus:ring-primary">{{ _('Skip to main content') }}</a>
+
+    <div id="offlineBanner"
+        class="hidden sticky top-0 z-[2147483647] flex items-center justify-center gap-2 bg-warning px-4 py-2 text-center text-sm font-medium text-warning-content"
+        role="status" aria-live="polite">
+        <span class="mdi mdi-wifi-off text-base"></span>
+        <span>{{ _('You are offline. Some features may be unavailable.') }}</span>
+    </div>
 
     {% block navbar %}
     {# Default navbar - pages can override this block #}
     {% endblock %}
 
-    <main class="flex-grow w-full" {% block main_attrs %}{% endblock %}>
+    <main id="main-content" class="flex min-h-0 flex-grow w-full flex-col" {% block main_attrs %}{% endblock %}>
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="mt-8 py-4 text-center text-sm text-base-content/70 bg-base-100 border-t border-base-300">
+    <footer class="md3-footer mt-8 py-4 text-center text-sm text-base-content/70 bg-base-100 border-t border-base-300">
         <span class="mdi mdi-yarn mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0 | {{ _('GPL-3.0-only')
         }}
+        <a href="/privacy" class="ml-2 text-base-content/70 hover:text-base-content">
+            {{ _('Privacy Policy') }}
+        </a>
         <a href="https://github.com/pschmitt/stricknani" target="_blank" rel="noopener noreferrer"
             class="ml-2 text-base-content/70 hover:text-base-content" aria-label="GitHub">
             <span class="mdi mdi-github text-lg align-middle"></span>
@@ -147,7 +160,7 @@
         {{ dialogs.modal_backdrop() }}
     </dialog>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         window.STRICKNANI = window.STRICKNANI || {};
         window.STRICKNANI.profileCropper = {
             currentUserId: {{ current_user.id }},
@@ -364,9 +377,7 @@
             <!-- Crop Area -->
             <div class="flex-1 min-h-0 bg-base-300 relative group overflow-hidden">
                 <!-- Checkerboard pattern for transparency -->
-                <div class="absolute inset-0 opacity-20 pointer-events-none"
-                    style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;">
-                </div>
+                <div class="absolute inset-0 opacity-20 pointer-events-none checkerboard-bg"></div>
 
                 <div class="w-full h-full p-4 sm:p-8" id="pswpCropContainer">
                     <img id="pswpCropImage" class="max-w-full block opacity-0 transition-opacity duration-300" src=""
@@ -415,14 +426,14 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         window.STRICKNANI = window.STRICKNANI || {};
         window.STRICKNANI.photoswipe = {
             ocrEndpoint: "/utils/ocr",
             pswpModuleUrl: "{{ url_for('static', path='vendor/photoswipe/photoswipe.esm.min.js') }}",
         };
     </script>
-    <script type="module">
+    <script type="module" nonce="{{ csp_nonce }}">
         import PhotoSwipeLightbox from "{{ url_for('static', path='vendor/photoswipe/photoswipe-lightbox.esm.min.js') }}";
         window.STRICKNANI.photoswipe.PhotoSwipeLightbox = PhotoSwipeLightbox;
         import("{{ url_for('static', path='js/features/photoswipe.js') }}");
@@ -431,7 +442,7 @@
     <script src="{{ url_for('static', path='js/features/swipe_nav.js') }}"></script>
     {% if sentry_frontend_enabled %}
     <script src="{{ url_for('static', path='vendor/sentry/bundle.tracing.min.js') }}"></script>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         Sentry.init({
             dsn: {{ sentry_frontend_dsn | tojson }},
             environment: {{ sentry_frontend_env | tojson }},

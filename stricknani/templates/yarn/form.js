@@ -152,21 +152,20 @@ function addPendingImageToGallery(url) {
 	container.classList.remove("hidden");
 
 	const div = document.createElement("div");
-	div.className =
-		"relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 group";
+	div.className = "md3-photo-tile md3-photo-tile--aspect";
 	div.setAttribute("data-pending-url", url);
 
 	div.innerHTML = `
-            <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false" class="block h-full w-full">
-                <img src="${url}" class="h-full w-full object-cover cursor-zoom-in">
+            <a href="${url}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-promote="true" data-pswp-delete="true" data-pswp-is-primary="false" class="md3-photo-tile__link">
+                <img src="${url}" alt="{{ _('Uploaded image') }}" class="md3-photo-tile__image">
             </a>
             <input type="hidden" name="import_image_urls" value="${url}">
 	            <button type="button" data-call="promotePendingYarnImage" data-call-args='["$this","$dataset:url"]' data-url="${url}"
-	                class="promote-pending-yarn-btn absolute top-1 left-1 z-10 rounded-full p-1 shadow-sm transition-all bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+	                class="promote-pending-yarn-btn md3-photo-action md3-photo-action--promote"
 	                title="{{ _('Make primary photo') }}">
-	                <span class="mdi mdi-star-outline text-sm"></span>
+	                <span class="mdi mdi-star-outline md3-photo-action__icon"></span>
 	            </button>
-	            <button type="button" data-call="removePendingYarnImage" class="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
+	            <button type="button" data-call="removePendingYarnImage" class="md3-photo-action md3-photo-action--delete">
 	                <span class="mdi mdi-close"></span>
 	            </button>
         `;
@@ -193,8 +192,7 @@ function promotePendingYarnImage(btn, url) {
 
 	// Visual update
 	document.querySelectorAll(".promote-pending-yarn-btn").forEach((b) => {
-		b.classList.remove("bg-amber-400", "text-white", "opacity-100");
-		b.classList.add("bg-white/90", "text-slate-400", "opacity-0");
+		b.classList.remove("is-primary");
 		const star = b.querySelector("span");
 		if (star) {
 			star.classList.remove("mdi-star");
@@ -209,8 +207,7 @@ function promotePendingYarnImage(btn, url) {
 	});
 
 	if (btn) {
-		btn.classList.add("bg-amber-400", "text-white", "opacity-100");
-		btn.classList.remove("bg-white/90", "text-slate-400", "opacity-0");
+		btn.classList.add("is-primary");
 		const star = btn.querySelector("span");
 		if (star) {
 			star.classList.remove("mdi-star-outline");
@@ -438,22 +435,22 @@ function addYarnPhotoToGallery(photoData) {
 function createYarnPhotoPreviewHTML(photo) {
 	return `
         <div id="photo-card-${photo.id}"
-            class="relative group aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
+	            class="md3-photo-tile md3-photo-tile--aspect"
             <a href="${photo.full_url}" data-pswp-width="${photo.width || 1200}"
                 data-pswp-height="${photo.height || 1200}" data-pswp-caption="${photo.alt_text}"
                 data-pswp-promote="true" data-pswp-delete="true"
                 data-pswp-is-primary="${photo.is_primary ? "true" : "false"}"
-                class="block h-full w-full">
+                class="md3-photo-tile__link">
                 <img src="${photo.thumbnail_url}" alt="${photo.alt_text}"
-                    class="h-full w-full object-cover cursor-zoom-in">
+	                class="md3-photo-tile__image">
             </a>
 	            <button type="button" data-call="promoteYarnPhoto" data-call-args='[${photo.id}]'
-	                class="yarn-promote-btn absolute top-2 left-2 z-10 rounded-full p-1.5 shadow-sm transition-all ${photo.is_primary ? "bg-amber-400 text-white opacity-100" : "bg-white/90 text-slate-400 opacity-0 group-hover:opacity-100 dark:bg-slate-900/90 dark:text-slate-500"} hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/50 dark:hover:text-amber-400"
+	                class="yarn-promote-btn md3-photo-action md3-photo-action--promote${photo.is_primary ? " is-primary" : ""}"
 	                title="{{ _('Make primary photo') }}">
 	                <span class="mdi ${photo.is_primary ? "mdi-star" : "mdi-star-outline"}"></span>
 	            </button>
 	            <button type="button" data-call="deleteYarnPhoto" data-call-args='[${photo.id}]'
-	                class="absolute top-2 right-2 z-10 bg-white/90 text-red-600 rounded-full p-1.5 hover:bg-red-50 shadow-sm transition-colors dark:bg-slate-900/90 dark:text-red-400 dark:hover:bg-red-900/50"
+	                class="md3-photo-action md3-photo-action--delete is-primary"
 	                title="{{ _('Delete photo') }}">
 	                <span class="mdi mdi-trash-can-outline"></span>
 	            </button>
@@ -632,8 +629,7 @@ function setPrimaryYarnPhoto(photoId) {
 		}
 		const button = card.querySelector(".yarn-promote-btn");
 		if (button) {
-			button.classList.remove("bg-amber-400", "text-white", "opacity-100");
-			button.classList.add("bg-white/90", "text-slate-400", "opacity-0");
+			button.classList.remove("is-primary");
 			const icon = button.querySelector("span");
 			if (icon) {
 				icon.classList.remove("mdi-star");
@@ -652,8 +648,7 @@ function setPrimaryYarnPhoto(photoId) {
 	}
 	const targetButton = target.querySelector(".yarn-promote-btn");
 	if (targetButton) {
-		targetButton.classList.add("bg-amber-400", "text-white", "opacity-100");
-		targetButton.classList.remove("bg-white/90", "text-slate-400", "opacity-0");
+		targetButton.classList.add("is-primary");
 		const icon = targetButton.querySelector("span");
 		if (icon) {
 			icon.classList.add("mdi-star");
@@ -759,15 +754,14 @@ function previewImages(input) {
 			const reader = new FileReader();
 			reader.onload = function (e) {
 				const div = document.createElement("div");
-				div.className =
-					"relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 group";
+				div.className = "md3-photo-tile md3-photo-tile--aspect";
 				div.setAttribute("data-preview-index", index);
 				div.innerHTML = `
-                    <a href="${e.target.result}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-delete="true" class="block h-full w-full">
-                        <img src="${e.target.result}" class="h-full w-full object-cover opacity-90 transition group-hover:opacity-100 cursor-zoom-in">
+                    <a href="${e.target.result}" data-pswp-width="1200" data-pswp-height="1200" data-pswp-delete="true" class="md3-photo-tile__link">
+                        <img src="${e.target.result}" alt="{{ _('Uploaded image') }} #${index + 1}" class="md3-photo-tile__image">
                     </a>
-	                    <button type="button" data-call="removeYarnFile" data-call-args='[${index}]' class="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-100 transition-opacity hover:bg-red-700 z-20" aria-label="{{ _('Remove image') }}">
-	                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+		                    <button type="button" data-call="removeYarnFile" data-call-args='[${index}]' class="md3-photo-action md3-photo-action--delete is-primary" aria-label="{{ _('Remove image') }}">
+	                        <svg class="md3-photo-action__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
 	                    </button>
                     `;
 				container.appendChild(div);

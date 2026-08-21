@@ -1,0 +1,30 @@
+name: Android Build
+
+# The shared build workflow owns the checkout, JDK/Gradle setup, unit test, ABI APK build, and
+# artifact contract. `project-directory` is required because Android lives below this repository's
+# unrelated Python web application.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-build.yaml'
+  pull_request:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-build.yaml'
+  workflow_dispatch:
+
+jobs:
+  assemble:
+    uses: pschmitt/android-app-ci/.github/workflows/build.yaml@main
+    with:
+      project-directory: android
+      unit-test-task: :app:testDebugUnitTest
+      gradle-task: :app:assembleDebug
+      apk-dir: app/build/outputs/apk/debug
+      artifact-prefix: app
+    secrets: inherit
+    permissions:
+      contents: read

@@ -34,7 +34,7 @@
                 </div>
                 <input type="url" id="importUrl" name="url" placeholder="{{ import_url_placeholder }}"
                     value="{{ import_url_value }}"
-                    class="input input-bordered w-full pl-10 bg-base-200/50 focus:bg-base-100 transition-all border-base-content/10 focus:border-primary" />
+                    class="md3-text-field" />
             </div>
         </div>
 
@@ -56,7 +56,7 @@
                         <div class="flex items-center gap-2">
                             <span class="font-medium truncate" title="{{ att.original_filename }}">{{
                                 att.original_filename }}</span>
-                            <span class="badge badge-sm badge-ghost">{{ (att.size_bytes / 1024 / 1024)|round(2) }}
+                            <span class="md3-chip md3-chip--compact">{{ (att.size_bytes / 1024 / 1024)|round(2) }}
                                 MB</span>
                         </div>
                     </div>
@@ -115,10 +115,10 @@
         </div>
     </div>
 
-    <div class="modal-action mt-8">
+    <div class="md3-action-row">
         {{ dialogs.dialog_cancel(_('Cancel'),
         attrs='data-action="close-dialog" data-dialog-id="importDialog"') }}
-        <button type="submit" class="btn btn-primary sm:btn-wide" data-import-submit>
+        <button type="submit" class="md3-button md3-button--filled" data-import-submit>
             <span class="mdi mdi-auto-fix mr-2"></span>
             {{ _('Analyze & Import') }}
         </button>

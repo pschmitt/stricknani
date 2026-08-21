@@ -7,7 +7,7 @@
       "automerge": true
     },
     {
-      "matchPackageNames": ["daisyui", "tailwindcss", "htmx.org"],
+      "matchPackageNames": ["htmx.org"],
       "groupName": "frontend dependencies"
     },
     {

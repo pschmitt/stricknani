@@ -1,5 +1,9 @@
 """Test gauge calculator."""
 
+from typing import Any
+
+import pytest
+
 from stricknani.utils.gauge import calculate_gauge
 
 
@@ -64,3 +68,44 @@ def test_gauge_calculation_rounding() -> None:
     assert isinstance(result.adjusted_rows, int)
     assert result.adjusted_stitches == 104  # round(121 * 19 / 22)
     assert result.adjusted_rows == 85  # round(95 * 25 / 28)
+
+
+_VALID_FORM: dict[str, str] = {
+    "pattern_gauge_stitches": "20",
+    "pattern_gauge_rows": "26",
+    "user_gauge_stitches": "18",
+    "user_gauge_rows": "24",
+    "pattern_cast_on_stitches": "120",
+    "pattern_row_count": "100",
+}
+
+
+@pytest.mark.asyncio
+async def test_calculate_endpoint_zero_gauge_returns_4xx(test_client: Any) -> None:
+    """A zero gauge stitch count must not trigger a ZeroDivisionError (500)."""
+    client, _, _, _, _ = test_client
+    data = {**_VALID_FORM, "pattern_gauge_stitches": "0"}
+    response = await client.post("/gauge/calculate", data=data)
+    assert 400 <= response.status_code < 500
+    assert response.status_code != 500
+
+
+@pytest.mark.asyncio
+async def test_calculate_endpoint_non_numeric_returns_4xx(test_client: Any) -> None:
+    """A non-numeric field must return a client error, not a 500 ValueError."""
+    client, _, _, _, _ = test_client
+    data = {**_VALID_FORM, "pattern_row_count": "not-a-number"}
+    response = await client.post("/gauge/calculate", data=data)
+    assert 400 <= response.status_code < 500
+    assert response.status_code != 500
+
+
+@pytest.mark.asyncio
+async def test_calculate_endpoint_valid_returns_result(test_client: Any) -> None:
+    """A valid calculation still returns the correct adjusted counts."""
+    client, _, _, _, _ = test_client
+    response = await client.post("/gauge/calculate", data=_VALID_FORM)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["adjusted_stitches"] == 108  # 120 * 18 / 20
+    assert body["adjusted_rows"] == 92  # round(100 * 24 / 26)

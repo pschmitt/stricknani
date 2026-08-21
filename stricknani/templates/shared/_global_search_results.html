@@ -12,7 +12,7 @@
         <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
                 <span class="font-bold truncate text-lg leading-tight text-base-content group-hover:text-primary transition-colors">{{ result.title }}</span>
-                <span class="badge badge-sm {% if result.type == 'project' %}badge-primary{% else %}badge-secondary{% endif %} opacity-70 uppercase font-black text-[10px] tracking-tight">{{ result.type }}</span>
+                <span class="md3-chip md3-chip--compact">{{ result.type }}</span>
             </div>
             {% if result.subtitle %}
             <p class="text-sm opacity-60 truncate">{{ result.subtitle }}</p>

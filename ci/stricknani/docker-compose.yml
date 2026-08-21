@@ -1,0 +1,33 @@
+services:
+  stricknani:
+    image: ${E2E_IMAGE:-stricknani:e2e}
+    environment:
+      ALLOWED_HOSTS: "*"
+      CSRF_SECRET_KEY: ci-only-csrf-secret
+      DATABASE_URL: sqlite:////app/data/stricknani.db
+      DEFAULT_LANGUAGE: en
+      INITIAL_ADMIN_EMAIL: demo@stricknani.local
+      INITIAL_ADMIN_PASSWORD: demo-password
+      MEDIA_ROOT: /app/media
+      SECRET_KEY: ci-only-stricknani-secret
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:7674/healthz', timeout=3)
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    ports:
+      - "7674:7674"
+    volumes:
+      - stricknani-e2e-data:/app/data
+      - stricknani-e2e-media:/app/media
+
+volumes:
+  stricknani-e2e-data:
+  stricknani-e2e-media:

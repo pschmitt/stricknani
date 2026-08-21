@@ -1,0 +1,19 @@
+{
+  "name": "stricknani-tiptap-vendor",
+  "private": true,
+  "type": "module",
+  "description": "Build-only input for `just vendor-tiptap`: bundles TipTap into a single self-contained ESM file (stricknani/static/vendor/tiptap/tiptap-bundle.js) so the editor never loads modules from a CDN. Not shipped or imported directly -- see entry.js and the justfile recipe.",
+  "devDependencies": {
+    "@tiptap/core": "3.30.2",
+    "@tiptap/extension-image": "3.30.2",
+    "@tiptap/extension-link": "3.30.2",
+    "@tiptap/extension-underline": "3.30.2",
+    "@tiptap/markdown": "3.30.2",
+    "@tiptap/pm": "3.30.2",
+    "@tiptap/starter-kit": "3.30.2",
+    "esbuild": "0.28.2"
+  },
+  "scripts": {
+    "build": "esbuild entry.js --bundle --format=esm --minify --outfile=tiptap-bundle.min.js"
+  }
+}

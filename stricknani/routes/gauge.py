@@ -30,22 +30,21 @@ async def gauge_calculator(
 
 @router.post("/calculate")
 async def calculate(
-    pattern_gauge_stitches: Annotated[int, Form()],
-    pattern_gauge_rows: Annotated[int, Form()],
-    user_gauge_stitches: Annotated[int, Form()],
-    user_gauge_rows: Annotated[int, Form()],
-    pattern_cast_on_stitches: Annotated[int, Form()],
-    pattern_row_count: Annotated[str | None, Form()] = None,
+    pattern_gauge_stitches: Annotated[int, Form(gt=0)],
+    pattern_gauge_rows: Annotated[int, Form(gt=0)],
+    user_gauge_stitches: Annotated[int, Form(gt=0)],
+    user_gauge_rows: Annotated[int, Form(gt=0)],
+    pattern_cast_on_stitches: Annotated[int, Form(gt=0)],
+    pattern_row_count: Annotated[int | None, Form(gt=0)] = None,
 ) -> JSONResponse:
     """Calculate gauge adjustments."""
-    pattern_row_count_value = int(pattern_row_count) if pattern_row_count else None
     result = calculate_gauge(
         pattern_gauge_stitches=pattern_gauge_stitches,
         pattern_gauge_rows=pattern_gauge_rows,
         user_gauge_stitches=user_gauge_stitches,
         user_gauge_rows=user_gauge_rows,
         pattern_cast_on_stitches=pattern_cast_on_stitches,
-        pattern_row_count=pattern_row_count_value,
+        pattern_row_count=pattern_row_count,
     )
 
     return JSONResponse(

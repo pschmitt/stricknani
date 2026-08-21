@@ -1,5 +1,7 @@
 """Authentication utilities."""
 
+import hashlib
+import secrets
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
@@ -9,7 +11,72 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from stricknani.config import config
 from stricknani.database import AsyncSessionLocal
-from stricknani.models import User
+from stricknani.models import ApiToken, User
+
+# Prefix on generated personal access tokens, purely for readability (so a
+# token is recognizable at a glance, e.g. in logs or a paste) - it carries no
+# security meaning and is included in the hashed value like the rest of the
+# token.
+API_TOKEN_PREFIX = "sna_"
+
+# Only bump `last_used_at` if it's stale by more than this, so a client
+# polling the API frequently doesn't turn every request into a write.
+API_TOKEN_LAST_USED_RESOLUTION = timedelta(seconds=60)
+
+# Minimum password policy (T69): enforced at signup and password-change
+# time. Kept intentionally simple (length + a small common-password
+# blocklist) rather than pulling in an external strength-scoring dependency.
+MIN_PASSWORD_LENGTH = 8
+
+_COMMON_WEAK_PASSWORDS = frozenset(
+    {
+        "password",
+        "password1",
+        "password123",
+        "12345678",
+        "123456789",
+        "1234567890",
+        "qwertyui",
+        "qwerty123",
+        "letmein1",
+        "iloveyou1",
+        "admin1234",
+        "welcome1",
+        "welcome123",
+        "abcd1234",
+        "11111111",
+        "00000000",
+        "changeme1",
+        "trustno1",
+        "sunshine1",
+        "monkey123",
+    }
+)
+
+
+class PasswordPolicyError(ValueError):
+    """Raised when a candidate password fails the minimum policy.
+
+    `reason` is a stable machine-readable code ("too_short" or "common") so
+    callers can render a localized, user-facing message.
+    """
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(reason)
+
+
+def validate_password_policy(password: str) -> None:
+    """Enforce the minimum password policy.
+
+    Raises:
+        PasswordPolicyError: if the password is too short or a common/trivially
+            guessable password.
+    """
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise PasswordPolicyError("too_short")
+    if password.strip().lower() in _COMMON_WEAK_PASSWORDS:
+        raise PasswordPolicyError("common")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -43,14 +110,32 @@ def create_access_token(
     return encoded_jwt
 
 
-def decode_access_token(token: str) -> str | None:
-    """Decode JWT access token and return user email."""
+def decode_access_token(token: str) -> tuple[str, int] | None:
+    """Decode a JWT access token and return `(email, token_version)`.
+
+    `token_version` (claim `"ver"`) supports revocable sessions (T69):
+    `get_current_user` compares it against the user's current
+    `token_version` and rejects the session on mismatch (e.g. after logout
+    or a password change), even though the JWT signature itself is still
+    valid. Tokens minted before this claim existed default to version 0,
+    matching newly created users' default `token_version`.
+    """
     try:
         payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
-        email: str | None = payload.get("sub")
-        return email
     except JWTError:
         return None
+
+    email = payload.get("sub")
+    if not email:
+        return None
+
+    raw_version = payload.get("ver", 0)
+    try:
+        version = int(raw_version)
+    except (TypeError, ValueError):
+        version = 0
+
+    return email, version
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
@@ -80,6 +165,63 @@ async def create_user(
     db.add(user)
     await db.commit()
     await db.refresh(user)
+    return user
+
+
+def hash_api_token(raw_token: str) -> str:
+    """Hash a raw API token for storage/lookup.
+
+    A plain SHA-256 digest (not bcrypt) is deliberate here: the token itself
+    is a high-entropy random secret (unlike a user-chosen password), so it
+    doesn't need a slow, salted KDF - and a fast hash keeps every
+    Bearer-authenticated request cheap.
+    """
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+
+def generate_api_token() -> tuple[str, str]:
+    """Generate a new personal access token.
+
+    Returns `(raw_token, token_hash)`. Only `token_hash` should ever be
+    persisted; `raw_token` must be shown to the user once and is not
+    recoverable afterwards.
+    """
+    raw_token = API_TOKEN_PREFIX + secrets.token_urlsafe(32)
+    return raw_token, hash_api_token(raw_token)
+
+
+async def get_user_from_api_token(db: AsyncSession, raw_token: str) -> User | None:
+    """Resolve a raw `Authorization: Bearer <token>` value to its owning user.
+
+    Also opportunistically bumps `last_used_at` on the token and rejects
+    expired or inactive-user tokens.
+    """
+    token_hash = hash_api_token(raw_token)
+    result = await db.execute(select(ApiToken).where(ApiToken.token_hash == token_hash))
+    api_token = result.scalar_one_or_none()
+    if not api_token:
+        return None
+
+    now = datetime.now(UTC)
+
+    expires_at = api_token.expires_at
+    if expires_at is not None:
+        if expires_at.tzinfo is None:  # Handle naive datetime from SQLite
+            expires_at = expires_at.replace(tzinfo=UTC)
+        if expires_at < now:
+            return None
+
+    user = await db.get(User, api_token.user_id)
+    if not user or not user.is_active:
+        return None
+
+    last_used_at = api_token.last_used_at
+    if last_used_at is not None and last_used_at.tzinfo is None:
+        last_used_at = last_used_at.replace(tzinfo=UTC)
+    if last_used_at is None or (now - last_used_at) > API_TOKEN_LAST_USED_RESOLUTION:
+        api_token.last_used_at = now
+        await db.commit()
+
     return user
 
 

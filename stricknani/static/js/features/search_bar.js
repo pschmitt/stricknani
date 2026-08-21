@@ -131,18 +131,31 @@
 							closeSuggestions();
 							return;
 						}
-						suggestionList.innerHTML = suggestions
-							.map((s, index) => {
-								return `
-	                                <li>
-	                                    <button type="button" data-suggestion-index="${index}" class="py-2 px-4 hover:bg-base-200 text-left w-full transition-colors flex items-center gap-2">
-	                                        <span class="mdi ${match.icon} text-base-content/50"></span>
-	                                        <span>${s}</span>
-	                                    </button>
-	                                </li>
-	                            `;
-							})
-							.join("");
+						// Build nodes and set `.textContent` for each suggestion
+						// (not a template-string `.innerHTML =`): suggestions
+						// come straight from user-editable Category/tag/Yarn
+						// brand names, so a value containing markup must
+						// never be interpreted as HTML here.
+						suggestionList.replaceChildren(
+							...suggestions.map((s, index) => {
+								const li = document.createElement("li");
+								const button = document.createElement("button");
+								button.type = "button";
+								button.dataset.suggestionIndex = String(index);
+								button.className =
+									"py-2 px-4 hover:bg-base-200 text-left w-full transition-colors flex items-center gap-2";
+
+								const icon = document.createElement("span");
+								icon.className = `mdi ${match.icon} text-base-content/50`;
+
+								const label = document.createElement("span");
+								label.textContent = s;
+
+								button.append(icon, label);
+								li.append(button);
+								return li;
+							}),
+						);
 						openSuggestions();
 						clearActiveState();
 					} else {

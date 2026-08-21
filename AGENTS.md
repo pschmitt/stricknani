@@ -16,6 +16,7 @@ Use this file as the operational source of truth for working in Stricknani.
 - All new frontend dependencies (JS/CSS) must be vendored via `vendir.yml` (no new CDN links).
 - After changing `vendir.yml`, run `just vendor-sync` and commit `vendir.lock.yml` and `stricknani/static/vendor/**`.
 - Prefer vanilla JS for new UI behavior. Add JS dependencies only when HTMX/browser APIs are insufficient.
+- Exception: `stricknani/static/vendor-tiptap/` (TipTap). Its npm packages pull in ~30 transitive modules (prosemirror-*, etc.) resolved via bare specifiers, which `vendir` can't vendor as browser-loadable files without an unmaintainable hand-written import map. It's instead bundled with esbuild into one self-contained file (`just vendor-tiptap`) — see that directory's `package.json`/`entry.js`. It deliberately lives outside `stricknani/static/vendor/` (not `.../vendor/tiptap/`), since that directory is exclusively managed by `vendir sync`, which deletes anything under it not declared in `vendir.yml`. Commit the regenerated `tiptap-bundle.min.js` and `package-lock.json` together after bumping pinned versions there.
 
 ### Translations (UI text)
 
@@ -82,3 +83,6 @@ Use this file as the operational source of truth for working in Stricknani.
 - Work queue: `TODO.md`
 - User/developer runbook: `README.md`
 - Product spec + implementation snapshot: `docs/spec-and-implementation.md`
+- Android app (offline-first native client, `android/`, package `blue.anika.wolle`): its own
+  `AGENTS.md`/`TODO.md` (`SNA-N` prefix) - read `android/AGENTS.md` before working in `android/`,
+  it is the operational source of truth there the same way this file is for `stricknani/`

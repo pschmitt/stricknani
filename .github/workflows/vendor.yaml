@@ -3,8 +3,20 @@ name: Vendor
 on:
   push:
     branches: [ main ]
+    paths:
+      - "vendir.yml"
+      - "vendir.lock.yml"
+      - "stricknani/static/vendor/**"
+      - "justfile"
+      - ".github/workflows/vendor.yaml"
   pull_request:
     branches: [ main ]
+    paths:
+      - "vendir.yml"
+      - "vendir.lock.yml"
+      - "stricknani/static/vendor/**"
+      - "justfile"
+      - ".github/workflows/vendor.yaml"
 
 permissions:
   contents: write
@@ -13,10 +25,10 @@ jobs:
   vendir:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Set up vendir
         uses: carvel-dev/setup-action@v2
@@ -31,13 +43,13 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.actor == 'renovate[bot]'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Install just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Set up vendir
         uses: carvel-dev/setup-action@v2

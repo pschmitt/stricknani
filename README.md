@@ -1,4 +1,8 @@
-# Stricknani
+<p align="center">
+  <img src="branding/icon.svg" alt="Stricknani icon" width="128">
+</p>
+
+<h1 align="center">Stricknani</h1>
 
 🧶 **A Mealie for knitting** — a self-hosted web app for managing knitting projects.
 
@@ -47,8 +51,8 @@ All config is via environment variables or `.env` (see `.env.sample`).
 
 | Variable                             | Description                         | Default                               |
 | ------------------------------------ | ----------------------------------- | ------------------------------------- |
-| `SECRET_KEY`                         | Secret key for sessions             | `dev-secret-key-change-in-production` |
-| `CSRF_SECRET_KEY`                    | CSRF secret key                     | Auto-generated on startup             |
+| `SECRET_KEY`                         | Secret key for sessions             | Random per `just run`; set explicitly in production |
+| `CSRF_SECRET_KEY`                    | CSRF secret key                     | Random per `just run`; set explicitly in production |
 | `PORT`                               | Port to listen on                   | `7674`                                |
 | `DEBUG`                              | Enable debug mode                   | `false`                               |
 | `AUTO_RELOAD`                        | Inject dev auto-reload script       | `false`                               |
@@ -107,6 +111,9 @@ just run            # Run dev server (reload)
 just lint           # ruff + mypy
 just fmt            # ruff format + fixes
 just test           # pytest -v
+uv run playwright install chromium  # Install the local E2E browser
+just e2e-smoke      # Run the fast disposable browser smoke suite
+just e2e-full       # Run the longer disposable browser suite
 just i18n-check     # Verify translations
 just check          # lint + test + i18n-check
 just build-image    # Build Docker image
