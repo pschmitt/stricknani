@@ -81,6 +81,12 @@ internal fun navigateToTopLevelRoot(
  * @param pendingDeepLinkRoute a project/yarn link the user tapped (SNA-17,
  *   `MainActivity`/`DeepLinkParser`), navigated to once and then cleared via [onDeepLinkConsumed] -
  *   `null` means there's nothing pending.
+ * @param pendingSetupUri a `stricknani://setup?p=...` URI delivered via the manifest's own
+ *   intent-filter (SNA-61, `MainActivity`) - e.g. a generic camera app's QR auto-detection handing
+ *   it back to us instead of the in-app scanner. Forwarded once to [OnboardingScreen], which feeds
+ *   it through the same [blue.anika.wolle.ui.onboarding.OnboardingViewModel.connectFromScannedText]
+ *   path the in-app scanner uses, then cleared via [onSetupUriConsumed]. `null` means nothing
+ *   pending - only meaningful pre-onboarding, see [MainActivity]'s call site.
  */
 @Composable
 fun StricknaniNavHost(
@@ -89,6 +95,8 @@ fun StricknaniNavHost(
     navBarViewModel: NavBarViewModel = hiltViewModel(),
     pendingDeepLinkRoute: Route? = null,
     onDeepLinkConsumed: () -> Unit = {},
+    pendingSetupUri: String? = null,
+    onSetupUriConsumed: () -> Unit = {},
     mutationFeedback: MutationFeedback,
 ) {
     val navController = rememberNavController()
@@ -154,7 +162,12 @@ fun StricknaniNavHost(
             startDestination = startDestination,
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable<Route.Onboarding> { OnboardingScreen() }
+            composable<Route.Onboarding> {
+                OnboardingScreen(
+                    pendingScannedText = pendingSetupUri,
+                    onScannedTextConsumed = onSetupUriConsumed,
+                )
+            }
             composable<Route.Home> {
                 HomeScreen(
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },

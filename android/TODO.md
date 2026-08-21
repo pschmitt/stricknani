@@ -167,23 +167,59 @@ working Dismiss action. `just check rofl-13.brkn.lol` (ktfmt + unit tests + Andr
 
 ## SNA-61: `stricknani://setup` QR intent-filter is dead - payload is silently dropped
 
-- [ ] `AndroidManifest.xml`'s `stricknani://setup` intent-filter comment claims "a generic camera
+- [x] `AndroidManifest.xml`'s `stricknani://setup` intent-filter comment claims "a generic camera
       app's own QR auto-detection can hand them back to this app too, not just the in-app scanner."
-      In practice `MainActivity.onCreate`/`onNewIntent` only ever calls
+      In practice `MainActivity.onCreate`/`onNewIntent` only ever called
       `DeepLinkParser.parse(intent.dataString)`, and `DeepLinkParser` (`ui/navigation/DeepLink.kt`)
       only recognizes `/projects/{id}` and `/yarn/{id}` paths - a `stricknani://setup?p=...` URI
-      matches neither regex and is silently discarded. `QrConfigCodec.decode` is only ever invoked
-      from the in-app scanner's `OnboardingViewModel.connectFromScannedText`.
-- [ ] So the manifest's advertised capability (finish onboarding by scanning the setup QR with any
-      camera app, not just the built-in scanner) does not work - the OS hands the URI to
-      `MainActivity`, and it goes nowhere.
-- [ ] Fix: route a `stricknani://setup` URI arriving via `onCreate`/`onNewIntent` into the same
-      `QrConfigCodec.decode` -> `connectFromScannedText` onboarding path, or drop the intent-filter
-      and its manifest comment if this capability isn't actually wanted.
+      matched neither regex and was silently discarded. `QrConfigCodec.decode` was only ever
+      invoked from the in-app scanner's `OnboardingViewModel.connectFromScannedText`.
+- [x] So the manifest's advertised capability (finish onboarding by scanning the setup QR with any
+      camera app, not just the built-in scanner) didn't work - the OS handed the URI to
+      `MainActivity`, and it went nowhere.
+- [x] Fix implemented (chose the ticket's first option - route it through, rather than dropping the
+      intent-filter - since the capability is real and worth keeping): `MainActivity` now
+      separately checks `intent.dataString` against `QrConfigCodec.looksLikeQrConfigUri` (alongside
+      the existing `DeepLinkParser.parse` check, which - as before - correctly returns null for
+      this URI shape, added a regression test documenting that split explicitly) in both
+      `onCreate` and `onNewIntent`, storing a match in a new `pendingSetupUri` state field.
+      - Threaded through `StricknaniNavHost` (`pendingSetupUri`/`onSetupUriConsumed` params,
+        mirroring the existing `pendingDeepLinkRoute`/`onDeepLinkConsumed` pair) into a new
+        `OnboardingScreen(pendingScannedText, onScannedTextConsumed)` param pair.
+      - `OnboardingScreen` runs a `LaunchedEffect(pendingScannedText)` that switches the mode
+        `FilterChip`s to "QR code" (so the visible UI matches what's actually happening) and calls
+        `OnboardingViewModel.connectFromScannedText(text)` - the *exact* function the in-app
+        scanner's `QrScannerDialog` result already calls, so QR-onboarding validation/error
+        handling/success path is shared code, not a parallel reimplementation.
+      - Only forwarded while `!isConfigured` (`MainActivity`'s call site) - once already signed in,
+        a stray setup URI (an old QR scanned again, say) has nothing useful to do, matching how the
+        in-app scanner is only reachable from the Onboarding screen in the first place.
+- [x] Test coverage: `DeepLinkParserTest` gained a case documenting that a `stricknani://setup`
+      URI deliberately returns `null` from `DeepLinkParser` (handled separately by
+      `MainActivity`/`QrConfigCodec` now, not silently dropped) - `QrConfigCodecTest` already
+      covered `looksLikeQrConfigUri`/`decode` themselves (SNA-13). Didn't add a full instrumented
+      `OnboardingScreen` test for the `LaunchedEffect` wiring itself - `OnboardingViewModel` needs
+      several real Hilt-injected collaborators (`OnboardingValidator`, `PasswordTokenMinter`,
+      `SettingsRepository`, `SyncScheduler`) with no existing fake/test-double infra for it in this
+      repo, and the live-device repro below exercises the exact same code path end-to-end more
+      convincingly than a hand-mocked unit test would.
+- [x] Verified live on the Zenfone 10, mirroring the ticket's own repro exactly: signed out to
+      reach Onboarding, then `adb shell am start -a android.intent.action.VIEW -d
+      "stricknani://setup?p=<payload>"` (delivered via `onNewIntent` since the activity was already
+      running, `singleTask`). Before this fix the ticket confirmed this "is dropped - no onboarding
+      UI reacts"; now the mode chips visibly switch to "QR code" and the screen shows "Couldn't
+      reach that server. Check the URL and your network connection." - the real
+      `OnboardingValidator` network path actually ran against the payload's (deliberately fake,
+      unreachable) `baseUrl`, proving the full `intent -> QrConfigCodec.decode ->
+      connectFromScannedText -> connect -> OnboardingValidator` chain is now wired end-to-end, not
+      just that the intent-filter matches.
+      - Signing out to reach Onboarding for this repro removed this device's real saved
+        `wolle.anika.blue` session (`EncryptedSharedPreferences`) - the device needs re-onboarding
+        (manual or the dedicated test account's sign-in) before it's usable again; flagging this
+        since it wasn't restored as part of this session (no credentials on hand to redo it).
 
-Status: not started (2026-08-21) - found via static audit, cross-checked live (deep link intent
-delivered via `adb shell am start -a android.intent.action.VIEW -d "stricknani://setup?p=..."` is
-confirmed dropped - no onboarding UI reacts).
+Status: **done** (2026-08-21) - verified via the live-device repro above (mirroring the ticket's
+own repro method) and `just check rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint), green.
 
 ## SNA-62: Backup export dialog's "(optional)" encryption label contradicts its own behavior
 

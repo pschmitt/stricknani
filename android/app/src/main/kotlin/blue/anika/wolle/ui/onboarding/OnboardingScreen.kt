@@ -26,6 +26,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,9 +67,19 @@ private fun OnboardingMode.label(): String =
  * [OnboardingViewModel]. Success flips
  * [blue.anika.wolle.data.settings.SettingsRepository.isConfigured], which `MainActivity` observes
  * to swap to the Home-rooted nav graph; this screen doesn't navigate itself.
+ *
+ * @param pendingScannedText a `stricknani://setup?p=...` URI delivered via the manifest's own
+ *   intent-filter (SNA-61) instead of the in-app scanner - e.g. a generic camera app's own QR
+ *   auto-detection. Fed through [OnboardingViewModel.connectFromScannedText] exactly like a
+ *   [QrScannerDialog] result once, then cleared via [onScannedTextConsumed]. `null` means nothing
+ *   pending.
  */
 @Composable
-fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
+fun OnboardingScreen(
+    viewModel: OnboardingViewModel = hiltViewModel(),
+    pendingScannedText: String? = null,
+    onScannedTextConsumed: () -> Unit = {},
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var mode by remember { mutableStateOf(OnboardingMode.MANUAL) }
     var serverUrl by remember { mutableStateOf("") }
@@ -79,6 +90,17 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
     var passwordVisible by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
     val isValidating = uiState is OnboardingUiState.Validating
+
+    // SNA-61: a stricknani://setup URI delivered by the OS (not the in-app scanner) goes through
+    // the exact same connectFromScannedText path a real scan result does - switching to QR mode
+    // first just keeps the visible UI consistent with what's actually happening.
+    LaunchedEffect(pendingScannedText) {
+        pendingScannedText?.let { text ->
+            mode = OnboardingMode.QR
+            viewModel.connectFromScannedText(text)
+            onScannedTextConsumed()
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
