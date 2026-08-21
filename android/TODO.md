@@ -41,6 +41,161 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-59: Scheduled backups default to unencrypted and silently include the live API PAT
+
+- [ ] Enabling scheduled/automatic backup (Settings -> Backup -> toggle) only asks for a
+      destination folder (`folderLauncher.launch(null)` -> `enableScheduledBackup`); it never
+      prompts for a password. `scheduledBackupPassword` (`SettingsRepository`) defaults to null, so
+      `BackupWorker.kt:38-40` calls `backupManager.export(password = null)` ->
+      `BackupCrypto.encode` -> `FLAG_PLAIN`, writing a **plaintext** zip on every scheduled run.
+- [ ] That zip's `credentials.json` (`BackupModels.kt:14`, `BackupManager.kt:50`) contains the raw
+      live Stricknani API token (`BackupCredentials(serverUrl, apiToken)`) - the same PAT
+      `SettingsRepository` otherwise keeps in `EncryptedSharedPreferences` specifically because it's
+      a bearer credential.
+- [ ] The destination folder is picked via SAF `OpenDocumentTree` - in realistic use this is very
+      often a cloud-synced folder (Drive/Nextcloud/Syncthing), so the live token can leave the
+      device on a recurring schedule with zero prompt or warning at enable time. The only visible
+      indication is a secondary "Password: Not set (unencrypted)" caption a user has to separately
+      go read under the Backup settings' scheduled section.
+- [ ] Fix: either require a password before scheduled backup can be enabled, or show an explicit,
+      un-skippable warning at enable time that the recurring export will contain the live API token
+      in plaintext unless a password is set. Add regression coverage asserting
+      `BackupWorker`/`enableScheduledBackup` can't silently produce an unencrypted export containing
+      credentials without the user having been warned.
+
+Status: not started (2026-08-21) - found via live-device + static audit (`data/backup/BackupWorker.kt`,
+`data/backup/BackupCrypto.kt`, `data/backup/BackupModels.kt`, `ui/settings/BackupSettingsScreen.kt`).
+
+## SNA-60: Home screen's "Sync issue" banner is completely non-interactive
+
+- [ ] Live-device repro (Zenfone 10, existing debug install): Home screen shows a "Sync issue - 1
+      change couldn't reach the server yet." card. Tapping it (confirmed via `uiautomator dump`:
+      the card and both its `TextView` children are `clickable="false"`) does nothing - no detail
+      of which change failed, no retry action, no way to dismiss it.
+- [ ] The user is left with a permanent, unresolvable warning on the primary screen with no
+      recovery path short of figuring out sync internals themselves.
+- [ ] Fix: make the banner tappable - at minimum trigger a manual sync retry; ideally show which
+      pending local change failed to sync and let the user retry or discard it.
+- [ ] Add a Compose UI test asserting the sync-issue banner has an `onClick`/semantics action once
+      fixed, so this can't silently regress back to non-interactive.
+
+Status: not started (2026-08-21) - found via live-device audit (Zenfone 10, serial
+R6AIB700W850L7G), verified with `uiautomator dump`.
+
+## SNA-61: `stricknani://setup` QR intent-filter is dead - payload is silently dropped
+
+- [ ] `AndroidManifest.xml`'s `stricknani://setup` intent-filter comment claims "a generic camera
+      app's own QR auto-detection can hand them back to this app too, not just the in-app scanner."
+      In practice `MainActivity.onCreate`/`onNewIntent` only ever calls
+      `DeepLinkParser.parse(intent.dataString)`, and `DeepLinkParser` (`ui/navigation/DeepLink.kt`)
+      only recognizes `/projects/{id}` and `/yarn/{id}` paths - a `stricknani://setup?p=...` URI
+      matches neither regex and is silently discarded. `QrConfigCodec.decode` is only ever invoked
+      from the in-app scanner's `OnboardingViewModel.connectFromScannedText`.
+- [ ] So the manifest's advertised capability (finish onboarding by scanning the setup QR with any
+      camera app, not just the built-in scanner) does not work - the OS hands the URI to
+      `MainActivity`, and it goes nowhere.
+- [ ] Fix: route a `stricknani://setup` URI arriving via `onCreate`/`onNewIntent` into the same
+      `QrConfigCodec.decode` -> `connectFromScannedText` onboarding path, or drop the intent-filter
+      and its manifest comment if this capability isn't actually wanted.
+
+Status: not started (2026-08-21) - found via static audit, cross-checked live (deep link intent
+delivered via `adb shell am start -a android.intent.action.VIEW -d "stricknani://setup?p=..."` is
+confirmed dropped - no onboarding UI reacts).
+
+## SNA-62: Backup export dialog's "(optional)" encryption label contradicts its own behavior
+
+- [ ] The manual-export password dialog's title is "Encrypt backup? (optional)"
+      (`backup_settings_export_password_dialog_title`), implying encryption can be skipped. But
+      `BackupPasswordDialog`'s confirm button uses `enabled = allowBlankToClear ||
+      password.isNotBlank()`, and the export call site (`BackupSettingsScreen.kt:251-264`) doesn't
+      pass `allowBlankToClear = true` - so the Confirm button stays disabled for a blank password,
+      and Cancel aborts the export entirely (`pendingExportUri = null`). There is no way to actually
+      produce an unencrypted manual export from this dialog, despite the label and despite
+      `BackupCrypto`/`BackupManager.export(null)` supporting it.
+- [ ] Not a security bug (forced encryption is the safer outcome) but a real copy/behavior
+      mismatch - fix by either passing `allowBlankToClear = true` here (if unencrypted manual
+      export should stay possible, matching the label) or changing the title/copy to reflect that a
+      password is actually required.
+
+Status: not started (2026-08-21) - found via static audit (`ui/settings/BackupSettingsScreen.kt`).
+
+## SNA-63: Remote build pipeline (`just build-fetch`) currently fails via `nix develop`
+
+- [x] `cd android && nix develop -c just build-fetch` (the documented `AGENTS.md` workflow for
+      getting a fresh debug APK) currently fails before Gradle ever runs: building the
+      `android-sdk-env` Nix derivation via the remote builder dispatch to `rofl-13.brkn.lol`/
+      `rofl-14.brkn.lol` fails with exit code 127 - `.../bin/android: ... cannot execute:
+      .android-wrapped: required file not found`.
+- [x] Root cause had **two independent layers**, both traced by bisecting `android-nixpkgs`
+      package versions directly on `rofl-13` rather than guessing from nixpkgs-drift alone (the
+      floating-`nixpkgs`/no-`flake.lock` theory from earlier in this session turned out to be a
+      real but secondary issue - see below):
+      1. `android-nixpkgs`'s `cmdline-tools-latest` currently resolves to cmdline-tools **23.0**,
+         which bundles a brand-new native `android` CLI binary (Google's replacement for the old
+         `sdkmanager` script/jar - the build log itself said "Android CLI will be used instead").
+         That binary's ELF interpreter is left at the upstream FHS path
+         (`/lib64/ld-linux-x86-64.so.2`); every `android-nixpkgs` package sets `dontPatchELF =
+         true` unconditionally (`pkgs/android/generic.nix`) - harmless while every SDK tool was a
+         script/jar, fatal for this one native binary inside a Nix build sandbox (no `/lib64`
+         there). `android-nixpkgs`'s own `sdk.nix` composition build runs `sdkmanager --list
+         --verbose` while assembling `android-sdk-env`, which shells out to this unpatched binary
+         and produces exactly this ticket's original symptom.
+      2. Even patched to actually run (confirmed via a manual `patchelf --set-interpreter
+         --set-rpath` + a writable `$HOME` for its `~/.android/bin` cache dir - both needed, and
+         both verified working in isolation), this binary **unconditionally tries to self-download
+         a bundled "Android CLI" payload from `dl.google.com`** on first invocation (live repro
+         outside any sandbox: `Downloading Android CLI... Error: Failed to download from
+         https://dl.google.com/... Temporary failure in name resolution`). That network fetch can
+         never succeed inside Nix's sandboxed, offline build environment - a hard blocker, not a
+         permissions nit. This explains "worked ~1 day before, not at audit time": `android-nixpkgs`
+         auto-updates its channel data roughly daily, and whichever daily bump first pointed
+         `cmdline-tools-latest` at 23.0 is what broke it, independent of the separate
+         no-`flake.lock` nixpkgs-drift issue.
+- [x] The originally-staged fix (committing the auto-generated `android/flake.lock`, previously
+      absent so every build re-resolved `nixpkgs` to whatever was newest at that moment) is real
+      and worth keeping for reproducibility, but on its own **did not** fix the build - re-ran
+      `just build-fetch` against the newly-locked revisions and hit the identical
+      `.android-wrapped` failure, since the lock just pins `android-nixpkgs` to a revision that
+      already had the broken cmdline-tools 23.0 as "latest". Kept the lock file committed anyway
+      (`android/flake.lock`, `git add`ed) - floating `nixpkgs`/`android-nixpkgs` inputs with no
+      lock remains an independent reproducibility bug worth having fixed regardless.
+- [x] Actual fix, in `android/flake.nix`: bisected cmdline-tools versions directly against this
+      pinned `android-nixpkgs` revision (`nix build` against a small probe expression selecting
+      only one cmdline-tools version + `platform-tools` at a time, bypassing the full devShell) -
+      confirmed cmdline-tools **22.0** (one version older, still present in this same revision's
+      channel data) predates the native-CLI switch and builds `android-sdk-env` successfully
+      standalone with **zero** modification. Since the self-download behavior in 23.0 means no
+      amount of ELF-patching can ever make it buildable offline, pinned `cmdline-tools-latest` to
+      22.0 instead of chasing further workarounds on 23.0. Implemented as a transparent wrapper
+      around the `android-nixpkgs` flake input's `sdk.${system}` function (intercepts the
+      `sdkPkgs` attrset handed to the caller's package-selector callback and swaps in
+      `cmdline-tools-22-0`, with only its `.path` metadata overridden back to `"cmdline-tools/
+      latest"` so it still installs at the layout `devshells.nix`'s shellHook `PATH` hardcodes) -
+      done this way specifically so the shared, cross-app `.just/android-app-ci` submodule
+      (`nix/devshells.nix`, used by nyetbox/augh/jollyfin/syncwich too) didn't need to be forked
+      or edited for a fix scoped to this one app's current channel-data bad luck.
+- [x] Verified end-to-end, remotely on `rofl-13.brkn.lol`, exactly via the documented workflow:
+      `just build-fetch debug rofl-13.brkn.lol` - `nix develop` now enters cleanly, Gradle runs,
+      `BUILD SUCCESSFUL in 57s`, and a fresh `dist/app-arm64-v8a-debug.apk` (39.3 MB, timestamped
+      to this session) was fetched back and installed on the Zenfone 10 (`just zenfone-install`,
+      `adb install -r` -> `Success`). Also ran the full documented pre-push check, `just check
+      rofl-13.brkn.lol` (`ktfmtCheck :app:testDebugUnitTest lintDebug`) - green, `BUILD SUCCESSFUL
+      in 1m 11s`, confirming the fix restores the *entire* documented local dev/CI-mirroring
+      workflow, not just a bare APK assemble.
+- [ ] Not filed upstream against `tadfisher/android-nixpkgs` this session (would be the right
+      long-term fix - either the package should keep pinning a working cmdline-tools version as
+      "latest" until the native CLI's offline/sandbox story is sorted, or should patch/opt this
+      one binary out of the `sdkmanager --list --verbose` sanity-check path). Worth doing as a
+      follow-up so this doesn't quietly reappear once someone bumps this repo's own
+      `android-nixpkgs` input past the pinned revision.
+
+Status: **done** (2026-08-21) - verified via `just build-fetch debug rofl-13.brkn.lol` (`BUILD
+SUCCESSFUL`, fresh APK fetched and installed on the Zenfone 10) and `just check rofl-13.brkn.lol`
+(ktfmt + unit tests + Android Lint, all green). Root cause was cmdline-tools 23.0's new
+self-downloading native `android` CLI binary (an upstream `android-nixpkgs` regression, unrelated
+to this repo's own code), not solely the missing `flake.lock` originally suspected - see the
+two-layer writeup above. `android/flake.lock` is committed alongside the `flake.nix` fix.
+
 ## Next
 
 ### Backend (`stricknani/`) - JSON API for the app
