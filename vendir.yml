@@ -33,7 +33,7 @@ directories:
       # renovate: datasource=npm depName=htmx.org
       - path: htmx
         http:
-          url: https://registry.npmjs.org/htmx.org/-/htmx.org-2.0.8.tgz
+          url: https://registry.npmjs.org/htmx.org/-/htmx.org-2.0.10.tgz
         newRootPath: package/dist
         includePaths:
           - package/dist/htmx.min.js
