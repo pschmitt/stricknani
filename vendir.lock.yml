@@ -11,5 +11,7 @@ directories:
     path: htmx
   - http: {}
     path: sentry
+  - http: {}
+    path: fonts/space-grotesk
   path: stricknani/static/vendor
 kind: LockConfig

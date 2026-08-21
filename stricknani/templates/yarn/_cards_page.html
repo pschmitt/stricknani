@@ -67,12 +67,13 @@
         <span class="md3-chip md3-chip--ai md3-chip--compact" title="{{ _('AI Enhanced') }}">AI</span>
         {% endif %}
     </h3>
+    {% if yarn.brand %}
+    <a href="/yarn?brand={{ yarn.brand|urlencode }}"
+       class="md3-chip md3-chip--compact {{ yarn.brand|category_color }}">
+        {{ yarn.brand }}
+    </a>
+    {% endif %}
 </div>
-{% if yarn.brand %}
-<p class="text-sm text-base-content/60 mb-3">
-    <a href="/yarn?brand={{ yarn.brand|urlencode }}" class="hover:text-primary">{{ yarn.brand }}</a>
-</p>
-{% endif %}
 
 <div class="grid grid-cols-2 gap-2 text-xs mb-4">
     {% if yarn.colorway %}

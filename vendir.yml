@@ -42,3 +42,16 @@ directories:
       - path: sentry
         http:
           url: https://browser.sentry-cdn.com/10.38.0/bundle.tracing.min.js
+
+      # renovate: datasource=npm depName=@fontsource/space-grotesk
+      - path: fonts/space-grotesk
+        http:
+          url: https://registry.npmjs.org/@fontsource/space-grotesk/-/space-grotesk-5.3.0.tgz
+        newRootPath: package/files
+        includePaths:
+          - package/files/space-grotesk-latin-500-normal.woff2
+          - package/files/space-grotesk-latin-600-normal.woff2
+          - package/files/space-grotesk-latin-700-normal.woff2
+          - package/files/space-grotesk-latin-ext-500-normal.woff2
+          - package/files/space-grotesk-latin-ext-600-normal.woff2
+          - package/files/space-grotesk-latin-ext-700-normal.woff2

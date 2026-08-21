@@ -33,31 +33,23 @@ templates.env.globals["sentry_frontend_enabled"] = bool(
 ) and not (config.DEBUG or config.TESTING)
 
 
+_CATEGORY_CHIP_VARIANTS = (
+    "md3-chip--variant-primary",
+    "md3-chip--variant-secondary",
+    "md3-chip--variant-tertiary",
+)
+
+
 def category_color_filter(category_name: str | None) -> str:
-    """Map category names to colorful Tailwind classes using deterministic hashing."""
+    """Deterministically map a category name to one of the three chip color
+    variants (`material.css`'s `.md3-chip--variant-*`), so a list/grid of
+    mixed categories reads with more color rhythm than one flat tone
+    everywhere. Same category name always gets the same variant."""
     if not category_name or category_name == "None":
-        return "badge-ghost"
+        return _CATEGORY_CHIP_VARIANTS[0]
 
     hash_val = sum(ord(c) for c in category_name)
-    palette: list[tuple[str, str]] = [
-        ("blue", "blue"),
-        ("indigo", "indigo"),
-        ("teal", "teal"),
-        ("rose", "rose"),
-        ("amber", "amber"),
-        ("emerald", "emerald"),
-        ("orange", "orange"),
-        ("purple", "purple"),
-        ("pink", "pink"),
-        ("cyan", "cyan"),
-        ("violet", "violet"),
-    ]
-
-    base, dark = palette[hash_val % len(palette)]
-    return (
-        f"bg-{base}-200 text-{base}-950 border-{base}-300 "
-        f"dark:bg-{dark}-950/60 dark:text-{dark}-200 dark:border-{dark}-700"
-    )
+    return _CATEGORY_CHIP_VARIANTS[hash_val % len(_CATEGORY_CHIP_VARIANTS)]
 
 
 templates.env.filters["category_color"] = category_color_filter
