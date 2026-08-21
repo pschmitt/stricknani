@@ -4,10 +4,13 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -17,6 +20,7 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -64,6 +69,11 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
     var showExportPasswordDialog by remember { mutableStateOf(false) }
     var showRestorePasswordDialog by remember { mutableStateOf(false) }
     var showScheduledPasswordDialog by remember { mutableStateOf(false) }
+    // SNA-59: gate turning scheduled backup on with an un-skippable choice (set a password, or
+    // explicitly continue without one) whenever no password is set yet - see the dialog below.
+    // Enabling used to silently jump straight to the folder picker with no password prompt at
+    // all, producing a plaintext export containing the live API token on every scheduled run.
+    var showScheduledPasswordGateDialog by remember { mutableStateOf(false) }
 
     var pendingExportUri by remember { mutableStateOf<Uri?>(null) }
     val exportLauncher =
@@ -183,7 +193,17 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                                 checked = scheduledEnabled,
                                 onCheckedChange = { enabled ->
                                     if (enabled) {
-                                        folderLauncher.launch(null)
+                                        // SNA-59: only skip straight to the folder picker if a
+                                        // password is already set (e.g. the user set one earlier
+                                        // via "Change" below, or re-enabling after a previous
+                                        // password-protected setup) - otherwise force the explicit
+                                        // gate dialog first so an unencrypted, token-bearing
+                                        // scheduled export can never happen silently.
+                                        if (scheduledPasswordSet) {
+                                            folderLauncher.launch(null)
+                                        } else {
+                                            showScheduledPasswordGateDialog = true
+                                        }
                                     } else {
                                         viewModel.disableScheduledBackup()
                                     }
@@ -298,6 +318,75 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
             },
         )
     }
+
+    if (showScheduledPasswordGateDialog) {
+        ScheduledBackupPasswordGateDialog(
+            onDismiss = { showScheduledPasswordGateDialog = false },
+            onSetPassword = { password ->
+                showScheduledPasswordGateDialog = false
+                viewModel.setScheduledBackupPassword(password)
+                folderLauncher.launch(null)
+            },
+            onContinueWithoutPassword = {
+                showScheduledPasswordGateDialog = false
+                folderLauncher.launch(null)
+            },
+        )
+    }
+}
+
+/**
+ * SNA-59: un-skippable choice shown the first time scheduled backup is enabled with no password
+ * already set. Unlike [BackupPasswordDialog]'s dismiss/confirm shape, there is deliberately no
+ * plain "OK" that silently proceeds unencrypted - continuing without a password is its own
+ * explicitly-labelled action, separate from cancelling out of the dialog entirely (which leaves
+ * scheduled backup off).
+ */
+@Composable
+fun ScheduledBackupPasswordGateDialog(
+    onDismiss: () -> Unit,
+    onSetPassword: (String) -> Unit,
+    onContinueWithoutPassword: () -> Unit,
+) {
+    var password by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("scheduled-backup-password-gate"),
+        icon = { Icon(Icons.Filled.Warning, contentDescription = null) },
+        title = { Text(stringResource(R.string.backup_settings_scheduled_gate_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.backup_settings_scheduled_gate_warning))
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(stringResource(R.string.backup_settings_password_field_label)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("scheduled-backup-gate-password"),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSetPassword(password) },
+                enabled = password.isNotBlank(),
+                modifier = Modifier.testTag("scheduled-backup-gate-set-password"),
+            ) {
+                Icon(Icons.Filled.Save, contentDescription = null)
+                Text(stringResource(R.string.backup_settings_scheduled_gate_set_password_button))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onContinueWithoutPassword,
+                modifier = Modifier.testTag("scheduled-backup-gate-skip"),
+            ) {
+                Text(stringResource(R.string.backup_settings_scheduled_gate_skip_button))
+            }
+        },
+    )
 }
 
 @Composable

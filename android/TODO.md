@@ -43,28 +43,57 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## SNA-59: Scheduled backups default to unencrypted and silently include the live API PAT
 
-- [ ] Enabling scheduled/automatic backup (Settings -> Backup -> toggle) only asks for a
+- [x] Enabling scheduled/automatic backup (Settings -> Backup -> toggle) only asked for a
       destination folder (`folderLauncher.launch(null)` -> `enableScheduledBackup`); it never
-      prompts for a password. `scheduledBackupPassword` (`SettingsRepository`) defaults to null, so
+      prompted for a password. `scheduledBackupPassword` (`SettingsRepository`) defaults to null, so
       `BackupWorker.kt:38-40` calls `backupManager.export(password = null)` ->
       `BackupCrypto.encode` -> `FLAG_PLAIN`, writing a **plaintext** zip on every scheduled run.
-- [ ] That zip's `credentials.json` (`BackupModels.kt:14`, `BackupManager.kt:50`) contains the raw
+- [x] That zip's `credentials.json` (`BackupModels.kt:14`, `BackupManager.kt:50`) contains the raw
       live Stricknani API token (`BackupCredentials(serverUrl, apiToken)`) - the same PAT
       `SettingsRepository` otherwise keeps in `EncryptedSharedPreferences` specifically because it's
       a bearer credential.
-- [ ] The destination folder is picked via SAF `OpenDocumentTree` - in realistic use this is very
-      often a cloud-synced folder (Drive/Nextcloud/Syncthing), so the live token can leave the
+- [x] The destination folder is picked via SAF `OpenDocumentTree` - in realistic use this is very
+      often a cloud-synced folder (Drive/Nextcloud/Syncthing), so the live token could leave the
       device on a recurring schedule with zero prompt or warning at enable time. The only visible
-      indication is a secondary "Password: Not set (unencrypted)" caption a user has to separately
+      indication was a secondary "Password: Not set (unencrypted)" caption a user had to separately
       go read under the Backup settings' scheduled section.
-- [ ] Fix: either require a password before scheduled backup can be enabled, or show an explicit,
-      un-skippable warning at enable time that the recurring export will contain the live API token
-      in plaintext unless a password is set. Add regression coverage asserting
-      `BackupWorker`/`enableScheduledBackup` can't silently produce an unencrypted export containing
-      credentials without the user having been warned.
+- [x] Fix implemented: an explicit, un-skippable gate dialog (`ScheduledBackupPasswordGateDialog`,
+      new composable in `ui/settings/BackupSettingsScreen.kt`) now sits between flipping the
+      "Enable scheduled backups" switch on and the SAF folder picker, whenever no scheduled-backup
+      password is already set (`scheduledBackupPasswordSet` from `SettingsViewModel`). It states
+      plainly that scheduled backups include the live sign-in token and will be a plain, readable
+      file without a password, then offers exactly two explicit actions - "Set password and
+      enable" (a real password field, confirm button disabled while blank) or "Enable without a
+      password" (its own separate, clearly-labelled action, not a generic "OK"/"Continue" that
+      could be tapped through without registering what it means). Dismissing the dialog (back
+      button / tap-outside) leaves scheduled backup off, matching the existing Switch semantics
+      (`scheduledEnabled` is untouched until one of the two explicit paths runs). If a password is
+      already set (e.g. from a previous session, or set via the pre-existing "Change" action under
+      the Password row), toggling on skips straight to the folder picker as before - no re-nagging
+      once the user has already made an informed choice.
+      - Went with the ticket's second suggested direction (explicit un-skippable warning) rather
+        than strictly *requiring* a password, so a user who genuinely wants an unencrypted
+        scheduled backup (e.g. a destination folder they know is local/private) still can - but
+        only via a deliberate, separately-labelled action, never as the silent default.
+      - `BackupWorker`/`BackupCrypto`/`BackupManager` themselves are unchanged - the fix is entirely
+        at the point of consent (enabling the schedule), which is where the actual bug was; the
+        worker correctly honors whatever password (or lack thereof) the user explicitly chose.
+- [x] Regression coverage: `app/src/androidTest/kotlin/blue/anika/wolle/focused/
+      ScheduledBackupPasswordGateDialogTest.kt` (3 Compose UI tests) - asserts the warning copy and
+      both actions are shown, that "Set password and enable" stays disabled until a non-blank
+      password is typed and then reports exactly that password, and that "Enable without a
+      password" is its own distinct action that never also reports a password having been set.
+      This pins down the "can't silently produce an unencrypted export without the user having
+      been warned" behavior the ticket asked for.
 
-Status: not started (2026-08-21) - found via live-device + static audit (`data/backup/BackupWorker.kt`,
-`data/backup/BackupCrypto.kt`, `data/backup/BackupModels.kt`, `ui/settings/BackupSettingsScreen.kt`).
+Status: **done** (2026-08-21) - verified two ways: (1) `ScheduledBackupPasswordGateDialogTest`'s 3
+new instrumentation tests run on the physical Zenfone 10 (serial `R6AIB700W850L7G`) via `adb shell
+am instrument -e class ...` - `OK (3 tests)`; (2) live manual repro on the same device against a
+real onboarded session - navigated to Settings -> Backup, tapped "Enable scheduled backups" with
+no password set, confirmed the gate dialog renders with the full warning text and both actions,
+confirmed "Set password and enable" is disabled while the password field is blank, and confirmed
+dismissing the dialog leaves the switch off (no silent-enable path). `just check rofl-13.brkn.lol`
+(ktfmt + unit tests + Android Lint) is green with this change in place.
 
 ## SNA-60: Home screen's "Sync issue" banner is completely non-interactive
 

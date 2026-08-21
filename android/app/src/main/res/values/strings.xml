@@ -295,6 +295,10 @@
     <string name="backup_settings_password_removed_toast">Backup password removed</string>
     <string name="backup_settings_password_set_toast">Backup password set</string>
     <string name="backup_settings_password_field_label">Password</string>
+    <string name="backup_settings_scheduled_gate_title">Protect scheduled backups?</string>
+    <string name="backup_settings_scheduled_gate_warning">Scheduled backups run automatically and include your live Stricknani sign-in token. Without a password, every scheduled backup is a plain, readable file - and the destination folder you pick is often synced to the cloud. Set a password to encrypt scheduled backups, or continue without one.</string>
+    <string name="backup_settings_scheduled_gate_set_password_button">Set password and enable</string>
+    <string name="backup_settings_scheduled_gate_skip_button">Enable without a password</string>
 
     <!-- MainActivity -->
     <string name="main_activity_crash_report_label">Crash report</string>

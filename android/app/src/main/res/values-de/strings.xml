@@ -295,6 +295,10 @@
     <string name="backup_settings_password_removed_toast">Backup-Passwort entfernt</string>
     <string name="backup_settings_password_set_toast">Backup-Passwort festgelegt</string>
     <string name="backup_settings_password_field_label">Passwort</string>
+    <string name="backup_settings_scheduled_gate_title">Geplante Backups schützen?</string>
+    <string name="backup_settings_scheduled_gate_warning">Geplante Backups laufen automatisch und enthalten dein aktives Stricknani-Anmeldetoken. Ohne Passwort ist jedes geplante Backup eine unverschlüsselte, lesbare Datei - und der gewählte Zielordner ist oft mit der Cloud synchronisiert. Lege ein Passwort fest, um geplante Backups zu verschlüsseln, oder fahre ohne Passwort fort.</string>
+    <string name="backup_settings_scheduled_gate_set_password_button">Passwort festlegen und aktivieren</string>
+    <string name="backup_settings_scheduled_gate_skip_button">Ohne Passwort aktivieren</string>
 
     <!-- MainActivity -->
     <string name="main_activity_crash_report_label">Absturzbericht</string>
