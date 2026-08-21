@@ -54,7 +54,7 @@ md:inline-flex') }}
 or ('cat:' ~ selected_category if selected_category else '')
 or ('#' ~ selected_tag if selected_tag else '') %}
 {% set search_placeholder = _('Search') %}
-{% set search_url = "/projects" %}
+{% set search_url = "/projects/" %}
 {% set search_target = "#projects-list" %}
 {% set wrapper_id = "project-search" %}
 {% include "shared/_search_bar.html" with context %}

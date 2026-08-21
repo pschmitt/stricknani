@@ -221,15 +221,14 @@
 						return data.message;
 					}
 				}
-			} else if (isFetchResponse) {
-				const text = await response.clone().text();
-				if (text.trim()) {
-					return text.trim();
-				}
-			} else if (response.responseText) {
-				const text = response.responseText;
-				if (text?.trim()) {
-					return text.trim();
+			} else if (!contentType.includes("text/html")) {
+				if (isFetchResponse) {
+					const text = await response.clone().text();
+					if (text.trim()) {
+						return text.trim();
+					}
+				} else if (response.responseText?.trim()) {
+					return response.responseText.trim();
 				}
 			}
 		} catch (error) {

@@ -25,6 +25,7 @@
             placeholder="{{ search_placeholder }}"
             class="md3-text-field md3-search-bar__input"
             hx-get="{{ search_url }}" hx-target="{{ search_target }}" hx-trigger="keyup changed delay:500ms"
+            hx-sync="this:replace"
             hx-replace-url="true" {% if filters %}hx-include=".search-filter-input" {% endif %}>
         <button type="button"
             class="md3-icon-button md3-search-bar__clear hidden"

@@ -1948,3 +1948,56 @@ Execution-oriented backlog for Stricknani.
   now correctly returns the new value in both themes; re-screenshotted light/dark and confirmed
   against the pre-fix screenshots that button/chip colors visibly shifted. `just lint-css` clean
   (same 2 pre-existing warnings only); full suite 303 passed, 1 skipped.
+
+### T118: Search-as-you-type could 500 (rare template-cache race) and dumped the raw error page into a toast
+
+- **Area**: web/ux
+- **Priority**: P1
+- **Status**: done
+- **Category**: bug
+- **Description**:
+  - User report: "i get 500 errors thrown and rendered as search results on prod". Prod logs
+    (`journalctl -u stricknani.service`) showed a single burst (one fast-typing session, ~15s
+    window on 2026-08-21) of `TypeError: unhashable type: 'dict'` inside Jinja2's `LRUCache`
+    (`environment.py:_load_template` -> `utils.py:LRUCache.__getitem__`) while loading
+    `projects/_list_partial.html`, resolving as a 500. This is a known-rare Jinja2 template-cache
+    concurrency hazard that surfaces only when the *same* Environment's `get_template()` is
+    entered by genuinely overlapping coroutines for the same template - it hadn't occurred once in
+    the preceding 7 days of logs, only in this one burst.
+  - Root mechanism enabling the overlap: the project/yarn search box
+    (`shared/_search_bar.html`) had no `hx-sync`, so HTMX lets every `keyup` firing overlap in
+    flight rather than cancelling the previous request - normal HTMX behavior without `hx-sync`,
+    but wrong for a live-search input. Compounding it, `search_url` was set to `/projects` /
+    `/yarn` (no trailing slash) while the routes are mounted at `/projects/` / `/yarn/`, so *every*
+    keystroke paid for a pointless 307 redirect first, widening the window in which multiple
+    requests could be in flight together.
+  - Separately, and this is what the user actually *saw*: whatever crashes (this or any future
+    unhandled exception) renders `errors/500.html`, a full HTML *page* (nav, styles, everything -
+    `stricknani/main.py`'s catch-all exception handler). HTMX correctly refuses to swap a 5xx
+    response into the results container (default `responseHandling` in vendored htmx 2.0.8 already
+    excludes `[45]..`), but it does fire `htmx:responseError`, whose handler
+    (`app.js`) calls `extractErrorMessage(xhr, null)` to build a toast message. For a non-JSON
+    response that function fell through to `return response.responseText.trim()` - the *entire*
+    rendered HTML page - which `showToast` then dropped into a toast as literal text. That's the
+    "500 errors ... rendered as search results" the user saw: a wall of the error page's raw
+    markup appearing right after they searched.
+- **Implementation**:
+  - `stricknani/static/js/app.js` (`extractErrorMessage`): for non-JSON responses, only trust
+    `response.responseText`/`.text()` as the toast message when the content-type is *not*
+    `text/html` (i.e. genuine plain-text bodies); an HTML error-page response now falls through to
+    the generic i18n fallback message instead of dumping the page.
+  - `stricknani/templates/shared/_search_bar.html`: added `hx-sync="this:replace"` to the search
+    input so a new keystroke aborts any in-flight request for the same element instead of letting
+    requests race - the standard HTMX pattern for live-search inputs, and it removes the
+    overlapping-coroutine window that was hitting the Jinja2 cache race in the first place.
+  - `stricknani/templates/projects/list.html` / `stricknani/templates/yarn/list.html`: fixed
+    `search_url` to `/projects/` / `/yarn/` (trailing slash) so search requests hit the route
+    directly instead of bouncing through a 307 redirect on every keystroke.
+- **Testing**: `CI=true just lint` clean (ruff/mypy/biome-js all pass; the 2 CSS specificity
+  warnings are pre-existing and unrelated). Full suite: 303 passed, 1 skipped. Did not attempt to
+  force-reproduce the Jinja2 race itself (single-threaded asyncio, no `await` inside the crashing
+  `_load_template` call path, and it hadn't recurred once in a week of logs before this one
+  fast-typing burst) - fixing the overlap-inducing HTMX/redirect issue and the error-message
+  fallback addresses both the user-visible symptom and the concurrency window that most plausibly
+  triggered it; kept monitoring via Sentry (already integrated) rather than chasing a
+  once-in-a-week Heisenbug further.
