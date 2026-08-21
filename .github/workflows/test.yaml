@@ -3,14 +3,32 @@ name: Test
 on:
   push:
     branches: [ main ]
+    paths:
+      - "stricknani/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "justfile"
+      - "flake.nix"
+      - "flake.lock"
+      - ".github/workflows/test.yaml"
   pull_request:
     branches: [ main ]
+    paths:
+      - "stricknani/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "justfile"
+      - "flake.nix"
+      - "flake.lock"
+      - ".github/workflows/test.yaml"
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install just
         uses: extractions/setup-just@v3
@@ -19,6 +37,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.5"
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -32,7 +51,7 @@ jobs:
         run: just test
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-xml
@@ -42,7 +61,7 @@ jobs:
   test-nix:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install just
         uses: extractions/setup-just@v3

@@ -3,14 +3,34 @@ name: Nix Build
 on:
   push:
     branches: [ main ]
+    paths:
+      - "stricknani/**"
+      - "nix/**"
+      - "flake.nix"
+      - "flake.lock"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "Dockerfile"
+      - "justfile"
+      - ".github/workflows/nix.yaml"
   pull_request:
     branches: [ main ]
+    paths:
+      - "stricknani/**"
+      - "nix/**"
+      - "flake.nix"
+      - "flake.lock"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "Dockerfile"
+      - "justfile"
+      - ".github/workflows/nix.yaml"
 
 jobs:
   nix-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install just
         uses: extractions/setup-just@v3

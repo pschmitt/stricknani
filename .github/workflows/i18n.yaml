@@ -3,14 +3,26 @@ name: i18n
 on:
   push:
     branches: [ main ]
+    paths:
+      - "stricknani/**"
+      - "babel.cfg"
+      - "pyproject.toml"
+      - "justfile"
+      - ".github/workflows/i18n.yaml"
   pull_request:
     branches: [ main ]
+    paths:
+      - "stricknani/**"
+      - "babel.cfg"
+      - "pyproject.toml"
+      - "justfile"
+      - ".github/workflows/i18n.yaml"
 
 jobs:
   i18n:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install just
         uses: extractions/setup-just@v3
@@ -19,6 +31,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.5"
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v6
