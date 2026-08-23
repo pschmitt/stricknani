@@ -25,7 +25,7 @@ directories:
       # renovate: datasource=npm depName=cropperjs
       - path: cropperjs
         http:
-          url: https://registry.npmjs.org/cropperjs/-/cropperjs-2.1.1.tgz
+          url: https://registry.npmjs.org/cropperjs/-/cropperjs-2.2.0.tgz
         newRootPath: package/dist
         includePaths:
           - package/dist/cropper.min.js
