@@ -1,5 +1,5 @@
 [versions]
-android-plugin = "9.3.1"
+android-plugin = "9.3.2"
 androidx-activity = "1.13.0"
 # Per-app language picker (SNA-37) - AppCompatDelegate.setApplicationLocales works with a plain
 # ComponentActivity (no AppCompatActivity needed) and auto-persists the choice across API levels.
