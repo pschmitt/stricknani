@@ -13,7 +13,7 @@
 {% endmacro %}
 
 {% macro preview_card(href, title, subtitle=None, image_url=None, image_alt=None, icon='mdi-image-off') %}
-<a href="{{ href }}" class="md3-card md3-card--outlined md3-preview-card">
+<a href="{{ href }}" class="md3-card md3-card--elevated md3-preview-card">
     <div class="md3-preview-card__thumbnail">
         {% if image_url %}
         <img src="{{ image_url }}" alt="{{ image_alt or title }}" class="h-full w-full object-cover">

@@ -1557,3 +1557,95 @@ body {
 		transition: none;
 	}
 }
+
+/* Detail pages are reading surfaces, not a stack of cards.  Use one calm
+ * sequence of sections with dividers; reserve tonal surfaces for the small,
+ * actionable groups within them. */
+.md3-detail-layout {
+	gap: 0;
+}
+
+.md3-detail-layout > .md3-disclosure {
+	overflow: visible;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+.md3-detail-layout > .md3-disclosure + .md3-disclosure {
+	border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.md3-detail-layout > .md3-disclosure > .md3-disclosure__title {
+	padding: 1.5rem 0 0.875rem;
+}
+
+.md3-detail-layout > .md3-disclosure > .md3-disclosure__title:hover {
+	background: transparent;
+	color: var(--md-sys-color-primary);
+}
+
+.md3-detail-layout > .md3-disclosure > .md3-disclosure__content {
+	padding: 0 0 2rem;
+}
+
+.md3-detail-layout
+	.md3-disclosure:not(.step-card)
+	.md3-disclosure__content
+	> .bg-base-200\/30,
+.md3-detail-layout
+	.md3-disclosure:not(.step-card)
+	.md3-disclosure__content
+	> .bg-base-200\/50 {
+	border: 0;
+	background: var(--md-sys-color-surface-container-low);
+}
+
+.md3-detail-layout .step-card,
+.md3-detail-layout [data-action="open-attachment"],
+.md3-detail-layout .md3-preview-card {
+	border: 0;
+	box-shadow: none;
+	background: var(--md-sys-color-surface-container-low);
+}
+
+.md3-detail-layout .step-card {
+	border-radius: var(--md-sys-shape-large);
+}
+
+.instructions-list {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.md3-detail-layout .step-card .md3-disclosure__title {
+	min-height: 3.75rem;
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid transparent;
+}
+
+.md3-detail-layout .step-card:has(input:checked) .md3-disclosure__title {
+	border-bottom-color: var(--md-sys-color-outline-variant);
+}
+
+.md3-step-number {
+	display: inline-flex;
+	width: 2.25rem;
+	height: 2.25rem;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	border-radius: var(--md-sys-shape-medium);
+	background: var(--md-sys-color-primary-container);
+	color: var(--md-sys-color-on-primary-container);
+	font-family: var(--font-display);
+	font-size: 0.875rem;
+	font-weight: 700;
+}
+
+.md3-detail-layout .md3-photo-tile,
+.md3-detail-layout .rounded-xl.border-base-200,
+.md3-detail-layout .rounded-2xl.border-base-200 {
+	border: 0;
+	box-shadow: none;
+}

@@ -1827,7 +1827,7 @@ svg {
 }
 .md3-card--elevated {
 	background: var(--md-sys-color-surface-container-low);
-	border: 1px solid var(--md-sys-color-outline-variant);
+	border: 0;
 	box-shadow: var(--md-sys-elevation-1);
 }
 .md3-card--outlined {
@@ -2728,7 +2728,7 @@ svg {
 	min-width: 0;
 	flex-direction: column;
 	overflow: hidden;
-	border: 1px solid var(--md-sys-color-outline-variant);
+	border: 0;
 	border-radius: var(--md-sys-shape-extra-large);
 	background: var(--md-sys-color-surface-container-low);
 	box-shadow: var(--md-sys-elevation-1);
@@ -2740,11 +2740,6 @@ svg {
 
 .md3-feature-card:hover,
 .md3-feature-card:focus-within {
-	border-color: color-mix(
-		in srgb,
-		var(--md-sys-color-primary) 45%,
-		var(--md-sys-color-outline-variant)
-	);
 	box-shadow: var(--md-sys-elevation-2);
 	transform: translateY(-4px) scale(1.015);
 }
@@ -2812,6 +2807,7 @@ svg {
 	min-width: 0;
 	overflow: hidden;
 	color: var(--md-sys-color-on-surface);
+	text-decoration: none;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
@@ -2988,7 +2984,7 @@ svg {
 .md3-disclosure {
 	position: relative;
 	overflow: hidden;
-	border: 1px solid var(--md-sys-color-outline-variant);
+	border: 0;
 	border-radius: var(--md-sys-shape-extra-large);
 	background: var(--md-sys-color-surface-container-low);
 	box-shadow: var(--md-sys-elevation-1);
