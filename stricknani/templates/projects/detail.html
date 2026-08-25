@@ -369,18 +369,22 @@ data-shortcut-delete-dialog="deleteProjectDialog"
             {% if project.notes_html %}
             <div class="md3-disclosure md3-content-card--notes">
                 <input type="checkbox" id="notes-toggle" checked />
-                <label for="notes-toggle" class="md3-disclosure__title">
-                    <span class="mdi mdi-notebook-outline"></span>
-                    {{ _('Notes') }}
-                </label>
+                <div class="md3-disclosure__header">
+                    <label for="notes-toggle" class="md3-disclosure__title">
+                        <span class="mdi mdi-notebook-outline"></span>
+                        {{ _('Notes') }}
+                    </label>
+                    <button type="button" class="md3-button md3-button--tonal md3-button--small md3-disclosure__copy"
+                        data-call="copyToClipboard"
+                        data-call-args='[{{ (project.notes or "")|tojson }}, "$this"]'
+                        title="{{ _('Copy Notes') }}">
+                        <span class="mdi mdi-content-copy"></span>
+                        <span class="md3-copy-label">{{ _('Copy') }}</span>
+                    </button>
+                    <label for="notes-toggle" class="md3-disclosure__toggle" aria-hidden="true"><span class="mdi mdi-chevron-down"></span></label>
+                </div>
                 <div class="md3-disclosure__content">
-                        <button type="button" class="md3-button md3-button--text md3-button--small absolute top-2 right-2"
-                            data-call="copyToClipboard"
-                            data-call-args='[{{ (project.notes or "")|tojson }}, "$this"]'
-                            title="{{ _('Copy Notes') }}">
-                            <span class="mdi mdi-content-copy"></span>
-                        </button>
-                        <div class="md3-content-prose pr-8">
+                        <div class="md3-content-prose">
                             {{ project.notes_html | safe }}
                         </div>
                 </div>
@@ -390,20 +394,24 @@ data-shortcut-delete-dialog="deleteProjectDialog"
             {% if project.description %}
             <div class="md3-disclosure">
                 <input type="checkbox" id="description-toggle" checked />
-                <label for="description-toggle" class="md3-disclosure__title">
-                    <h2 class="font-bold text-lg flex items-center gap-2">
-                        <span class="mdi mdi-text-box-outline text-primary"></span>
-                        {{ _('Description') }}
-                    </h2>
-                </label>
-                <div class="md3-disclosure__content">
-                    <button type="button" class="md3-button md3-button--text md3-button--small absolute top-2 right-2"
+                <div class="md3-disclosure__header">
+                    <label for="description-toggle" class="md3-disclosure__title">
+                        <h2 class="font-bold text-lg flex items-center gap-2">
+                            <span class="mdi mdi-text-box-outline text-primary"></span>
+                            {{ _('Description') }}
+                        </h2>
+                    </label>
+                    <button type="button" class="md3-button md3-button--tonal md3-button--small md3-disclosure__copy"
                         data-call="copyToClipboard"
                         data-call-args='[{{ (project.description or "")|tojson }}, "$this"]'
                         title="{{ _('Copy Description') }}">
                         <span class="mdi mdi-content-copy"></span>
+                        <span class="md3-copy-label">{{ _('Copy') }}</span>
                     </button>
-                    <div class="md3-content-prose pr-8">
+                    <label for="description-toggle" class="md3-disclosure__toggle" aria-hidden="true"><span class="mdi mdi-chevron-down"></span></label>
+                </div>
+                <div class="md3-disclosure__content">
+                    <div class="md3-content-prose">
                         {% if project.description_html %}
                         {{ project.description_html | safe }}
                         {% else %}
@@ -584,23 +592,26 @@ data-shortcut-delete-dialog="deleteProjectDialog"
                         {% for step in project.steps %}
                         <div class="md3-disclosure step-card">
                                 <input type="checkbox" id="step-toggle-{{ step.step_number }}" checked />
-                                <label for="step-toggle-{{ step.step_number }}" class="md3-disclosure__title">
-                                    <div class="flex items-center gap-3">
-                                        <span class="md3-step-number" aria-hidden="true">{{ step.step_number }}</span>
-                                        <h3 class="text-lg font-bold text-base-content">{{ step.title }}</h3>
-                                    </div>
-                                </label>
-                                <div class="md3-disclosure__content">
-                                    <button type="button" class="md3-button md3-button--text md3-button--small absolute top-2 right-2"
+                                <div class="md3-disclosure__header">
+                                    <label for="step-toggle-{{ step.step_number }}" class="md3-disclosure__title">
+                                        <div class="flex items-center gap-3">
+                                            <span class="md3-step-number" aria-hidden="true">{{ step.step_number }}</span>
+                                            <h3 class="text-lg font-bold text-base-content">{{ step.title }}</h3>
+                                        </div>
+                                    </label>
+                                    <button type="button" class="md3-button md3-button--tonal md3-button--small md3-disclosure__copy"
                                         data-call="copyToClipboard"
                                         data-call-args='[{{ (step.description or "")|tojson }}, "$this"]'
                                         title="{{ _('Copy Instructions') }}">
                                         <span class="mdi mdi-content-copy"></span>
+                                        <span class="md3-copy-label">{{ _('Copy') }}</span>
                                     </button>
-
+                                    <label for="step-toggle-{{ step.step_number }}" class="md3-disclosure__toggle" aria-hidden="true"><span class="mdi mdi-chevron-down"></span></label>
+                                </div>
+                                <div class="md3-disclosure__content">
                                     {% if step.description_html %}
                                     <div
-                                        class="step-description md3-content-prose mb-4 pr-8">
+                                        class="step-description md3-content-prose mb-4">
                                         {{ step.description_html | safe }}
                                     </div>
                                     {% endif %}

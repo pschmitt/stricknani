@@ -55,6 +55,11 @@
 		min-height: 0 !important;
 	}
 
+	/* Make project details much more compact in print. */
+	.project-details-card > input ~ .md3-disclosure__content {
+		padding: 0 !important;
+	}
+
 	/*
 	Force collapsed sections to print expanded, regardless of the checkbox
 	state the user left them in on screen.
@@ -72,11 +77,6 @@
 
 	.md3-disclosure__title::after {
 		display: none !important;
-	}
-
-	/* Make project details much more compact in print. */
-	.project-details-card > input ~ .md3-disclosure__content {
-		padding: 0 !important;
 	}
 
 	.project-details-print-table {

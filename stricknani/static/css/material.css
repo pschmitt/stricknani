@@ -110,6 +110,7 @@
 	--md-sys-color-surface-container-low: oklch(96% 0.01 264);
 	--md-sys-color-surface-container: oklch(94% 0.012 264);
 	--md-sys-color-surface-container-high: oklch(91% 0.016 264);
+	--md-sys-color-surface-container-highest: oklch(89% 0.018 264);
 	--md-sys-color-on-surface: oklch(20% 0.025 264);
 	--md-sys-color-on-surface-variant: oklch(42% 0.025 264);
 	--md-sys-color-outline: oklch(50% 0.02 264);
@@ -125,8 +126,11 @@
 		color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
 	--md-sys-elevation-2: 0 2px 6px 2px
 		color-mix(in srgb, var(--md-sys-color-on-surface) 14%, transparent);
+	--md-sys-elevation-3: 0 4px 10px 3px
+		color-mix(in srgb, var(--md-sys-color-on-surface) 16%, transparent);
 	--md-sys-elevation-level-1: var(--md-sys-elevation-1);
 	--md-sys-elevation-level-2: var(--md-sys-elevation-2);
+	--md-sys-elevation-level-3: var(--md-sys-elevation-3);
 	--md-motion-short: 160ms cubic-bezier(0.2, 0, 0, 1);
 	--md-focus-ring: 0 0 0 3px
 		color-mix(in srgb, var(--md-sys-color-primary) 32%, transparent);
@@ -173,6 +177,7 @@ html[data-theme="dark"] {
 	--md-sys-color-surface-container-low: oklch(20% 0.02 264);
 	--md-sys-color-surface-container: oklch(23% 0.022 264);
 	--md-sys-color-surface-container-high: oklch(27% 0.024 264);
+	--md-sys-color-surface-container-highest: oklch(30% 0.026 264);
 	--md-sys-color-on-surface: oklch(91% 0.018 264);
 	--md-sys-color-on-surface-variant: oklch(75% 0.025 264);
 	--md-sys-color-outline: oklch(72% 0.02 264);
@@ -436,7 +441,7 @@ svg {
 	background: var(--md-sys-color-surface-container);
 }
 .bg-base-300 {
-	background: var(--md-sys-color-surface-container-high);
+	background: var(--md-sys-color-surface-container-highest);
 }
 .bg-base-200\/30 {
 	background: color-mix(
@@ -562,7 +567,7 @@ svg {
 }
 .shadow-lg,
 .shadow-xl {
-	box-shadow: var(--md-sys-elevation-2);
+	box-shadow: var(--md-sys-elevation-3);
 }
 .sr-only {
 	position: absolute;
@@ -1545,10 +1550,6 @@ svg {
 	padding-right: 0.5rem;
 	pointer-events: none;
 }
-.md3-search-bar__filters--inline .md3-chip {
-	pointer-events: auto;
-}
-
 @media (min-width: 640px) {
 	.sm\:flex {
 		display: flex;
@@ -1686,6 +1687,10 @@ svg {
 	background: var(--md-sys-color-secondary);
 	color: var(--md-sys-color-on-secondary);
 }
+.md3-button--tonal {
+	background: var(--md-sys-color-secondary-container);
+	color: var(--md-sys-color-on-secondary-container);
+}
 .btn-accent {
 	background: var(--md-sys-color-tertiary);
 	color: var(--md-sys-color-on-tertiary);
@@ -1775,11 +1780,11 @@ svg {
 	width: 100%;
 	max-width: 100%;
 	min-height: 3.5rem;
-	border: 1px solid var(--md-sys-color-outline);
+	border: 0;
 	border-radius: var(--md-sys-shape-small) var(--md-sys-shape-small) 0 0;
-	background: var(--md-sys-color-surface-container-high);
+	background: var(--md-sys-color-surface-container-highest);
 	color: var(--md-sys-color-on-surface);
-	box-shadow: inset 0 -2px 0 var(--md-sys-color-outline);
+	box-shadow: inset 0 -1px 0 var(--md-sys-color-outline);
 	padding: 0.75rem 1rem;
 }
 .textarea {
@@ -1861,6 +1866,76 @@ svg {
 	padding: 1rem;
 	background: var(--md-sys-color-surface-container);
 	color: var(--md-sys-color-on-surface);
+}
+
+/* Snackbar is Material's transient, non-blocking confirmation pattern. */
+.md3-snackbar-region {
+	position: fixed;
+	z-index: 1000;
+	bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+	left: 50%;
+	display: flex;
+	width: min(calc(100% - 2rem), 34rem);
+	flex-direction: column;
+	gap: 0.5rem;
+	pointer-events: none;
+	transform: translateX(-50%);
+}
+.md3-snackbar {
+	display: flex;
+	min-height: 3.25rem;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem 1rem;
+	border-radius: var(--md-sys-shape-medium);
+	background: var(--md-sys-color-surface-container-high);
+	box-shadow: var(--md-sys-elevation-3);
+	color: var(--md-sys-color-on-surface);
+	opacity: 0;
+	pointer-events: auto;
+	transform: translateY(1rem);
+	transition:
+		opacity var(--md-motion-short),
+		transform var(--md-motion-short);
+}
+.md3-snackbar.is-visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+.md3-snackbar--success {
+	background: var(--md-sys-color-primary-container);
+	color: var(--md-sys-color-on-primary-container);
+}
+.md3-snackbar--error {
+	background: var(--md-sys-color-error-container);
+	color: var(--md-sys-color-on-error-container);
+}
+.md3-snackbar__icon {
+	font-size: 1.25rem;
+}
+.md3-snackbar__message {
+	margin: 0;
+	flex: 1;
+	font-size: 0.875rem;
+	line-height: 1.35;
+}
+.md3-snackbar__dismiss {
+	display: inline-flex;
+	width: 2.25rem;
+	height: 2.25rem;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: currentColor;
+	cursor: pointer;
+}
+.md3-snackbar__dismiss:hover,
+.md3-snackbar__dismiss:focus-visible {
+	background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 /* Top app bar and popup menus. */
@@ -2376,11 +2451,10 @@ svg {
 	max-height: calc(100vh - 2rem);
 	overflow: auto;
 	padding: 1.5rem;
-	border: 1px solid var(--md-sys-color-outline-variant);
 	border-radius: var(--md-sys-shape-extra-large);
-	background: var(--md-sys-color-surface-container-low);
+	background: var(--md-sys-color-surface-container-high);
 	color: var(--md-sys-color-on-surface);
-	box-shadow: var(--md-sys-elevation-2);
+	box-shadow: var(--md-sys-elevation-3);
 }
 .modal-action {
 	display: flex;
@@ -2616,10 +2690,9 @@ svg {
 	justify-content: space-between;
 	gap: 1rem;
 	padding: 1rem;
-	border: 1px solid var(--md-sys-color-outline-variant);
 	border-radius: var(--md-sys-shape-extra-large);
-	background: var(--md-sys-color-surface-container);
-	box-shadow: var(--md-sys-elevation-1);
+	background: var(--md-sys-color-surface-container-low);
+	box-shadow: none;
 }
 .md3-list-toolbar:has(.md3-search-bar) {
 	padding: 0;
@@ -2858,6 +2931,10 @@ svg {
 	text-decoration: none;
 }
 
+.md3-search-bar__filters--inline .md3-chip {
+	pointer-events: auto;
+}
+
 .md3-chip:hover,
 .md3-chip:focus-visible {
 	border-color: var(--md-sys-color-primary);
@@ -2987,7 +3064,7 @@ svg {
 	border: 0;
 	border-radius: var(--md-sys-shape-extra-large);
 	background: var(--md-sys-color-surface-container-low);
-	box-shadow: var(--md-sys-elevation-1);
+	box-shadow: none;
 }
 
 .md3-disclosure > input[type="checkbox"] {
@@ -3023,11 +3100,66 @@ svg {
 	transition: transform var(--md-motion-short);
 }
 
-.md3-disclosure > input:not(:checked) ~ .md3-disclosure__title::after {
+.md3-disclosure > input:not(:checked) ~ .md3-disclosure__title::after,
+.md3-disclosure
+	> input:not(:checked)
+	~ .md3-disclosure__header
+	.md3-disclosure__title::after {
 	transform: translateY(0.2rem) rotate(-45deg);
 }
 .md3-disclosure__title:hover {
 	background: color-mix(in srgb, var(--md-sys-color-primary) 5%, transparent);
+}
+.md3-disclosure__header {
+	display: flex;
+	align-items: center;
+}
+.md3-disclosure__header:has(.md3-disclosure__copy) .md3-disclosure__title {
+	flex: 1;
+	justify-content: flex-start;
+	padding-right: 0.75rem;
+}
+.md3-disclosure__header:has(.md3-disclosure__copy)
+	.md3-disclosure__title::after {
+	display: none;
+}
+.md3-disclosure__copy {
+	flex: 0 0 auto;
+	margin-right: 0.25rem;
+	opacity: 0.65;
+}
+.md3-disclosure__copy:hover,
+.md3-disclosure__copy:focus-visible {
+	opacity: 1;
+}
+.md3-disclosure__copy.is-copied {
+	background: var(--md-sys-color-primary-container);
+	color: var(--md-sys-color-on-primary-container);
+}
+.md3-disclosure__toggle {
+	display: inline-flex;
+	width: 2.5rem;
+	height: 2.5rem;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	color: var(--md-sys-color-on-surface-variant);
+	cursor: pointer;
+}
+.md3-disclosure__toggle:hover {
+	background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+}
+.md3-disclosure__toggle .mdi {
+	font-size: 1.5rem;
+	transition: transform var(--md-motion-short);
+}
+.md3-disclosure
+	> input:not(:checked)
+	~ .md3-disclosure__header
+	.md3-disclosure__toggle
+	.mdi {
+	transform: rotate(-90deg);
 }
 .md3-disclosure__content {
 	padding: 0 1.25rem 1.25rem;
@@ -3051,16 +3183,10 @@ svg {
 }
 .md3-content-card {
 	padding: 1.25rem;
-	border: 1px solid var(--md-sys-color-outline-variant);
 	border-radius: var(--md-sys-shape-large);
-	background: var(--md-sys-color-surface-container);
+	background: var(--md-sys-color-surface-container-low);
 }
 .md3-content-card--notes {
-	border-color: color-mix(
-		in srgb,
-		var(--md-sys-color-warning) 35%,
-		var(--md-sys-color-outline-variant)
-	);
 	background: color-mix(
 		in srgb,
 		var(--md-sys-color-warning) 10%,
@@ -3226,11 +3352,14 @@ svg {
 	border-radius: var(--md-sys-shape-medium);
 }
 .md3-form-card {
-	padding: 1.5rem;
-	border: 1px solid var(--md-sys-color-outline-variant);
-	border-radius: var(--md-sys-shape-extra-large);
-	background: var(--md-sys-color-surface-container-low);
-	box-shadow: var(--md-sys-elevation-1);
+	padding: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+.md3-form-main > .md3-form-card + .md3-form-card {
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--md-sys-color-outline-variant);
 }
 .md3-form-field {
 	display: flex;
@@ -3250,10 +3379,11 @@ svg {
 .md3-select {
 	width: 100%;
 	min-height: 3rem;
-	border: 1px solid var(--md-sys-color-outline);
+	border: 0;
 	border-radius: var(--md-sys-shape-small);
-	background: var(--md-sys-color-surface-container-high);
+	background: var(--md-sys-color-surface-container-highest);
 	color: var(--md-sys-color-on-surface);
+	box-shadow: inset 0 -1px 0 var(--md-sys-color-outline);
 	padding: 0.75rem 1rem;
 }
 .md3-checkbox-field {
@@ -3261,9 +3391,8 @@ svg {
 	align-items: center;
 	gap: 0.75rem;
 	padding: 0.75rem;
-	border: 1px solid var(--md-sys-color-outline-variant);
 	border-radius: var(--md-sys-shape-large);
-	background: var(--md-sys-color-surface-container);
+	background: var(--md-sys-color-surface-container-high);
 }
 .md3-checkbox-field input {
 	accent-color: var(--md-sys-color-primary);
@@ -3283,10 +3412,9 @@ svg {
 	text-align: center;
 }
 .md3-empty-state--surface {
-	border: 1px solid var(--md-sys-color-outline-variant);
 	border-radius: var(--md-sys-shape-large);
 	background: var(--md-sys-color-surface-container-low);
-	box-shadow: var(--md-sys-elevation-1);
+	box-shadow: none;
 }
 .md3-dropzone {
 	padding: 2rem;
@@ -3321,10 +3449,9 @@ svg {
 /* Project category management. */
 .md3-category-editor,
 .md3-category-card {
-	border: 1px solid var(--md-sys-color-outline-variant);
 	border-radius: var(--md-sys-shape-extra-large);
 	background: var(--md-sys-color-surface-container-low);
-	box-shadow: var(--md-sys-elevation-1);
+	box-shadow: none;
 }
 .md3-category-editor {
 	margin-bottom: 1.5rem;
@@ -3381,13 +3508,13 @@ svg {
 }
 .md3-category-card {
 	transition:
-		border-color var(--md-motion-short),
+		background-color var(--md-motion-short),
 		box-shadow var(--md-motion-short);
 }
 .md3-category-card:hover,
 .md3-category-card:focus-within {
-	border-color: var(--md-sys-color-outline);
-	box-shadow: var(--md-sys-elevation-2);
+	background: var(--md-sys-color-surface-container);
+	box-shadow: var(--md-sys-elevation-1);
 }
 .md3-category-actions {
 	display: flex;

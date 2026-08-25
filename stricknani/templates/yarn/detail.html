@@ -315,19 +315,23 @@ data-shortcut-delete-dialog="deleteYarnDialog"
             {% if yarn.description %}
             <div class="md3-disclosure">
                 <input type="checkbox" id="description-toggle" checked />
-                <label for="description-toggle" class="md3-disclosure__title">
-                    <h2 class="font-bold text-lg flex items-center gap-2">
-                        <span class="mdi mdi-text-box-outline text-primary"></span>
-                        {{ _('Description') }}
-                    </h2>
-                </label>
-                <div class="md3-disclosure__content">
-                    <button type="button" class="md3-button md3-button--text md3-button--small absolute top-2 right-2"
+                <div class="md3-disclosure__header">
+                    <label for="description-toggle" class="md3-disclosure__title">
+                        <h2 class="font-bold text-lg flex items-center gap-2">
+                            <span class="mdi mdi-text-box-outline text-primary"></span>
+                            {{ _('Description') }}
+                        </h2>
+                    </label>
+                    <button type="button" class="md3-button md3-button--tonal md3-button--small md3-disclosure__copy"
                         data-call="copyToClipboard"
                         data-call-args='[{{ (yarn.description or "")|tojson }}, "$this"]'
                         title="{{ _('Copy Description') }}">
                         <span class="mdi mdi-content-copy"></span>
+                        <span class="md3-copy-label">{{ _('Copy') }}</span>
                     </button>
+                    <label for="description-toggle" class="md3-disclosure__toggle" aria-hidden="true"><span class="mdi mdi-chevron-down"></span></label>
+                </div>
+                <div class="md3-disclosure__content">
                     <div class="md3-content-prose">
                         {% if description_html %}
                         {{ description_html | safe }}
@@ -343,17 +347,21 @@ data-shortcut-delete-dialog="deleteYarnDialog"
             {% if yarn.notes %}
             <div class="md3-disclosure md3-content-card--notes">
                 <input type="checkbox" id="notes-toggle" checked />
-                <label for="notes-toggle" class="md3-disclosure__title">
-                    <span class="mdi mdi-notebook-outline"></span>
-                    {{ _('Notes') }}
-                </label>
-                <div class="md3-disclosure__content">
-                    <button type="button" class="md3-button md3-button--text md3-button--small absolute top-2 right-2"
+                <div class="md3-disclosure__header">
+                    <label for="notes-toggle" class="md3-disclosure__title">
+                        <span class="mdi mdi-notebook-outline"></span>
+                        {{ _('Notes') }}
+                    </label>
+                    <button type="button" class="md3-button md3-button--tonal md3-button--small md3-disclosure__copy"
                         data-call="copyToClipboard"
                         data-call-args='[{{ (yarn.notes or "")|tojson }}, "$this"]'
                         title="{{ _('Copy Notes') }}">
                         <span class="mdi mdi-content-copy"></span>
+                        <span class="md3-copy-label">{{ _('Copy') }}</span>
                     </button>
+                    <label for="notes-toggle" class="md3-disclosure__toggle" aria-hidden="true"><span class="mdi mdi-chevron-down"></span></label>
+                </div>
+                <div class="md3-disclosure__content">
                     <div class="md3-content-prose">
                         {% if notes_html %}
                         {{ notes_html | safe }}

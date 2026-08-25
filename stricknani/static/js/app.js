@@ -22,18 +22,7 @@
 	// CSRF header don't each re-implement the same meta-tag lookup.
 	window.getCsrfToken = getCsrfToken;
 
-	const toastVariants = {
-		success:
-			"bg-emerald-500/90 text-white border border-emerald-200/30 shadow-[0_14px_30px_-18px_rgba(16,185,129,0.8)]",
-		error:
-			"bg-red-600/90 text-white border border-red-200/30 shadow-[0_14px_30px_-18px_rgba(239,68,68,0.8)]",
-		info: "bg-slate-900/90 text-white border border-slate-500/20 shadow-[0_14px_30px_-18px_rgba(15,23,42,0.8)]",
-	};
-	const toastAccents = {
-		success: "bg-emerald-200/70",
-		error: "bg-rose-200/70",
-		info: "bg-slate-200/50",
-	};
+	const toastVariants = new Set(["success", "error", "info"]);
 	const toastDurations = {
 		success: 2400,
 		error: 6200,
@@ -55,8 +44,7 @@
 		if (!container) {
 			container = document.createElement("div");
 			container.setAttribute("data-toast-container", "1");
-			container.className =
-				"fixed inset-x-4 top-[4.5rem] z-[2147483647] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-[4.5rem] sm:w-80";
+			container.className = "md3-snackbar-region";
 			container.setAttribute("aria-live", "polite");
 			container.setAttribute("aria-atomic", "true");
 			activeDialog.appendChild(container);
@@ -72,11 +60,9 @@
 
 		container.replaceChildren();
 		const toast = document.createElement("div");
-		toast.className = `relative overflow-hidden rounded-2xl px-4 py-3 shadow-lg ring-1 ring-black/10 backdrop-blur transition duration-200 ease-out opacity-0 translate-y-2 translate-x-4 hover:translate-y-1 cursor-pointer ${
-			toastVariants[variant] || toastVariants.info
-		}`;
+		const resolvedVariant = toastVariants.has(variant) ? variant : "info";
+		toast.className = `md3-snackbar md3-snackbar--${resolvedVariant}`;
 		toast.setAttribute("role", "status");
-		const accentClass = toastAccents[variant] || toastAccents.info;
 
 		const dismissLabel = getI18n("dismissMessage", "Dismiss message");
 		const iconClass =
@@ -87,19 +73,16 @@
 					: "mdi-information";
 
 		toast.innerHTML = `
-      <span class="pointer-events-none absolute inset-y-0 left-0 w-1 ${accentClass}"></span>
-      <div class="flex items-center gap-3">
-        <span class="mdi ${iconClass} text-lg"></span>
-        <p class="text-sm leading-snug"></p>
-        <button type="button" class="ml-auto text-white/80 transition hover:text-white" aria-label="${dismissLabel}">
+      <span class="mdi ${iconClass} md3-snackbar__icon" aria-hidden="true"></span>
+      <p class="md3-snackbar__message"></p>
+      <button type="button" class="md3-snackbar__dismiss" aria-label="${dismissLabel}">
           <span class="mdi mdi-close"></span>
-        </button>
-      </div>
+      </button>
     `;
 		toast.querySelector("p")?.append(document.createTextNode(String(message)));
 
 		const dismiss = () => {
-			toast.classList.add("opacity-0", "translate-y-2", "translate-x-4");
+			toast.classList.remove("is-visible");
 			setTimeout(() => toast.remove(), 200);
 		};
 
@@ -108,7 +91,7 @@
 
 		requestAnimationFrame(() => {
 			requestAnimationFrame(() => {
-				toast.classList.remove("opacity-0", "translate-y-2", "translate-x-4");
+				toast.classList.add("is-visible");
 			});
 		});
 
@@ -163,10 +146,17 @@
 				execCommandCopyFallback(text);
 			}
 
-			const originalContent = btn ? btn.innerHTML : "";
+			const copyIcon = btn?.querySelector(".mdi-content-copy");
+			const hasCopyLabel = Boolean(btn?.querySelector(".md3-copy-label"));
+			const originalContent = hasCopyLabel ? "" : btn?.innerHTML || "";
 			if (btn) {
-				btn.innerHTML = '<span class="mdi mdi-check text-success"></span>';
-				btn.classList.add("btn-success", "bg-success/10");
+				if (copyIcon) {
+					copyIcon.classList.replace("mdi-content-copy", "mdi-check");
+					btn.classList.add("is-copied");
+				} else {
+					btn.innerHTML = '<span class="mdi mdi-check text-success"></span>';
+					btn.classList.add("btn-success", "bg-success/10");
+				}
 			}
 
 			window.showToast?.(
@@ -178,8 +168,13 @@
 				if (!btn) {
 					return;
 				}
-				btn.innerHTML = originalContent;
-				btn.classList.remove("btn-success", "bg-success/10");
+				if (hasCopyLabel && copyIcon) {
+					copyIcon.classList.replace("mdi-check", "mdi-content-copy");
+					btn.classList.remove("is-copied");
+				} else {
+					btn.innerHTML = originalContent;
+					btn.classList.remove("btn-success", "bg-success/10");
+				}
 			}, 2000);
 		} catch (err) {
 			console.error("Failed to copy:", err);

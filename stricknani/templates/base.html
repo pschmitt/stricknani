@@ -207,9 +207,7 @@
     <script src="{{ url_for('static', path='js/features/global_search_modal.js') }}"></script>
     {% endif %}
 
-    <div id="toastContainer"
-        class="fixed inset-x-4 top-[4.5rem] z-[2147483647] mx-auto flex max-w-sm flex-col gap-3 sm:inset-auto sm:right-4 sm:top-[4.5rem] sm:w-80"
-        aria-live="polite" aria-atomic="true"></div>
+    <div id="toastContainer" class="md3-snackbar-region" aria-live="polite" aria-atomic="true"></div>
 
     <dialog id="confirmationDialog" class="modal modal-bottom sm:modal-middle backdrop:bg-slate-900/50">
         <div class="modal-box p-0 overflow-hidden bg-base-100 shadow-2xl rounded-2xl w-full max-w-sm sm:max-w-md">

@@ -1086,8 +1086,7 @@ body {
 
 .md3-top-app-bar {
 	background: color-mix(in srgb, var(--md-sys-color-surface) 94%, transparent);
-	border-bottom: 1px solid
-		color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
+	border-bottom: 0;
 	box-shadow: none;
 }
 
@@ -1218,18 +1217,20 @@ body {
 .textarea,
 .select,
 .file-input {
-	border: 1px solid var(--md-sys-color-outline);
+	border: 0;
 	border-radius: var(--radius-field);
-	background: var(--md-sys-color-surface-container-low);
+	background: var(--md-sys-color-surface-container-highest);
 	color: var(--md-sys-color-on-surface);
-	box-shadow: none;
+	box-shadow: inset 0 -1px 0 var(--md-sys-color-outline);
 }
 
 .input:focus,
 .textarea:focus,
 .select:focus {
 	border-color: var(--md-sys-color-primary);
-	box-shadow: var(--md-focus-ring);
+	box-shadow:
+		inset 0 -2px 0 var(--md-sys-color-primary),
+		var(--md-focus-ring);
 	outline: none;
 }
 
@@ -1244,9 +1245,8 @@ body {
 .dropdown-content,
 .menu {
 	border-radius: var(--md-sys-shape-corner-large);
-	border-color: var(--md-sys-color-outline-variant);
 	background: var(--md-sys-color-surface-container-low);
-	box-shadow: var(--md-sys-elevation-level-1);
+	box-shadow: none;
 }
 
 .card.bg-base-200,
@@ -1268,10 +1268,9 @@ body {
 
 .navbar {
 	min-height: 4rem;
-	background: var(--md-sys-color-surface-container-low);
-	border-color: var(--md-sys-color-outline-variant);
-	box-shadow: 0 1px 3px
-		color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+	background: var(--md-sys-color-surface);
+	border: 0;
+	box-shadow: none;
 }
 
 .tabs-boxed {
@@ -1305,8 +1304,8 @@ body {
 }
 
 .md3-elevated-surface {
-	border-color: var(--md-sys-color-outline-variant);
-	box-shadow: var(--md-sys-elevation-level-1);
+	border: 0;
+	box-shadow: none;
 }
 
 .md3-tonal-surface {
@@ -1332,8 +1331,10 @@ body {
 }
 
 .md3-dialog-surface {
+	border: 0;
+	background: var(--md-sys-color-surface-container-high);
 	border-radius: var(--md-sys-shape-corner-extra-large);
-	box-shadow: var(--md-sys-elevation-level-2);
+	box-shadow: var(--md-sys-elevation-level-3);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1457,16 +1458,11 @@ body {
 
 .md3-card--elevated {
 	background: var(--md-sys-color-surface-container-low);
-	border-color: var(--md-sys-color-outline-variant);
+	border: 0;
 	box-shadow: var(--md-sys-elevation-level-1);
 }
 
 .md3-card--elevated:hover {
-	border-color: color-mix(
-		in srgb,
-		var(--md-sys-color-primary) 45%,
-		var(--md-sys-color-outline-variant)
-	);
 	box-shadow: var(--md-sys-elevation-level-2);
 }
 
@@ -1484,11 +1480,11 @@ body {
 
 .md3-text-field {
 	min-height: 3.5rem;
-	border: 1px solid var(--md-sys-color-outline);
+	border: 0;
 	border-radius: 0.25rem 0.25rem 0 0;
-	background: var(--md-sys-color-surface-container-high);
+	background: var(--md-sys-color-surface-container-highest);
 	color: var(--md-sys-color-on-surface);
-	box-shadow: inset 0 -2px 0 var(--md-sys-color-outline);
+	box-shadow: inset 0 -1px 0 var(--md-sys-color-outline);
 }
 
 .md3-text-field:hover {
@@ -1538,10 +1534,10 @@ body {
 
 .md3-login-card .input {
 	min-height: 3.5rem;
-	border: 1px solid var(--md-sys-color-outline);
+	border: 0;
 	border-radius: 0.25rem 0.25rem 0 0;
-	background: var(--md-sys-color-surface-container-high);
-	box-shadow: inset 0 -2px 0 var(--md-sys-color-outline);
+	background: var(--md-sys-color-surface-container-highest);
+	box-shadow: inset 0 -1px 0 var(--md-sys-color-outline);
 }
 
 .md3-login-card .input:focus {
@@ -1558,11 +1554,11 @@ body {
 	}
 }
 
-/* Detail pages are reading surfaces, not a stack of cards.  Use one calm
- * sequence of sections with dividers; reserve tonal surfaces for the small,
- * actionable groups within them. */
+/* Detail pages are reading surfaces, not a stack of cards. Use breathing room
+ * between sections; reserve tonal surfaces for small actionable groups within
+ * them instead of drawing a rule across every transition. */
 .md3-detail-layout {
-	gap: 0;
+	gap: 1.5rem;
 }
 
 .md3-detail-layout > .md3-disclosure {
@@ -1572,21 +1568,25 @@ body {
 	box-shadow: none;
 }
 
-.md3-detail-layout > .md3-disclosure + .md3-disclosure {
-	border-top: 1px solid var(--md-sys-color-outline-variant);
+.md3-detail-layout > .md3-disclosure > .md3-disclosure__title,
+.md3-detail-layout
+	> .md3-disclosure
+	> .md3-disclosure__header
+	> .md3-disclosure__title {
+	padding: 0 0 0.75rem;
 }
 
-.md3-detail-layout > .md3-disclosure > .md3-disclosure__title {
-	padding: 1.5rem 0 0.875rem;
-}
-
-.md3-detail-layout > .md3-disclosure > .md3-disclosure__title:hover {
+.md3-detail-layout > .md3-disclosure > .md3-disclosure__title:hover,
+.md3-detail-layout
+	> .md3-disclosure
+	> .md3-disclosure__header
+	> .md3-disclosure__title:hover {
 	background: transparent;
 	color: var(--md-sys-color-primary);
 }
 
 .md3-detail-layout > .md3-disclosure > .md3-disclosure__content {
-	padding: 0 0 2rem;
+	padding: 0;
 }
 
 .md3-detail-layout
@@ -1626,6 +1626,41 @@ body {
 
 .md3-detail-layout .step-card:has(input:checked) .md3-disclosure__title {
 	border-bottom-color: var(--md-sys-color-outline-variant);
+}
+
+/* Form sections should read as one editing flow. The field and editor
+ * containers supply the necessary hierarchy; wrapping every section in an
+ * elevated card makes the page visually noisy. */
+.md3-form-main > .md3-disclosure {
+	overflow: visible;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+.md3-form-main > .md3-disclosure + .md3-disclosure {
+	border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.md3-form-main > .md3-disclosure > .md3-disclosure__title {
+	padding: 1.5rem 0 0.875rem;
+	cursor: default;
+}
+
+.md3-form-main > .md3-disclosure > .md3-disclosure__title:hover {
+	background: transparent;
+}
+
+.md3-form-main > .md3-disclosure > .md3-disclosure__content {
+	padding: 0 0 2rem;
+}
+
+.md3-form-main .bg-base-200\/30.rounded-xl.border,
+.md3-form-main .bg-base-200\/50.rounded-xl.border,
+.md3-form-main .step-item {
+	border: 0;
+	background: var(--md-sys-color-surface-container-low);
+	box-shadow: none;
 }
 
 .md3-step-number {
