@@ -6,7 +6,7 @@ androidx-activity = "1.13.0"
 androidx-appcompat = "1.8.0"
 # QR scanning for SNA-13's onboarding flow - same versions as the sibling apps' scanners
 # (nyetbox/jollyfin), so the fleet stays on one known-good CameraX/ZXing combination.
-androidx-camera = "1.6.1"
+androidx-camera = "1.6.2"
 androidx-compose = "1.12.0"
 # Decoupled from androidx-compose above - this artifact's release cadence lags the rest of
 # Compose, but it's just a large set of static ImageVector vals with no API coupling to newer
