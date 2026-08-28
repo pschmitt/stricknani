@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       track:
-        description: "Play track (internal is the safe first destination)"
+        description: "Play track(s), comma-separated (e.g. internal,alpha - internal is the safe first destination)"
         required: true
         default: internal
         type: string
@@ -65,15 +65,21 @@ jobs:
             echo "version_name contains unsupported characters" >&2
             exit 1
           }
-          [[ "$TRACK" =~ ^(internal|alpha|beta|production)$ ]] || {
-            echo "track must be internal, alpha, beta, or production" >&2
+          # Comma-separated so one upload can target multiple tracks at once (e.g.
+          # "internal,alpha" to publish closed testing - currently this app's highest eligible
+          # track - without leaving internal testers on a stale build).
+          [[ "$TRACK" =~ ^(internal|alpha|beta|production)(,(internal|alpha|beta|production))*$ ]] || {
+            echo "track must be a comma-separated list of internal, alpha, beta, and/or production" >&2
             exit 1
           }
-          if [[ "$TRACK" == production && "$PRODUCTION_CONFIRMATION" != I_UNDERSTAND_PRODUCTION_UPLOAD ]]
-          then
-            echo "production requires the exact production_confirmation value" >&2
-            exit 1
-          fi
+          IFS=',' read -ra track_list <<< "$TRACK"
+          for track in "${track_list[@]}"; do
+            if [[ "$track" == production && "$PRODUCTION_CONFIRMATION" != I_UNDERSTAND_PRODUCTION_UPLOAD ]]
+            then
+              echo "production requires the exact production_confirmation value" >&2
+              exit 1
+            fi
+          done
 
       - name: Validate Play Store metadata and committed assets
         env:

@@ -2039,4 +2039,42 @@ Status: **done** (2026-08-21) - fix verified via a live CI run on a rebased Reno
 `Disposable Stricknani + Android emulator` check, previously failing uniformly across every open
 PR after a rebase onto current `main`).
 
+## SNA-65: allow requesting multiple Play tracks in one dispatch (e.g. internal + closed/alpha)
+
+Same fleet-wide "dual channel" request applied across syncwich/augh/jollyfin/nyetbox, adapted to
+this app's different release design: unlike the sibling apps' tag-triggered `play-store.yaml`
+(which had no `track` input at all and silently defaulted to `internal`-only), this one is
+`workflow_dispatch`-only with an explicit, human-supplied `track` input and a
+`production_confirmation` gate - a deliberately manual, one-release-at-a-time pipeline. Did **not**
+change its default or make it tag-triggered; only made requesting multiple tracks in a single run
+actually possible, since the validation step would previously reject anything but one exact track
+name.
+
+- [x] `track`'s validation regex only ever matched a single value
+      (`^(internal|alpha|beta|production)$`), so passing `internal,alpha` to publish closed
+      testing alongside internal in one upload would have failed validation outright even though
+      the shared reusable workflow already supports comma-separated `tracks:` (forwarded verbatim
+      to `r0adkll/upload-google-play@v1`) - loosened the regex to accept a comma-separated list of
+      the same four values.
+- [x] The production-confirmation check used an exact `$TRACK == production` match, which a
+      comma-list like `alpha,production` would silently bypass - replaced with a loop over each
+      comma-separated entry so requesting production alongside any other track still requires
+      `production_confirmation: I_UNDERSTAND_PRODUCTION_UPLOAD`.
+- [x] Left the `track` input's `default: internal` unchanged and did not add automatic
+      tag-triggered publishing - this app's release process stays a deliberate, per-run human
+      decision, only now capable of targeting more than one track when asked.
+- [x] Updated the input description to mention the comma-separated format.
+
+**Why:** direct user request; kept the change scoped to "make dual-track possible" rather than
+"make dual-track the default," since this pipeline's manual-dispatch-plus-confirmation design
+looks intentional (production gate, metadata validation) rather than an oversight like the
+sibling apps' missing `track` input was.
+**How to apply:** to actually publish to both tracks, a future dispatch run passes
+`track: internal,alpha` explicitly - nothing publishes to closed testing automatically.
+
+Status: **done**, 2026-08-28 - CI-only change (`.github/workflows/play-store.yaml`), no app code
+or version change; not exercised with a real dispatch run in this task (would have meant cutting
+an otherwise-unneeded release just to test CI wiring) - confirm a `track: internal,alpha` dispatch
+actually lands the bundle on both tracks next time a real release is cut.
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
