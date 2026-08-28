@@ -1,32 +1,47 @@
 name: Play Store Release
 
-# Validation remains local because it checks Stricknani's declarations, privacy-policy URL, and
-# production confirmation. The shared workflow owns the signed AAB build, artifact hand-off, and
-# explicitly gated Play publication.
+# Stable semantic-version tags publish a signed bundle to both the internal and closed (alpha)
+# testing tracks in one upload, matching the fleet's other Android apps (syncwich/augh/jollyfin/
+# nyetbox) - closed testing is the highest track this app is currently eligible for, so every
+# tagged release goes out to both simultaneously. Delegates the actual build/publish to
+# pschmitt/android-app-ci's reusable play-store.yaml, which additionally requires the repository
+# variable PLAY_PUBLISH_ENABLED=true (already set - see android/docs/play-store-release.md) and a
+# PLAY_SERVICE_ACCOUNT_JSON secret; a tag push safely fails loudly instead of silently publishing
+# on a fresh checkout if either is ever missing. Local metadata validation (declarations,
+# privacy-policy URL, committed listing assets) still runs before every build, tag-triggered or
+# manual.
+#
+# Version resolution stays local, mirroring syncwich/augh/nyetbox: no baked-in incrementing
+# default, so a real value has to be computed and passed on every run rather than leaving it to
+# the shared workflow's own "use the app's default" behavior.
 
 on:
+  push:
+    tags:
+      - v*
+      - '*.*.*'
   workflow_dispatch:
     inputs:
       version_code:
-        description: "Positive, never-used Google Play version code"
-        required: true
+        description: "Override versionCode (leave blank on a tag build to derive it from the tag)"
+        required: false
         type: string
       version_name:
-        description: "Human-readable Android version name, e.g. 0.1.0"
-        required: true
+        description: "Override versionName (leave blank on a tag build to derive it from the tag)"
+        required: false
         type: string
       track:
-        description: "Play track(s), comma-separated (e.g. internal,alpha - internal is the safe first destination)"
-        required: true
-        default: internal
+        description: "Play track(s), comma-separated (e.g. internal,alpha)"
+        required: false
+        default: "internal,alpha"
         type: string
       production_confirmation:
-        description: "Required only for a production track: type I_UNDERSTAND_PRODUCTION_UPLOAD"
+        description: "Required only when track includes production: type I_UNDERSTAND_PRODUCTION_UPLOAD"
         required: false
         default: ""
         type: string
       publish:
-        description: "Upload the signed AAB (also requires PLAY_PUBLISH_ENABLED=true)"
+        description: "Upload the bundle to the requested Play track(s)"
         required: true
         default: false
         type: boolean
@@ -39,51 +54,80 @@ permissions:
   contents: read
 
 jobs:
-  validate:
-    name: Validate listing and release parameters
+  version:
+    name: Resolve release version and track
     runs-on: ubuntu-24.04
+    outputs:
+      code: ${{ steps.resolve.outputs.code }}
+      name: ${{ steps.resolve.outputs.name }}
+      track: ${{ steps.resolve.outputs.track }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Validate version and track
+      - name: Resolve release version and track
+        id: resolve
         env:
-          VERSION_CODE: ${{ inputs.version_code }}
-          VERSION_NAME: ${{ inputs.version_name }}
-          TRACK: ${{ inputs.track }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION_CODE: ${{ inputs.version_code }}
+          INPUT_VERSION_NAME: ${{ inputs.version_name }}
+          INPUT_TRACK: ${{ inputs.track }}
           PRODUCTION_CONFIRMATION: ${{ inputs.production_confirmation }}
+        shell: bash
         run: |
-          [[ "$VERSION_CODE" =~ ^[1-9][0-9]*$ ]] || {
+          if [[ -n "$INPUT_VERSION_CODE" || -n "$INPUT_VERSION_NAME" ]]; then
+            version_code="$INPUT_VERSION_CODE"
+            version_name="$INPUT_VERSION_NAME"
+          elif [[ "$REF_NAME" =~ ^v?([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            version_name="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+            # Keep version codes deterministic and monotonic for semantic-version tags.
+            version_code=$((10#${BASH_REMATCH[1]} * 1000000 + 10#${BASH_REMATCH[2]} * 1000 + 10#${BASH_REMATCH[3]}))
+          else
+            echo "Expected a semantic-version tag such as 1.0.0, or explicit version_code/version_name inputs" >&2
+            exit 1
+          fi
+          [[ "$version_code" =~ ^[1-9][0-9]*$ ]] || {
             echo "version_code must be a positive integer" >&2
             exit 1
           }
-          (( VERSION_CODE <= 2100000000 )) || {
+          (( version_code <= 2100000000 )) || {
             echo "version_code exceeds Google Play's maximum" >&2
             exit 1
           }
-          [[ "$VERSION_NAME" =~ ^[0-9A-Za-z][0-9A-Za-z.+_-]*$ ]] || {
+          [[ "$version_name" =~ ^[0-9A-Za-z][0-9A-Za-z.+_-]*$ ]] || {
             echo "version_name contains unsupported characters" >&2
             exit 1
           }
-          # Comma-separated so one upload can target multiple tracks at once (e.g.
-          # "internal,alpha" to publish closed testing - currently this app's highest eligible
-          # track - without leaving internal testers on a stale build).
-          [[ "$TRACK" =~ ^(internal|alpha|beta|production)(,(internal|alpha|beta|production))*$ ]] || {
+
+          # Falls back to the fleet default even on a tag push, where inputs.track is unset
+          # (workflow_dispatch inputs only populate for dispatch-triggered runs).
+          track="${INPUT_TRACK:-internal,alpha}"
+          [[ "$track" =~ ^(internal|alpha|beta|production)(,(internal|alpha|beta|production))*$ ]] || {
             echo "track must be a comma-separated list of internal, alpha, beta, and/or production" >&2
             exit 1
           }
-          IFS=',' read -ra track_list <<< "$TRACK"
-          for track in "${track_list[@]}"; do
-            if [[ "$track" == production && "$PRODUCTION_CONFIRMATION" != I_UNDERSTAND_PRODUCTION_UPLOAD ]]
+          IFS=',' read -ra track_list <<< "$track"
+          for t in "${track_list[@]}"; do
+            if [[ "$t" == production && "$PRODUCTION_CONFIRMATION" != I_UNDERSTAND_PRODUCTION_UPLOAD ]]
             then
               echo "production requires the exact production_confirmation value" >&2
               exit 1
             fi
           done
 
+          {
+            echo "code=$version_code"
+            echo "name=$version_name"
+            echo "track=$track"
+          } >> "$GITHUB_OUTPUT"
+
+  validate:
+    name: Validate listing and committed assets
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
       - name: Validate Play Store metadata and committed assets
         env:
-          PUBLISH: ${{ inputs.publish }}
+          PUBLISH: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
         run: |
           args=(--root .)
           if [[ "$PUBLISH" == true ]]
@@ -94,7 +138,7 @@ jobs:
 
   play-store:
     name: Build and publish signed Android App Bundle
-    needs: validate
+    needs: [version, validate]
     uses: pschmitt/android-app-ci/.github/workflows/play-store.yaml@main
     with:
       application-id: blue.anika.wolle
@@ -104,8 +148,8 @@ jobs:
       unit-test-task: :app:testDebugUnitTest
       gradle-bundle-task: :app:bundleRelease
       aab-path: app/build/outputs/bundle/release/app-release.aab
-      version-code: ${{ inputs.version_code }}
-      version-name: ${{ inputs.version_name }}
-      publish: ${{ inputs.publish }}
-      track: ${{ inputs.track }}
+      version-code: ${{ needs.version.outputs.code }}
+      version-name: ${{ needs.version.outputs.name }}
+      publish: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
+      track: ${{ needs.version.outputs.track }}
     secrets: inherit

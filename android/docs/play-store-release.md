@@ -1,8 +1,12 @@
 # Google Play release runbook
 
-Stricknani's Play package is `blue.anika.wolle`. The Play Console integration is intentionally
-manual and gated while the listing is being prepared. No workflow runs on a push, and both the
-release and asset workflows default to validation-only behavior.
+Stricknani's Play package is `blue.anika.wolle`. Since SNA-65, **Play Store Release** runs
+automatically on every semantic-version tag push (`vX.Y.Z` or `X.Y.Z`), matching the fleet's other
+Android apps (syncwich/augh/jollyfin/nyetbox): it publishes to both the `internal` and `alpha`
+(closed testing) tracks in one upload, gated by the repository variable
+`PLAY_PUBLISH_ENABLED=true` (already set for this repo). A `workflow_dispatch` run is still
+available for ad-hoc bundles, an arbitrary track list, or a dry run with `publish=false`. **Play
+Store Assets** (screenshots/icon/feature-graphic upload) remains manual-dispatch-only, unchanged.
 
 ## Local validation
 
@@ -47,39 +51,32 @@ Before enabling an upload, an operator must complete these external steps:
 6. Set the repository variable `PLAY_PUBLISH_ENABLED` to the exact value `true` only after the
    listing, account access, declarations, and service account have been reviewed.
 
-The first upload should be made to the `internal` track. Play App Signing enrollment and any first-
-time developer-account declarations remain Console actions and cannot be safely automated from this
-repository.
+Play App Signing enrollment and any first-time developer-account declarations remain Console
+actions and cannot be safely automated from this repository.
 
-## Dry-run and staged release
+## Release flow
 
-1. Dispatch **Play Store Release** with a never-used `version_code`, a `version_name`, the
-   `internal` track, and `publish=false`. This validates metadata, runs Android unit tests, and
-   builds a signed AAB artifact without contacting Play Console.
-2. Review the downloaded AAB and the CI logs. A version code must increase for every later Play
-   upload; do not reuse a code rejected or accepted by Play.
+1. Tag a commit on `main` with a semantic version (`vX.Y.Z` or `X.Y.Z`) and push the tag.
+   **Play Store Release** derives `versionCode`/`versionName` from the tag (same monotonic
+   `major*1000000 + minor*1000 + patch` scheme as the sibling apps), validates metadata, runs
+   Android unit tests, builds a signed AAB, and publishes it to `internal,alpha` in one upload.
+2. To do a dry run or target different tracks instead, dispatch **Play Store Release** manually
+   with explicit `version_code`/`version_name` overrides, a `track` list (comma-separated, e.g.
+   `internal,alpha` or just `internal`), and `publish=false` to validate/build only. Set
+   `publish=true` to actually upload - both that input and `PLAY_PUBLISH_ENABLED=true` are
+   required, the default cannot publish. Production is reachable this way too, but requires the
+   exact `production_confirmation=I_UNDERSTAND_PRODUCTION_UPLOAD` input alongside a `track` value
+   that includes `production` - keep production promotion a deliberate, explicit choice, not
+   something a routine tag push should ever reach.
 3. Dispatch **Play Store Assets** with `upload=false` after the screenshot PR has been reviewed.
-   This remains validation-only. Dispatch it with `upload=true` only after the repository gate is
-   enabled; the workflow then validates all three screenshot buckets, authenticates `gpc`, checks
-   that `blue.anika.wolle` exists in the account, and uploads the reviewed icon, feature graphic,
-   and screenshots.
-4. Dispatch **Play Store Release** again with the same version inputs and `publish=true` to upload
-   the signed AAB to the selected track. Both the input and `PLAY_PUBLISH_ENABLED=true` are required;
-   the default cannot publish.
-5. Test the internal release with the configured testers before promoting it in Play Console. Keep
-   production promotion as a deliberate Console action, not an automatic GitHub job. If a
-   production upload is ever intentionally chosen, the workflow additionally requires the exact
-   `production_confirmation=I_UNDERSTAND_PRODUCTION_UPLOAD` input.
+   This remains validation-only. Dispatch it with `upload=true` to validate all three screenshot
+   buckets, authenticate `gpc`, confirm `blue.anika.wolle` exists in the account, and upload the
+   reviewed icon, feature graphic, and screenshots.
+4. Test each new internal/closed release with the configured testers before promoting it further
+   in Play Console.
 
 The asset uploader deletes and replaces each screenshot bucket before uploading the reviewed set,
 which avoids Play's duplicate-image behavior. It does not upload listing text or declarations;
 those remain reviewable repository metadata and must be completed in Play Console's app-content
 forms. A failed or unwanted release is rolled back by stopping promotion and selecting the last
 known-good artifact/release in Play Console; never reuse its version code for a new upload.
-
-## Current blocker
-
-The repository-side scaffolding and public privacy-policy URL are ready. The external Play
-application/listing, completed content-rating/data-safety forms, and Play service-account secret
-remain unverified. Therefore `PLAY_PUBLISH_ENABLED` must remain unset and no release or asset
-upload should be attempted yet.

@@ -2077,4 +2077,51 @@ or version change; not exercised with a real dispatch run in this task (would ha
 an otherwise-unneeded release just to test CI wiring) - confirm a `track: internal,alpha` dispatch
 actually lands the bundle on both tracks next time a real release is cut.
 
+## SNA-66: Convert Play Store Release to tag-triggered, matching the sibling apps exactly
+
+Supersedes SNA-65's "leave it manual-dispatch-only" decision. Direct user follow-up: "there is no
+good reason for it to be different" than syncwich/augh/jollyfin/nyetbox's tag-triggered design.
+Re-checked the original rationale (SNA-42: "intentionally manual and gated while the listing is
+being prepared") against current state and found it stale - `PLAY_PUBLISH_ENABLED` was already
+flipped to `true` for this repo on 2026-08-19, and SNA-42's own status note confirms a real
+internal release was already uploaded and verified through it. The "not ready yet" caution in
+`android/docs/play-store-release.md`'s "Current blocker" section no longer matched reality, so
+there was no live safety reason left to keep this workflow different from the fleet.
+
+- [x] Rewrote `.github/workflows/play-store.yaml` to trigger on the same `v*`/`*.*.*` tag pattern
+      as the sibling apps (previously `workflow_dispatch` only), with a new `version` job deriving
+      `versionCode`/`versionName` from the tag using the exact same monotonic
+      `major*1000000 + minor*1000 + patch` scheme as syncwich/augh/nyetbox - `version_code`/
+      `version_name` dispatch inputs became optional overrides instead of required-every-run
+      manual entry.
+- [x] Track resolution now lives in that same `version` job: defaults to `internal,alpha` (the
+      fleet default from SNA-65/NBC-453/AUG-89/JF-89) whether triggered by a tag push or a
+      no-override dispatch, while still accepting a comma-separated `track` dispatch override and
+      still enforcing SNA-65's per-entry `production_confirmation` check for any list containing
+      `production`.
+- [x] `publish` now follows the same fleet expression
+      (`github.event_name != 'workflow_dispatch' || inputs.publish`) - every tag push attempts to
+      publish (still gated by `PLAY_PUBLISH_ENABLED`/`PLAY_SERVICE_ACCOUNT_JSON` in the reusable
+      workflow's own publish-gate job), a manual dispatch only publishes if explicitly asked.
+- [x] Kept the metadata-validation job (`validate-play-store-metadata.py`, declarations/
+      privacy-policy URL/committed listing assets) exactly as-is, now running independently of the
+      `version` job so it's not blocked by version/track resolution - this check has nothing to do
+      with why the workflow used to be dispatch-only and there's no reason to touch it.
+- [x] Rewrote `android/docs/play-store-release.md`'s stale "manual and gated, no workflow runs on
+      a push" framing and "Current blocker" section (which no longer reflected
+      `PLAY_PUBLISH_ENABLED` already being on) into a "Release flow" section describing the new
+      tag-triggered default plus the still-available manual-dispatch dry-run/track-override path.
+
+**Why:** direct user request - the original manual-only design (SNA-42) was a deliberate caution
+tied to an unfinished Play listing, but that listing has since been finished and verified
+(SNA-12/SNA-42's own status notes), leaving no remaining justification to diverge from the fleet
+pattern.
+**How to apply:** the next real semantic-version tag push is the first live test of the
+tag-triggered path end-to-end (build, both-track publish, and the reusable workflow's own gates) -
+confirm it lands cleanly, the same as SNA-65 flagged for its own untested change.
+
+Status: **done**, 2026-08-28 - CI/doc-only change, no app code or version change; not exercised
+with a real tag push in this task for the same reason as SNA-65 (would have meant cutting an
+otherwise-unneeded release). Confirm on the next real tagged release.
+
 <!-- vim: set ft=markdown et ts=2 sw=2 : -->
