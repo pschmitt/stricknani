@@ -41,7 +41,7 @@ directories:
       # renovate: datasource=github-releases depName=getsentry/sentry-javascript
       - path: sentry
         http:
-          url: https://browser.sentry-cdn.com/10.70.0/bundle.tracing.min.js
+          url: https://browser.sentry-cdn.com/10.71.0/bundle.tracing.min.js
 
       # renovate: datasource=npm depName=@fontsource/space-grotesk
       - path: fonts/space-grotesk
