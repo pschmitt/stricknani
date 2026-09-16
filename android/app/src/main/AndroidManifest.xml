@@ -4,6 +4,14 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- WorkManager contributes these permissions to its merged manifest, but this app never
+         promotes a worker to a foreground service. Keep them out of the Play-distributed bundle. -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"
+        tools:node="remove" />
     <!-- API 33+ runtime permission for optional background sync result notifications (SNA-14).
          Sync never depends on it being granted. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
