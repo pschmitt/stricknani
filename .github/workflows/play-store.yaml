@@ -45,6 +45,11 @@ on:
         required: true
         default: false
         type: boolean
+      release_status:
+        description: "Play release status (draft for the first release of a draft app)"
+        required: false
+        default: draft
+        type: string
 
 concurrency:
   group: play-store-${{ github.ref }}
@@ -152,4 +157,5 @@ jobs:
       version-name: ${{ needs.version.outputs.name }}
       publish: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
       track: ${{ needs.version.outputs.track }}
+      status: ${{ github.event_name == 'workflow_dispatch' && inputs.release_status || 'completed' }}
     secrets: inherit
