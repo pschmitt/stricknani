@@ -36,6 +36,12 @@
         <!-- usesCleartextTraffic=true: self-hosted Stricknani instances are frequently plain
              HTTP on a local network (this app's whole audience is homelab/self-hosted users). -->
 
+        <!-- WorkManager contributes this component for expedited workers. Stricknani never uses
+             foreground workers, so keep it out of the Play-distributed bundle. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            tools:node="remove" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
