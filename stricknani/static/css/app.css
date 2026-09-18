@@ -1081,7 +1081,8 @@ body {
 				transparent
 			),
 			transparent 24rem
-		), var(--md-sys-color-background);
+		),
+		var(--md-sys-color-background);
 }
 
 .md3-top-app-bar {

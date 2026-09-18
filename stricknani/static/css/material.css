@@ -86,8 +86,8 @@
 
 :root {
 	--font-display:
-		"Space Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-		"Segoe UI", sans-serif;
+		"Space Grotesk", ui-sans-serif, system-ui, -apple-system,
+		BlinkMacSystemFont, "Segoe UI", sans-serif;
 	--md-sys-color-primary: oklch(44% 0.2 264);
 	--md-sys-color-on-primary: oklch(99% 0.01 264);
 	--md-sys-color-primary-container: oklch(88% 0.09 264);
@@ -2498,7 +2498,8 @@ svg {
 				transparent
 			),
 			transparent 24rem
-		), var(--md-sys-color-background);
+		),
+		var(--md-sys-color-background);
 }
 .md3-page-frame {
 	color: var(--md-sys-color-on-surface);
