@@ -144,7 +144,8 @@ def validate_image_upload(content: bytes) -> tuple[str, str]:
     except Exception as exc:  # noqa: BLE001 - any decode failure means invalid
         raise InvalidImageError("Corrupt or unreadable image data") from exc
 
-    if width * height > Image.MAX_IMAGE_PIXELS:
+    max_pixels = Image.MAX_IMAGE_PIXELS
+    if max_pixels is not None and width * height > max_pixels:
         raise InvalidImageError("Image exceeds the maximum allowed size")
 
     return content_type, IMAGE_MIME_TO_EXTENSION[content_type]
@@ -302,18 +303,19 @@ async def create_thumbnail(
             raise InvalidImageError("Image exceeds the maximum allowed size") from exc
         with opened as img:
             # Convert RGBA to RGB if necessary
-            if img.mode in ("RGBA", "LA", "P"):
-                background = Image.new("RGB", img.size, (255, 255, 255))
-                if img.mode == "P":
-                    img = img.convert("RGBA")
+            pic: Image.Image = img
+            if pic.mode in ("RGBA", "LA", "P"):
+                background = Image.new("RGB", pic.size, (255, 255, 255))
+                if pic.mode == "P":
+                    pic = pic.convert("RGBA")
                 background.paste(
-                    img,
-                    mask=img.split()[-1] if img.mode == "RGBA" else None,
+                    pic,
+                    mask=pic.split()[-1] if pic.mode == "RGBA" else None,
                 )
-                img = background
+                pic = background
 
             # Resize maintaining aspect ratio
-            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            pic.thumbnail(max_size, Image.Resampling.LANCZOS)
 
             # Generate thumbnail filename
             thumbnail_name = f"thumb_{source_path.stem}.jpg"
@@ -324,7 +326,7 @@ async def create_thumbnail(
 
             # Save thumbnail
             thumb_path = thumb_dir / thumbnail_name
-            img.save(thumb_path, "JPEG", quality=85, optimize=True)
+            pic.save(thumb_path, "JPEG", quality=85, optimize=True)
 
             return thumbnail_name
 
