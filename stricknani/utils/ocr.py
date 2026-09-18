@@ -83,9 +83,9 @@ def _extract_text_sync(
             return cache_text_path.read_text(encoding="utf-8")
 
     with Image.open(file_path) as img:
-        img = img.convert("RGB")
+        rgb_img = img.convert("RGB")
         with tempfile.NamedTemporaryFile(suffix=".png", delete=True) as tmp:
-            img.save(tmp.name, format="PNG")
+            rgb_img.save(tmp.name, format="PNG")
             proc = subprocess.run(
                 [*tesseract_args, tmp.name, "stdout"],
                 capture_output=True,

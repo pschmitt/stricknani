@@ -191,9 +191,9 @@ def _render_favorite_toggle(
     language = get_language(request)
     with language_context(language):
         return templates.TemplateResponse(
+            request,
             "projects/_favorite_toggle.html",
             {
-                "request": request,
                 "project_id": project_id,
                 "is_favorite": is_favorite,
                 "variant": variant,
@@ -382,9 +382,9 @@ async def list_projects(
         language = get_language(request)
         with language_context(language):
             return templates.TemplateResponse(
+                request,
                 "projects/_cards_page.html",
                 {
-                    "request": request,
                     "projects": projects_data,
                     "current_language": language,
                     "next_page_url": next_page_url,
@@ -396,9 +396,9 @@ async def list_projects(
         language = get_language(request)
         with language_context(language):
             return templates.TemplateResponse(
+                request,
                 "projects/_list_partial.html",
                 {
-                    "request": request,
                     "projects": projects_data,
                     "current_language": language,
                     "search": search or "",

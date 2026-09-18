@@ -1,9 +1,9 @@
 """Enum types for models."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class ProjectCategory(str, Enum):
+class ProjectCategory(StrEnum):
     """Project category enum."""
 
     PULLOVER = "Pullover"
@@ -13,7 +13,7 @@ class ProjectCategory(str, Enum):
     STIRNBAND = "Stirnband"
 
 
-class ImageType(str, Enum):
+class ImageType(StrEnum):
     """Image type enum."""
 
     PHOTO = "photo"

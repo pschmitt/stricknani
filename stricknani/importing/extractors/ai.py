@@ -349,18 +349,19 @@ class AIExtractor(ContentExtractor):
         try:
             with PilImage.open(BytesIO(image_bytes)) as img:
                 # Convert to RGB if necessary
-                if img.mode in ("RGBA", "P"):
-                    img = img.convert("RGB")
+                pic: PilImage.Image = img
+                if pic.mode in ("RGBA", "P"):
+                    pic = pic.convert("RGB")
 
                 # Resize if too large
-                if max(img.size) > max_size:
-                    ratio = max_size / max(img.size)
-                    new_size = (int(img.size[0] * ratio), int(img.size[1] * ratio))
-                    img = img.resize(new_size, PilImage.Resampling.LANCZOS)
+                if max(pic.size) > max_size:
+                    ratio = max_size / max(pic.size)
+                    new_size = (int(pic.size[0] * ratio), int(pic.size[1] * ratio))
+                    pic = pic.resize(new_size, PilImage.Resampling.LANCZOS)
 
                 # Save to bytes
                 output = BytesIO()
-                img.save(output, format="JPEG", quality=85)
+                pic.save(output, format="JPEG", quality=85)
                 return output.getvalue()
 
         except Exception as exc:
