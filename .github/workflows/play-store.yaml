@@ -61,7 +61,7 @@ permissions:
 jobs:
   version:
     name: Resolve release version and track
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       code: ${{ steps.resolve.outputs.code }}
       name: ${{ steps.resolve.outputs.name }}
@@ -125,7 +125,7 @@ jobs:
 
   validate:
     name: Validate listing and committed assets
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
