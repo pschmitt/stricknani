@@ -25,14 +25,21 @@ status (`SNA-N` entries).
 
 ## Installation
 
-Stricknani is not published on Google Play yet. Until the Play Console listing is completed, install
-and auto-update it via [Obtainium](https://obtainium.imranr.dev/) pointed at this repository, or
-grab an APK directly from the [Releases page](https://github.com/pschmitt/stricknani/releases).
+### Google Play (closed testing)
 
-The repository contains a manual, gated Play Store release and asset workflow. Its default mode only
-validates the listing and builds a signed AAB; it cannot upload anything. See
-[the Play Store release runbook](docs/play-store-release.md) for the one-time Console setup,
+Stricknani publishes automatically to Play's internal/closed-testing tracks on every tagged
+release. Join the testing program, then install and auto-update via the Play Store:
+
+[Join the Play Store closed test](https://play.google.com/apps/testing/blue.anika.wolle)
+
+See [the Play Store release runbook](docs/play-store-release.md) for the one-time Console setup,
 metadata checklist, staged internal-testing flow, and rollback procedure.
+
+### APK / Obtainium
+
+Prefer not to use Play, or want a specific build without joining testing? Install and auto-update
+via [Obtainium](https://obtainium.imranr.dev/) pointed at this repository, or grab an APK directly
+from the [Releases page](https://github.com/pschmitt/stricknani/releases).
 
 [<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="60">][obtainium-link]
 
