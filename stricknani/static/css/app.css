@@ -1226,10 +1226,10 @@ body {
 .select,
 .file-input {
 	border: 0;
-	border-radius: var(--radius-field);
+	border-radius: var(--md-sys-shape-medium);
 	background: var(--md-sys-color-surface-container-highest);
 	color: var(--md-sys-color-on-surface);
-	box-shadow: inset 0 -1px 0 var(--md-sys-color-outline);
+	box-shadow: inset 0 0 0 1px var(--md-sys-color-outline);
 }
 
 .input:focus,
@@ -1237,7 +1237,7 @@ body {
 .select:focus {
 	border-color: var(--md-sys-color-primary);
 	box-shadow:
-		inset 0 -2px 0 var(--md-sys-color-primary),
+		inset 0 0 0 2px var(--md-sys-color-primary),
 		var(--md-focus-ring);
 	outline: none;
 }
@@ -1489,10 +1489,10 @@ body {
 .md3-text-field {
 	min-height: 3.5rem;
 	border: 0;
-	border-radius: 0.25rem 0.25rem 0 0;
+	border-radius: var(--md-sys-shape-medium);
 	background: var(--md-sys-color-surface-container-highest);
 	color: var(--md-sys-color-on-surface);
-	box-shadow: inset 0 -1px 0 var(--md-sys-color-outline);
+	box-shadow: inset 0 0 0 1px var(--md-sys-color-outline);
 }
 
 .md3-text-field:hover {
@@ -1502,7 +1502,7 @@ body {
 .md3-text-field:focus {
 	border-color: var(--md-sys-color-primary);
 	box-shadow:
-		inset 0 -2px 0 var(--md-sys-color-primary),
+		inset 0 0 0 2px var(--md-sys-color-primary),
 		var(--md-focus-ring);
 }
 
