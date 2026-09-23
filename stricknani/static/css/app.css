@@ -1135,10 +1135,7 @@ body {
 	border-top-color: var(--md-sys-color-outline-variant);
 }
 
-/* Icon-only footer links (identified by aria-label) have no visible text to
-   underline; without this, the browser's default link underline renders as a
-   stray mark under the whitespace between the icon and the closing tag. */
-.md3-footer a[aria-label] {
+.md3-footer a {
 	text-decoration: none;
 }
 
