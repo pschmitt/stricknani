@@ -263,6 +263,10 @@
                                 <span class="mdi mdi-key-chain-variant md3-account-action__icon"></span>
                                 {{ _('API Tokens') }}
                             </a>
+                            <button type="button" class="md3-account-action" data-action="open-dialog" data-dialog-id="mobileAppDialog">
+                                <span class="mdi mdi-cellphone md3-account-action__icon"></span>
+                                {{ _('Android App') }}
+                            </button>
                             <form action="/auth/logout" method="post">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit" class="md3-account-action md3-account-action--danger">
@@ -275,24 +279,49 @@
                 </div>
                 {% else %}
                 <div class="md3-navbar__public-controls">
-		                    <button type="button" data-call="toggleTheme" class="md3-button md3-button--icon md3-button--text"
-	                        title="{{ _('Toggle theme') }}" aria-label="{{ _('Toggle theme') }}">
-	                        <span id="theme-icon-public" class="mdi mdi-weather-night"></span>
-	                    </button>
-
-                    <div class="md3-navbar__public-language">
-                        {% set container_class = "md3-language-selector--public" %}
-                        {% include "shared/_language_selector.html" %}
-                    </div>
-
-                    <div class="dropdown dropdown-end md3-dropdown md3-navbar__mobile-language">
-                        <button tabindex="0" role="button" class="md3-button md3-button--icon md3-button--text md3-button--small"
-                            title="{{ _('Change language') }}" aria-label="{{ _('Change language') }}">
-                            <span class="mdi mdi-translate"></span>
+                    <div class="dropdown dropdown-end md3-dropdown">
+                        <button tabindex="0" role="button" class="md3-button md3-button--icon md3-button--text"
+                            title="{{ _('Settings') }}" aria-label="{{ _('Settings') }}">
+                            <span class="mdi mdi-dots-vertical"></span>
                         </button>
-                        <div tabindex="0"
-                            class="dropdown-content md3-menu md3-navbar__mobile-language-menu">
-                            {% include "shared/_language_selector.html" %}
+                        <div tabindex="0" class="dropdown-content md3-menu md3-navbar__public-menu">
+                            <div class="md3-account-settings">
+                                <div class="md3-account-setting">
+                                    <label class="md3-account-setting__label">
+                                        <span>
+                                            <span class="mdi mdi-translate"></span>
+                                            {{ _('Language') }}
+                                        </span>
+                                    </label>
+                                    {% include "shared/_language_selector.html" %}
+                                </div>
+                                <div class="md3-account-setting">
+                                    <label class="md3-account-setting__label">
+                                        <span>
+                                            <span class="mdi mdi-palette-swatch"></span>
+                                            {{ _('Appearance') }}
+                                        </span>
+                                    </label>
+                                    <div class="md3-theme-selector">
+                                        <button type="button" id="theme-btn-light" data-call="setTheme" data-call-args='["light"]'
+                                            class="md3-theme-selector__button">
+                                            <span class="mdi mdi-weather-sunny"></span>
+                                            {{ _('Light') }}
+                                        </button>
+                                        <button type="button" id="theme-btn-dark" data-call="setTheme" data-call-args='["dark"]'
+                                            class="md3-theme-selector__button">
+                                            <span class="mdi mdi-weather-night"></span>
+                                            {{ _('Dark') }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="md3-account-actions">
+                                <button type="button" class="md3-account-action" data-action="open-dialog" data-dialog-id="mobileAppDialog">
+                                    <span class="mdi mdi-cellphone md3-account-action__icon"></span>
+                                    {{ _('Android App') }}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

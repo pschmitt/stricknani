@@ -206,12 +206,16 @@ body {
 
 body {
 	min-height: 100vh;
-	/* `100vh` on mobile Chrome/Firefox is measured against the toolbar-
-	   hidden viewport, so content sized against it can overflow (and hide
-	   behind the sticky navbar) while the toolbar is actually visible.
-	   `dvh` tracks the real, currently-visible viewport; keep the `vh`
-	   line above as a fallback for browsers without dvh support. */
-	min-height: 100dvh;
+}
+/* `100vh` on mobile Chrome/Firefox is measured against the toolbar-hidden
+   viewport, so content sized against it can overflow (and hide behind the
+   sticky navbar) while the toolbar is actually visible. `dvh` tracks the
+   real, currently-visible viewport; the plain `vh` rule above is the
+   fallback for browsers without dvh support. */
+@supports (min-height: 100dvh) {
+	body {
+		min-height: 100dvh;
+	}
 }
 
 a {
@@ -2308,18 +2312,13 @@ svg {
 .md3-navbar__public-controls {
 	gap: 0.5rem;
 }
-.md3-navbar__public-language {
-	display: block;
-	min-width: 8rem;
-}
-.md3-navbar__mobile-language {
-	display: none;
-}
-.md3-navbar__mobile-language-menu {
+.md3-navbar__public-menu {
 	top: 100%;
 	right: 0;
-	width: 12rem;
-	padding: 0.5rem;
+	width: 16rem;
+	margin-top: 0.5rem;
+	padding: 0;
+	overflow: hidden;
 }
 .md3-language-selector {
 	display: flex;
@@ -2328,14 +2327,6 @@ svg {
 	padding: 0.25rem;
 	border-radius: var(--md-sys-shape-large);
 	background: var(--md-sys-color-surface-container);
-}
-.md3-language-selector--public {
-	border: 1px solid var(--md-sys-color-outline-variant);
-	background: color-mix(
-		in srgb,
-		var(--md-sys-color-surface-container-high) 50%,
-		transparent
-	);
 }
 .md3-language-selector__form {
 	min-width: 0;
@@ -2483,6 +2474,41 @@ svg {
 	top: 0.5rem;
 	right: 0.5rem;
 }
+.md3-app-link-list {
+	display: grid;
+	gap: 0.5rem;
+}
+.md3-app-link {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 0.875rem 1rem;
+	border: 1px solid var(--md-sys-color-outline-variant);
+	border-radius: var(--md-sys-shape-large);
+	color: var(--md-sys-color-on-surface);
+	text-decoration: none;
+}
+.md3-app-link:hover,
+.md3-app-link:focus-visible {
+	background: var(--md-sys-color-surface-container);
+	border-color: var(--md-sys-color-primary);
+}
+.md3-app-link__icon {
+	font-size: 1.75rem;
+	color: var(--md-sys-color-primary);
+}
+.md3-app-link__text {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+}
+.md3-app-link__title {
+	font-weight: 650;
+}
+.md3-app-link__subtitle {
+	color: var(--md-sys-color-on-surface-variant);
+	font-size: 0.8125rem;
+}
 .md3-menu-item {
 	display: flex;
 	width: 100%;
@@ -2551,12 +2577,8 @@ svg {
 	.md3-navbar__title-chevron--mobile-hidden {
 		display: none;
 	}
-	.md3-navbar__public-language,
 	.md3-navbar__install {
 		display: none;
-	}
-	.md3-navbar__mobile-language {
-		display: block;
 	}
 	.md3-category-form {
 		align-items: stretch;
@@ -4221,21 +4243,6 @@ svg {
 	margin: 0.375rem 0 0;
 	color: var(--md-sys-color-on-surface-variant);
 	font-size: 0.875rem;
-}
-
-.md3-auth-privacy {
-	margin: 1rem 0 0;
-	color: var(--md-sys-color-on-surface-variant);
-	font-size: 0.75rem;
-	line-height: 1.5;
-	text-align: center;
-}
-
-.md3-auth-privacy a {
-	color: var(--md-sys-color-primary);
-	font-weight: 600;
-	text-decoration: underline;
-	text-underline-offset: 0.15em;
 }
 
 @media (max-width: 30rem) {

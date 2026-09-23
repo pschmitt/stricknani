@@ -773,18 +773,10 @@
 		window.updateThemeUI?.(newTheme);
 	};
 
-	window.toggleTheme = () => {
-		const currentTheme =
-			document.documentElement.getAttribute("data-theme") || "light";
-		const newTheme = currentTheme === "dark" ? "light" : "dark";
-		window.setTheme(newTheme);
-	};
-
 	window.updateThemeUI = (theme) => {
 		const isDark = theme === "dark";
 		const label = document.getElementById("theme-label");
 		const icon = document.getElementById("theme-icon");
-		const iconPublic = document.getElementById("theme-icon-public");
 
 		const lightBtn = document.getElementById("theme-btn-light");
 		const darkBtn = document.getElementById("theme-btn-dark");
@@ -800,10 +792,6 @@
 
 		if (icon) {
 			icon.className = `mdi ${iconClass} text-xl transition-all duration-300 ${iconColor}`;
-		}
-
-		if (iconPublic) {
-			iconPublic.className = `mdi ${iconClass} text-xl transition-all duration-300 ${iconColor}`;
 		}
 
 		if (lightBtn && darkBtn) {

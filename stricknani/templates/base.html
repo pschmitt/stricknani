@@ -131,22 +131,33 @@
     </main>
 
     <footer class="md3-footer mt-8 py-4 text-center text-sm text-base-content/70 bg-base-100 border-t border-base-300">
-        <span class="mdi mdi-yarn mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0 &middot; {{ _('GPL-3.0-only')
-        }}
-        <a href="/privacy" class="ml-2 text-base-content/70 hover:text-base-content">{{ _('Privacy Policy') }}</a>
         <a href="https://github.com/pschmitt/stricknani" target="_blank" rel="noopener noreferrer"
-            class="ml-2 text-base-content/70 hover:text-base-content" aria-label="GitHub">
-            <span class="mdi mdi-github text-lg align-middle"></span>
+            class="text-base-content/70 hover:text-base-content">
+            <span class="mdi mdi-github mr-1 align-middle"></span>{{ _('Stricknani') }} v0.1.0
         </a>
+        <a href="/privacy" class="ml-2 text-base-content/70 hover:text-base-content">{{ _('Privacy Policy') }}</a>
+    </footer>
+
+    {% call dialogs.modal('mobileAppDialog', title=_('Get the Android app')) %}
+    <div class="md3-app-link-list">
         <a href="https://github.com/pschmitt/stricknani/releases/download/latest/stricknani-latest-app-arm64-v8a-release.apk"
-            class="ml-2 text-base-content/70 hover:text-base-content" aria-label="Android APK">
-            <span class="mdi mdi-android text-lg align-middle"></span>
+            class="md3-app-link">
+            <span class="mdi mdi-android md3-app-link__icon"></span>
+            <span class="md3-app-link__text">
+                <span class="md3-app-link__title">{{ _('Download APK') }}</span>
+                <span class="md3-app-link__subtitle">{{ _('Latest build, direct download') }}</span>
+            </span>
         </a>
         <a href="https://play.google.com/apps/testing/blue.anika.wolle" target="_blank" rel="noopener noreferrer"
-            class="ml-2 text-base-content/70 hover:text-base-content" aria-label="Play Store">
-            <span class="mdi mdi-google-play text-lg align-middle"></span>
+            class="md3-app-link">
+            <span class="mdi mdi-google-play md3-app-link__icon"></span>
+            <span class="md3-app-link__text">
+                <span class="md3-app-link__title">{{ _('Play Store (closed testing)') }}</span>
+                <span class="md3-app-link__subtitle">{{ _('Join the testing program') }}</span>
+            </span>
         </a>
-    </footer>
+    </div>
+    {% endcall %}
 
     {% if current_user %}
     <!-- Profile Image Upload Tools -->
