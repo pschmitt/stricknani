@@ -193,6 +193,16 @@ in
         wants = [ "network-online.target" ];
         wantedBy = [ "multi-user.target" ];
 
+        # Belt-and-suspenders: switch-to-configuration's unit-file-text diff
+        # is supposed to catch an ExecStart path change on its own, but has
+        # been observed (2026-09-23) to sometimes leave the old process
+        # running after a successful `nixos-rebuild switch` that did update
+        # the unit file on disk. Pinning restartTriggers to the package
+        # derivation makes the restart decision explicit and independent of
+        # that diffing, so a deploy can never again silently apply without
+        # actually restarting the service.
+        restartTriggers = [ cfg.package ];
+
         environment = {
           PORT = toString cfg.port;
           BIND_HOST = cfg.bindHost;
