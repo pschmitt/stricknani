@@ -31,7 +31,7 @@ permissions:
 jobs:
   browser:
     name: Chromium ${{ github.event_name == 'pull_request' && 'PR smoke' || inputs.suite }} suite
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 45
     env:
       E2E_SUITE: ${{ github.event_name == 'pull_request' && 'smoke' || inputs.suite }}

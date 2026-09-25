@@ -23,7 +23,7 @@ permissions:
 jobs:
   validate:
     name: Validate Play Store assets
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -43,7 +43,7 @@ jobs:
     name: Require explicit asset publication gate
     needs: validate
     if: ${{ inputs.upload }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Check repository publication gate
         run: |
@@ -58,7 +58,7 @@ jobs:
     name: Upload reviewed listing assets
     needs: [validate, upload-gate]
     if: ${{ inputs.upload && vars.PLAY_PUBLISH_ENABLED == 'true' }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       PLAY_PACKAGE: blue.anika.wolle
       GPC_VERSION: 0.5.15

@@ -31,7 +31,7 @@ permissions:
 jobs:
   e2e:
     name: Disposable Stricknani + Android emulator
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 90
     env:
       COMPOSE_FILE: ci/stricknani/docker-compose.yml
