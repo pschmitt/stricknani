@@ -14,7 +14,7 @@ androidx-compose = "1.12.1"
 # nyetbox/syncwich apps).
 androidx-compose-material-icons-extended = "1.7.8"
 androidx-compose-material3 = "1.4.0"
-androidx-core = "1.19.0"
+androidx-core = "1.19.1"
 androidx-core-splashscreen = "1.2.0"
 androidx-datastore = "1.2.1"
 androidx-hilt = "1.4.0"
