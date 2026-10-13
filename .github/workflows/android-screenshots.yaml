@@ -23,7 +23,7 @@ permissions:
 jobs:
   capture:
     name: ${{ matrix.device }} / ${{ matrix.theme }} screenshots
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -197,7 +197,7 @@ jobs:
   aggregate-play-store-screenshots:
     needs: capture
     if: ${{ !cancelled() && !failure() && inputs.open_pr }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
