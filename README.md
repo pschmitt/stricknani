@@ -1,4 +1,6 @@
 <p align="center">
+
+[![nixbot](https://nixbot.brkn.lol/repos/github/pschmitt/stricknani/badge.svg?branch=main)](https://nixbot.brkn.lol/repos/github/pschmitt/stricknani)
   <img src="branding/icon.svg" alt="Stricknani icon" width="128">
 </p>
 
