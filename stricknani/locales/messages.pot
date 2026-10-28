@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-23 08:25+0200\n"
+"POT-Creation-Date: 2026-10-28 22:51+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,7 +26,7 @@ msgid "This password is too common. Please choose a stronger one."
 msgstr ""
 
 #: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
-#: stricknani/templates/base.html:134 stricknani/templates/errors/401.html:3
+#: stricknani/templates/base.html:136 stricknani/templates/errors/401.html:3
 #: stricknani/templates/errors/403.html:3
 #: stricknani/templates/errors/404.html:3
 #: stricknani/templates/errors/429.html:3
@@ -42,8 +42,8 @@ msgstr ""
 #: stricknani/templates/admin/users.html:88
 #: stricknani/templates/admin/users.html:125
 #: stricknani/templates/admin/users.html:142 stricknani/templates/base.html:21
-#: stricknani/templates/base.html:174 stricknani/templates/base.html:250
-#: stricknani/templates/base.html:419
+#: stricknani/templates/base.html:173 stricknani/templates/base.html:249
+#: stricknani/templates/base.html:418
 #: stricknani/templates/projects/_delete_dialog.html:18
 #: stricknani/templates/projects/detail.html:820
 #: stricknani/templates/projects/form.html:819
@@ -57,7 +57,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: stricknani/templates/base.html:22 stricknani/templates/base.html:254
+#: stricknani/templates/base.html:22 stricknani/templates/base.html:253
 msgid "Confirm"
 msgstr ""
 
@@ -259,12 +259,13 @@ msgstr ""
 msgid "You are offline. Some features may be unavailable."
 msgstr ""
 
-#: stricknani/templates/base.html:135 stricknani/templates/legal/privacy.html:3
+#: stricknani/templates/auth/login.html:138 stricknani/templates/base.html:138
+#: stricknani/templates/legal/privacy.html:3
 #: stricknani/templates/legal/privacy.html:17
 msgid "Privacy Policy"
 msgstr ""
 
-#: stricknani/templates/base.html:142
+#: stricknani/templates/base.html:141
 msgid "Get the Android app"
 msgstr ""
 
@@ -284,91 +285,91 @@ msgstr ""
 msgid "Join the testing program"
 msgstr ""
 
-#: stricknani/templates/base.html:168
+#: stricknani/templates/base.html:167
 msgid "Crop Profile Picture"
 msgstr ""
 
-#: stricknani/templates/base.html:175
+#: stricknani/templates/base.html:174
 msgid "Save & Upload"
 msgstr ""
 
-#: stricknani/templates/base.html:197
+#: stricknani/templates/base.html:196
 msgid "Search projects, yarns..."
 msgstr ""
 
-#: stricknani/templates/base.html:211
+#: stricknani/templates/base.html:210
 msgid "Start typing to search..."
 msgstr ""
 
-#: stricknani/templates/base.html:216
+#: stricknani/templates/base.html:215
 msgid "↑↓ to navigate"
 msgstr ""
 
-#: stricknani/templates/base.html:217
+#: stricknani/templates/base.html:216
 msgid "Enter to select"
 msgstr ""
 
-#: stricknani/templates/base.html:235
+#: stricknani/templates/base.html:234
 msgid "Confirm Action"
 msgstr ""
 
-#: stricknani/templates/base.html:241
+#: stricknani/templates/base.html:240
 msgid "Are you sure you want to proceed?"
 msgstr ""
 
-#: stricknani/templates/base.html:266 stricknani/templates/base.html:282
-#: stricknani/templates/base.html:292
+#: stricknani/templates/base.html:265 stricknani/templates/base.html:281
+#: stricknani/templates/base.html:291
 #: stricknani/templates/projects/form.html:47
 #: stricknani/templates/yarn/form.html:49
 msgid "Preview"
 msgstr ""
 
-#: stricknani/templates/base.html:271 stricknani/templates/base.html:297
+#: stricknani/templates/base.html:270 stricknani/templates/base.html:296
 #: stricknani/templates/projects/detail.html:186
 #: stricknani/templates/projects/form.html:264
 msgid "Download"
 msgstr ""
 
-#: stricknani/templates/base.html:275 stricknani/templates/base.html:301
-#: stricknani/templates/base.html:335
+#: stricknani/templates/base.html:274 stricknani/templates/base.html:300
+#: stricknani/templates/base.html:334
 msgid "close"
 msgstr ""
 
-#: stricknani/templates/base.html:322
+#: stricknani/templates/base.html:321
 msgid "OCR"
 msgstr ""
 
-#: stricknani/templates/base.html:327
+#: stricknani/templates/base.html:326
 msgid "Copy text"
 msgstr ""
 
-#: stricknani/templates/base.html:331
+#: stricknani/templates/base.html:330
 #: stricknani/templates/projects/detail.html:338
 #: stricknani/templates/yarn/detail.html:287
 msgid "Retry"
 msgstr ""
 
-#: stricknani/templates/base.html:374
+#: stricknani/templates/base.html:373
 msgid "Crop Image"
 msgstr ""
 
-#: stricknani/templates/base.html:381
+#: stricknani/templates/base.html:380
 msgid "Reset crop"
 msgstr ""
 
-#: stricknani/templates/base.html:383
+#: stricknani/templates/base.html:382
 msgid "Reset"
 msgstr ""
 
-#: stricknani/templates/base.html:386
+#: stricknani/templates/base.html:385
 msgid "Close"
 msgstr ""
 
-#: stricknani/templates/base.html:415
+#: stricknani/templates/base.html:414
 msgid "Drag to crop, scroll to zoom"
 msgstr ""
 
-#: stricknani/templates/base.html:421
+#: stricknani/templates/base.html:420
 msgid "Save Crop"
 msgstr ""
 
@@ -637,6 +638,10 @@ msgstr ""
 
 #: stricknani/templates/auth/login.html:128
 msgid "Already have an account? Sign in"
+msgstr ""
+
+#: stricknani/templates/auth/login.html:137
+msgid "Learn how Stricknani handles your data in the"
 msgstr ""
 
 #: stricknani/templates/errors/401.html:3
