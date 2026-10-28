@@ -461,7 +461,22 @@
         Sentry.init({
             dsn: {{ sentry_frontend_dsn | tojson }},
             environment: {{ sentry_frontend_env | tojson }},
-            tracesSampleRate: {{ sentry_frontend_traces_sample_rate }}
+            tracesSampleRate: {{ sentry_frontend_traces_sample_rate }},
+            // Keep the v10 collection defaults when upgrading to v11.
+            dataCollection: {
+                userInfo: false,
+                cookies: false,
+                httpHeaders: {
+                    request: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+                    response: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] }
+                },
+                httpBodies: [],
+                urlQueryParams: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+                genAI: { inputs: false, outputs: false },
+                databaseQueryData: false,
+                queues: false,
+                graphQL: { document: false, variables: false }
+            }
         });
     </script>
     {% endif %}
