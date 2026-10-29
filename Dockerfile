@@ -1,10 +1,11 @@
-FROM python:3.14-slim
+FROM python:3.15-slim AS build
 
 WORKDIR /app
 
-# `pdftoppm` is used for best-effort PDF attachment thumbnails.
+# scikit-image 0.26.0 has no CPython 3.15 wheel yet, so install its stable
+# source distribution with a compiler in this disposable build stage.
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends poppler-utils \
+  && apt-get install -y --no-install-recommends build-essential \
   && rm -rf /var/lib/apt/lists/*
 
 # Install uv
@@ -22,6 +23,19 @@ RUN uv pip install --system -e .
 # Compile gettext catalogs (.mo) at build time so they ship in the image and
 # are never lazily compiled into a read-only rootfs at request time.
 RUN python -m babel.messages.frontend compile -d stricknani/locales
+
+FROM python:3.15-slim
+
+WORKDIR /app
+
+# `pdftoppm` is used for best-effort PDF attachment thumbnails.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends poppler-utils \
+  && rm -rf /var/lib/apt/lists/*
+
+# Reuse the matching Python install and application built in the first stage.
+COPY --from=build /usr/local /usr/local
+COPY --from=build /app /app
 
 # Create media directory
 RUN mkdir -p /app/media
