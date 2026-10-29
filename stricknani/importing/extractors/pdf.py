@@ -19,14 +19,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger("stricknani.imports")
 
 # Try to import optional PDF libraries
-PYMUPDF_AVAILABLE = importlib.util.find_spec("fitz") is not None
+PYMUPDF_AVAILABLE = importlib.util.find_spec("pymupdf") is not None
 PYPDF_AVAILABLE = importlib.util.find_spec("pypdf") is not None
 
 
 class PDFExtractor(ContentExtractor):
     """Extract pattern data from PDF files.
 
-    Uses PyMuPDF (fitz) or pypdf to extract text from PDFs.
+    Uses PyMuPDF or pypdf to extract text from PDFs.
     Can also extract images for AI analysis.
     """
 
@@ -104,12 +104,14 @@ class PDFExtractor(ContentExtractor):
             ) from exc
 
     def _extract_with_pymupdf(self, pdf_bytes: bytes) -> str:
-        """Extract text using PyMuPDF (fitz)."""
-        import fitz
+        """Extract text using PyMuPDF."""
+        import pymupdf
 
         text_parts = []
 
-        with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        with pymupdf.open(  # type: ignore[no-untyped-call]
+            stream=pdf_bytes, filetype="pdf"
+        ) as doc:
             for page_num in range(len(doc)):
                 page = doc.load_page(page_num)
                 text = page.get_text()
@@ -155,9 +157,11 @@ class PDFExtractor(ContentExtractor):
         try:
             import hashlib
 
-            import fitz
+            import pymupdf
 
-            with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+            with pymupdf.open(  # type: ignore[no-untyped-call]
+                stream=pdf_bytes, filetype="pdf"
+            ) as doc:
                 # Strategy 1: Extract embedded images
                 for page_num in range(len(doc)):
                     page = doc.load_page(page_num)
@@ -208,13 +212,19 @@ class PDFExtractor(ContentExtractor):
         images = []
 
         try:
-            import fitz
+            import pymupdf
 
-            with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+            with pymupdf.open(  # type: ignore[no-untyped-call]
+                stream=pdf_bytes, filetype="pdf"
+            ) as doc:
                 for page_num in range(min(len(doc), max_pages)):
                     page = doc.load_page(page_num)
                     # Render page to a high-res image (2.0 zoom)
-                    pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+                    pix = page.get_pixmap(
+                        matrix=pymupdf.Matrix(  # type: ignore[no-untyped-call]
+                            2, 2
+                        )
+                    )
                     images.append(pix.tobytes("jpg"))
         except Exception as exc:
             logger.error("Failed to render PDF pages as images: %s", exc)
