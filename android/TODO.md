@@ -41,6 +41,20 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-69: Make local and CI ktfmt agree (stop formatting-only CI failures)
+
+- [ ] Decide how to get one ktfmt on both ends. Findings (2026-10-31): CI's ktfmt step is the shared
+      `pschmitt/android-app-ci` lint workflow, i.e. the Gradle plugin's pinned ktfmt (0.64, plugin
+      0.27.0 - the plugin has no version setting); nixpkgs ships 0.63 and reformats 8 files that
+      CI accepts, so a plain nixpkgs `ktfmt` pre-commit hook would make things worse. No fat ktfmt
+      jar exists on Maven Central, so pinning 0.64 in nix needs a `pkgs.ktfmt` override (mvnHash).
+- [ ] Options: (a) override nixpkgs ktfmt to 0.64 for a root-flake pre-commit hook on `android/**`;
+      (b) switch the shared lint workflow to nix ktfmt (fleet-wide, other repo) and reformat once.
+
+**Why:** direct user request - formatting-only CI failures keep recurring.
+
+Status: **not started**, 2026-10-31.
+
 ## SNA-68: In-app update card for APK installs
 
 - [x] `UpdateChecker` queries GitHub Releases: tagged builds follow the newest stable release
