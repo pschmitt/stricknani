@@ -41,6 +41,18 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-67: Edit existing project and yarn gallery images on web and Android
+
+- [x] Fix malformed dynamically inserted gallery preview markup in the web project and yarn editors
+      so newly uploaded images keep working delete/promote controls.
+- [x] Show already-saved project title/step images and yarn photos in the Android editors, and allow
+      removing them without losing the offline-first mutation queue behavior.
+- [x] Add focused regression coverage for web preview markup and Android image-deletion behavior.
+
+Status: **done** (2026-10-31) - verified by focused web/health tests and remote Android ktfmt, unit
+tests, and lint. The full web check still reports an unrelated privacy-policy assertion and existing
+Biome warnings in untouched static JavaScript.
+
 ## SNA-59: Scheduled backups default to unencrypted and silently include the live API PAT
 
 - [x] Enabling scheduled/automatic backup (Settings -> Backup -> toggle) only asked for a

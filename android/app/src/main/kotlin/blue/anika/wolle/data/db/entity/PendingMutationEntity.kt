@@ -18,7 +18,9 @@ object MutationOperation {
     const val PROJECT_STEP_IMAGE_UPLOAD = "project_step_image_upload"
     const val PROJECT_ATTACHMENT_UPLOAD = "project_attachment_upload"
     const val PROJECT_ATTACHMENT_DELETE = "project_attachment_delete"
+    const val PROJECT_IMAGE_DELETE = "project_image_delete"
     const val YARN_PHOTO_UPLOAD = "yarn_photo_upload"
+    const val YARN_PHOTO_DELETE = "yarn_photo_delete"
 }
 
 /**
@@ -27,7 +29,7 @@ object MutationOperation {
  * for a still-unsynced [MutationOperation.CREATE] (see `ProjectRepository.createProject`/
  * `YarnRepository.createYarn`), or the real server id otherwise. [payloadJson] is the write request
  * DTO (`ProjectWriteRequest`/`YarnWriteRequest`), a serialized `PendingUpload` for a media upload,
- * or a serialized `PendingAttachmentDelete` for an attachment delete, verbatim JSON - `null` for a
+ * or a serialized deletion payload for an image/attachment delete, verbatim JSON - `null` for a
  * regular entity delete.
  */
 @Entity(tableName = "pending_mutations")

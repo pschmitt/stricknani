@@ -14,6 +14,7 @@ import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
+import blue.anika.wolle.data.uploads.PendingGalleryImageDelete
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.data.util.DateTimeUtils
@@ -186,6 +187,27 @@ constructor(
         }
     }
 
+    /** Removes a photo from the local detail immediately and queues its server deletion. */
+    suspend fun queuePhotoDelete(yarnId: Int, photoId: Int) {
+        database.withTransaction {
+            yarnDao.getById(yarnId)?.let { existing ->
+                val current = json.decodeFromString<YarnDto>(existing.detailJson)
+                val updated = removeYarnPhoto(current, photoId)
+                if (updated != current) yarnDao.upsertAll(listOf(updated.toEntity(json)))
+            }
+            pendingMutationDao.deleteResolvedConflicts(MutationEntityType.YARN, yarnId)
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.YARN,
+                    operation = MutationOperation.YARN_PHOTO_DELETE,
+                    localId = yarnId,
+                    payloadJson = json.encodeToString(PendingGalleryImageDelete(photoId)),
+                    createdAt = System.currentTimeMillis(),
+                )
+            )
+        }
+    }
+
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */
     suspend fun replayCreate(tempId: Int, request: YarnWriteRequest): Int {
         val created = yarnsApi.createYarn(request)
@@ -228,6 +250,27 @@ constructor(
         pendingUploadStore.delete(upload)
         runCatching { refreshOne(id) }
     }
+
+    /** Photo deletion is idempotent: a 404 means the photo is already gone. */
+    suspend fun replayPhotoDelete(id: Int, photoId: Int) {
+        removePhotoFromLocalDetail(id, photoId)
+        try {
+            yarnsApi.deletePhoto(yarnId = id, photoId = photoId)
+        } catch (e: HttpException) {
+            if (e.code() != 404) throw e
+        }
+        runCatching { refreshOne(id) }
+    }
+
+    private suspend fun removePhotoFromLocalDetail(yarnId: Int, photoId: Int) {
+        database.withTransaction {
+            yarnDao.getById(yarnId)?.let { existing ->
+                val current = json.decodeFromString<YarnDto>(existing.detailJson)
+                val updated = removeYarnPhoto(current, photoId)
+                if (updated != current) yarnDao.upsertAll(listOf(updated.toEntity(json)))
+            }
+        }
+    }
 }
 
 /**
@@ -246,6 +289,9 @@ private fun YarnDto.toEntity(json: Json): YarnEntity =
         previewUrl = (photos.firstOrNull { it.isPrimary } ?: photos.firstOrNull())?.thumbnailUrl,
         detailJson = json.encodeToString(this),
     )
+
+internal fun removeYarnPhoto(yarn: YarnDto, photoId: Int): YarnDto =
+    yarn.copy(photos = yarn.photos.filterNot { it.id == photoId })
 
 private fun nowIso(): String = OffsetDateTime.now(ZoneOffset.UTC).toString()
 

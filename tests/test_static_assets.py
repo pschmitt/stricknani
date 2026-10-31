@@ -141,6 +141,18 @@ def test_remaining_material_surfaces_use_semantic_components() -> None:
             r'class="[^\"]*\s(?:btn|badge|card)(?:\s|[\"]|$)', contents
         )
 
+    project_form = (template_root / "projects/form.js").read_text(encoding="utf-8")
+    yarn_form = (template_root / "yarn/form.js").read_text(encoding="utf-8")
+    assert re.search(
+        r'<button[^>]*class="md3-photo-action md3-photo-action--delete">\s*<span',
+        project_form,
+    )
+    assert re.search(
+        r'<div id="photo-card-\$\{photo\.id\}"\s+'
+        r'class="md3-photo-tile md3-photo-tile--aspect">',
+        yarn_form,
+    )
+
 
 def test_logo_animation_is_accessible() -> None:
     """The logo has a visible affordance without forcing motion on users."""

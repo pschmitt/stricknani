@@ -48,4 +48,10 @@ interface YarnsApi {
         @Path("yarnId") yarnId: Int,
         @Part file: MultipartBody.Part,
     ): YarnPhotoDto
+
+    @DELETE("api/v1/yarns/{yarnId}/photos/{photoId}")
+    suspend fun deletePhoto(
+        @Path("yarnId") yarnId: Int,
+        @Path("photoId") photoId: Int,
+    )
 }

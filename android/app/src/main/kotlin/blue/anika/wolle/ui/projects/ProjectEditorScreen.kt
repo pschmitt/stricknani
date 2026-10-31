@@ -368,6 +368,30 @@ fun ProjectEditorScreen(
                     ) {
                         Text(stringResource(R.string.project_editor_add_step_image))
                     }
+                    step.existingImages.forEach { image ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(
+                                model = viewModel.imageUrl(image.thumbnailUrl),
+                                contentDescription = image.altText,
+                                modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop,
+                            )
+                            Text(
+                                image.altText,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f).padding(start = 8.dp),
+                            )
+                            IconButton(
+                                onClick = { viewModel.removeExistingStepImage(index, image.id) }
+                            ) {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription =
+                                        stringResource(R.string.project_editor_remove_image),
+                                )
+                            }
+                        }
+                    }
                     step.images.forEachIndexed { imageIndex, image ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -394,6 +418,30 @@ fun ProjectEditorScreen(
             item {
                 TextButton(onClick = { titleImagePicker.launch("image/*") }) {
                     Text(stringResource(R.string.project_editor_add_title_image))
+                }
+                form.existingTitleImages.forEach { image ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AsyncImage(
+                            model = viewModel.imageUrl(image.thumbnailUrl),
+                            contentDescription = image.altText,
+                            modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop,
+                        )
+                        Text(
+                            image.altText,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f).padding(start = 8.dp),
+                        )
+                        IconButton(
+                            onClick = { viewModel.removeExistingTitleImage(image.id) }
+                        ) {
+                            Icon(
+                                Icons.Filled.Delete,
+                                contentDescription =
+                                    stringResource(R.string.project_editor_remove_image),
+                            )
+                        }
+                    }
                 }
                 form.titleImages.forEachIndexed { index, image ->
                     Row(verticalAlignment = Alignment.CenterVertically) {

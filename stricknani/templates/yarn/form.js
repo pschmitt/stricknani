@@ -435,7 +435,7 @@ function addYarnPhotoToGallery(photoData) {
 function createYarnPhotoPreviewHTML(photo) {
 	return `
         <div id="photo-card-${photo.id}"
-	            class="md3-photo-tile md3-photo-tile--aspect"
+	            class="md3-photo-tile md3-photo-tile--aspect">
             <a href="${photo.full_url}" data-pswp-width="${photo.width || 1200}"
                 data-pswp-height="${photo.height || 1200}" data-pswp-caption="${photo.alt_text}"
                 data-pswp-promote="true" data-pswp-delete="true"

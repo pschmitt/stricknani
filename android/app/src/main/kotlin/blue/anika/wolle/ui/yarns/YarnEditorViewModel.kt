@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.YarnPhotoDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
+import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
@@ -35,7 +37,9 @@ data class YarnEditorFormState(
     val notes: String = "",
     val link: String = "",
     val isAiEnhanced: Boolean = false,
+    val existingPhotos: List<YarnPhotoDto> = emptyList(),
     val photos: List<PendingUpload> = emptyList(),
+    val removedPhotoIds: List<Int> = emptyList(),
 )
 
 @HiltViewModel
@@ -44,6 +48,7 @@ class YarnEditorViewModel
 constructor(
     savedStateHandle: SavedStateHandle,
     private val yarnRepository: YarnRepository,
+    private val mediaUrlResolver: MediaUrlResolver,
     private val syncScheduler: SyncScheduler,
     private val mutationFeedback: MutationFeedback,
     private val pendingUploadStore: PendingUploadStore,
@@ -86,6 +91,7 @@ constructor(
                             notes = detail.notes ?: "",
                             link = detail.link ?: "",
                             isAiEnhanced = detail.isAiEnhanced,
+                            existingPhotos = detail.photos,
                         )
                 }
             }
@@ -95,6 +101,8 @@ constructor(
     fun updateForm(transform: (YarnEditorFormState) -> YarnEditorFormState) {
         _form.value = transform(_form.value)
     }
+
+    fun imageUrl(path: String): String? = mediaUrlResolver.resolve(path)
 
     fun addPhotos(uris: List<Uri>) {
         viewModelScope.launch {
@@ -112,6 +120,15 @@ constructor(
             it.copy(photos = it.photos.filterIndexed { position, _ -> position != index })
         }
         viewModelScope.launch { pendingUploadStore.delete(upload) }
+    }
+
+    fun removeExistingPhoto(photoId: Int) {
+        updateForm {
+            it.copy(
+                existingPhotos = it.existingPhotos.filterNot { photo -> photo.id == photoId },
+                removedPhotoIds = it.removedPhotoIds + photoId,
+            )
+        }
     }
 
     fun save() {
@@ -147,6 +164,9 @@ constructor(
                     } else {
                         yarnRepository.createYarn(request)
                     }
+                current.removedPhotoIds.distinct().forEach { photoId ->
+                    yarnRepository.queuePhotoDelete(yarnId, photoId)
+                }
                 current.photos.forEach { upload -> yarnRepository.queuePhotoUpload(yarnId, upload) }
                 syncScheduler.replayThenSyncNow()
                 mutationFeedback.show(

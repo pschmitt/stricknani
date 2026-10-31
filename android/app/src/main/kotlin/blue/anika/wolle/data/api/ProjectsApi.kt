@@ -83,4 +83,10 @@ interface ProjectsApi {
         @Path("projectId") projectId: Int,
         @Path("attachmentId") attachmentId: Int,
     )
+
+    @DELETE("api/v1/projects/{projectId}/images/{imageId}")
+    suspend fun deleteImage(
+        @Path("projectId") projectId: Int,
+        @Path("imageId") imageId: Int,
+    )
 }

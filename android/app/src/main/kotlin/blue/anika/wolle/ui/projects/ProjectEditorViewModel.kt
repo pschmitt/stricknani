@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
 import blue.anika.wolle.data.db.entity.CategoryEntity
@@ -42,7 +43,9 @@ data class ProjectEditorFormState(
     val isAiEnhanced: Boolean = false,
     val selectedYarnIds: Set<Int> = emptySet(),
     val steps: List<ProjectEditorStep> = emptyList(),
+    val existingTitleImages: List<ImageDto> = emptyList(),
     val titleImages: List<PendingUpload> = emptyList(),
+    val removedImageIds: List<Int> = emptyList(),
     val attachments: List<PendingUpload> = emptyList(),
 )
 
@@ -50,6 +53,7 @@ data class ProjectEditorStep(
     val id: Int? = null,
     val title: String = "",
     val description: String = "",
+    val existingImages: List<ImageDto> = emptyList(),
     val images: List<PendingUpload> = emptyList(),
 )
 
@@ -128,7 +132,13 @@ constructor(
                                         id = step.id,
                                         title = step.title,
                                         description = step.description ?: "",
+                                        existingImages =
+                                            detail.images.filter { image -> image.stepId == step.id },
                                     )
+                                },
+                            existingTitleImages =
+                                detail.images.filter { image ->
+                                    image.stepId == null && !image.isStitchSample
                                 },
                         )
                 }
@@ -166,6 +176,8 @@ constructor(
         updateForm { it.copy(steps = it.steps + ProjectEditorStep()) }
     }
 
+    fun imageUrl(path: String): String? = mediaUrlResolver.resolve(path)
+
     fun removeStep(index: Int) {
         updateForm { it.copy(steps = it.steps.filterIndexed { position, _ -> position != index }) }
     }
@@ -190,6 +202,15 @@ constructor(
             it.copy(titleImages = it.titleImages.filterIndexed { position, _ -> position != index })
         }
         viewModelScope.launch { pendingUploadStore.delete(upload) }
+    }
+
+    fun removeExistingTitleImage(imageId: Int) {
+        updateForm {
+            it.copy(
+                existingTitleImages = it.existingTitleImages.filterNot { image -> image.id == imageId },
+                removedImageIds = it.removedImageIds + imageId,
+            )
+        }
     }
 
     fun addAttachment(uri: Uri) {
@@ -224,6 +245,13 @@ constructor(
             it.copy(images = it.images.filterIndexed { position, _ -> position != imageIndex })
         }
         viewModelScope.launch { pendingUploadStore.delete(upload) }
+    }
+
+    fun removeExistingStepImage(stepIndex: Int, imageId: Int) {
+        updateStep(stepIndex) { step ->
+            step.copy(existingImages = step.existingImages.filterNot { image -> image.id == imageId })
+        }
+        updateForm { it.copy(removedImageIds = it.removedImageIds + imageId) }
     }
 
     fun save() {
@@ -266,6 +294,9 @@ constructor(
                     } else {
                         projectRepository.createProject(request)
                     }
+                current.removedImageIds.distinct().forEach { imageId ->
+                    projectRepository.queueImageDelete(projectId, imageId)
+                }
                 current.titleImages.forEach { upload ->
                     projectRepository.queueTitleImageUpload(projectId, upload)
                 }

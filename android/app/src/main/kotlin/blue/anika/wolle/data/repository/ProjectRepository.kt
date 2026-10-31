@@ -16,6 +16,7 @@ import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.uploads.PendingAttachmentDelete
+import blue.anika.wolle.data.uploads.PendingGalleryImageDelete
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.data.util.DateTimeUtils
@@ -260,6 +261,27 @@ constructor(
         }
     }
 
+    /** Removes a gallery image from the local detail immediately and queues its server deletion. */
+    suspend fun queueImageDelete(projectId: Int, imageId: Int) {
+        database.withTransaction {
+            projectDao.getById(projectId)?.let { existing ->
+                val current = json.decodeFromString<ProjectDto>(existing.detailJson)
+                val updated = removeProjectImage(current, imageId)
+                if (updated != current) projectDao.upsertAll(listOf(updated.toEntity(json)))
+            }
+            pendingMutationDao.deleteResolvedConflicts(MutationEntityType.PROJECT, projectId)
+            pendingMutationDao.insert(
+                PendingMutationEntity(
+                    entityType = MutationEntityType.PROJECT,
+                    operation = MutationOperation.PROJECT_IMAGE_DELETE,
+                    localId = projectId,
+                    payloadJson = json.encodeToString(PendingGalleryImageDelete(imageId)),
+                    createdAt = System.currentTimeMillis(),
+                )
+            )
+        }
+    }
+
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */
     suspend fun replayCreate(tempId: Int, request: ProjectWriteRequest): Int {
         val created = projectsApi.createProject(request)
@@ -357,6 +379,27 @@ constructor(
         }
         runCatching { refreshOne(id) }
     }
+
+    /** Image deletion is idempotent: a 404 means it is already gone. */
+    suspend fun replayImageDelete(id: Int, imageId: Int) {
+        removeImageFromLocalDetail(id, imageId)
+        try {
+            projectsApi.deleteImage(projectId = id, imageId = imageId)
+        } catch (e: HttpException) {
+            if (e.code() != 404) throw e
+        }
+        runCatching { refreshOne(id) }
+    }
+
+    private suspend fun removeImageFromLocalDetail(projectId: Int, imageId: Int) {
+        database.withTransaction {
+            projectDao.getById(projectId)?.let { existing ->
+                val current = json.decodeFromString<ProjectDto>(existing.detailJson)
+                val updated = removeProjectImage(current, imageId)
+                if (updated != current) projectDao.upsertAll(listOf(updated.toEntity(json)))
+            }
+        }
+    }
 }
 
 /**
@@ -377,6 +420,9 @@ private fun ProjectDto.toEntity(json: Json): ProjectEntity =
 
 internal fun removeProjectAttachment(project: ProjectDto, attachmentId: Int): ProjectDto =
     project.copy(attachments = project.attachments.filterNot { it.id == attachmentId })
+
+internal fun removeProjectImage(project: ProjectDto, imageId: Int): ProjectDto =
+    project.copy(images = project.images.filterNot { it.id == imageId })
 
 private fun nowIso(): String = OffsetDateTime.now(ZoneOffset.UTC).toString()
 

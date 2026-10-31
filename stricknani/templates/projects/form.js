@@ -1069,7 +1069,7 @@ function createImagePreviewHTML(imageData, options = {}) {
 								showDelete
 									? `
 	            <button type="button" data-call="deleteImage" data-call-args='[${imageData.id}]'
-		                class="md3-photo-action md3-photo-action--delete"
+		                class="md3-photo-action md3-photo-action--delete">
 	                <span class="mdi mdi-delete"></span>
 	            </button>
 	            `

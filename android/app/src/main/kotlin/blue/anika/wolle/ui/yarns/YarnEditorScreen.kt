@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -36,6 +38,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -46,6 +51,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.EditorSectionCard
+import coil3.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -279,6 +285,28 @@ fun YarnEditorScreen(
                     Column {
                         TextButton(onClick = { photoPicker.launch("image/*") }) {
                             Text(stringResource(R.string.yarn_editor_add_photo))
+                        }
+                        form.existingPhotos.forEach { photo ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                AsyncImage(
+                                    model = viewModel.imageUrl(photo.thumbnailUrl),
+                                    contentDescription = photo.altText,
+                                    modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop,
+                                )
+                                Text(
+                                    photo.altText,
+                                    modifier = Modifier.weight(1f).padding(start = 8.dp),
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                IconButton(onClick = { viewModel.removeExistingPhoto(photo.id) }) {
+                                    Icon(
+                                        Icons.Filled.Delete,
+                                        contentDescription =
+                                            stringResource(R.string.yarn_editor_remove_photo),
+                                    )
+                                }
+                            }
                         }
                         form.photos.forEachIndexed { index, photo ->
                             Row(
