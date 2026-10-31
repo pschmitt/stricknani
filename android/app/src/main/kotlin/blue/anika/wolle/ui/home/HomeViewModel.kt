@@ -24,6 +24,7 @@ import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -129,20 +130,24 @@ constructor(
 
     init {
         refresh(trigger = RefreshTrigger.Automatic)
-        checkForUpdate()
     }
+
+    private var updateCheckJob: Job? = null
 
     private fun checkForUpdate() {
         // Off in the Play bundle (see app/build.gradle.kts): Play installs update through Play.
         if (!BuildConfig.SELF_UPDATE_ENABLED) return
-        viewModelScope.launch {
-            foundUpdate.value =
-                updateChecker.check(
+        if (updateCheckJob?.isActive == true) return
+        updateCheckJob = viewModelScope.launch {
+            // A failed or offline check yields null - keep any update already found.
+            updateChecker
+                .check(
                     gitRevision = BuildConfig.GIT_REVISION,
                     versionName = BuildConfig.VERSION_NAME,
                     isDebugBuild = BuildConfig.DEBUG,
                     supportedAbis = Build.SUPPORTED_ABIS.toList(),
                 )
+                ?.let { foundUpdate.value = it }
         }
     }
 
@@ -154,6 +159,7 @@ constructor(
     fun previewUrl(path: String?): String? = mediaUrlResolver.resolve(path)
 
     fun refresh(trigger: RefreshTrigger = RefreshTrigger.UserInitiated) {
+        checkForUpdate()
         refreshController.refresh(trigger = trigger) {
             categoryRepository.sync()
             val projectsChanged = projectRepository.sync()
