@@ -28,6 +28,8 @@
             inherit fastapi-csrf-protect;
           };
 
+          stricknaniRust = pkgs.callPackage ./nix/rust-package.nix { };
+
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
             hooks = {
@@ -53,6 +55,20 @@
           packages = {
             default = stricknani;
             inherit stricknani;
+            stricknani-rust = stricknaniRust;
+
+            stricknani-rust-docker = pkgs.dockerTools.buildLayeredImage {
+              name = "ghcr.io/pschmitt/stricknani-rust-candidate";
+              tag = "latest";
+              contents = [ stricknaniRust ];
+              config = {
+                Cmd = [ "${stricknaniRust}/bin/stricknani-server" ];
+                ExposedPorts = {
+                  "7674/tcp" = { };
+                };
+                Env = [ "BIND_HOST=0.0.0.0" ];
+              };
+            };
 
             stricknani-docker = pkgs.dockerTools.buildLayeredImage {
               name = "ghcr.io/pschmitt/stricknani";
@@ -69,42 +85,62 @@
             };
           };
 
-          # Just ktfmt, from this flake's nixpkgs: what the android lint workflow runs
-          # (`nix develop .#ktfmt`) - the same binary as the pre-commit hook above.
-          devShells.ktfmt = pkgs.mkShell { packages = [ pkgs.ktfmt ]; };
+          apps.stricknani-rust = {
+            type = "app";
+            program = "${stricknaniRust}/bin/stricknani-server";
+            meta.description = "Run the Rust Stricknani candidate server";
+          };
 
-          devShells.default = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              python
-              uv
-              just
-              ruff
-              mypy
-              statix
-              ktfmt
-              poppler-utils
-              tesseract
-              vendir
-              biome
-              # Only needed to regenerate stricknani/static/vendor-tiptap/
-              # (`just vendor-tiptap`) when bumping TipTap's pinned version;
-              # the committed bundle is what actually ships at runtime.
-              nodejs
-            ];
+          # These shells keep Android lint, Rust work, and the existing app
+          # development environments separate.
+          devShells = {
+            # `nix develop .#ktfmt` supplies the binary used by Android lint.
+            ktfmt = pkgs.mkShell { packages = [ pkgs.ktfmt ]; };
 
-            shellHook = ''
-              ${pre-commit-check.shellHook}
+            rust = pkgs.mkShell {
+              packages = with pkgs; [
+                cargo
+                rustc
+                rustfmt
+                clippy
+                rust-analyzer
+              ];
+            };
 
-              # Ensure prebuilt binary wheels (greenlet, numpy, ...) in the uv
-              # venv can load libstdc++.so.6 from the Nix C++ stdlib.
-              export LD_LIBRARY_PATH="${
-                pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]
-              }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-            '';
+            default = pkgs.mkShell {
+              buildInputs = with pkgs; [
+                python
+                uv
+                just
+                ruff
+                mypy
+                statix
+                ktfmt
+                poppler-utils
+                tesseract
+                vendir
+                biome
+                # Only needed to regenerate stricknani/static/vendor-tiptap/
+                # (`just vendor-tiptap`) when bumping TipTap's pinned version;
+                # the committed bundle is what actually ships at runtime.
+                nodejs
+              ];
+
+              shellHook = ''
+                ${pre-commit-check.shellHook}
+
+                # Ensure prebuilt binary wheels (greenlet, numpy, ...) in the uv
+                # venv can load libstdc++.so.6 from the Nix C++ stdlib.
+                export LD_LIBRARY_PATH="${
+                  pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]
+                }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+              '';
+            };
           };
 
           checks = {
             build = stricknani;
+            rust-build = stricknaniRust;
             inherit pre-commit-check;
           };
         }

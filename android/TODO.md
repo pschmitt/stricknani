@@ -41,6 +41,26 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-70: Exercise the Android v1 APIs against the Rust candidate
+
+- [x] Add an opt-in JVM integration test using the app's Retrofit APIs and Kotlin serialization;
+      mint its PAT from an isolated seeded fixture account without printing credentials.
+- [x] Cover categories, yarns, projects, favorites, sync, multipart image/attachment/photo uploads,
+      and bearer-protected media reads; clean up created domain records after the test.
+- [x] Run the focused test against the disposable Rust server with fixture URL and credentials
+      supplied through `STRICKNANI_RUST_TEST_URL`, `STRICKNANI_RUST_TEST_EMAIL`, and
+      `STRICKNANI_RUST_TEST_PASSWORD`.
+
+**Why:** verify the actual Kotlin API clients and media authorization against Rust v1 before
+accepting the candidate backend.
+**How to apply:** from `android/`, run
+`./gradlew :app:testDebugUnitTest --tests blue.anika.wolle.data.api.RustBackendContractTest`
+with those three environment variables set. With no fixture environment, the test is skipped.
+Run only against disposable seeded state; the test's password-login flow creates a PAT in that
+fixture database.
+
+Status: **mostly done**, 2026-11-01 - focused JVM contract passed against the real disposable Rust service; CI formatting/checks remain pending.
+
 ## SNA-69: Make local and CI ktfmt agree (stop formatting-only CI failures)
 
 - [x] Shared `pschmitt/android-app-ci` is nix-only for ktfmt: the lint workflow checks with the

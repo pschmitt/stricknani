@@ -1,0 +1,253 @@
+use std::env;
+use std::error::Error;
+use std::fmt;
+use std::net::{IpAddr, SocketAddr};
+use std::path::PathBuf;
+
+const DEFAULT_BIND_HOST: &str = "127.0.0.1";
+const DEFAULT_BIND_PORT: u16 = 7674;
+
+pub struct Config {
+    pub database_url: String,
+    pub media_root: PathBuf,
+    pub bind_address: SocketAddr,
+    pub static_root: PathBuf,
+}
+
+impl fmt::Debug for Config {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("Config")
+            .field("database_url", &"[REDACTED]")
+            .field("media_root", &self.media_root)
+            .field("bind_address", &self.bind_address)
+            .field("static_root", &self.static_root)
+            .finish()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ConfigError(&'static str);
+
+impl fmt::Display for ConfigError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.0)
+    }
+}
+
+impl Error for ConfigError {}
+
+impl Config {
+    pub fn from_env() -> Result<Self, ConfigError> {
+        Self::from_lookup(|key| env::var(key).ok())
+    }
+
+    fn from_lookup(mut get: impl FnMut(&str) -> Option<String>) -> Result<Self, ConfigError> {
+        let database_url = get("RUST_DATABASE_URL")
+            .filter(|value| !value.trim().is_empty())
+            .ok_or(ConfigError("RUST_DATABASE_URL must be set"))?;
+        if !database_url.starts_with("sqlite:") {
+            return Err(ConfigError("RUST_DATABASE_URL must use SQLite"));
+        }
+
+        let media_root = get("RUST_MEDIA_ROOT")
+            .filter(|value| !value.trim().is_empty())
+            .map(PathBuf::from)
+            .ok_or(ConfigError("RUST_MEDIA_ROOT must be set"))?;
+        if !media_root.is_absolute() {
+            return Err(ConfigError("RUST_MEDIA_ROOT must be an absolute path"));
+        }
+
+        if let Some(legacy_url) = get("DATABASE_URL") {
+            let legacy_url = legacy_url.replace("sqlite+aiosqlite:", "sqlite:");
+            if let (Some(rust_path), Some(legacy_path)) =
+                (database_path(&database_url), database_path(&legacy_url))
+                && rust_path == legacy_path
+            {
+                return Err(ConfigError("Rust and Python database paths must differ"));
+            }
+        }
+        if let Some(legacy_media) = get("MEDIA_ROOT")
+            && resolved_path(&media_root) == resolved_path(std::path::Path::new(&legacy_media))
+        {
+            return Err(ConfigError("Rust and Python media paths must differ"));
+        }
+
+        let bind_host = get("BIND_HOST").unwrap_or_else(|| DEFAULT_BIND_HOST.to_owned());
+        let bind_ip = bind_host
+            .parse::<IpAddr>()
+            .map_err(|_| ConfigError("BIND_HOST must be an IP address"))?;
+
+        let port = get("BIND_PORT")
+            .or_else(|| get("PORT"))
+            .map(|value| {
+                value
+                    .parse::<u16>()
+                    .map_err(|_| ConfigError("BIND_PORT or PORT must be a valid port"))
+            })
+            .transpose()?
+            .unwrap_or(DEFAULT_BIND_PORT);
+
+        let static_root = get("STATIC_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or_else(default_static_root);
+
+        Ok(Self {
+            database_url,
+            media_root,
+            bind_address: SocketAddr::new(bind_ip, port),
+            static_root,
+        })
+    }
+}
+
+fn database_path(url: &str) -> Option<PathBuf> {
+    use std::str::FromStr;
+    let options = sqlx::sqlite::SqliteConnectOptions::from_str(url).ok()?;
+    Some(resolved_path(options.get_filename()))
+}
+
+fn resolved_path(path: &std::path::Path) -> PathBuf {
+    if let Ok(path) = path.canonicalize() {
+        return path;
+    }
+    if let (Some(parent), Some(name)) = (path.parent(), path.file_name())
+        && let Ok(parent) = parent.canonicalize()
+    {
+        return parent.join(name);
+    }
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir().unwrap_or_default().join(path)
+    };
+    let mut result = PathBuf::new();
+    for component in absolute.components() {
+        match component {
+            std::path::Component::ParentDir => {
+                result.pop();
+            }
+            std::path::Component::CurDir => {}
+            part => result.push(part.as_os_str()),
+        }
+    }
+    result
+}
+
+fn default_static_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static")
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::net::SocketAddr;
+    use std::path::PathBuf;
+
+    use super::Config;
+
+    fn parse(values: &[(&str, &str)]) -> Result<Config, super::ConfigError> {
+        let values: HashMap<_, _> = values
+            .iter()
+            .map(|(key, value)| ((*key).to_owned(), (*value).to_owned()))
+            .collect();
+        Config::from_lookup(|key| values.get(key).cloned())
+    }
+
+    #[test]
+    fn requires_isolated_rust_database_and_media_settings() {
+        assert!(parse(&[]).is_err());
+        assert!(
+            parse(&[
+                ("DATABASE_URL", "sqlite:production.db"),
+                ("MEDIA_ROOT", "/media")
+            ])
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_non_sqlite_database_urls() {
+        let error = parse(&[
+            ("RUST_DATABASE_URL", "postgres://user:secret@host/db"),
+            ("RUST_MEDIA_ROOT", "/media"),
+        ])
+        .expect_err("non-SQLite databases must be rejected");
+        assert_eq!(error.to_string(), "RUST_DATABASE_URL must use SQLite");
+        assert!(!error.to_string().contains("secret"));
+    }
+
+    #[test]
+    fn requires_an_absolute_media_root() {
+        assert!(
+            parse(&[
+                ("RUST_DATABASE_URL", "sqlite:/tmp/test.db"),
+                ("RUST_MEDIA_ROOT", "media")
+            ])
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn parses_bind_host_and_uses_bind_port_before_port() {
+        let config = parse(&[
+            ("RUST_DATABASE_URL", "sqlite:/tmp/test.db"),
+            ("RUST_MEDIA_ROOT", "/tmp/media"),
+            ("BIND_HOST", "::1"),
+            ("BIND_PORT", "8080"),
+            ("PORT", "9090"),
+        ])
+        .expect("valid configuration");
+        assert_eq!(
+            config.bind_address,
+            SocketAddr::from(([0, 0, 0, 0, 0, 0, 0, 1], 8080))
+        );
+    }
+
+    #[test]
+    fn falls_back_to_port_then_default_and_keeps_static_default() {
+        let config = parse(&[
+            ("RUST_DATABASE_URL", "sqlite:/tmp/test.db"),
+            ("RUST_MEDIA_ROOT", "/tmp/media"),
+            ("PORT", "9001"),
+        ])
+        .expect("valid configuration");
+        assert_eq!(
+            config.bind_address,
+            "127.0.0.1:9001".parse().expect("socket address")
+        );
+        assert_eq!(
+            config.static_root,
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static")
+        );
+
+        let config = parse(&[
+            ("RUST_DATABASE_URL", "sqlite:/tmp/test.db"),
+            ("RUST_MEDIA_ROOT", "/tmp/media"),
+        ])
+        .expect("valid configuration");
+        assert_eq!(
+            config.bind_address,
+            "127.0.0.1:7674".parse().expect("socket address")
+        );
+    }
+    #[test]
+    fn refuses_explicit_shared_database_or_media_paths() {
+        assert!(
+            parse(&[
+                ("RUST_DATABASE_URL", "sqlite:///tmp/./shared.db"),
+                ("DATABASE_URL", "sqlite:/tmp/shared.db"),
+                ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+            ])
+            .is_err()
+        );
+        assert!(
+            parse(&[
+                ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
+                ("RUST_MEDIA_ROOT", "/tmp/shared-media"),
+                ("MEDIA_ROOT", "/tmp/./shared-media"),
+            ])
+            .is_err()
+        );
+    }
+}

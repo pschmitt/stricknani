@@ -2,9 +2,10 @@ name: Nix Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, rust ]
     paths:
       - "stricknani/**"
+      - "rust/**"
       - "nix/**"
       - "flake.nix"
       - "flake.lock"
@@ -17,6 +18,7 @@ on:
     branches: [ main ]
     paths:
       - "stricknani/**"
+      - "rust/**"
       - "nix/**"
       - "flake.nix"
       - "flake.lock"
@@ -48,3 +50,43 @@ jobs:
 
       - name: Build Nix container
         run: just build-container
+
+      - name: Build Rust candidate image
+        run: nix build '.#stricknani-rust-docker' --out-link result-rust-image
+
+      - name: Verify Rust candidate image
+        run: |
+          set -Eeuo pipefail
+
+          image_name="ghcr.io/pschmitt/stricknani-rust-candidate:latest"
+          container_name="stricknani-rust-candidate-test"
+          health_url="http://127.0.0.1:7674/healthz"
+
+          cleanup() {
+            docker rm --force "$container_name" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker load < result-rust-image
+          docker run --detach --publish 7674:7674 --name "$container_name" \
+            --env RUST_DATABASE_URL=sqlite::memory: \
+            --env RUST_MEDIA_ROOT=/tmp/stricknani-rust-media \
+            "$image_name"
+
+          deadline=$((SECONDS + 60))
+          while (( SECONDS < deadline )); do
+            if curl --fail --silent --show-error "$health_url"; then
+              exit 0
+            fi
+
+            if ! docker container inspect "$container_name" >/dev/null 2>&1; then
+              printf '%s\n' 'Rust candidate container exited before becoming ready.' >&2
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          printf 'Timed out waiting for %s after 60 seconds.\n' "$health_url" >&2
+          docker logs "$container_name" >&2 || true
+          exit 1

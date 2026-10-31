@@ -54,7 +54,16 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T119 | P1 | todo | rust-port | refactor | Replace the Python server with a standalone Rust application while preserving web/API behavior, Android compatibility, and existing data; follow `REWRITE.md` |
+| T119 | P1 | wip (PID: 536119, AGENT: codex:stricknani-rust-port-t119) | rust-port | refactor | Rebuild Stricknani as a Rust-first application with Android integration; follow `REWRITE.md` |
+| T119.1 | P1 | done | rust-port | feat | Rust service foundation and gauge workflow; Askama page, health/static routes, and candidate Nix package/image |
+| T119.2 | P1 | done | rust-port/data | feat | Design fresh Rust schema/migrations and implement authentication, accounts, sessions, and configuration |
+| T119.3 | P1 | wip | rust-port/api | feat | Implement initial `/api/v1/` project, yarn, category, upload, and media contract |
+| T119.4 | P1 | wip | rust-port/sync | feat | Implement v1 pagination/delta sync and verify offline mutation semantics with the Android client |
+| T119.5 | P1 | wip | rust-port/web | feat | Implement core browser account, project, yarn, category, favorite, steps, and media workflows with a replaceable presentation layer |
+| T119.6 | P1 | todo | rust-port/product | feat | Port imports, administrative/CLI operations, security controls, background work, translations, and PWA capabilities selected by inventory |
+| T119.7 | P1 | todo | rust-port/migration | feat | Build and rehearse a one-time importer using separate copies of production database and media |
+| T119.8 | P1 | todo | rust-port/build | refactor | Switch final Nix package/app/check/dev-shell, deployment module, and container workflow to the complete Python-free Rust runtime |
+| T119.9 | P1 | todo | rust-port/acceptance | test | Run full Rust/Android/Nix/container acceptance, isolated candidate validation, and document operational rollback/cutover readiness |
 | T39 | P0 | done | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
 | T41 | P1 | done | ux | bug | Fix remaining print layout issues (Wayback buttons, footer, spacing) |
 | T38 | P2 | done | ux | refactor | Improve print layout to save space and show only relevant content |
@@ -2003,14 +2012,105 @@ Execution-oriented backlog for Stricknani.
   triggered it; kept monitoring via Sentry (already integrated) rather than chasing a
   once-in-a-week Heisenbug further.
 
-### T119: Replace the Python server with a Rust application
+### T119: Rebuild Stricknani as a Rust-first application
 
 - **Area**: rust-port
 - **Priority**: P1
-- **Status**: todo
+- **Status**: wip (PID: 536119, AGENT: codex:stricknani-rust-port-t119)
 - **Category**: refactor
 - **Brief**: Follow [`REWRITE.md`](REWRITE.md) and the `port-to-rust`, `port-from-python`, `rust-testing`, and `rust-code-review` skills.
-- **Scope**: Replace the Python web server/backend with a standalone Rust service behind the existing HTTP boundary. Preserve server-rendered HTMX pages, the `/api/v1/` contract used by the Kotlin Android app, database meaning, media, CLI, configuration, and Nix/container packaging. Keep the Android client and product/UI redesign out of scope.
-- **Execution**: Inventory and characterize current behavior first; port in small slices while keeping Python available for comparison; prove parity with isolated databases and media directories; remove Python from the runtime only after parity. Read the current source and tests as the authority when this summary is incomplete.
-- **Safety**: Do not use production data for tests, run competing migration systems, or perform a production cutover. Document database migration ownership and rollback before proposing cutover. Preserve unrelated worktree changes; use an isolated worktree if target files are already modified.
-- **Acceptance**: Meet the contract and acceptance criteria in `REWRITE.md`; preserve the existing Android client compatibility; run the checks required by `AGENTS.md`; report remaining parity gaps. Production cutover is a separate user decision.
+- **Scope**: Rebuild the backend and web application as a standalone, Rust-first service. The repository's Nix flake, package/check/dev-shell outputs, deployment-facing definitions, and container workflow are in scope. Treat Python internals, SQLAlchemy schema, and Alembic history as product evidence rather than constraints. Keep current `/api/v1/` routes and Android-facing request/response semantics as initial Rust v1; test the Kotlin app against it. Put future breaking API changes in `/api/v2/`; use native Rust approaches for internals and data storage. A broader UI redesign is planned separately; structure the presentation layer so it can evolve independently.
+- **Execution**: Work in an isolated git worktree on branch `rust`. Break the work into bounded TODO subtasks (`T119.1`, `T119.2`, ...) with scope, dependencies, acceptance criteria, and status. The agent owns Rust stack choices and reviews each slice using the listed Rust skills; record rationale and findings instead of requiring the user to review Rust internals. Use `aimemory.sh` or the configured ai-memory integration for concise cross-session decisions and handoffs. Inventory product needs and Nix flake outputs, implement vertical slices, test the Android app against Rust `/api/v1/`, and build a one-time importer from copied production database/media into the fresh Rust schema. Update the flake and container to use the Rust runtime; remove Python from the final runtime.
+- **Safety**: Keep any staging instance at `https://rust.anika.blue` separate from production configuration, database, media, and jobs. A copy of production data may be used there, but Rust must never share or write to live production storage; protect staging access and disable/isolate external side effects. Rehearse migration on a separate copy. Do not switch production traffic to Rust until migration and acceptance are complete and the user explicitly approves. Preserve unrelated worktree changes.
+- **Acceptance**: Implement the selected product capabilities with Rust-native designs, keep web presentation independent from domain/API logic, run Rust, Android, Nix flake, and container checks, and test the Kotlin client against Rust `/api/v1/`. Rehearse migration of copied production database/media and verify relationships and media references. A full visual redesign is out of scope. Demonstrate the candidate can run alongside production at `rust.anika.blue` without affecting the live instance. The Nix package and container must use the Rust runtime without Python. At approved cutover, migrate a final production-data copy and route the production `/api/v1/` URL to Rust without a client-visible redirect. Production cutover requires a separate explicit go-ahead.
+
+### T119.1: Rust service foundation and gauge workflow
+
+- **Area**: rust-port
+- **Priority**: P1
+- **Status**: done
+- **Category**: feat
+- **Dependencies**: None
+- **Scope**: Establish the Rust crate, Axum/Tokio server, health endpoint, static asset serving, and one complete standalone Askama gauge page. Keep pure gauge arithmetic in the domain module and HTML/view data in the presentation layer. Add opt-in Nix package, app, check, Rust dev shell, and candidate image outputs without changing production defaults.
+- **Acceptance**: Gauge GET/POST and validation tests pass; static assets and health endpoint work; `cargo fmt`, clippy, and Rust tests pass; `nix flake check` and Rust package/image builds pass; an ephemeral candidate container returns healthy. The image uses no Python runtime. The production package/module and Python container remain untouched in this foundation slice.
+
+### T119.2: Rust data model, migrations, and account security
+
+- **Area**: rust-port/data
+- **Priority**: P1
+- **Status**: done
+- **Category**: feat
+- **Dependencies**: T119.1
+- **Scope**: Implement the selected fresh Rust schema and migration system, account lifecycle, password/session or token authentication, authorization boundaries, configuration validation, and abuse protections. Use disposable local state only.
+- **Acceptance**: Fresh-database migrations pass; auth/account tests cover success, failure, expiry/revocation, and authorization; secrets/configuration fail safely; no old Alembic compatibility is introduced.
+
+
+### T119.3: Initial API v1 domain and media contract
+
+- **Area**: rust-port/api
+- **Priority**: P1
+- **Status**: wip
+- **Category**: feat
+- **Dependencies**: T119.2
+- **Scope**: Implement current `/api/v1/` project, yarn, category, favorite, steps, upload, and media routes with the existing Android-facing request/response semantics and ownership controls. Keep Rust domain and persistence types independent of JSON DTOs.
+- **Acceptance**: A route/DTO test matrix covers current v1 success and error cases; CRUD and media integration tests use disposable DB/files; upload limits, content handling, access control, and ownership checks are verified.
+
+### T119.4: Initial API v1 sync and Android integration
+
+- **Area**: rust-port/sync
+- **Priority**: P1
+- **Status**: wip
+- **Category**: feat
+- **Dependencies**: T119.3
+- **Scope**: Implement the v1 paging/delta-sync and queued-mutation behavior, then exercise the current offline-first Android app against the actual Rust service. Read `android/AGENTS.md` before any Android changes and add an Android TODO entry before nontrivial Kotlin edits.
+- **Acceptance**: Sync cursors, deletions, conflict/idempotency behavior, uploads, media, and token flows have integration evidence. Android unit/integration checks pass against disposable Rust DB/media state. No test uses production data or uncontrolled external services.
+
+### T119.5: Core browser product workflows
+
+- **Area**: rust-port/web
+- **Priority**: P1
+- **Status**: wip
+- **Category**: feat
+- **Dependencies**: T119.2, T119.3
+- **Scope**: Implement browser account, project/yarn list and detail, search/filter, create/edit/delete, category/favorite, step, attachment, and image workflows. Keep page components, styling, and view-model mapping separate from domain/API logic so a future UI redesign can replace them.
+- **Acceptance**: Browser tests cover selected workflows, validation, authorization, translations, and media; the presentation layer can be changed without changing domain/API contracts. No broader visual redesign is included.
+
+### T119.6: Imports, administration, CLI, and background features
+
+- **Area**: rust-port/product
+- **Priority**: P1
+- **Status**: todo
+- **Category**: feat
+- **Dependencies**: T119.2, T119.3, T119.5
+- **Scope**: Port selected import and deduplication flows, SSRF protections, PDF/image/OCR/Wayback integrations, admin actions, CLI operations, background jobs, security headers, translations, and PWA/service-worker behavior. Inventory required capabilities and record intentional removals/tradeoffs.
+- **Acceptance**: Selected capabilities have local tests with fake/stubbed external providers; network-sensitive tests validate redirects and private-address blocking; background jobs use isolated inputs/outputs; no candidate job reaches production state.
+
+### T119.7: One-time production data migration
+
+- **Area**: rust-port/migration
+- **Priority**: P1
+- **Status**: todo
+- **Category**: feat
+- **Dependencies**: T119.2, T119.3
+- **Scope**: Implement an importer from a separate snapshot/copy of production database and media into the fresh Rust schema. Never point Rust at or share the live database or media. Rehearse with an isolated copy and ensure staging access is protected because copied data may be private.
+- **Acceptance**: Rehearsal verifies record counts, relationships, ownership/permissions, and every migrated media reference; failures are reported without partial cutover. Document final snapshot, write-freeze, verification, backup, and rollback steps for an explicitly approved cutover. No live production state is touched by rehearsal.
+
+### T119.8: Final Nix, deployment, and container transition
+
+- **Area**: rust-port/build
+- **Priority**: P1
+- **Status**: todo
+- **Category**: refactor
+- **Dependencies**: T119.2, T119.3, T119.4, T119.5, T119.6
+- **Scope**: Replace Python runtime artifacts in the existing package, app/check/dev-shell outputs, deployment module, and container workflow with the complete Rust application. Keep the candidate image until acceptance is complete, then make the release-facing image Rust-only.
+- **Acceptance**: Nix flake checks/builds, Android CI, and container build/start/health checks pass; final runtime closure and image contain no Python; default deployment definitions point to Rust only after dependent features are ready. Do not deploy or publish production artifacts in this subtask.
+
+### T119.9: Isolated candidate and release acceptance
+
+- **Area**: rust-port/acceptance
+- **Priority**: P1
+- **Status**: todo
+- **Category**: test
+- **Dependencies**: T119.1, T119.2, T119.3, T119.4, T119.5, T119.6, T119.7, T119.8
+- **Scope**: Validate the complete app and Android client against Rust, then use the authorized `rust.anika.blue` candidate with isolated config, database, media, credentials, and background jobs. The candidate may use a separate production data copy after the importer is safe. Document bootstrap, backup, rollback, and data handling.
+- **Acceptance**: All product and engineering checks in `REWRITE.md` pass; Android flows work against candidate `/api/v1/`; candidate isolation and access protection are verified; migration rehearsals are complete; production traffic/state remain untouched. Production cutover requires separate explicit approval.
