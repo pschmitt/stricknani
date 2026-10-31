@@ -133,7 +133,9 @@ constructor(
                                         title = step.title,
                                         description = step.description ?: "",
                                         existingImages =
-                                            detail.images.filter { image -> image.stepId == step.id },
+                                            detail.images.filter { image ->
+                                                image.stepId == step.id
+                                            },
                                     )
                                 },
                             existingTitleImages =
@@ -207,7 +209,8 @@ constructor(
     fun removeExistingTitleImage(imageId: Int) {
         updateForm {
             it.copy(
-                existingTitleImages = it.existingTitleImages.filterNot { image -> image.id == imageId },
+                existingTitleImages =
+                    it.existingTitleImages.filterNot { image -> image.id == imageId },
                 removedImageIds = it.removedImageIds + imageId,
             )
         }
@@ -249,7 +252,9 @@ constructor(
 
     fun removeExistingStepImage(stepIndex: Int, imageId: Int) {
         updateStep(stepIndex) { step ->
-            step.copy(existingImages = step.existingImages.filterNot { image -> image.id == imageId })
+            step.copy(
+                existingImages = step.existingImages.filterNot { image -> image.id == imageId }
+            )
         }
         updateForm { it.copy(removedImageIds = it.removedImageIds + imageId) }
     }

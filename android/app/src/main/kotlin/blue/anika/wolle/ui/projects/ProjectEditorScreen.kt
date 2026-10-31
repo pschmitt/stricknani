@@ -432,9 +432,7 @@ fun ProjectEditorScreen(
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f).padding(start = 8.dp),
                         )
-                        IconButton(
-                            onClick = { viewModel.removeExistingTitleImage(image.id) }
-                        ) {
+                        IconButton(onClick = { viewModel.removeExistingTitleImage(image.id) }) {
                             Icon(
                                 Icons.Filled.Delete,
                                 contentDescription =
