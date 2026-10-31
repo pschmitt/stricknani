@@ -157,6 +157,26 @@ async def test_create_and_update_yarn_write_audit_logs(
 
 
 @pytest.mark.asyncio
+async def test_yarn_edit_form_offers_photo_upload(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, _session_factory, _user_id, _project_id, _step_id = test_client
+
+    create_response = await client.post(
+        "/yarn/", data={"name": "Edit Yarn"}, follow_redirects=False
+    )
+    yarn_id = int(
+        create_response.headers["location"].split("?")[0].strip("/").split("/")[1]
+    )
+
+    edit = await client.get(f"/yarn/{yarn_id}/edit")
+
+    assert edit.status_code == 200
+    assert 'id="photos"' in edit.text
+    assert 'class="md3-dropzone' in edit.text
+
+
+@pytest.mark.asyncio
 async def test_uploading_yarn_photos_keeps_single_primary(
     test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
 ) -> None:

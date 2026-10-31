@@ -457,6 +457,20 @@ async def test_upload_image_attachment_renders_preview_button(
 
 
 @pytest.mark.asyncio
+async def test_edit_form_offers_gallery_uploads(
+    test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
+) -> None:
+    client, _session_factory, _user_id, project_id, _step_id = test_client
+
+    edit = await client.get(f"/projects/{project_id}/edit")
+
+    assert edit.status_code == 200
+    assert 'id="titleImageDropZone"' in edit.text
+    assert 'id="stitchSampleDropzone"' in edit.text
+    assert 'class="step-image-input hidden"' in edit.text
+
+
+@pytest.mark.asyncio
 async def test_manage_categories_includes_project_categories(
     test_client: tuple[AsyncClient, async_sessionmaker[AsyncSession], int, int, int],
 ) -> None:

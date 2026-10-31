@@ -88,6 +88,7 @@
     <string name="editor_section_media">Bilder und Anhänge</string>
     <string name="editor_section_yarn_details">Garndetails</string>
     <string name="editor_section_yarn_specs">Garn-Eigenschaften</string>
+    <string name="editor_section_gallery">Galerie</string>
     <string name="editor_section_photos">Fotos</string>
     <string name="project_editor_tags_label">Tags (kommagetrennt)</string>
     <string name="project_editor_link_label">Link</string>

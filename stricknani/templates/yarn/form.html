@@ -305,7 +305,9 @@
                 </div>
 
 
-                {% if not yarn %}
+                {% if yarn %}
+                {{ image_upload.upload_dropzone(input_id='photos') }}
+                {% else %}
                 {{ image_upload.upload_dropzone(
                   input_id='photos',
                   input_name='photos',

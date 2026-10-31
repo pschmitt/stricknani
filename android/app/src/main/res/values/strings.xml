@@ -88,6 +88,7 @@
     <string name="editor_section_media">Images and attachments</string>
     <string name="editor_section_yarn_details">Yarn details</string>
     <string name="editor_section_yarn_specs">Yarn specifications</string>
+    <string name="editor_section_gallery">Gallery</string>
     <string name="editor_section_photos">Photos</string>
     <string name="project_editor_tags_label">Tags (comma-separated)</string>
     <string name="project_editor_link_label">Link</string>

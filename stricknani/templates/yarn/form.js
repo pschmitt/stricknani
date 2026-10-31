@@ -460,7 +460,7 @@ function createYarnPhotoPreviewHTML(photo) {
 
 document.addEventListener("DOMContentLoaded", () => {
 	const photosInput = document.getElementById("photos");
-	const dropzone = photosInput?.closest(".border-2");
+	const dropzone = photosInput?.closest(".md3-dropzone");
 	if (photosInput && dropzone) {
 		window.setupImageUploadWidget(photosInput, dropzone, async (file) => {
 			if (isEditing && yarnId) {

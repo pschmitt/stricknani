@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -185,6 +186,58 @@ fun ProjectEditorScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                         )
+                    }
+                }
+            }
+            item {
+                EditorSectionCard(
+                    title = stringResource(R.string.editor_section_gallery),
+                    icon = Icons.Filled.PhotoLibrary,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { titleImagePicker.launch("image/*") }) {
+                            Text(stringResource(R.string.project_editor_add_title_image))
+                        }
+                        form.existingTitleImages.forEach { image ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                AsyncImage(
+                                    model = viewModel.imageUrl(image.thumbnailUrl),
+                                    contentDescription = image.altText,
+                                    modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop,
+                                )
+                                Text(
+                                    image.altText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f).padding(start = 8.dp),
+                                )
+                                IconButton(
+                                    onClick = { viewModel.removeExistingTitleImage(image.id) }
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Delete,
+                                        contentDescription =
+                                            stringResource(R.string.project_editor_remove_image),
+                                    )
+                                }
+                            }
+                        }
+                        form.titleImages.forEachIndexed { index, image ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    image.fileName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                IconButton(onClick = { viewModel.removeTitleImage(index) }) {
+                                    Icon(
+                                        Icons.Filled.Delete,
+                                        contentDescription =
+                                            stringResource(R.string.project_editor_remove_image),
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -413,49 +466,6 @@ fun ProjectEditorScreen(
             item {
                 TextButton(onClick = viewModel::addStep) {
                     Text(stringResource(R.string.project_editor_add_step))
-                }
-            }
-            item {
-                TextButton(onClick = { titleImagePicker.launch("image/*") }) {
-                    Text(stringResource(R.string.project_editor_add_title_image))
-                }
-                form.existingTitleImages.forEach { image ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        AsyncImage(
-                            model = viewModel.imageUrl(image.thumbnailUrl),
-                            contentDescription = image.altText,
-                            modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop,
-                        )
-                        Text(
-                            image.altText,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f).padding(start = 8.dp),
-                        )
-                        IconButton(onClick = { viewModel.removeExistingTitleImage(image.id) }) {
-                            Icon(
-                                Icons.Filled.Delete,
-                                contentDescription =
-                                    stringResource(R.string.project_editor_remove_image),
-                            )
-                        }
-                    }
-                }
-                form.titleImages.forEachIndexed { index, image ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            image.fileName,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconButton(onClick = { viewModel.removeTitleImage(index) }) {
-                            Icon(
-                                Icons.Filled.Delete,
-                                contentDescription =
-                                    stringResource(R.string.project_editor_remove_image),
-                            )
-                        }
-                    }
                 }
             }
             item {

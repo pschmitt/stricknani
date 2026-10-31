@@ -190,14 +190,12 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                             {% endif %}
                         </div>
 
-                        {% if not project %}
                         <div id="titleImageUploadContainer">
                             {{ image_upload.upload_dropzone(
                               input_id='titleImageInput',
                               container_id='titleImageDropZone'
                             ) }}
                         </div>
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -513,11 +511,9 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                         {% endfor %}
                                         {% endif %}
                                     </div>
-                                    {% if not project %}
                                     {{ image_upload.upload_dropzone('stitchSampleImageInput',
                                       container_id='stitchSampleDropzone')
                                     }}
-                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -590,6 +586,10 @@ attrs='data-action="open-dialog" data-dialog-id="importDialog"', class='flex-1 s
                                     show_crop=true) }}
                                     {% endfor %}
                                 </div>
+                            {{ image_upload.step_upload_dropzone(
+                              input_id='stepImageInput' + step.id|string,
+                              step_id=step.id
+                            ) }}
                         </div>
                         {% endfor %}
                     </div>
