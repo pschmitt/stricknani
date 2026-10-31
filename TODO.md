@@ -54,6 +54,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T119 | P1 | todo | rust-port | refactor | Replace the Python server with a standalone Rust application while preserving web/API behavior, Android compatibility, and existing data; follow `REWRITE.md` |
 | T39 | P0 | done | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
 | T41 | P1 | done | ux | bug | Fix remaining print layout issues (Wayback buttons, footer, spacing) |
 | T38 | P2 | done | ux | refactor | Improve print layout to save space and show only relevant content |
@@ -2001,3 +2002,15 @@ Execution-oriented backlog for Stricknani.
   fallback addresses both the user-visible symptom and the concurrency window that most plausibly
   triggered it; kept monitoring via Sentry (already integrated) rather than chasing a
   once-in-a-week Heisenbug further.
+
+### T119: Replace the Python server with a Rust application
+
+- **Area**: rust-port
+- **Priority**: P1
+- **Status**: todo
+- **Category**: refactor
+- **Brief**: Follow [`REWRITE.md`](REWRITE.md) and the `port-to-rust`, `port-from-python`, `rust-testing`, and `rust-code-review` skills.
+- **Scope**: Replace the Python web server/backend with a standalone Rust service behind the existing HTTP boundary. Preserve server-rendered HTMX pages, the `/api/v1/` contract used by the Kotlin Android app, database meaning, media, CLI, configuration, and Nix/container packaging. Keep the Android client and product/UI redesign out of scope.
+- **Execution**: Inventory and characterize current behavior first; port in small slices while keeping Python available for comparison; prove parity with isolated databases and media directories; remove Python from the runtime only after parity. Read the current source and tests as the authority when this summary is incomplete.
+- **Safety**: Do not use production data for tests, run competing migration systems, or perform a production cutover. Document database migration ownership and rollback before proposing cutover. Preserve unrelated worktree changes; use an isolated worktree if target files are already modified.
+- **Acceptance**: Meet the contract and acceptance criteria in `REWRITE.md`; preserve the existing Android client compatibility; run the checks required by `AGENTS.md`; report remaining parity gaps. Production cutover is a separate user decision.
