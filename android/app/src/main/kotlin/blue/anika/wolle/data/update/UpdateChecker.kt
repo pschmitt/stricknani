@@ -34,11 +34,11 @@ internal data class GithubAsset(
 )
 
 /**
- * Self-update check against this repo's GitHub Releases. Which release to compare against depends on
- * what is installed: a tagged build (`GIT_REVISION` is `vX.Y.Z`) follows the newest stable release,
- * a rolling `latest` build (`GIT_REVISION` is a commit hash, what Obtainium users run) follows the
- * `latest` prerelease, whose body records the commit it was built from. Anything else (local or
- * dirty builds) is never offered an update.
+ * Self-update check against this repo's GitHub Releases. Which release to compare against depends
+ * on what is installed: a tagged build (`GIT_REVISION` is `vX.Y.Z`) follows the newest stable
+ * release, a rolling `latest` build (`GIT_REVISION` is a commit hash, what Obtainium users run)
+ * follows the `latest` prerelease, whose body records the commit it was built from. Anything else
+ * (local or dirty builds) is never offered an update.
  *
  * Uses the unauthenticated [ValidationClient] on purpose: the main client would rewrite the URL to
  * the Stricknani server and attach the PAT to a request meant for github.com.
@@ -100,10 +100,7 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
 
     private fun fetch(url: String): GithubRelease {
         val request =
-            Request.Builder()
-                .url(url)
-                .header("Accept", "application/vnd.github+json")
-                .build()
+            Request.Builder().url(url).header("Accept", "application/vnd.github+json").build()
         client.newCall(request).execute().use { response ->
             check(response.isSuccessful) { "GitHub returned ${response.code}" }
             return json.decodeFromString(response.body.string())
@@ -118,10 +115,9 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
         val variant = if (isDebugBuild) "debug" else "release"
         // Release assets are per-ABI splits named `...-app-<abi>-<variant>.apk`; the suffix match
         // keeps `x86` from matching `x86_64`. Preferred ABI first, like the platform's own order.
-        val asset =
-            supportedAbis.firstNotNullOfOrNull { abi ->
-                release.assets.firstOrNull { it.name.endsWith("-app-$abi-$variant.apk") }
-            }
+        val asset = supportedAbis.firstNotNullOfOrNull { abi ->
+            release.assets.firstOrNull { it.name.endsWith("-app-$abi-$variant.apk") }
+        }
         return asset?.downloadUrl ?: release.htmlUrl
     }
 

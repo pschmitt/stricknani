@@ -27,8 +27,7 @@ class UpdateCheckerTest {
             }
     }
 
-    @After
-    fun tearDown() = server.shutdown()
+    @After fun tearDown() = server.shutdown()
 
     private fun releaseJson(tag: String, body: String = "") =
         """
