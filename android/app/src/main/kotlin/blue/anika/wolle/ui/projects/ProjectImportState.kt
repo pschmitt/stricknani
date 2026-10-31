@@ -114,12 +114,13 @@ class ProjectImportController(
     }
 
     private companion object {
-        fun isHttpUrl(value: String): Boolean = runCatching {
-            URI(value).let { uri ->
-                (uri.scheme == "http" || uri.scheme == "https") && !uri.host.isNullOrBlank()
-            }
-        }
-            .getOrDefault(false)
+        fun isHttpUrl(value: String): Boolean =
+            runCatching {
+                    URI(value).let { uri ->
+                        (uri.scheme == "http" || uri.scheme == "https") && !uri.host.isNullOrBlank()
+                    }
+                }
+                .getOrDefault(false)
 
         fun classifyFailure(failure: Throwable): ProjectImportFailure =
             when {

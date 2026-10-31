@@ -508,8 +508,8 @@ internal fun ProjectWriteRequest.coalesceExpectedUpdatedAt(
         expectedUpdatedAt =
             previousPayloadJson?.let { payload ->
                 runCatching {
-                    json.decodeFromString<ProjectWriteRequest>(payload).expectedUpdatedAt
-                }
+                        json.decodeFromString<ProjectWriteRequest>(payload).expectedUpdatedAt
+                    }
                     .getOrNull()
             } ?: expectedUpdatedAt
     )

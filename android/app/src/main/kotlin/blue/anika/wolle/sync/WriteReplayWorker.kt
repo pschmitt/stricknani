@@ -211,10 +211,10 @@ constructor(
  */
 internal inline fun <reified T> parseConflictDetail(json: Json, errorBody: String): T? =
     runCatching {
-        val detail = json.parseToJsonElement(errorBody).jsonObject["detail"] ?: return null
-        json.decodeFromJsonElement<T>(detail)
-    }
-    .getOrNull()
+            val detail = json.parseToJsonElement(errorBody).jsonObject["detail"] ?: return null
+            json.decodeFromJsonElement<T>(detail)
+        }
+        .getOrNull()
 
 /** Thrown when a replay hits a resolved SNA-33 conflict - see [WriteReplayWorker]'s kdoc. */
 private class ConflictException(message: String) : Exception(message)

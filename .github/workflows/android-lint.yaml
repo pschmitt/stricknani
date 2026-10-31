@@ -24,6 +24,9 @@ jobs:
       project-directory: android
       lint-baseline-path: ''
       enable-auto-fix: false
+      # Check with the root flake's nixpkgs ktfmt - the same binary as the pre-commit hook - rather
+      # than the Gradle plugin's pinned one, which kept disagreeing with local formatting.
+      ktfmt-runner: nix
     secrets: inherit
     permissions:
       contents: read

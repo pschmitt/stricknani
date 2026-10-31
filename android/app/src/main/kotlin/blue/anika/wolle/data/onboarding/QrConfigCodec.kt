@@ -35,12 +35,12 @@ object QrConfigCodec {
         val encoded = trimmed.removePrefix(URI_PREFIX)
         if (encoded == trimmed) return null
         return runCatching {
-            val bytes = Base64.getUrlDecoder().decode(encoded)
-            val envelope = json.decodeFromString<QrSetupEnvelope>(bytes.decodeToString())
-            envelope
-                .takeIf { it.baseUrl.isNotBlank() && it.token.isNotBlank() }
-                ?.let { QrSetupPayload(it.baseUrl, it.token) }
-        }
+                val bytes = Base64.getUrlDecoder().decode(encoded)
+                val envelope = json.decodeFromString<QrSetupEnvelope>(bytes.decodeToString())
+                envelope
+                    .takeIf { it.baseUrl.isNotBlank() && it.token.isNotBlank() }
+                    ?.let { QrSetupPayload(it.baseUrl, it.token) }
+            }
             .getOrNull()
     }
 }

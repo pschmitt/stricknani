@@ -61,8 +61,9 @@ default:
 import '.just/android-app-ci/just/common.just'
 import '.just/android-app-ci/just/single-module.just'
 
-# ktfmtCheck + unit tests + Android Lint, remotely - the full local pre-push check.
-check host=remote_host: (gradle host "ktfmtCheck :app:testDebugUnitTest lintDebug")
+# Unit tests + Android Lint, remotely - the full local pre-push check. ktfmt is not part of it: CI
+# and the pre-commit hook both use the root flake's nixpkgs ktfmt (the Gradle plugin's differs).
+check host=remote_host: (gradle host ":app:testDebugUnitTest lintDebug")
 
 # Compile the app and instrumentation APKs remotely. The emulator itself belongs to the CI
 # workflow; keeping this recipe remote preserves the repository rule that Gradle never runs on the

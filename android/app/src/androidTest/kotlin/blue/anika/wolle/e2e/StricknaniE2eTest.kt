@@ -84,21 +84,22 @@ abstract class StricknaniE2eTest {
     }
 
     private fun hasTag(tag: String): Boolean =
-    // Momentarily false (rather than propagating) while returning from an external Activity
-    // (e.g. the system photo picker): our Activity has not finished resuming yet, so there is
-    // no Compose hierarchy to query. The caller's waitUntil polls again on the next frame.
-    runCatching {
-        composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
-    }
-        .getOrDefault(false)
+        // Momentarily false (rather than propagating) while returning from an external Activity
+        // (e.g. the system photo picker): our Activity has not finished resuming yet, so there is
+        // no Compose hierarchy to query. The caller's waitUntil polls again on the next frame.
+        runCatching {
+                composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+            }
+            .getOrDefault(false)
 
-    private fun hasText(text: String): Boolean = runCatching {
-        composeRule
-            .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-    }
-        .getOrDefault(false)
+    private fun hasText(text: String): Boolean =
+        runCatching {
+                composeRule
+                    .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            .getOrDefault(false)
 
     protected fun openProjects() {
         composeRule.onNodeWithText("Projects").performClick()
@@ -351,13 +352,14 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
     private fun scrollProjectsListToText(text: String, timeoutMillis: Long) {
         val deadline = SystemClock.elapsedRealtime() + timeoutMillis
         while (SystemClock.elapsedRealtime() < deadline) {
-            val found = runCatching {
-                composeRule
-                    .onNodeWithTag("e2e-projects-list")
-                    .performScrollToNode(hasTextMatcher(text))
-                true
-            }
-                .getOrDefault(false)
+            val found =
+                runCatching {
+                        composeRule
+                            .onNodeWithTag("e2e-projects-list")
+                            .performScrollToNode(hasTextMatcher(text))
+                        true
+                    }
+                    .getOrDefault(false)
             if (found) return
             Thread.sleep(FIXTURE_POLL_INTERVAL_MILLIS)
         }
@@ -484,13 +486,14 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
     private fun scrollYarnsListToText(text: String, timeoutMillis: Long) {
         val deadline = SystemClock.elapsedRealtime() + timeoutMillis
         while (SystemClock.elapsedRealtime() < deadline) {
-            val found = runCatching {
-                composeRule
-                    .onNodeWithTag("e2e-yarns-list")
-                    .performScrollToNode(hasTextMatcher(text))
-                true
-            }
-                .getOrDefault(false)
+            val found =
+                runCatching {
+                        composeRule
+                            .onNodeWithTag("e2e-yarns-list")
+                            .performScrollToNode(hasTextMatcher(text))
+                        true
+                    }
+                    .getOrDefault(false)
             if (found) return
             Thread.sleep(FIXTURE_POLL_INTERVAL_MILLIS)
         }

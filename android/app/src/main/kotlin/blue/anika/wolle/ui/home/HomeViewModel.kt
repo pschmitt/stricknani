@@ -151,16 +151,17 @@ constructor(
 
     @Suppress("DEPRECATION")
     private fun isInstalledFromPlayStore(): Boolean {
-        val installer = runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                context.packageManager
-                    .getInstallSourceInfo(context.packageName)
-                    .installingPackageName
-            } else {
-                context.packageManager.getInstallerPackageName(context.packageName)
-            }
-        }
-            .getOrNull()
+        val installer =
+            runCatching {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        context.packageManager
+                            .getInstallSourceInfo(context.packageName)
+                            .installingPackageName
+                    } else {
+                        context.packageManager.getInstallerPackageName(context.packageName)
+                    }
+                }
+                .getOrNull()
         return installer == PLAY_STORE_PACKAGE
     }
 

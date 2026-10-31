@@ -124,14 +124,14 @@ private fun ScannerCameraPreview(onCodeScanned: (String) -> Unit) {
                     .build()
                     .also { it.setAnalyzer(cameraExecutor, BarcodeAnalyzer(onCodeScanned)) }
             runCatching {
-                provider.unbindAll()
-                provider.bindToLifecycle(
-                    lifecycleOwner,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    preview,
-                    analysis,
-                )
-            }
+                    provider.unbindAll()
+                    provider.bindToLifecycle(
+                        lifecycleOwner,
+                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        preview,
+                        analysis,
+                    )
+                }
                 .onFailure { Timber.e(it, "Unable to bind camera for QR scanning") }
             onDispose { runCatching { provider.unbindAll() } }
         }

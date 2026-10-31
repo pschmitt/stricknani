@@ -37,6 +37,15 @@
 
               # Nix
               statix.enable = true;
+
+              # Kotlin (android/): the same nixpkgs ktfmt CI's lint job runs
+              # (android-lint.yaml, ktfmt-runner: nix), so local and CI formatting agree.
+              ktfmt = {
+                enable = true;
+                name = "ktfmt";
+                entry = "${pkgs.ktfmt}/bin/ktfmt --kotlinlang-style";
+                files = "^android/.*\\.kts?$";
+              };
             };
           };
         in
@@ -68,6 +77,7 @@
               ruff
               mypy
               statix
+              ktfmt
               poppler-utils
               tesseract
               vendir

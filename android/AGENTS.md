@@ -55,14 +55,12 @@ directory, not mixed into the root one.
   explanation was found. Use `just build-fetch` (or `just deploy-zenfone`/`just deploy-all`, which
   call it) whenever you need the on-device result to reflect the latest source - never bare
   `just build` followed by a manual install step.
-- See the shared doc for the CI-lint-authority rule and `ktfmt-diff-patch` retrieval procedure.
-  **Confirmed unreliable here, twice**: running `ktfmtCheck` via `nix develop --command ./gradlew`
-  on `rofl-13`/`rofl-14` reports `ktfmtCheckMain NO-SOURCE` (i.e. "nothing to check") even when
-  real files under `src/main/kotlin` have genuine formatting violations that CI's `ktfmtCheck`
-  (GitHub Actions runner, system JDK, no nix) catches immediately - root cause not identified. Do
-  not treat a clean local `ktfmtCheck`/`ktfmtFormat` run as proof of formatting correctness; push
-  and let CI's `Android Lint` workflow be the actual check, and if it fails, fetch that run's
-  `ktfmt-diff-patch` artifact and apply it rather than re-attempting a local check.
+- **ktfmt is the flake's nixpkgs `ktfmt` (kotlinlang style) on both ends** (SNA-69): the root
+  `flake.nix` pre-commit hook formats staged `android/**/*.kt(s)` files, and `android-lint.yaml`
+  calls the shared lint workflow with `ktfmt-runner: nix`, which runs the same binary from the same
+  `flake.lock`. The Gradle plugin's `ktfmtCheck` (pinned, different version) is deliberately not
+  used here - don't run it or `just lint`/`just format` from the shared justfiles and trust the
+  result. If CI's `Android Lint` ktfmt job fails anyway, apply its `ktfmt-diff-patch` artifact.
 - CI workflows here are thin callers (`android/.github` doesn't exist - see repo-root
   `.github/workflows/android-*.yaml`). The build, lint, signed release, and Play bundle lanes call
   the fleet's reusable `pschmitt/android-app-ci` workflows with `project-directory: android`,

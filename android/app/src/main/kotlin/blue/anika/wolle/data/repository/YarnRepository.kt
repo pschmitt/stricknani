@@ -371,8 +371,8 @@ internal fun YarnWriteRequest.coalesceExpectedUpdatedAt(
         expectedUpdatedAt =
             previousPayloadJson?.let { payload ->
                 runCatching {
-                    json.decodeFromString<YarnWriteRequest>(payload).expectedUpdatedAt
-                }
+                        json.decodeFromString<YarnWriteRequest>(payload).expectedUpdatedAt
+                    }
                     .getOrNull()
             } ?: expectedUpdatedAt
     )
