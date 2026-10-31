@@ -41,6 +41,20 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-68: In-app update card for APK installs
+
+- [x] `UpdateChecker` queries GitHub Releases: tagged builds follow the newest stable release
+      (semver compare), rolling `latest` builds compare their commit hash against the one in the
+      prerelease body; local/dirty builds and Play-installed copies are skipped.
+- [x] Home shows a primary-container `UpdateAvailableCard` ("Download" opens the matching
+      ABI/variant APK URL, "Later" dismisses that version).
+- [x] Unit tests for both channels, ABI/variant selection and failure handling.
+
+**Why:** direct user request - APK/Obtainium users had no in-app signal that a new build exists.
+**How to apply:** nothing installs in-app (no install permission); the browser downloads the APK.
+
+Status: **done**, 2026-10-31 - unit tests pass on rofl-13; not yet seen on a device.
+
 ## SNA-67: Edit existing project and yarn gallery images on web and Android
 
 - [x] Fix malformed dynamically inserted gallery preview markup in the web project and yarn editors

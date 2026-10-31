@@ -94,7 +94,15 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_NOTIFICATION_PERMISSION_REQUESTED] = true }
     }
 
+    /** Version of the update card the user tapped "Later" on - a newer release shows it again. */
+    val dismissedUpdateVersion = dataStore.data.map { prefs -> prefs[KEY_DISMISSED_UPDATE] }
+
+    suspend fun dismissUpdate(version: String) {
+        dataStore.edit { prefs -> prefs[KEY_DISMISSED_UPDATE] = version }
+    }
+
     private companion object {
+        val KEY_DISMISSED_UPDATE = stringPreferencesKey("dismissed_update_version")
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_NAVBAR_ITEMS = stringPreferencesKey("navbar_items")
         val KEY_BACKUP_FOLDER_URI = stringPreferencesKey("scheduled_backup_folder_uri")

@@ -419,4 +419,8 @@
 
     <!-- Settings: Appearance language picker -->
     <string name="appearance_settings_language_title">Sprache</string>
+    <string name="update_available_title">Update verfügbar</string>
+    <string name="update_available_message">Eine neuere Version von Stricknani (%1$s) steht zum Download bereit.</string>
+    <string name="update_available_download">Herunterladen</string>
+    <string name="update_available_later">Später</string>
 </resources>

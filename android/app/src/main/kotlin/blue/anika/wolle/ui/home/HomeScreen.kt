@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,6 +72,8 @@ fun HomeScreen(
     val pendingChangesCount by viewModel.pendingChangesCount.collectAsStateWithLifecycle()
     val hasSyncFailures by viewModel.hasSyncFailures.collectAsStateWithLifecycle()
     val failedMutations by viewModel.failedMutations.collectAsStateWithLifecycle()
+    val availableUpdate by viewModel.availableUpdate.collectAsStateWithLifecycle()
+    val uriHandler = LocalUriHandler.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
@@ -101,6 +104,16 @@ fun HomeScreen(
         ) {
             if (isEmpty) {
                 LazyColumn(Modifier.fillMaxSize()) {
+                    availableUpdate?.let { update ->
+                        item {
+                            UpdateAvailableCard(
+                                update = update,
+                                onDownload = { uriHandler.openUri(update.downloadUrl) },
+                                onDismiss = viewModel::dismissUpdate,
+                                modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 0.dp),
+                            )
+                        }
+                    }
                     item {
                         HomeSyncStatusCard(
                             isRefreshing = isRefreshing,
@@ -135,6 +148,16 @@ fun HomeScreen(
                     Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(vertical = 16.dp),
                 ) {
+                    availableUpdate?.let { update ->
+                        item {
+                            UpdateAvailableCard(
+                                update = update,
+                                onDownload = { uriHandler.openUri(update.downloadUrl) },
+                                onDismiss = viewModel::dismissUpdate,
+                                modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 12.dp),
+                            )
+                        }
+                    }
                     item {
                         HomeSyncStatusCard(
                             isRefreshing = isRefreshing,
