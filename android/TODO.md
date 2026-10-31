@@ -43,21 +43,21 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## SNA-69: Make local and CI ktfmt agree (stop formatting-only CI failures)
 
-- [x] Shared `pschmitt/android-app-ci`: lint workflow got an opt-in `ktfmt-runner: nix` (+
-      `ktfmt-nix-directory`) and the devShell an opt-in `ktfmtPreCommit` hook; defaults unchanged,
-      so the other apps are unaffected until they opt in.
+- [x] Shared `pschmitt/android-app-ci` is nix-only for ktfmt: the lint workflow checks with the
+      flake's `ktfmt` devShell (`ktfmt-flake-ref`, default `.#ktfmt`), the devshell hook is always
+      on, `just lint`/`format` use the same binary. The Gradle runner was removed; all four
+      sibling apps migrated the same day.
 - [x] Root `flake.nix`: ktfmt pre-commit hook on `android/**` and `ktfmt` in the devShell, same
-      nixpkgs binary as CI (`android-lint.yaml` now passes `ktfmt-runner: nix`).
+      nixpkgs binary as CI (`android-lint.yaml` uses the shared workflow's default `.#ktfmt`).
 - [x] Reformatted the 8 files nixpkgs ktfmt 0.63 formats differently from the old Gradle-pinned
-      0.64; dropped `ktfmtCheck` from `just check`.
+      0.64; removed the ktfmt Gradle plugin and `ktfmtCheck` from `just check`.
 
 **Why:** direct user request - formatting-only CI failures kept recurring (the Gradle plugin's
 pinned ktfmt disagreed with every local ktfmt).
-**How to apply:** other apps opt in with `ktfmt-runner: nix` + `ktfmtPreCommit = true`, then
-reformat once.
+**How to apply:** bump the `android-app-ci` flake input and submodule, reformat once.
 
-Status: **done**, 2026-10-31 - tree verified clean under the flake's ktfmt; CI job not yet seen
-green with the nix runner (first run is this commit).
+Status: **done**, 2026-10-31 - tree verified clean under the flake's ktfmt; Gradle plugin removed,
+build checked on rofl-13.
 
 ## SNA-68: In-app update card for APK installs
 

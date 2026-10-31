@@ -55,12 +55,10 @@ directory, not mixed into the root one.
   explanation was found. Use `just build-fetch` (or `just deploy-zenfone`/`just deploy-all`, which
   call it) whenever you need the on-device result to reflect the latest source - never bare
   `just build` followed by a manual install step.
-- **ktfmt is the flake's nixpkgs `ktfmt` (kotlinlang style) on both ends** (SNA-69): the root
-  `flake.nix` pre-commit hook formats staged `android/**/*.kt(s)` files, and `android-lint.yaml`
-  calls the shared lint workflow with `ktfmt-runner: nix`, which runs the same binary from the same
-  `flake.lock`. The Gradle plugin's `ktfmtCheck` (pinned, different version) is deliberately not
-  used here - don't run it or `just lint`/`just format` from the shared justfiles and trust the
-  result. If CI's `Android Lint` ktfmt job fails anyway, apply its `ktfmt-diff-patch` artifact.
+- **ktfmt is nix-only** (SNA-69): the root `flake.nix` pre-commit hook, `just lint`/`just format`
+  and CI's `Android Lint` ktfmt job (shared workflow, `nix develop .#ktfmt`) all run the same
+  nixpkgs `ktfmt` (kotlinlang style) from the root `flake.lock`. The app does not use the ktfmt
+  Gradle plugin any more. If CI's ktfmt job fails anyway, apply its `ktfmt-diff-patch` artifact.
 - CI workflows here are thin callers (`android/.github` doesn't exist - see repo-root
   `.github/workflows/android-*.yaml`). The build, lint, signed release, and Play bundle lanes call
   the fleet's reusable `pschmitt/android-app-ci` workflows with `project-directory: android`,

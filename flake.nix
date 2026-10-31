@@ -69,6 +69,10 @@
             };
           };
 
+          # Just ktfmt, from this flake's nixpkgs: what the android lint workflow runs
+          # (`nix develop .#ktfmt`) - the same binary as the pre-commit hook above.
+          devShells.ktfmt = pkgs.mkShell { packages = [ pkgs.ktfmt ]; };
+
           devShells.default = pkgs.mkShell {
             buildInputs = with pkgs; [
               python
