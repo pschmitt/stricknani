@@ -1,5 +1,10 @@
 # AGENTS.md
 
+## Private infrastructure details
+
+Do not include private hostnames, device identifiers, network addresses or topology here. Use placeholders and consult the private `brkn-infra` skill for specific host or device details.
+
+
 Repository instructions for AI coding agents working in `android/` - the Stricknani Android app, a
 native offline-first client for the Stricknani web app (`stricknani/`, one directory up).
 
@@ -42,8 +47,8 @@ directory, not mixed into the root one.
 
 ## Builds
 
-- **Never run Gradle builds locally on this machine** - always build on `rofl-13.brkn.lol` or
-  `rofl-14.brkn.lol` instead (`just sync`, `just gradle`, `just build [variant]`, `just lint`,
+- **Never run Gradle builds locally on this machine** - always build on `<private-domain>` or
+  `<private-domain>` instead (`just sync`, `just gradle`, `just build [variant]`, `just lint`,
   `just test`, `just check`, `just fetch`, `just build-fetch`, run from `android/`). Remote build
   directory: `~/build/stricknani-android` (see `android/justfile`).
 - **`just build` does NOT copy the APK back** - it only builds remotely. If you then run
@@ -69,7 +74,7 @@ directory, not mixed into the root one.
 
 ## Physical test devices
 
-Same fleet hardware as the sibling apps - Zenfone 10 / Mi Pad 4 / Pixel 5, see the shared doc for
+Same fleet hardware as the sibling apps - <phone> / <tablet> / <phone>, see the shared doc for
 connection details/gotchas. `android/justfile` has the same device identifiers committed as
 defaults (`zenfone_serial`, `mipad_host`, `px5_host`); `just deploy-all [variant]` builds, fetches,
 and installs on all three. Confirmed working live 2026-08-18. Release-build signing and Play Store
