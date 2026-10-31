@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.home
 
-import android.content.Context
 import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,7 +23,6 @@ import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -54,7 +52,6 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val updateChecker: UpdateChecker,
     private val appPreferences: AppPreferencesRepository,
-    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val foundUpdate = MutableStateFlow<AppUpdate?>(null)
@@ -136,8 +133,8 @@ constructor(
     }
 
     private fun checkForUpdate() {
-        // Play-installed copies update through the store, not from GitHub APKs.
-        if (isInstalledFromPlayStore()) return
+        // Off in the Play bundle (see app/build.gradle.kts): Play installs update through Play.
+        if (!BuildConfig.SELF_UPDATE_ENABLED) return
         viewModelScope.launch {
             foundUpdate.value =
                 updateChecker.check(
@@ -147,22 +144,6 @@ constructor(
                     supportedAbis = Build.SUPPORTED_ABIS.toList(),
                 )
         }
-    }
-
-    @Suppress("DEPRECATION")
-    private fun isInstalledFromPlayStore(): Boolean {
-        val installer =
-            runCatching {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        context.packageManager
-                            .getInstallSourceInfo(context.packageName)
-                            .installingPackageName
-                    } else {
-                        context.packageManager.getInstallerPackageName(context.packageName)
-                    }
-                }
-                .getOrNull()
-        return installer == PLAY_STORE_PACKAGE
     }
 
     fun dismissUpdate() {
@@ -187,6 +168,5 @@ constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
-        const val PLAY_STORE_PACKAGE = "com.android.vending"
     }
 }

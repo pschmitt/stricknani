@@ -63,9 +63,10 @@ build checked on rofl-13.
 
 - [x] `UpdateChecker` queries GitHub Releases: tagged builds follow the newest stable release
       (semver compare), rolling `latest` builds compare their commit hash against the one in the
-      prerelease body; local/dirty builds and Play-installed copies are skipped.
+      prerelease body; local/dirty builds are skipped.
 - [x] Home shows a primary-container `UpdateAvailableCard` ("Download" opens the matching
-      ABI/variant APK URL, "Later" dismisses that version).
+      ABI/variant APK URL, "Later" dismisses that version). Compiled out of the Play bundle via
+      `BuildConfig.SELF_UPDATE_ENABLED` (false when a `bundle*` task runs, `-PselfUpdate` overrides).
 - [x] Unit tests for both channels, ABI/variant selection and failure handling.
 
 **Why:** direct user request - APK/Obtainium users had no in-app signal that a new build exists.

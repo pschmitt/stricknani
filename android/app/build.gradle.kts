@@ -21,6 +21,12 @@ val configuredVersionCode =
         }
         .get()
 val gitRevision = System.getenv("GIT_REVISION") ?: "unknown"
+// The Play bundle must not ship the GitHub-APK self-update card (Play apps update through Play), so
+// it is compiled out when building a bundle; every APK build keeps it. `-PselfUpdate=true|false`
+// overrides the detection.
+val isBuildingBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
+val selfUpdateEnabled =
+    providers.gradleProperty("selfUpdate").map { it.toBoolean() }.orElse(!isBuildingBundle).get()
 val inferredVersionName =
     Regex("""^v?(\d+\.\d+\.\d+)(?:[-+].*)?$""").matchEntire(gitRevision)?.groupValues?.get(1)
 val configuredVersionName =
@@ -42,6 +48,7 @@ android {
         versionCode = configuredVersionCode
         versionName = configuredVersionName
         buildConfigField("String", "GIT_REVISION", "\"$gitRevision\"")
+        buildConfigField("boolean", "SELF_UPDATE_ENABLED", selfUpdateEnabled.toString())
         val buildDate = System.getenv("BUILD_DATE") ?: "unknown"
         buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
 
@@ -80,8 +87,6 @@ android {
 
     splits {
         abi {
-            val isBuildingBundle =
-                gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
             isEnable = !isBuildingBundle
 
             reset()

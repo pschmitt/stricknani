@@ -52,7 +52,8 @@ the [Releases page](https://github.com/pschmitt/stricknani/releases).
 Sideloaded APK installs also check GitHub Releases themselves: when a newer build exists, Home
 shows an "Update available" card whose **Download** button opens the matching APK (right ABI and
 variant) in the browser. Tagged builds follow the newest stable release, `latest` builds follow the
-`latest` pre-release; Play Store installs are skipped (the store updates those).
+`latest` pre-release. The Play Store build does not include this check at all (it is compiled
+out when building the bundle); the store updates those installs.
 
 [obtainium-link]: https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22blue.anika.wolle%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fpschmitt%2Fstricknani%22%2C%22author%22%3A%22pschmitt%22%2C%22name%22%3A%22Stricknani%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22.%2A-release%5C%5C%5C%5C.apk%24%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22trackOnly%5C%22%3Afalse%7D%22%7D
 
