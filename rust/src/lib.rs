@@ -46,7 +46,7 @@ use tower_http::services::ServeDir;
 mod domain;
 mod time;
 
-use crate::domain::gauge::{GaugeResult, adjusted_count};
+use crate::domain::gauge::{GaugeInput, GaugeResult};
 
 pub fn app() -> Router {
     let static_root = std::env::var_os("STATIC_ROOT")
@@ -238,20 +238,15 @@ impl GaugeForm {
             &labels,
         )?;
 
-        Ok(GaugeResult {
-            adjusted_stitches: adjusted_count(
-                pattern_cast_on_stitches.get(),
-                user_gauge_stitches.get(),
-                pattern_gauge_stitches.get(),
-            ),
-            adjusted_rows: pattern_row_count.map(|row_count| {
-                adjusted_count(
-                    row_count.get(),
-                    user_gauge_rows.get(),
-                    pattern_gauge_rows.get(),
-                )
-            }),
-        })
+        Ok(GaugeInput {
+            pattern_gauge_stitches,
+            pattern_gauge_rows,
+            user_gauge_stitches,
+            user_gauge_rows,
+            pattern_cast_on_stitches,
+            pattern_row_count,
+        }
+        .calculate())
     }
 }
 

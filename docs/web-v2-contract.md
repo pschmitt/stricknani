@@ -75,6 +75,34 @@ password-verification budget. Invalid credentials return the same response
 whether the account is missing, inactive, or the password is wrong. V1 remains
 bearer-only and keeps its response contract.
 
+## Gauge tool
+
+`POST /tools/gauge` is a stateless calculation and does not require a session
+or CSRF token. It accepts the same six field names as the existing gauge form;
+the five required values and the optional `pattern_row_count` must be positive
+32-bit integers when present:
+
+```json
+{
+  "pattern_gauge_stitches": 20,
+  "pattern_gauge_rows": 28,
+  "user_gauge_stitches": 22,
+  "user_gauge_rows": 30,
+  "pattern_cast_on_stitches": 80,
+  "pattern_row_count": 100
+}
+```
+
+Success returns `{ "data": { "adjusted_stitches": "88",
+"adjusted_rows": "107" } }`; calculated counts are decimal strings so large
+valid Rust results remain exact in JavaScript. Omitted `pattern_row_count`
+yields `"adjusted_rows": null`. The v2 endpoint and the existing HTML form
+call the same validated Rust input and calculation. Invalid field values return `422`
+with `error.code: "validation_error"` and a `fields` map. Invalid JSON or
+unknown fields return `400` with `error.code: "invalid_json"`. Bodies larger
+than the endpoint's 8 KiB JSON limit return `413` with
+`error.code: "payload_too_large"`.
+
 ## Error envelope
 
 Errors have a stable shape; `fields` is present only when a caller can act on a

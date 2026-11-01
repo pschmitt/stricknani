@@ -33,6 +33,7 @@ mod imports;
 mod media;
 mod ocr;
 mod projects;
+mod tools;
 mod yarns;
 
 use self::{access::OwnerRequestLimiter, imports::PreviewLimiter};
@@ -108,6 +109,7 @@ fn router_with_context(
         .merge(imports::router())
         .merge(ocr::router())
         .merge(archive::router())
+        .merge(tools::router())
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }
