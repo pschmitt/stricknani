@@ -290,7 +290,7 @@ the coordinator reviews their contracts and security-sensitive changes.
 ### Luna implementation waves and ownership
 
 The paths below are proposed new ownership boundaries, finalized in T120.1.
-Implementation has not started; all T120 checkboxes are intentionally open.
+Implementation has started. Checkboxes stay open until each slice passes its acceptance checks.
 
 | Wave | Luna scopes (up to three in parallel) | Integration condition |
 | --- | --- | --- |

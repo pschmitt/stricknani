@@ -28,10 +28,10 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T120 | P1 | todo | web-rewrite | feat | Rebuild the web UI for smartphones first; follow `WEB-UI-REWRITE.md` |
-| T120.1 | P1 | todo | web-rewrite/design | design | Define key mobile journeys, restrained design system, route map and browser API contracts |
-| T120.2 | P1 | todo | web-rewrite/foundation | feat | Add the SvelteKit/TypeScript static build, shared shell and session-aware frontend foundation |
-| T120.3 | P1 | todo | web-rewrite/api | feat | Implement focused cookie-authenticated browser API v2 with shared Rust services and contract tests |
+| T120 | P1 | wip | web-rewrite | feat | Rebuild the web UI for smartphones first; follow `WEB-UI-REWRITE.md` |
+| T120.1 | P1 | wip | web-rewrite/design | design | Define key mobile journeys, restrained design system, route map and browser API contracts |
+| T120.2 | P1 | wip | web-rewrite/foundation | feat | Add the SvelteKit/TypeScript static build, shared shell and session-aware frontend foundation |
+| T120.3 | P1 | wip | web-rewrite/api | feat | Implement focused cookie-authenticated browser API v2 with shared Rust services and contract tests |
 | T120.4 | P1 | todo | web-rewrite/projects | feat | Build project browsing, search and a comfortable mobile pattern reader |
 | T120.5 | P1 | todo | web-rewrite/editor | feat | Build touch-friendly project editing, steps, uploads and conflict recovery |
 | T120.6 | P1 | todo | web-rewrite/yarns | feat | Build yarn browsing/editing, project associations and category management |
@@ -2133,10 +2133,10 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: web-rewrite
 - **Priority**: P1
-- **Status**: todo
+- **Status**: wip
 - **Category**: feat
 - **Brief and checklist**: [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md) defines the journeys, architecture, visual direction, T120.1–T120.9 scopes, Luna ownership waves and acceptance criteria.
 - **Scope**: A fresh responsive web application using SvelteKit/TypeScript static assets served by Rust, with focused browser API v2 support where useful. Prioritize phone navigation, reading patterns, editing and uploads. Preserve useful product capabilities, with no requirement to retain old web layouts or interaction conventions. Keep Android API v1 independent.
 - **Design**: Modern, fast and restrained. Opaque surfaces, readable content and accessible controls; subtle motion only when it explains a state change. No glass/transparency effects or ornamental animation.
-- **Execution**: Planning is prepared; implementation has not started. Delegate scoped implementation to GPT-6 Luna agents; coordinator integrates and reviews shared contracts, security, accessibility, performance and deployment. Start with T120.1, then follow the waves in the brief.
+- **Execution**: Implementation started with scoped Luna foundation, API/auth, and packaging work. Delegate scoped implementation to GPT-6 Luna agents; coordinator integrates and reviews shared contracts, security, accessibility, performance and deployment. Start with T120.1, then follow the waves in the brief.
 - **Acceptance**: Complete workflows on phone and desktop, English/German coverage, meaningful browser/API tests, explicit performance and accessibility checks, reproducible static assets in the Rust package/container, and rollout to the isolated Rust preview. Production cutover remains separate.
