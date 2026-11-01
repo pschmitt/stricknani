@@ -45,6 +45,10 @@ Use this file as the operational source of truth for working in Stricknani.
 
 - Follow [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md) and track implementation under
   T120. The T119 limit on visual redesign applied to the Rust rewrite, not T120.
+- Prioritize usable phone layouts and compact navigation. Keep mobile language
+  preferences in Account settings instead of a dedicated global toolbar; retain
+  compact signed-out language access. Use blue accents and neutral surfaces in
+  both themes, with readable button foregrounds and restrained motion.
 - Use scoped GPT-6 Luna agents for implementation. The coordinator owns the
   shared contracts, integration, and review of authentication, API changes,
   accessibility, performance, and packaging. Freeze shared interfaces before

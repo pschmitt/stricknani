@@ -113,11 +113,13 @@ Projects  Yarns  Create  More    Projects  Yarns  Create  More
   safe areas, virtual keyboards, zoom, and scroll restoration. Keep primary
   actions reachable; use a compact bottom navigation on phones for Projects,
   Yarns, Create, and More, with a clear desktop navigation/rail. Hide or group
-  account and administrator links by role.
+  account and administrator links by role. Avoid stacked global toolbars on
+  phones; put authenticated mobile language selection in Account settings and
+  keep signed-out language controls in a compact footer.
 - Use semantic HTML and plain CSS design tokens. Start with an opaque, calm
   light/dark system theme; use high-contrast surfaces and restrained color.
   Starting light-theme tokens: canvas `#f7f9fb`, surface `#ffffff`, text
-  `#17242d`, secondary text `#566874`, accent `#176a68`, border `#cbd5df`.
+  `#17242d`, secondary text `#566874`, blue accent `#185b96`, border `#cbd5df`.
   Use a native system sans-serif stack; start at 16px for controls and 18px for
   reading, with a reader measure of 60–70 characters. Actual project photos and
   yarn colors provide the visual interest. Validate contrast, matching dark

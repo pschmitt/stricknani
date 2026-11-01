@@ -25,6 +25,11 @@ offers the relevant creation/import choices, not a misleading selected tab.
 Signed-out screens never show these protected destinations. Retain normal
 links, browser history, open-in-new-tab behavior and URL-based search state.
 
+Preserve useful vertical space on phones. Put the authenticated mobile language
+choice in Account settings, reachable from the existing account link, rather
+than a dedicated toolbar or the global header. Keep language selection available
+in a compact footer on sign-in/signup screens and on the public gauge tool.
+
 The reader is a working surface rather than a dashboard. Preserve scroll and
 step context when viewing an image or following a linked yarn. Image viewing
 has a reachable close action and keyboard equivalent; zoom does not disable
@@ -52,6 +57,9 @@ it. Confirm the assembled control works under CSP and with assistive input.
 Use the palette, type scale and restrained motion in the brief. Dark theme is
 an opaque, contrast-checked token set. Borders used to identify controls must
 have adequate contrast; decorative separators need not be the control outline.
+The user now prefers blue accents with neutral slate surfaces in both themes.
+Use semantic foreground tokens for accent buttons so dark-theme text remains
+readable. Keep meaningful success colors and user-selected yarn colors intact.
 No layout depends on hover, a precise pointer, or a fixed phone height. Verify
 safe areas, virtual keyboards, 200% text zoom and reduced motion.
 

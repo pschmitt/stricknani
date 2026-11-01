@@ -6,17 +6,25 @@ The existing Rust preview remains usable while new routes are built at `/app`.
 
 ## Latest verified state
 
-The live preview runs `c81fc16`, deployed through infrastructure commit
-`317310f982a69a6b3a964364ddee22de7121b51c`. HTTPS, native login, assets,
-strict CSP, isolated storage and unchanged production executable were verified.
-The deployment agent sent the requested Signal notification with the preview
-link. The exact committed source passed `just check` (the full Rust suite, 75
-shipping-harness tests, 94 Vitest tests, frontend/i18n checks and static build),
-the application flake check, package/container builds and target host build.
-The parent independently checked the live 546-key bilingual catalog/cache
-headers, strict CSP, safe anonymous session state, disabled optional services,
-all service states and the exact host closure. The upgrade unit exited
-successfully. Package and all container layers exclude the dev-only companion.
+The live preview runs `9fded03`, deployed through infrastructure commit
+`ac0bc74dfe31e575328eb0da6c7661ec1e99d617`. The useless welcome greeting is
+removed. HTTPS, native login, assets, strict CSP, isolated storage and unchanged
+production executable were verified. The requested Signal notification was
+sent, followed by a correction: the administrator/audit APIs are live, while
+their new screens remain uncommitted.
+The exact committed source passed `just check`, the application flake check,
+package/container builds and target host build. The parent independently checked
+the live 579-key bilingual catalog/cache headers, strict CSP and running closure.
+Both application services and nginx are active. Package and all container layers
+exclude the dev-only companion. The upgrade wrapper returned status 4 despite
+the correct active closure; read-only investigation points to root's user
+manager closing during activation. Root activation remains unverified. No retry,
+root lingering change or failure reset has been performed.
+
+Next, the user requests less wasted vertical space on phones and a blue palette.
+Luna is moving authenticated mobile language controls to Account settings and
+checking light/dark button contrast. Signup and administrator/audit screens have
+isolated acceptance evidence but await integration; PWA acceptance remains open.
 Earlier sections below retain historical
 checkpoint evidence; their pending deployment statements describe that time.
 
