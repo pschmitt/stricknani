@@ -12,9 +12,6 @@ use serde::Deserialize;
 use sqlx::{Row, SqlitePool};
 use zeroize::Zeroizing;
 
-const MAX_PASSWORD_BYTES: usize = 1024;
-const MAX_TOKEN_NAME_BYTES: usize = 255;
-const MAX_TOKENS_PER_HOUR: i64 = 5;
 const MAX_AVATAR_REQUEST_BYTES: usize = 27 * 1024 * 1024;
 
 #[derive(Clone, Copy)]
@@ -145,68 +142,41 @@ async fn create_token(
     if !web::valid_csrf(&session.token, &form.csrf) {
         return StatusCode::FORBIDDEN.into_response();
     }
-    let name = form.name.unwrap_or_default().trim().to_owned();
-    let name = if name.is_empty() {
-        "API token".to_owned()
-    } else {
-        name
-    };
-    if name.len() > MAX_TOKEN_NAME_BYTES {
-        return render_account(
-            &state,
-            &headers,
-            &session,
-            Some(AccountMessage::TokenNameTooLong.text(&headers)),
-            None,
-            StatusCode::UNPROCESSABLE_ENTITY,
-        )
-        .await;
-    }
-    let recent: i64 = match sqlx::query_scalar(
-        "SELECT count(*) FROM api_tokens WHERE user_id = ? AND purpose = 'api' \
-         AND created_at > unixepoch() - 3600",
-    )
-    .bind(session.user_id)
-    .fetch_one(&state.app.pool)
-    .await
-    {
-        Ok(count) => count,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    if recent >= MAX_TOKENS_PER_HOUR {
-        return render_account(
-            &state,
-            &headers,
-            &session,
-            Some(AccountMessage::TooManyTokens.text(&headers)),
-            None,
-            StatusCode::TOO_MANY_REQUESTS,
-        )
-        .await;
-    }
-    let token = match auth::generate_token() {
-        Ok(token) => token,
-        Err(()) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    let token_hash = auth::token_hash(token.as_bytes());
-    if sqlx::query(
-        "INSERT INTO api_tokens (user_id, name, token_hash, created_at) VALUES (?, ?, ?, unixepoch())",
-    )
-    .bind(session.user_id)
-    .bind(name)
-    .bind(token_hash)
-    .execute(&state.app.pool)
-    .await
-    .is_err()
-    {
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-    }
+    let token =
+        match crate::account_service::create_token(&state.app.pool, session.user_id, form.name)
+            .await
+        {
+            Ok(token) => token.token,
+            Err(crate::account_service::AccountError::InvalidTokenName) => {
+                return render_account(
+                    &state,
+                    &headers,
+                    &session,
+                    Some(AccountMessage::TokenNameTooLong.text(&headers)),
+                    None,
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                )
+                .await;
+            }
+            Err(crate::account_service::AccountError::TokenRateLimited(_)) => {
+                return render_account(
+                    &state,
+                    &headers,
+                    &session,
+                    Some(AccountMessage::TooManyTokens.text(&headers)),
+                    None,
+                    StatusCode::TOO_MANY_REQUESTS,
+                )
+                .await;
+            }
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        };
     render_account(
         &state,
         &headers,
         &session,
         None,
-        Some(token),
+        Some(token.to_string()),
         StatusCode::OK,
     )
     .await
@@ -231,15 +201,7 @@ async fn revoke_token(
     if !web::valid_csrf(&session.token, &form.csrf) {
         return StatusCode::FORBIDDEN.into_response();
     }
-    match sqlx::query(
-        "UPDATE api_tokens SET revoked_at = unixepoch() \
-         WHERE id = ? AND user_id = ? AND purpose = 'api' AND revoked_at IS NULL",
-    )
-    .bind(id)
-    .bind(session.user_id)
-    .execute(&state.app.pool)
-    .await
-    {
+    match crate::account_service::revoke_token(&state.app.pool, session.user_id, id).await {
         Ok(_) => Redirect::to("/account").into_response(),
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
@@ -300,21 +262,17 @@ async fn change_password(
         )
         .await;
     }
-    let old_hash = match sqlx::query_scalar::<_, String>(
-        "SELECT password_hash FROM users WHERE id = ? AND active = 1",
+    match crate::account_service::change_password(
+        &state.app.pool,
+        session.user_id,
+        current_password,
+        new_password,
     )
-    .bind(session.user_id)
-    .fetch_optional(&state.app.pool)
     .await
     {
-        Ok(Some(hash)) => hash,
-        Ok(None) => return Redirect::to("/login").into_response(),
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    match auth::verify_password_for_account(current_password, old_hash.clone()).await {
-        Ok(true) => {}
-        Ok(false) => {
-            return render_account(
+        Ok(()) => clear_browser_session(&state, Redirect::to("/login").into_response()),
+        Err(crate::account_service::AccountError::CurrentPasswordIncorrect) => {
+            render_account(
                 &state,
                 &headers,
                 &session,
@@ -322,25 +280,11 @@ async fn change_password(
                 None,
                 StatusCode::UNPROCESSABLE_ENTITY,
             )
-            .await;
+            .await
         }
-        Err(()) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    }
-    let new_hash = match auth::hash_password_for_account(new_password).await {
-        Ok(hash) => hash,
-        Err(()) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    match update_password_and_revoke_sessions(
-        &state.app.pool,
-        session.user_id,
-        &new_hash,
-        false,
-        Some(&old_hash),
-    )
-    .await
-    {
-        Ok(true) => clear_browser_session(&state, Redirect::to("/login").into_response()),
-        Ok(false) => StatusCode::CONFLICT.into_response(),
+        Err(crate::account_service::AccountError::PasswordConflict) => {
+            StatusCode::CONFLICT.into_response()
+        }
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
 }
@@ -369,70 +313,14 @@ async fn upload_avatar(
         Ok(upload) => upload,
         Err(error) => return avatar_upload_error(&state, &headers, &session, error).await,
     };
-    let image = match media::prepare_avatar(upload.bytes).await {
-        Ok(image) => image,
-        Err(error) => return avatar_upload_error(&state, &headers, &session, error).await,
-    };
-    let filename = match media::save_avatar(&root, session.user_id, &image).await {
-        Ok(filename) => filename,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    let created_at = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Micros, true);
-    let mut tx = match state.app.pool.begin().await {
-        Ok(tx) => tx,
-        Err(_) => {
-            media::cleanup_avatar(&root, session.user_id, &filename).await;
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-        }
-    };
-    match sqlx::query(
-        "INSERT INTO user_avatars \
-         (user_id, filename, original_filename, content_type, width, height, created_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?) \
-         ON CONFLICT(user_id) DO UPDATE SET filename = excluded.filename, \
-           original_filename = excluded.original_filename, content_type = excluded.content_type, \
-           width = excluded.width, height = excluded.height, created_at = excluded.created_at",
-    )
-    .bind(session.user_id)
-    .bind(&filename)
-    .bind(upload.original_filename)
-    .bind(image.content_type)
-    .bind(i64::from(image.width))
-    .bind(i64::from(image.height))
-    .bind(&created_at)
-    .execute(&mut *tx)
-    .await
+    match crate::account_service::save_avatar(&state.app.pool, &root, session.user_id, upload).await
     {
-        Ok(_) => {}
-        Err(_) => {
-            let _ = tx.rollback().await;
-            media::cleanup_avatar(&root, session.user_id, &filename).await;
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        Ok(_) => Redirect::to("/account").into_response(),
+        Err(crate::account_service::AccountError::InvalidAvatar(error)) => {
+            avatar_upload_error(&state, &headers, &session, error).await
         }
-    };
-    let profile = sqlx::query("UPDATE users SET profile_image = ? WHERE id = ? AND active = 1")
-        .bind(&filename)
-        .bind(session.user_id)
-        .execute(&mut *tx)
-        .await;
-    match profile {
-        Ok(result) if result.rows_affected() == 1 => {}
-        Ok(_) => {
-            let _ = tx.rollback().await;
-            media::cleanup_avatar(&root, session.user_id, &filename).await;
-            return Redirect::to("/login").into_response();
-        }
-        Err(_) => {
-            let _ = tx.rollback().await;
-            media::cleanup_avatar(&root, session.user_id, &filename).await;
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-        }
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
-    if tx.commit().await.is_err() {
-        media::cleanup_avatar(&root, session.user_id, &filename).await;
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-    }
-    Redirect::to("/account").into_response()
 }
 
 async fn avatar_upload_error(
@@ -476,38 +364,10 @@ async fn delete_avatar(
     if !web::valid_csrf(&session.token, &form.csrf) {
         return StatusCode::FORBIDDEN.into_response();
     }
-    let mut tx = match state.app.pool.begin().await {
-        Ok(tx) => tx,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    if sqlx::query("DELETE FROM user_avatars WHERE user_id = ?")
-        .bind(session.user_id)
-        .execute(&mut *tx)
-        .await
-        .is_err()
-    {
-        let _ = tx.rollback().await;
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-    };
-    let profile = sqlx::query("UPDATE users SET profile_image = NULL WHERE id = ? AND active = 1")
-        .bind(session.user_id)
-        .execute(&mut *tx)
-        .await;
-    match profile {
-        Ok(result) if result.rows_affected() == 1 => {}
-        Ok(_) => {
-            let _ = tx.rollback().await;
-            return Redirect::to("/login").into_response();
-        }
-        Err(_) => {
-            let _ = tx.rollback().await;
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-        }
+    match crate::account_service::delete_avatar(&state.app.pool, session.user_id).await {
+        Ok(()) => Redirect::to("/account").into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
-    if tx.commit().await.is_err() {
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-    }
-    Redirect::to("/account").into_response()
 }
 
 #[derive(Deserialize)]
@@ -749,6 +609,15 @@ async fn update_password_and_revoke_sessions(
     reactivate: bool,
     expected_password_hash: Option<&str>,
 ) -> Result<bool, sqlx::Error> {
+    if !reactivate && let Some(expected_hash) = expected_password_hash {
+        return crate::account_service::update_password_and_revoke_sessions(
+            pool,
+            user_id,
+            password_hash,
+            expected_hash,
+        )
+        .await;
+    }
     let mut tx = pool.begin().await?;
     let result = if reactivate {
         sqlx::query("UPDATE users SET password_hash = ?, active = 1 WHERE id = ?")
@@ -844,11 +713,11 @@ async fn is_admin(pool: &SqlitePool, user_id: i64) -> Result<bool, sqlx::Error> 
 }
 
 fn password_length_valid(password: &str, minimum: usize) -> bool {
-    (minimum..=MAX_PASSWORD_BYTES).contains(&password.len())
+    (minimum..=crate::account_service::MAX_PASSWORD_BYTES).contains(&password.len())
 }
 
 fn password_max_valid(password: &str) -> bool {
-    password.len() <= MAX_PASSWORD_BYTES
+    password.len() <= crate::account_service::MAX_PASSWORD_BYTES
 }
 
 fn valid_email(email: &str) -> bool {

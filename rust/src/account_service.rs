@@ -1,0 +1,403 @@
+//! Shared typed account operations used by the browser and API adapters.
+
+use sqlx::SqlitePool;
+use zeroize::Zeroizing;
+
+use crate::{auth, media};
+
+pub(crate) const MAX_PASSWORD_BYTES: usize = 1024;
+pub(crate) const MAX_TOKEN_NAME_BYTES: usize = 255;
+pub(crate) const MAX_TOKENS_PER_HOUR: i64 = 5;
+
+#[derive(Debug)]
+pub(crate) enum AccountError {
+    Database,
+    InvalidTokenName,
+    TokenRateLimited(u64),
+    TokenNotFound,
+    PasswordTooLong,
+    PasswordPolicy(auth::NewPasswordError),
+    CurrentPasswordIncorrect,
+    PasswordConflict,
+    InvalidAvatar(media::UploadError),
+}
+
+pub(crate) struct CreatedToken {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) created_at: String,
+    pub(crate) token: Zeroizing<String>,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub(crate) struct TokenMetadata {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) created_at: String,
+    pub(crate) expires_at: Option<String>,
+}
+
+pub(crate) async fn list_tokens(
+    pool: &SqlitePool,
+    user_id: i64,
+) -> Result<Vec<TokenMetadata>, AccountError> {
+    let rows = sqlx::query(
+        "SELECT id, name, created_at, expires_at FROM api_tokens \
+         WHERE user_id = ? AND purpose = 'api' AND revoked_at IS NULL \
+           AND (expires_at IS NULL OR expires_at > unixepoch()) ORDER BY id DESC",
+    )
+    .bind(user_id)
+    .fetch_all(pool)
+    .await
+    .map_err(|_| AccountError::Database)?;
+    use sqlx::Row;
+    Ok(rows
+        .into_iter()
+        .map(|row| TokenMetadata {
+            id: row.get("id"),
+            name: row.get("name"),
+            created_at: format_timestamp(row.get("created_at")),
+            expires_at: row
+                .get::<Option<i64>, _>("expires_at")
+                .map(format_timestamp),
+        })
+        .collect())
+}
+
+pub(crate) async fn create_token(
+    pool: &SqlitePool,
+    user_id: i64,
+    requested_name: Option<String>,
+) -> Result<CreatedToken, AccountError> {
+    let name = requested_name.unwrap_or_default().trim().to_owned();
+    let name = if name.is_empty() {
+        "API token".to_owned()
+    } else {
+        name
+    };
+    if name.len() > MAX_TOKEN_NAME_BYTES {
+        return Err(AccountError::InvalidTokenName);
+    }
+
+    // The no-op active-user write obtains SQLite's write lock before quota
+    // inspection, so concurrent requests cannot race past the hourly limit.
+    let mut tx = pool.begin().await.map_err(|_| AccountError::Database)?;
+    let active = sqlx::query("UPDATE users SET id = id WHERE id = ? AND active = 1")
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    if active.rows_affected() != 1 {
+        return Err(AccountError::TokenNotFound);
+    }
+    let oldest_recent: Option<i64> = sqlx::query_scalar(
+        "SELECT min(created_at) FROM api_tokens WHERE user_id = ? AND purpose = 'api' \
+         AND created_at > unixepoch() - 3600",
+    )
+    .bind(user_id)
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(|_| AccountError::Database)?;
+    let recent_count: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM api_tokens WHERE user_id = ? AND purpose = 'api' \
+         AND created_at > unixepoch() - 3600",
+    )
+    .bind(user_id)
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(|_| AccountError::Database)?;
+    if recent_count >= MAX_TOKENS_PER_HOUR {
+        let oldest_recent = oldest_recent.unwrap_or_else(|| chrono::Utc::now().timestamp());
+        let retry_after =
+            (3600_i64 - (chrono::Utc::now().timestamp() - oldest_recent)).max(1) as u64;
+        return Err(AccountError::TokenRateLimited(retry_after));
+    }
+    let token = auth::generate_token().map_err(|_| AccountError::Database)?;
+    let token_hash = auth::token_hash(token.as_bytes());
+    let result = sqlx::query(
+        "INSERT INTO api_tokens (user_id, name, token_hash, created_at) \
+         VALUES (?, ?, ?, unixepoch())",
+    )
+    .bind(user_id)
+    .bind(&name)
+    .bind(token_hash)
+    .execute(&mut *tx)
+    .await
+    .map_err(|_| AccountError::Database)?;
+    let created_at: i64 = sqlx::query_scalar("SELECT created_at FROM api_tokens WHERE id = ?")
+        .bind(result.last_insert_rowid())
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    tx.commit().await.map_err(|_| AccountError::Database)?;
+    Ok(CreatedToken {
+        id: result.last_insert_rowid(),
+        name,
+        created_at: format_timestamp(created_at),
+        token: Zeroizing::new(token),
+    })
+}
+
+pub(crate) async fn revoke_token(
+    pool: &SqlitePool,
+    user_id: i64,
+    token_id: i64,
+) -> Result<bool, AccountError> {
+    let result = sqlx::query(
+        "UPDATE api_tokens SET revoked_at = coalesce(revoked_at, unixepoch()) \
+         WHERE id = ? AND user_id = ? AND purpose = 'api'",
+    )
+    .bind(token_id)
+    .bind(user_id)
+    .execute(pool)
+    .await
+    .map_err(|_| AccountError::Database)?;
+    Ok(result.rows_affected() > 0)
+}
+
+pub(crate) async fn change_password(
+    pool: &SqlitePool,
+    user_id: i64,
+    current_password: Zeroizing<String>,
+    new_password: Zeroizing<String>,
+) -> Result<(), AccountError> {
+    if new_password.len() > MAX_PASSWORD_BYTES {
+        return Err(AccountError::PasswordTooLong);
+    }
+    auth::validate_new_password(&new_password).map_err(AccountError::PasswordPolicy)?;
+    let old_hash: Option<String> =
+        sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ? AND active = 1")
+            .bind(user_id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|_| AccountError::Database)?;
+    let Some(old_hash) = old_hash else {
+        return Err(AccountError::PasswordConflict);
+    };
+    if !auth::verify_password_for_account(current_password, old_hash.clone())
+        .await
+        .map_err(|_| AccountError::Database)?
+    {
+        return Err(AccountError::CurrentPasswordIncorrect);
+    }
+    let password_hash = auth::hash_password_for_account(new_password)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    if !update_password_and_revoke_sessions(pool, user_id, &password_hash, &old_hash)
+        .await
+        .map_err(|_| AccountError::Database)?
+    {
+        return Err(AccountError::PasswordConflict);
+    }
+    Ok(())
+}
+
+pub(crate) async fn update_password_and_revoke_sessions(
+    pool: &SqlitePool,
+    user_id: i64,
+    password_hash: &str,
+    expected_password_hash: &str,
+) -> Result<bool, sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    let result = sqlx::query(
+        "UPDATE users SET password_hash = ? WHERE id = ? AND active = 1 AND password_hash = ?",
+    )
+    .bind(password_hash)
+    .bind(user_id)
+    .bind(expected_password_hash)
+    .execute(&mut *tx)
+    .await?;
+    if result.rows_affected() == 0 {
+        return Ok(false);
+    }
+    sqlx::query(
+        "UPDATE api_tokens SET revoked_at = unixepoch() \
+         WHERE user_id = ? AND purpose = 'browser' AND revoked_at IS NULL",
+    )
+    .bind(user_id)
+    .execute(&mut *tx)
+    .await?;
+    tx.commit().await?;
+    Ok(true)
+}
+
+pub(crate) async fn save_avatar(
+    pool: &SqlitePool,
+    root: &std::path::Path,
+    user_id: i64,
+    upload: media::AvatarUpload,
+) -> Result<String, AccountError> {
+    let image = media::prepare_avatar(upload.bytes)
+        .await
+        .map_err(AccountError::InvalidAvatar)?;
+    let filename = media::save_avatar(root, user_id, &image)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    let created_at = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Micros, true);
+    let result = async {
+        let mut tx = pool.begin().await.map_err(|_| AccountError::Database)?;
+        sqlx::query(
+            "INSERT INTO user_avatars \
+             (user_id, filename, original_filename, content_type, width, height, created_at) \
+             VALUES (?, ?, ?, ?, ?, ?, ?) \
+             ON CONFLICT(user_id) DO UPDATE SET filename = excluded.filename, \
+               original_filename = excluded.original_filename, content_type = excluded.content_type, \
+               width = excluded.width, height = excluded.height, created_at = excluded.created_at",
+        )
+        .bind(user_id)
+        .bind(&filename)
+        .bind(upload.original_filename)
+        .bind(image.content_type)
+        .bind(i64::from(image.width))
+        .bind(i64::from(image.height))
+        .bind(&created_at)
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| AccountError::Database)?;
+        let profile = sqlx::query("UPDATE users SET profile_image = ? WHERE id = ? AND active = 1")
+            .bind(&filename)
+            .bind(user_id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|_| AccountError::Database)?;
+        if profile.rows_affected() != 1 {
+            return Err(AccountError::TokenNotFound);
+        }
+        tx.commit().await.map_err(|_| AccountError::Database)?;
+        Ok::<(), AccountError>(())
+    }
+    .await;
+    if result.is_err() {
+        media::cleanup_avatar(root, user_id, &filename).await;
+    }
+    result.map(|()| {
+        format!(
+            "/media/thumbnails/users/{user_id}/{}",
+            media::avatar_thumbnail_name(&filename)
+        )
+    })
+}
+
+pub(crate) async fn delete_avatar(pool: &SqlitePool, user_id: i64) -> Result<(), AccountError> {
+    let mut tx = pool.begin().await.map_err(|_| AccountError::Database)?;
+    sqlx::query("DELETE FROM user_avatars WHERE user_id = ?")
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    let profile = sqlx::query("UPDATE users SET profile_image = NULL WHERE id = ? AND active = 1")
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    if profile.rows_affected() != 1 {
+        return Err(AccountError::TokenNotFound);
+    }
+    tx.commit().await.map_err(|_| AccountError::Database)?;
+    Ok(())
+}
+
+pub(crate) async fn account_dto(
+    pool: &SqlitePool,
+    user_id: i64,
+) -> Result<AccountDto, AccountError> {
+    use sqlx::Row;
+    let row = sqlx::query(
+        "SELECT users.id, users.email, users.is_admin, user_avatars.filename \
+         FROM users LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
+         WHERE users.id = ? AND users.active = 1",
+    )
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(|_| AccountError::Database)?
+    .ok_or(AccountError::TokenNotFound)?;
+    let filename: Option<String> = row.get("filename");
+    Ok(AccountDto {
+        id: row.get("id"),
+        email: row.get("email"),
+        is_admin: row.get::<i64, _>("is_admin") != 0,
+        avatar_url: filename.map(|filename| {
+            format!(
+                "/media/thumbnails/users/{user_id}/{}",
+                media::avatar_thumbnail_name(&filename)
+            )
+        }),
+    })
+}
+
+#[derive(serde::Serialize)]
+pub(crate) struct AccountDto {
+    pub(crate) id: i64,
+    pub(crate) email: String,
+    pub(crate) is_admin: bool,
+    pub(crate) avatar_url: Option<String>,
+}
+
+fn format_timestamp(timestamp: i64) -> String {
+    chrono::DateTime::from_timestamp(timestamp, 0)
+        .unwrap_or(chrono::DateTime::UNIX_EPOCH)
+        .to_rfc3339_opts(chrono::SecondsFormat::Micros, true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::update_password_and_revoke_sessions;
+
+    #[tokio::test]
+    async fn stale_password_cas_preserves_new_hash_and_browser_sessions() {
+        let pool = crate::db::connect("sqlite::memory:")
+            .await
+            .expect("test database should migrate");
+        let user_id = crate::db::create_user(
+            &pool,
+            "stale-account-service@example.test",
+            "account-service-test-password".to_owned(),
+        )
+        .await
+        .expect("test account should be created");
+        let old_hash: String = sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ?")
+            .bind(user_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        let browser_token_id: i64 = sqlx::query_scalar(
+            "INSERT INTO api_tokens (user_id, name, token_hash, purpose, created_at) \
+             VALUES (?, 'browser', 'test-browser-session-hash', 'browser', unixepoch()) \
+             RETURNING id",
+        )
+        .bind(user_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        sqlx::query("UPDATE users SET password_hash = 'newer-password-hash' WHERE id = ?")
+            .bind(user_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let changed = update_password_and_revoke_sessions(
+            &pool,
+            user_id,
+            "stale-browser-password-hash",
+            &old_hash,
+        )
+        .await
+        .unwrap();
+        assert!(!changed);
+        let stored_hash: String =
+            sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ?")
+                .bind(user_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(stored_hash, "newer-password-hash");
+        let revoked_at: Option<i64> =
+            sqlx::query_scalar("SELECT revoked_at FROM api_tokens WHERE id = ?")
+                .bind(browser_token_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(revoked_at, None);
+    }
+}

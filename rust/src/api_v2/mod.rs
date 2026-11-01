@@ -27,6 +27,7 @@ use zeroize::Zeroizing;
 use crate::{auth, db::AppState, import_service::ImportContext};
 
 mod access;
+mod account;
 mod archive;
 mod categories;
 mod imports;
@@ -110,6 +111,7 @@ fn router_with_context(
         .merge(ocr::router())
         .merge(archive::router())
         .merge(tools::router())
+        .merge(account::router())
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }
@@ -190,6 +192,25 @@ fn api_error(status: StatusCode, code: &'static str, message: &'static str) -> R
                 code,
                 message,
                 fields: None,
+            },
+        }),
+    )
+        .into_response()
+}
+
+fn api_error_fields(
+    status: StatusCode,
+    code: &'static str,
+    message: &'static str,
+    fields: BTreeMap<&'static str, &'static str>,
+) -> Response {
+    (
+        status,
+        Json(ApiErrorBody {
+            error: ApiError {
+                code,
+                message,
+                fields: Some(fields),
             },
         }),
     )

@@ -75,6 +75,37 @@ password-verification budget. Invalid credentials return the same response
 whether the account is missing, inactive, or the password is wrong. V1 remains
 bearer-only and keeps its response contract.
 
+## Account API slice
+
+Account routes use the current browser-purpose session. Every mutation requires
+same-origin `Origin` and the matching `X-CSRF-Token`. Token secrets are returned
+only in the successful create response; list responses never include token
+hashes or secret values. The token quota is five API-token creations per hour
+per owner, counting revoked API tokens as issued; browser-session tokens do not
+consume that quota.
+
+| Method and path | Request | Result |
+| --- | --- | --- |
+| `GET /account` | — | `{data: {id, email, is_admin, avatar_url}}` |
+| `GET /account/api-tokens` | — | `{data: [{id, name, created_at, expires_at}]}` |
+| `POST /account/api-tokens` | JSON `{name?: string}` | `201 {data: {id, name, created_at, token}}` |
+| `DELETE /account/api-tokens/{id}` | — | `204`; only owned API-purpose tokens can be revoked; repeat revoke is idempotent |
+| `PUT /account/password` | JSON `{current_password, new_password}` | `204`; revokes browser sessions and clears the current cookie after commit |
+| `POST /account/avatar` | Multipart `file` | `{data: {avatar_url}}` |
+| `DELETE /account/avatar` | — | `204` |
+
+`created_at` and non-null `expires_at` values are RFC3339 UTC timestamps.
+Token listing includes active, unexpired API-purpose tokens only. Token names
+are trimmed, default to `API token` when empty, and are limited to 255 UTF-8
+bytes. Creation returns the secret exactly once. Password changes require the
+current password and the existing 12-character minimum / common-password
+checks; the password update and browser-session revocations commit atomically.
+The avatar upload uses the shared image decoder and storage lifecycle, accepts
+one `file` field, caps the file at 25 MiB and the request at 26 MiB, and returns
+the same thumbnail URL used by the browser pages. All account reads and writes
+are owner-scoped by the authenticated account; token IDs owned by another user
+or belonging to browser sessions return `404`.
+
 ## Gauge tool
 
 `POST /tools/gauge` is a stateless calculation and does not require a session

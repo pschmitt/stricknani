@@ -1,3 +1,4 @@
+pub(crate) mod account_service;
 pub mod ai;
 pub mod api_v2;
 pub mod archive_jobs;
