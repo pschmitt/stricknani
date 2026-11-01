@@ -32,6 +32,10 @@ Use this file as the operational source of truth for working in Stricknani.
   prove that the complete command passed. Keep the process or tool handle
   until the exit status has been collected.
 - When syncing source into cached remote Cargo builds, use checksums and refresh changed Rust source timestamps. Preserved older mtimes can leave a stale executable even after a successful Cargo command; verify a new CLI command actually exists in the built artifact.
+- Before sharing a browser-fixture executable, copy it into a versioned artifact
+  directory outside Cargo's target directory and record its source revision and
+  checksum. `cargo test` can rebuild executable and example targets too; a shared
+  target path is not a frozen artifact, even without an explicit build command.
 - Prioritize a usable, styled Rust preview. Pixel-perfect matching and the planned full UI redesign are out of scope.
 - The Rust preview uses its own application login. Do not add Authelia or another extra login layer unless the user requests it; keep public signup disabled when serving copied data.
 - Keep Python production and Rust candidate storage separate. Production migration and cutover require the explicit approval described in `REWRITE.md`.
@@ -75,6 +79,9 @@ Use this file as the operational source of truth for working in Stricknani.
 - Browser URL changes and API responses do not prove that controls or data
   have rendered. Wait for the intended visible element before assertions;
   scope single-element reads explicitly when several content blocks match.
+- Give selects an explicit, unique label association and verify their accessible
+  names. Nesting option text inside a wrapping label can make the name include
+  every option; translated exact-label browser checks should catch this.
 - Preserve drafts on validation, conflict and network failures. Allow media
   changes only on a saved, clean form, then reload the full resource. Never
   advance its conflict timestamp blindly while retaining stale draft fields.
