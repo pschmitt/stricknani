@@ -54,16 +54,16 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T119 | P1 | wip (PID: 536119, AGENT: codex:stricknani-rust-port-t119) | rust-port | refactor | Rebuild Stricknani as a Rust-first application with Android integration; follow `REWRITE.md` |
+| T119 | P1 | wip | rust-port | refactor | Rebuild Stricknani as a Rust-first application with Android integration; follow `REWRITE.md` |
 | T119.1 | P1 | done | rust-port | feat | Rust service foundation and gauge workflow; Askama page, health/static routes, and candidate Nix package/image |
 | T119.2 | P1 | done | rust-port/data | feat | Design fresh Rust schema/migrations and implement authentication, accounts, sessions, and configuration |
 | T119.3 | P1 | wip | rust-port/api | feat | Implement initial `/api/v1/` project, yarn, category, upload, and media contract |
 | T119.4 | P1 | wip | rust-port/sync | feat | Implement v1 pagination/delta sync and verify offline mutation semantics with the Android client |
 | T119.5 | P1 | wip | rust-port/web | feat | Implement core browser account, project, yarn, category, favorite, steps, and media workflows with a replaceable presentation layer |
 | T119.6 | P1 | wip | rust-port/product | feat | Port imports, administrative/CLI operations, security controls, background work, translations, and PWA capabilities selected by inventory |
-| T119.7 | P1 | wip | rust-port/migration | feat | Build and rehearse a one-time importer using separate copies of production database and media |
-| T119.8 | P1 | todo | rust-port/build | refactor | Switch final Nix package/app/check/dev-shell, deployment module, and container workflow to the complete Python-free Rust runtime |
-| T119.9 | P1 | todo | rust-port/acceptance | test | Run full Rust/Android/Nix/container acceptance, isolated candidate validation, and document operational rollback/cutover readiness |
+| T119.7 | P1 | done | rust-port/migration | feat | Build and rehearse a one-time importer using separate copies of production database and media; verify imported records, ownership, and original media bytes |
+| T119.8 | P1 | wip | rust-port/build | refactor | Make Rust package/app/check/dev-shell/image outputs the default; keep the production NixOS module on Python until separately approved cutover |
+| T119.9 | P1 | wip | rust-port/acceptance | test | Complete final-candidate Android/container acceptance and document snapshot/backup/rollback steps; production cutover remains separately gated |
 | T39 | P0 | done | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
 | T41 | P1 | done | ux | bug | Fix remaining print layout issues (Wayback buttons, footer, spacing) |
 | T38 | P2 | done | ux | refactor | Improve print layout to save space and show only relevant content |
@@ -2016,7 +2016,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port
 - **Priority**: P1
-- **Status**: wip (PID: 536119, AGENT: codex:stricknani-rust-port-t119)
+- **Status**: wip
 - **Category**: refactor
 - **Brief**: Follow [`REWRITE.md`](REWRITE.md) and the `port-to-rust`, `port-from-python`, `rust-testing`, and `rust-code-review` skills.
 - **Scope**: Rebuild the backend and web application as a standalone, Rust-first service. The repository's Nix flake, package/check/dev-shell outputs, deployment-facing definitions, and container workflow are in scope. Treat Python internals, SQLAlchemy schema, and Alembic history as product evidence rather than constraints. Keep current `/api/v1/` routes and Android-facing request/response semantics as initial Rust v1; test the Kotlin app against it. Put future breaking API changes in `/api/v2/`; use native Rust approaches for internals and data storage. A broader UI redesign is planned separately; structure the presentation layer so it can evolve independently.
@@ -2097,15 +2097,15 @@ Execution-oriented backlog for Stricknani.
 
 - **Evidence**: A copied production SQLite/media snapshot imported successfully. All 34 independent record/relationship/credential/media verification checks passed, followed by 38 checks through the deployed candidate API. The original production data remains separate; final cutover still requires approval.
 
-### T119.8: Final Nix, deployment, and container transition
+### T119.8: Rust package defaults and isolated deployment mode
 
 - **Area**: rust-port/build
 - **Priority**: P1
 - **Status**: wip
 - **Category**: refactor
 - **Dependencies**: T119.2, T119.3, T119.4, T119.5, T119.6
-- **Scope**: Replace Python runtime artifacts in the existing package, app/check/dev-shell outputs, deployment module, and container workflow with the complete Rust application. Keep the candidate image until acceptance is complete, then make the release-facing image Rust-only.
-- **Acceptance**: Nix flake checks/builds, Android CI, and container build/start/health checks pass; final runtime closure and image contain no Python; default deployment definitions point to Rust only after dependent features are ready. Do not deploy or publish production artifacts in this subtask.
+- **Scope**: Make the flake package, app, check, development shell, and container defaults use the Rust application while retaining explicit Python artifacts for development and rollback. Provide an isolated Rust deployment mode with separate storage. Keep the production NixOS module's Python default until acceptance is complete and the user separately approves cutover.
+- **Acceptance**: Nix flake checks and Rust package builds pass; the default Rust runtime closure contains no Python; container build/start/health checks pass; the isolated Rust deployment mode evaluates with separate storage. Do not change production routing or storage in this subtask.
 
 ### T119.9: Isolated candidate and release acceptance
 

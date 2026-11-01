@@ -59,7 +59,8 @@ as the `Host` header, disables proxy use and redirects, and has a three-second
 timeout. It prints only a fixed status or error.
 
 Create an administrator by running `stricknani-server create-admin EMAIL` in
-the container and supplying a password of at least 12 bytes on standard input.
+the container and supplying a password of at least 12 Unicode characters and
+at most 1,024 UTF-8 bytes on standard input.
 Do not put it in command arguments or shell history. The Rust service uses its
 own database and media paths. It does not automatically migrate or bootstrap
 the Python service's data; use the documented snapshot importer on a protected

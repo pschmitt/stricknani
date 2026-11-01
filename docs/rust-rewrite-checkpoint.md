@@ -1,33 +1,49 @@
 # Rust rewrite checkpoint — 2026-11-01
 
-This branch is an implementation checkpoint, not a release or production replacement.
-Production defaults and traffic remain unchanged. Follow `REWRITE.md` and T119 in
-`TODO.md` for acceptance and the cutover approval boundary.
+This branch is an implementation checkpoint, not a release or production
+replacement. Production traffic and storage remain on Python. The Rust package,
+app, and image defaults on this branch do not authorize production cutover. See
+`REWRITE.md` and T119 in `TODO.md` for acceptance and the explicit approval
+boundary.
 
-The checkpoint adds browser CRUD/media/account/admin workflows, explicit browser/API
-token purposes, protected avatars, legacy metadata and media-ID preservation, a
-one-time copied-snapshot importer, safe URL fetching and document parsing, process
-limits for document workers, gettext integration, candidate image hardening, and an
-Android instrumentation replay test. Search/filter controls are still being integrated.
-The import-service and PWA modules still need application routing integration.
+## Current evidence and open gates (2026-11-01)
 
-Evidence recorded during integration:
+- The final Rust package build ran the default `cargo test` phase, formatting
+  check, and strict Clippy check successfully after the bounded loopback TCP
+  health probe was added. This supersedes the earlier 205-test result.
+- The Room/WorkManager replay passed on a disposable API 34 x86_64 emulator.
+  Repeat it against the exact final candidate and complete the pending KVM CI
+  replay lane.
+- The Python reference/harness suite passed 336 tests plus one skip; Ruff and
+  mypy passed for 197 files. The migration verifier passed 34 independent
+  checks and 38 checks through the actual candidate API, including ownership,
+  record, and original-media-byte verification on an isolated copied snapshot.
+- The styled source passed focused browser-route and desktop/mobile layout
+  checks. The `rust.css` Biome check, full Nix flake check, and Rust package
+  build passed. The `rofl-10` system closure also built with the isolated Rust
+  service enabled. The updated styling is deployed to the isolated preview:
+  `/static/css/rust.css` returns 200, the root redirects to login, the API
+  returns 401 without authentication, and signup returns 404 while disabled.
+  A 390px viewport had no horizontal overflow. Desktop verification at 1600px
+  also passed with a 1152px main content width. This is not production
+  acceptance.
+- A real Tesseract OCR request passed against a disposable fixture, which was
+  removed afterward. An earlier candidate image passed non-root, read-only-root
+  health checks and had no Python runtime paths; rebuild and verify the image
+  after the latest health-probe and CSS changes.
+- The copied production snapshot and verification report remain outside source
+  trees. No live production database or media was connected to Rust or changed.
 
-- The previous committed API candidate passed 51 Rust tests, Kotlin contract and JVM
-  tests, Nix checks, and container health/runtime-closure checks.
-- The importer fixture suite passed 10 tests and the safe-fetch policy suite passed
-  six tests. Later path-handling changes still need another run.
-- The new Android replay instrumentation test compiles; its emulator run is pending.
-- Python type checking passed for 189 files. The full Python suite had 311 passes,
-  one skip, and one failure because new Rust labels require regenerated translations.
-- The latest full Rust check stopped on worker helper imports; that fix is present
-  but awaits a rerun. New parser, account/avatar, search, and worker integration still
-  need the complete formatting, lint, and test pass.
+Remaining acceptance includes final-candidate Android replay, final container
+build/health/closure check, and final snapshot/backup/rollback procedures. Production
+cutover remains a separate user-approved decision. The dependency findings and
+their review dates are recorded in `rust-security-review.md`.
 
-No production data has been imported. Copied-production rehearsal, complete external
-integrations, staging acceptance, final Python-free default outputs, and production
-cutover remain outstanding. The dependency-audit findings are tracked separately in
-`rust-security-review.md`.
+## Historical integration notes
+
+The sections below retain progress reports from earlier implementation stages.
+Their pending-work statements describe those snapshots and are superseded by
+the current status above; they are not additional current blockers.
 
 ## Follow-up integration
 
@@ -132,9 +148,12 @@ for navigation, page widths, forms, cards, tables, responsive grids and readable
 project text. This is a usability fix; pixel-perfect matching and the future UI
 overhaul remain out of scope, as the user clarified.
 
-The focused browser-route tests pass. Desktop and 390px mobile browser checks
-show the expected bounded content width and no horizontal overflow. The new CSS
+The focused browser-route tests pass. The deployed preview responds with the
+new CSS; 390px mobile checks show the expected bounded content width and no
+horizontal overflow, and desktop verification at 1600px passed with a 1152px
+main content width. The new CSS
 passes Biome with zero diagnostics, and statix, the full Nix flake check and the
 Rust package build pass. The install step also stops preserving source read-only
 permissions before pruning unused legacy assets. Existing app.css/material.css
-warnings were left untouched. The styled package is ready for preview deployment.
+warnings were left untouched. The styled package is deployed to the isolated
+preview. This does not imply production deployment or cutover.

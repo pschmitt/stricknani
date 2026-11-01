@@ -45,7 +45,8 @@ exact public host authority. Do not expose the app directly to the Internet.
 
 Registration is off by default, so create the first administrator by piping a
 password from a protected file to the CLI. The password is read from standard
-input and must be at least 12 bytes:
+input and must be at least 12 Unicode characters and no more than 1024 UTF-8
+bytes:
 
 ```bash
 docker exec -i stricknani \

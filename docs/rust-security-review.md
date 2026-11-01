@@ -64,7 +64,12 @@ authentication, health, and media responses use `private, no-store`; successful
 
 ## Remaining release work
 
-Browser sessions/CSRF, full browser security headers and sanitization,
-URL-import SSRF/redirect policy, copied-data migration verification, and
-staging isolation must pass their own acceptance checks before the candidate is
-a production replacement.
+The browser session/CSRF protections, browser security headers and sanitization,
+URL-import policy, copied-snapshot verification, and isolated storage are
+implemented and covered by the current Rust tests or migration checks. Remaining
+acceptance work is tracked in [`rust-rewrite-checkpoint.md`](rust-rewrite-checkpoint.md)
+and [`TODO.md`](../TODO.md#L57-L66): repeat the Android replay against the exact
+final candidate and complete its pending CI lane; rebuild and smoke-test the
+final container; and finish the final-snapshot, backup, and rollback procedure.
+Production cutover remains separately gated by the user's explicit approval. The two
+dependency-audit findings above remain under their stated review dates.
