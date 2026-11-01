@@ -30,6 +30,7 @@ mod access;
 mod account;
 mod admin;
 mod archive;
+mod audit;
 mod categories;
 mod imports;
 mod media;
@@ -115,6 +116,7 @@ fn router_with_context(
         .merge(tools::router())
         .merge(account::router())
         .merge(admin::router())
+        .merge(audit::router())
         .merge(signup::router())
         .with_state(state)
         .layer(middleware::from_fn(no_store))

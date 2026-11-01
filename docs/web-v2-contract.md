@@ -465,6 +465,35 @@ resetting oneself clears that cookie after the database commit. API-purpose
 tokens are not revoked by password reset. The server does not return password
 hashes or other credential material.
 
+## Administrator audit API slice
+
+The audit endpoint is read-only and requires an active browser session for an
+active administrator. API bearer tokens do not authenticate it; no CSRF token
+is needed for this GET request. The v1 HTML audit page and this endpoint use the
+same query parser and typed safe projection.
+
+| Method and path | Query parameters | Result |
+| --- | --- | --- |
+| `GET /admin/audit` | Optional `page`, `entity`, `action` | `{data: AuditEvent[], meta: {page, per_page: 50, has_more}}` |
+
+`AuditEvent` contains only `{id, actor_email, legacy_actor_user_id,
+entity_type, entity_id, action, created_at}`. The two actor fields are nullable:
+`actor_email` is present when the referenced account still exists, while
+`legacy_actor_user_id` preserves an imported actor ID. The endpoint never
+returns the arbitrary historical `details` JSON, which may contain user text or
+credential-like values.
+
+`entity` accepts `all`, `project`, `yarn`, or `category`; it defaults to `all`.
+`action` is an optional exact historical action string, trimmed and limited to
+64 UTF-8 bytes; it is not restricted to the current action enum. The raw query
+is limited to 512 bytes and eight key/value pairs. Unknown keys, duplicate
+keys, invalid filters, page values outside 1 through 10000, and control
+characters in `action` return `400 invalid_query`. Results are ordered by
+`created_at DESC, id DESC` in pages of 50. Out-of-range pages within the
+allowed numeric range clamp to the last available page, matching the legacy
+HTML audit view. `has_more` indicates whether another permitted page exists.
+V2 responses use `Cache-Control: no-store`.
+
 ## Proposed contract for remaining resource slices
 
 These resource routes are a starting contract for frontend/backend slices;

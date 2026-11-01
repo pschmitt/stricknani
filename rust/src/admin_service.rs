@@ -60,6 +60,13 @@ async fn require_admin(pool: &SqlitePool, actor_id: i64) -> Result<(), AdminErro
     }
 }
 
+pub(crate) async fn require_active_admin(
+    pool: &SqlitePool,
+    actor_id: i64,
+) -> Result<(), AdminError> {
+    require_admin(pool, actor_id).await
+}
+
 pub(crate) async fn list_users(
     pool: &SqlitePool,
     actor_id: i64,

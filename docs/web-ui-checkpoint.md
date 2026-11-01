@@ -112,8 +112,15 @@ before password hashing and again inside serialized write transactions;
 disable/reset operations revoke browser sessions atomically. Stale-actor,
 concurrent-disable, validation, pagination and self-reset regressions pass.
 The isolated source passed all 281 Rust tests with all targets, formatting,
-strict Clippy and four health tests. Administrator screens and the audit API/UI
-remain unfinished; this checkpoint is not part of the live preview yet.
+strict Clippy and four health tests. Administrator and audit screens remain
+unfinished; this checkpoint is not part of the live preview yet.
+
+The audit API is reviewed too. It shares bounded filter parsing, pagination
+and the safe row projection with the legacy audit view, retaining historical
+actions and legacy actor identifiers while omitting arbitrary detail JSON.
+All 284 Rust tests, formatting, strict Clippy and four health tests passed;
+the five existing legacy audit regressions remain unchanged. Parent comparison
+confirmed the eight submitted files match the tested isolated source.
 The complete accessibility/performance/multi-browser/
 real-phone acceptance remain open. The browser CI lane still needs the actual
 Rust-backed journeys in addition to existing static frontend checks.

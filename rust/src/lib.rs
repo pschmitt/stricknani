@@ -5,6 +5,7 @@ pub mod api_v2;
 pub mod archive_jobs;
 pub mod archive_service;
 mod audit;
+pub(crate) mod audit_service;
 pub mod auth;
 pub mod categories;
 pub mod config;
