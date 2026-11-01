@@ -27,6 +27,7 @@ use crate::{auth, db::AppState};
 
 mod access;
 mod categories;
+mod media;
 mod projects;
 mod yarns;
 
@@ -60,6 +61,7 @@ pub fn router(app: AppState, ai_enabled: bool) -> Router {
         .merge(projects::router())
         .merge(yarns::router())
         .merge(categories::router())
+        .merge(media::router())
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }

@@ -93,34 +93,34 @@ struct MediaRow {
 }
 
 #[derive(Debug, Serialize)]
-struct ImageResponse {
-    id: i64,
-    url: String,
-    thumbnail_url: String,
-    alt_text: String,
-    image_type: String,
-    is_title_image: bool,
-    is_stitch_sample: bool,
-    step_id: Option<i64>,
+pub(crate) struct ImageResponse {
+    pub(crate) id: i64,
+    pub(crate) url: String,
+    pub(crate) thumbnail_url: String,
+    pub(crate) alt_text: String,
+    pub(crate) image_type: String,
+    pub(crate) is_title_image: bool,
+    pub(crate) is_stitch_sample: bool,
+    pub(crate) step_id: Option<i64>,
 }
 
 #[derive(Debug, Serialize)]
-struct AttachmentResponse {
-    id: i64,
-    filename: String,
-    original_filename: String,
-    content_type: String,
-    size_bytes: i64,
-    url: String,
+pub(crate) struct AttachmentResponse {
+    pub(crate) id: i64,
+    pub(crate) filename: String,
+    pub(crate) original_filename: String,
+    pub(crate) content_type: String,
+    pub(crate) size_bytes: i64,
+    pub(crate) url: String,
 }
 
 #[derive(Debug, Serialize)]
-struct YarnPhotoResponse {
-    id: i64,
-    url: String,
-    thumbnail_url: String,
-    alt_text: String,
-    is_primary: bool,
+pub(crate) struct YarnPhotoResponse {
+    pub(crate) id: i64,
+    pub(crate) url: String,
+    pub(crate) thumbnail_url: String,
+    pub(crate) alt_text: String,
+    pub(crate) is_primary: bool,
 }
 
 #[derive(Debug)]
@@ -370,6 +370,15 @@ fn upload_error(error: UploadError) -> Response {
     }
 }
 
+fn legacy_media_error(error: MediaOperationError) -> Response {
+    match error {
+        MediaOperationError::NotFound(detail) => not_found(detail),
+        MediaOperationError::ServiceUnavailable => StatusCode::SERVICE_UNAVAILABLE.into_response(),
+        MediaOperationError::Upload(error) => upload_error(error),
+        MediaOperationError::Database => database_error(),
+    }
+}
+
 fn not_found(detail: &str) -> Response {
     error_response(StatusCode::NOT_FOUND, detail)
 }
@@ -422,6 +431,15 @@ pub(crate) enum UploadError {
     BadMultipart,
 }
 
+/// Typed failures returned by shared media mutations before HTTP adapter mapping.
+#[derive(Debug)]
+pub(crate) enum MediaOperationError {
+    NotFound(&'static str),
+    ServiceUnavailable,
+    Upload(UploadError),
+    Database,
+}
+
 async fn upload_title_image(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -432,12 +450,10 @@ async fn upload_title_image(
         Ok(id) => id,
         Err(error) => return error.into_response(),
     };
-    match project_exists(&state.pool, user_id, project_id).await {
-        Ok(true) => {}
-        Ok(false) => return not_found("Project not found"),
-        Err(_) => return database_error(),
+    match upload_project_image(&state, user_id, project_id, None, "title", multipart).await {
+        Ok(result) => json_response(StatusCode::CREATED, result),
+        Err(error) => legacy_media_error(error),
     }
-    upload_project_image(&state, user_id, project_id, None, "title", multipart).await
 }
 
 async fn upload_step_image(
@@ -450,12 +466,7 @@ async fn upload_step_image(
         Ok(id) => id,
         Err(error) => return error.into_response(),
     };
-    match step_belongs_to_project(&state.pool, user_id, project_id, step_id).await {
-        Ok(true) => {}
-        Ok(false) => return not_found("Step not found"),
-        Err(_) => return database_error(),
-    }
-    upload_project_image(
+    match upload_project_image(
         &state,
         user_id,
         project_id,
@@ -464,27 +475,45 @@ async fn upload_step_image(
         multipart,
     )
     .await
+    {
+        Ok(result) => json_response(StatusCode::CREATED, result),
+        Err(error) => legacy_media_error(error),
+    }
 }
 
-async fn upload_project_image(
+pub(crate) async fn upload_project_image(
     state: &AppState,
     user_id: i64,
     project_id: i64,
     step_id: Option<i64>,
     kind: &'static str,
     multipart: Multipart,
-) -> Response {
+) -> Result<ImageResponse, MediaOperationError> {
+    match step_id {
+        Some(step_id) => {
+            match step_belongs_to_project(&state.pool, user_id, project_id, step_id).await {
+                Ok(true) => {}
+                Ok(false) => return Err(MediaOperationError::NotFound("Step not found")),
+                Err(_) => return Err(MediaOperationError::Database),
+            }
+        }
+        None => match project_exists(&state.pool, user_id, project_id).await {
+            Ok(true) => {}
+            Ok(false) => return Err(MediaOperationError::NotFound("Project not found")),
+            Err(_) => return Err(MediaOperationError::Database),
+        },
+    }
     let root = match media_root(state) {
         Ok(root) => root,
-        Err(error) => return error.into_response(),
+        Err(_) => return Err(MediaOperationError::ServiceUnavailable),
     };
     let upload = match read_upload(multipart, true).await {
         Ok(upload) => upload,
-        Err(error) => return upload_error(error),
+        Err(error) => return Err(MediaOperationError::Upload(error)),
     };
     let prepared = match process_image(upload.bytes).await {
         Ok(image) => image,
-        Err(error) => return upload_error(error),
+        Err(error) => return Err(MediaOperationError::Upload(error)),
     };
     let alt_text = if upload.alt_text.trim().is_empty() {
         upload.original_filename.clone()
@@ -493,14 +522,14 @@ async fn upload_project_image(
     };
     let files = match save_image_files(&root, "projects", project_id, &prepared).await {
         Ok(files) => files,
-        Err(_) => return database_error(),
+        Err(_) => return Err(MediaOperationError::Database),
     };
 
     let mut tx = match state.pool.begin().await {
         Ok(tx) => tx,
         Err(_) => {
             cleanup_saved_files(&root, "projects", project_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     match verify_image_target(&mut tx, user_id, project_id, step_id).await {
@@ -508,16 +537,16 @@ async fn upload_project_image(
         Ok(false) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "projects", project_id, &files).await;
-            return not_found(if step_id.is_some() {
+            return Err(MediaOperationError::NotFound(if step_id.is_some() {
                 "Step not found"
             } else {
                 "Project not found"
-            });
+            }));
         }
         Err(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "projects", project_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     }
     let is_primary = if kind == "title" {
@@ -535,7 +564,7 @@ async fn upload_project_image(
             Err(_) => {
                 let _ = tx.rollback().await;
                 cleanup_saved_files(&root, "projects", project_id, &files).await;
-                return database_error();
+                return Err(MediaOperationError::Database);
             }
         }
     } else {
@@ -547,14 +576,14 @@ async fn upload_project_image(
     {
         let _ = tx.rollback().await;
         cleanup_saved_files(&root, "projects", project_id, &files).await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     let public_id = match media_ids::allocate(&mut tx, Namespace::Image).await {
         Ok(public_id) => public_id,
         Err(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "projects", project_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     let insert = sqlx::query(
@@ -584,7 +613,7 @@ async fn upload_project_image(
         Err(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "projects", project_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     if crate::audit::record(
@@ -599,11 +628,11 @@ async fn upload_project_image(
     {
         let _ = tx.rollback().await;
         cleanup_saved_files(&root, "projects", project_id, &files).await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     if tx.commit().await.is_err() {
         cleanup_saved_files(&root, "projects", project_id, &files).await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     let row = MediaRow {
         id: media_id,
@@ -624,7 +653,7 @@ async fn upload_project_image(
         is_stitch_sample: None,
         legacy_is_title_image: None,
     };
-    json_response(StatusCode::CREATED, image_dto(&row))
+    Ok(image_dto(&row))
 }
 
 /// Decode imported content with the bounded uploader decoder and import's minimum dimensions.
@@ -742,18 +771,30 @@ async fn upload_attachment(
         Ok(id) => id,
         Err(error) => return error.into_response(),
     };
+    match upload_project_attachment(&state, user_id, project_id, multipart).await {
+        Ok(result) => json_response(StatusCode::CREATED, result),
+        Err(error) => legacy_media_error(error),
+    }
+}
+
+pub(crate) async fn upload_project_attachment(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    multipart: Multipart,
+) -> Result<AttachmentResponse, MediaOperationError> {
     match project_exists(&state.pool, user_id, project_id).await {
         Ok(true) => {}
-        Ok(false) => return not_found("Project not found"),
-        Err(_) => return database_error(),
+        Ok(false) => return Err(MediaOperationError::NotFound("Project not found")),
+        Err(_) => return Err(MediaOperationError::Database),
     }
-    let root = match media_root(&state) {
+    let root = match media_root(state) {
         Ok(root) => root,
-        Err(error) => return error.into_response(),
+        Err(_) => return Err(MediaOperationError::ServiceUnavailable),
     };
     let upload = match read_upload(multipart, false).await {
         Ok(upload) => upload,
-        Err(error) => return upload_error(error),
+        Err(error) => return Err(MediaOperationError::Upload(error)),
     };
     let claimed_type = safe_mime_type(upload.claimed_content_type.as_deref())
         .unwrap_or_else(|| "application/octet-stream".to_owned());
@@ -773,13 +814,13 @@ async fn upload_attachment(
     .await
     {
         Ok(files) => files,
-        Err(_) => return database_error(),
+        Err(_) => return Err(MediaOperationError::Database),
     };
     let mut tx = match state.pool.begin().await {
         Ok(tx) => tx,
         Err(_) => {
             cleanup_saved_files(&root, "projects", project_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     match verify_project_target(&mut tx, user_id, project_id).await {
@@ -787,12 +828,12 @@ async fn upload_attachment(
         Ok(false) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "projects", project_id, &files).await;
-            return not_found("Project not found");
+            return Err(MediaOperationError::NotFound("Project not found"));
         }
         Err(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "projects", project_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     }
     if bump_project_timestamp(&mut tx, user_id, project_id)
@@ -801,14 +842,14 @@ async fn upload_attachment(
     {
         let _ = tx.rollback().await;
         cleanup_saved_files(&root, "projects", project_id, &files).await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     let public_id = match media_ids::allocate(&mut tx, Namespace::Attachment).await {
         Ok(public_id) => public_id,
         Err(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "projects", project_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     let insert = sqlx::query(
@@ -835,7 +876,7 @@ async fn upload_attachment(
         Err(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "projects", project_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     if crate::audit::record(
@@ -850,11 +891,11 @@ async fn upload_attachment(
     {
         let _ = tx.rollback().await;
         cleanup_saved_files(&root, "projects", project_id, &files).await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     if tx.commit().await.is_err() {
         cleanup_saved_files(&root, "projects", project_id, &files).await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     let row = MediaRow {
         id: media_id,
@@ -875,7 +916,7 @@ async fn upload_attachment(
         is_stitch_sample: None,
         legacy_is_title_image: None,
     };
-    json_response(StatusCode::CREATED, attachment_dto(&row))
+    Ok(attachment_dto(&row))
 }
 
 async fn upload_yarn_photo(
@@ -888,32 +929,44 @@ async fn upload_yarn_photo(
         Ok(id) => id,
         Err(error) => return error.into_response(),
     };
+    match upload_yarn_photo_for_owner(&state, user_id, yarn_id, multipart).await {
+        Ok(result) => json_response(StatusCode::CREATED, result),
+        Err(error) => legacy_media_error(error),
+    }
+}
+
+pub(crate) async fn upload_yarn_photo_for_owner(
+    state: &AppState,
+    user_id: i64,
+    yarn_id: i64,
+    multipart: Multipart,
+) -> Result<YarnPhotoResponse, MediaOperationError> {
     let yarn_name = match yarn_name(&state.pool, user_id, yarn_id).await {
         Ok(Some(name)) => name,
-        Ok(None) => return not_found("Yarn not found"),
-        Err(_) => return database_error(),
+        Ok(None) => return Err(MediaOperationError::NotFound("Yarn not found")),
+        Err(_) => return Err(MediaOperationError::Database),
     };
-    let root = match media_root(&state) {
+    let root = match media_root(state) {
         Ok(root) => root,
-        Err(error) => return error.into_response(),
+        Err(_) => return Err(MediaOperationError::ServiceUnavailable),
     };
     let upload = match read_upload(multipart, false).await {
         Ok(upload) => upload,
-        Err(error) => return upload_error(error),
+        Err(error) => return Err(MediaOperationError::Upload(error)),
     };
     let prepared = match process_image(upload.bytes).await {
         Ok(image) => image,
-        Err(error) => return upload_error(error),
+        Err(error) => return Err(MediaOperationError::Upload(error)),
     };
     let files = match save_image_files(&root, "yarns", yarn_id, &prepared).await {
         Ok(files) => files,
-        Err(_) => return database_error(),
+        Err(_) => return Err(MediaOperationError::Database),
     };
     let mut tx = match state.pool.begin().await {
         Ok(tx) => tx,
         Err(_) => {
             cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     let owner = sqlx::query_scalar::<_, i64>("SELECT owner_id FROM yarns WHERE id = ?")
@@ -925,12 +978,12 @@ async fn upload_yarn_photo(
         Ok(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
-            return not_found("Yarn not found");
+            return Err(MediaOperationError::NotFound("Yarn not found"));
         }
         Err(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     }
     let primary = sqlx::query_scalar::<_, i64>(
@@ -945,7 +998,7 @@ async fn upload_yarn_photo(
         Err(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     if bump_yarn_timestamp(&mut tx, user_id, yarn_id)
@@ -954,14 +1007,14 @@ async fn upload_yarn_photo(
     {
         let _ = tx.rollback().await;
         cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     let public_id = match media_ids::allocate(&mut tx, Namespace::Photo).await {
         Ok(public_id) => public_id,
         Err(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     let insert = sqlx::query(
@@ -989,7 +1042,7 @@ async fn upload_yarn_photo(
         Err(_) => {
             let _ = tx.rollback().await;
             cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     if crate::audit::record(
@@ -1004,11 +1057,11 @@ async fn upload_yarn_photo(
     {
         let _ = tx.rollback().await;
         cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     if tx.commit().await.is_err() {
         cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     let row = MediaRow {
         id: media_id,
@@ -1029,7 +1082,7 @@ async fn upload_yarn_photo(
         is_stitch_sample: None,
         legacy_is_title_image: None,
     };
-    json_response(StatusCode::CREATED, yarn_photo_dto(&row))
+    Ok(yarn_photo_dto(&row))
 }
 
 async fn delete_project_image(
@@ -1041,7 +1094,10 @@ async fn delete_project_image(
         Ok(id) => id,
         Err(error) => return error.into_response(),
     };
-    delete_project_media(&state, user_id, project_id, image_id, Namespace::Image).await
+    match delete_project_media(&state, user_id, project_id, image_id, Namespace::Image).await {
+        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Err(error) => legacy_media_error(error),
+    }
 }
 
 async fn delete_project_attachment(
@@ -1053,7 +1109,7 @@ async fn delete_project_attachment(
         Ok(id) => id,
         Err(error) => return error.into_response(),
     };
-    delete_project_media(
+    match delete_project_media(
         &state,
         user_id,
         project_id,
@@ -1061,18 +1117,22 @@ async fn delete_project_attachment(
         Namespace::Attachment,
     )
     .await
+    {
+        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Err(error) => legacy_media_error(error),
+    }
 }
 
-async fn delete_project_media(
+pub(crate) async fn delete_project_media(
     state: &AppState,
     user_id: i64,
     project_id: i64,
     media_id: i64,
     namespace: Namespace,
-) -> Response {
+) -> Result<(), MediaOperationError> {
     let mut tx = match state.pool.begin().await {
         Ok(tx) => tx,
-        Err(_) => return database_error(),
+        Err(_) => return Err(MediaOperationError::Database),
     };
     let row = match sqlx::query_as::<_, MediaRow>(
         "SELECT * FROM media_files WHERE public_id = ? AND owner_id = ? AND project_id = ? \
@@ -1089,15 +1149,17 @@ async fn delete_project_media(
         Ok(Some(row)) => row,
         Ok(None) => {
             let _ = tx.rollback().await;
-            return not_found(if namespace == Namespace::Attachment {
-                "Attachment not found"
-            } else {
-                "Image not found"
-            });
+            return Err(MediaOperationError::NotFound(
+                if namespace == Namespace::Attachment {
+                    "Attachment not found"
+                } else {
+                    "Image not found"
+                },
+            ));
         }
         Err(_) => {
             let _ = tx.rollback().await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     if bump_project_timestamp(&mut tx, user_id, project_id)
@@ -1105,7 +1167,7 @@ async fn delete_project_media(
         .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     if sqlx::query("DELETE FROM media_files WHERE id = ?")
         .bind(row.id)
@@ -1114,7 +1176,7 @@ async fn delete_project_media(
         .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     if crate::audit::record(
         &mut tx,
@@ -1127,13 +1189,13 @@ async fn delete_project_media(
     .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     if tx.commit().await.is_err() {
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     let _ = cleanup_pending(state).await;
-    StatusCode::NO_CONTENT.into_response()
+    Ok(())
 }
 
 async fn delete_yarn_photo(
@@ -1145,9 +1207,21 @@ async fn delete_yarn_photo(
         Ok(id) => id,
         Err(error) => return error.into_response(),
     };
+    match delete_yarn_photo_for_owner(&state, user_id, yarn_id, photo_id).await {
+        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Err(error) => legacy_media_error(error),
+    }
+}
+
+pub(crate) async fn delete_yarn_photo_for_owner(
+    state: &AppState,
+    user_id: i64,
+    yarn_id: i64,
+    photo_id: i64,
+) -> Result<(), MediaOperationError> {
     let mut tx = match state.pool.begin().await {
         Ok(tx) => tx,
-        Err(_) => return database_error(),
+        Err(_) => return Err(MediaOperationError::Database),
     };
     let photo = match sqlx::query_as::<_, MediaRow>(
         "SELECT * FROM media_files WHERE public_id = ? AND owner_id = ? \
@@ -1162,11 +1236,11 @@ async fn delete_yarn_photo(
         Ok(Some(photo)) => photo,
         Ok(None) => {
             let _ = tx.rollback().await;
-            return not_found("Photo not found");
+            return Err(MediaOperationError::NotFound("Photo not found"));
         }
         Err(_) => {
             let _ = tx.rollback().await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     };
     let still_owned = sqlx::query_scalar::<_, i64>("SELECT owner_id FROM yarns WHERE id = ?")
@@ -1177,11 +1251,11 @@ async fn delete_yarn_photo(
         Ok(Some(owner_id)) if owner_id == user_id => {}
         Ok(_) => {
             let _ = tx.rollback().await;
-            return not_found("Photo not found");
+            return Err(MediaOperationError::NotFound("Photo not found"));
         }
         Err(_) => {
             let _ = tx.rollback().await;
-            return database_error();
+            return Err(MediaOperationError::Database);
         }
     }
     if bump_yarn_timestamp(&mut tx, user_id, yarn_id)
@@ -1189,7 +1263,7 @@ async fn delete_yarn_photo(
         .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     if sqlx::query("DELETE FROM media_files WHERE id = ?")
         .bind(photo.id)
@@ -1198,7 +1272,7 @@ async fn delete_yarn_photo(
         .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     if crate::audit::record(
         &mut tx,
@@ -1211,7 +1285,7 @@ async fn delete_yarn_photo(
     .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
     if photo.is_primary {
         let next = sqlx::query_scalar::<_, i64>(
@@ -1230,21 +1304,21 @@ async fn delete_yarn_photo(
                     .is_err()
                 {
                     let _ = tx.rollback().await;
-                    return database_error();
+                    return Err(MediaOperationError::Database);
                 }
             }
             Ok(None) => {}
             Err(_) => {
                 let _ = tx.rollback().await;
-                return database_error();
+                return Err(MediaOperationError::Database);
             }
         }
     }
     if tx.commit().await.is_err() {
-        return database_error();
+        return Err(MediaOperationError::Database);
     }
-    let _ = cleanup_pending(&state).await;
-    StatusCode::NO_CONTENT.into_response()
+    let _ = cleanup_pending(state).await;
+    Ok(())
 }
 
 async fn serve_media(

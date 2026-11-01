@@ -204,6 +204,65 @@ category with `201` and does not duplicate its audit event. A rename collision
 returns `409` with a `name` field error. Foreign-owned category IDs are hidden
 as `404`.
 
+## Media API slice
+
+Media uploads and deletes use the same browser session and same-origin CSRF
+checks as other v2 writes. These routes mirror existing v1 operations and call
+the same typed storage functions, so Android's bearer-token routes and wire
+shapes stay unchanged:
+
+| Method and path | Multipart fields / result |
+| --- | --- |
+| `POST /projects/{project_id}/images/title` | `file` and optional `alt_text`; `201 {data: Image}` |
+| `POST /projects/{project_id}/steps/{step_id}/images` | `file` and optional `alt_text`; `201 {data: Image}` |
+| `POST /projects/{project_id}/attachments` | `file`; `201 {data: Attachment}` |
+| `POST /yarns/{yarn_id}/photos` | `file`; `201 {data: YarnPhoto}` |
+| `DELETE /projects/{project_id}/images/{image_id}` | `204` |
+| `DELETE /projects/{project_id}/attachments/{attachment_id}` | `204` |
+| `DELETE /yarns/{yarn_id}/photos/{photo_id}` | `204` |
+
+Each upload requires a multipart field named `file`. Project image uploads may
+also set `alt_text`; other fields are rejected. Upload responses use existing
+v1 DTO field names and numeric public IDs, wrapped in `{ "data": ... }`:
+
+```json
+{
+  "data": {
+    "id": 17,
+    "url": "/media/projects/42/example.png",
+    "thumbnail_url": "/media/thumbnails/projects/42/thumb_example.jpg",
+    "alt_text": "Sleeve detail",
+    "image_type": "photo",
+    "is_title_image": false,
+    "is_stitch_sample": false,
+    "step_id": 81
+  }
+}
+```
+
+An `Image` contains `id`, `url`, `thumbnail_url`, `alt_text`, `image_type`,
+`is_title_image`, `is_stitch_sample`, and nullable `step_id`. An `Attachment`
+contains `id`, `filename`, `original_filename`, `content_type`, `size_bytes`,
+and `url`. A `YarnPhoto` contains `id`, `url`, `thumbnail_url`, `alt_text`, and
+`is_primary`. Upload responses include only the new media DTO; clients refresh
+the owning resource to get its full current media list.
+
+The request body limit is 26 MiB to allow multipart overhead. The file part is
+limited to 25 MiB; image decoding retains its pixel, dimension, and allocation
+limits. The server continues to normalize supported images, create thumbnails,
+classify safe attachments, use opaque filenames, stage and clean files around
+the owner-scoped database transaction, and write existing upload/remove audit
+events. Adding or deleting media advances its project's or yarn's
+`updated_at`; deleting a primary yarn photo promotes the next photo. Uploads do
+not accept `expected_updated_at`; the existing transaction serializes each
+media mutation and updates the resource timestamp.
+
+Missing or foreign-owned targets return `404`. Invalid multipart returns `400`
+with `error.code: "invalid_multipart"`; unsupported images return `400` with
+`error.code: "invalid_image"`; files over the limit return `413` with
+`error.code: "payload_too_large"`. Media serving remains on the existing
+authenticated `/media/...` routes.
+
 ## Proposed contract for remaining resource slices
 
 These resource routes are a starting contract for frontend/backend slices;
@@ -211,7 +270,6 @@ they are not part of the initial authentication implementation.
 
 | Resource | Proposed operations |
 | --- | --- |
-| Media | Multipart upload and delete routes under the owning project, step, or yarn |
 | Imports | Synchronous URL/text/file preview routes; creation uses normal project/yarn writes |
 | Archive | Enqueue route and owner-scoped status only if the UI needs polling |
 | Account/admin | Only the self-service and administrator operations used by the UI |
@@ -235,8 +293,6 @@ returns `409` with `error.code: "conflict"` and the current DTO in
 V2 responses use the common error envelope.
 
 All resource lookups and mutations are scoped to the authenticated owner.
-Missing and foreign-owned IDs both return `404`. Media handlers enforce the
-same ownership rule and the existing upload byte, type, decoding, and image
-dimension limits. Import previews remain bounded synchronous requests; the
-existing archive queue is the only durable asynchronous job in the current
-Rust candidate.
+Missing and foreign-owned IDs both return `404`. Import previews remain
+bounded synchronous requests; the existing archive queue is the only durable
+asynchronous job in the current Rust candidate.
