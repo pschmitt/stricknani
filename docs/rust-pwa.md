@@ -14,7 +14,7 @@ URL. Other GET requests and every non-GET request stay network-only. Navigations
 the offline page is returned only when a navigation fetch fails at the network layer. An HTTP
 response such as a login redirect, 401, or server error is returned unchanged.
 
-The worker uses the versioned `stricknani-pwa-v1` cache. Bump the version when changing cache
+The worker uses the versioned `stricknani-pwa-v2` cache. Bump the version when changing cache
 policy or public-shell assets. Activation deletes older caches owned by this worker and removes
 cache entries outside the current public allowlist. It also clears the previous Python worker's
 `stricknani-static-*` and `stricknani-runtime-*` caches, which could contain previously viewed

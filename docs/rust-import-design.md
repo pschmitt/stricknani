@@ -1,8 +1,10 @@
 # Rust URL import foundation
 
-`rust/src/imports.rs` provides a bounded fetch layer for routes that import a public URL.
-It is a transport and small metadata-extraction foundation; routes, provider integrations,
-background work, and image import workflows remain separate work.
+`rust/src/imports.rs` provides the bounded public-URL fetch layer used by the Android import
+endpoint, browser import preview, and create-time image import. The document parser runs through
+`document_worker`; `import_service` maps extracted drafts to Android responses and reviewable
+browser forms. Optional AI enhancement is wired through the same service when enabled and
+explicitly requested by the user.
 
 ## Request policy
 
@@ -73,15 +75,18 @@ and wall-time limits. Image and sha2 dependencies provide image-header facts and
 
 ## Import endpoints
 
-The import service accepts the Android URL-encoded POST /projects/import request with type=url,
-url, and use_ai. It requires a Bearer token. Remote URL requests return service unavailable until
-the explicit external-import flag is enabled. The current route performs extraction only; even
-when use_ai is requested, the response reports is_ai_enhanced=false and ai_fallback=false. It
-returns the source content SHA-256 as duplicate-review evidence and never merges or deletes records
-based on the digest.
+The import service accepts the Android URL-encoded `POST /projects/import` request with
+`type=url`, `url`, and `use_ai`. It requires a Bearer token. Remote URL requests return service
+unavailable until the explicit external-import flag is enabled. When the AI feature is also
+enabled and `use_ai` is true, the service may enhance the draft through the configured provider;
+the response distinguishes `ai_requested`, `is_ai_enhanced`, and `ai_fallback`. Failures preserve
+the local draft and do not mark it as AI-enhanced. The response also returns the source content
+SHA-256 as duplicate-review evidence. The digest never merges or deletes records by itself.
 
-Browser users can preview URL, text, and uploaded-file imports at /imports. The browser routes
-require the existing session cookie and CSRF token. Project and yarn creation call the normal
+Browser users can preview URL, text, and uploaded-file imports at `/imports`. The browser routes
+require the existing session cookie and CSRF token. URL preview is subject to the external-import
+feature flag; text and file parsing do not fetch a URL. Optional AI enhancement requires both its
+server feature flag and explicit form selection. Project and yarn creation call the normal
 versioned API router with the browser session token; the import module does not write domain SQL.
 Remote images remain suggestions in the preview. Project creation now accepts the existing v1
 `image_urls` list for gallery media and `steps[*].image_urls` for the newly created steps. Image
@@ -108,3 +113,10 @@ disabled, a create request carrying image URLs keeps the existing 501 response a
 fetch or database write; production wiring may enable it only through the explicit
 `RUST_EXTERNAL_IMPORTS_ENABLED` setting. Tests inject an image fetcher and use in-memory SQLite and
 temporary media directories; they do not contact public hosts.
+
+`rust/tests/import_service.rs` covers bearer authorization, the disabled remote-URL path, browser
+CSRF, text and AI previews, file parsing, AI provenance through creation, and bounded source text.
+`rust/tests/image_import.rs` covers safe fetch policy, best-effort create-time media import, exact
+byte deduplication, and media persistence with injected transports. `rust/tests/document_worker.rs`
+and `rust/tests/import_document.rs` exercise the isolated parser boundary and local formats. OCR
+is a separate authorized-media utility at `/utils/ocr`; it is not automatically run during import.

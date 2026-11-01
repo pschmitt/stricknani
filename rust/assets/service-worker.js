@@ -1,6 +1,6 @@
 /* Public offline shell only. Authenticated pages, APIs, and media stay network-only. */
 const CACHE_PREFIX = "stricknani-pwa-";
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const CACHE_NAME = `${CACHE_PREFIX}v2`;
 const LEGACY_CACHE_PREFIXES = ["stricknani-static-", "stricknani-runtime-"];
 const OFFLINE_PATH = "/offline";
 const PUBLIC_PATHS = new Set([
@@ -9,6 +9,7 @@ const PUBLIC_PATHS = new Set([
 	"/register-pwa.js",
 	"/static/css/app.css",
 	"/static/css/material.css",
+	"/static/css/rust.css",
 	"/static/favicon.svg",
 	"/static/icons/icon-192.png",
 	"/static/icons/icon-512.png",

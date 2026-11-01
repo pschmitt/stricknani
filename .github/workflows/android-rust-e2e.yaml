@@ -152,6 +152,16 @@ jobs:
           working-directory: android
           script: bash ../ci/stricknani/run-rust-e2e-ci.sh
 
+      - name: Summarize Android instrumentation failures
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m ci.stricknani.summarize_rust_e2e \
+            --results-dir android/app/build/outputs/androidTest-results/connected/debug \
+            --fixture-file "$RUST_FIXTURE_FILE" \
+            --token-file "$RUST_E2E_TOKEN_FILE"
+
       - name: Stop and remove disposable Rust fixture
         if: ${{ always() }}
         shell: bash

@@ -125,3 +125,33 @@ async fn pwa_router_does_not_serve_authenticated_or_api_routes() {
         assert_eq!(response.status(), StatusCode::NOT_FOUND, "path: {path}");
     }
 }
+
+#[test]
+fn service_worker_precaches_all_offline_fallback_stylesheets() {
+    let offline = scraper::Html::parse_document(include_str!("../templates/offline.html"));
+    let stylesheet_selector = scraper::Selector::parse("link[rel='stylesheet']")
+        .expect("stylesheet selector should parse");
+    let worker = include_str!("../assets/service-worker.js");
+    let allowlist = worker
+        .split("const PUBLIC_PATHS = new Set([")
+        .nth(1)
+        .and_then(|tail| tail.split("]);").next())
+        .expect("service worker should declare its public cache allowlist");
+
+    for stylesheet in offline.select(&stylesheet_selector) {
+        let href = stylesheet
+            .value()
+            .attr("href")
+            .expect("offline stylesheet should have a URL");
+        assert!(
+            allowlist.contains(&format!("\"{href}\"")),
+            "offline fallback stylesheet is missing from the service worker precache: {href}"
+        );
+    }
+    for private_path in ["/projects", "/api/v1/projects", "/media/projects/"] {
+        assert!(
+            !allowlist.contains(private_path),
+            "private route must not enter the service worker precache: {private_path}"
+        );
+    }
+}

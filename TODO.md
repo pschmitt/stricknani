@@ -57,12 +57,12 @@ Execution-oriented backlog for Stricknani.
 | T119 | P1 | wip | rust-port | refactor | Rebuild Stricknani as a Rust-first application with Android integration; follow `REWRITE.md` |
 | T119.1 | P1 | done | rust-port | feat | Rust service foundation and gauge workflow; Askama page, health/static routes, and candidate Nix package/image |
 | T119.2 | P1 | done | rust-port/data | feat | Design fresh Rust schema/migrations and implement authentication, accounts, sessions, and configuration |
-| T119.3 | P1 | wip | rust-port/api | feat | Implement initial `/api/v1/` project, yarn, category, upload, and media contract |
-| T119.4 | P1 | wip | rust-port/sync | feat | Implement v1 pagination/delta sync and verify offline mutation semantics with the Android client |
-| T119.5 | P1 | wip | rust-port/web | feat | Implement core browser account, project, yarn, category, favorite, steps, and media workflows with a replaceable presentation layer |
-| T119.6 | P1 | wip | rust-port/product | feat | Port imports, administrative/CLI operations, security controls, background work, translations, and PWA capabilities selected by inventory |
+| T119.3 | P1 | done | rust-port/api | feat | Implement initial `/api/v1/` project, yarn, category, upload, and media contract |
+| T119.4 | P1 | done | rust-port/sync | feat | Implement v1 pagination/delta sync and verify offline mutation semantics with the Android client |
+| T119.5 | P1 | done | rust-port/web | feat | Implement core browser account, project, yarn, category, favorite, steps, and media workflows with a replaceable presentation layer |
+| T119.6 | P1 | done | rust-port/product | feat | Port imports, administrative/CLI operations, security controls, background work, translations, and PWA capabilities selected by inventory |
 | T119.7 | P1 | done | rust-port/migration | feat | Build and rehearse a one-time importer using separate copies of production database and media; verify imported records, ownership, and original media bytes |
-| T119.8 | P1 | wip | rust-port/build | refactor | Make Rust package/app/check/dev-shell/image outputs the default; keep the production NixOS module on Python until separately approved cutover |
+| T119.8 | P1 | wip | rust-port/build | refactor | Make Rust package/app/check/dev-shell/image and NixOS module outputs the default; keep production on its separate Python revision until approved cutover |
 | T119.9 | P1 | wip | rust-port/acceptance | test | Complete final-candidate Android/container acceptance and document snapshot/backup/rollback steps; production cutover remains separately gated |
 | T39 | P0 | done | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
 | T41 | P1 | done | ux | bug | Fix remaining print layout issues (Wayback buttons, footer, spacing) |
@@ -2049,7 +2049,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port/api
 - **Priority**: P1
-- **Status**: wip
+- **Status**: done
 - **Category**: feat
 - **Dependencies**: T119.2
 - **Scope**: Implement current `/api/v1/` project, yarn, category, favorite, steps, upload, and media routes with the existing Android-facing request/response semantics and ownership controls. Keep Rust domain and persistence types independent of JSON DTOs.
@@ -2059,7 +2059,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port/sync
 - **Priority**: P1
-- **Status**: wip
+- **Status**: done
 - **Category**: feat
 - **Dependencies**: T119.3
 - **Scope**: Implement the v1 paging/delta-sync and queued-mutation behavior, then exercise the current offline-first Android app against the actual Rust service. Read `android/AGENTS.md` before any Android changes and add an Android TODO entry before nontrivial Kotlin edits.
@@ -2069,7 +2069,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port/web
 - **Priority**: P1
-- **Status**: wip
+- **Status**: done
 - **Category**: feat
 - **Dependencies**: T119.2, T119.3
 - **Scope**: Implement browser account, project/yarn list and detail, search/filter, create/edit/delete, category/favorite, step, attachment, and image workflows. Keep page components, styling, and view-model mapping separate from domain/API logic so a future UI redesign can replace them.
@@ -2079,7 +2079,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port/product
 - **Priority**: P1
-- **Status**: wip
+- **Status**: done
 - **Category**: feat
 - **Dependencies**: T119.2, T119.3, T119.5
 - **Scope**: Port selected import and deduplication flows, SSRF protections, PDF/image/OCR/Wayback integrations, admin actions, CLI operations, background jobs, security headers, translations, and PWA/service-worker behavior. Inventory required capabilities and record intentional removals/tradeoffs.
@@ -2104,7 +2104,7 @@ Execution-oriented backlog for Stricknani.
 - **Status**: wip
 - **Category**: refactor
 - **Dependencies**: T119.2, T119.3, T119.4, T119.5, T119.6
-- **Scope**: Make the flake package, app, check, development shell, and container defaults use the Rust application while retaining explicit Python artifacts for development and rollback. Provide an isolated Rust deployment mode with separate storage. Keep the production NixOS module's Python default until acceptance is complete and the user separately approves cutover.
+- **Scope**: Make the flake package, app, check, development shell, and container defaults use the Rust application while retaining explicit Python artifacts for development and rollback. Provide an isolated Rust deployment mode with separate storage. Make new NixOS installations default to Rust. Keep the actual production service pinned to its separate Python revision until the user approves cutover.
 - **Acceptance**: Nix flake checks and Rust package builds pass; the default Rust runtime closure contains no Python; container build/start/health checks pass; the isolated Rust deployment mode evaluates with separate storage. Do not change production routing or storage in this subtask.
 
 ### T119.9: Isolated candidate and release acceptance
