@@ -145,6 +145,14 @@ pub(crate) enum ProjectError {
     ImageImportUnavailable,
 }
 
+/// Tag parsing mode at the API boundary: v1 keeps its tokenized labels while
+/// browser v2 preserves each JSON array item as a label.
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum TagPolicy {
+    Legacy,
+    PreserveLabels,
+}
+
 impl ProjectError {
     fn into_v1_response(self) -> Response {
         match self {
@@ -226,6 +234,15 @@ pub(crate) async fn list_for_owner(
     user_id: i64,
     query: ListQuery,
 ) -> Result<ProjectPage, ProjectError> {
+    list_for_owner_with_tag_policy(state, user_id, query, TagPolicy::Legacy).await
+}
+
+pub(crate) async fn list_for_owner_with_tag_policy(
+    state: &AppState,
+    user_id: i64,
+    query: ListQuery,
+    tag_policy: TagPolicy,
+) -> Result<ProjectPage, ProjectError> {
     let page = query.page.unwrap_or(1);
     if page < 1 {
         return Err(ProjectError::Invalid("Invalid page"));
@@ -288,7 +305,7 @@ pub(crate) async fn list_for_owner(
             id: row.id,
             name: row.name,
             category: row.category,
-            tags: decode_tags(&row.tags),
+            tags: decode_tags(&row.tags, tag_policy),
             is_favorite: row.is_favorite,
             updated_at: row.updated_at,
             preview_url: crate::media::project_preview(&images),
@@ -349,6 +366,15 @@ pub(crate) async fn create_for_owner(
     user_id: i64,
     payload: ProjectWriteRequest,
 ) -> Result<ProjectResponse, ProjectError> {
+    create_for_owner_with_tag_policy(state, user_id, payload, TagPolicy::Legacy).await
+}
+
+pub(crate) async fn create_for_owner_with_tag_policy(
+    state: &AppState,
+    user_id: i64,
+    payload: ProjectWriteRequest,
+    tag_policy: TagPolicy,
+) -> Result<ProjectResponse, ProjectError> {
     if payload_has_image_urls(&payload) && (!state.external_imports || state.media_root.is_none()) {
         return Err(if state.external_imports {
             ProjectError::Database
@@ -385,7 +411,7 @@ pub(crate) async fn create_for_owner(
         .await
         .map_err(|_| ProjectError::Database)?;
     let now = timestamp(Utc::now());
-    let tags = encode_tags(&payload.tags);
+    let tags = encode_tags(&payload.tags, tag_policy);
     let inserted = sqlx::query(
         "INSERT INTO projects (owner_id, category_id, name, needles, stitch_sample, \
          description, notes, other_materials, tags, link, is_ai_enhanced, created_at, updated_at) \
@@ -459,7 +485,7 @@ pub(crate) async fn create_for_owner(
         .await;
     }
 
-    load_project(state, user_id, project_id)
+    load_project_with_tag_policy(state, user_id, project_id, tag_policy)
         .await
         .map_err(|_| ProjectError::Database)?
         .ok_or(ProjectError::Database)
@@ -487,6 +513,16 @@ pub(crate) async fn update_for_owner(
     project_id: i64,
     payload: ProjectWriteRequest,
 ) -> Result<ProjectResponse, ProjectError> {
+    update_for_owner_with_tag_policy(state, user_id, project_id, payload, TagPolicy::Legacy).await
+}
+
+pub(crate) async fn update_for_owner_with_tag_policy(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    payload: ProjectWriteRequest,
+    tag_policy: TagPolicy,
+) -> Result<ProjectResponse, ProjectError> {
     let name = payload.name.trim().to_owned();
     let expected_updated_at = match payload.expected_updated_at.as_deref() {
         Some(value) => Some(
@@ -494,7 +530,7 @@ pub(crate) async fn update_for_owner(
         ),
         None => None,
     };
-    let current = load_project(state, user_id, project_id)
+    let current = load_project_with_tag_policy(state, user_id, project_id, tag_policy)
         .await
         .map_err(|_| ProjectError::Database)?
         .ok_or(ProjectError::NotFound)?;
@@ -522,7 +558,7 @@ pub(crate) async fn update_for_owner(
         .await
         .map_err(|_| ProjectError::Database)?;
     let updated_at = next_timestamp(&current.updated_at).ok_or(ProjectError::Database)?;
-    let tags = encode_tags(&payload.tags);
+    let tags = encode_tags(&payload.tags, tag_policy);
     let updated = sqlx::query(
         "UPDATE projects SET category_id = ?, name = ?, needles = ?, stitch_sample = ?, \
          description = ?, notes = ?, other_materials = ?, tags = ?, link = ?, \
@@ -549,7 +585,8 @@ pub(crate) async fn update_for_owner(
         Ok(result) if result.rows_affected() == 1 => {}
         Ok(_) => {
             let _ = transaction.rollback().await;
-            return match load_project(state, user_id, project_id).await {
+            return match load_project_with_tag_policy(state, user_id, project_id, tag_policy).await
+            {
                 Ok(Some(project)) => Err(ProjectError::Conflict(Box::new(project))),
                 Ok(None) => Err(ProjectError::NotFound),
                 Err(_) => Err(ProjectError::Database),
@@ -602,7 +639,7 @@ pub(crate) async fn update_for_owner(
     if transaction.commit().await.is_err() {
         return Err(ProjectError::Database);
     }
-    load_project(state, user_id, project_id)
+    load_project_with_tag_policy(state, user_id, project_id, tag_policy)
         .await
         .map_err(|_| ProjectError::Database)?
         .ok_or(ProjectError::NotFound)
@@ -734,6 +771,17 @@ pub(crate) async fn set_favorite_for_owner(
     project_id: i64,
     favorite: bool,
 ) -> Result<ProjectResponse, ProjectError> {
+    set_favorite_for_owner_with_tag_policy(state, user_id, project_id, favorite, TagPolicy::Legacy)
+        .await
+}
+
+pub(crate) async fn set_favorite_for_owner_with_tag_policy(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    favorite: bool,
+    tag_policy: TagPolicy,
+) -> Result<ProjectResponse, ProjectError> {
     let project_exists =
         sqlx::query_scalar::<_, i64>("SELECT id FROM projects WHERE id = ? AND owner_id = ?")
             .bind(project_id)
@@ -764,7 +812,7 @@ pub(crate) async fn set_favorite_for_owner(
     if result.is_err() {
         return Err(ProjectError::Database);
     }
-    load_project(state, user_id, project_id)
+    load_project_with_tag_policy(state, user_id, project_id, tag_policy)
         .await
         .map_err(|_| ProjectError::Database)?
         .ok_or(ProjectError::NotFound)
@@ -774,6 +822,15 @@ pub(crate) async fn load_project(
     state: &AppState,
     user_id: i64,
     project_id: i64,
+) -> Result<Option<ProjectResponse>, sqlx::Error> {
+    load_project_with_tag_policy(state, user_id, project_id, TagPolicy::Legacy).await
+}
+
+pub(crate) async fn load_project_with_tag_policy(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    tag_policy: TagPolicy,
 ) -> Result<Option<ProjectResponse>, sqlx::Error> {
     let row = sqlx::query_as::<_, ProjectRow>(
         "SELECT p.id, p.name, c.name AS category, p.needles, p.stitch_sample, \
@@ -826,7 +883,7 @@ pub(crate) async fn load_project(
         description: row.description,
         notes: row.notes,
         other_materials: row.other_materials,
-        tags: decode_tags(&row.tags),
+        tags: decode_tags(&row.tags, tag_policy),
         link: row.link,
         link_archive: row.link_archive,
         is_ai_enhanced: row.is_ai_enhanced,
@@ -1094,30 +1151,41 @@ fn stripped_optional(value: Option<String>) -> Option<String> {
     value.map(|value| value.trim().to_owned())
 }
 
-fn encode_tags(tags: &[String]) -> String {
-    let mut seen = HashSet::new();
-    let normalized: Vec<String> = tags
-        .iter()
-        .flat_map(|tag| {
-            tag.split(|character: char| {
-                character == ',' || character == '#' || character.is_whitespace()
-            })
-        })
-        .map(str::trim)
-        .filter(|tag| !tag.is_empty())
-        .filter(|tag| seen.insert(tag.to_lowercase()))
-        .map(str::to_owned)
-        .collect();
+fn encode_tags(tags: &[String], tag_policy: TagPolicy) -> String {
+    let normalized: Vec<String> = match tag_policy {
+        TagPolicy::PreserveLabels => tags.to_vec(),
+        TagPolicy::Legacy => {
+            let mut seen = HashSet::new();
+            tags.iter()
+                .flat_map(|tag| {
+                    tag.split(|character: char| {
+                        character == ',' || character == '#' || character.is_whitespace()
+                    })
+                })
+                .map(str::trim)
+                .filter(|tag| !tag.is_empty())
+                .filter(|tag| seen.insert(tag.to_lowercase()))
+                .map(str::to_owned)
+                .collect()
+        }
+    };
     serde_json::to_string(&normalized).unwrap_or_else(|_| "[]".to_owned())
 }
 
-fn decode_tags(tags: &str) -> Vec<String> {
-    serde_json::from_str::<Vec<String>>(tags)
-        .unwrap_or_else(|_| tags.split(',').map(str::to_owned).collect())
-        .into_iter()
-        .map(|tag| tag.trim().to_owned())
-        .filter(|tag| !tag.is_empty())
-        .collect()
+fn decode_tags(tags: &str, tag_policy: TagPolicy) -> Vec<String> {
+    match serde_json::from_str::<Vec<String>>(tags) {
+        Ok(tags) if matches!(tag_policy, TagPolicy::PreserveLabels) => tags,
+        Ok(tags) => tags
+            .into_iter()
+            .map(|tag| tag.trim().to_owned())
+            .filter(|tag| !tag.is_empty())
+            .collect(),
+        Err(_) => tags
+            .split(',')
+            .map(|tag| tag.trim().to_owned())
+            .filter(|tag| !tag.is_empty())
+            .collect(),
+    }
 }
 
 fn parse_timestamp(value: &str) -> Option<DateTime<Utc>> {

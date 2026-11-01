@@ -416,3 +416,71 @@ async fn project_json_allows_large_patterns_but_returns_stable_error_over_two_mi
     assert_eq!(error["error"]["code"], "payload_too_large");
     assert_eq!(error["error"]["message"], "Request body is too large");
 }
+
+#[tokio::test]
+async fn v2_project_tags_preserve_each_json_label_across_unrelated_updates() {
+    let (app, pool) = fixture().await;
+    db::create_user(
+        &pool,
+        "tag-labels@example.test",
+        "tag-label-password-long".to_owned(),
+    )
+    .await
+    .unwrap();
+    let (session, csrf) =
+        signed_in(&app, "tag-labels@example.test", "tag-label-password-long").await;
+    let tags = serde_json::json!(["color, texture", "two words", "#literal"]);
+
+    let created = app
+        .clone()
+        .oneshot(browser_request(
+            "POST",
+            "/projects",
+            &session,
+            Some(&csrf),
+            Some(serde_json::json!({ "name": "Tagged shawl", "tags": tags.clone() }).to_string()),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(created.status(), StatusCode::CREATED);
+    let created = json(created).await["data"].clone();
+    let project_id = created["id"].as_i64().unwrap();
+    assert_eq!(created["tags"], tags);
+
+    let updated = app
+        .clone()
+        .oneshot(browser_request(
+            "PUT",
+            &format!("/projects/{project_id}"),
+            &session,
+            Some(&csrf),
+            Some(
+                serde_json::json!({
+                    "name": "Tagged shawl renamed",
+                    "tags": tags.clone(),
+                    "expected_updated_at": created["updated_at"].clone()
+                })
+                .to_string(),
+            ),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(updated.status(), StatusCode::OK);
+    let updated = json(updated).await["data"].clone();
+    assert_eq!(updated["name"], "Tagged shawl renamed");
+    assert_eq!(updated["tags"], tags);
+
+    let stored_tags: String = sqlx::query_scalar("SELECT tags FROM projects WHERE id = ?")
+        .bind(project_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        serde_json::from_str::<Vec<String>>(&stored_tags).unwrap(),
+        tags.as_array()
+            .unwrap()
+            .iter()
+            .map(|tag| tag.as_str().unwrap().to_owned())
+            .collect::<Vec<_>>()
+    );
+}

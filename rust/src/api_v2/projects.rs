@@ -12,7 +12,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use project_service::{ListQuery, ProjectError, ProjectResponse, ProjectWriteRequest};
+use project_service::{ListQuery, ProjectError, ProjectResponse, ProjectWriteRequest, TagPolicy};
 use serde::{Deserialize, Serialize};
 
 use super::{
@@ -225,7 +225,7 @@ async fn list_projects(
         Ok(query) => query,
         Err(_) => return validation_error("Invalid query", None),
     };
-    let page = match project_service::list_for_owner(
+    let page = match project_service::list_for_owner_with_tag_policy(
         &state.app,
         user_id,
         ListQuery {
@@ -235,6 +235,7 @@ async fn list_projects(
             favorite: query.favorite,
             q: query.q,
         },
+        TagPolicy::PreserveLabels,
     )
     .await
     {
@@ -262,7 +263,14 @@ async fn get_project(
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };
-    match project_service::load_project(&state.app, user_id, project_id).await {
+    match project_service::load_project_with_tag_policy(
+        &state.app,
+        user_id,
+        project_id,
+        TagPolicy::PreserveLabels,
+    )
+    .await
+    {
         Ok(Some(project)) => Json(Envelope {
             data: ProjectDto::from(project),
         })
@@ -288,7 +296,14 @@ async fn create_project(
     if let Some(response) = validate_project(&payload) {
         return response;
     }
-    match project_service::create_for_owner(&state.app, user_id, payload).await {
+    match project_service::create_for_owner_with_tag_policy(
+        &state.app,
+        user_id,
+        payload,
+        TagPolicy::PreserveLabels,
+    )
+    .await
+    {
         Ok(project) => (
             StatusCode::CREATED,
             Json(Envelope {
@@ -325,7 +340,15 @@ async fn update_project(
             Some("image_urls"),
         );
     }
-    match project_service::update_for_owner(&state.app, user_id, project_id, payload).await {
+    match project_service::update_for_owner_with_tag_policy(
+        &state.app,
+        user_id,
+        project_id,
+        payload,
+        TagPolicy::PreserveLabels,
+    )
+    .await
+    {
         Ok(project) => Json(Envelope {
             data: ProjectDto::from(project),
         })
@@ -375,7 +398,15 @@ async fn set_favorite(
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };
-    match project_service::set_favorite_for_owner(&state.app, user_id, project_id, favorite).await {
+    match project_service::set_favorite_for_owner_with_tag_policy(
+        &state.app,
+        user_id,
+        project_id,
+        favorite,
+        TagPolicy::PreserveLabels,
+    )
+    .await
+    {
         Ok(project) => Json(Envelope {
             data: ProjectDto::from(project),
         })

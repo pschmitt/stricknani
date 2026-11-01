@@ -151,6 +151,9 @@ The project DTO keeps v1 project field names and numeric IDs. It includes
 these values are rendered and sanitized by the same Rust Markdown helper used
 by server-rendered pages. The UI must render these safe HTML companion fields
 instead of interpreting raw Markdown or trusting authored HTML itself.
+In v2, each string in `tags` is one complete label and is preserved exactly;
+commas, `#`, and internal spaces are not delimiters. V1 retains its legacy
+comma/hash/whitespace splitting and case-insensitive deduplication behavior.
 
 Project creation accepts the established project fields, `yarn_ids`, and
 `steps`. If the existing external image import capability is enabled, gallery
