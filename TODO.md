@@ -36,7 +36,7 @@ Execution-oriented backlog for Stricknani.
 | T120.5 | P1 | wip | web-rewrite/editor | feat | Build touch-friendly project editing, steps, uploads and conflict recovery |
 | T120.6 | P1 | wip | web-rewrite/yarns | feat | Build yarn browsing/editing, project associations and category management |
 | T120.7 | P1 | wip | web-rewrite/imports | feat | Build import review, optional OCR/archive controls and bounded job progress feedback |
-| T120.8 | P1 | todo | web-rewrite/settings | feat | Build account/security, gauge and responsive admin workflows |
+| T120.8 | P1 | wip | web-rewrite/settings | feat | Build account/security, gauge and responsive admin workflows |
 | T120.9 | P1 | todo | web-rewrite/acceptance | test | Verify mobile usability, accessibility, performance, packaging and isolated preview rollout |
 | T52 | P0 | done | security | bug | Add SSRF guard to import fetch layer (block private/loopback/link-local, re-validate redirects) |
 | T54 | P0 | done | import | bug | Return friendly 4xx/502 on import fetch failures instead of 500 with raw error text |

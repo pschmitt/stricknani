@@ -4,6 +4,47 @@ The new web UI is in progress on branch `rust`. The implementation brief is
 `WEB-UI-REWRITE.md`; shared design decisions are in `web-ui-design.md`.
 The existing Rust preview remains usable while new routes are built at `/app`.
 
+## Latest verified state
+
+The live preview runs `6cb58fb`, deployed through infrastructure commit
+`d580a6033b76d19413c4f618d839fcd3ad5e4f6b`. HTTPS, native login, assets,
+strict CSP, isolated storage and unchanged production executable were verified.
+The deployment agent sent the requested Signal notification with the preview
+link. All six source CI runs passed. Earlier sections below retain historical
+checkpoint evidence; their pending deployment statements describe that time.
+
+Newer committed checkpoints await the next integrated build and rollout:
+
+- `976b621`: full-resolution project and step images in print, verified with
+  real uploaded images and print-media browser assertions.
+- `22acd26`: yarn browsing, editing, photos, favorites, deletion and category
+  management. Real Chromium journeys passed at 320, 390 and 1280 pixels with
+  touch-target and strict-CSP checks; frontend checks and 23 unit tests passed.
+- `9cdbab6`: project creation/editing, ordered steps, yarn association, media,
+  deletion and conflict recovery. Browser acceptance enters through visible
+  Create/Edit links and verifies draft preservation, both conflict choices,
+  uploads and print. Frontend checks and 51 unit tests passed. Session race
+  tests prevent older bootstrap responses from replacing newer auth state.
+- `ecd9aff`: owner-scoped OCR and safe current-link archive status/enqueue.
+  OCR has bounded image reads and a separate per-owner quota. The full Rust
+  suite passed 250 tests before shared limiter extraction; 14 focused tests,
+  formatting and strict Clippy passed afterward. The full combined rerun is
+  pending. OCR/archive frontend controls remain unfinished.
+
+Imports are in real-browser acceptance. Reader step navigation, preservation of
+tag labels containing commas, and removal of outdated placeholder copy are in
+progress. Gauge, account, signup, admin/audit, PWA/cache and the complete
+accessibility/performance/multi-browser/real-phone acceptance remain open.
+
+Deployment limitations are recorded separately from application checks. The
+public infrastructure no-build flake check fails on a missing Termux Home
+Manager derivation, reproduced on its unchanged baseline. The application
+flake checks, package, container and exact host build passed for `6cb58fb`.
+The upgrade wrapper exited unsuccessfully after activation, while the switch
+unit, exact running closure and both application services were verified; the
+wrapper failure's precise cause remains unresolved. Neither limitation is
+reported as a passed gate.
+
 ## First wave
 
 - Luna foundation: SvelteKit/TypeScript static build, shared components,
