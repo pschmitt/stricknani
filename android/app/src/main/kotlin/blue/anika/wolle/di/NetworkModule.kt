@@ -16,6 +16,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlinx.serialization.json.Json
@@ -124,8 +125,22 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideProjectImportApi(retrofit: Retrofit): ProjectImportApi =
-        retrofit.create(ProjectImportApi::class.java)
+    fun provideProjectImportApi(
+        retrofit: Retrofit,
+        okHttpClient: OkHttpClient,
+    ): ProjectImportApi {
+        val importClient =
+            okHttpClient
+                .newBuilder()
+                .readTimeout(65, TimeUnit.SECONDS)
+                .callTimeout(75, TimeUnit.SECONDS)
+                .build()
+        return retrofit
+            .newBuilder()
+            .client(importClient)
+            .build()
+            .create(ProjectImportApi::class.java)
+    }
 
     @Provides
     @Singleton

@@ -17,6 +17,9 @@ pub struct Config {
     pub static_root: PathBuf,
     pub secure_cookies: bool,
     pub external_imports: bool,
+    pub ocr_enabled: bool,
+    pub signup_enabled: bool,
+    pub archive_enabled: bool,
     /// Validated provider configuration, absent unless `RUST_AI_ENABLED=true`.
     pub ai: Option<AiConfig>,
     pub trusted_hosts: TrustedHosts,
@@ -125,6 +128,21 @@ impl Config {
                 ));
             }
         };
+        let archive_enabled = match get("RUST_WAYBACK_ENABLED").as_deref() {
+            None | Some("false" | "0") => false,
+            Some("true" | "1") => true,
+            _ => return Err(ConfigError("RUST_WAYBACK_ENABLED must be true or false")),
+        };
+        let signup_enabled = match get("RUST_SIGNUP_ENABLED").as_deref() {
+            None | Some("false" | "0") => false,
+            Some("true" | "1") => true,
+            _ => return Err(ConfigError("RUST_SIGNUP_ENABLED must be true or false")),
+        };
+        let ocr_enabled = match get("RUST_OCR_ENABLED").as_deref() {
+            None | Some("false" | "0") => false,
+            Some("true" | "1") => true,
+            _ => return Err(ConfigError("RUST_OCR_ENABLED must be true or false")),
+        };
         let ai_enabled = match get("RUST_AI_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
@@ -148,6 +166,9 @@ impl Config {
             static_root,
             secure_cookies,
             external_imports,
+            ocr_enabled,
+            signup_enabled,
+            archive_enabled,
             ai,
             trusted_hosts,
         })

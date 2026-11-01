@@ -13,9 +13,9 @@ import subprocess
 import sys
 import tempfile
 import threading
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Mapping, Sequence
 from urllib.parse import urlsplit, urlunsplit
 
 APP_ID = "blue.anika.wolle.debug"
@@ -188,9 +188,10 @@ def ensure_reverse(adb: str, serial: str, port: int, *, timeout: int) -> bool:
 
 
 def validate_emulator(adb: str, serial: str, *, timeout: int) -> None:
-    if not serial.startswith("emulator-") or not serial.removeprefix(
-        "emulator-"
-    ).isdigit():
+    if (
+        not serial.startswith("emulator-")
+        or not serial.removeprefix("emulator-").isdigit()
+    ):
         raise ReplayError("--serial must name an emulator-* device")
     devices = _run([adb, "devices", "-l"], timeout=timeout).stdout.decode(
         "utf-8", errors="replace"
@@ -201,9 +202,11 @@ def validate_emulator(adb: str, serial: str, *, timeout: int) -> None:
         if line.strip()
     ):
         raise ReplayError("selected emulator is not connected and ready")
-    emulator = _run(
-        _adb(adb, serial, "shell", "getprop", "ro.kernel.qemu"), timeout=timeout
-    ).stdout.decode("utf-8", errors="replace").strip()
+    emulator = (
+        _run(_adb(adb, serial, "shell", "getprop", "ro.kernel.qemu"), timeout=timeout)
+        .stdout.decode("utf-8", errors="replace")
+        .strip()
+    )
     if emulator != "1":
         raise ReplayError("selected Android device does not report emulator mode")
 
@@ -240,6 +243,7 @@ def _capture_instrumentation(
             process.kill()
             process.wait()
             raise ReplayError("could not capture instrumentation output")
+        pipe = process.stdout
         stored = 0
         truncated = False
         reader_error: OSError | None = None
@@ -247,7 +251,7 @@ def _capture_instrumentation(
         def drain() -> None:
             nonlocal stored, truncated, reader_error
             try:
-                while chunk := process.stdout.read(8192):
+                while chunk := pipe.read(8192):
                     available = MAX_RAW_LOG_BYTES - stored
                     if available > 0:
                         selected = chunk[:available]
@@ -453,9 +457,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         apk = _safe_path(args.apk, "--apk")
         test_apk = _safe_path(args.test_apk, "--test-apk")
         # Reject obviously non-emulator targets before even loading credentials.
-        if not args.serial.startswith("emulator-") or not args.serial.removeprefix(
-            "emulator-"
-        ).isdigit():
+        if (
+            not args.serial.startswith("emulator-")
+            or not args.serial.removeprefix("emulator-").isdigit()
+        ):
             raise ReplayError("--serial must name an emulator-* device")
         fixture = read_fixture()
         run_replay(

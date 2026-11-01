@@ -1,4 +1,6 @@
 pub mod ai;
+pub mod archive_jobs;
+pub mod archive_service;
 mod audit;
 pub mod auth;
 pub mod categories;
@@ -14,10 +16,12 @@ pub mod imports;
 pub mod media;
 pub mod media_ids;
 pub mod ocr;
+pub mod ocr_service;
 pub mod projects;
 pub mod pwa;
 pub mod security;
 pub mod sync;
+pub mod wayback;
 mod web;
 mod web_accounts;
 mod web_audit;
@@ -80,6 +84,18 @@ pub fn app_with_imports_and_ai(
     external_imports: bool,
     ai: Option<ai::AiClient>,
 ) -> Router {
+    app_with_services(static_root, state, worker_path, external_imports, ai, None)
+}
+
+/// Build the candidate with explicitly enabled optional integrations.
+pub fn app_with_services(
+    static_root: PathBuf,
+    state: db::AppState,
+    worker_path: PathBuf,
+    external_imports: bool,
+    ai: Option<ai::AiClient>,
+    ocr: Option<ocr::OcrService>,
+) -> Router {
     let state = state.with_external_imports(external_imports);
     let core = Router::new()
         .nest(
@@ -99,6 +115,12 @@ pub fn app_with_imports_and_ai(
         .merge(web_accounts::router(core.clone(), state.clone()))
         .merge(web_audit::router(core.clone(), state.clone()))
         .merge(web_signup::router(state.clone()))
+        .merge(archive_service::router(
+            core.clone(),
+            state.clone(),
+            state.archive_enabled,
+        ))
+        .merge(ocr_service::router(core.clone(), state.clone(), ocr))
         .merge(import_service::router_with_ai(
             core.clone(),
             state,

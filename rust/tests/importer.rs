@@ -852,3 +852,35 @@ fn hash_tree(root: &Path) -> Vec<(PathBuf, [u8; 32])> {
     entries.sort_by(|left, right| left.0.cmp(&right.0));
     entries
 }
+
+#[tokio::test]
+async fn pending_archive_requests_resume_as_availability_checks_only() {
+    let fixture = Fixture::new().await;
+    let source = source_pool(&fixture.source_db).await;
+    sqlx::query("UPDATE projects SET link='https://example.org/pattern', link_archive=NULL, link_archive_requested_at='2026-01-01T00:00:00', link_archive_failed=0 WHERE id=19")
+        .execute(&source).await.unwrap();
+    sqlx::query("UPDATE yarns SET link='https://example.org/yarn', link_archive=NULL, link_archive_requested_at='2026-01-01T00:00:00', link_archive_failed=0 WHERE id=17")
+        .execute(&source).await.unwrap();
+    source.close().await;
+    let report = import_snapshot(ImportOptions {
+        source_db: fixture.source_db.clone(),
+        source_media: fixture.source_media.clone(),
+        destination: fixture.destination.clone(),
+    })
+    .await
+    .unwrap();
+    assert_eq!(report.pending_archive_jobs, 2);
+    let target = SqlitePoolOptions::new()
+        .connect_with(
+            SqliteConnectOptions::new().filename(fixture.destination.join("database.sqlite3")),
+        )
+        .await
+        .unwrap();
+    let pending: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM archive_jobs WHERE state='pending' AND save_accepted=1",
+    )
+    .fetch_one(&target)
+    .await
+    .unwrap();
+    assert_eq!(pending, 2);
+}

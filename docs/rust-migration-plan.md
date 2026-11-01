@@ -118,3 +118,12 @@ keys, unresolved category collisions, orphaned relationships, missing media file
 and audit/avatar counts. Verify owner access and media references on the isolated Rust
 candidate. This plan and migration do not perform a production snapshot or cutover;
 production cutover remains a separate user-approved operation after acceptance.
+
+## Pending archive work
+
+Legacy accepted archive requests without a snapshot or failure are seeded into the
+durable outbox as availability-only jobs. They do not resubmit the save request.
+No worker runs unless `RUST_WAYBACK_ENABLED=true`; staging keeps it false. Polling
+is bounded, and a failed request can be retried explicitly from its owned detail
+page. Source links longer than the archival limit retain their original metadata
+but require a corrected link before archival can resume.

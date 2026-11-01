@@ -41,6 +41,19 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-72: Allow longer Android pattern import requests
+
+- [x] Give `ProjectImportApi` a dedicated OkHttp client with a 65-second read timeout and
+      75-second call timeout, preserving the app's existing Retrofit converters and interceptors.
+- [ ] Verify Android formatting and lint on the designated remote build host.
+
+**Why:** the import path may spend up to 10 seconds fetching and 10 seconds parsing before its
+optional 30-second AI enhancement, which exceeds the shared 10-second HTTP client timeout.
+**How to apply:** no user action; only pattern import requests use the longer timeout.
+
+Status: **in progress**, 2026-11-01 - dedicated import client implemented; remote Android checks
+are pending.
+
 ## SNA-71: Exercise offline queued writes against the Rust backend (T119.4)
 
 - [x] Add an opt-in instrumentation test using the app's Room repositories, Hilt graph,
@@ -48,7 +61,7 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
       deletion, and project update conflict resolution.
 - [x] Keep fixture credentials in a short-lived file under the debug app's private `filesDir`,
       provisioned over `adb` stdin; clean up only fixture-prefixed or explicitly tracked rows.
-- [ ] Run the instrumentation test on a disposable emulator and isolated Rust fixture, then record
+- [x] Run the instrumentation test on a disposable emulator and isolated Rust fixture, then record
       the result.
 
 **Why:** verify actual Android offline replay and conflict behavior against the Rust candidate,
@@ -57,8 +70,10 @@ beyond the existing Retrofit-only JVM contract test.
 the three `STRICKNANI_RUST_TEST_*` environment variables, then run the class with
 `blue.anika.wolle.debug.test/androidx.test.runner.AndroidJUnitRunner`.
 
-Status: **in progress**, 2026-11-01 - instrumentation and fixture cleanup are implemented; an
-emulator run is pending.
+Status: **done**, 2026-11-01 - instrumentation passed on an API 34 x86_64 disposable
+emulator against the isolated Rust fixture. The debug-only Hilt entrypoint is compiled into the
+app graph; private fixture provisioning and cleanup use the reviewed replay runner. Software
+emulation needed Bluetooth disabled to avoid repeated service crashes and application-start ANRs.
 
 ## SNA-70: Exercise the Android v1 APIs against the Rust candidate
 

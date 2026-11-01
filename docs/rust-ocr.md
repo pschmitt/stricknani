@@ -37,3 +37,11 @@ The old Python implementation caches OCR output next to media using media
 mtime and language. The Rust core intentionally has no disk cache: the future
 route supplies bytes, and a digest-keyed cache can be added when its ownership,
 invalidation, and `force` semantics are designed at the storage boundary.
+
+## Server integration
+
+`RUST_OCR_ENABLED=true` enables authenticated `POST /utils/ocr`. It accepts
+origin-relative registered project/yarn media paths only; foreign media is
+reported as missing. Browser requests also require `X-CSRF-Token`. The Nix
+candidate supplies Tesseract with German and English language data. The default
+is disabled. No network service or Python runtime is used.

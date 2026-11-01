@@ -98,3 +98,14 @@ control.
 4. **Kotlin wire tests:** use MockWebServer around each Retrofit interface plus onboarding clients. Pin methods, content types, exact query/form/multipart field names, optional-field omission, timestamp pass-through, auth header routing (not on meta/token mint, present on API and media), 201/204 handling, additive unknown response fields, `409.detail` decoding, and media URL resolution. In particular test bounded sync DTOs (`has_more`, `next_cursor`) before enabling pagination in the client.
 5. **Broader app-to-Rust E2E:** parameterize the disposable fixture in `.github/workflows/android-e2e.yaml` and its seed helper so the same smoke/full emulator journeys can run against the Rust binary/container. The new replay instrumentation covers project/yarn queueing, temp IDs, sync, deletion and conflict adoption; extend the Rust lane with onboarding, favorites, project step/title images, yarn photos, attachment upload/delete, URL import behavior or a deterministic local import fixture, restart/re-sync, and cross-user denial. Keep external URL/AI calls stubbed or disabled. Run against a fresh disposable DB/media root, never production state.
 6. **Parity checkpoint:** run the existing Python API tests as contract-source evidence and the Kotlin E2E suite against Rust; report any deliberate differences. Do not count Python-only tests or UI-only JVM tests as Android/Rust integration evidence.
+
+## Recorded emulator evidence
+
+On 2026-11-01 the actual API 34 x86_64 emulator replay passed against the
+isolated Rust fixture using `run_rust_replay.py`. The runner rejects skipped
+tests, so this is executed Room/WorkManager/HTTP replay evidence. The initial
+Hilt entrypoint cast failure was fixed by moving the entrypoint into the debug
+app source set. A later software-emulator application-start ANR cleared after
+disabling its repeatedly crashing Bluetooth service. Updated Android JVM tests
+and both APK builds also pass. A repeat against the final candidate is still
+part of acceptance.

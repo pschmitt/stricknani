@@ -11,12 +11,32 @@ pub struct AppState {
     pub build_id: String,
     pub media_root: Option<std::path::PathBuf>,
     pub secure_cookies: bool,
+    pub signup_enabled: bool,
+    pub archive_enabled: bool,
+    pub ocr_enabled: bool,
     pub auth_limiter: Arc<crate::auth::RateLimiter>,
     pub external_imports: bool,
     pub image_fetcher: Arc<dyn crate::image_import::ImageFetcher>,
 }
 
 impl AppState {
+    pub fn with_ocr_enabled(mut self, enabled: bool) -> Self {
+        self.ocr_enabled = enabled;
+        self
+    }
+
+    /// Enable durable archive jobs; disabled candidates never enqueue requests.
+    pub fn with_archive_enabled(mut self, enabled: bool) -> Self {
+        self.archive_enabled = enabled;
+        self
+    }
+
+    /// Public registration is opt-in; administrator bootstrap remains available.
+    pub fn with_signup_enabled(mut self, enabled: bool) -> Self {
+        self.signup_enabled = enabled;
+        self
+    }
+
     pub fn with_secure_cookies(mut self, secure: bool) -> Self {
         self.secure_cookies = secure;
         self
@@ -47,6 +67,9 @@ impl AppState {
             pool,
             media_root: None,
             secure_cookies: false,
+            signup_enabled: false,
+            archive_enabled: false,
+            ocr_enabled: false,
             build_id: format!("{:032x}", rand::random::<u128>()),
             auth_limiter: Arc::new(crate::auth::RateLimiter::default()),
             external_imports: false,

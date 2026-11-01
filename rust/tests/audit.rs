@@ -1,5 +1,6 @@
 use axum::{body::Body, http::Request};
 use http_body_util::BodyExt;
+use scraper::{Html, Selector};
 use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
 use std::path::PathBuf;
@@ -103,6 +104,14 @@ async fn html(response: axum::response::Response) -> String {
     .expect("page should be UTF-8")
 }
 
+fn parse_selector(selector: &str) -> Selector {
+    Selector::parse(selector).expect("test selector should be valid")
+}
+
+fn visible_text(document: &Html) -> String {
+    document.root_element().text().collect::<String>()
+}
+
 async fn api(
     app: &TestApp,
     method: &str,
@@ -171,7 +180,16 @@ async fn admin_view_is_protected_and_inactive_admin_is_denied() {
 
     let admin = get(&app, "/admin/audit", Some(ADMIN_SESSION)).await;
     assert_eq!(admin.status(), axum::http::StatusCode::OK);
-    assert_eq!(admin.headers()["cache-control"], "no-store");
+    let cache_control = admin.headers()["cache-control"]
+        .to_str()
+        .expect("cache policy should be valid header text");
+    assert!(
+        cache_control
+            .split(',')
+            .map(str::trim)
+            .any(|directive| directive.eq_ignore_ascii_case("no-store")),
+        "admin audit pages must not be stored: {cache_control:?}"
+    );
 
     sqlx::query("UPDATE users SET active = 0 WHERE id = ?")
         .bind(app.admin_id)
@@ -208,12 +226,42 @@ async fn view_escapes_legacy_text_and_never_renders_details_json() {
     let response = get(&app, "/admin/audit", Some(ADMIN_SESSION)).await;
     assert_eq!(response.status(), axum::http::StatusCode::OK);
     let page = html(response).await;
-    assert!(page.contains("&lt;script&gt;alert(1)&lt;/script&gt;@example.test"));
-    assert!(page.contains("&lt;img src=x onerror=alert(1)&gt;"));
-    assert!(!page.contains("<img src=x onerror=alert(1)>"));
-    assert!(page.contains("Legacy account #987"));
-    assert!(!page.contains("secret-note-must-not-render"));
-    assert!(!page.contains("{&quot;notes&quot;"));
+    let document = Html::parse_document(&page);
+    let visible = visible_text(&document);
+
+    let strong = document
+        .select(&parse_selector("p strong"))
+        .next()
+        .expect("signed-in account should be visible");
+    assert_eq!(
+        strong.text().collect::<String>(),
+        "<script>alert(1)</script>@example.test"
+    );
+    let action_cells = document
+        .select(&parse_selector("tbody tr td:nth-child(4)"))
+        .map(|cell| cell.text().collect::<String>())
+        .collect::<Vec<_>>();
+    assert!(
+        action_cells
+            .iter()
+            .any(|action| { action == "<img src=x onerror=alert(1)>" })
+    );
+    assert!(
+        document
+            .select(&parse_selector("table img"))
+            .next()
+            .is_none()
+    );
+    assert!(
+        document
+            .select(&parse_selector("script:not([src])"))
+            .next()
+            .is_none(),
+        "untrusted account text must not create executable script elements"
+    );
+    assert!(visible.contains("Legacy account #987"));
+    assert!(!visible.contains("secret-note-must-not-render"));
+    assert!(!visible.contains("private"));
 }
 
 #[tokio::test]
@@ -249,9 +297,19 @@ async fn entity_action_filters_and_pagination_are_bounded_and_preserved() {
     .await;
     assert_eq!(first_page.status(), axum::http::StatusCode::OK);
     let first_page = html(first_page).await;
-    assert!(first_page.contains("#1051"));
-    assert!(!first_page.contains("#1000"));
-    assert!(first_page.contains("/admin/audit?page=2&amp;entity=project&amp;action=created"));
+    let first_document = Html::parse_document(&first_page);
+    let first_text = visible_text(&first_document);
+    assert!(first_text.contains("#1051"));
+    assert!(!first_text.contains("#1000"));
+    let next_href = first_document
+        .select(&parse_selector("nav.pagination a[href*='page=2']"))
+        .filter_map(|anchor| anchor.value().attr("href"))
+        .next()
+        .expect("next page link should be present");
+    assert_eq!(
+        next_href,
+        "/admin/audit?page=2&entity=project&action=created"
+    );
 
     let second_page = get(
         &app,
@@ -261,8 +319,9 @@ async fn entity_action_filters_and_pagination_are_bounded_and_preserved() {
     .await;
     assert_eq!(second_page.status(), axum::http::StatusCode::OK);
     let second_page = html(second_page).await;
-    assert!(second_page.contains("#1000"));
-    assert!(!second_page.contains("#1051"));
+    let second_text = visible_text(&Html::parse_document(&second_page));
+    assert!(second_text.contains("#1000"));
+    assert!(!second_text.contains("#1051"));
 
     assert_eq!(
         get(&app, "/admin/audit?page=0", Some(ADMIN_SESSION))

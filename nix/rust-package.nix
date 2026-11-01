@@ -5,8 +5,17 @@
   rustfmt,
   clippy,
   cacert,
+  tesseract,
 }:
 
+let
+  ocrEngine = tesseract.override {
+    enableLanguages = [
+      "deu"
+      "eng"
+    ];
+  };
+in
 rustPlatform.buildRustPackage {
   pname = "stricknani-server";
   version = "0.1.0";
@@ -29,7 +38,8 @@ rustPlatform.buildRustPackage {
     cp -a ${../stricknani/static}/. "$out/share/stricknani/static/"
     wrapProgram "$out/bin/stricknani-server" \
       --set STATIC_ROOT "$out/share/stricknani/static" \
-      --set-default SSL_CERT_FILE "${cacert}/etc/ssl/certs/ca-bundle.crt"
+      --set-default SSL_CERT_FILE "${cacert}/etc/ssl/certs/ca-bundle.crt" \
+      --prefix PATH : "${lib.makeBinPath [ ocrEngine ]}"
   '';
 
   meta = {

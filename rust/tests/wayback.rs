@@ -162,7 +162,9 @@ async fn source_validation_rejects_private_and_reserved_hosts_before_transport()
         "https://example.test/path",
     ] {
         assert!(
-            validate_source_url(source, &resolver()).await.is_err(),
+            validate_source_url(source, resolver().as_ref())
+                .await
+                .is_err(),
             "source should be rejected: {source:?}"
         );
     }

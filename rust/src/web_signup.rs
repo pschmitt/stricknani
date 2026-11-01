@@ -21,6 +21,9 @@ const MAX_PASSWORD_BYTES: usize = 1024;
 
 /// Browser signup routes. The coordinator adds this router to the public app.
 pub(crate) fn router(app: AppState) -> Router {
+    if !app.signup_enabled {
+        return Router::new();
+    }
     Router::new()
         .route("/signup", get(signup_page).post(signup))
         .layer(DefaultBodyLimit::max(8 * 1024))

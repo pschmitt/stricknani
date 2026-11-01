@@ -156,3 +156,26 @@ GPL-3.0-only
 ## Maintainer
 
 Philipp Schmitt (GitHub: @pschmitt)
+
+## Rust rewrite candidate
+
+The `rust` branch contains the standalone Rust candidate, built with
+`nix build '.#stricknani-rust'` and run with `stricknani-server serve`.
+Set `RUST_DATABASE_URL` to a fresh Rust SQLite database and `RUST_MEDIA_ROOT`
+to its own absolute media directory. Keep both separate from Python storage.
+Bootstrap an administrator with `create-admin EMAIL`, supplying the password
+on standard input. See [migration and rollback](docs/rust-migration-plan.md),
+[design decisions](docs/rust-port-decisions.md), and
+[current acceptance evidence](docs/rust-rewrite-checkpoint.md).
+
+Public registration and external integrations are disabled by default:
+`RUST_SIGNUP_ENABLED`, `RUST_EXTERNAL_IMPORTS_ENABLED`, `RUST_AI_ENABLED`, and
+`RUST_OCR_ENABLED`, and `RUST_WAYBACK_ENABLED` each require an explicit `true`. AI also requires the user's
+per-import opt-in; see [provider settings](docs/rust-ai.md). OCR uses the
+German/English Tesseract data included by the candidate package. For an HTTPS
+reverse proxy, set `SESSION_COOKIE_SECURE=true` and an explicit `TRUSTED_HOSTS`
+allowlist. Forwarded headers do not override these settings.
+
+The current Python deployment remains production until acceptance and a
+separately approved cutover. The candidate importer accepts a copied snapshot,
+never live production files.

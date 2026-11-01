@@ -236,6 +236,7 @@ async fn create_imports_gallery_and_step_images_into_owned_media_rows() {
 
     let denied = harness
         .app
+        .clone()
         .oneshot(
             Request::get(images[0]["url"].as_str().unwrap())
                 .header("authorization", "Bearer another-token")
@@ -244,7 +245,26 @@ async fn create_imports_gallery_and_step_images_into_owned_media_rows() {
         )
         .await
         .expect("media endpoint should respond");
-    assert_eq!(denied.status(), StatusCode::NOT_FOUND);
+    assert_eq!(denied.status(), StatusCode::UNAUTHORIZED);
+    let foreign_id: i64 = sqlx::query_scalar(
+        "INSERT INTO users (email, password_hash) VALUES ('foreign@example.test', 'fixture-hash') RETURNING id",
+    ).fetch_one(&harness.pool).await.unwrap();
+    sqlx::query("INSERT INTO api_tokens (user_id, name, token_hash, created_at) VALUES (?, 'foreign', ?, unixepoch())")
+        .bind(foreign_id)
+        .bind(hex::encode(Sha256::digest(b"foreign-fixture-token")))
+        .execute(&harness.pool).await.unwrap();
+    let foreign = harness
+        .app
+        .clone()
+        .oneshot(
+            Request::get(images[0]["url"].as_str().unwrap())
+                .header("authorization", "Bearer foreign-fixture-token")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(foreign.status(), StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]

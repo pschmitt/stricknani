@@ -29,6 +29,7 @@ use crate::{
 const MAX_UPLOAD_BYTES: usize = 5 * 1024 * 1024;
 const MAX_FORM_BYTES: usize = 8 * 1024 * 1024;
 const API_RESPONSE_BYTES: usize = 16 * 1024 * 1024;
+const AI_MAX_SOURCE_CHARS: usize = 12_000;
 
 #[derive(Clone)]
 struct ImportState {
@@ -276,6 +277,7 @@ async fn enhance_draft(
     if !requested {
         return false;
     }
+    let source_text = source_text.chars().take(AI_MAX_SOURCE_CHARS).collect();
     let outcome = enhance_or_fallback(
         state.ai.as_deref(),
         AiInput {
@@ -325,6 +327,7 @@ struct ImportPage {
 struct ImportPreview {
     draft_json: String,
     sha256: String,
+    is_ai_enhanced: bool,
     name: String,
     description: String,
     category: String,
@@ -536,11 +539,12 @@ async fn preview_form(
     };
     match result {
         Ok((mut draft, source_text)) => {
-            enhance_draft(&state, &mut draft, form.use_ai, source_text, Vec::new()).await;
+            let is_ai_enhanced =
+                enhance_draft(&state, &mut draft, form.use_ai, source_text, Vec::new()).await;
             render_import_page(
                 &headers,
                 &session.token,
-                ImportPreview::from_draft(&draft),
+                ImportPreview::from_draft(&draft, is_ai_enhanced),
                 None,
                 true,
             )
@@ -615,27 +619,31 @@ async fn preview_file(
     let Some((filename, content_type, bytes)) = file else {
         return StatusCode::BAD_REQUEST.into_response();
     };
-    let ai_image = use_ai
-        .then(|| AiImage {
-            media_type: content_type.clone(),
-            bytes: bytes.clone(),
-        })
-        .filter(|image| image.media_type.starts_with("image/"));
+    let ai_image_bytes = use_ai.then(|| bytes.clone());
     match parse_bytes(&state, bytes, Some(content_type), Some(filename), None).await {
         Ok(mut draft) => {
             let source_text = String::new();
-            enhance_draft(
-                &state,
-                &mut draft,
-                use_ai,
-                source_text,
-                ai_image.into_iter().collect(),
-            )
-            .await;
+            let ai_images = match (
+                draft
+                    .image
+                    .as_ref()
+                    .and_then(|facts| ai_media_type(&facts.format)),
+                ai_image_bytes,
+            ) {
+                (Some(media_type), Some(bytes)) => {
+                    vec![AiImage {
+                        media_type: media_type.to_owned(),
+                        bytes,
+                    }]
+                }
+                _ => Vec::new(),
+            };
+            let is_ai_enhanced =
+                enhance_draft(&state, &mut draft, use_ai, source_text, ai_images).await;
             render_import_page(
                 &headers,
                 &session.token,
-                ImportPreview::from_draft(&draft),
+                ImportPreview::from_draft(&draft, is_ai_enhanced),
                 None,
                 true,
             )
@@ -650,10 +658,22 @@ async fn preview_file(
     }
 }
 
+fn ai_media_type(image_format: &str) -> Option<&'static str> {
+    match image_format {
+        "jpeg" => Some("image/jpeg"),
+        "png" => Some("image/png"),
+        "webp" => Some("image/webp"),
+        "gif" => Some("image/gif"),
+        _ => None,
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct CreateProjectForm {
     csrf: String,
     draft_json: String,
+    #[serde(default)]
+    is_ai_enhanced: bool,
     name: String,
     #[serde(default)]
     description: String,
@@ -705,7 +725,7 @@ async fn create_project(
     project.other_materials = optional(form.other_materials);
     project.yarn = optional(form.yarn);
     project.link = optional(form.link).or_else(|| project.link.clone());
-    let payload = project_payload(project);
+    let payload = project_payload(project, form.is_ai_enhanced);
     let response = match api_call(
         &state.api,
         &session.token,
@@ -720,7 +740,7 @@ async fn create_project(
             return render_import_page(
                 &headers,
                 &session.token,
-                ImportPreview::from_draft(&draft),
+                ImportPreview::from_draft(&draft, form.is_ai_enhanced),
                 Some("Image import is not available yet."),
                 true,
             );
@@ -729,7 +749,7 @@ async fn create_project(
             return render_import_page(
                 &headers,
                 &session.token,
-                ImportPreview::from_draft(&draft),
+                ImportPreview::from_draft(&draft, form.is_ai_enhanced),
                 Some("The project could not be created."),
                 true,
             );
@@ -745,6 +765,8 @@ async fn create_project(
 struct CreateYarnForm {
     csrf: String,
     draft_json: String,
+    #[serde(default)]
+    is_ai_enhanced: bool,
     yarn_name: String,
     #[serde(default)]
     yarn_brand: String,
@@ -792,7 +814,7 @@ async fn create_yarn(
         return render_import_page(
             &headers,
             &session.token,
-            ImportPreview::from_draft(&draft),
+            ImportPreview::from_draft(&draft, form.is_ai_enhanced),
             Some("A yarn name is required."),
             true,
         );
@@ -806,7 +828,7 @@ async fn create_yarn(
         "weight_category": optional(form.yarn_weight_category),
         "fiber_content": optional(form.yarn_fiber_content),
         "link": optional(form.yarn_link),
-        "is_ai_enhanced": false
+        "is_ai_enhanced": form.is_ai_enhanced
     });
     let response = match api_call(
         &state.api,
@@ -822,7 +844,7 @@ async fn create_yarn(
             return render_import_page(
                 &headers,
                 &session.token,
-                ImportPreview::from_draft(&draft),
+                ImportPreview::from_draft(&draft, form.is_ai_enhanced),
                 Some("The yarn could not be created."),
                 true,
             );
@@ -834,7 +856,7 @@ async fn create_yarn(
     Redirect::to(&format!("/yarns/{id}")).into_response()
 }
 
-fn project_payload(project: &ProjectImportDraft) -> Value {
+fn project_payload(project: &ProjectImportDraft, is_ai_enhanced: bool) -> Value {
     json!({
         "name": project.name.as_deref().filter(|name| !name.trim().is_empty()).unwrap_or("Imported project"),
         "category": project.category,
@@ -845,7 +867,7 @@ fn project_payload(project: &ProjectImportDraft) -> Value {
         "other_materials": project.other_materials.as_deref().or(project.yarn.as_deref()),
         "tags": [],
         "link": project.link,
-        "is_ai_enhanced": false,
+        "is_ai_enhanced": is_ai_enhanced,
         "yarn_ids": [],
         "steps": project.steps.iter().map(|step| json!({
             "title": step.title.as_deref().filter(|title| !title.trim().is_empty()).unwrap_or("Step"),
@@ -907,7 +929,7 @@ fn render_import_page(
 }
 
 impl ImportPreview {
-    fn from_draft(draft: &ImportDocumentDraft) -> Self {
+    fn from_draft(draft: &ImportDocumentDraft, is_ai_enhanced: bool) -> Self {
         let yarn = draft.project.yarns.first().cloned().unwrap_or_else(|| {
             draft
                 .project
@@ -922,6 +944,7 @@ impl ImportPreview {
         Self {
             draft_json: serde_json::to_string(draft).unwrap_or_default(),
             sha256: draft.sha256.clone(),
+            is_ai_enhanced,
             name: draft.project.name.clone().unwrap_or_default(),
             description: draft.project.description.clone().unwrap_or_default(),
             category: draft.project.category.clone().unwrap_or_default(),

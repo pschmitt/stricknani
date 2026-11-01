@@ -154,7 +154,7 @@ fn login_view(state: &WebState, headers: &HeaderMap, failed: bool, status: Statu
         csrf: csrf.clone(),
         email: None,
         is_admin: false,
-        body: PageBody::Login(error),
+        body: PageBody::Login(error, state.app.signup_enabled),
     };
     let response = render(page, status);
     with_cookie(
@@ -694,15 +694,10 @@ async fn detail(
             description: rich_text(&string(step, "description")),
         })
         .collect();
-    let external_link = item["link"]
-        .as_str()
-        .and_then(|link| url::Url::parse(link).ok())
-        .filter(|link| {
-            matches!(link.scheme(), "https" | "http")
-                && link.username().is_empty()
-                && link.password().is_none()
-        })
-        .map(|link| link.to_string());
+    let external_link = item["link"].as_str().and_then(safe_http_url);
+    let archive_form_action = (state.app.archive_enabled && external_link.is_some())
+        .then(|| format!("/{}/{id}/archive", kind.path()));
+    let archive_link = item["link_archive"].as_str().and_then(safe_archive_url);
     let name = string(&item, "name");
     let body = Detail {
         id,
@@ -725,6 +720,9 @@ async fn detail(
         attachments,
         steps,
         external_link,
+        archive_link,
+        archive_form_action,
+        ocr_enabled: state.app.ocr_enabled,
     };
     render(
         Page {
@@ -737,6 +735,26 @@ async fn detail(
         },
         StatusCode::OK,
     )
+}
+
+fn safe_http_url(value: &str) -> Option<String> {
+    let url = url::Url::parse(value).ok()?;
+    (matches!(url.scheme(), "https" | "http")
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url.port_or_known_default().is_some())
+    .then(|| url.to_string())
+}
+
+fn safe_archive_url(value: &str) -> Option<String> {
+    let url = url::Url::parse(value).ok()?;
+    (url.scheme() == "https"
+        && url.host_str() == Some("web.archive.org")
+        && url.port_or_known_default() == Some(443)
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url.path().starts_with("/web/"))
+    .then(|| url.to_string())
 }
 
 async fn new_project(State(state): State<WebState>, headers: HeaderMap) -> Response {
@@ -1970,9 +1988,12 @@ struct Detail {
     attachments: Vec<AttachmentView>,
     steps: Vec<StepView>,
     external_link: Option<String>,
+    archive_link: Option<String>,
+    archive_form_action: Option<String>,
+    ocr_enabled: bool,
 }
 enum PageBody {
-    Login(Option<&'static str>),
+    Login(Option<&'static str>, bool),
     Catalog(Catalog),
     Detail(Detail),
     Editor(Editor),
@@ -2107,6 +2128,12 @@ struct Labels {
     alt_text: &'static str,
     media_error: &'static str,
     csrf_error: &'static str,
+    archive_save: &'static str,
+    archive_saved: &'static str,
+    ocr_run: &'static str,
+    ocr_language: &'static str,
+    ocr_busy: &'static str,
+    ocr_error: &'static str,
 }
 impl Labels {
     fn new(language: Language) -> Self {
@@ -2188,6 +2215,15 @@ impl Labels {
             csrf_error: tr(
                 "The form expired. Reload this page and try again.",
                 "Das Formular ist abgelaufen. Lade die Seite neu und versuche es erneut.",
+            ),
+            archive_save: tr("Save link to Wayback", "Link bei Wayback speichern"),
+            archive_saved: tr("Saved to Wayback", "Bei Wayback gespeichert"),
+            ocr_run: tr("Read text", "Text erkennen"),
+            ocr_language: tr("OCR language", "OCR-Sprache"),
+            ocr_busy: tr("Reading text…", "Text wird erkannt …"),
+            ocr_error: tr(
+                "Text recognition failed. Try again.",
+                "Texterkennung fehlgeschlagen. Bitte erneut versuchen.",
             ),
         }
     }

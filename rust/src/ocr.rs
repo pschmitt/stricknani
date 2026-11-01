@@ -188,6 +188,9 @@ fn normalize_image(bytes: Vec<u8>) -> Result<NamedTempFile, OcrError> {
 
 async fn run_tesseract(image: NamedTempFile, language: OcrLanguage) -> Result<String, OcrError> {
     let mut child = Command::new("tesseract")
+        .env_clear()
+        .env("PATH", std::env::var_os("PATH").unwrap_or_default())
+        .env("OMP_THREAD_LIMIT", "1")
         .arg(image.path())
         .arg("stdout")
         .arg("-l")

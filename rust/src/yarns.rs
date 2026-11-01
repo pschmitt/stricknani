@@ -319,6 +319,18 @@ async fn create_yarn(
         let _ = tx.rollback().await;
         return database_error();
     }
+    if state.archive_enabled
+        && crate::archive_jobs::enqueue_in_transaction(
+            &mut tx,
+            user_id,
+            crate::archive_jobs::ArchiveEntityKind::Yarn,
+            id,
+        )
+        .await
+        .is_err()
+    {
+        return database_error();
+    }
     if tx.commit().await.is_err() {
         return database_error();
     }
@@ -432,6 +444,18 @@ async fn update_yarn(
         .is_err()
     {
         let _ = tx.rollback().await;
+        return database_error();
+    }
+    if state.archive_enabled
+        && crate::archive_jobs::enqueue_in_transaction(
+            &mut tx,
+            user_id,
+            crate::archive_jobs::ArchiveEntityKind::Yarn,
+            yarn_id,
+        )
+        .await
+        .is_err()
+    {
         return database_error();
     }
     if tx.commit().await.is_err() {

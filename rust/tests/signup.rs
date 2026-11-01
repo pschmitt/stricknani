@@ -17,7 +17,9 @@ async fn app() -> (axum::Router, SqlitePool) {
         .expect("disposable database should migrate");
     let app = app_with_state(
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static"),
-        db::AppState::new(pool.clone()).with_secure_cookies(true),
+        db::AppState::new(pool.clone())
+            .with_secure_cookies(true)
+            .with_signup_enabled(true),
     );
     (app, pool)
 }
@@ -260,5 +262,38 @@ async fn signup_attempts_are_also_limited_per_ip() {
         .fetch_one(&pool)
         .await
         .expect("user count should be readable");
+    assert_eq!(count, 0);
+}
+
+#[tokio::test]
+async fn public_signup_is_disabled_by_default() {
+    let pool = db::connect("sqlite::memory:").await.unwrap();
+    let app = app_with_state(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static"),
+        db::AppState::new(pool.clone()),
+    );
+    for method in ["GET", "POST"] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(method)
+                    .uri("/signup")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+    let response = app
+        .oneshot(Request::get("/login").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert!(!body(response).await.contains("href=\"/signup\""));
+    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(count, 0);
 }

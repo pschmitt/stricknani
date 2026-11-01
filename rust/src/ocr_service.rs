@@ -77,7 +77,10 @@ async fn ocr(
     };
 
     let Some(service) = state.service else {
-        return (StatusCode::SERVICE_UNAVAILABLE, Json(error("ocr_not_available")))
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(error("ocr_not_available")),
+        )
             .into_response();
     };
     let path = match validated_media_path(&request.src) {
@@ -129,15 +132,17 @@ async fn ocr(
     let image_bytes = match to_bytes(media_response.into_body(), MAX_OCR_BYTES).await {
         Ok(bytes) => bytes.to_vec(),
         Err(_) => {
-            return (StatusCode::PAYLOAD_TOO_LARGE, Json(error("file_too_large")))
-                .into_response();
+            return (StatusCode::PAYLOAD_TOO_LARGE, Json(error("file_too_large"))).into_response();
         }
     };
 
     // OCR has no cache in this port yet. Accept `force` for API compatibility;
     // every request with an authorized image performs recognition.
     let _force = request.force;
-    match service.recognize(image_bytes, request.lang.as_deref()).await {
+    match service
+        .recognize(image_bytes, request.lang.as_deref())
+        .await
+    {
         Ok(text) => Json(OcrResponse { text }).into_response(),
         Err(error) => ocr_error(error),
     }
@@ -153,13 +158,9 @@ fn validated_media_path(src: &str) -> Result<Uri, ()> {
     }
     let path = uri.path();
     let segments: Vec<_> = path.split('/').collect();
-    let entity_id = segments
-        .get(3)
-        .ok_or(())?
-        .parse::<i64>()
-        .map_err(|_| ())?;
+    let entity_id = segments.get(3).ok_or(())?.parse::<i64>().map_err(|_| ())?;
     if segments.len() != 5
-        || segments[0] != ""
+        || !segments[0].is_empty()
         || segments[1] != "media"
         || !matches!(segments[2], "projects" | "yarns")
         || entity_id <= 0

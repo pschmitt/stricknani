@@ -1,0 +1,121 @@
+name: Android Rust Replay
+
+on:
+  push:
+    branches:
+      - rust
+    paths:
+      - "android/**"
+      - "rust/**"
+      - "ci/stricknani/**"
+      - "nix/rust-package.nix"
+      - "tests/test_rust_replay_runner.py"
+      - "tests/test_rust_fixture.py"
+      - "docs/rust-replay-ci.md"
+      - "flake.nix"
+      - "flake.lock"
+      - ".github/workflows/android-rust-replay.yaml"
+  workflow_dispatch:
+
+concurrency:
+  group: android-rust-replay-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    name: Rust server and Android Room replay
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Set up Android SDK and Gradle
+        uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+
+      - name: Build Rust candidate
+        id: rust
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          nix build --no-link --print-out-paths '.#stricknani-rust' > "$RUNNER_TEMP/rust-out-path"
+          printf 'binary=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_OUTPUT"
+
+      # Keep Gradle away from the emulator's CPU and memory during boot and tests.
+      - name: Build x86_64 debug and instrumentation APKs
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+        working-directory: android
+
+      - name: Start disposable Rust fixture
+        shell: bash
+        env:
+          RUST_SERVER_BINARY: ${{ steps.rust.outputs.binary }}
+        run: |
+          set -Eeuo pipefail
+          python3 -m ci.stricknani.rust_fixture start \
+            --binary "$RUST_SERVER_BINARY" \
+            --temp-dir "$RUNNER_TEMP" \
+            --fixture-file "$RUNNER_TEMP/stricknani-rust-fixture.json" \
+            --state-file "$RUNNER_TEMP/stricknani-rust-fixture-state.json"
+
+      - name: Enable KVM
+        uses: pschmitt/android-app-ci/.github/actions/enable-kvm@main
+
+      - name: Run Room replay on x86_64 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_2
+          target: google_apis
+          force-avd-creation: true
+          emulator-boot-timeout: 1800
+          disable-animations: true
+          ram-size: 4096M
+          heap-size: 512M
+          cores: 4
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
+          working-directory: android
+          script: |
+            set -Eeuo pipefail
+            declare -a emulators=()
+            while IFS= read -r serial; do
+              emulators+=("$serial")
+            done < <(adb devices | awk '$2 == "device" && $1 ~ /^emulator-[0-9]+$/ { print $1 }')
+            if (( ${#emulators[@]} != 1 )); then
+              echo "Expected exactly one ready emulator; found ${#emulators[@]}." >&2
+              adb devices -l >&2
+              exit 1
+            fi
+            cd ..
+            python3 -m ci.stricknani.rust_fixture run-replay \
+              --fixture-file "$RUNNER_TEMP/stricknani-rust-fixture.json" \
+              --adb "$(command -v adb)" \
+              --serial "${emulators[0]}" \
+              --apk android/app/build/outputs/apk/debug/app-x86_64-debug.apk \
+              --test-apk android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+              2>&1 | tee "$RUNNER_TEMP/rust-replay-sanitized.log"
+
+      - name: Stop and remove disposable Rust fixture
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -f "$RUNNER_TEMP/stricknani-rust-fixture-state.json" ]]; then
+            python3 -m ci.stricknani.rust_fixture stop \
+              --state-file "$RUNNER_TEMP/stricknani-rust-fixture-state.json" || true
+          fi
+
+      - name: Upload sanitized replay failure log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-rust-replay-failure-${{ github.run_id }}
+          if-no-files-found: ignore
+          path: ${{ runner.temp }}/rust-replay-sanitized.log

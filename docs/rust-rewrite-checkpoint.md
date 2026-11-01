@@ -70,3 +70,28 @@ now reaches instrumentation, but the app process crashes; this is not acceptance
 evidence. The previous pushed checkpoint e6fd81b passed CI. This is a work-in-progress
 checkpoint, with full Python checks, updated translations, Android crash diagnosis,
 and fresh package/image validation still pending. Production remains untouched.
+
+## Verified Android replay and optional services
+
+The complete Rust suite now passes 202 tests with formatting and strict Clippy.
+This includes durable archival job leasing/recovery, bounded retries, preserved
+accepted saves, authenticated/CSRF-protected archive and OCR routes, and optional
+browser controls. Public signup is disabled by default, matching the production
+policy; tests explicitly enable it where required. AI provenance survives browser
+preview and creation, and the Android import client has a dedicated bounded timeout.
+
+Actual Android Room/WorkManager replay passed on the disposable API 34 x86_64
+emulator. Updated JVM tests and both APK builds pass. Python formatting, Ruff,
+and mypy (195 files) pass; the complete suite passed 325 tests plus one skip before
+the latest fixture-helper additions. Those helpers, replay runner, and health now
+pass 23 focused tests. The CI fixture helper also starts and cleans a real isolated
+Rust process without exposing its generated credentials.
+
+A private production snapshot was copied and successfully imported into separate
+Rust storage. Independent record/media verification and protected staging acceptance
+are still in progress. No live database/media was connected to Rust or changed.
+NixOS has an explicit Rust mode with separate storage while Python remains the module
+default. Fresh Nix evaluation/build/image checks for these latest changes are pending.
+The previous WIP CI failure was Python formatting in the new replay runner/tests;
+that formatting has been corrected. The new KVM-backed replay workflow still needs
+its first CI run. This checkpoint does not authorize production cutover.

@@ -70,6 +70,8 @@ pub trait WaybackTransport: Send + Sync {
     ) -> WaybackFuture<'a, Result<Option<Url>, WaybackError>>;
 }
 
+const SAVE_ENDPOINT_PREFIX: &str = "https://web.archive.org/save/";
+
 /// Production HTTP transport, restricted to the fixed Wayback origin.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ReqwestWaybackTransport;
@@ -81,12 +83,7 @@ impl WaybackTransport for ReqwestWaybackTransport {
     ) -> WaybackFuture<'a, Result<Option<Url>, WaybackError>> {
         Box::pin(async move {
             let client = wayback_http_client()?;
-            let mut endpoint = Url::parse("https://web.archive.org/save/")
-                .map_err(|_error| WaybackError::Internal)?;
-            endpoint
-                .path_segments_mut()
-                .map_err(|_error| WaybackError::Internal)?
-                .push(source_url.as_str());
+            let endpoint = save_endpoint(source_url)?;
             let response = client
                 .get(endpoint)
                 .send()
@@ -212,6 +209,11 @@ fn is_redirect(status: StatusCode) -> bool {
     matches!(status.as_u16(), 301 | 302 | 303 | 307 | 308)
 }
 
+fn save_endpoint(source_url: &Url) -> Result<Url, WaybackError> {
+    Url::parse(&format!("{SAVE_ENDPOINT_PREFIX}{source_url}"))
+        .map_err(|_error| WaybackError::InvalidSource)
+}
+
 fn checked_snapshot_url(url: &Url) -> Result<Url, WaybackError> {
     if url.scheme() == "https"
         && url.host_str() == Some("web.archive.org")
@@ -229,12 +231,22 @@ fn checked_snapshot_url(url: &Url) -> Result<Url, WaybackError> {
 
 /// Optional archive client. It performs no work unless constructed enabled.
 /// Clone one instance into application state to share its concurrency limit.
-#[derive(Clone)]
 pub struct WaybackClient<T = ReqwestWaybackTransport, R = SystemResolver> {
     enabled: bool,
     transport: Arc<T>,
     resolver: Arc<R>,
     semaphore: Arc<Semaphore>,
+}
+
+impl<T, R> Clone for WaybackClient<T, R> {
+    fn clone(&self) -> Self {
+        Self {
+            enabled: self.enabled,
+            transport: Arc::clone(&self.transport),
+            resolver: Arc::clone(&self.resolver),
+            semaphore: Arc::clone(&self.semaphore),
+        }
+    }
 }
 
 impl Default for WaybackClient<ReqwestWaybackTransport, SystemResolver> {
@@ -265,6 +277,10 @@ where
             resolver,
             semaphore: Arc::new(Semaphore::new(MAX_CONCURRENT_REQUESTS)),
         }
+    }
+
+    pub const fn is_enabled(&self) -> bool {
+        self.enabled
     }
 
     /// Submit a validated public source URL and check for a resulting snapshot.
@@ -305,6 +321,55 @@ where
                 }
             };
         self.archive_validated(source_url, deadline, permit).await
+    }
+
+    /// Check for a snapshot without submitting another save request.
+    pub async fn check_availability(&self, raw_source_url: &str) -> WaybackOutcome {
+        if !self.enabled {
+            return WaybackOutcome::Failure {
+                error: WaybackError::Disabled,
+            };
+        }
+        let deadline = tokio::time::Instant::now() + TOTAL_TIMEOUT;
+        let source_url = match tokio::time::timeout_at(
+            deadline,
+            validate_source_url(raw_source_url, self.resolver.as_ref()),
+        )
+        .await
+        {
+            Ok(Ok(url)) => url,
+            Ok(Err(error)) => return WaybackOutcome::Failure { error },
+            Err(_elapsed) => {
+                return WaybackOutcome::Failure {
+                    error: WaybackError::TimedOut,
+                };
+            }
+        };
+        let _permit =
+            match tokio::time::timeout_at(deadline, self.semaphore.clone().acquire_owned()).await {
+                Ok(Ok(permit)) => permit,
+                Ok(Err(_error)) => {
+                    return WaybackOutcome::Failure {
+                        error: WaybackError::Internal,
+                    };
+                }
+                Err(_elapsed) => {
+                    return WaybackOutcome::Failure {
+                        error: WaybackError::TimedOut,
+                    };
+                }
+            };
+        match tokio::time::timeout_at(deadline, self.transport.availability(&source_url)).await {
+            Ok(Ok(Some(snapshot_url))) => match checked_snapshot_url(&snapshot_url) {
+                Ok(snapshot_url) => WaybackOutcome::Success { snapshot_url },
+                Err(error) => WaybackOutcome::Failure { error },
+            },
+            Ok(Ok(None)) => WaybackOutcome::Pending,
+            Ok(Err(error)) => WaybackOutcome::Failure { error },
+            Err(_elapsed) => WaybackOutcome::Failure {
+                error: WaybackError::TimedOut,
+            },
+        }
     }
 
     async fn archive_validated(
@@ -365,7 +430,10 @@ pub async fn validate_source_url<R: DnsResolver>(
     input: &str,
     resolver: &R,
 ) -> Result<Url, WaybackError> {
-    if input.len() > MAX_SOURCE_URL_BYTES || input.trim() != input {
+    if input.len() > MAX_SOURCE_URL_BYTES
+        || input.trim() != input
+        || input.bytes().any(|byte| byte.is_ascii_control())
+    {
         return Err(WaybackError::InvalidSource);
     }
     let url = Url::parse(input).map_err(|_error| WaybackError::InvalidSource)?;
@@ -377,9 +445,10 @@ pub async fn validate_source_url<R: DnsResolver>(
             .split_once("://")
             .and_then(|(_, rest)| rest.split(['/', '?', '#']).next())
             .is_some_and(|authority| authority.contains('@'))
-        || url
-            .port()
-            .is_some_and(|port| Some(port) != url.port_or_known_default())
+        || url.port().is_some_and(|port| {
+            let allowed = if url.scheme() == "https" { 443 } else { 80 };
+            port != allowed
+        })
     {
         return Err(WaybackError::InvalidSource);
     }
@@ -424,4 +493,23 @@ fn is_reserved_hostname(hostname: &str) -> bool {
         || ["example.com", "example.org", "example.net"]
             .iter()
             .any(|suffix| hostname == *suffix || hostname.ends_with(&format!(".{suffix}")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::save_endpoint;
+    use url::Url;
+
+    #[test]
+    fn save_endpoint_keeps_the_source_url_path_and_query_shape() {
+        let source = Url::parse("https://ravelry.com/patterns/123?color=blue&size=2")
+            .expect("source URL should parse");
+
+        let endpoint = save_endpoint(&source).expect("save endpoint should parse");
+
+        assert_eq!(
+            endpoint.as_str(),
+            "https://web.archive.org/save/https://ravelry.com/patterns/123?color=blue&size=2"
+        );
+    }
 }

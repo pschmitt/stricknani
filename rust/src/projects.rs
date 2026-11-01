@@ -402,6 +402,18 @@ async fn create_project(
     {
         return database_error();
     }
+    if state.archive_enabled
+        && crate::archive_jobs::enqueue_in_transaction(
+            &mut transaction,
+            user_id,
+            crate::archive_jobs::ArchiveEntityKind::Project,
+            project_id,
+        )
+        .await
+        .is_err()
+    {
+        return database_error();
+    }
     if transaction.commit().await.is_err() {
         return database_error();
     }
@@ -539,6 +551,18 @@ async fn update_project(
     )
     .await
     .is_err()
+    {
+        return database_error();
+    }
+    if state.archive_enabled
+        && crate::archive_jobs::enqueue_in_transaction(
+            &mut transaction,
+            user_id,
+            crate::archive_jobs::ArchiveEntityKind::Project,
+            project_id,
+        )
+        .await
+        .is_err()
     {
         return database_error();
     }

@@ -34,7 +34,7 @@
 <main class="max-w-6xl mx-auto p-4 md:p-8">
     <h1 class="text-3xl font-bold mb-6">{{ title }}</h1>
     {% match body %}
-    {% when PageBody::Login with (error) %}
+    {% when PageBody::Login with (error, signup_enabled) %}
         <section class="max-w-md">
             {% match error %}{% when Some with (message) %}<p role="alert" class="alert alert-error mb-4">{{ message }}</p>{% when None %}{% endmatch %}
             <form action="/login" method="post" class="space-y-4">
@@ -43,7 +43,7 @@
                 <label class="form-control"><span class="label-text">{{ labels.password }}</span><input class="input input-bordered" type="password" name="password" autocomplete="current-password" required></label>
                 <button class="btn btn-primary">{{ labels.sign_in }}</button>
             </form>
-            <p class="mt-4"><a href="/signup">{{ labels.create_account }}</a></p>
+            {% if signup_enabled %}<p class="mt-4"><a href="/signup">{{ labels.create_account }}</a></p>{% endif %}
         </section>
     {% when PageBody::Catalog with (catalog) %}
         <p class="mb-5"><a class="btn btn-primary" href="/{{ catalog.path }}/new">{{ labels.create }}</a></p>
@@ -84,9 +84,11 @@
         <dl class="grid gap-3 my-6 sm:grid-cols-2">{% for pair in detail.metadata %}<div><dt class="font-semibold">{{ pair.0 }}</dt><dd>{{ pair.1 }}</dd></div>{% endfor %}</dl>
         <div class="prose max-w-none">{{ detail.description|safe }}</div>
         {% match detail.external_link %}{% when Some with (url) %}<p class="my-4"><a class="link" href="{{ url }}" rel="noopener noreferrer">{{ labels.source }}</a></p>{% when None %}{% endmatch %}
+        {% match detail.archive_link %}{% when Some with (url) %}<p class="my-4"><a class="link" href="{{ url }}" rel="noopener noreferrer">{{ labels.archive_saved }}</a></p>{% when None %}{% endmatch %}
+        {% match detail.archive_form_action %}{% when Some with (path) %}<form action="{{ path }}" method="post" class="my-4"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn btn-sm">{{ labels.archive_save }}</button></form>{% when None %}{% endmatch %}
         {% if !detail.steps.is_empty() %}<h2 class="text-2xl font-semibold mt-8">{{ labels.steps }}</h2><ol class="space-y-5 mt-4">{% for step in detail.steps %}<li><h3 class="text-lg font-semibold">{{ step.title }}</h3><div class="prose">{{ step.description|safe }}</div>{% if detail.path == "projects" %}<form action="/{{ detail.path }}/{{ detail.id }}/steps/{{ step.id }}/media" method="post" enctype="multipart/form-data" class="flex flex-wrap gap-3 mt-3"><input type="hidden" name="csrf" value="{{ csrf }}"><label class="form-control"><span class="label-text">{{ labels.file }}</span><input class="file-input file-input-bordered" type="file" name="file" accept="image/*" required></label><label class="form-control"><span class="label-text">{{ labels.alt_text }}</span><input class="input input-bordered" name="alt_text" maxlength="4096"></label><button class="btn self-end">{{ labels.upload }}</button></form>{% endif %}</li>{% endfor %}</ol>{% endif %}
         <h2 class="text-2xl font-semibold mt-8">{{ labels.photos }}</h2>
-        {% if !detail.images.is_empty() %}<div class="flex flex-wrap gap-4 mt-4">{% for image in detail.images %}<div><a href="{{ image.url }}"><img src="{{ image.thumbnail }}" alt="{{ image.alt }}" loading="lazy" class="rounded-lg max-w-full"></a><form action="{{ image.delete_path }}" method="post" class="mt-2"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn btn-ghost btn-sm">{{ labels.delete }}</button></form></div>{% endfor %}</div>{% endif %}
+        {% if !detail.images.is_empty() %}<div class="flex flex-wrap gap-4 mt-4">{% for image in detail.images %}<div><a href="{{ image.url }}"><img src="{{ image.thumbnail }}" alt="{{ image.alt }}" loading="lazy" class="rounded-lg max-w-full"></a><form action="{{ image.delete_path }}" method="post" class="mt-2"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn btn-ghost btn-sm">{{ labels.delete }}</button></form>{% if detail.ocr_enabled %}<div class="mt-2 space-y-2" data-ocr-widget data-src="{{ image.url }}" data-csrf="{{ csrf }}" data-busy="{{ labels.ocr_busy }}" data-error="{{ labels.ocr_error }}"><label class="form-control"><span class="label-text">{{ labels.ocr_language }}</span><select class="select select-bordered select-sm" data-ocr-language><option value="deu">Deutsch</option><option value="eng">English</option></select></label><button type="button" class="btn btn-secondary btn-sm" data-ocr-run>{{ labels.ocr_run }}</button><p class="text-sm" role="status" aria-live="polite" data-ocr-status></p><textarea class="textarea textarea-bordered w-full" rows="4" readonly hidden data-ocr-output></textarea></div>{% endif %}</div>{% endfor %}</div>{% endif %}
         <form action="{{ detail.image_upload_path }}" method="post" enctype="multipart/form-data" class="flex flex-wrap gap-3 mt-4"><input type="hidden" name="csrf" value="{{ csrf }}"><label class="form-control"><span class="label-text">{{ labels.file }}</span><input class="file-input file-input-bordered" type="file" name="file" accept="image/*" required></label>{% if detail.path == "projects" %}<label class="form-control"><span class="label-text">{{ labels.alt_text }}</span><input class="input input-bordered" name="alt_text" maxlength="4096"></label>{% endif %}<button class="btn self-end">{{ labels.upload }}</button></form>
         {% if !detail.notes.is_empty() %}<h2 class="text-2xl font-semibold mt-8">{{ labels.notes }}</h2><div class="prose mt-4">{{ detail.notes|safe }}</div>{% endif %}
         {% if detail.attachment_upload_path.is_some() %}<h2 class="text-2xl font-semibold mt-8">{{ labels.attachments }}</h2>{% endif %}
@@ -121,5 +123,6 @@
         <ul class="space-y-3">{% for item in items %}<li class="flex flex-wrap gap-3 items-center"><form action="/categories/{{ item.id }}/save" method="post" class="flex gap-3"><input type="hidden" name="csrf" value="{{ csrf }}"><input class="input input-bordered" name="name" value="{{ item.name }}" required><button class="btn">{{ labels.save }}</button></form><a class="btn btn-ghost" href="/categories/{{ item.id }}/delete">{{ labels.delete }}</a></li>{% endfor %}</ul>
     {% endmatch %}
 </main>
+<script src="/static/rust-utilities.js" defer></script>
 </body>
 </html>

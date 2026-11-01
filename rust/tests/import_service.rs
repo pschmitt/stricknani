@@ -1,5 +1,6 @@
 use std::{
     future::Future,
+    io::Cursor,
     path::PathBuf,
     pin::Pin,
     sync::{Arc, Mutex},
@@ -27,6 +28,7 @@ type PostFuture<'a> = Pin<Box<dyn Future<Output = Result<Value, AiError>> + Send
 
 struct FixtureAiTransport {
     calls: Arc<Mutex<usize>>,
+    requests: Arc<Mutex<Vec<Value>>>,
 }
 
 impl AiTransport for FixtureAiTransport {
@@ -34,25 +36,29 @@ impl AiTransport for FixtureAiTransport {
         &'a self,
         _endpoint: &'a url::Url,
         _api_key: &'a ApiKey,
-        _body: &'a Value,
+        body: &'a Value,
     ) -> PostFuture<'a> {
         Box::pin(async move {
             *self.calls.lock().expect("fixture counter lock") += 1;
+            self.requests
+                .lock()
+                .expect("fixture request lock")
+                .push(body.clone());
             Ok(serde_json::json!({
-                "choices": [{"message": {"content": "{\"name\":\"AI improved title\",\"link\":\"https://untrusted.example/\"}"}}]
+                "choices": [{"message": {"content": "{\"name\":\"AI improved title\",\"yarn\":\"Merino wool\",\"link\":\"https://untrusted.example/\"}"}}]
             }))
         })
     }
 }
 
-fn fixture_ai(calls: Arc<Mutex<usize>>) -> AiClient {
+fn fixture_ai(calls: Arc<Mutex<usize>>, requests: Arc<Mutex<Vec<Value>>>) -> AiClient {
     let config = AiConfig::from_lookup(true, |key| match key {
         "AI_API_KEY" => Some("fixture-key".to_owned()),
         _ => None,
     })
     .expect("fixture AI config is valid")
     .expect("AI config is enabled");
-    AiClient::with_transport(config, Arc::new(FixtureAiTransport { calls }))
+    AiClient::with_transport(config, Arc::new(FixtureAiTransport { calls, requests }))
 }
 
 async fn setup() -> (axum::Router, SqlitePool) {
@@ -111,6 +117,39 @@ fn form_body(pairs: &[(&str, &str)]) -> String {
     let mut serializer = url::form_urlencoded::Serializer::new(String::new());
     serializer.extend_pairs(pairs.iter().copied());
     serializer.finish()
+}
+
+fn png_bytes() -> Vec<u8> {
+    let image = image::DynamicImage::new_rgba8(2, 2);
+    let mut output = Cursor::new(Vec::new());
+    image
+        .write_to(&mut output, image::ImageFormat::Png)
+        .expect("fixture PNG encodes");
+    output.into_inner()
+}
+
+fn image_preview_request(token: &str, csrf: &str) -> Request<Body> {
+    let boundary = "ai-image-boundary";
+    let mut body = format!(
+        "--{boundary}\r\nContent-Disposition: form-data; name=\"csrf\"\r\n\r\n{csrf}\r\n\
+         --{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"pattern.png\"\r\nContent-Type: image/jpeg\r\n\r\n"
+    )
+    .into_bytes();
+    body.extend_from_slice(&png_bytes());
+    body.extend_from_slice(
+        format!(
+            "\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"use_ai\"\r\n\r\ntrue\r\n--{boundary}--\r\n"
+        )
+        .as_bytes(),
+    );
+    Request::post("/imports/preview-file")
+        .header("cookie", format!("stricknani_session={token}; language=en"))
+        .header(
+            "content-type",
+            format!("multipart/form-data; boundary={boundary}"),
+        )
+        .body(Body::from(body))
+        .expect("multipart request builds")
 }
 
 async fn html_body(response: axum::response::Response) -> String {
@@ -278,7 +317,8 @@ async fn browser_text_import_checks_csrf_then_previews_and_creates_through_api()
 #[tokio::test]
 async fn browser_ai_preview_calls_provider_only_after_explicit_opt_in() {
     let calls = Arc::new(Mutex::new(0));
-    let (app, _) = setup_with_ai(Some(fixture_ai(calls.clone()))).await;
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let (app, pool) = setup_with_ai(Some(fixture_ai(calls.clone(), requests.clone()))).await;
     let csrf = valid_csrf();
     let cookie = format!("stricknani_session={BROWSER_TOKEN}; language=en");
 
@@ -301,6 +341,7 @@ async fn browser_ai_preview_calls_provider_only_after_explicit_opt_in() {
     assert_eq!(*calls.lock().expect("fixture counter lock"), 0);
 
     let opted_in = app
+        .clone()
         .oneshot(
             Request::post("/imports/preview")
                 .header("content-type", "application/x-www-form-urlencoded")
@@ -325,4 +366,172 @@ async fn browser_ai_preview_calls_provider_only_after_explicit_opt_in() {
     .expect("preview draft is JSON");
     assert_eq!(draft["project"]["name"], "AI improved title");
     assert_ne!(draft["project"]["link"], "https://untrusted.example/");
+
+    let project_marker = hidden_value(
+        &html,
+        "form[action='/imports/create-project'] input[name='is_ai_enhanced']",
+    );
+    let yarn_marker = hidden_value(
+        &html,
+        "form[action='/imports/create-yarn'] input[name='is_ai_enhanced']",
+    );
+    assert_eq!(project_marker, "true");
+    assert_eq!(yarn_marker, "true");
+
+    let create_project = app
+        .clone()
+        .oneshot(
+            Request::post("/imports/create-project")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .header(
+                    "cookie",
+                    format!("stricknani_session={BROWSER_TOKEN}; language=en"),
+                )
+                .body(Body::from(form_body(&[
+                    (
+                        "csrf",
+                        &hidden_value(
+                            &html,
+                            "form[action='/imports/create-project'] input[name='csrf']",
+                        ),
+                    ),
+                    (
+                        "draft_json",
+                        &hidden_value(
+                            &html,
+                            "form[action='/imports/create-project'] input[name='draft_json']",
+                        ),
+                    ),
+                    ("is_ai_enhanced", &project_marker),
+                    (
+                        "name",
+                        &hidden_value(
+                            &html,
+                            "form[action='/imports/create-project'] input[name='name']",
+                        ),
+                    ),
+                    ("description", "A reviewed pattern description."),
+                    ("category", ""),
+                    ("needles", ""),
+                    ("stitch_sample", ""),
+                    ("other_materials", ""),
+                    ("yarn", "Merino wool"),
+                    ("link", ""),
+                ])))
+                .expect("request builds"),
+        )
+        .await
+        .expect("router responds");
+    assert_eq!(create_project.status(), StatusCode::SEE_OTHER);
+    let enhanced_projects: i64 = sqlx::query_scalar("SELECT is_ai_enhanced FROM projects")
+        .fetch_one(&pool)
+        .await
+        .expect("created project flag reads");
+    assert_eq!(enhanced_projects, 1);
+
+    let create_yarn = app
+        .oneshot(
+            Request::post("/imports/create-yarn")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .header(
+                    "cookie",
+                    format!("stricknani_session={BROWSER_TOKEN}; language=en"),
+                )
+                .body(Body::from(form_body(&[
+                    (
+                        "csrf",
+                        &hidden_value(
+                            &html,
+                            "form[action='/imports/create-yarn'] input[name='csrf']",
+                        ),
+                    ),
+                    (
+                        "draft_json",
+                        &hidden_value(
+                            &html,
+                            "form[action='/imports/create-yarn'] input[name='draft_json']",
+                        ),
+                    ),
+                    ("is_ai_enhanced", &yarn_marker),
+                    ("yarn_name", "Merino wool"),
+                    ("yarn_brand", ""),
+                    ("yarn_colorway", ""),
+                    ("yarn_weight", ""),
+                    ("yarn_length", ""),
+                    ("yarn_weight_category", ""),
+                    ("yarn_fiber_content", ""),
+                    ("yarn_link", ""),
+                ])))
+                .expect("request builds"),
+        )
+        .await
+        .expect("router responds");
+    assert_eq!(create_yarn.status(), StatusCode::SEE_OTHER);
+    let enhanced_yarns: i64 = sqlx::query_scalar("SELECT is_ai_enhanced FROM yarns")
+        .fetch_one(&pool)
+        .await
+        .expect("created yarn flag reads");
+    assert_eq!(enhanced_yarns, 1);
+    assert_eq!(*calls.lock().expect("fixture counter lock"), 1);
+}
+
+#[tokio::test]
+async fn browser_ai_preview_bounds_unicode_source_text_before_calling_provider() {
+    let calls = Arc::new(Mutex::new(0));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let (app, _) = setup_with_ai(Some(fixture_ai(calls.clone(), requests.clone()))).await;
+    let long_text = "ä".repeat(13_000);
+    let response = app
+        .oneshot(
+            Request::post("/imports/preview")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .header(
+                    "cookie",
+                    format!("stricknani_session={BROWSER_TOKEN}; language=en"),
+                )
+                .body(Body::from(form_body(&[
+                    ("csrf", &valid_csrf()),
+                    ("type", "text"),
+                    ("text", &long_text),
+                    ("use_ai", "true"),
+                ])))
+                .expect("request builds"),
+        )
+        .await
+        .expect("router responds");
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(*calls.lock().expect("fixture counter lock"), 1);
+
+    let requests = requests.lock().expect("fixture request lock");
+    let prompt = requests[0]["messages"][1]["content"][0]["text"]
+        .as_str()
+        .expect("AI user prompt contains text");
+    let supplied_source = prompt
+        .split_once("Source text:\n")
+        .expect("prompt includes source text")
+        .1
+        .split_once("\n\nExisting parsed draft JSON:")
+        .expect("prompt separates source and draft")
+        .0;
+    assert_eq!(supplied_source.chars().count(), 12_000);
+    assert!(supplied_source.chars().all(|character| character == 'ä'));
+}
+
+#[tokio::test]
+async fn browser_file_ai_uses_parsed_image_format_not_claimed_mime_type() {
+    let calls = Arc::new(Mutex::new(0));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let (app, _) = setup_with_ai(Some(fixture_ai(calls.clone(), requests.clone()))).await;
+    let response = app
+        .oneshot(image_preview_request(BROWSER_TOKEN, &valid_csrf()))
+        .await
+        .expect("router responds");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(*calls.lock().expect("fixture counter lock"), 1);
+    let requests = requests.lock().expect("fixture request lock");
+    let image_url = requests[0]["messages"][1]["content"][1]["image_url"]["url"]
+        .as_str()
+        .expect("AI request has image data URL");
+    assert!(image_url.starts_with("data:image/png;base64,"));
 }

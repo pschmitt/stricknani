@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import shutil
 import stat
 import subprocess
 from pathlib import Path
@@ -39,8 +40,8 @@ def test_validate_url_only_allows_plain_loopback_urls() -> None:
 def test_invalid_serial_is_rejected_before_subprocess_or_credentials(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(runner.shutil, "which", lambda _command: "/usr/bin/adb")
-    monkeypatch.setattr(runner.Path, "is_file", lambda _path: True)
+    monkeypatch.setattr(shutil, "which", lambda _command: "/usr/bin/adb")
+    monkeypatch.setattr(Path, "is_file", lambda _path: True)
     monkeypatch.setattr(
         runner, "_run", lambda *_args, **_kwargs: pytest.fail("adb called")
     )
@@ -76,7 +77,7 @@ def test_qemu_property_is_checked_before_install(
         output = b"emulator-5554 device\n" if "devices" in command else b"0\n"
         return subprocess.CompletedProcess(command, 0, output, b"")
 
-    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
     with pytest.raises(runner.ReplayError, match="emulator mode"):
         runner.validate_emulator("/usr/bin/adb", "emulator-5554", timeout=10)
     assert not any("install" in command for command in calls)
@@ -98,7 +99,7 @@ def test_existing_reverse_mapping_is_reused_without_removal(
             b"",
         )
 
-    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
     assert runner.ensure_reverse("adb", "emulator-5554", 7674, timeout=10) is False
     assert len(calls) == 1
     assert calls[0][-2:] == ["reverse", "--list"]
@@ -120,7 +121,7 @@ def test_conflicting_reverse_mapping_fails_closed(
             b"",
         )
 
-    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
     with pytest.raises(runner.ReplayError, match="conflicting reverse"):
         runner.ensure_reverse("adb", "emulator-5554", 7674, timeout=10)
     assert len(calls) == 1
@@ -148,7 +149,7 @@ def test_success_streams_fixture_to_private_file_and_runs_only_target_class(
             return subprocess.CompletedProcess(command, 0, b"1\n", b"")
         return subprocess.CompletedProcess(command, 0, b"", b"")
 
-    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
 
     def capture(command: list[str], log_path: Path, *, timeout: int) -> int:
         del timeout
@@ -224,7 +225,7 @@ def test_instrumentation_skip_or_failure_is_not_a_pass(
     ) -> subprocess.CompletedProcess[bytes]:
         return subprocess.CompletedProcess(command, 0, b"", b"")
 
-    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
 
     def capture(_command: list[str], log_path: Path, *, timeout: int) -> int:
         del timeout
@@ -247,7 +248,8 @@ def test_failure_diagnostics_redact_credentials_and_pat() -> None:
     fixture = runner.read_fixture(fixture_values())
     diagnostic = runner.redact(
         "failed for replay@example.invalid disposable-test-password "
-        "sna_abcdefghijklmno", fixture
+        "sna_abcdefghijklmno",
+        fixture,
     )
     assert "replay@example.invalid" not in diagnostic
     assert "disposable-test-password" not in diagnostic
@@ -270,7 +272,7 @@ def test_failed_instrumentation_redacts_secret_output(
     ) -> subprocess.CompletedProcess[bytes]:
         return subprocess.CompletedProcess(command, 0, b"", b"")
 
-    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
 
     def capture(_command: list[str], log_path: Path, *, timeout: int) -> int:
         del timeout
@@ -312,9 +314,7 @@ def test_instrumentation_log_is_private_and_bounded(
         def kill(self) -> None:
             pytest.fail("successful fake process was killed")
 
-    monkeypatch.setattr(
-        runner.subprocess, "Popen", lambda *_args, **_kwargs: FakeProcess()
-    )
+    monkeypatch.setattr(subprocess, "Popen", lambda *_args, **_kwargs: FakeProcess())
     log_path = tmp_path / "raw.log"
     assert runner._capture_instrumentation(["adb"], log_path, timeout=5) == 0
     assert stat.S_IMODE(log_path.stat().st_mode) == 0o600
@@ -341,7 +341,7 @@ def test_instrumentation_timeout_force_stops_app_and_cleans_runner_state(
             return subprocess.CompletedProcess(command, 0, b"", b"")
         return subprocess.CompletedProcess(command, 0, b"", b"")
 
-    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
 
     def capture(command: list[str], _log_path: Path, *, timeout: int) -> int:
         raise subprocess.TimeoutExpired(command, timeout=timeout)
@@ -363,4 +363,3 @@ def test_instrumentation_timeout_force_stops_app_and_cleans_runner_state(
     assert any(
         command[-1] == "files/.rust-replay-fixture.json.tmp" for command in calls
     )
-

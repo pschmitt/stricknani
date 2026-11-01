@@ -12,7 +12,8 @@ and [Groq structured output guide](https://console.groq.com/docs/structured-outp
 
 ## Configuration
 
-The integration is off unless the caller explicitly enables it. When disabled,
+The server integration is off unless `RUST_AI_ENABLED=true` and the user selects
+AI for that import. When disabled,
 `AiConfig::from_lookup(false, ...)` returns `None` without reading any key. When
 enabled, provider resolution is:
 

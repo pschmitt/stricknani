@@ -155,7 +155,10 @@ async fn serve() -> Result<(), &'static str> {
         .map_err(|_| "cannot initialize Rust database")?;
     let state = db::AppState::new(pool)
         .with_media_root(config.media_root)
-        .with_secure_cookies(config.secure_cookies);
+        .with_secure_cookies(config.secure_cookies)
+        .with_signup_enabled(config.signup_enabled)
+        .with_archive_enabled(config.archive_enabled)
+        .with_ocr_enabled(config.ocr_enabled);
 
     let listener = tokio::net::TcpListener::bind(config.bind_address)
         .await
@@ -176,18 +179,37 @@ async fn serve() -> Result<(), &'static str> {
             tokio::time::sleep(std::time::Duration::from_secs(30)).await;
         }
     });
+    let archive_worker = config.archive_enabled.then(|| {
+        let pool = state.pool.clone();
+        tokio::spawn(async move {
+            let client = stricknani_server::wayback::WaybackClient::new(true);
+            loop {
+                if stricknani_server::archive_jobs::process_one(&pool, &client)
+                    .await
+                    .is_err()
+                {
+                    tracing::warn!(component = "archive", "archive.job.failed");
+                }
+                tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+            }
+        })
+    });
     let worker_path = std::env::current_exe().map_err(|_| "cannot locate document worker")?;
     let ai = config
         .ai
         .map(stricknani_server::ai::AiClient::new)
         .transpose()
         .map_err(|_| "cannot initialize AI provider")?;
-    let app = stricknani_server::app_with_imports_and_ai(
+    let ocr = config
+        .ocr_enabled
+        .then(stricknani_server::ocr::OcrService::new);
+    let app = stricknani_server::app_with_services(
         config.static_root,
         state,
         worker_path,
         config.external_imports,
         ai,
+        ocr,
     );
     let app = security::with_host_validation(app, config.trusted_hosts.clone());
     let result = axum::serve(
@@ -197,6 +219,9 @@ async fn serve() -> Result<(), &'static str> {
     .with_graceful_shutdown(shutdown_signal())
     .await;
     cleanup.abort();
+    if let Some(worker) = archive_worker {
+        worker.abort();
+    }
     result.map_err(|_| "server failed")
 }
 

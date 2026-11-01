@@ -54,6 +54,7 @@ pub struct ImportReport {
     pub attachments: usize,
     pub user_avatars: usize,
     pub audit_events: usize,
+    pub pending_archive_jobs: usize,
     pub deletion_events: usize,
     pub reused_media_aliases: usize,
     pub reused_thumbnail_aliases: usize,
@@ -913,6 +914,23 @@ async fn import_rows(
         insert_media(&mut tx, &prepared, reused_alias).await?;
     }
     report.user_avatars = import_avatars(&mut tx, data, source_media, target_media).await?;
+    // Preserve accepted legacy requests without resubmitting their save operation.
+    // The candidate worker remains disabled unless explicitly configured at runtime.
+    for (table, kind) in [("projects", "project"), ("yarns", "yarn")] {
+        let statement = format!(
+            "INSERT INTO archive_jobs (owner_id,entity_type,entity_id,source_url,save_accepted) \
+             SELECT owner_id,?,id,link,1 FROM {table} \
+             WHERE link IS NOT NULL AND trim(link) <> '' AND length(link) <= 2048 \
+             AND archive_requested_at IS NOT NULL AND archive_failed = 0 \
+             AND (link_archive IS NULL OR trim(link_archive) = '')"
+        );
+        report.pending_archive_jobs += sqlx::query(&statement)
+            .bind(kind)
+            .execute(&mut *tx)
+            .await
+            .map_err(|_| ImportError::Database)?
+            .rows_affected() as usize;
+    }
     tx.commit().await.map_err(|_| ImportError::Database)?;
 
     let foreign_key_issues = sqlx::query("PRAGMA foreign_key_check")
