@@ -1,6 +1,6 @@
 //! Rust-owned SQLite storage. Never open the Python application's live database.
 use sqlx::{
-    SqlitePool,
+    Executor, SqlitePool,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
 };
 use std::{str::FromStr, sync::Arc, time::Duration};
@@ -195,11 +195,29 @@ pub async fn create_account(
     let password_hash = crate::auth::hash_password_for_account(password)
         .await
         .map_err(|_| DatabaseError::Password)?;
+    insert_prehashed_account(pool, &email, &password_hash, role).await
+}
+
+/// Insert a validated account hash using the caller's existing transaction.
+/// This is crate-private so only typed account services can supply hashes.
+pub(crate) async fn insert_prehashed_account<'e, E>(
+    executor: E,
+    email: &str,
+    password_hash: &str,
+    role: AccountRole,
+) -> Result<i64, DatabaseError>
+where
+    E: Executor<'e, Database = sqlx::Sqlite>,
+{
+    let email = email.trim().to_lowercase();
+    if email.len() > 320 || !email.contains('@') || email.contains(char::is_whitespace) {
+        return Err(DatabaseError::InvalidAccount);
+    }
     let result = sqlx::query("INSERT INTO users (email, password_hash, is_admin) VALUES (?, ?, ?)")
         .bind(email)
         .bind(password_hash)
         .bind(role.is_admin())
-        .execute(pool)
+        .execute(executor)
         .await
         .map_err(DatabaseError::Account)?;
     Ok(result.last_insert_rowid())

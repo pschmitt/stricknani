@@ -652,6 +652,43 @@ async fn common_admin_password_is_rejected_without_creating_an_account() {
 }
 
 #[tokio::test]
+async fn legacy_self_password_reset_clears_the_revoked_session_cookie() {
+    let app = test_app().await;
+    let response = app
+        .router
+        .oneshot(request(
+            &format!("/admin/users/{}/reset-password", app.admin_id),
+            ADMIN_TOKEN,
+            &[
+                ("csrf", &csrf(ADMIN_TOKEN)),
+                ("new_password", "legacy-self-reset-password"),
+            ],
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), axum::http::StatusCode::SEE_OTHER);
+    assert_eq!(response.headers()["location"], "/login");
+    assert!(
+        response
+            .headers()
+            .get_all("set-cookie")
+            .iter()
+            .filter_map(|value| value.to_str().ok())
+            .any(|value| value.starts_with("__Host-stricknani_session=")
+                && value.contains("Max-Age=0"))
+    );
+    let revoked: Option<i64> = sqlx::query_scalar(
+        "SELECT revoked_at FROM api_tokens WHERE user_id = ? AND purpose = 'browser' AND token_hash = ?",
+    )
+    .bind(app.admin_id)
+    .bind(hex::encode(Sha256::digest(ADMIN_TOKEN.as_bytes())))
+    .fetch_one(&app.pool)
+    .await
+    .unwrap();
+    assert!(revoked.is_some());
+}
+
+#[tokio::test]
 async fn admin_routes_reject_non_admin_mutations() {
     let app = test_app().await;
     let response = app

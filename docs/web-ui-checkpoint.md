@@ -94,7 +94,15 @@ existing auth limiter and explicit member role. It creates no browser session
 and stays unavailable when signup is disabled. Its six focused API tests, the
 full Rust suite (271 tests), formatting, strict Clippy and four health tests
 passed. The signup screen remains open; preview signup stays disabled.
-Admin/audit and the complete accessibility/performance/multi-browser/
+The administrator user API has also passed review. Its shared service powers
+the new browser API and legacy HTML adapters. It checks the administrator role
+before password hashing and again inside serialized write transactions;
+disable/reset operations revoke browser sessions atomically. Stale-actor,
+concurrent-disable, validation, pagination and self-reset regressions pass.
+The isolated source passed all 281 Rust tests with all targets, formatting,
+strict Clippy and four health tests. Administrator screens and the audit API/UI
+remain unfinished; this checkpoint is not part of the live preview yet.
+The complete accessibility/performance/multi-browser/
 real-phone acceptance remain open. The browser CI lane still needs the actual
 Rust-backed journeys in addition to existing static frontend checks.
 

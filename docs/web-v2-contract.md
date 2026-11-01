@@ -428,6 +428,43 @@ archive_unavailable`. The owner-scoped status response excludes source URLs,
 worker errors, leases, and job identifiers. Clients can poll this durable
 status; no streaming connection is needed.
 
+## Administrator user API slice
+
+Administrator routes require an active browser session whose user is an active
+administrator. Mutations also require same-origin `Origin` and the matching
+`X-CSRF-Token`. Request JSON is limited to 8 KiB and rejects unknown fields.
+User creation hashes the validated password before opening a serialized write
+transaction, then rechecks that the actor is still an active administrator
+inside that transaction. Account creation, role assignment, active-state
+changes, password reset, and browser-session revocation use shared typed
+operations also called by the legacy HTML handlers. Public signup always
+creates a member.
+
+| Method and path | Request | Result |
+| --- | --- | --- |
+| `GET /admin/users?page=N` | Optional `page`, default 1; values 1 through 10000 | `{data: UserSummary[], meta: {page, per_page: 50, has_more}}` |
+| `POST /admin/users` | JSON `{email, password, is_admin?}`; omitted `is_admin` is false | `201 {data: UserSummary}` |
+| `PATCH /admin/users/{id}/active` | JSON `{active: boolean}` | `200 {data: UserSummary}` |
+| `POST /admin/users/{id}/reset-password` | JSON `{new_password}` | `200 {data: {id, session_revoked: true}}` |
+
+`UserSummary` is `{id, email, active, is_admin}`. IDs are JSON numbers.
+User pages contain at most 50 rows, ordered by `email COLLATE NOCASE` then `id`;
+`has_more` indicates whether another row exists. Invalid pages return
+`400 invalid_query`. Invalid JSON, unknown fields, and oversized bodies use
+stable `invalid_json`/`payload_too_large` errors. Validation errors return
+`422` with `error.code` and a `fields` mapping. A non-admin receives `403
+admin_required`; an existing email returns `409 email_in_use` with an `email`
+field error; a missing target receives `404 not_found`; attempts to disable the
+current administrator or the last active administrator receive `409
+admin_conflict`.
+
+Disabling an account revokes its browser sessions in the same transaction.
+Password reset sets the target active and revokes all of its browser sessions
+atomically. Resetting another user leaves the administrator's cookie intact;
+resetting oneself clears that cookie after the database commit. API-purpose
+tokens are not revoked by password reset. The server does not return password
+hashes or other credential material.
+
 ## Proposed contract for remaining resource slices
 
 These resource routes are a starting contract for frontend/backend slices;

@@ -391,52 +391,17 @@ async fn create_user(
     if !web::valid_csrf(&session.token, &form.csrf) {
         return StatusCode::FORBIDDEN.into_response();
     }
-    let email = form.email.trim().to_lowercase();
-    if !valid_email(&email) {
-        return render_admin(
-            &state,
-            &headers,
-            &session,
-            Some(AccountMessage::InvalidEmailOrPassword.text(&headers)),
-            StatusCode::UNPROCESSABLE_ENTITY,
-        )
-        .await;
-    }
-    if !password_max_valid(&password) {
-        return render_admin(
-            &state,
-            &headers,
-            &session,
-            Some(AccountMessage::PasswordTooLong.text(&headers)),
-            StatusCode::UNPROCESSABLE_ENTITY,
-        )
-        .await;
-    }
-    if let Some(message) = password_policy_message(&password, &headers) {
-        return render_admin(
-            &state,
-            &headers,
-            &session,
-            Some(message),
-            StatusCode::UNPROCESSABLE_ENTITY,
-        )
-        .await;
-    }
-    let role = if form.is_admin.as_deref() == Some("1") {
-        crate::db::AccountRole::Admin
-    } else {
-        crate::db::AccountRole::Member
-    };
-    match crate::db::create_account(
+    match crate::admin_service::create_user(
         &state.app.pool,
-        &email,
-        std::mem::take(&mut *password),
-        role,
+        session.user_id,
+        form.email,
+        std::mem::take(&mut password),
+        form.is_admin.as_deref() == Some("1"),
     )
     .await
     {
         Ok(_) => {}
-        Err(crate::db::DatabaseError::Account(_)) => {
+        Err(crate::admin_service::AdminError::AccountExists) => {
             return render_admin(
                 &state,
                 &headers,
@@ -445,6 +410,43 @@ async fn create_user(
                 StatusCode::CONFLICT,
             )
             .await;
+        }
+        Err(crate::admin_service::AdminError::InvalidEmail) => {
+            return render_admin(
+                &state,
+                &headers,
+                &session,
+                Some(AccountMessage::InvalidEmailOrPassword.text(&headers)),
+                StatusCode::UNPROCESSABLE_ENTITY,
+            )
+            .await;
+        }
+        Err(crate::admin_service::AdminError::PasswordTooLong) => {
+            return render_admin(
+                &state,
+                &headers,
+                &session,
+                Some(AccountMessage::PasswordTooLong.text(&headers)),
+                StatusCode::UNPROCESSABLE_ENTITY,
+            )
+            .await;
+        }
+        Err(crate::admin_service::AdminError::PasswordPolicy(error)) => {
+            let message = match error {
+                auth::NewPasswordError::TooShort => AccountMessage::PasswordTooShort,
+                auth::NewPasswordError::Common => AccountMessage::PasswordCommon,
+            };
+            return render_admin(
+                &state,
+                &headers,
+                &session,
+                Some(message.text(&headers)),
+                StatusCode::UNPROCESSABLE_ENTITY,
+            )
+            .await;
+        }
+        Err(crate::admin_service::AdminError::Forbidden) => {
+            return StatusCode::FORBIDDEN.into_response();
         }
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     };
@@ -477,76 +479,19 @@ async fn set_user_active(
     }) else {
         return StatusCode::UNPROCESSABLE_ENTITY.into_response();
     };
-    if id == session.user_id && !active {
-        return StatusCode::CONFLICT.into_response();
-    }
-    let mut tx = match state.app.pool.begin().await {
-        Ok(tx) => tx,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    let actor = match sqlx::query(
-        "UPDATE users SET active = active \
-         WHERE id = ? AND active = 1 AND is_admin = 1",
-    )
-    .bind(session.user_id)
-    .execute(&mut *tx)
-    .await
+    match crate::admin_service::set_user_active(&state.app.pool, session.user_id, id, active).await
     {
-        Ok(result) => result,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    if actor.rows_affected() == 0 {
-        return StatusCode::FORBIDDEN.into_response();
-    }
-    let target = match sqlx::query("SELECT active, is_admin FROM users WHERE id = ?")
-        .bind(id)
-        .fetch_optional(&mut *tx)
-        .await
-    {
-        Ok(Some(row)) => (
-            row.get::<i64, _>("active") != 0,
-            row.get::<i64, _>("is_admin") != 0,
-        ),
-        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    if !active && target.0 && target.1 {
-        let active_admins: i64 = match sqlx::query_scalar(
-            "SELECT count(*) FROM users WHERE active = 1 AND is_admin = 1",
-        )
-        .fetch_one(&mut *tx)
-        .await
-        {
-            Ok(count) => count,
-            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        };
-        if active_admins <= 1 {
+        Ok(_) => {}
+        Err(crate::admin_service::AdminError::Forbidden) => {
+            return StatusCode::FORBIDDEN.into_response();
+        }
+        Err(crate::admin_service::AdminError::NotFound) => {
+            return StatusCode::NOT_FOUND.into_response();
+        }
+        Err(crate::admin_service::AdminError::Conflict) => {
             return StatusCode::CONFLICT.into_response();
         }
-    }
-    if sqlx::query("UPDATE users SET active = ? WHERE id = ?")
-        .bind(active)
-        .bind(id)
-        .execute(&mut *tx)
-        .await
-        .is_err()
-    {
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-    }
-    if !active
-        && sqlx::query(
-            "UPDATE api_tokens SET revoked_at = unixepoch() \
-             WHERE user_id = ? AND purpose = 'browser' AND revoked_at IS NULL",
-        )
-        .bind(id)
-        .execute(&mut *tx)
-        .await
-        .is_err()
-    {
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-    }
-    if tx.commit().await.is_err() {
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
     Redirect::to("/admin/users").into_response()
 }
@@ -591,68 +536,40 @@ async fn reset_password(
         )
         .await;
     }
-    let hash = match auth::hash_password_for_account(password).await {
-        Ok(hash) => hash,
-        Err(()) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    match update_password_and_revoke_sessions(&state.app.pool, id, &hash, true, None).await {
-        Ok(true) => Redirect::to("/admin/users").into_response(),
-        Ok(false) => StatusCode::NOT_FOUND.into_response(),
+    match crate::admin_service::reset_password(&state.app.pool, session.user_id, id, password).await
+    {
+        Ok(()) if session.user_id == id => {
+            clear_browser_session(&state, Redirect::to("/login").into_response())
+        }
+        Ok(()) => Redirect::to("/admin/users").into_response(),
+        Err(crate::admin_service::AdminError::Forbidden) => StatusCode::FORBIDDEN.into_response(),
+        Err(crate::admin_service::AdminError::NotFound) => StatusCode::NOT_FOUND.into_response(),
+        Err(crate::admin_service::AdminError::PasswordTooLong) => {
+            render_admin(
+                &state,
+                &headers,
+                &session,
+                Some(AccountMessage::PasswordTooLong.text(&headers)),
+                StatusCode::UNPROCESSABLE_ENTITY,
+            )
+            .await
+        }
+        Err(crate::admin_service::AdminError::PasswordPolicy(error)) => {
+            let message = match error {
+                auth::NewPasswordError::TooShort => AccountMessage::PasswordTooShort,
+                auth::NewPasswordError::Common => AccountMessage::PasswordCommon,
+            };
+            render_admin(
+                &state,
+                &headers,
+                &session,
+                Some(message.text(&headers)),
+                StatusCode::UNPROCESSABLE_ENTITY,
+            )
+            .await
+        }
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
-}
-
-async fn update_password_and_revoke_sessions(
-    pool: &SqlitePool,
-    user_id: i64,
-    password_hash: &str,
-    reactivate: bool,
-    expected_password_hash: Option<&str>,
-) -> Result<bool, sqlx::Error> {
-    if !reactivate && let Some(expected_hash) = expected_password_hash {
-        return crate::account_service::update_password_and_revoke_sessions(
-            pool,
-            user_id,
-            password_hash,
-            expected_hash,
-        )
-        .await;
-    }
-    let mut tx = pool.begin().await?;
-    let result = if reactivate {
-        sqlx::query("UPDATE users SET password_hash = ?, active = 1 WHERE id = ?")
-            .bind(password_hash)
-            .bind(user_id)
-            .execute(&mut *tx)
-            .await?
-    } else if let Some(expected_hash) = expected_password_hash {
-        sqlx::query(
-            "UPDATE users SET password_hash = ? WHERE id = ? AND active = 1 AND password_hash = ?",
-        )
-        .bind(password_hash)
-        .bind(user_id)
-        .bind(expected_hash)
-        .execute(&mut *tx)
-        .await?
-    } else {
-        sqlx::query("UPDATE users SET password_hash = ? WHERE id = ? AND active = 1")
-            .bind(password_hash)
-            .bind(user_id)
-            .execute(&mut *tx)
-            .await?
-    };
-    if result.rows_affected() == 0 {
-        return Ok(false);
-    }
-    sqlx::query(
-        "UPDATE api_tokens SET revoked_at = unixepoch() \
-         WHERE user_id = ? AND purpose = 'browser' AND revoked_at IS NULL",
-    )
-    .bind(user_id)
-    .execute(&mut *tx)
-    .await?;
-    tx.commit().await?;
-    Ok(true)
 }
 
 fn clear_browser_session(state: &web::WebState, mut response: Response) -> Response {
@@ -718,14 +635,6 @@ fn password_length_valid(password: &str, minimum: usize) -> bool {
 
 fn password_max_valid(password: &str) -> bool {
     password.len() <= crate::account_service::MAX_PASSWORD_BYTES
-}
-
-fn valid_email(email: &str) -> bool {
-    email.len() <= 320
-        && email.contains('@')
-        && !email.chars().any(char::is_whitespace)
-        && !email.starts_with('@')
-        && !email.ends_with('@')
 }
 
 async fn render_account(
@@ -801,24 +710,21 @@ async fn render_admin(
     error: Option<&str>,
     status: StatusCode,
 ) -> Response {
-    let rows = match sqlx::query(
-        "SELECT id, email, active, is_admin FROM users ORDER BY email COLLATE NOCASE",
-    )
-    .fetch_all(&state.app.pool)
-    .await
-    {
-        Ok(rows) => rows,
+    let users = match crate::admin_service::list_users(&state.app.pool, session.user_id).await {
+        Ok(users) => users
+            .into_iter()
+            .map(|user| UserRow {
+                id: user.id,
+                email: user.email,
+                active: user.active,
+                is_admin: user.is_admin,
+            })
+            .collect(),
+        Err(crate::admin_service::AdminError::Forbidden) => {
+            return StatusCode::FORBIDDEN.into_response();
+        }
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     };
-    let users = rows
-        .into_iter()
-        .map(|row| UserRow {
-            id: row.get("id"),
-            email: row.get("email"),
-            active: row.get::<i64, _>("active") != 0,
-            is_admin: row.get::<i64, _>("is_admin") != 0,
-        })
-        .collect();
     render(
         AccountPage::new(
             crate::language_from_headers(headers),
@@ -1008,51 +914,4 @@ struct UserRow {
     email: String,
     active: bool,
     is_admin: bool,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::update_password_and_revoke_sessions;
-    use crate::db;
-
-    #[tokio::test]
-    async fn stale_verified_password_cannot_overwrite_a_newer_change() {
-        let pool = db::connect("sqlite::memory:")
-            .await
-            .expect("test database should migrate");
-        let user_id = db::create_user(
-            &pool,
-            "cas@example.test",
-            "initial-account-password".to_owned(),
-        )
-        .await
-        .expect("test account should be created");
-        let old_hash: String = sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ?")
-            .bind(user_id)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-        sqlx::query("UPDATE users SET password_hash = 'newer-admin-reset' WHERE id = ?")
-            .bind(user_id)
-            .execute(&pool)
-            .await
-            .unwrap();
-
-        let changed = update_password_and_revoke_sessions(
-            &pool,
-            user_id,
-            "stale-browser-change",
-            false,
-            Some(&old_hash),
-        )
-        .await
-        .unwrap();
-        assert!(!changed);
-        let stored: String = sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ?")
-            .bind(user_id)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-        assert_eq!(stored, "newer-admin-reset");
-    }
 }
