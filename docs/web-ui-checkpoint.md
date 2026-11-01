@@ -72,9 +72,16 @@ browser assertions with rendered data. It covers search/category/tag/favorite
 filters, sanitized instructions, ordered steps, linked yarns, the single-image
 320px viewer with Escape/focus restoration, text sizing, print, and logout under
 strict CSP. The runner passes MyPy, Ruff and 21 focused Python tests. The
-coordinator reviewed masked phone screenshots. The final clean-source full
-gate and the next feature rollout remain pending; concurrent yarn work is
-excluded from this project checkpoint.
+coordinator reviewed masked phone screenshots. The exact committed `6cb58fb`
+clean-source `just check` also passes: all Rust test groups, 72 Python harness
+tests, zero frontend diagnostics, 22 Vitest tests, and the static build. The
+next feature rollout remains pending; concurrent yarn work is excluded from
+this project checkpoint.
+Review found that `6cb58fb` print includes text and steps but omits reference
+images. A separate fix now prints full-resolution project and step photos,
+with real uploaded step-image coverage under print media. Its browser run,
+type/build checks, MyPy/Ruff and 21 runner tests pass. This fix is separate from
+the currently deploying reader checkpoint.
 The reader includes sanitized instructions, ordered steps, linked yarn details,
 reference images, attachments, text sizing and print output. Editing, deletion,
 media mutations and persistent current-step navigation remain separate work.
@@ -94,6 +101,14 @@ operations. Their ownership, CSRF, image processing, file limits, audit and
 cleanup behavior remain shared with v1. The full Rust suite passes 233 tests,
 formatting and strict Clippy pass, and the four health tests pass. Frontend
 upload workflows are still being implemented.
+
+Import previews are committed in `46fa060`. URL/text/file preview reuses the
+isolated parser, preserves safe fetching and source limits, requires cookie
+authentication and same-origin CSRF, and calls AI only on explicit opt-in.
+Responses report fallback honestly; a separate owner limiter bounds preview
+work. Reviewed drafts use normal project/yarn creation. All 244 Rust tests,
+formatting, strict Clippy and the four health checks pass; the import UI is
+still pending.
 
 A preliminary project-screen build measured 61,003 gzip bytes across all 31
 JavaScript assets and 9,758 gzip bytes across seven CSS assets. This measures

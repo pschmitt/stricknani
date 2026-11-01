@@ -132,7 +132,40 @@ def _prepare_project_reader_fixture(page: Page) -> int:
               expected_updated_at: project.updated_at,
             }),
           });
-          return { status: updateResponse.status, id };
+          if (!updateResponse.ok) {
+            return { status: updateResponse.status, id, photo_status: 0 };
+          }
+          const updatedEnvelope = await updateResponse.json();
+          const updatedProject = updatedEnvelope?.data;
+          const step = updatedProject?.steps?.find(candidate =>
+            candidate.title === 'Work the textured panel');
+          const cover = project.images?.find(image => image.step_id === null);
+          if (!Number.isSafeInteger(step?.id) || typeof cover?.url !== 'string') {
+            return { status: updateResponse.status, id, photo_status: 0 };
+          }
+          const imageResponse = await fetch(cover.url);
+          if (!imageResponse.ok) {
+            return {
+              status: updateResponse.status,
+              id,
+              photo_status: imageResponse.status,
+            };
+          }
+          const image = await imageResponse.blob();
+          const form = new FormData();
+          form.append('file', image, 'textured-panel-reference.jpg');
+          form.append('alt_text', 'Textured panel reference');
+          const photoResponse = await fetch(
+            `/api/v2/projects/${id}/steps/${step.id}/images`, {
+              method: 'POST',
+              headers: { 'x-csrf-token': token },
+              body: form,
+            });
+          return {
+            status: updateResponse.status,
+            id,
+            photo_status: photoResponse.status,
+          };
         }"""
     )
     if (
@@ -141,8 +174,11 @@ def _prepare_project_reader_fixture(page: Page) -> int:
         or not isinstance(result.get("id"), int)
         or isinstance(result.get("id"), bool)
         or result["id"] < 1
+        or result.get("photo_status") != 201
     ):
-        raise AcceptanceFailure("the synthetic project fixture could not be prepared")
+        raise AcceptanceFailure(
+            "the synthetic project and step-photo fixture could not be prepared"
+        )
     return int(result["id"])
 
 
@@ -865,6 +901,18 @@ def run_acceptance(
                 ],
                 "the reader did not display pattern steps in order",
             )
+            mark_stage("checking the seeded project-step reference photo")
+            step_photo = page.locator(".steps-list .step-image img")
+            step_photo.wait_for(state="visible", timeout=5_000)
+            step_photo.scroll_into_view_if_needed()
+            step_photo.evaluate("image => image.decode()")
+            _require(
+                step_photo.evaluate(
+                    "image => image.complete && image.naturalWidth > 0 "
+                    "&& image.currentSrc.includes('/media/thumbnails/projects/')"
+                ),
+                "the project-step reference photo did not load from same-origin media",
+            )
             mark_stage("checking sanitized pattern text")
             description = page.locator(".pattern-section > .reading-copy > .rich-text")
             sanitized_text = description.locator("strong")
@@ -977,11 +1025,37 @@ def run_acceptance(
             _require(
                 large_font > small_font, "reader text-size control did not grow text"
             )
+            mark_stage("checking complete pattern instructions in print")
             page.emulate_media(media="print")
+            page.wait_for_function(
+                "() => Array.from(document.querySelectorAll("
+                "'picture source[media=print]')).every(source => {"
+                "const image = source.parentElement?.querySelector('img');"
+                "if (!image || !image.complete || "
+                "image.naturalWidth === 0) return false;"
+                "const printPath = new URL(source.srcset, location.href).pathname;"
+                "return new URL(image.currentSrc, location.href).pathname "
+                "=== printPath;"
+                "})",
+                timeout=5_000,
+            )
+            print_image_state = page.locator(
+                ".image-gallery .gallery-image, .steps-list .step-image"
+            ).evaluate_all(
+                "nodes => nodes.map(node => getComputedStyle(node).display !== 'none')"
+            )
             _require(
                 not page.locator(".reader-topline").is_visible()
-                and page.locator(".steps-list > li").nth(1).is_visible(),
-                "print layout hid reader controls but omitted pattern instructions",
+                and page.locator(".steps-list > li").nth(1).is_visible()
+                and len(print_image_state) == 2
+                and all(print_image_state)
+                and page.locator(".image-gallery").is_visible()
+                and page.locator(".steps-list .step-image img").evaluate(
+                    "image => image.complete && image.naturalWidth > 0 "
+                    "&& new URL(image.currentSrc).pathname.startsWith("
+                    "'/media/projects/')"
+                ),
+                "print layout omitted instructions or full-resolution reference photos",
             )
             page.emulate_media(media="screen")
             page.get_by_role("button", name="Remove from favorites").click()

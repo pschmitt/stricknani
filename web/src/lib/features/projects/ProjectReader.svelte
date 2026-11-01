@@ -44,6 +44,9 @@
         )
       : [],
   );
+  const galleryImages = $derived(
+    project?.images.filter((image) => image.step_id === null) ?? [],
+  );
   const selectedImage = $derived(
     project?.images.find((image) => image.id === selectedImageId) ?? null,
   );
@@ -279,14 +282,14 @@
       <p class="inline-error" role="alert">{favoriteError}</p>
     {/if}
 
-    {#if project.images.length}
+    {#if galleryImages.length}
       <section class="image-gallery" aria-labelledby="gallery-heading">
         <div class="section-heading-row">
           <h2 id="gallery-heading">{t("Project photos", locale)}</h2>
-          <span>{project.images.length}</span>
+          <span>{galleryImages.length}</span>
         </div>
         <div class="gallery-grid">
-          {#each project.images as image (image.id)}
+          {#each galleryImages as image (image.id)}
             <button
               class="gallery-image"
               type="button"
@@ -294,11 +297,14 @@
                 `: ${image.alt_text || project.name}`}
               onclick={() => openImage(image)}
             >
-              <img
-                src={image.thumbnail_url}
-                alt={image.alt_text || project.name}
-                loading="lazy"
-              />
+              <picture>
+                <source media="print" srcset={image.url} />
+                <img
+                  src={image.thumbnail_url}
+                  alt={image.alt_text || project.name}
+                  loading="lazy"
+                />
+              </picture>
               {#if image.is_title_image}
                 <span class="title-image-label">{t("Cover photo", locale)}</span
                 >
@@ -379,11 +385,14 @@
                               `: ${image.alt_text || step.title}`}
                             onclick={() => openImage(image)}
                           >
-                            <img
-                              src={image.thumbnail_url}
-                              alt={image.alt_text || step.title}
-                              loading="lazy"
-                            />
+                            <picture>
+                              <source media="print" srcset={image.url} />
+                              <img
+                                src={image.thumbnail_url}
+                                alt={image.alt_text || step.title}
+                                loading="lazy"
+                              />
+                            </picture>
                           </button>
                         {/each}
                       </div>
@@ -1136,11 +1145,57 @@
 
     .reader-topline,
     .reader-favorite,
-    .image-gallery,
-    .gallery-image,
-    .step-image,
     .reader-footer a,
     .lightbox {
+      display: none !important;
+    }
+
+    .image-gallery {
+      display: block;
+      break-inside: auto;
+    }
+
+    .gallery-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.16in;
+    }
+
+    .step-images {
+      break-inside: avoid;
+    }
+
+    .gallery-image,
+    .step-image {
+      display: block !important;
+      width: 100%;
+      min-height: 0;
+      height: auto;
+      aspect-ratio: auto;
+      overflow: visible;
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      background: transparent;
+      cursor: default;
+      break-inside: avoid;
+    }
+
+    .gallery-image picture,
+    .step-image picture {
+      display: block;
+    }
+
+    .gallery-image img,
+    .step-image img {
+      position: static;
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 7in;
+      object-fit: contain;
+    }
+
+    .title-image-label {
       display: none !important;
     }
 
