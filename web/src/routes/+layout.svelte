@@ -3,6 +3,11 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
+  import {
+    shouldRedirectExpiredSession,
+    showPublicGauge,
+  } from "#lib/app-shell.ts";
+  import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import SignInForm from "#lib/components/SignInForm.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session, signOut } from "#lib/session.svelte.ts";
@@ -14,6 +19,9 @@
   const locale = $derived(session.data?.locale ?? "en");
   const pathname = $derived(page.url.pathname);
   const user = $derived(session.data?.user ?? null);
+  const publicGauge = $derived(
+    showPublicGauge(pathname, linkTo("/gauge"), session.status, user !== null),
+  );
   const adminRoute = $derived(
     pathname.startsWith(resolve("/admin/users")) ||
       pathname.startsWith(resolve("/admin/audit")),
@@ -43,9 +51,13 @@
     setLocale(locale);
     if (typeof document !== "undefined") document.documentElement.lang = locale;
     if (
-      session.expired &&
-      session.status === "ready" &&
-      pathname !== linkTo("/login")
+      shouldRedirectExpiredSession(
+        session.expired,
+        session.status,
+        pathname,
+        linkTo("/login"),
+        publicGauge,
+      )
     ) {
       void goto(linkTo("/login"), { replaceState: true });
     }
@@ -109,7 +121,23 @@
 
 <a class="skip-link" href="#main-content">{t("Skip to content", locale)}</a>
 
-{#if session.status === "loading"}
+{#if publicGauge}
+  <div class="public-tool-shell">
+    <header class="public-tool-header">
+      <a class="wordmark" href={linkTo("/login")}>
+        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span>Stricknani</span>
+      </a>
+      <LocaleSwitcher />
+      <a class="public-sign-in" href={linkTo("/login")}
+        >{t("Sign in", locale)}</a
+      >
+    </header>
+    <main id="main-content" class="public-tool-main">
+      {@render children()}
+    </main>
+  </div>
+{:else if session.status === "loading"}
   <main
     id="main-content"
     class="boot-screen"
@@ -147,6 +175,12 @@
   </main>
 {:else if !user}
   <div class="signed-out-screen">
+    <div class="signed-out-tools">
+      <LocaleSwitcher />
+      <a class="public-tool-link" href={linkTo("/gauge")}
+        >{t("Gauge calculator", locale)}</a
+      >
+    </div>
     <SignInForm />
   </div>
 {:else}
@@ -233,11 +267,14 @@
           <p class="header-greeting">{t("Welcome back", locale)}</p>
           <p class="header-user">{user.email}</p>
         </div>
-        <button
-          class="text-button header-sign-out"
-          type="button"
-          onclick={handleSignOut}>{t("Sign out", locale)}</button
-        >
+        <div class="header-actions">
+          <LocaleSwitcher />
+          <button
+            class="text-button header-sign-out"
+            type="button"
+            onclick={handleSignOut}>{t("Sign out", locale)}</button
+          >
+        </div>
       </header>
 
       {#if logoutError}
@@ -278,3 +315,104 @@
     </div>
   </div>
 {/if}
+
+<style>
+  .public-tool-shell {
+    min-height: 100svh;
+    background: var(--canvas);
+  }
+
+  .public-tool-header {
+    display: flex;
+    min-height: 4.25rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--line);
+    padding: 0.5rem max(1rem, env(safe-area-inset-left));
+    background: var(--surface);
+  }
+
+  .public-tool-header > * {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .public-tool-header .wordmark {
+    text-decoration: none;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .signed-out-tools {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .public-tool-link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    padding: 0.45rem 0.7rem;
+    color: var(--accent-strong);
+    background: var(--surface);
+    font-size: 0.9rem;
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .public-sign-in {
+    justify-content: center;
+    border: 1px solid var(--line);
+    border-radius: 0.65rem;
+    padding: 0.4rem 0.8rem;
+    color: var(--accent-strong);
+    background: var(--surface-raised);
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .public-tool-main {
+    width: min(100%, 56rem);
+    margin-inline: auto;
+    padding: clamp(1rem, 4vw, 2.5rem);
+  }
+
+  @media (max-width: 380px) {
+    .public-tool-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      justify-content: initial;
+      gap: 0.35rem;
+      padding-inline: 0.5rem;
+    }
+
+    .public-tool-header .wordmark {
+      min-width: 0;
+      overflow: hidden;
+      gap: 0.4rem;
+      font-size: 0.95rem;
+    }
+
+    .public-tool-header .wordmark > span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .public-sign-in {
+      padding-inline: 0.5rem;
+      font-size: 0.9rem;
+    }
+  }
+</style>

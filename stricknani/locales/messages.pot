@@ -385,6 +385,7 @@ msgid "Offline"
 msgstr ""
 
 #: rust/src/pwa.rs:102 stricknani/templates/offline.html:7
+#: web/src/lib/components/PwaUpdate.svelte:8
 msgid "No connection"
 msgstr ""
 
@@ -409,7 +410,9 @@ msgstr ""
 #: stricknani/templates/admin/users.html:7
 #: stricknani/templates/shared/unified_navbar.html:88
 #: stricknani/templates/shared/unified_navbar.html:152
-#: web/src/routes/+layout.svelte:189 web/src/routes/admin/users/+page.svelte:8
+#: web/src/routes/+layout.svelte:189 web/src/routes/+layout.svelte:192
+#: web/src/routes/+layout.svelte:211 web/src/routes/+layout.svelte:214
+#: web/src/routes/+layout.svelte:221 web/src/routes/admin/users/+page.svelte:8
 #: web/src/routes/admin/users/+page.svelte:10
 #: web/src/routes/more/+page.svelte:24 web/src/routes/more/+page.svelte:36
 msgid "Admin"
@@ -531,6 +534,9 @@ msgid "Password reset"
 msgstr ""
 
 #: rust/src/web_accounts.rs:1073 stricknani/templates/admin/users.html:82
+#: web/src/lib/features/account/AccountSettings.svelte:704
+#: web/src/lib/features/account/AccountSettings.svelte:706
+#: web/src/lib/features/account/AccountSettings.svelte:755
 msgid "New password"
 msgstr ""
 
@@ -609,7 +615,8 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:109
 #: web/src/lib/features/projects/ProjectEditor.svelte:658
 #: web/src/lib/features/projects/ProjectEditor.svelte:730
-#: web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:127 web/src/routes/+layout.svelte:129
+#: web/src/routes/+layout.svelte:136 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr ""
 
@@ -741,66 +748,114 @@ msgid "Gauge Calculator"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:19
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:153
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:157
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:165
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:169
 msgid ""
 "Calculate how many stitches to cast on and rows to knit based on your "
 "gauge and the pattern's gauge."
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:26
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:173
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:177
 msgid "How to use this calculator"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:28
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:176
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:180
 msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:29
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:182
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:186
 msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:30
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:188
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:192
 msgid "Enter the stitch count from your pattern (cast-on stitches)"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:31
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:191
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:194
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:198
 msgid "Click Calculate to see how many stitches and rows you need"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:43
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:198
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:204
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:208
 msgid "Pattern Gauge (per 10cm)"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:51
 #: stricknani/templates/gauge/calculator.html:81
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:201
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:207
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:211
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:256
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:264
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:268
 msgid "Stitches"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:62
 #: stricknani/templates/gauge/calculator.html:92
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:226
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:234
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:238
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:281
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:289
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:293
 msgid "Rows"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:73
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:253
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:261
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:265
 msgid "Your Gauge (per 10cm)"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:103
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:308
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:316
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:320
 msgid "Pattern Counts"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:111
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:311
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:319
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:323
 msgid "Stitches to cast on"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:122
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:336
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:346
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:350
 msgid "Rows to knit"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:122
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:337
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:347
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:351
 msgid "optional"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:132
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:367
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:377
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:381
 msgid "Calculate"
 msgstr ""
 
@@ -1248,7 +1303,9 @@ msgstr ""
 
 #: rust/src/web.rs:2168 rust/src/web_accounts.rs:1076
 #: stricknani/templates/projects/categories.html:44
-#: web/src/routes/+layout.svelte:26 web/src/routes/create/+page.svelte:8
+#: web/src/routes/+layout.svelte:26 web/src/routes/+layout.svelte:27
+#: web/src/routes/+layout.svelte:31 web/src/routes/+layout.svelte:32
+#: web/src/routes/+layout.svelte:35 web/src/routes/create/+page.svelte:8
 msgid "Create"
 msgstr ""
 
@@ -1328,7 +1385,9 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:247
 #: web/src/lib/features/projects/ProjectReader.svelte:264
 #: web/src/lib/features/projects/ProjectReader.svelte:268
-#: web/src/routes/+layout.svelte:256
+#: web/src/routes/+layout.svelte:256 web/src/routes/+layout.svelte:259
+#: web/src/routes/+layout.svelte:278 web/src/routes/+layout.svelte:284
+#: web/src/routes/+layout.svelte:291
 msgid "Back to projects"
 msgstr ""
 
@@ -1405,6 +1464,9 @@ msgstr ""
 #: stricknani/templates/projects/detail.html:227
 #: stricknani/templates/projects/detail.html:279
 #: stricknani/templates/user/api_tokens.html:117
+#: web/src/lib/features/account/AccountSettings.svelte:637
+#: web/src/lib/features/account/AccountSettings.svelte:639
+#: web/src/lib/features/account/AccountSettings.svelte:688
 msgid "Created"
 msgstr ""
 
@@ -1855,7 +1917,9 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:139
 #: web/src/lib/features/projects/ProjectLibrary.svelte:145
 #: web/src/lib/features/projects/ProjectLibrary.svelte:146
-#: web/src/routes/+layout.svelte:24 web/src/routes/projects/+page.svelte:8
+#: web/src/routes/+layout.svelte:24 web/src/routes/+layout.svelte:25
+#: web/src/routes/+layout.svelte:29 web/src/routes/+layout.svelte:30
+#: web/src/routes/+layout.svelte:33 web/src/routes/projects/+page.svelte:8
 #: web/src/routes/projects/+page.svelte:10
 msgid "Projects"
 msgstr ""
@@ -1966,7 +2030,11 @@ msgstr ""
 
 #: rust/src/import_service.rs:391 rust/src/web_accounts.rs:1054
 #: stricknani/templates/shared/unified_navbar.html:16
-#: web/src/routes/+layout.svelte:154 web/src/routes/+layout.svelte:266
+#: web/src/routes/+layout.svelte:154 web/src/routes/+layout.svelte:157
+#: web/src/routes/+layout.svelte:176 web/src/routes/+layout.svelte:179
+#: web/src/routes/+layout.svelte:186 web/src/routes/+layout.svelte:266
+#: web/src/routes/+layout.svelte:269 web/src/routes/+layout.svelte:288
+#: web/src/routes/+layout.svelte:294 web/src/routes/+layout.svelte:301
 msgid "Main navigation"
 msgstr ""
 
@@ -1978,7 +2046,9 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:217
 #: web/src/lib/features/yarns/YarnLibrary.svelte:118
 #: web/src/lib/features/yarns/YarnLibrary.svelte:129
-#: web/src/routes/+layout.svelte:25 web/src/routes/yarns/+page.svelte:8
+#: web/src/routes/+layout.svelte:25 web/src/routes/+layout.svelte:26
+#: web/src/routes/+layout.svelte:30 web/src/routes/+layout.svelte:31
+#: web/src/routes/+layout.svelte:34 web/src/routes/yarns/+page.svelte:8
 #: web/src/routes/yarns/+page.svelte:10
 msgid "Yarns"
 msgstr ""
@@ -1997,6 +2067,8 @@ msgstr ""
 
 #: stricknani/templates/shared/unified_navbar.html:235
 #: stricknani/templates/shared/unified_navbar.html:293
+#: web/src/lib/components/LocaleSwitcher.svelte:18
+#: web/src/lib/components/LocaleSwitcher.svelte:19
 msgid "Language"
 msgstr ""
 
@@ -2087,6 +2159,9 @@ msgid "Stricknani Android"
 msgstr ""
 
 #: stricknani/templates/user/api_tokens.html:102
+#: web/src/lib/features/account/AccountSettings.svelte:599
+#: web/src/lib/features/account/AccountSettings.svelte:601
+#: web/src/lib/features/account/AccountSettings.svelte:650
 msgid "Create token"
 msgstr ""
 
@@ -2105,10 +2180,19 @@ msgstr ""
 #: rust/src/web_accounts.rs:1084 stricknani/templates/user/api_tokens.html:125
 #: stricknani/templates/user/api_tokens.html:132
 #: stricknani/templates/user/api_tokens.html:139
+#: web/src/lib/features/account/AccountSettings.svelte:654
+#: web/src/lib/features/account/AccountSettings.svelte:656
+#: web/src/lib/features/account/AccountSettings.svelte:705
 msgid "Revoke"
 msgstr ""
 
 #: stricknani/templates/user/api_tokens.html:130
+#: web/src/lib/features/account/AccountSettings.svelte:648
+#: web/src/lib/features/account/AccountSettings.svelte:650
+#: web/src/lib/features/account/AccountSettings.svelte:699
+#: web/src/lib/features/account/AccountSettings.svelte:837
+#: web/src/lib/features/account/AccountSettings.svelte:839
+#: web/src/lib/features/account/AccountSettings.svelte:888
 msgid "Revoke token"
 msgstr ""
 
@@ -2418,7 +2502,11 @@ msgstr ""
 
 #: rust/src/import_service.rs:394 rust/src/web.rs:2149
 #: rust/src/web_accounts.rs:1060 web/src/routes/+layout.svelte:209
-#: web/src/routes/+layout.svelte:239
+#: web/src/routes/+layout.svelte:212 web/src/routes/+layout.svelte:231
+#: web/src/routes/+layout.svelte:234 web/src/routes/+layout.svelte:239
+#: web/src/routes/+layout.svelte:241 web/src/routes/+layout.svelte:242
+#: web/src/routes/+layout.svelte:261 web/src/routes/+layout.svelte:266
+#: web/src/routes/+layout.svelte:273
 msgid "Sign out"
 msgstr ""
 
@@ -2501,9 +2589,15 @@ msgstr ""
 msgid "Link"
 msgstr ""
 
-#: rust/src/web.rs:2146 web/src/routes/+layout.svelte:33
-#: web/src/routes/gauge/+page.svelte:9 web/src/routes/gauge/+page.svelte:12
-#: web/src/routes/more/+page.svelte:21 web/src/routes/more/+page.svelte:27
+#: rust/src/web.rs:2146 web/src/lib/features/gauge/GaugeCalculator.svelte:150
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:154
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:163
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:167
+#: web/src/routes/+layout.svelte:33 web/src/routes/+layout.svelte:34
+#: web/src/routes/+layout.svelte:38 web/src/routes/+layout.svelte:39
+#: web/src/routes/+layout.svelte:42 web/src/routes/gauge/+page.svelte:9
+#: web/src/routes/gauge/+page.svelte:12 web/src/routes/more/+page.svelte:21
+#: web/src/routes/more/+page.svelte:27
 msgid "Gauge calculator"
 msgstr ""
 
@@ -2596,7 +2690,9 @@ msgid "Manage categories"
 msgstr ""
 
 #: rust/src/web.rs:2189 web/src/lib/features/imports/ImportWorkbench.svelte:350
-#: web/src/routes/+layout.svelte:31 web/src/routes/imports/+page.svelte:8
+#: web/src/routes/+layout.svelte:31 web/src/routes/+layout.svelte:32
+#: web/src/routes/+layout.svelte:36 web/src/routes/+layout.svelte:37
+#: web/src/routes/+layout.svelte:40 web/src/routes/imports/+page.svelte:8
 #: web/src/routes/imports/+page.svelte:10 web/src/routes/more/+page.svelte:19
 #: web/src/routes/more/+page.svelte:21
 msgid "Imports"
@@ -2631,7 +2727,17 @@ msgid "Apply filters"
 msgstr ""
 
 #: rust/src/web.rs:2197 rust/src/web_accounts.rs:1057 rust/src/web_audit.rs:249
-#: web/src/routes/+layout.svelte:34 web/src/routes/+layout.svelte:222
+#: web/src/lib/features/account/AccountSettings.svelte:465
+#: web/src/lib/features/account/AccountSettings.svelte:467
+#: web/src/lib/features/account/AccountSettings.svelte:476
+#: web/src/lib/features/account/AccountSettings.svelte:478
+#: web/src/lib/features/account/AccountSettings.svelte:516
+#: web/src/lib/features/account/AccountSettings.svelte:527
+#: web/src/routes/+layout.svelte:34 web/src/routes/+layout.svelte:35
+#: web/src/routes/+layout.svelte:39 web/src/routes/+layout.svelte:40
+#: web/src/routes/+layout.svelte:43 web/src/routes/+layout.svelte:222
+#: web/src/routes/+layout.svelte:225 web/src/routes/+layout.svelte:244
+#: web/src/routes/+layout.svelte:247 web/src/routes/+layout.svelte:254
 #: web/src/routes/account/+page.svelte:8 web/src/routes/account/+page.svelte:10
 #: web/src/routes/more/+page.svelte:22 web/src/routes/more/+page.svelte:31
 msgid "Account"
@@ -2698,14 +2804,23 @@ msgid "Actions"
 msgstr ""
 
 #: rust/src/web_accounts.rs:1069
+#: web/src/lib/features/account/AccountSettings.svelte:511
+#: web/src/lib/features/account/AccountSettings.svelte:513
+#: web/src/lib/features/account/AccountSettings.svelte:562
 msgid "Administrator"
 msgstr ""
 
 #: rust/src/web_accounts.rs:1070
+#: web/src/lib/features/account/AccountSettings.svelte:511
+#: web/src/lib/features/account/AccountSettings.svelte:513
+#: web/src/lib/features/account/AccountSettings.svelte:562
 msgid "Member"
 msgstr ""
 
 #: rust/src/web_accounts.rs:1077
+#: web/src/lib/features/account/AccountSettings.svelte:568
+#: web/src/lib/features/account/AccountSettings.svelte:570
+#: web/src/lib/features/account/AccountSettings.svelte:619
 msgid "API tokens"
 msgstr ""
 
@@ -2714,10 +2829,16 @@ msgid "Create API token"
 msgstr ""
 
 #: rust/src/web_accounts.rs:1086
+#: web/src/lib/features/account/AccountSettings.svelte:668
+#: web/src/lib/features/account/AccountSettings.svelte:670
+#: web/src/lib/features/account/AccountSettings.svelte:719
 msgid "Change password"
 msgstr ""
 
 #: rust/src/web_accounts.rs:1087
+#: web/src/lib/features/account/AccountSettings.svelte:685
+#: web/src/lib/features/account/AccountSettings.svelte:687
+#: web/src/lib/features/account/AccountSettings.svelte:736
 msgid "Current password"
 msgstr ""
 
@@ -2781,11 +2902,15 @@ msgstr ""
 msgid "A calm place for the work in your hands."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:103
+#: web/src/routes/+layout.svelte:103 web/src/routes/+layout.svelte:104
+#: web/src/routes/+layout.svelte:108 web/src/routes/+layout.svelte:109
+#: web/src/routes/+layout.svelte:116
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:250
+#: web/src/routes/+layout.svelte:250 web/src/routes/+layout.svelte:253
+#: web/src/routes/+layout.svelte:272 web/src/routes/+layout.svelte:278
+#: web/src/routes/+layout.svelte:285
 msgid "Account access"
 msgstr ""
 
@@ -2793,11 +2918,15 @@ msgstr ""
 msgid "Account settings will be added after the authentication foundation."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:254
+#: web/src/routes/+layout.svelte:254 web/src/routes/+layout.svelte:257
+#: web/src/routes/+layout.svelte:276 web/src/routes/+layout.svelte:282
+#: web/src/routes/+layout.svelte:289
 msgid "Ask an administrator if you need access."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:194 web/src/routes/admin/audit/+page.svelte:8
+#: web/src/routes/+layout.svelte:194 web/src/routes/+layout.svelte:197
+#: web/src/routes/+layout.svelte:216 web/src/routes/+layout.svelte:219
+#: web/src/routes/+layout.svelte:226 web/src/routes/admin/audit/+page.svelte:8
 #: web/src/routes/admin/audit/+page.svelte:10
 #: web/src/routes/more/+page.svelte:25 web/src/routes/more/+page.svelte:40
 msgid "Audit log"
@@ -2805,7 +2934,9 @@ msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:184
 #: web/src/lib/features/categories/CategoryManager.svelte:195
-#: web/src/routes/+layout.svelte:32 web/src/routes/categories/+page.svelte:8
+#: web/src/routes/+layout.svelte:32 web/src/routes/+layout.svelte:33
+#: web/src/routes/+layout.svelte:37 web/src/routes/+layout.svelte:38
+#: web/src/routes/+layout.svelte:41 web/src/routes/categories/+page.svelte:8
 #: web/src/routes/categories/+page.svelte:10
 #: web/src/routes/more/+page.svelte:20 web/src/routes/more/+page.svelte:22
 #: web/src/routes/more/+page.svelte:23
@@ -2818,6 +2949,13 @@ msgstr ""
 
 #: web/src/lib/api.ts:202 web/src/lib/api.ts:208 web/src/lib/api.ts:214
 #: web/src/lib/api.ts:246 web/src/lib/api.ts:258
+#: web/src/lib/features/account/AccountSettings.svelte:457
+#: web/src/lib/features/account/AccountSettings.svelte:459
+#: web/src/lib/features/account/AccountSettings.svelte:508
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:103
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:107
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:131
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:135
 #: web/src/lib/features/projects/ProjectEditor.svelte:427
 #: web/src/lib/features/projects/ProjectEditor.svelte:460
 msgid "Check the highlighted fields and try again."
@@ -2827,7 +2965,9 @@ msgstr ""
 msgid "Choose a project or add yarn to your inventory."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:89
+#: web/src/routes/+layout.svelte:89 web/src/routes/+layout.svelte:90
+#: web/src/routes/+layout.svelte:94 web/src/routes/+layout.svelte:95
+#: web/src/routes/+layout.svelte:102
 msgid "Could not sign out."
 msgstr ""
 
@@ -2847,7 +2987,9 @@ msgstr ""
 msgid "Keep your projects, notes and yarn details close while you knit."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:27 web/src/routes/more/+page.svelte:9
+#: web/src/routes/+layout.svelte:27 web/src/routes/+layout.svelte:28
+#: web/src/routes/+layout.svelte:32 web/src/routes/+layout.svelte:33
+#: web/src/routes/+layout.svelte:36 web/src/routes/more/+page.svelte:9
 #: web/src/routes/more/+page.svelte:11 web/src/routes/more/+page.svelte:13
 msgid "More"
 msgstr ""
@@ -2889,7 +3031,9 @@ msgstr ""
 msgid "Open your project library to continue."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:121
+#: web/src/routes/+layout.svelte:121 web/src/routes/+layout.svelte:124
+#: web/src/routes/+layout.svelte:143 web/src/routes/+layout.svelte:145
+#: web/src/routes/+layout.svelte:152
 msgid "Opening your workspace…"
 msgstr ""
 
@@ -2919,7 +3063,9 @@ msgstr ""
 msgid "Signing in…"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:110
+#: web/src/routes/+layout.svelte:110 web/src/routes/+layout.svelte:112
+#: web/src/routes/+layout.svelte:116 web/src/routes/+layout.svelte:117
+#: web/src/routes/+layout.svelte:124
 msgid "Skip to content"
 msgstr ""
 
@@ -2957,6 +3103,7 @@ msgstr ""
 
 #: web/src/lib/api.ts:246 web/src/lib/api.ts:252 web/src/lib/api.ts:266
 #: web/src/lib/api.ts:329 web/src/lib/api.ts:341
+#: web/src/lib/features/account/account-api.ts:33
 #: web/src/lib/features/categories/category-api.ts:20
 #: web/src/lib/features/categories/category-api.ts:75
 #: web/src/lib/features/projects/project-api.ts:397
@@ -2969,6 +3116,8 @@ msgstr ""
 
 #: web/src/lib/session.svelte.ts:97 web/src/lib/session.svelte.ts:108
 #: web/src/lib/session.svelte.ts:115 web/src/routes/+layout.svelte:137
+#: web/src/routes/+layout.svelte:140 web/src/routes/+layout.svelte:159
+#: web/src/routes/+layout.svelte:161 web/src/routes/+layout.svelte:168
 msgid "The session could not be loaded."
 msgstr ""
 
@@ -2991,6 +3140,12 @@ msgstr ""
 msgid "Too many attempts. Wait a moment and try again."
 msgstr ""
 
+#: web/src/lib/features/account/AccountSettings.svelte:506
+#: web/src/lib/features/account/AccountSettings.svelte:508
+#: web/src/lib/features/account/AccountSettings.svelte:557
+#: web/src/lib/features/account/AccountSettings.svelte:623
+#: web/src/lib/features/account/AccountSettings.svelte:625
+#: web/src/lib/features/account/AccountSettings.svelte:674
 #: web/src/lib/features/categories/CategoryManager.svelte:206
 #: web/src/lib/features/projects/ProjectLibrary.svelte:227
 #: web/src/lib/features/projects/ProjectLibrary.svelte:233
@@ -3003,7 +3158,9 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:232
 #: web/src/lib/features/yarns/YarnForm.svelte:374
 #: web/src/lib/features/yarns/YarnLibrary.svelte:186
-#: web/src/routes/+layout.svelte:144
+#: web/src/routes/+layout.svelte:144 web/src/routes/+layout.svelte:147
+#: web/src/routes/+layout.svelte:166 web/src/routes/+layout.svelte:168
+#: web/src/routes/+layout.svelte:175
 msgid "Try again"
 msgstr ""
 
@@ -3011,7 +3168,9 @@ msgstr ""
 msgid "User administration is reserved for a later slice."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:233
+#: web/src/routes/+layout.svelte:233 web/src/routes/+layout.svelte:236
+#: web/src/routes/+layout.svelte:255 web/src/routes/+layout.svelte:258
+#: web/src/routes/+layout.svelte:265
 msgid "Welcome back"
 msgstr ""
 
@@ -3020,11 +3179,15 @@ msgid "What would you like to add?"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:194
-#: web/src/routes/+layout.svelte:174
+#: web/src/routes/+layout.svelte:174 web/src/routes/+layout.svelte:177
+#: web/src/routes/+layout.svelte:196 web/src/routes/+layout.svelte:199
+#: web/src/routes/+layout.svelte:206
 msgid "Workspace"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:175
+#: web/src/routes/+layout.svelte:175 web/src/routes/+layout.svelte:178
+#: web/src/routes/+layout.svelte:197 web/src/routes/+layout.svelte:200
+#: web/src/routes/+layout.svelte:207
 msgid "Workspace navigation"
 msgstr ""
 
@@ -3040,7 +3203,9 @@ msgstr ""
 msgid "You are already signed in."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:252
+#: web/src/routes/+layout.svelte:252 web/src/routes/+layout.svelte:255
+#: web/src/routes/+layout.svelte:274 web/src/routes/+layout.svelte:280
+#: web/src/routes/+layout.svelte:287
 msgid "You do not have access to this page."
 msgstr ""
 
@@ -3060,7 +3225,9 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:138
 #: web/src/lib/features/projects/ProjectLibrary.svelte:144
 #: web/src/lib/features/projects/ProjectLibrary.svelte:145
-#: web/src/routes/+layout.svelte:160
+#: web/src/routes/+layout.svelte:160 web/src/routes/+layout.svelte:163
+#: web/src/routes/+layout.svelte:182 web/src/routes/+layout.svelte:185
+#: web/src/routes/+layout.svelte:192
 msgid "Your library"
 msgstr ""
 
@@ -3088,11 +3255,16 @@ msgstr ""
 msgid "Your session has expired. Sign in again."
 msgstr ""
 
+#: web/src/lib/features/account/AccountSettings.svelte:475
+#: web/src/lib/features/account/AccountSettings.svelte:477
+#: web/src/lib/features/account/AccountSettings.svelte:526
 #: web/src/routes/+page.svelte:15 web/src/routes/create/+page.svelte:11
 msgid "Your workspace"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:133
+#: web/src/routes/+layout.svelte:133 web/src/routes/+layout.svelte:136
+#: web/src/routes/+layout.svelte:155 web/src/routes/+layout.svelte:157
+#: web/src/routes/+layout.svelte:164
 msgid "Your workspace is taking a moment."
 msgstr ""
 
@@ -3587,6 +3759,9 @@ msgid "Your session check failed. Refresh the page and try again."
 msgstr ""
 
 #: web/src/lib/api.ts:211 web/src/lib/api.ts:243 web/src/lib/api.ts:255
+#: web/src/lib/features/account/AccountSettings.svelte:434
+#: web/src/lib/features/account/AccountSettings.svelte:436
+#: web/src/lib/features/account/AccountSettings.svelte:485
 msgid "Your session expired. Sign in again."
 msgstr ""
 
@@ -4034,6 +4209,9 @@ msgstr ""
 msgid "Remove this project photo?"
 msgstr ""
 
+#: web/src/lib/features/account/AccountSettings.svelte:549
+#: web/src/lib/features/account/AccountSettings.svelte:551
+#: web/src/lib/features/account/AccountSettings.svelte:600
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:242
 msgid "Removing…"
 msgstr ""
@@ -4327,6 +4505,9 @@ msgstr ""
 msgid "Uploading photo…"
 msgstr ""
 
+#: web/src/lib/features/account/AccountSettings.svelte:537
+#: web/src/lib/features/account/AccountSettings.svelte:539
+#: web/src/lib/features/account/AccountSettings.svelte:588
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:133
 msgid "Uploading…"
 msgstr ""
@@ -4606,6 +4787,9 @@ msgid "Markdown file"
 msgstr ""
 
 #: web/src/lib/api.ts:259 web/src/lib/api.ts:271
+#: web/src/lib/features/account/AccountSettings.svelte:445
+#: web/src/lib/features/account/AccountSettings.svelte:447
+#: web/src/lib/features/account/AccountSettings.svelte:496
 msgid "Media storage is unavailable. Try again later."
 msgstr ""
 
@@ -4857,5 +5041,507 @@ msgstr ""
 
 #: web/src/routes/more/+page.svelte:15
 msgid "Tools and settings for your knitting library."
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:66
+#: web/src/lib/components/PwaUpdate.svelte:67
+#: web/src/lib/components/PwaUpdate.svelte:77
+#: web/src/lib/components/PwaUpdate.svelte:78
+msgid ""
+"Close all Stricknani tabs and reopen the app to finish installing the "
+"update."
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:73
+#: web/src/lib/components/PwaUpdate.svelte:74
+#: web/src/lib/components/PwaUpdate.svelte:84
+#: web/src/lib/components/PwaUpdate.svelte:85
+msgid "Dismiss"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:64
+#: web/src/lib/components/PwaUpdate.svelte:65
+#: web/src/lib/components/PwaUpdate.svelte:75
+#: web/src/lib/components/PwaUpdate.svelte:76
+msgid "Update available"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:380
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:390
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:394
+msgid "Adjusted Rows"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:376
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:386
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:390
+msgid "Adjusted Stitches"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:386
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:396
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:400
+msgid "Based on a pattern cast-on of"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:367
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:377
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:381
+msgid "Calculating…"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:373
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:383
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:387
+msgid "Calculation Results"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:58
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:60
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:68
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:72
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:128
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:132
+msgid "Enter a positive whole number."
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:381
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:391
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:395
+msgid "N/A"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:141
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:145
+msgid "The calculation could not be completed."
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:133
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:137
+msgid "The calculation request is too large. Reduce the values and try again."
+msgstr ""
+
+#: web/src/lib/features/gauge/gauge-api.ts:32
+msgid "The calculator returned an unreadable response."
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:162
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:166
+msgid "Tools"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:390
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:400
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:404
+msgid "and"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:390
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:402
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:406
+msgid "rows"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:388
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:398
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:402
+msgid "stitches"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:816
+#: web/src/lib/features/account/AccountSettings.svelte:818
+#: web/src/lib/features/account/AccountSettings.svelte:867
+msgid "API access"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:241
+#: web/src/lib/features/account/AccountSettings.svelte:243
+#: web/src/lib/features/account/AccountSettings.svelte:280
+msgid "API token revoked."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:631
+#: web/src/lib/features/account/AccountSettings.svelte:633
+#: web/src/lib/features/account/AccountSettings.svelte:682
+msgid "Active API tokens"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:819
+#: web/src/lib/features/account/AccountSettings.svelte:821
+#: web/src/lib/features/account/AccountSettings.svelte:870
+msgid "Apps using this token will no longer be able to connect."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:717
+#: web/src/lib/features/account/AccountSettings.svelte:719
+#: web/src/lib/features/account/AccountSettings.svelte:768
+msgid "At least 12 characters. Avoid common passwords."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:753
+#: web/src/lib/features/account/AccountSettings.svelte:755
+#: web/src/lib/features/account/AccountSettings.svelte:804
+msgid "Changing password…"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:670
+#: web/src/lib/features/account/AccountSettings.svelte:672
+#: web/src/lib/features/account/AccountSettings.svelte:721
+msgid "Changing your password signs out this browser and other sessions."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:384
+#: web/src/lib/features/account/AccountSettings.svelte:386
+#: web/src/lib/features/account/AccountSettings.svelte:431
+msgid "Choose a password that is not commonly used."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:519
+#: web/src/lib/features/account/AccountSettings.svelte:521
+#: web/src/lib/features/account/AccountSettings.svelte:570
+msgid "Choose a profile picture"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:443
+#: web/src/lib/features/account/AccountSettings.svelte:445
+#: web/src/lib/features/account/AccountSettings.svelte:494
+msgid "Choose a supported image file."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:272
+#: web/src/lib/features/account/AccountSettings.svelte:274
+#: web/src/lib/features/account/AccountSettings.svelte:319
+#: web/src/lib/features/account/AccountSettings.svelte:441
+#: web/src/lib/features/account/AccountSettings.svelte:443
+#: web/src/lib/features/account/AccountSettings.svelte:492
+msgid "Choose an image smaller than 25 MiB."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:526
+#: web/src/lib/features/account/AccountSettings.svelte:528
+#: web/src/lib/features/account/AccountSettings.svelte:577
+msgid "Choose image"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:729
+#: web/src/lib/features/account/AccountSettings.svelte:731
+#: web/src/lib/features/account/AccountSettings.svelte:780
+msgid "Confirm new password"
+msgstr ""
+
+#: web/src/lib/components/LocaleSwitcher.svelte
+#: web/src/lib/features/account/AccountSettings.svelte:771
+#: web/src/lib/features/account/AccountSettings.svelte:773
+#: web/src/lib/features/account/AccountSettings.svelte:822
+msgid ""
+"Copy this token now. It will not be shown again after you close this "
+"message."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:788
+#: web/src/lib/features/account/AccountSettings.svelte:790
+#: web/src/lib/features/account/AccountSettings.svelte:839
+msgid "Copy token"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:405
+#: web/src/lib/features/account/AccountSettings.svelte:407
+#: web/src/lib/features/account/AccountSettings.svelte:456
+msgid "Copy was blocked. Select and copy the token manually."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:380
+#: web/src/lib/features/account/AccountSettings.svelte:382
+#: web/src/lib/features/account/AccountSettings.svelte:427
+msgid "Current password is incorrect."
+msgstr ""
+
+#: web/src/lib/components/LocaleSwitcher.svelte:21
+#: web/src/lib/components/LocaleSwitcher.svelte:23
+msgid "English"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:348
+#: web/src/lib/features/account/AccountSettings.svelte:350
+#: web/src/lib/features/account/AccountSettings.svelte:395
+msgid "Enter your current password."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:641
+#: web/src/lib/features/account/AccountSettings.svelte:643
+#: web/src/lib/features/account/AccountSettings.svelte:692
+msgid "Expires"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:587
+#: web/src/lib/features/account/AccountSettings.svelte:589
+#: web/src/lib/features/account/AccountSettings.svelte:638
+msgid "For example, my tablet"
+msgstr ""
+
+#: web/src/lib/components/LocaleSwitcher.svelte:28
+#: web/src/lib/components/LocaleSwitcher.svelte:31
+msgid "German"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:803
+#: web/src/lib/features/account/AccountSettings.svelte:805
+#: web/src/lib/features/account/AccountSettings.svelte:854
+msgid "Hide token"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:795
+#: web/src/lib/features/account/AccountSettings.svelte:797
+#: web/src/lib/features/account/AccountSettings.svelte:846
+msgid "I saved this token somewhere safe."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:827
+#: web/src/lib/features/account/AccountSettings.svelte:829
+#: web/src/lib/features/account/AccountSettings.svelte:878
+msgid "Keep token"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:613
+#: web/src/lib/features/account/AccountSettings.svelte:615
+#: web/src/lib/features/account/AccountSettings.svelte:664
+msgid "Loading API tokens…"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:498
+#: web/src/lib/features/account/AccountSettings.svelte:500
+#: web/src/lib/features/account/AccountSettings.svelte:549
+msgid "Loading account details…"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:468
+#: web/src/lib/features/account/AccountSettings.svelte:470
+#: web/src/lib/features/account/AccountSettings.svelte:519
+msgid "Manage your profile and sign-in security."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:477
+#: web/src/lib/features/account/AccountSettings.svelte:479
+#: web/src/lib/features/account/AccountSettings.svelte:528
+msgid "Manage your profile, API access, and password."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:778
+#: web/src/lib/features/account/AccountSettings.svelte:780
+#: web/src/lib/features/account/AccountSettings.svelte:829
+msgid "New API token"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:628
+#: web/src/lib/features/account/AccountSettings.svelte:630
+#: web/src/lib/features/account/AccountSettings.svelte:679
+msgid "No API tokens yet. Create one when an app needs access."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:768
+#: web/src/lib/features/account/AccountSettings.svelte:770
+#: web/src/lib/features/account/AccountSettings.svelte:819
+msgid "One-time display"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:352
+#: web/src/lib/features/account/AccountSettings.svelte:354
+#: web/src/lib/features/account/AccountSettings.svelte:399
+msgid "Passwords must be 1024 bytes or fewer."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:496
+#: web/src/lib/features/account/AccountSettings.svelte:498
+#: web/src/lib/features/account/AccountSettings.svelte:547
+msgid "Profile"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:322
+#: web/src/lib/features/account/AccountSettings.svelte:324
+#: web/src/lib/features/account/AccountSettings.svelte:369
+msgid "Profile picture removed."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:288
+#: web/src/lib/features/account/AccountSettings.svelte:290
+#: web/src/lib/features/account/AccountSettings.svelte:335
+msgid "Profile picture updated."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:550
+#: web/src/lib/features/account/AccountSettings.svelte:552
+#: web/src/lib/features/account/AccountSettings.svelte:601
+msgid "Remove picture"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:817
+#: web/src/lib/features/account/AccountSettings.svelte:819
+#: web/src/lib/features/account/AccountSettings.svelte:868
+msgid "Revoke this token?"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:653
+#: web/src/lib/features/account/AccountSettings.svelte:655
+#: web/src/lib/features/account/AccountSettings.svelte:704
+#: web/src/lib/features/account/AccountSettings.svelte:836
+#: web/src/lib/features/account/AccountSettings.svelte:838
+#: web/src/lib/features/account/AccountSettings.svelte:887
+msgid "Revoking…"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:754
+#: web/src/lib/features/account/AccountSettings.svelte:756
+#: web/src/lib/features/account/AccountSettings.svelte:805
+msgid "Save new password"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:85
+#: web/src/lib/features/account/AccountSettings.svelte:86
+#: web/src/lib/features/account/AccountSettings.svelte:114
+#: web/src/lib/features/account/AccountSettings.svelte:115
+msgid "Sign in to manage your account."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:203
+#: web/src/lib/features/account/AccountSettings.svelte:205
+#: web/src/lib/features/account/AccountSettings.svelte:248
+msgid "The API token could not be created."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:247
+#: web/src/lib/features/account/AccountSettings.svelte:249
+#: web/src/lib/features/account/AccountSettings.svelte:290
+msgid "The API token could not be revoked."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:385
+#: web/src/lib/features/account/AccountSettings.svelte:387
+#: web/src/lib/features/account/AccountSettings.svelte:432
+msgid "The new password could not be accepted."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:363
+#: web/src/lib/features/account/AccountSettings.svelte:365
+#: web/src/lib/features/account/AccountSettings.svelte:410
+msgid "The new passwords do not match."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:389
+#: web/src/lib/features/account/AccountSettings.svelte:391
+#: web/src/lib/features/account/AccountSettings.svelte:436
+msgid "The password could not be changed."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:328
+#: web/src/lib/features/account/AccountSettings.svelte:330
+#: web/src/lib/features/account/AccountSettings.svelte:375
+msgid "The profile picture could not be removed."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:294
+#: web/src/lib/features/account/AccountSettings.svelte:296
+#: web/src/lib/features/account/AccountSettings.svelte:341
+msgid "The profile picture could not be uploaded."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:447
+#: web/src/lib/features/account/AccountSettings.svelte:449
+#: web/src/lib/features/account/AccountSettings.svelte:498
+msgid "The uploaded image could not be read. Choose it again."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:403
+#: web/src/lib/features/account/AccountSettings.svelte:405
+#: web/src/lib/features/account/AccountSettings.svelte:453
+msgid "Token copied. Keep it somewhere safe."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:580
+#: web/src/lib/features/account/AccountSettings.svelte:582
+#: web/src/lib/features/account/AccountSettings.svelte:631
+msgid "Token name"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:199
+#: web/src/lib/features/account/AccountSettings.svelte:201
+#: web/src/lib/features/account/AccountSettings.svelte:244
+msgid "Token names must be 255 bytes or fewer."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:436
+#: web/src/lib/features/account/AccountSettings.svelte:438
+#: web/src/lib/features/account/AccountSettings.svelte:487
+msgid "Too many tokens were created recently. Try again later."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:538
+#: web/src/lib/features/account/AccountSettings.svelte:540
+#: web/src/lib/features/account/AccountSettings.svelte:589
+msgid "Upload picture"
+msgstr ""
+
+#: web/src/lib/components/LocaleSwitcher.svelte
+#: web/src/lib/features/account/AccountSettings.svelte:570
+#: web/src/lib/features/account/AccountSettings.svelte:572
+#: web/src/lib/features/account/AccountSettings.svelte:621
+msgid ""
+"Use a token for a trusted app or device. You can only see a new token "
+"once."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:356
+#: web/src/lib/features/account/AccountSettings.svelte:358
+#: web/src/lib/features/account/AccountSettings.svelte:403
+msgid "Use at least 12 characters for your new password."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:598
+#: web/src/lib/features/account/AccountSettings.svelte:600
+#: web/src/lib/features/account/AccountSettings.svelte:649
+msgid "Working…"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:118
+#: web/src/lib/features/account/AccountSettings.svelte:147
+#: web/src/lib/features/account/AccountSettings.svelte:167
+#: web/src/lib/features/account/AccountSettings.svelte:209
+msgid "Your API tokens could not be loaded."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:452
+#: web/src/lib/features/account/AccountSettings.svelte:454
+#: web/src/lib/features/account/AccountSettings.svelte:503
+msgid "Your account changed in another window. Refresh and try again."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:102
+#: web/src/lib/features/account/AccountSettings.svelte:131
+#: web/src/lib/features/account/AccountSettings.svelte:146
+#: web/src/lib/features/account/AccountSettings.svelte:188
+msgid "Your account details could not be loaded."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:769
+#: web/src/lib/features/account/AccountSettings.svelte:771
+#: web/src/lib/features/account/AccountSettings.svelte:820
+msgid "Your new API token"
+msgstr ""
+
+#: web/src/lib/components/LocaleSwitcher.svelte
+#: web/src/lib/components/PwaUpdate.svelte:8
+#: web/src/lib/components/PwaUpdate.svelte:9
+msgid "Your workspace is waiting online."
+msgstr ""
+
+#: web/src/lib/components/LocaleSwitcher.svelte
+#: web/src/lib/components/PwaUpdate.svelte:9
+#: web/src/lib/components/PwaUpdate.svelte:10
+msgid ""
+"We couldn’t reach Stricknani. Your projects, yarn, photos, and edits are "
+"not stored offline."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:82
+msgid "Leave this account page without saving your changes?"
 msgstr ""
 

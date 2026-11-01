@@ -25,7 +25,7 @@
     </a>
     <a href={resolve("/gauge")}>
       <strong>{t("Gauge calculator", locale)}</strong>
-      <small>{t("In progress", locale)}</small>
+      <small>{t("Available now", locale)}</small>
     </a>
     <a href={resolve("/account")}>
       <strong>{t("Account", locale)}</strong>

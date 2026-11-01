@@ -5,14 +5,16 @@ from __future__ import annotations
 
 import argparse
 import ipaddress
+import json
 import os
 import re
 import sys
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from playwright.sync_api import Page, Response, sync_playwright
+from playwright.sync_api import Page, Request, Response, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from ci.stricknani import rust_fixture, seed_rust
@@ -238,12 +240,26 @@ def _assert_no_horizontal_overflow(page: Page, viewport_width: int) -> None:
           body: document.body.scrollWidth
         })"""
     )
-    _require(
-        dimensions["document"] <= viewport_width
-        and dimensions["body"] <= viewport_width
-        and dimensions["viewport"] == viewport_width,
-        "a checked viewport has horizontal overflow",
-    )
+    if (
+        dimensions["document"] > viewport_width
+        or dimensions["body"] > viewport_width
+        or dimensions["viewport"] != viewport_width
+    ):
+        offenders: object = page.evaluate(
+            """() => Array.from(document.querySelectorAll('body *'))
+              .map(element => ({
+                tag: element.tagName.toLowerCase(),
+                className: element.getAttribute('class') || '',
+                right: Math.round(element.getBoundingClientRect().right),
+              }))
+              .filter(element => element.right > window.innerWidth + 1)
+              .slice(0, 5)"""
+        )
+        raise AcceptanceFailure(
+            f"viewport width {viewport_width}px overflowed "
+            f"(inner={dimensions['viewport']}, document={dimensions['document']}, "
+            f"body={dimensions['body']}; elements={offenders})"
+        )
 
 
 def _visible_heights(page: Page, selector: str) -> list[float]:
@@ -257,6 +273,358 @@ def _visible_heights(page: Page, selector: str) -> list[float]:
     ):
         raise AcceptanceFailure("browser returned invalid navigation target sizes")
     return [float(value) for value in values]
+
+
+def _assert_step_in_usable_viewport(page: Page, step_id: int) -> None:
+    bounds: object = page.locator(f"#step-{step_id}").evaluate(
+        """element => {
+          const step = element.getBoundingClientRect();
+          const header = document.querySelector('.mobile-header');
+          const bottomNavigation = document.querySelector('.mobile-navigation');
+          const headerBottom = header && getComputedStyle(header).display !== 'none'
+            ? header.getBoundingClientRect().bottom
+            : 0;
+          const navigationTop = bottomNavigation &&
+              getComputedStyle(bottomNavigation).display !== 'none'
+            ? bottomNavigation.getBoundingClientRect().top
+            : window.innerHeight;
+          return {
+            intersectsUsableViewport: step.bottom > headerBottom &&
+              step.top < navigationTop && step.bottom > 0 &&
+              step.top < window.innerHeight,
+            height: step.height,
+          };
+        }"""
+    )
+    if (
+        not isinstance(bounds, dict)
+        or bounds.get("intersectsUsableViewport") is not True
+        or not isinstance(bounds.get("height"), (float, int))
+        or isinstance(bounds.get("height"), bool)
+        or bounds["height"] <= 0
+    ):
+        raise AcceptanceFailure(
+            "the current pattern step is outside the usable viewport"
+        )
+
+
+def _exercise_gauge_calculator(
+    page: Page,
+    origin: str,
+    signed_in: bool,
+    mark_stage: Callable[[str], None],
+    screenshots: Path,
+) -> None:
+    account_state = "signed-in" if signed_in else "anonymous"
+    mark_stage(f"loading {account_state} gauge route")
+    route_response = page.goto(f"{origin}/app/gauge", wait_until="networkidle")
+    _require(
+        route_response is not None and route_response.status == 200,
+        "the gauge calculator route did not load",
+    )
+    page.get_by_role("heading", name="Gauge calculator", exact=True).wait_for(
+        state="visible"
+    )
+    english_button = page.get_by_role("button", name="English", exact=True)
+    german_button = page.get_by_role("button", name="German", exact=True)
+    _require(
+        english_button.is_visible() and german_button.is_visible(),
+        "the language switch is missing from the gauge page",
+    )
+    mark_stage(f"checking {account_state} language preference persistence")
+    page.locator(".locale-switcher button").nth(0).click()
+    page.get_by_role("heading", name="Gauge calculator", exact=True).wait_for(
+        state="visible"
+    )
+    german_button = page.locator(".locale-switcher button").nth(1)
+    german_button.click()
+    page.get_by_role("heading", name="Maschenprobe berechnen", exact=True).wait_for(
+        state="visible"
+    )
+    _require(
+        page.locator("html").get_attribute("lang") == "de"
+        and "language=de" in page.evaluate("document.cookie"),
+        "the German preference did not update the document and language cookie",
+    )
+    page.locator(".gauge-form").evaluate(
+        "form => form.dispatchEvent(new SubmitEvent('submit', "
+        "{ bubbles: true, cancelable: true }))"
+    )
+    page.get_by_role("alert").wait_for(state="visible")
+    _require(
+        page.get_by_role("alert").inner_text()
+        == "Prüfe die markierten Felder und versuche es erneut.",
+        "the gauge validation message was not translated into German",
+    )
+    page.reload(wait_until="networkidle")
+    page.get_by_role("heading", name="Maschenprobe berechnen", exact=True).wait_for(
+        state="visible"
+    )
+    page.locator(".locale-switcher button").nth(0).click()
+    page.get_by_role("heading", name="Gauge calculator", exact=True).wait_for(
+        state="visible"
+    )
+
+    mark_stage(f"checking {account_state} gauge layout and viewport targets")
+    if signed_in:
+        page.locator(".app-shell").wait_for(state="visible")
+        _require(
+            page.locator(".mobile-navigation").is_visible()
+            and page.locator(".public-tool-shell").count() == 0,
+            "the signed-in gauge route did not retain the app shell",
+        )
+    else:
+        _require(
+            page.locator(".public-tool-shell").count() == 1
+            and page.locator(".app-shell").count() == 0
+            and page.locator(".mobile-navigation").count() == 0
+            and page.get_by_role("link", name="Projects", exact=True).count() == 0
+            and page.get_by_role("link", name="Yarns", exact=True).count() == 0,
+            "the public gauge route exposed private library navigation",
+        )
+
+    for width in (320, 390, 1280):
+        page.set_viewport_size({"width": width, "height": 844})
+        _assert_no_horizontal_overflow(page, width)
+        controls = _visible_heights(page, ".gauge-form input, .calculate-button")
+        _require(
+            len(controls) == 7 and min(controls) >= 44,
+            "a gauge form control is below the 44px target size",
+        )
+
+    page.set_viewport_size({"width": 390, "height": 844})
+    mark_stage(f"capturing sanitized {account_state} gauge screen")
+    _mask_fixture_identity(page)
+    _prepare_screenshot(page)
+    page.screenshot(
+        path=str(screenshots / f"gauge-{account_state}-390.png"),
+        caret="initial",
+    )
+    page.reload(wait_until="networkidle")
+    page.get_by_role("heading", name="Gauge calculator", exact=True).wait_for(
+        state="visible"
+    )
+    expected_input = {
+        "pattern_gauge_stitches": 20,
+        "pattern_gauge_rows": 28,
+        "user_gauge_stitches": 22,
+        "user_gauge_rows": 30,
+        "pattern_cast_on_stitches": 80,
+        "pattern_row_count": 100,
+    }
+    mark_stage(f"filling {account_state} gauge inputs")
+    for field, value in expected_input.items():
+        page.locator(f"[name='{field}']").fill(str(value))
+
+    mark_stage(f"submitting {account_state} gauge calculation")
+    _require(
+        page.locator(".gauge-form").evaluate("form => form.checkValidity()"),
+        "the seeded gauge form is not valid before submit",
+    )
+    gauge_request_methods: list[str] = []
+    gauge_response_statuses: list[int] = []
+    gauge_page_error_locations: list[str] = []
+
+    def observe_gauge_request(request: object) -> None:
+        if urlsplit(getattr(request, "url", "")).path == "/api/v2/tools/gauge":
+            gauge_request_methods.append(getattr(request, "method", "unknown"))
+
+    def observe_gauge_response(response: Response) -> None:
+        if _response_path(response) == "/api/v2/tools/gauge":
+            gauge_response_statuses.append(response.status)
+
+    def observe_gauge_page_error(error: object) -> None:
+        stack = getattr(error, "stack", "")
+        match = re.search(r"(/app/_app/immutable/[^\s:)]+\.js):(\d+):(\d+)", stack)
+        gauge_page_error_locations.append(
+            f"{match.group(1)}:{match.group(2)}:{match.group(3)}"
+            if match
+            else "script-location-unavailable"
+        )
+
+    page.on("request", observe_gauge_request)
+    page.on("response", observe_gauge_response)
+    page.on("pageerror", observe_gauge_page_error)
+    click_completed = False
+    try:
+        with page.expect_response(
+            lambda response: (
+                urlsplit(response.url).path == "/api/v2/tools/gauge"
+                and response.request.method == "POST"
+            ),
+            timeout=10_000,
+        ) as gauge_response_info:
+            page.get_by_role("button", name="Calculate", exact=True).click(
+                timeout=5_000
+            )
+            click_completed = True
+    except PlaywrightTimeoutError:
+        form_valid = page.locator(".gauge-form").evaluate(
+            "form => form.checkValidity()"
+        )
+        alert_visible = page.locator('[role="alert"]').is_visible()
+        submit_disabled = page.get_by_role(
+            "button", name="Calculate", exact=True
+        ).is_disabled()
+        _mask_fixture_identity(page)
+        _prepare_screenshot(page)
+        diagnostic_path = screenshots / f"gauge-{account_state}-failure.png"
+        page.screenshot(path=str(diagnostic_path), caret="initial")
+        raise AcceptanceFailure(
+            "the gauge form did not issue its API request "
+            f"(route={urlsplit(page.url).path}; form valid={form_valid}; "
+            f"submit disabled={submit_disabled}; alert visible={alert_visible}; "
+            f"click completed={click_completed}; "
+            f"request methods={gauge_request_methods}; "
+            f"responses={gauge_response_statuses}; "
+            f"page error locations={gauge_page_error_locations}; "
+            f"screenshot={diagnostic_path})"
+        ) from None
+    except Exception as error:
+        raise AcceptanceFailure(
+            "gauge submission raised "
+            f"{type(error).__name__} before a response "
+            f"(request methods={gauge_request_methods}; "
+            f"responses={gauge_response_statuses})"
+        ) from None
+    finally:
+        page.remove_listener("request", observe_gauge_request)
+        page.remove_listener("response", observe_gauge_response)
+        page.remove_listener("pageerror", observe_gauge_page_error)
+
+    gauge_response = gauge_response_info.value
+    mark_stage(f"checking {account_state} gauge response envelope")
+    _require(
+        gauge_response.status == 200,
+        "the gauge API did not return a successful calculation",
+    )
+    try:
+        request_input = json.loads(gauge_response.request.post_data or "")
+        envelope = gauge_response.json()
+    except (TypeError, ValueError):
+        raise AcceptanceFailure("the gauge API returned an unreadable result") from None
+    _require(
+        request_input == expected_input,
+        "the browser sent non-numeric or changed gauge inputs",
+    )
+    data = envelope.get("data") if isinstance(envelope, dict) else None
+    if (
+        not isinstance(data, dict)
+        or not isinstance(data.get("adjusted_stitches"), str)
+        or not isinstance(data.get("adjusted_rows"), str)
+    ):
+        raise AcceptanceFailure("the gauge API returned a result with unexpected types")
+    page.locator(".results").wait_for(state="visible")
+    _require(
+        page.locator(".result-grid strong").all_inner_texts()
+        == [data["adjusted_stitches"], data["adjusted_rows"]],
+        "the gauge page changed the exact server-calculated result strings",
+    )
+
+    mark_stage(f"checking {account_state} stale gauge request cancellation")
+    stitch_input = page.locator("[name='user_gauge_stitches']")
+    stitch_input.fill("23")
+    cdp = page.context.new_cdp_session(page)
+    cdp.send("Network.enable")
+    cdp.send(
+        "Network.emulateNetworkConditions",
+        {
+            "offline": False,
+            "latency": 2_000,
+            "downloadThroughput": 1_000_000,
+            "uploadThroughput": 1_000_000,
+        },
+    )
+
+    def request_filter(request: Request) -> bool:
+        return (
+            urlsplit(request.url).path == "/api/v2/tools/gauge"
+            and request.method == "POST"
+        )
+
+    try:
+        with page.expect_request(request_filter, timeout=5_000) as delayed_request_info:
+            page.get_by_role("button", name="Calculate", exact=True).click(
+                timeout=5_000
+            )
+        delayed_request = delayed_request_info.value
+        race_start_input = dict(expected_input)
+        race_start_input["user_gauge_stitches"] = 23
+        try:
+            request_payload = json.loads(delayed_request.post_data or "")
+        except (TypeError, ValueError):
+            raise AcceptanceFailure(
+                "the delayed gauge request body was unreadable"
+            ) from None
+        _require(
+            request_payload == race_start_input,
+            "the delayed gauge request did not use the current input values",
+        )
+        with page.expect_event(
+            "requestfailed", predicate=request_filter, timeout=5_000
+        ) as cancelled_request_info:
+            stitch_input.fill("24")
+        cancelled_request = cancelled_request_info.value
+        _require(
+            urlsplit(cancelled_request.url).path == "/api/v2/tools/gauge",
+            "editing the gauge did not abort its in-flight API request",
+        )
+    finally:
+        cdp.send(
+            "Network.emulateNetworkConditions",
+            {
+                "offline": False,
+                "latency": 0,
+                "downloadThroughput": -1,
+                "uploadThroughput": -1,
+            },
+        )
+        cdp.detach()
+
+    _require(
+        stitch_input.input_value() == "24"
+        and page.locator(".results").count() == 0
+        and not page.get_by_role("button", name="Calculate", exact=True).is_disabled(),
+        "a stale gauge result replaced the edited values or left submit locked",
+    )
+    with page.expect_response(
+        lambda response: (
+            urlsplit(response.url).path == "/api/v2/tools/gauge"
+            and response.request.method == "POST"
+        )
+    ) as current_response_info:
+        page.get_by_role("button", name="Calculate", exact=True).click()
+    current_response = current_response_info.value
+    _require(
+        current_response.status == 200,
+        "the gauge could not be recalculated after an edit cancelled a request",
+    )
+    try:
+        current_request_input = json.loads(current_response.request.post_data or "")
+        current_envelope = current_response.json()
+    except (TypeError, ValueError):
+        raise AcceptanceFailure(
+            "the recalculated gauge response was unreadable"
+        ) from None
+    _require(
+        current_request_input == {**race_start_input, "user_gauge_stitches": 24},
+        "the recalculated gauge request did not preserve the edited values",
+    )
+    current_data = (
+        current_envelope.get("data") if isinstance(current_envelope, dict) else None
+    )
+    if (
+        not isinstance(current_data, dict)
+        or not isinstance(current_data.get("adjusted_stitches"), str)
+        or not isinstance(current_data.get("adjusted_rows"), str)
+    ):
+        raise AcceptanceFailure("the recalculated gauge result had unexpected types")
+    page.locator(".results").wait_for(state="visible")
+    _require(
+        page.locator(".result-grid strong").all_inner_texts()
+        == [current_data["adjusted_stitches"], current_data["adjusted_rows"]],
+        "the recalculated result did not match the exact server response",
+    )
 
 
 def _mask_fixture_identity(page: Page) -> None:
@@ -541,6 +909,24 @@ def run_acceptance(
                 page.locator(".mobile-navigation").count() == 0,
                 "mobile library navigation appeared while signed out",
             )
+            gauge_link = page.get_by_role("link", name="Gauge calculator", exact=True)
+            _require(
+                gauge_link.count() == 1
+                and gauge_link.get_attribute("href") == "/app/gauge",
+                "the signed-out screen did not expose the public gauge tool",
+            )
+            gauge_link.click()
+            page.wait_for_url("**/app/gauge")
+            page.get_by_role("heading", name="Gauge calculator", exact=True).wait_for(
+                state="visible"
+            )
+            _require(
+                page.locator(".public-tool-shell").count() == 1
+                and page.locator(".app-shell").count() == 0,
+                "the signed-out gauge link opened a private shell",
+            )
+            page.goto(f"{origin}/app/login", wait_until="networkidle")
+            page.locator("#email").wait_for(state="visible")
 
             policy = response.headers.get("content-security-policy", "")
             _require(
@@ -579,9 +965,17 @@ def run_acceptance(
                 form_heights = _visible_heights(
                     page, "#email, #password, .auth-form button"
                 )
+                signed_out_tool_heights = _visible_heights(
+                    page, ".signed-out-tools a, .locale-switcher button"
+                )
                 _require(
                     len(form_heights) == 3 and min(form_heights) >= 44,
                     "a sign-in control is below the 44px target size",
+                )
+                _require(
+                    len(signed_out_tool_heights) == 3
+                    and min(signed_out_tool_heights) >= 44,
+                    "a signed-out tool or language control is below 44px",
                 )
             page.set_viewport_size({"width": 390, "height": 844})
             _prepare_screenshot(page)
@@ -1061,6 +1455,7 @@ def run_acceptance(
                 "the reader did not restore the last step after "
                 "returning from the library",
             )
+            _assert_step_in_usable_viewport(page, step_ids[1])
             mark_stage("opening a direct reader step link")
             page.goto(
                 f"{origin}/app/projects/{project_id}#step-{step_ids[0]}",
@@ -1071,6 +1466,7 @@ def run_acceptance(
                 page.locator(".step-progress").inner_text() == "Step 1 of 2",
                 "direct hash navigation did not open the requested step",
             )
+            _assert_step_in_usable_viewport(page, step_ids[0])
             mark_stage("checking the seeded project-step reference photo")
             step_photo = page.locator(".steps-list .step-image img")
             step_photo.wait_for(state="visible", timeout=5_000)
@@ -1273,11 +1669,19 @@ def run_acceptance(
                 page.get_by_role("heading", name=heading).wait_for(state="visible")
                 if route == "/app/more":
                     more_links = page.locator(".more-links")
-                    gauge_links = more_links.get_by_role(
+                    gauge_link = more_links.get_by_role(
                         "link", name="Gauge calculator", exact=False
-                    ).count()
-                    account_links = more_links.get_by_role(
+                    )
+                    account_link = more_links.get_by_role(
                         "link", name="Account", exact=False
+                    )
+                    gauge_links = gauge_link.count()
+                    account_links = account_link.count()
+                    gauge_available = gauge_link.get_by_text(
+                        "Available now", exact=True
+                    ).count()
+                    account_pending = account_link.get_by_text(
+                        "In progress", exact=True
                     ).count()
                     in_progress_labels = page.get_by_text(
                         "In progress", exact=True
@@ -1288,7 +1692,9 @@ def run_acceptance(
                     if (
                         gauge_links != 1
                         or account_links != 1
-                        or in_progress_labels < 2
+                        or gauge_available != 1
+                        or account_pending != 1
+                        or in_progress_labels < 1
                         or stale_notices != 0
                     ):
                         _mask_fixture_identity(page)
@@ -1300,6 +1706,8 @@ def run_acceptance(
                         raise AcceptanceFailure(
                             "More-route counts did not match expectations "
                             f"(gauge={gauge_links}, account={account_links}, "
+                            f"gauge_available={gauge_available}, "
+                            f"account_pending={account_pending}, "
                             f"in_progress={in_progress_labels}, "
                             f"stale_notice={stale_notices})"
                         )
@@ -1318,6 +1726,14 @@ def run_acceptance(
                         "the create page showed stale preview copy or "
                         "missing creation links",
                     )
+            mark_stage("checking signed-in gauge calculator and exact API result")
+            _exercise_gauge_calculator(
+                page,
+                origin,
+                signed_in=True,
+                mark_stage=mark_stage,
+                screenshots=screenshots,
+            )
             mark_stage("creating a project through the browser editor")
             library_response = page.goto(
                 f"{origin}/app/projects", wait_until="networkidle"
@@ -1700,6 +2116,14 @@ def run_acceptance(
                 path=str(screenshots / "signed-out-after-logout.png"),
                 caret="initial",
             )
+            mark_stage("checking public gauge calculator after logout")
+            _exercise_gauge_calculator(
+                page,
+                origin,
+                signed_in=False,
+                mark_stage=mark_stage,
+                screenshots=screenshots,
+            )
 
             _require(
                 not csp_errors,
@@ -1759,7 +2183,7 @@ def main(argv: list[str] | None = None) -> int:
     except AcceptanceFailure as error:
         print(f"Web UI browser acceptance failed: {error}", file=sys.stderr)
         return 1
-    except Exception:
+    except Exception as error:
         stage_file = (
             private_dir / "browser-stage.txt" if private_dir is not None else None
         )
@@ -1767,6 +2191,7 @@ def main(argv: list[str] | None = None) -> int:
             stage = stage_file.read_text(encoding="ascii")
             print(
                 f"Web UI browser acceptance failed during {stage}; "
+                f"exception type {type(error).__name__}; "
                 "diagnostic details were suppressed.",
                 file=sys.stderr,
             )

@@ -6,14 +6,19 @@ The existing Rust preview remains usable while new routes are built at `/app`.
 
 ## Latest verified state
 
-The live preview runs `6cb58fb`, deployed through infrastructure commit
-`d580a6033b76d19413c4f618d839fcd3ad5e4f6b`. HTTPS, native login, assets,
+The live preview runs `c77eb88`, deployed through infrastructure commit
+`dfe46f97aa0d8096662baca29f0ab869107a7dc8`. HTTPS, native login, assets,
 strict CSP, isolated storage and unchanged production executable were verified.
 The deployment agent sent the requested Signal notification with the preview
-link. All six source CI runs passed. Earlier sections below retain historical
+link. The exact committed source passed `just check` (258 Rust tests, 72
+shipping-harness tests, 83 Vitest tests, frontend/i18n checks and static build),
+the application flake check, package/container builds and target host build.
+The parent independently checked live catalog/cache headers, safe anonymous
+session state, public gauge results, service status and the exact host closure.
+Earlier sections below retain historical
 checkpoint evidence; their pending deployment statements describe that time.
 
-Newer committed checkpoints await the next integrated build and rollout:
+The live milestone includes these reviewed checkpoints:
 
 - `976b621`: full-resolution project and step images in print, verified with
   real uploaded images and print-media browser assertions.
@@ -52,21 +57,32 @@ Newer committed checkpoints await the next integrated build and rollout:
   reads; v1 retains its established normalization. The full Rust suite passed
   258 tests, strict Clippy and formatting; four health tests passed. The normal
   server binary was rebuilt for the frontend round-trip browser regression.
+- `c77eb88`: previous/next steps, addressable step links and in-memory reading
+  position, complete tag chips and a project-library landing page. The real
+  browser passed tag round-trips, step navigation and return/deep-link flows;
+  additional assertions confirm the restored step is actually in the usable
+  viewport. More retains secondary links and identifies unfinished screens.
 
-Reader step navigation, the complete frontend/backend tag round-trip, and
-removal of outdated placeholder copy are in browser acceptance. Account API
-extraction and the public offline/update design are in progress. Gauge UI,
-account UI, signup, admin/audit, PWA/cache and the complete
+The newer account API checkpoint `66d90a9` is committed but is not in this
+deployment. It shares typed token, password and avatar operations with legacy
+adapters. The full Rust run passed 264 tests before an additional stale-password
+CAS regression; that focused regression, formatting, strict Clippy and 26
+targeted Python tests also passed. Token quota is atomic under concurrent
+requests; password update and browser-session revocation commit together.
+
+Account screens, the public gauge/language controls and public offline/update
+support are in browser acceptance. Signup, admin/audit, OCR/archive controls
+and the complete
 accessibility/performance/multi-browser/real-phone acceptance remain open.
 
 Deployment limitations are recorded separately from application checks. The
 public infrastructure no-build flake check fails on a missing Termux Home
-Manager derivation, reproduced on its unchanged baseline. The application
-flake checks, package, container and exact host build passed for `6cb58fb`.
-The upgrade wrapper exited unsuccessfully after activation, while the switch
+Manager derivation, reproduced on clean `d580a6033` and the candidate. This is
+not reported as a passed gate. The `c77eb88` upgrade unit completed successfully.
+During the earlier `6cb58fb` rollout, the wrapper exited unsuccessfully after
+activation, while the switch
 unit, exact running closure and both application services were verified; the
-wrapper failure's precise cause remains unresolved. Neither limitation is
-reported as a passed gate.
+earlier wrapper failure's precise cause remains unresolved.
 
 ## First wave
 
