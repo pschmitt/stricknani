@@ -54,6 +54,26 @@ Use this file as the operational source of truth for working in Stricknani.
   the working clickable preview link. Send one notification per deployed
   version; do not announce a deployment before it is verified.
 
+### Frontend integration checks
+
+- For isolated feature checks, start from committed source and overlay only the
+  assigned files. Do not copy another agent's unfinished routes into that
+  snapshot. Run integration gates again on the exact committed checkpoint.
+- In Svelte effects, compute new filter/draft objects in local variables before
+  assigning reactive state. Reading an object immediately after replacing it
+  in the same effect can create a dependency loop.
+- Abort obsolete loads and guard asynchronous results with the captured user
+  and resource identity, or a request generation. This includes mutation
+  success, failure and cleanup: dynamic routes may reuse the same component.
+- Browser URL changes and API responses do not prove that controls or data
+  have rendered. Wait for the intended visible element before assertions;
+  scope single-element reads explicitly when several content blocks match.
+- Preserve drafts on validation, conflict and network failures. Allow media
+  changes only on a saved, clean form, then reload the full resource. Never
+  advance its conflict timestamp blindly while retaining stale draft fields.
+- Verify print with real project and step images as well as text. Hidden
+  controls must not hide reference diagrams; print should use full media URLs.
+
 ### Vendored Web Dependencies
 
 - The new web UI is planned in [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md), tracked
