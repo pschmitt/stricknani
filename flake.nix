@@ -107,6 +107,7 @@
             rust = pkgs.mkShell {
               packages = with pkgs; [
                 cargo
+                cargo-audit
                 rustc
                 rustfmt
                 clippy

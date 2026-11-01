@@ -21,6 +21,12 @@ advisory suppression or new license policy was added.
 
 ## Verified boundaries
 
+The expanded 398-crate lockfile was rechecked with cargo-audit 0.22.2 on
+2026-11-01. It reports the same two findings above, with no additional advisory.
+The Rust development shell now includes cargo-audit. Reqwest uses Rustls with
+the platform verifier; the Nix wrapper supplies `SSL_CERT_FILE` from `cacert`
+so the non-root candidate has a CA bundle without an OpenSSL dependency.
+
 - Explicit Rust storage settings and application ownership marker; legacy
   database/media paths are rejected when inherited alongside Rust settings.
 - Argon2id for new passwords; successful legacy bcrypt verification upgrades
