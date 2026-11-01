@@ -21,16 +21,21 @@ the correct active closure; read-only investigation points to root's user
 manager closing during activation. Root activation remains unverified. No retry,
 root lingering change or failure reset has been performed.
 
-The next source checkpoint integrates the requested blue/slate light and dark
+Source checkpoint `72e009c` integrates the requested blue/slate light and dark
 themes, mobile language selection in Account settings, compact signed-out
 footers, signup and administrator/audit screens. Theme foregrounds passed real
 rendered contrast checks; isolated feature type, format, unit and browser checks
 passed before integration. Integrated browser testing found tablet library and
-header overflows, now corrected. Its final rerun remains pending while the test
-runner is adapted to the new mobile language location. The runtime catalog was
+header overflows, now corrected. Exact-source browser runs passed with optional
+services disabled, succeeding and failing, and with signup enabled. The static
+checks passed 110 frontend tests, Svelte, formatting, i18n and build checks. The
+updated runner passed Ruff formatting/lint, MyPy and seven helper tests. The
+runtime catalog was
 generated from the staged source and validated with 666 bilingual messages.
-This checkpoint is not deployed yet. The main browser runner and new CI job
-remain separate work in progress; PWA acceptance also remains open.
+This checkpoint is not deployed yet. The next test checkpoint adds the updated
+main browser runner and a CI job for actual Rust-backed journeys, keeping fixture
+data private and excluding PWA until its acceptance passes. PWA acceptance
+remains open.
 Earlier sections below retain historical
 checkpoint evidence; their pending deployment statements describe that time.
 

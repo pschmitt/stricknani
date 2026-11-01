@@ -7,9 +7,18 @@ on:
       - "web/**"
       - "nix/web-package.nix"
       - "nix/rust-package.nix"
-      - "rust/src/frontend.rs"
-      - "rust/src/security.rs"
-      - "rust/tests/frontend.rs"
+      - "rust/**"
+      - "ci/stricknani/**"
+      - "stricknani/locales/**"
+      - "scripts/generate_web_i18n.py"
+      - "tests/test_health.py"
+      - "tests/test_rust_e2e_seed.py"
+      - "tests/test_rust_fixture.py"
+      - "tests/test_web_i18n.py"
+      - "tests/test_web_ui_browser.py"
+      - "docs/web-v2-contract.md"
+      - "pyproject.toml"
+      - "uv.lock"
       - ".github/workflows/web-ui.yaml"
   pull_request:
     branches: [main, rust]
@@ -17,9 +26,18 @@ on:
       - "web/**"
       - "nix/web-package.nix"
       - "nix/rust-package.nix"
-      - "rust/src/frontend.rs"
-      - "rust/src/security.rs"
-      - "rust/tests/frontend.rs"
+      - "rust/**"
+      - "ci/stricknani/**"
+      - "stricknani/locales/**"
+      - "scripts/generate_web_i18n.py"
+      - "tests/test_health.py"
+      - "tests/test_rust_e2e_seed.py"
+      - "tests/test_rust_fixture.py"
+      - "tests/test_web_i18n.py"
+      - "tests/test_web_ui_browser.py"
+      - "docs/web-v2-contract.md"
+      - "pyproject.toml"
+      - "uv.lock"
       - ".github/workflows/web-ui.yaml"
   workflow_dispatch:
 
@@ -29,6 +47,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: web
@@ -53,3 +72,155 @@ jobs:
           test -s build/csp.json
           test -d build/_app
           node -e 'const csp = require("./build/csp.json"); if (!Array.isArray(csp.script_hashes) || !Array.isArray(csp.style_hashes)) process.exit(1);'
+
+      - name: Upload static app for browser acceptance
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-static-build
+          path: web/build/**
+          if-no-files-found: error
+          retention-days: 1
+
+  browser:
+    name: Rust-backed browser acceptance
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      STRICKNANI_SERVER_BINARY: ${{ github.workspace }}/rust/target/debug/stricknani-server
+      STRICKNANI_FIXTURE_BINARY: ${{ github.workspace }}/rust/target/debug/examples/optional_browser_fixture
+      STRICKNANI_WEB_ROOT: ${{ github.workspace }}/web/build
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download static app
+        uses: actions/download-artifact@v7
+        with:
+          name: web-static-build
+          path: web/build
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust -> target
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.6"
+          enable-cache: true
+
+      - name: Install browser runner dependencies
+        run: uv sync --extra dev --locked
+
+      - name: Install Playwright Chromium
+        run: uv run playwright install --with-deps chromium
+
+      - name: Build server and dev-only fixture example
+        run: cargo build --locked --manifest-path rust/Cargo.toml --bin stricknani-server --example optional_browser_fixture
+
+      - name: Run core browser journey with optional services disabled
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          private_dir="$RUNNER_TEMP/stricknani-web-browser-core-disabled"
+          uv run python -m ci.stricknani.web_ui_browser \
+            --binary "$STRICKNANI_SERVER_BINARY" \
+            --web-root "$STRICKNANI_WEB_ROOT" \
+            --private-dir "$private_dir"
+
+      - name: Run signup and optional service success journeys
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          private_dir="$RUNNER_TEMP/stricknani-web-browser-services-success"
+          uv run python -m ci.stricknani.web_ui_browser \
+            --binary "$STRICKNANI_SERVER_BINARY" \
+            --web-root "$STRICKNANI_WEB_ROOT" \
+            --private-dir "$private_dir" \
+            --service-fixture-binary "$STRICKNANI_FIXTURE_BINARY" \
+            --ocr-mode success \
+            --archive-mode success \
+            --signup-enabled
+
+      - name: Run optional service failure journeys
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          private_dir="$RUNNER_TEMP/stricknani-web-browser-services-failure"
+          uv run python -m ci.stricknani.web_ui_browser \
+            --binary "$STRICKNANI_SERVER_BINARY" \
+            --web-root "$STRICKNANI_WEB_ROOT" \
+            --private-dir "$private_dir" \
+            --service-fixture-binary "$STRICKNANI_FIXTURE_BINARY" \
+            --ocr-mode failure \
+            --archive-mode failure \
+            --signup-enabled
+
+      - name: Run account browser journey
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          private_dir="$RUNNER_TEMP/stricknani-web-browser-account"
+          uv run python -m ci.stricknani.web_account_browser \
+            --binary "$STRICKNANI_SERVER_BINARY" \
+            --web-root "$STRICKNANI_WEB_ROOT" \
+            --private-dir "$private_dir"
+
+      - name: Run administrator and audit browser journey
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          private_dir="$RUNNER_TEMP/stricknani-web-browser-admin"
+          uv run python -m ci.stricknani.web_admin_browser \
+            --binary "$STRICKNANI_SERVER_BINARY" \
+            --web-root "$STRICKNANI_WEB_ROOT" \
+            --private-dir "$private_dir"
+
+      - name: Run import browser journey
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          private_dir="$RUNNER_TEMP/stricknani-web-browser-imports"
+          uv run python -m ci.stricknani.web_import_browser \
+            --binary "$STRICKNANI_SERVER_BINARY" \
+            --web-root "$STRICKNANI_WEB_ROOT" \
+            --private-dir "$private_dir"
+
+      - name: Run yarn and category browser journey
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          private_dir="$RUNNER_TEMP/stricknani-web-browser-yarns"
+          uv run python -m ci.stricknani.web_yarn_browser \
+            --binary "$STRICKNANI_SERVER_BINARY" \
+            --web-root "$STRICKNANI_WEB_ROOT" \
+            --private-dir "$private_dir"
+
+      - name: Stop remaining browser fixtures and remove private test data
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for private_dir in "$RUNNER_TEMP"/stricknani-web-browser-*
+          do
+            if [[ ! -d "$private_dir" ]]
+            then
+              continue
+            fi
+            state_file="$private_dir/fixture-state.json"
+            if [[ -f "$state_file" ]]
+            then
+              uv run python -m ci.stricknani.rust_fixture stop \
+                --state-file "$state_file" || true
+            fi
+            rm -rf -- "$private_dir"
+          done

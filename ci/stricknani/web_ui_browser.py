@@ -8,8 +8,10 @@ import ipaddress
 import json
 import os
 import re
+import secrets
 import sys
 import tempfile
+import traceback
 from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -298,9 +300,10 @@ def _assert_no_horizontal_overflow(page: Page, viewport_width: int) -> None:
               .map(element => ({
                 tag: element.tagName.toLowerCase(),
                 className: element.getAttribute('class') || '',
-                right: Math.round(element.getBoundingClientRect().right),
+                right: Math.round(element.getBoundingClientRect().right * 100) / 100,
+                left: Math.round(element.getBoundingClientRect().left * 100) / 100,
               }))
-              .filter(element => element.right > window.innerWidth + 1)
+              .filter(element => element.right > window.innerWidth || element.left < 0)
               .slice(0, 5)"""
         )
         raise AcceptanceFailure(
@@ -354,6 +357,37 @@ def _assert_step_in_usable_viewport(page: Page, step_id: int) -> None:
         raise AcceptanceFailure(
             "the current pattern step is outside the usable viewport"
         )
+
+
+def _assert_mobile_app_header(page: Page) -> None:
+    _require(
+        page.get_by_text("Welcome back", exact=True).count() == 0,
+        "the redundant welcome greeting remains in the web UI",
+    )
+    _require(
+        not page.locator(".page-header").is_visible(),
+        "the desktop page header left an empty spacer on a mobile route",
+    )
+    _require(
+        page.locator(".mobile-header .locale-switcher").count() == 0,
+        "the compact mobile header still reserves space for language controls",
+    )
+    account_target = page.locator(".mobile-header .mobile-account")
+    dimensions: object = account_target.evaluate(
+        "node => ({width: node.getBoundingClientRect().width, "
+        "height: node.getBoundingClientRect().height})"
+    )
+    _require(
+        isinstance(dimensions, dict)
+        and dimensions.get("width", 0) >= 44
+        and dimensions.get("height", 0) >= 44,
+        "the compact mobile header account target is smaller than 44px",
+    )
+    sign_out_heights = _visible_heights(page, ".mobile-header .mobile-sign-out")
+    _require(
+        len(sign_out_heights) == 1 and sign_out_heights[0] >= 44,
+        "mobile sign-out is not a reachable 44px target",
+    )
 
 
 def _assert_service_capabilities(page: Page, enabled: bool) -> None:
@@ -816,19 +850,46 @@ def _exercise_gauge_calculator(
     page.get_by_role("heading", name="Gauge calculator", exact=True).wait_for(
         state="visible"
     )
-    english_button = page.get_by_role("button", name="English", exact=True)
-    german_button = page.get_by_role("button", name="German", exact=True)
+    if signed_in:
+        page.locator(".mobile-header .mobile-account").click()
+        page.get_by_role("heading", name="Account", exact=True).wait_for(
+            state="visible"
+        )
+        language_switcher = page.locator(".mobile-language .locale-switcher")
+    else:
+        language_switcher = page.locator(".public-tool-header .locale-switcher")
+    english_button = language_switcher.get_by_role("button", name="English", exact=True)
+    german_button = language_switcher.get_by_role("button", name="German", exact=True)
     _require(
         english_button.is_visible() and german_button.is_visible(),
         "the language switch is missing from the gauge page",
     )
     mark_stage(f"checking {account_state} language preference persistence")
-    page.locator(".locale-switcher button").nth(0).click()
+    english_button.click()
+    if signed_in:
+        page.get_by_role("heading", name="Account", exact=True).wait_for(
+            state="visible"
+        )
+        page.goto(f"{origin}/app/gauge", wait_until="networkidle")
+        page.get_by_role("heading", name="Gauge calculator", exact=True).wait_for(
+            state="visible"
+        )
     page.get_by_role("heading", name="Gauge calculator", exact=True).wait_for(
         state="visible"
     )
-    german_button = page.locator(".locale-switcher button").nth(1)
+    if signed_in:
+        page.locator(".mobile-header .mobile-account").click()
+        page.get_by_role("heading", name="Account", exact=True).wait_for(
+            state="visible"
+        )
+        language_switcher = page.locator(".mobile-language .locale-switcher")
+        german_button = language_switcher.get_by_role(
+            "button", name="German", exact=True
+        )
     german_button.click()
+    if signed_in:
+        page.get_by_role("heading", name="Konto", exact=True).wait_for(state="visible")
+        page.goto(f"{origin}/app/gauge", wait_until="networkidle")
     page.get_by_role("heading", name="Maschenprobe berechnen", exact=True).wait_for(
         state="visible"
     )
@@ -851,7 +912,13 @@ def _exercise_gauge_calculator(
     page.get_by_role("heading", name="Maschenprobe berechnen", exact=True).wait_for(
         state="visible"
     )
-    page.locator(".locale-switcher button").nth(0).click()
+    if signed_in:
+        page.locator(".mobile-header .mobile-account").click()
+        page.get_by_role("heading", name="Konto", exact=True).wait_for(state="visible")
+        page.locator(".mobile-language .locale-switcher button").nth(0).click()
+        page.goto(f"{origin}/app/gauge", wait_until="networkidle")
+    else:
+        page.locator(".public-tool-header .locale-switcher button").nth(0).click()
     page.get_by_role("heading", name="Gauge calculator", exact=True).wait_for(
         state="visible"
     )
@@ -1127,11 +1194,202 @@ def _mask_fixture_identity(page: Page) -> None:
         "nodes => nodes.forEach(node => { "
         "node.textContent = 'Demo account'; node.title = 'Demo account'; })"
     )
+    page.locator(".profile-email").evaluate_all(
+        "nodes => nodes.forEach(node => node.textContent = 'Demo account')"
+    )
     page.locator(".avatar").evaluate_all(
         "nodes => nodes.forEach(node => node.textContent = 'D')"
     )
     page.locator("#email, #password").evaluate_all(
         "nodes => nodes.forEach(node => { node.value = ''; })"
+    )
+
+
+def _check_mobile_language_and_screenshots(
+    page: Page,
+    origin: str,
+    screenshots: Path,
+    mark_stage: Callable[[str], None],
+) -> None:
+    page.set_viewport_size({"width": 390, "height": 844})
+    _mask_fixture_identity(page)
+    _prepare_screenshot(page)
+    page.screenshot(
+        path=str(screenshots / "projects-mobile-light.png"), caret="initial"
+    )
+    page.emulate_media(color_scheme="dark")
+    page.reload(wait_until="networkidle")
+    page.locator(".project-card .project-open").first.wait_for(state="visible")
+    page.evaluate("document.fonts.ready")
+    page.screenshot(path=str(screenshots / "projects-mobile-dark.png"), caret="initial")
+    project_contrast: object = page.evaluate(
+        """() => {
+          const card = document.querySelector('.project-card');
+          const title = card?.querySelector('h2');
+          const link = card?.querySelector('.project-open');
+          if (!card || !title || !link) return { ratio: 0 };
+          const titleColor = getComputedStyle(title).color;
+          const linkColor = getComputedStyle(link).color;
+          const cardColor = getComputedStyle(card).color;
+          const libraryColor = getComputedStyle(card.closest('.library')).color;
+          const rootColor = getComputedStyle(document.documentElement).color;
+          const color = titleColor.match(/[\\d.]+/g)?.map(Number);
+          const surface = getComputedStyle(card).backgroundColor
+            .match(/[\\d.]+/g)?.map(Number);
+          if (!color || !surface || color.length < 3 || surface.length < 3) {
+            return {
+              ratio: 0,
+              titleColor,
+              linkColor,
+              cardColor,
+              libraryColor,
+              rootColor,
+            };
+          }
+          const luminance = ([r, g, b]) => [r, g, b]
+            .map(value => value / 255)
+            .map(value => value <= 0.04045
+              ? value / 12.92
+              : Math.pow((value + 0.055) / 1.055, 2.4))
+            .reduce((sum, value, index) => {
+              const weights = [0.2126, 0.7152, 0.0722];
+              return sum + value * weights[index];
+            }, 0);
+          const values = [luminance(color), luminance(surface)].sort((a, b) => b - a);
+          return {
+            ratio: (values[0] + 0.05) / (values[1] + 0.05),
+            titleColor,
+            linkColor,
+            cardColor,
+            libraryColor,
+            rootColor,
+            surfaceColor: getComputedStyle(card).backgroundColor,
+          };
+        }"""
+    )
+    contrast_ratio = (
+        project_contrast.get("ratio") if isinstance(project_contrast, dict) else None
+    )
+    print(
+        "Dark project title contrast: "
+        + json.dumps(
+            {
+                key: project_contrast.get(key)
+                for key in (
+                    "ratio",
+                    "titleColor",
+                    "linkColor",
+                    "cardColor",
+                    "surfaceColor",
+                )
+            }
+            if isinstance(project_contrast, dict)
+            else {"ratio": None},
+            sort_keys=True,
+        )
+    )
+    _require(
+        isinstance(contrast_ratio, (int, float))
+        and not isinstance(contrast_ratio, bool)
+        and contrast_ratio >= 4.5,
+        f"project card title contrast is below 4.5:1 ({project_contrast})",
+    )
+    page.emulate_media(color_scheme="light")
+    page.reload(wait_until="networkidle")
+    page.locator(".project-card .project-open").first.wait_for(state="visible")
+
+    _require(
+        page.locator(".mobile-header .locale-switcher").count() == 0,
+        "the mobile header still reserves space for language controls",
+    )
+    page.locator(".mobile-header .mobile-account").click()
+    page.get_by_role("heading", name="Account", exact=True).wait_for(state="visible")
+    page.locator(".mobile-language .locale-switcher").wait_for(state="visible")
+    _require(
+        page.locator(".page-header .locale-switcher").count() == 1,
+        "the desktop language control was removed",
+    )
+    language_targets = _visible_heights(
+        page, ".mobile-language .locale-switcher button"
+    )
+    _require(
+        len(language_targets) == 2 and min(language_targets) >= 44,
+        "a mobile account language target is below 44px",
+    )
+    _assert_no_horizontal_overflow(page, 390)
+    _mask_fixture_identity(page)
+    _prepare_screenshot(page)
+    page.screenshot(path=str(screenshots / "account-mobile-light.png"), caret="initial")
+    page.emulate_media(color_scheme="dark")
+    page.reload(wait_until="networkidle")
+    page.get_by_role("heading", name="Account", exact=True).wait_for(state="visible")
+    page.evaluate("document.fonts.ready")
+    page.screenshot(path=str(screenshots / "account-mobile-dark.png"), caret="initial")
+    page.emulate_media(color_scheme="light")
+    page.reload(wait_until="networkidle")
+    page.get_by_role("heading", name="Account", exact=True).wait_for(state="visible")
+
+    page.evaluate(
+        "document.activeElement instanceof HTMLElement && document.activeElement.blur()"
+    )
+    reached_language_by_keyboard = False
+    for _ in range(18):
+        page.keyboard.press("Tab")
+        focused_label = page.evaluate(
+            "document.activeElement?.getAttribute('aria-label') || ''"
+        )
+        if focused_label in {"English", "German"}:
+            reached_language_by_keyboard = True
+            break
+    _require(
+        reached_language_by_keyboard,
+        "mobile language controls are not reachable in the keyboard tab order",
+    )
+    page.locator('.mobile-language button[aria-label="German"]').focus()
+    page.keyboard.press("Enter")
+    page.wait_for_function("document.documentElement.lang === 'de'", timeout=5_000)
+    _require(
+        page.get_by_role("heading", name="Konto", exact=True).is_visible(),
+        "German locale selection did not update the account interface",
+    )
+    page.reload(wait_until="networkidle")
+    _require(
+        page.locator("html").get_attribute("lang") == "de",
+        "the account language choice did not persist after reload",
+    )
+    for color_scheme in ("light", "dark"):
+        page.emulate_media(color_scheme=color_scheme)
+        for width in (320, 390, 768, 1280):
+            mark_stage(
+                f"checking account layout and locale at {width}px "
+                f"in {color_scheme} mode"
+            )
+            page.set_viewport_size({"width": width, "height": 844})
+            _assert_no_horizontal_overflow(page, width)
+            switcher = (
+                ".mobile-language .locale-switcher"
+                if width <= 760
+                else ".page-header .locale-switcher"
+            )
+            page.locator(switcher).wait_for(state="visible")
+            control_heights = _visible_heights(page, f"{switcher} button")
+            _require(
+                len(control_heights) == 2 and min(control_heights) >= 44,
+                f"locale controls are not 44px targets at {width}px",
+            )
+            for locale_index, locale_code in ((1, "de"), (0, "en")):
+                page.locator(switcher).get_by_role("button").nth(locale_index).click()
+                page.wait_for_function(
+                    "locale => document.documentElement.lang === locale",
+                    arg=locale_code,
+                    timeout=5_000,
+                )
+                _assert_no_horizontal_overflow(page, width)
+    page.emulate_media(color_scheme="light")
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{origin}/app/projects", wait_until="networkidle")
+    page.get_by_role("heading", name="Heirloom Baby Blanket", exact=True).wait_for(
+        state="visible"
     )
 
 
@@ -1152,6 +1410,7 @@ def run_live_fixture(
     service_fixture_binary: Path | None = None,
     ocr_mode: str = "success",
     archive_mode: str = "success",
+    signup_enabled: bool = False,
 ) -> Path:
     """Start, exercise, and safely stop one disposable server fixture."""
     fixture_file = private_dir / "fixture.json"
@@ -1168,6 +1427,7 @@ def run_live_fixture(
             server_binary=service_fixture_binary,
             ocr_mode=ocr_mode,
             archive_mode=archive_mode,
+            signup_enabled=signup_enabled,
         )
         started = True
         try:
@@ -1185,6 +1445,7 @@ def run_live_fixture(
             service_fixture_enabled=service_fixture_binary is not None,
             ocr_mode=ocr_mode,
             archive_mode=archive_mode,
+            signup_enabled=signup_enabled,
         )
     finally:
         if started:
@@ -1199,6 +1460,7 @@ def run_acceptance(
     service_fixture_enabled: bool = False,
     ocr_mode: str = "success",
     archive_mode: str = "success",
+    signup_enabled: bool = False,
 ) -> Path:
     fixture = rust_fixture.load_fixture_environment(fixture_file)
     origin = _loopback_origin(fixture["STRICKNANI_RUST_TEST_URL"])
@@ -1231,11 +1493,15 @@ def run_acceptance(
     catalog_statuses: list[int] = []
     csp_errors: list[str] = []
     console_errors: list[str] = []
+    console_error_locations: list[str] = []
     page_errors: list[bool] = []
+    page_error_types: list[str] = []
     responsive_failures: list[str] = []
     expected_404_path = "/app/this-route-does-not-exist"
     expected_404_window = [False]
     expected_conflict_window = [False]
+    expected_signup_conflict_window = [False]
+    expected_signup_conflict_pending = [False]
     expected_conflict_paths: set[str] = set()
 
     def observe_request(request: object) -> None:
@@ -1244,17 +1510,30 @@ def run_acceptance(
         path = request_url.path
         if path == "/api/v2/projects":
             project_list_queries.append(parse_qs(request_url.query))
-        if path not in {"/api/v2/auth/login", "/api/v2/auth/logout"} and not (
-            path.startswith("/api/v2/projects/") and path.endswith("/favorite")
-        ):
+        if path not in {
+            "/api/v2/auth/login",
+            "/api/v2/auth/logout",
+            "/api/v2/auth/signup",
+        } and not (path.startswith("/api/v2/projects/") and path.endswith("/favorite")):
             return
         headers = getattr(request, "headers", {})
         csrf_requests.append((path, bool(headers.get("x-csrf-token"))))
 
     def observe_response(response: Response) -> None:
         path = _response_path(response)
-        if path in {"/api/v2/auth/login", "/api/v2/auth/logout"}:
+        if path in {
+            "/api/v2/auth/login",
+            "/api/v2/auth/logout",
+            "/api/v2/auth/signup",
+        }:
             auth_responses.append((path, response.status))
+            if (
+                path == "/api/v2/auth/signup"
+                and expected_signup_conflict_window[0]
+                and response.request.method == "POST"
+                and response.status == 409
+            ):
+                expected_signup_conflict_pending[0] = True
         if path.startswith("/api/v2/projects/") or path == "/api/v2/projects":
             project_responses.append((path, response.status))
             if (
@@ -1358,6 +1637,17 @@ def run_acceptance(
         ):
             console_errors.append("expected_project_conflict_409")
         elif (
+            expected_signup_conflict_pending[0]
+            and source_path == "/api/v2/auth/signup"
+            and "failed to load resource" in text
+            and any(
+                response_path == source_path and status == 409
+                for response_path, status in auth_responses
+            )
+        ):
+            console_errors.append("expected_signup_conflict_409")
+            expected_signup_conflict_pending[0] = False
+        elif (
             source_path == "/api/v2/utils/ocr"
             and ocr_mode == "failure"
             and any(
@@ -1380,9 +1670,17 @@ def run_acceptance(
             else:
                 source_class = "browser"
             console_errors.append(f"unexpected_console_error:{source_class}")
+            status = re.search(r"status of (\d+)", text)
+            console_error_locations.append(
+                f"{source_path or '/'}:{status.group(1) if status else 'unknown'}"
+            )
 
     def observe_page_error(_error: object) -> None:
         page_errors.append(True)
+        error_name = getattr(_error, "name", "unknown")
+        page_error_types.append(
+            error_name if isinstance(error_name, str) else "unknown"
+        )
 
     with sync_playwright() as playwright:
         mark_stage("launching packaged Chromium")
@@ -1431,6 +1729,408 @@ def run_acceptance(
                 and gauge_link.get_attribute("href") == "/app/gauge",
                 "the signed-out screen did not expose the public gauge tool",
             )
+
+            browser_email = email
+            browser_password = password
+            if signup_enabled:
+                mark_stage("checking the capability-gated signup link")
+                signup_link = page.get_by_role(
+                    "link", name="Create an account", exact=True
+                )
+                try:
+                    signup_link.wait_for(state="visible", timeout=5_000)
+                except PlaywrightTimeoutError:
+                    capability: object = page.evaluate(
+                        """async () => {
+                          const response = await fetch('/api/v2/session');
+                          const envelope = response.ok ? await response.json() : null;
+                          return {
+                            status: response.status,
+                            signup: envelope?.data?.capabilities?.signup ?? null,
+                            signInVisible: !!document.querySelector('#password')
+                          };
+                        }"""
+                    )
+                    raise AcceptanceFailure(
+                        "the signup link did not match the anonymous capability "
+                        f"(sanitized checks={capability}; matching link count="
+                        f"{signup_link.count()})"
+                    ) from None
+                mark_stage("selecting German for the signup page")
+                page.locator(".auth-footer").get_by_role(
+                    "button", name="German", exact=True
+                ).click()
+                page.wait_for_function(
+                    "document.documentElement.lang === 'de'", timeout=5_000
+                )
+                mark_stage("clicking the translated signup link")
+                page.get_by_role("link", name="Konto erstellen", exact=True).click()
+                mark_stage("waiting for the translated signup route")
+                try:
+                    page.wait_for_url("**/app/signup", timeout=5_000)
+                except PlaywrightTimeoutError:
+                    raise AcceptanceFailure(
+                        "the translated signup link did not reach its route "
+                        f"(path={urlsplit(page.url).path}; "
+                        f"signup form count={page.locator('#signup-email').count()}; "
+                        f"page language={page.locator('html').get_attribute('lang')})"
+                    ) from None
+                page.set_default_timeout(2_000)
+                route_state: dict[str, object] = {"path": urlsplit(page.url).path}
+                for key, query in (
+                    ("language", lambda: page.locator("html").get_attribute("lang")),
+                    ("signupPanel", lambda: page.locator(".signup-panel").count() > 0),
+                    ("signInPassword", lambda: page.locator("#password").count() > 0),
+                    (
+                        "englishHeading",
+                        lambda: (
+                            page.get_by_role(
+                                "heading", name="Create an account", exact=True
+                            ).count()
+                            > 0
+                        ),
+                    ),
+                    (
+                        "germanHeading",
+                        lambda: (
+                            page.get_by_role(
+                                "heading", name="Konto erstellen", exact=True
+                            ).count()
+                            > 0
+                        ),
+                    ),
+                    (
+                        "germanHeadingVisible",
+                        lambda: page.get_by_role(
+                            "heading", name="Konto erstellen", exact=True
+                        ).is_visible(),
+                    ),
+                    (
+                        "germanHeadingBox",
+                        lambda: page.get_by_role(
+                            "heading", name="Konto erstellen", exact=True
+                        ).bounding_box(),
+                    ),
+                    (
+                        "signupFormVisible",
+                        lambda: page.locator("#signup-email").is_visible(),
+                    ),
+                    (
+                        "emailLabelCount",
+                        lambda: page.get_by_label("E-Mail", exact=True).count(),
+                    ),
+                    (
+                        "emailLabelVisible",
+                        lambda: page.get_by_label("E-Mail", exact=True).is_visible(),
+                    ),
+                    (
+                        "signupCapability",
+                        lambda: page.evaluate(
+                            """async () => {
+                              const result = await Promise.race([
+                                fetch('/api/v2/session', {credentials: 'same-origin'})
+                                  .then(async response => ({
+                                    available: true,
+                                    enabled: response.ok &&
+                                      (await response.json())?.data?.capabilities
+                                        ?.signup === true
+                                  })),
+                                new Promise(resolve => setTimeout(() =>
+                                  resolve({available: false, enabled: false}), 1500))
+                              ]);
+                              return result;
+                            }"""
+                        ),
+                    ),
+                ):
+                    try:
+                        route_state[key] = query()
+                    except Exception as diagnostic_error:
+                        route_state[key] = type(diagnostic_error).__name__
+                page.set_default_timeout(10_000)
+                mark_stage(
+                    "waiting for translated signup content; preflight="
+                    + json.dumps(route_state, ensure_ascii=True, sort_keys=True)
+                )
+                try:
+                    page.get_by_role(
+                        "heading", name="Konto erstellen", exact=True
+                    ).wait_for(state="visible", timeout=5_000)
+                except PlaywrightTimeoutError:
+                    raise AcceptanceFailure(
+                        "translated signup content was not visible; "
+                        "sanitized preflight="
+                        + json.dumps(route_state, ensure_ascii=True, sort_keys=True)
+                    ) from None
+                mark_stage("signup heading visible")
+                _require(
+                    page.locator(".app-shell").count() == 0,
+                    "private navigation appeared on the signup route",
+                )
+                mark_stage("waiting for translated signup email label")
+                page.get_by_label("E-Mail", exact=True).wait_for(state="visible")
+                mark_stage("signup email label visible")
+                _require(
+                    page.locator("html").get_attribute("lang") == "de",
+                    "the signup page did not retain the chosen German locale",
+                )
+                page.set_viewport_size({"width": 320, "height": 760})
+                mark_stage("checking signup at 320px")
+                _assert_no_horizontal_overflow(page, 320)
+                mark_stage("signup 320px overflow check passed")
+                signup_control_heights = _visible_heights(
+                    page,
+                    "#signup-email, #signup-password, "
+                    "#signup-confirmation, .signup-form button",
+                )
+                _require(
+                    len(signup_control_heights) == 4
+                    and min(signup_control_heights) >= 44,
+                    "a signup form control is smaller than the 44px target",
+                )
+                mark_stage("signup 44px controls passed")
+                page.set_viewport_size({"width": 390, "height": 844})
+                mark_stage("filling signup confirmation mismatch")
+                signup_email = f"signup-{secrets.token_hex(8)}@example.test"
+                signup_password = secrets.token_urlsafe(24)
+                mark_stage("filling signup email")
+                page.locator("#signup-email").fill(signup_email)
+                mark_stage("signup email filled")
+                page.locator("#signup-password").fill(signup_password)
+                mark_stage("signup password filled")
+                page.locator("#signup-confirmation").fill("mismatch")
+                mark_stage(
+                    "signup mismatch filled; page errors="
+                    + ",".join(page_error_types[:3])
+                    + "; signup requests="
+                    + str(
+                        sum(path == "/api/v2/auth/signup" for path, _ in auth_responses)
+                    )
+                )
+                signup_submit = page.locator(".signup-form button")
+                mark_stage("counting signup submit controls")
+                submit_count = signup_submit.count()
+                mark_stage(f"signup submit control count={submit_count}")
+                submit_state: dict[str, object] = {
+                    "count": submit_count,
+                    "pageErrors": page_error_types[:3],
+                }
+                if submit_count == 1:
+                    submit_state["text"] = signup_submit.inner_text()
+                    submit_state["disabled"] = signup_submit.evaluate(
+                        "button => button.disabled"
+                    )
+                    submit_state["visible"] = signup_submit.is_visible()
+                mark_stage(
+                    "signup submit state="
+                    + json.dumps(submit_state, ensure_ascii=True, sort_keys=True)
+                )
+                _require(
+                    submit_state["visible"] is True
+                    and submit_state["disabled"] is False,
+                    "signup submit was not actionable after anonymous bootstrap",
+                )
+                signup_submit.click(timeout=5_000)
+                mark_stage("waiting for local password mismatch copy")
+                try:
+                    page.get_by_text(
+                        "Die Passwörter stimmen nicht überein.", exact=True
+                    ).wait_for(state="visible")
+                except PlaywrightTimeoutError:
+                    try:
+                        safe_state = page.evaluate(
+                            """() => {
+                              const button = document.querySelector(
+                                '.signup-form button'
+                              );
+                              return {
+                                path: location.pathname,
+                                queryKeys: Array.from(
+                                  new URL(location.href).searchParams.keys()
+                                ),
+                                language: document.documentElement.lang,
+                                signupForm: Boolean(
+                                  document.querySelector('.signup-form')
+                                ),
+                                headingTexts: Array.from(
+                                  document.querySelectorAll('h1')
+                                )
+                                  .map(node => node.textContent?.trim() ?? ''),
+                                errorTexts: Array.from(document.querySelectorAll(
+                                  '.field-error, .signup-error, [role=alert]'
+                                )).map(node => node.textContent?.trim() ?? ''),
+                                buttonText: button?.textContent?.trim() ?? null,
+                                buttonDisabled: button?.disabled ?? null
+                              };
+                            }"""
+                        )
+                    except Exception as diagnostic_error:
+                        safe_state = {
+                            "browserResponsive": False,
+                            "diagnosticError": type(diagnostic_error).__name__,
+                            "pageErrorTypes": page_error_types[:3],
+                        }
+                    mark_stage(
+                        "signup mismatch diagnostic="
+                        + json.dumps(safe_state, ensure_ascii=True, sort_keys=True)
+                    )
+                    raise AcceptanceFailure(
+                        "localized password mismatch feedback did not appear"
+                    ) from None
+                _require(
+                    not any(
+                        path == "/api/v2/auth/signup" for path, _ in auth_responses
+                    ),
+                    "password confirmation mismatch reached the signup API",
+                )
+                mark_stage("local password mismatch verified")
+                page.locator(".signup-footer").get_by_role(
+                    "button", name="Englisch", exact=True
+                ).click()
+                page.goto(f"{origin}/app/signup", wait_until="networkidle")
+                page.get_by_role(
+                    "heading", name="Create an account", exact=True
+                ).wait_for(state="visible")
+                page.locator("#signup-email").fill(signup_email)
+                page.locator("#signup-password").fill(signup_password)
+                page.locator("#signup-confirmation").fill(signup_password)
+                mark_stage("creating an account through the real signup API")
+                sessions_before_signup = len(session_observations)
+                with page.expect_response(
+                    lambda candidate: (
+                        _response_path(candidate) == "/api/v2/auth/signup"
+                        and candidate.request.method == "POST"
+                    )
+                ) as signup_response_info:
+                    page.get_by_role(
+                        "button", name="Create account", exact=True
+                    ).click()
+                signup_response = signup_response_info.value
+                _require(
+                    signup_response.status == 201,
+                    "account registration did not succeed against the Rust API",
+                )
+                try:
+                    signup_request = json.loads(signup_response.request.post_data or "")
+                    signup_envelope = signup_response.json()
+                except (TypeError, ValueError):
+                    raise AcceptanceFailure(
+                        "the signup API returned an unreadable result"
+                    ) from None
+                _require(
+                    signup_request
+                    == {
+                        "email": signup_email,
+                        "password": signup_password,
+                    },
+                    "signup sent unexpected fields to the Rust API",
+                )
+                _require(
+                    any(
+                        path == "/api/v2/auth/signup" and has_csrf
+                        for path, has_csrf in csrf_requests
+                    ),
+                    "signup did not send its pre-authentication CSRF header",
+                )
+                signup_data = (
+                    signup_envelope.get("data")
+                    if isinstance(signup_envelope, dict)
+                    else None
+                )
+                _require(
+                    isinstance(signup_data, dict)
+                    and isinstance(signup_data.get("id"), int)
+                    and not isinstance(signup_data.get("id"), bool)
+                    and signup_data.get("email") == signup_email
+                    and signup_data.get("is_admin") is False,
+                    "signup returned an unexpected member account",
+                )
+                _require(
+                    page.locator(".app-shell").count() == 0,
+                    "signup implicitly authenticated the new member",
+                )
+                page.wait_for_url("**/app/login?created=1")
+                page.get_by_text(
+                    "Your account is ready. Sign in with your email and password.",
+                    exact=True,
+                ).wait_for(state="visible")
+                _require(
+                    any(
+                        status == 200 and user_null and csrf
+                        for status, user_null, csrf, _ in session_observations[
+                            sessions_before_signup:
+                        ]
+                    ),
+                    "signup did not refresh an anonymous session and CSRF token",
+                )
+                page.goto(f"{origin}/app/signup", wait_until="networkidle")
+                page.locator("#signup-email").fill(signup_email)
+                page.locator("#signup-password").fill(signup_password)
+                page.locator("#signup-confirmation").fill(signup_password)
+                mark_stage("checking duplicate-account recovery copy")
+                expected_signup_conflict_window[0] = True
+                try:
+                    with page.expect_response(
+                        lambda candidate: (
+                            _response_path(candidate) == "/api/v2/auth/signup"
+                            and candidate.request.method == "POST"
+                        )
+                    ) as duplicate_response_info:
+                        page.get_by_role(
+                            "button", name="Create account", exact=True
+                        ).click()
+                finally:
+                    expected_signup_conflict_window[0] = False
+                _require(
+                    duplicate_response_info.value.status == 409,
+                    "a duplicate signup did not return the account conflict",
+                )
+                page.get_by_text(
+                    "An account already exists for this email.", exact=True
+                ).wait_for(state="visible")
+                page.goto(f"{origin}/app/login?created=1", wait_until="networkidle")
+                page.locator("#email").wait_for(state="visible")
+                page.locator("#email").fill(signup_email)
+                page.locator("#password").fill(signup_password)
+                mark_stage("explicitly signing in with the new account")
+                page.get_by_role("button", name="Sign in", exact=True).click()
+                page.locator(".app-shell").wait_for(state="visible")
+                page.set_viewport_size({"width": 1280, "height": 844})
+                _require(
+                    page.locator(".account-email").inner_text() == signup_email,
+                    "the newly created account could not sign in explicitly",
+                )
+                mark_stage("returning to anonymous sign-in after signup check")
+                page.locator(".header-sign-out").click()
+                page.locator("#email").wait_for(state="visible")
+                browser_email = email
+                browser_password = password
+            else:
+                _require(
+                    page.get_by_role(
+                        "link", name="Create an account", exact=True
+                    ).count()
+                    == 0,
+                    "signup was linked while the server capability was disabled",
+                )
+                mark_stage("direct route for disabled account registration")
+                disabled_response = page.goto(
+                    f"{origin}/app/signup", wait_until="networkidle"
+                )
+                _require(
+                    disabled_response is not None and disabled_response.status == 200,
+                    "direct signup route did not load its unavailable state",
+                )
+                page.get_by_role(
+                    "heading", name="Account registration is unavailable.", exact=True
+                ).wait_for(state="visible")
+                _require(
+                    page.locator("#signup-password").count() == 0,
+                    "the disabled signup route exposed its account form",
+                )
+                page.goto(f"{origin}/app/login", wait_until="networkidle")
+                page.locator("#email").wait_for(state="visible")
+
             gauge_link.click()
             page.wait_for_url("**/app/gauge")
             page.get_by_role("heading", name="Gauge calculator", exact=True).wait_for(
@@ -1475,14 +2175,14 @@ def run_acceptance(
             )
 
             mark_stage("anonymous responsive layout")
-            for width in (320, 390, 1280):
+            for width in (320, 390, 768, 1280):
                 page.set_viewport_size({"width": width, "height": 844})
                 _assert_no_horizontal_overflow(page, width)
                 form_heights = _visible_heights(
                     page, "#email, #password, .auth-form button"
                 )
                 signed_out_tool_heights = _visible_heights(
-                    page, ".signed-out-tools a, .locale-switcher button"
+                    page, ".auth-footer a, .auth-footer .locale-switcher button"
                 )
                 _require(
                     len(form_heights) == 3 and min(form_heights) >= 44,
@@ -1500,13 +2200,14 @@ def run_acceptance(
             )
 
             mark_stage("real password login and session cookie")
-            page.locator("#email").fill(email)
-            page.locator("#password").fill(password)
+            page.locator("#email").fill(browser_email)
+            page.locator("#password").fill(browser_password)
             page.get_by_role("button", name="Sign in").click()
             mark_stage("waiting for authenticated app shell")
             page.locator(".app-shell").wait_for(state="visible")
             mark_stage("waiting for authenticated mobile navigation")
             page.locator(".mobile-navigation").wait_for(state="visible")
+            _assert_mobile_app_header(page)
             current_route = urlsplit(page.url).path
             mark_stage(f"checking project route after login at {current_route}")
             _require(
@@ -1785,6 +2486,7 @@ def run_acceptance(
             page.get_by_role(
                 "heading", name="Heirloom Baby Blanket", exact=True
             ).wait_for(state="visible")
+            _assert_mobile_app_header(page)
             project_card = page.locator(".project-card").filter(
                 has=page.get_by_role(
                     "heading", name="Heirloom Baby Blanket", exact=True
@@ -1837,10 +2539,40 @@ def run_acceptance(
                 ),
                 "the favorite action did not persist through the Rust API",
             )
+            mark_stage("checking mobile account language controls")
+            _check_mobile_language_and_screenshots(
+                page, origin, screenshots, mark_stage
+            )
             mark_stage("authenticated responsive layout")
-            for width in (320, 390, 1280):
+            for width in (320, 390, 768, 1280):
                 page.set_viewport_size({"width": width, "height": 844})
                 _assert_no_horizontal_overflow(page, width)
+                if width == 320:
+                    _require(
+                        page.locator(
+                            ".mobile-header .wordmark > span:last-child"
+                        ).is_visible(),
+                        "the brand name is not visible in the 320px header",
+                    )
+                if width == 768:
+                    metrics = page.evaluate(
+                        """() => {
+                          const card = document.querySelector('.project-card');
+                          const rect = card?.getBoundingClientRect();
+                          return {
+                            viewport: window.innerWidth,
+                            clientWidth: document.documentElement.clientWidth,
+                            scrollWidth: document.documentElement.scrollWidth,
+                            cardLeft: rect?.left ?? null,
+                            cardRight: rect?.right ?? null,
+                            cardWidth: rect?.width ?? null,
+                          };
+                        }"""
+                    )
+                    print(
+                        "Project library viewport at 768px: "
+                        + json.dumps(metrics, sort_keys=True)
+                    )
                 selector = (
                     ".mobile-navigation a"
                     if width <= 760
@@ -1870,13 +2602,6 @@ def run_acceptance(
                     "reduced-motion scroll behavior was not applied",
                 )
             page.set_viewport_size({"width": 390, "height": 844})
-            _mask_fixture_identity(page)
-            _prepare_screenshot(page)
-            page.screenshot(
-                path=str(screenshots / "signed-in-mobile.png"),
-                caret="initial",
-            )
-
             mark_stage("project reader, ordered steps, media, and print")
             with page.expect_response(
                 lambda response: (
@@ -1941,6 +2666,7 @@ def run_acceptance(
             page.get_by_role(
                 "heading", name="Riverbend Merino DK", exact=True
             ).wait_for(state="visible")
+            _assert_mobile_app_header(page)
             _exercise_yarn_service_tools(
                 page,
                 origin,
@@ -1951,6 +2677,32 @@ def run_acceptance(
                 mark_stage,
                 screenshots,
             )
+            mark_stage("measuring the yarn library at tablet width")
+            page.goto(f"{origin}/app/yarns", wait_until="networkidle")
+            page.get_by_role(
+                "heading", name="Riverbend Merino DK", exact=True
+            ).wait_for(state="visible")
+            page.set_viewport_size({"width": 768, "height": 844})
+            _assert_no_horizontal_overflow(page, 768)
+            yarn_metrics = page.evaluate(
+                """() => {
+                  const card = document.querySelector('.yarn-card');
+                  const rect = card?.getBoundingClientRect();
+                  return {
+                    viewport: window.innerWidth,
+                    clientWidth: document.documentElement.clientWidth,
+                    scrollWidth: document.documentElement.scrollWidth,
+                    cardLeft: rect?.left ?? null,
+                    cardRight: rect?.right ?? null,
+                    cardWidth: rect?.width ?? null,
+                  };
+                }"""
+            )
+            print(
+                "Yarn library viewport at 768px: "
+                + json.dumps(yarn_metrics, sort_keys=True)
+            )
+            page.set_viewport_size({"width": 390, "height": 844})
             page.goto(f"{origin}/app/projects/{project_id}", wait_until="networkidle")
             page.get_by_role(
                 "heading", name="Heirloom Baby Blanket", exact=True
@@ -2687,12 +3439,15 @@ def run_acceptance(
                     in {
                         "expected_unknown_route_404",
                         "expected_project_conflict_409",
+                        "expected_signup_conflict_409",
                         "expected_ocr_failure_5xx",
                     }
                     for error in console_errors
                 ),
                 "the browser reported an unexpected console error: "
-                + ", ".join(sorted(set(console_errors))),
+                + ", ".join(sorted(set(console_errors)))
+                + "; path/status="
+                + ", ".join(sorted(set(console_error_locations))),
             )
             _require(
                 not responsive_failures,
@@ -2721,6 +3476,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--archive-mode", choices=("success", "failure"), default="success"
     )
+    parser.add_argument("--signup-enabled", action="store_true")
     args = parser.parse_args(argv)
     private_dir: Path | None = None
     try:
@@ -2733,6 +3489,7 @@ def main(argv: list[str] | None = None) -> int:
             args.service_fixture_binary,
             args.ocr_mode,
             args.archive_mode,
+            args.signup_enabled,
         )
     except rust_fixture.FixtureError as error:
         print(
@@ -2749,10 +3506,14 @@ def main(argv: list[str] | None = None) -> int:
         )
         if stage_file is not None and stage_file.is_file():
             stage = stage_file.read_text(encoding="ascii")
+            locations = ",".join(
+                f"{Path(frame.filename).name}:{frame.lineno}"
+                for frame in traceback.extract_tb(error.__traceback__)[-3:]
+            )
             print(
                 f"Web UI browser acceptance failed during {stage}; "
                 f"exception type {type(error).__name__}; "
-                "diagnostic details were suppressed.",
+                f"failure locations {locations}; diagnostic details were suppressed.",
                 file=sys.stderr,
             )
         else:
