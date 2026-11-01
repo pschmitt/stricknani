@@ -18,6 +18,7 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const pathname = $derived(page.url.pathname);
+  const signupRoute = $derived(pathname === linkTo("/signup"));
   const user = $derived(session.data?.user ?? null);
   const publicGauge = $derived(
     showPublicGauge(pathname, linkTo("/gauge"), session.status, user !== null),
@@ -66,6 +67,7 @@
   type AppPath =
     | "/"
     | "/login"
+    | "/signup"
     | "/projects"
     | "/projects/new"
     | "/yarns"
@@ -173,14 +175,14 @@
       </button>
     </section>
   </main>
+{:else if !user && signupRoute}
+  <div class="signed-out-screen">
+    <main id="main-content" class="signup-route-main">
+      {@render children()}
+    </main>
+  </div>
 {:else if !user}
   <div class="signed-out-screen">
-    <div class="signed-out-tools">
-      <LocaleSwitcher />
-      <a class="public-tool-link" href={linkTo("/gauge")}
-        >{t("Gauge calculator", locale)}</a
-      >
-    </div>
     <SignInForm />
   </div>
 {:else}
@@ -259,6 +261,9 @@
           >{user.email.slice(0, 1).toUpperCase()}</span
         >
       </a>
+      <button class="mobile-sign-out" type="button" onclick={handleSignOut}
+        >{t("Sign out", locale)}</button
+      >
     </div>
 
     <div class="content-column">
@@ -346,26 +351,10 @@
     gap: 0.75rem;
   }
 
-  .signed-out-tools {
+  .signup-route-main {
     display: flex;
-    align-items: center;
+    width: 100%;
     justify-content: center;
-    gap: 0.5rem;
-  }
-
-  .public-tool-link {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--line);
-    border-radius: 0.7rem;
-    padding: 0.45rem 0.7rem;
-    color: var(--accent-strong);
-    background: var(--surface);
-    font-size: 0.9rem;
-    font-weight: 650;
-    text-decoration: none;
   }
 
   .public-sign-in {

@@ -300,8 +300,10 @@
   .library {
     display: grid;
     gap: 1.25rem;
+    min-width: 0;
     max-width: 76rem;
     margin: 0 auto;
+    container-type: inline-size;
   }
 
   .library-heading {
@@ -342,7 +344,7 @@
     border: 0;
     border-radius: 0.7rem;
     padding: 0.6rem 0.95rem;
-    color: #fff;
+    color: var(--on-accent);
     background: var(--accent-strong);
     font: inherit;
     font-weight: 650;
@@ -457,7 +459,7 @@
   .yarn-open {
     display: block;
     min-width: 0;
-    color: inherit;
+    color: var(--ink);
     text-decoration: none;
   }
 
@@ -670,6 +672,39 @@
   @media (max-width: 380px) {
     .yarn-grid {
       grid-template-columns: 1fr;
+    }
+  }
+
+  @container (min-width: 381px) and (max-width: 700px) {
+    .library-heading {
+      align-items: start;
+      flex-wrap: wrap;
+    }
+
+    .library-heading > div {
+      min-width: 0;
+      flex: 1 1 16rem;
+    }
+
+    .filters {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .search-field {
+      min-width: 0;
+      grid-column: 1 / -1;
+    }
+
+    .search-field input {
+      min-width: 0;
+    }
+
+    .search-button {
+      grid-column: 2;
+    }
+
+    .clear-button {
+      grid-column: 1 / -1;
     }
   }
 </style>

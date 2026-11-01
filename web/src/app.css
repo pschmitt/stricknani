@@ -12,18 +12,24 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --canvas: #f2f6f5;
+  --canvas: #f3f6fb;
   --surface: #ffffff;
-  --surface-raised: #f8fbfa;
-  --ink: #18302d;
-  --ink-muted: #526663;
-  --line: #cedbd7;
-  --accent: #116d64;
-  --accent-strong: #0b574f;
-  --accent-wash: #dcefeb;
+  --surface-raised: #f8fafd;
+  --ink: #1f2d3d;
+  --ink-muted: #52657a;
+  --line: #d2dce8;
+  --accent: #2f75b5;
+  --accent-strong: #185b96;
+  --on-accent: #ffffff;
+  --accent-wash: #e4eff9;
   --danger: #a4333b;
-  --focus: #157a70;
-  --shadow: 0 14px 38px rgb(24 48 45 / 8%);
+  --on-danger: #ffffff;
+  --success: #166534;
+  --success-surface: #e7f5eb;
+  --warning: #815900;
+  --warning-surface: #fff4d6;
+  --focus: #286fba;
+  --shadow: 0 14px 38px rgb(31 45 61 / 8%);
 
   font-optical-sizing: auto;
   font-weight: 400;
@@ -35,17 +41,23 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --canvas: #14201e;
-    --surface: #1b2926;
-    --surface-raised: #22332f;
-    --ink: #e5efec;
-    --ink-muted: #a9beb8;
-    --line: #3d514c;
-    --accent: #80c8b7;
-    --accent-strong: #a3decf;
-    --accent-wash: #24423d;
+    --canvas: #111b28;
+    --surface: #1a2736;
+    --surface-raised: #223448;
+    --ink: #e6edf3;
+    --ink-muted: #b2c0cf;
+    --line: #3b4d60;
+    --accent: #8dc5ef;
+    --accent-strong: #b8daf3;
+    --on-accent: #10243a;
+    --accent-wash: #263d54;
     --danger: #ffabb0;
-    --focus: #9ce0d1;
+    --on-danger: #381319;
+    --success: #9be2ae;
+    --success-surface: #173b2b;
+    --warning: #f4d27a;
+    --warning-surface: #463919;
+    --focus: #a9d5fa;
     --shadow: 0 16px 42px rgb(0 0 0 / 24%);
   }
 }
@@ -117,7 +129,7 @@ button:disabled {
   transform: translateY(-160%);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
-  color: #fff;
+  color: var(--on-accent);
   background: var(--accent-strong);
 }
 
@@ -182,7 +194,7 @@ button:disabled {
   aspect-ratio: 1;
   place-items: center;
   border-radius: 0.65rem;
-  background: var(--accent);
+  background: var(--accent-strong);
 }
 
 .brand-mark::before,
@@ -190,14 +202,14 @@ button:disabled {
   position: absolute;
   width: 0.9rem;
   height: 1.1rem;
-  border: 1.5px solid var(--surface);
+  border: 1.5px solid var(--on-accent);
   border-radius: 50%;
   content: "";
 }
 
 .brand-mark span {
   width: 0.56rem;
-  border-color: #a8d7cb;
+  border-color: color-mix(in srgb, var(--on-accent) 72%, var(--accent-strong));
 }
 
 .wordmark {
@@ -386,6 +398,17 @@ button:disabled {
   font-size: 0.84rem;
 }
 
+@media (min-width: 761px) and (max-width: 820px) {
+  .page-header {
+    justify-content: flex-end;
+    padding-inline: 1rem;
+  }
+
+  .header-user {
+    display: none;
+  }
+}
+
 .content-main {
   width: min(100%, 76rem);
   margin-inline: auto;
@@ -425,8 +448,8 @@ button:disabled {
   border: 0;
   border-radius: 0.7rem;
   padding: 0.65rem 1.1rem;
-  color: #fff;
-  background: #116d64;
+  color: var(--on-accent);
+  background: var(--accent-strong);
   font-weight: 650;
   cursor: pointer;
 }
@@ -498,7 +521,9 @@ button:disabled {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--line);
-    padding: 0.5rem 1rem;
+    padding: calc(0.5rem + env(safe-area-inset-top))
+      max(1rem, env(safe-area-inset-right)) 0.5rem
+      max(1rem, env(safe-area-inset-left));
     background: var(--surface);
   }
 
@@ -511,9 +536,23 @@ button:disabled {
     border-radius: 50%;
   }
 
+  .mobile-sign-out {
+    min-width: 44px;
+    min-height: 44px;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 0.65rem;
+    padding: 0.4rem 0.55rem;
+    color: var(--accent-strong);
+    background: transparent;
+    font-size: 0.8rem;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
   .page-header {
-    min-height: 4.6rem;
-    padding: 0.75rem 1.1rem;
+    display: none;
   }
 
   .header-user,
@@ -534,7 +573,9 @@ button:disabled {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     border-top: 1px solid var(--line);
-    padding: 0.35rem 0.35rem calc(0.35rem + env(safe-area-inset-bottom));
+    padding: 0.35rem max(0.35rem, env(safe-area-inset-right))
+      calc(0.35rem + env(safe-area-inset-bottom))
+      max(0.35rem, env(safe-area-inset-left));
     background: var(--surface);
   }
 
@@ -568,6 +609,11 @@ button:disabled {
 }
 
 @media (max-width: 390px) {
+  .mobile-header {
+    gap: 0.25rem;
+    padding-inline: max(0.5rem, env(safe-area-inset-left));
+  }
+
   .mobile-navigation a {
     font-size: 0.68rem;
   }

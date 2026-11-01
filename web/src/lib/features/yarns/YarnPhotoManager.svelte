@@ -443,7 +443,7 @@
 
   .danger-button {
     border-color: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
     background: var(--danger);
   }
 

@@ -140,7 +140,10 @@ def _safe_terminate(pid: int, expected_start: str) -> None:
 
 
 def _server_environment(
-    runtime: Path, port: int, web_root: Path | None = None
+    runtime: Path,
+    port: int,
+    web_root: Path | None = None,
+    signup_enabled: bool = False,
 ) -> dict[str, str]:
     environment = {
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
@@ -160,6 +163,8 @@ def _server_environment(
         if not resolved_web_root.is_dir():
             raise FixtureError("web root must be an existing directory")
         environment["WEB_ROOT"] = str(resolved_web_root)
+    if signup_enabled:
+        environment["RUST_SIGNUP_ENABLED"] = "true"
     return environment
 
 
@@ -194,6 +199,7 @@ def start_fixture(
     server_binary: Path | None = None,
     ocr_mode: str = "success",
     archive_mode: str = "success",
+    signup_enabled: bool = False,
 ) -> None:
     """Start one local server and write private replay credentials for the runner."""
     binary_path = binary.expanduser().resolve()
@@ -208,6 +214,8 @@ def start_fixture(
         raise FixtureError("OCR fixture mode must be success or failure")
     if archive_mode not in {"success", "failure"}:
         raise FixtureError("archive fixture mode must be success or failure")
+    if not isinstance(signup_enabled, bool):
+        raise FixtureError("signup_enabled must be a boolean")
     if server_binary is None and (ocr_mode != "success" or archive_mode != "success"):
         raise FixtureError("fixture service modes require a fixture server binary")
     if web_root is not None:
@@ -224,7 +232,7 @@ def start_fixture(
     _private_write(runtime / OWNER_FILE, owner.encode("ascii"))
     (runtime / "media").mkdir(mode=0o700)
     port = _unused_port()
-    env = _server_environment(runtime, port, web_root)
+    env = _server_environment(runtime, port, web_root, signup_enabled)
     server_log = os.open(
         runtime / "server.log", os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600
     )
@@ -369,6 +377,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     start.add_argument(
         "--archive-mode", choices=("success", "failure"), default="success"
     )
+    start.add_argument("--signup-enabled", action="store_true")
     stop = commands.add_parser("stop")
     stop.add_argument("--state-file", type=Path, required=True)
     replay = commands.add_parser("run-replay")
@@ -390,6 +399,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 server_binary=args.server_binary,
                 ocr_mode=args.ocr_mode,
                 archive_mode=args.archive_mode,
+                signup_enabled=args.signup_enabled,
             )
             print("Rust replay fixture started.")
         elif args.command == "stop":

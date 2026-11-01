@@ -534,7 +534,7 @@
 
   .primary-action {
     border-color: var(--accent-strong);
-    color: #fff;
+    color: var(--on-accent);
     background: var(--accent-strong);
   }
 
@@ -723,7 +723,7 @@
 
   .danger-button {
     border-color: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
     background: var(--danger);
   }
 

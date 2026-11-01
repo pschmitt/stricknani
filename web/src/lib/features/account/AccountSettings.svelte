@@ -2,6 +2,7 @@
   import { beforeNavigate } from "$app/navigation";
   import { onDestroy, tick } from "svelte";
   import { ApiError, type SessionData } from "#lib/api.ts";
+  import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
   import {
@@ -544,6 +545,10 @@
     </div>
   </header>
 
+  <section class="mobile-language" aria-label={t("Language", locale)}>
+    <LocaleSwitcher />
+  </section>
+
   {#if pageStatus}
     <p class="page-status" role="status" aria-live="polite">{pageStatus}</p>
   {/if}
@@ -1054,15 +1059,8 @@
 
   .primary-button {
     border-color: var(--accent-strong);
-    color: #fff;
+    color: var(--on-accent);
     background: var(--accent-strong);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .primary-button {
-      color: #14201e;
-      background: var(--accent);
-    }
   }
 
   .file-picker,
@@ -1078,8 +1076,12 @@
 
   .danger-button {
     border-color: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
     background: var(--danger);
+  }
+
+  .mobile-language {
+    display: none;
   }
 
   .danger-text {
@@ -1330,6 +1332,16 @@
     .settings-columns {
       grid-template-columns: minmax(0, 1fr);
       gap: 1.8rem;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .mobile-language {
+      display: flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: flex-end;
+      margin-bottom: 0.5rem;
     }
   }
 

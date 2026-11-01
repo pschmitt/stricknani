@@ -34,11 +34,11 @@
     {#if session.data?.user?.is_admin}
       <a href={resolve("/admin/users")}>
         <strong>{t("Admin", locale)}</strong>
-        <small>{t("In progress", locale)}</small>
+        <small>{t("Available now", locale)}</small>
       </a>
       <a href={resolve("/admin/audit")}>
         <strong>{t("Audit log", locale)}</strong>
-        <small>{t("In progress", locale)}</small>
+        <small>{t("Available now", locale)}</small>
       </a>
     {/if}
   </nav>

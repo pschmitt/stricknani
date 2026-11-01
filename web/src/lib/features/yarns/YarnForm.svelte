@@ -860,7 +860,7 @@
 
   .primary-action {
     border-color: var(--accent-strong);
-    color: #fff;
+    color: var(--on-accent);
     background: var(--accent-strong);
   }
 

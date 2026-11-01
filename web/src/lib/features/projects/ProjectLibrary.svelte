@@ -373,6 +373,8 @@
   .library {
     display: grid;
     gap: 1.5rem;
+    min-width: 0;
+    container-type: inline-size;
   }
 
   .library-heading {
@@ -408,7 +410,7 @@
     border: 0;
     border-radius: 0.7rem;
     padding: 0.65rem 0.95rem;
-    color: #fff;
+    color: var(--on-accent);
     background: var(--accent-strong);
     font: inherit;
     font-weight: 650;
@@ -558,7 +560,7 @@
   .project-open {
     display: block;
     min-width: 0;
-    color: inherit;
+    color: var(--ink);
     text-decoration: none;
   }
 
@@ -864,6 +866,44 @@
 
     .project-card:hover {
       transform: none;
+    }
+  }
+
+  @container (min-width: 381px) and (max-width: 700px) {
+    .library-heading {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .library-heading > div {
+      min-width: 0;
+      flex: 1 1 16rem;
+    }
+
+    .filters {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr);
+      align-items: end;
+    }
+
+    .search-field,
+    .category-field,
+    .search-field input,
+    .category-field select {
+      min-width: 0;
+    }
+
+    .favorite-filter {
+      grid-column: 1 / -1;
+    }
+
+    .search-button {
+      grid-column: 1;
+      grid-row: auto;
+    }
+
+    .clear-button {
+      grid-column: 2;
+      grid-row: auto;
     }
   }
 </style>

@@ -77,9 +77,14 @@ def test_web_root_is_only_added_when_explicit_and_must_be_a_directory(
 
     default_environment = rust_fixture._server_environment(runtime, 32123)
     web_environment = rust_fixture._server_environment(runtime, 32123, web_root)
+    signup_environment = rust_fixture._server_environment(
+        runtime, 32123, signup_enabled=True
+    )
 
     assert "WEB_ROOT" not in default_environment
+    assert "RUST_SIGNUP_ENABLED" not in default_environment
     assert web_environment["WEB_ROOT"] == str(web_root.resolve())
+    assert signup_environment["RUST_SIGNUP_ENABLED"] == "true"
     assert (
         web_environment["RUST_DATABASE_URL"] == default_environment["RUST_DATABASE_URL"]
     )
@@ -139,9 +144,13 @@ def test_start_fixture_masks_generated_credentials_only_in_actions(
             return None
 
     popen_args: list[object] = []
+    popen_environment: dict[str, str] = {}
 
-    def fake_popen(*args: object, **_kwargs: object) -> FakeProcess:
+    def fake_popen(*args: object, **kwargs: object) -> FakeProcess:
         popen_args.extend(args)
+        env = kwargs.get("env")
+        assert isinstance(env, dict)
+        popen_environment.update(env)
         return FakeProcess()
 
     create_user_args: list[list[str]] = []
@@ -165,6 +174,7 @@ def test_start_fixture_masks_generated_credentials_only_in_actions(
         state_file=state_file,
         server_binary=fixture_server,
         ocr_mode="failure",
+        signup_enabled=True,
     )
 
     runtime = Path(json.loads(state_file.read_text(encoding="utf-8"))["runtime"])
@@ -183,6 +193,7 @@ def test_start_fixture_masks_generated_credentials_only_in_actions(
     ]
     assert len(create_user_args) == 1
     assert create_user_args[0][:2] == [str(binary.resolve()), "create-user"]
+    assert popen_environment["RUST_SIGNUP_ENABLED"] == "true"
 
     credentials = json.loads(fixture_file.read_text(encoding="utf-8"))
     output = capsys.readouterr().out

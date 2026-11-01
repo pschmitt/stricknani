@@ -2,6 +2,8 @@
   import { ApiError } from "#lib/api.ts";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { page } from "$app/state";
+  import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session, signIn } from "#lib/session.svelte.ts";
 
@@ -11,6 +13,7 @@
   let failure = $state<ApiError | Error | null>(null);
 
   const locale = $derived(session.data?.locale ?? "en");
+  const accountCreated = $derived(page.url.searchParams.get("created") === "1");
 
   async function submit(event: SubmitEvent) {
     event.preventDefault();
@@ -35,10 +38,10 @@
 
 <svelte:head>
   <title>{t("Sign in", locale)} · Stricknani</title>
-  <meta name="theme-color" content="#f2f6f5" />
+  <meta name="theme-color" content="#f3f6fb" />
 </svelte:head>
 
-<main class="auth-page">
+<main id="main-content" class="auth-page">
   <section class="auth-panel" aria-labelledby="auth-title">
     <a class="wordmark" href="/app/" aria-label="Stricknani home">
       <span class="brand-mark" aria-hidden="true"><span></span></span>
@@ -55,6 +58,15 @@
     {#if session.expired}
       <div class="form-error" role="status">
         {t("Your session expired. Sign in again to continue.", locale)}
+      </div>
+    {/if}
+
+    {#if accountCreated}
+      <div class="form-success" role="status">
+        {t(
+          "Your account is ready. Sign in with your email and password.",
+          locale,
+        )}
       </div>
     {/if}
 
@@ -114,6 +126,18 @@
     <p class="auth-footnote">
       {t("Your projects stay on your own Stricknani server.", locale)}
     </p>
+    {#if session.data?.capabilities.signup}
+      <p class="auth-signup-link">
+        {t("New to Stricknani?", locale)}
+        <a href={resolve("/signup")}>{t("Create an account", locale)}</a>
+      </p>
+    {/if}
+    <footer class="auth-footer">
+      <LocaleSwitcher />
+      <a class="public-tool-link" href={resolve("/gauge")}
+        >{t("Gauge calculator", locale)}</a
+      >
+    </footer>
   </section>
   <div class="auth-side" aria-hidden="true">
     <div class="thread-art">
@@ -128,6 +152,8 @@
 <style>
   .auth-page {
     display: grid;
+    width: 100%;
+    min-width: 0;
     min-height: 100svh;
     grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.8fr);
     padding: clamp(1rem, 3vw, 2.5rem);
@@ -163,7 +189,7 @@
     aspect-ratio: 1;
     place-items: center;
     border-radius: 0.65rem;
-    background: var(--accent);
+    background: var(--accent-strong);
   }
 
   .brand-mark::before,
@@ -171,14 +197,18 @@
     position: absolute;
     width: 0.9rem;
     aspect-ratio: 0.78;
-    border: 1.5px solid var(--surface);
+    border: 1.5px solid var(--on-accent);
     border-radius: 50%;
     content: "";
   }
 
   .brand-mark span {
     width: 0.56rem;
-    border-color: #a8d7cb;
+    border-color: color-mix(
+      in srgb,
+      var(--on-accent) 72%,
+      var(--accent-strong)
+    );
   }
 
   .auth-copy {
@@ -241,8 +271,8 @@
     border: 0;
     border-radius: 0.7rem;
     padding: 0.65rem 1.1rem;
-    color: #fff;
-    background: #116d64;
+    color: var(--on-accent);
+    background: var(--accent-strong);
     font-weight: 650;
     cursor: pointer;
     transition:
@@ -251,7 +281,7 @@
   }
 
   .primary-button:hover:not(:disabled) {
-    background: #0b574f;
+    background: var(--accent);
   }
 
   .primary-button:active:not(:disabled) {
@@ -261,7 +291,7 @@
   :global(.spinner-light) {
     width: 1rem;
     border-color: rgb(255 255 255 / 40%);
-    border-top-color: #fff;
+    border-top-color: var(--on-accent);
   }
 
   .form-error {
@@ -273,6 +303,15 @@
     background: color-mix(in srgb, var(--danger) 7%, var(--surface));
   }
 
+  .form-success {
+    margin-top: 1.4rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius: 0.7rem;
+    padding: 0.8rem 0.9rem;
+    color: var(--success);
+    background: var(--success-surface);
+  }
+
   .form-error ul {
     margin: 0.5rem 0 0;
     padding-left: 1.2rem;
@@ -282,6 +321,46 @@
     margin: 1.25rem 0 0;
     color: var(--ink-muted);
     font-size: 0.85rem;
+  }
+
+  .auth-signup-link {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 0.35rem;
+    margin: 0.65rem 0 0;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+  }
+
+  .auth-signup-link a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    color: var(--accent-strong);
+    font-weight: 650;
+  }
+
+  .auth-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+  }
+
+  .public-tool-link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    padding: 0.4rem 0.7rem;
+    color: var(--accent-strong);
+    background: var(--surface);
+    font-size: 0.88rem;
+    font-weight: 650;
+    text-decoration: none;
   }
 
   .auth-side {
@@ -339,9 +418,15 @@
     transform: translate(0, 3.7rem) rotate(2deg);
   }
 
+  @media (max-width: 390px) {
+    .thread-art {
+      display: none;
+    }
+  }
+
   @media (max-width: 720px) {
     .auth-page {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
       align-content: center;
       padding: 1rem;
     }
