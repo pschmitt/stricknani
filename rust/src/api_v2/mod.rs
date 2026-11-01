@@ -34,6 +34,7 @@ mod imports;
 mod media;
 mod ocr;
 mod projects;
+mod signup;
 mod tools;
 mod yarns;
 
@@ -112,6 +113,7 @@ fn router_with_context(
         .merge(archive::router())
         .merge(tools::router())
         .merge(account::router())
+        .merge(signup::router())
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }

@@ -27,6 +27,7 @@ The initial implementation exposes the following routes, mounted below
 | --- | --- | --- |
 | `GET /session` | None required | Current session or anonymous bootstrap, capabilities, locale, and CSRF token |
 | `POST /auth/login` | Pre-auth CSRF | Creates a browser-purpose session and sets its cookie |
+| `POST /auth/signup` | Pre-auth CSRF; signup capability enabled | Creates a member account; does not create a session |
 | `POST /auth/logout` | Browser session and CSRF | Revokes that session and clears its cookie; returns 204 |
 
 `GET /session` returns HTTP 200 for both authenticated and anonymous users:
@@ -63,6 +64,23 @@ It sets a 14-day browser-purpose cookie and clears the pre-auth CSRF cookie.
 The session token is only in the HttpOnly cookie; it is never included in the
 response body. Logout accepts `{}` and sends the session-derived CSRF token in
 `X-CSRF-Token`.
+
+When `capabilities.signup` is true, the browser may submit
+`POST /api/v2/auth/signup` with the pre-authentication cookie and CSRF header,
+plus a same-origin `Origin` and `Sec-Fetch-Site: same-origin`:
+
+```json
+{ "email": "knitter@example.test", "password": "a-long-password" }
+```
+
+The server applies the existing password policy and signup rate limit and
+creates an ordinary member. Success returns HTTP 201 with
+`{ "data": { "id": 42, "email": "knitter@example.test", "is_admin": false } }`
+and clears the pre-authentication CSRF cookie. Signup does not sign the new
+member in; the client must call `GET /api/v2/session` again to bootstrap a fresh
+CSRF token before sign-in. Disabled signup returns HTTP 404 with
+`error.code = "signup_disabled"`; the session capability is false in that
+configuration.
 
 On secure deployments the session cookie is named
 `__Host-stricknani_session`; otherwise it is `stricknani_session`. Both use

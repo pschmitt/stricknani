@@ -89,7 +89,12 @@ still in acceptance. Their disposable test companion uses deterministic
 providers with the real application router and archive worker; it must refuse
 database/media paths outside the helper-owned private runtime. These test
 providers do not enable integrations on the preview.
-Signup, admin/audit and the complete accessibility/performance/multi-browser/
+The reviewed signup API now uses the signed pre-authentication CSRF bootstrap,
+existing auth limiter and explicit member role. It creates no browser session
+and stays unavailable when signup is disabled. Its six focused API tests, the
+full Rust suite (271 tests), formatting, strict Clippy and four health tests
+passed. The signup screen remains open; preview signup stays disabled.
+Admin/audit and the complete accessibility/performance/multi-browser/
 real-phone acceptance remain open. The browser CI lane still needs the actual
 Rust-backed journeys in addition to existing static frontend checks.
 
