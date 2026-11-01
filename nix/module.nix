@@ -150,7 +150,7 @@ in
         "python"
         "rust"
       ];
-      default = "python";
+      default = "rust";
       description = "Implementation used by the Stricknani service.";
     };
 

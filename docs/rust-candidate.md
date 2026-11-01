@@ -1,10 +1,11 @@
 # Rust candidate development
 
-The candidate is developed on the `rust` branch. The flake package, app, and
-container defaults select Rust; explicit Python artifacts remain available for
-reference and rollback. The NixOS production module still selects Python until
-acceptance is complete and the user separately approves cutover. Do not route
-production traffic to the candidate or share production storage with it.
+The candidate is developed on the `rust` branch. The flake package, app,
+container, and NixOS-module defaults select Rust; the module can select Python
+explicitly with `services.stricknani.backend = "python"`. The production
+configuration still imports a separately pinned older module revision, so
+this branch default does not switch production. Do not route production traffic
+to the candidate or share production storage with it.
 
 ## Storage and startup
 

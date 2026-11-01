@@ -62,7 +62,7 @@ Execution-oriented backlog for Stricknani.
 | T119.5 | P1 | done | rust-port/web | feat | Implement core browser account, project, yarn, category, favorite, steps, and media workflows with a replaceable presentation layer |
 | T119.6 | P1 | done | rust-port/product | feat | Port imports, administrative/CLI operations, security controls, background work, translations, and PWA capabilities selected by inventory |
 | T119.7 | P1 | done | rust-port/migration | feat | Build and rehearse a one-time importer using separate copies of production database and media; verify imported records, ownership, and original media bytes |
-| T119.8 | P1 | wip | rust-port/build | refactor | Make Rust package/app/check/dev-shell/image and NixOS module outputs the default; keep production on its separate Python revision until approved cutover |
+| T119.8 | P1 | done | rust-port/build | refactor | Make Rust package/app/check/dev-shell/image and NixOS module outputs the default; keep production on its separate Python revision until approved cutover |
 | T119.9 | P1 | wip | rust-port/acceptance | test | Complete final-candidate Android/container acceptance and document snapshot/backup/rollback steps; production cutover remains separately gated |
 | T39 | P0 | done | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
 | T41 | P1 | done | ux | bug | Fix remaining print layout issues (Wayback buttons, footer, spacing) |
@@ -2101,7 +2101,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port/build
 - **Priority**: P1
-- **Status**: wip
+- **Status**: done
 - **Category**: refactor
 - **Dependencies**: T119.2, T119.3, T119.4, T119.5, T119.6
 - **Scope**: Make the flake package, app, check, development shell, and container defaults use the Rust application while retaining explicit Python artifacts for development and rollback. Provide an isolated Rust deployment mode with separate storage. Make new NixOS installations default to Rust. Keep the actual production service pinned to its separate Python revision until the user approves cutover.

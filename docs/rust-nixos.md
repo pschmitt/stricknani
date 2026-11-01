@@ -1,24 +1,31 @@
-# Rust backend in the NixOS module
+# Stricknani backends in the NixOS module
 
-The NixOS module keeps the existing Python service as its default. Selecting
-the Rust backend is an explicit staging choice:
+The NixOS module defaults to Rust on this branch:
 
 ```nix
 services.stricknani = {
   enable = true;
-  backend = "rust";
   hostName = "knitting.example.invalid";
   nginx.enable = true;
 };
 ```
 
+To select the Python reference implementation explicitly, set
+`services.stricknani.backend = "python"`.
+
 With `backend = "rust"`, the module selects the Rust package by default and
-uses an isolated data directory, `/var/lib/stricknani-rust`. Its default
-database is `rust.sqlite3` and its default media directory is `media` under
-that data directory. The Python defaults remain `/var/lib/stricknani`,
-`stricknani.db`, and `media`. If you override `dataDir` or `mediaRoot`, keep
-them separate from the existing Python database and media tree. Do not
-configure Rust with the Python data paths.
+uses `/var/lib/stricknani-rust` as its data directory. Its default database is
+`rust.sqlite3` and its default media directory is `media` under that data
+directory. With `backend = "python"`, the module selects the Python package
+and uses `/var/lib/stricknani`, `stricknani.db`, and `media`. If overriding
+`dataDir` or `mediaRoot`, keep Rust paths separate from the Python database
+and media tree. Do not configure Rust with the Python data paths.
+
+This branch's module default does not change a deployed service whose
+production configuration still imports a separately pinned older module
+revision. Advancing that production input, migrating data, and switching
+traffic remain separate steps that require the documented acceptance and
+approval process.
 
 The module translates its service options into the Rust environment names:
 `RUST_DATABASE_URL`, `RUST_MEDIA_ROOT`, `BIND_HOST`, `BIND_PORT`,

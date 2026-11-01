@@ -2,13 +2,14 @@
 
 ## Current packaging state
 
-The Rust server is the default flake package, app, and container runtime on the
-`rust` branch. The explicit Python package and image remain available for
-development and rollback. The NixOS production module still defaults to Python;
-the isolated Rust mode uses separate database and media paths. This preserves
-the production boundary until acceptance is complete and the user separately
-approves cutover. See [the runtime transition guide](rust-runtime-transition.md)
-and [NixOS module guide](rust-nixos.md).
+The Rust server is the default flake package, app, container runtime, and
+NixOS-module backend on the `rust` branch. The module's Python backend remains
+available by explicitly setting `services.stricknani.backend = "python"`.
+Production still imports a separately pinned older module revision, so this
+branch change does not alter its backend or data paths. Advancing the production
+input and any cutover remain gated on acceptance and explicit approval. See
+[the runtime transition guide](rust-runtime-transition.md) and
+[NixOS module guide](rust-nixos.md).
 
 The root [Dockerfile](../Dockerfile) builds the Rust default package into a
 `scratch` image. [Dockerfile.python](../Dockerfile.python) retains the Python
@@ -28,8 +29,9 @@ HTTP, CLI, and container health checks with a read-only root as UID/GID
 - Keep the passing container health and Python-free closure checks as release gates.
 - Keep the deployed styled candidate separated from production storage and
   routing; its desktop and mobile viewport checks have passed.
-- Keep the NixOS production module's Python default until acceptance is
-  complete and the user explicitly approves cutover.
+- Keep production on its separately pinned module revision until acceptance is
+  complete and the user explicitly approves cutover. The branch module default
+  alone does not change the production input.
 - At any later cutover, use the documented final snapshot, backup, verification,
   and rollback procedure. Do not treat the branch's Rust package defaults as
   authorization to move production traffic.

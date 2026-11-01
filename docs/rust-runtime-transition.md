@@ -1,10 +1,11 @@
 # Rust runtime outputs and container
 
-This branch makes the Rust service the default flake runtime while keeping the
-Python runtime available for development and the existing Android end-to-end
-workflow. This does not change the NixOS module's Python default or deploy
-anything to production. Rust acceptance and a separately approved cutover are
-still pending.
+This branch makes the Rust service the default flake runtime and NixOS module
+backend while keeping the Python runtime available through an explicit backend
+selection and for the existing Android end-to-end workflow. Production still
+uses a separately pinned older module revision, so this source change does not
+alter or deploy the production service. Rust acceptance and a separately
+approved production cutover remain pending.
 
 ## Flake outputs
 
@@ -68,7 +69,10 @@ copy when preparing migration evidence.
 
 ## Rollout boundary
 
-The NixOS module continues to select Python by default. The flake and image
-defaults changing on this branch do not switch any deployed service. Production
-remains on Python until the Rust acceptance work and a separately approved
-cutover are complete. Keep Python data and Rust data separate during staging.
+This branch's NixOS module defaults to Rust; set
+`services.stricknani.backend = "python"` to select the Python package and
+legacy data paths explicitly. The production configuration still imports its
+separately pinned older module revision, so changing this branch's default does
+not switch the deployed service. Production remains on Python until Rust
+acceptance, a production input update, and a separately approved cutover are
+complete. Keep Python data and Rust data separate during staging.
