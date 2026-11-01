@@ -20,16 +20,20 @@ use rand::{RngCore, rngs::OsRng};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use sqlx::SqlitePool;
+use std::{path::PathBuf, sync::Arc};
 use subtle::ConstantTimeEq;
 use zeroize::Zeroizing;
 
-use crate::{auth, db::AppState};
+use crate::{auth, db::AppState, import_service::ImportContext};
 
 mod access;
 mod categories;
+mod imports;
 mod media;
 mod projects;
 mod yarns;
+
+use self::imports::PreviewLimiter;
 
 const SESSION_SECONDS: i64 = 14 * 24 * 60 * 60;
 const LOGIN_CSRF_SECONDS: i64 = 10 * 60;
@@ -42,16 +46,38 @@ struct ApiV2State {
     app: AppState,
     csrf_key: Option<[u8; 32]>,
     ai_enabled: bool,
+    imports: Option<ImportContext>,
+    import_preview_limiter: PreviewLimiter,
 }
 
-/// Build the v2 authentication routes. The caller mounts this router at `/api/v2`.
+/// Build API v2 routes without optional import services.
+///
+/// The boolean is an availability hint only; the AI capability remains false
+/// until the composed application supplies an actual configured AI client.
+/// Use the application constructor to mount import previews with their parser
+/// worker and optional AI client.
 pub fn router(app: AppState, ai_enabled: bool) -> Router {
+    router_with_context(app, ai_enabled, None)
+}
+
+pub(crate) fn router_with_imports(
+    app: AppState,
+    worker_path: PathBuf,
+    ai: Option<Arc<crate::ai::AiClient>>,
+) -> Router {
+    let ai_enabled = ai.is_some();
+    router_with_context(app, ai_enabled, Some(ImportContext::new(worker_path, ai)))
+}
+
+fn router_with_context(app: AppState, ai_enabled: bool, imports: Option<ImportContext>) -> Router {
     let mut csrf_key = [0_u8; 32];
     let csrf_key = OsRng.try_fill_bytes(&mut csrf_key).ok().map(|()| csrf_key);
     let state = ApiV2State {
         app,
         csrf_key,
         ai_enabled,
+        imports,
+        import_preview_limiter: PreviewLimiter::default(),
     };
     Router::new()
         .route("/session", get(session))
@@ -62,6 +88,7 @@ pub fn router(app: AppState, ai_enabled: bool) -> Router {
         .merge(yarns::router())
         .merge(categories::router())
         .merge(media::router())
+        .merge(imports::router())
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }
@@ -100,7 +127,12 @@ impl Capabilities {
         Self {
             signup: state.app.signup_enabled,
             external_imports: state.app.external_imports,
-            ai: state.ai_enabled,
+            ai: state.ai_enabled
+                && state
+                    .imports
+                    .as_ref()
+                    .and_then(|imports| imports.ai.as_ref())
+                    .is_some(),
             ocr: state.app.ocr_enabled,
             archive: state.app.archive_enabled,
         }

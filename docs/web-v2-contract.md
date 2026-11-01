@@ -5,6 +5,13 @@ cookie. Android continues to use the bearer-token `/api/v1/` contract. V2
 handlers must not accept API tokens from the cookie, return browser session
 secrets in JSON, or call the v1 router internally.
 
+The application-composed v2 router mounts authentication, projects, yarns,
+categories, media, and synchronous import previews. The standalone router used
+by API tests has no document worker or AI client; its imports return
+`import_unavailable` and its AI capability is false, even if the compatibility
+availability hint is true. Composed applications pass the actual worker and
+configured AI client, so the capability reflects a usable service.
+
 All `/api/v2` responses use `Cache-Control: no-store`. The browser API does not
 enable cross-origin access. State-changing requests require a matching CSRF
 token and a same-origin `Origin`; when `Sec-Fetch-Site` is present, its value
@@ -263,6 +270,45 @@ with `error.code: "invalid_multipart"`; unsupported images return `400` with
 `error.code: "payload_too_large"`. Media serving remains on the existing
 authenticated `/media/...` routes.
 
+## Import preview API slice
+
+Import previews use the browser session and same-origin CSRF checks. They run
+synchronously through the existing bounded document worker; no import draft is
+stored server-side and no new background job is created.
+
+| Method and path | Request | Result |
+| --- | --- | --- |
+| `POST /imports/preview` | `{ "type": "text", "text": "...", "use_ai": false }` or `{ "type": "url", "url": "https://...", "use_ai": false }` | `200 {data: Preview}` |
+| `POST /imports/preview-file` | Multipart `file` and optional `use_ai` (`true`/`false`) | `200 {data: Preview}` |
+
+The response contains `draft`, `content_sha256`, `ai_requested`,
+`is_ai_enhanced`, and `ai_fallback`. The draft uses the import parser's camelCase
+fields, including `project.imageUrls` and `project.steps[].images`. The
+fingerprint is informational; clients must treat the draft as editable user
+input, not as an authorization token. After review, clients create a resource
+through the ordinary `POST /projects` or `POST /yarns` contract. That keeps
+domain validation, image URL safety checks, ownership, audit records, and
+transactions in the shared resource services.
+
+Pasted text and uploaded files are each limited to 5 MiB. The JSON endpoint
+allows up to 32 MiB of encoded body so valid text containing JSON escapes still
+fits while the decoded source remains capped at 5 MiB. Multipart allows 5 MiB
+plus bounded framing overhead. URL fetching remains gated by the configured
+`external_imports` capability and uses the existing SSRF-resistant fetcher and
+its timeout/body limits. AI runs only when `use_ai: true`; when unavailable or
+when enhancement fails, the original parsed draft is returned with
+`ai_fallback: true`. The source sent to AI retains its existing text/image caps.
+
+Errors use the common v2 envelope. Invalid source fields return `422` with
+`validation_error`; disabled URL fetching returns `503 feature_disabled`;
+unsafe URLs return `422 unsafe_url`; parser failures return
+`422 unsupported_document` or `422 invalid_document`; timeouts return `504
+import_timeout`; and oversized requests return `413 payload_too_large`.
+Preview work is limited to 20 requests per authenticated owner per 10 minutes
+with a bounded 4096-owner in-memory table; excess requests return `429
+rate_limited` with `Retry-After`. This limiter is separate from password-login
+attempt accounting.
+
 ## Proposed contract for remaining resource slices
 
 These resource routes are a starting contract for frontend/backend slices;
@@ -270,7 +316,6 @@ they are not part of the initial authentication implementation.
 
 | Resource | Proposed operations |
 | --- | --- |
-| Imports | Synchronous URL/text/file preview routes; creation uses normal project/yarn writes |
 | Archive | Enqueue route and owner-scoped status only if the UI needs polling |
 | Account/admin | Only the self-service and administrator operations used by the UI |
 

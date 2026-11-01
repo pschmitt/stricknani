@@ -31,6 +31,7 @@ mod web_signup;
 pub mod yarns;
 use std::num::NonZeroU32;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use askama::Template;
 use axum::extract::Form;
@@ -103,6 +104,7 @@ pub fn app_with_services(
     ocr: Option<ocr::OcrService>,
 ) -> Router {
     let state = state.with_external_imports(external_imports);
+    let ai = ai.map(Arc::new);
     let core = Router::new()
         .nest(
             "/api/v1",
@@ -117,7 +119,10 @@ pub fn app_with_services(
         .merge(media::router().with_state(state.clone()));
 
     app_with_static_root(static_root)
-        .nest("/api/v2", api_v2::router(state.clone(), ai.is_some()))
+        .nest(
+            "/api/v2",
+            api_v2::router_with_imports(state.clone(), worker_path.clone(), ai.clone()),
+        )
         .merge(web::router(core.clone(), state.clone()))
         .merge(web_accounts::router(core.clone(), state.clone()))
         .merge(web_audit::router(core.clone(), state.clone()))
@@ -128,7 +133,7 @@ pub fn app_with_services(
             state.archive_enabled,
         ))
         .merge(ocr_service::router(core.clone(), state.clone(), ocr))
-        .merge(import_service::router_with_ai(
+        .merge(import_service::router_with_shared_ai(
             core.clone(),
             state,
             worker_path,
