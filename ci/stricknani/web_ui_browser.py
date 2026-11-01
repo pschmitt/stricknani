@@ -101,6 +101,52 @@ def _prepare_project_reader_fixture(page: Page) -> int:
           if (!detailResponse.ok) return { status: detailResponse.status, id: 0 };
           const detailEnvelope = await detailResponse.json();
           const project = detailEnvelope?.data;
+          const yarnId = project?.yarn_ids?.[0];
+          if (!Number.isSafeInteger(yarnId) || yarnId < 1) {
+            return { status: detailResponse.status, id, photo_status: 0 };
+          }
+          const yarnResponse = await fetch(`/api/v2/yarns/${yarnId}`);
+          if (!yarnResponse.ok) {
+            return {
+              status: detailResponse.status,
+              id,
+              photo_status: 0,
+              yarn_status: yarnResponse.status,
+            };
+          }
+          const yarn = (await yarnResponse.json())?.data;
+          const yarnUpdateResponse = await fetch(`/api/v2/yarns/${yarnId}`, {
+            method: 'PUT',
+            headers: {
+              'accept': 'application/json',
+              'content-type': 'application/json',
+              'x-csrf-token': token,
+            },
+            body: JSON.stringify({
+              name: yarn.name,
+              description: yarn.description,
+              brand: yarn.brand,
+              colorway: yarn.colorway,
+              dye_lot: yarn.dye_lot,
+              fiber_content: yarn.fiber_content,
+              weight_category: yarn.weight_category,
+              recommended_needles: yarn.recommended_needles,
+              weight_grams: yarn.weight_grams,
+              length_meters: yarn.length_meters,
+              notes: yarn.notes,
+              link: 'https://ravelry.com/yarns/fixture',
+              is_ai_enhanced: yarn.is_ai_enhanced,
+              expected_updated_at: yarn.updated_at,
+            }),
+          });
+          if (!yarnUpdateResponse.ok) {
+            return {
+              status: detailResponse.status,
+              id,
+              photo_status: 0,
+              yarn_status: yarnUpdateResponse.status,
+            };
+          }
           const updateResponse = await fetch(`/api/v2/projects/${id}`, {
             method: 'PUT',
             headers: {
@@ -117,7 +163,7 @@ def _prepare_project_reader_fixture(page: Page) -> int:
               notes: 'After the border, pause and check the width before continuing.',
               other_materials: 'Two stitch markers and a tapestry needle.',
               tags: ['heirloom', 'textured', 'textured'],
-              link: project.link,
+              link: 'https://ravelry.com/patterns/fixture',
               is_ai_enhanced: false,
               yarn_ids: project.yarn_ids,
               steps: [
@@ -168,6 +214,7 @@ def _prepare_project_reader_fixture(page: Page) -> int:
             status: updateResponse.status,
             id,
             photo_status: photoResponse.status,
+            yarn_status: yarnUpdateResponse.status,
           };
         }"""
     )
@@ -178,6 +225,7 @@ def _prepare_project_reader_fixture(page: Page) -> int:
         or isinstance(result.get("id"), bool)
         or result["id"] < 1
         or result.get("photo_status") != 201
+        or result.get("yarn_status") != 200
     ):
         raise AcceptanceFailure(
             "the synthetic project and step-photo fixture could not be prepared"
@@ -306,6 +354,449 @@ def _assert_step_in_usable_viewport(page: Page, step_id: int) -> None:
         raise AcceptanceFailure(
             "the current pattern step is outside the usable viewport"
         )
+
+
+def _assert_service_capabilities(page: Page, enabled: bool) -> None:
+    capabilities: object = page.evaluate(
+        """async () => {
+          const response = await fetch('/api/v2/session');
+          if (!response.ok) return null;
+          const envelope = await response.json();
+          return envelope?.data?.capabilities ?? null;
+        }"""
+    )
+    if (
+        not isinstance(capabilities, dict)
+        or capabilities.get("ocr") is not enabled
+        or capabilities.get("archive") is not enabled
+    ):
+        raise AcceptanceFailure(
+            "the browser fixture reported unexpected OCR/archive capabilities"
+        )
+
+
+def _exercise_project_service_tools(
+    page: Page,
+    origin: str,
+    project_id: int,
+    enabled: bool,
+    ocr_mode: str,
+    archive_mode: str,
+    mark_stage: Callable[[str], None],
+    diagnostic_dir: Path,
+) -> None:
+    _assert_service_capabilities(page, enabled)
+    if not enabled:
+        _require(
+            page.locator(".ocr-control, .archive-control").count() == 0,
+            "disabled service controls were exposed in the project reader",
+        )
+        return
+
+    mark_stage("opening OCR controls for a stored project image")
+    ocr = page.locator(".steps-list .step-photo-card .ocr-control").first
+    try:
+        ocr.wait_for(state="visible", timeout=5_000)
+    except PlaywrightTimeoutError:
+        try:
+            page.set_default_timeout(1_000)
+            counts: object = page.evaluate(
+                """() => ({
+                  photoCards: document.querySelectorAll(
+                    '.steps-list .step-photo-card').length,
+                  ocrControls: document.querySelectorAll('.ocr-control').length,
+                  routeReady: document.querySelectorAll('.reader-columns').length > 0,
+                  authenticated: document.querySelectorAll('.account-email').length > 0,
+                  viewportVisible: document.visibilityState === 'visible'
+                })""",
+            )
+        except PlaywrightTimeoutError:
+            counts = "page script did not respond to the diagnostic query"
+        mask_succeeded = False
+        page.set_default_timeout(1_500)
+        try:
+            _mask_fixture_identity(page)
+            mask_succeeded = True
+        except PlaywrightTimeoutError:
+            counts = f"{counts}; identity mask timed out, screenshot suppressed"
+        if mask_succeeded:
+            try:
+                page.screenshot(
+                    path=str(diagnostic_dir / "project-ocr-control-debug.png"),
+                    caret="initial",
+                    timeout=2_000,
+                )
+            except PlaywrightTimeoutError:
+                counts = f"{counts}; sanitized screenshot timed out"
+        page.set_default_timeout(30_000)
+        raise AcceptanceFailure(
+            "project OCR control did not become visible "
+            f"(sanitized DOM checks: {counts})"
+        ) from None
+    mark_stage("opening the project OCR control")
+    ocr.locator("summary").click()
+    mark_stage("selecting the project OCR language")
+    html_language = page.locator("html").get_attribute("lang")
+    if html_language == "en":
+        language_label = "Recognition language"
+    elif html_language == "de":
+        language_label = "Erkennungssprache"
+    else:
+        raise AcceptanceFailure("the OCR fixture had an unsupported page language")
+    language = ocr.get_by_label(language_label, exact=True)
+    try:
+        language.wait_for(state="visible", timeout=5_000)
+    except PlaywrightTimeoutError:
+        details_open = ocr.evaluate("node => node.open")
+        selector_labels = ocr.locator("select").evaluate_all(
+            "nodes => nodes.map(node => ({"
+            "visible: !!(node.offsetWidth || node.offsetHeight), "
+            "labels: Array.from(node.labels ?? []).map(label => "
+            "label.textContent?.trim() ?? '') }))"
+        )
+        _mask_fixture_identity(page)
+        page.screenshot(
+            path=str(diagnostic_dir / "project-ocr-language-debug.png"),
+            caret="initial",
+        )
+        raise AcceptanceFailure(
+            "the OCR language selector was not available by its translated label "
+            f"(details_open={details_open}; selectors={selector_labels})"
+        ) from None
+    _require(
+        language.input_value() == "deu+eng",
+        "OCR did not start with the configured German and English languages",
+    )
+    language.select_option("deu")
+    mark_stage("submitting project OCR")
+    if ocr_mode == "failure":
+        with page.expect_response(
+            lambda response: (
+                urlsplit(response.url).path == "/api/v2/utils/ocr"
+                and response.request.method == "POST"
+            )
+        ) as ocr_response_info:
+            ocr.get_by_role("button", name="Recognize text", exact=True).click()
+        _require(
+            ocr_response_info.value.status >= 500,
+            "the configured OCR failure did not reach the real API route",
+        )
+        ocr.get_by_role("alert").wait_for(state="visible")
+        _require(
+            ocr.get_by_role("alert").inner_text()
+            == "Text recognition could not complete. You can enter the text manually.",
+            "the OCR failure was not translated into actionable text",
+        )
+    else:
+        page.context.grant_permissions(
+            ["clipboard-read", "clipboard-write"], origin=origin
+        )
+        with page.expect_response(
+            lambda response: (
+                urlsplit(response.url).path == "/api/v2/utils/ocr"
+                and response.request.method == "POST"
+            )
+        ) as ocr_response_info:
+            ocr.get_by_role("button", name="Recognize text", exact=True).click()
+        ocr_response = ocr_response_info.value
+        _require(ocr_response.status == 200, "the OCR API did not succeed")
+        try:
+            request_payload = json.loads(ocr_response.request.post_data or "")
+            result_payload = ocr_response.json()
+        except (TypeError, ValueError):
+            raise AcceptanceFailure(
+                "the OCR API returned an unreadable result"
+            ) from None
+        _require(
+            isinstance(request_payload, dict)
+            and isinstance(request_payload.get("src"), str)
+            and request_payload["src"].startswith("/media/projects/")
+            and request_payload.get("lang") == "deu"
+            and request_payload.get("force") is False,
+            "OCR did not send the selected language and owned media path",
+        )
+        data = result_payload.get("data") if isinstance(result_payload, dict) else None
+        if not isinstance(data, dict) or not isinstance(data.get("text"), str):
+            raise AcceptanceFailure("the OCR API returned unexpected result types")
+        recognized_text = data["text"]
+        textarea = ocr.locator("textarea")
+        textarea.wait_for(state="visible", timeout=5_000)
+        _require(
+            textarea.input_value() == recognized_text and recognized_text.strip(),
+            "the OCR result did not display the exact real API response",
+        )
+        ocr.get_by_role("button", name="Copy recognized text", exact=True).click()
+        ocr.get_by_role("button", name="Text copied", exact=True).wait_for(
+            state="visible", timeout=5_000
+        )
+        _require(
+            page.evaluate("navigator.clipboard.readText()") == recognized_text,
+            "copy did not transfer the recognized text to the clipboard",
+        )
+
+    mark_stage("requesting a project source archive")
+    mark_stage("loading project archive controls")
+    archive = page.locator(".source-card .archive-control")
+    archive.wait_for(state="visible", timeout=5_000)
+    mark_stage("checking project archive status")
+    if archive_mode == "failure":
+        retry = archive.get_by_role(
+            "button",
+            name=re.compile(r"^(?:Request a new archive|Archive this source)$"),
+        )
+        mark_stage("waiting for the project archive retry action")
+        retry.wait_for(state="visible", timeout=10_000)
+        with page.expect_response(
+            lambda response: (
+                urlsplit(response.url).path == f"/api/v2/projects/{project_id}/archive"
+                and response.request.method == "POST"
+            )
+        ) as archive_response_info:
+            retry.click()
+        _require(
+            archive_response_info.value.status == 202,
+            "the project archive request was not queued by the Rust API",
+        )
+        archive.get_by_text("The archive could not be completed.", exact=True).wait_for(
+            state="visible", timeout=15_000
+        )
+        _require(
+            archive.get_by_role(
+                "button", name="Request a new archive", exact=True
+            ).is_visible(),
+            "the failed archive did not offer an explicit retry",
+        )
+        _require(
+            page.get_by_role("link", name="Open archived copy", exact=True).count()
+            == 0,
+            "a failed archive was shown as an available copy",
+        )
+    else:
+        ready = archive.get_by_text("An archived copy is ready.", exact=True)
+        try:
+            mark_stage("waiting for the project archive to complete")
+            ready.wait_for(state="visible", timeout=10_000)
+        except PlaywrightTimeoutError:
+            archive_button = archive.get_by_role(
+                "button",
+                name=re.compile(r"^(?:Request a new archive|Archive this source)$"),
+            )
+            mark_stage("waiting for the project archive action")
+            archive_button.wait_for(state="visible", timeout=10_000)
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path
+                    == f"/api/v2/projects/{project_id}/archive"
+                    and response.request.method == "POST"
+                )
+            ) as archive_response_info:
+                archive_button.click()
+            _require(
+                archive_response_info.value.status == 202,
+                "the project archive request was not queued by the Rust API",
+            )
+            mark_stage("waiting for the project archive action to complete")
+            ready.wait_for(state="visible", timeout=20_000)
+        archived_link = page.get_by_role(
+            "link", name=re.compile(r"^Open archived copy")
+        )
+        mark_stage("verifying the refreshed project archive link")
+        try:
+            archived_link.wait_for(state="visible", timeout=5_000)
+        except PlaywrightTimeoutError:
+            details: object = page.evaluate(
+                """async projectId => {
+                  const response = await fetch(`/api/v2/projects/${projectId}`);
+                  const envelope = response.ok ? await response.json() : null;
+                  const text = document.querySelector('.source-card .archive-status')
+                    ?.textContent?.trim() ?? null;
+                  return {
+                    responseStatus: response.status,
+                    detailHasArchive: typeof envelope?.data?.link_archive === 'string',
+                    statusText: text,
+                    linkCount: document.querySelectorAll(
+                      '.source-card a[href*="web.archive.org"]').length
+                  };
+                }""",
+                project_id,
+            )
+            raise AcceptanceFailure(
+                "the project archive completed but its link was not shown "
+                f"(sanitized state: {details})"
+            ) from None
+        _require(
+            "web.archive.org" in (archived_link.get_attribute("href") or ""),
+            "the freshly loaded project detail did not expose its archived link",
+        )
+    if ocr_mode == "success":
+        _require(
+            ocr.locator("textarea").input_value().strip() != "",
+            "project OCR result disappeared after the archive update",
+        )
+    else:
+        _require(
+            ocr.get_by_role("alert").is_visible(),
+            "project OCR error disappeared after the archive update",
+        )
+    _mask_fixture_identity(page)
+    _prepare_screenshot(page)
+    page.screenshot(
+        path=str(diagnostic_dir / "project-media-tools.png"),
+        caret="initial",
+        full_page=True,
+    )
+
+
+def _exercise_yarn_service_tools(
+    page: Page,
+    origin: str,
+    yarn_id: int,
+    enabled: bool,
+    ocr_mode: str,
+    archive_mode: str,
+    mark_stage: Callable[[str], None],
+    screenshots: Path,
+) -> None:
+    _assert_service_capabilities(page, enabled)
+    if not enabled:
+        _require(
+            page.locator(".ocr-control, .archive-control").count() == 0,
+            "disabled service controls were exposed on the yarn detail",
+        )
+        return
+
+    mark_stage("opening OCR controls for a stored yarn photo")
+    ocr = page.locator(".photo-item .ocr-control").first
+    ocr.wait_for(state="visible", timeout=5_000)
+    ocr.locator("summary").click()
+    if ocr_mode == "failure":
+        with page.expect_response(
+            lambda response: (
+                urlsplit(response.url).path == "/api/v2/utils/ocr"
+                and response.request.method == "POST"
+            )
+        ) as ocr_response_info:
+            ocr.get_by_role("button", name="Recognize text", exact=True).click()
+        _require(
+            ocr_response_info.value.status >= 500,
+            "the yarn OCR failure did not reach the real API route",
+        )
+        ocr.get_by_role("alert").wait_for(state="visible")
+    else:
+        with page.expect_response(
+            lambda response: (
+                urlsplit(response.url).path == "/api/v2/utils/ocr"
+                and response.request.method == "POST"
+            )
+        ) as ocr_response_info:
+            ocr.get_by_role("button", name="Recognize text", exact=True).click()
+        response = ocr_response_info.value
+        _require(response.status == 200, "yarn photo OCR did not succeed")
+        try:
+            request_payload = json.loads(response.request.post_data or "")
+            payload = response.json()
+        except (TypeError, ValueError):
+            raise AcceptanceFailure("the yarn OCR response was unreadable") from None
+        data = payload.get("data") if isinstance(payload, dict) else None
+        if (
+            not isinstance(request_payload, dict)
+            or not isinstance(request_payload.get("src"), str)
+            or not request_payload["src"].startswith("/media/yarns/")
+            or not isinstance(data, dict)
+            or not isinstance(data.get("text"), str)
+        ):
+            raise AcceptanceFailure("the yarn OCR response had unexpected types")
+        textarea = ocr.locator("textarea")
+        textarea.wait_for(state="visible", timeout=5_000)
+        _require(
+            textarea.input_value() == data["text"] and data["text"].strip(),
+            "the yarn OCR control did not display the exact API result",
+        )
+
+    mark_stage("requesting a yarn source archive")
+    mark_stage("loading yarn archive controls")
+    archive = page.locator(".spec-panel .archive-control")
+    archive.wait_for(state="visible", timeout=5_000)
+    mark_stage("checking yarn archive status")
+    if archive_mode == "failure":
+        retry = archive.get_by_role(
+            "button",
+            name=re.compile(r"^(?:Request a new archive|Archive this source)$"),
+        )
+        mark_stage("waiting for the yarn archive retry action")
+        retry.wait_for(state="visible", timeout=10_000)
+        with page.expect_response(
+            lambda response: (
+                urlsplit(response.url).path == f"/api/v2/yarns/{yarn_id}/archive"
+                and response.request.method == "POST"
+            )
+        ) as archive_response_info:
+            retry.click()
+        _require(
+            archive_response_info.value.status == 202,
+            "the yarn archive request was not queued by the Rust API",
+        )
+        archive.get_by_text("The archive could not be completed.", exact=True).wait_for(
+            state="visible", timeout=15_000
+        )
+        _require(
+            archive.get_by_role(
+                "button", name="Request a new archive", exact=True
+            ).is_visible(),
+            "the failed yarn archive did not offer an explicit retry",
+        )
+        _require(
+            page.get_by_role("link", name="Archived source", exact=True).count() == 0,
+            "a failed yarn archive was shown as an available copy",
+        )
+    else:
+        ready = archive.get_by_text("An archived copy is ready.", exact=True)
+        try:
+            mark_stage("waiting for the yarn archive to complete")
+            ready.wait_for(state="visible", timeout=10_000)
+        except PlaywrightTimeoutError:
+            archive_button = archive.get_by_role(
+                "button",
+                name=re.compile(r"^(?:Request a new archive|Archive this source)$"),
+            )
+            mark_stage("waiting for the yarn archive action")
+            archive_button.wait_for(state="visible", timeout=10_000)
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == f"/api/v2/yarns/{yarn_id}/archive"
+                    and response.request.method == "POST"
+                )
+            ) as archive_response_info:
+                archive_button.click()
+            _require(
+                archive_response_info.value.status == 202,
+                "the yarn archive request was not queued by the Rust API",
+            )
+            mark_stage("waiting for the yarn archive action to complete")
+            ready.wait_for(state="visible", timeout=20_000)
+        archived_link = page.get_by_role("link", name="Archived source", exact=True)
+        archived_link.wait_for(state="visible", timeout=5_000)
+        _require(
+            "web.archive.org" in (archived_link.get_attribute("href") or ""),
+            "the freshly loaded yarn detail did not expose its archived link",
+        )
+    if ocr_mode == "success":
+        _require(
+            ocr.locator("textarea").input_value().strip() != "",
+            "yarn OCR result disappeared after the archive update",
+        )
+    else:
+        _require(
+            ocr.get_by_role("alert").is_visible(),
+            "yarn OCR error disappeared after the archive update",
+        )
+    _mask_fixture_identity(page)
+    _prepare_screenshot(page)
+    page.screenshot(
+        path=str(screenshots / "yarn-media-tools.png"),
+        caret="initial",
+        full_page=True,
+    )
 
 
 def _exercise_gauge_calculator(
@@ -658,6 +1149,9 @@ def run_live_fixture(
     web_root: Path,
     private_dir: Path,
     chromium_executable: Path | None = None,
+    service_fixture_binary: Path | None = None,
+    ocr_mode: str = "success",
+    archive_mode: str = "success",
 ) -> Path:
     """Start, exercise, and safely stop one disposable server fixture."""
     fixture_file = private_dir / "fixture.json"
@@ -671,20 +1165,26 @@ def run_live_fixture(
             fixture_file=fixture_file,
             state_file=state_file,
             web_root=web_root,
+            server_binary=service_fixture_binary,
+            ocr_mode=ocr_mode,
+            archive_mode=archive_mode,
         )
         started = True
         try:
             seed_rust.seed_fixture(fixture_file, token_file)
         except seed_rust.SeedError as error:
             raise AcceptanceFailure(
-                "synthetic project and photo fixture could not be seeded"
-            ) from error
+                f"synthetic project and photo fixture could not be seeded: {error}"
+            ) from None
         finally:
             token_file.unlink(missing_ok=True)
         return run_acceptance(
             fixture_file,
             private_dir / "screenshots",
             chromium_executable,
+            service_fixture_enabled=service_fixture_binary is not None,
+            ocr_mode=ocr_mode,
+            archive_mode=archive_mode,
         )
     finally:
         if started:
@@ -695,6 +1195,10 @@ def run_acceptance(
     fixture_file: Path,
     screenshot_path: Path | None = None,
     chromium_executable: Path | None = None,
+    *,
+    service_fixture_enabled: bool = False,
+    ocr_mode: str = "success",
+    archive_mode: str = "success",
 ) -> Path:
     fixture = rust_fixture.load_fixture_environment(fixture_file)
     origin = _loopback_origin(fixture["STRICKNANI_RUST_TEST_URL"])
@@ -721,6 +1225,7 @@ def run_acceptance(
     project_list_sizes: list[int | None] = []
     project_list_queries: list[dict[str, list[str]]] = []
     yarn_responses: list[tuple[str, int]] = []
+    service_responses: list[tuple[str, int]] = []
     category_responses: list[tuple[str, int]] = []
     app_asset_statuses: list[int] = []
     catalog_statuses: list[int] = []
@@ -772,6 +1277,8 @@ def run_acceptance(
             project_list_sizes.append(size)
         if path.startswith("/api/v2/yarns/") or path == "/api/v2/yarns":
             yarn_responses.append((path, response.status))
+        if path == "/api/v2/utils/ocr":
+            service_responses.append((path, response.status))
         if path.startswith("/api/v2/categories"):
             category_responses.append((path, response.status))
         if path in {"/api/v2/session", "/api/v2/auth/login"}:
@@ -850,6 +1357,15 @@ def run_acceptance(
             )
         ):
             console_errors.append("expected_project_conflict_409")
+        elif (
+            source_path == "/api/v2/utils/ocr"
+            and ocr_mode == "failure"
+            and any(
+                response_path == source_path and status >= 500
+                for response_path, status in service_responses
+            )
+        ):
+            console_errors.append("expected_ocr_failure_5xx")
         else:
             if source_path.startswith("/api/v2/projects/"):
                 source_class = "project-api"
@@ -1148,7 +1664,7 @@ def run_acceptance(
             )
             mark_stage("filtering project library by category")
             selected_category: list[str] = []
-            category_select = page.get_by_role("combobox")
+            category_select = page.get_by_label("Category", exact=True)
             try:
                 category_select.wait_for(state="visible", timeout=5_000)
             except PlaywrightTimeoutError:
@@ -1168,7 +1684,7 @@ def run_acceptance(
                     "project category control did not become visible "
                     f"(diagnostics={category_debug}; "
                     f"native select count={page.locator('select').count()}; "
-                    f"accessible combobox count={category_select.count()})"
+                    f"exact Category label count={category_select.count()})"
                 ) from None
             _require(category_select.count() == 1, "category filter is ambiguous")
             _require(
@@ -1399,6 +1915,46 @@ def run_acceptance(
                 reader_tags == ["heirloom", "textured", "textured"],
                 "the project reader collapsed or misrendered repeated tag labels",
             )
+            _exercise_project_service_tools(
+                page,
+                origin,
+                project_id,
+                service_fixture_enabled,
+                ocr_mode,
+                archive_mode,
+                mark_stage,
+                screenshots,
+            )
+            project_data = reader_response.json().get("data", {})
+            yarn_ids = project_data.get("yarn_ids", [])
+            if (
+                not isinstance(yarn_ids, list)
+                or not yarn_ids
+                or not isinstance(yarn_ids[0], int)
+            ):
+                raise AcceptanceFailure(
+                    "the project fixture did not return a linked yarn ID"
+                )
+            yarn_id = yarn_ids[0]
+            mark_stage("checking OCR and archive controls on linked yarn photos")
+            page.goto(f"{origin}/app/yarns/{yarn_id}", wait_until="networkidle")
+            page.get_by_role(
+                "heading", name="Riverbend Merino DK", exact=True
+            ).wait_for(state="visible")
+            _exercise_yarn_service_tools(
+                page,
+                origin,
+                yarn_id,
+                service_fixture_enabled,
+                ocr_mode,
+                archive_mode,
+                mark_stage,
+                screenshots,
+            )
+            page.goto(f"{origin}/app/projects/{project_id}", wait_until="networkidle")
+            page.get_by_role(
+                "heading", name="Heirloom Baby Blanket", exact=True
+            ).wait_for(state="visible")
             mark_stage(
                 "checking step progress, hash links, and previous/next navigation"
             )
@@ -2131,6 +2687,7 @@ def run_acceptance(
                     in {
                         "expected_unknown_route_404",
                         "expected_project_conflict_409",
+                        "expected_ocr_failure_5xx",
                     }
                     for error in console_errors
                 ),
@@ -2159,6 +2716,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--web-root", type=Path, required=True)
     parser.add_argument("--private-dir", type=Path)
     parser.add_argument("--chromium-executable", type=Path)
+    parser.add_argument("--service-fixture-binary", type=Path)
+    parser.add_argument("--ocr-mode", choices=("success", "failure"), default="success")
+    parser.add_argument(
+        "--archive-mode", choices=("success", "failure"), default="success"
+    )
     args = parser.parse_args(argv)
     private_dir: Path | None = None
     try:
@@ -2168,6 +2730,9 @@ def main(argv: list[str] | None = None) -> int:
             args.web_root,
             private_dir,
             args.chromium_executable,
+            args.service_fixture_binary,
+            args.ocr_mode,
+            args.archive_mode,
         )
     except rust_fixture.FixtureError as error:
         print(

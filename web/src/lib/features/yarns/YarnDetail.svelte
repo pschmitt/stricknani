@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
+  import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import YarnPhotoManager from "./YarnPhotoManager.svelte";
@@ -33,6 +34,8 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+  const canUseOcr = $derived(session.data?.capabilities.ocr === true);
+  const canArchive = $derived(session.data?.capabilities.archive === true);
   const yarnId = $derived(id);
 
   $effect(() => {
@@ -134,6 +137,13 @@
     );
     linkedProjectsError = linkedProjects.length < loaded.project_ids.length;
     linkedProjectsLoading = false;
+  }
+
+  async function refreshCurrentYarn(_marker: string) {
+    const currentYarn = yarn;
+    const currentOwnerId = userId;
+    if (!currentYarn || currentOwnerId === null) return;
+    await refreshYarn(currentYarn.id, currentOwnerId);
   }
 
   async function toggleFavorite() {
@@ -287,6 +297,8 @@
             yarnId={yarn.id}
             photos={yarn.photos}
             {locale}
+            ownerId={userId}
+            ocrEnabled={canUseOcr}
             onResourceUpdated={refreshYarn}
           />
         </section>
@@ -396,6 +408,18 @@
             target="_blank"
             rel="noopener noreferrer">{t("Archived source", locale)}</a
           >
+        {/if}
+        {#if safeExternalHref(yarn.link) && canArchive}
+          <ArchiveControl
+            entity="yarns"
+            id={yarn.id}
+            sourceLink={yarn.link ?? ""}
+            detailHasArchive={yarn.link_archive !== null}
+            ownerId={userId}
+            {locale}
+            enabled={canArchive}
+            onArchived={refreshCurrentYarn}
+          />
         {/if}
       </aside>
     </div>

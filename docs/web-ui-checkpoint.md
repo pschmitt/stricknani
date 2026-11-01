@@ -84,11 +84,23 @@ Two further frontend checkpoints are pushed, but are not yet deployed:
   frontend checks/build, Python runner checks and four health tests passed.
   The staged runtime catalog and both source catalogs agree on 546 UI keys.
 
-Public offline/update support and enabled-service OCR/archive journeys are
-still in acceptance. Their disposable test companion uses deterministic
-providers with the real application router and archive worker; it must refuse
-database/media paths outside the helper-owned private runtime. These test
-providers do not enable integrations on the preview.
+OCR/archive controls are now reviewed. Real browser journeys passed with
+services disabled, enabled successfully, and returning failures, using frozen
+server/companion/static artifacts. They verify OCR text/error persistence
+through archive completion/failure, source links, retry and exact accessible
+select labels. Frontend checks passed 99 Vitest tests, formatting, type checks,
+the static build and a 580-key EN/DE catalog. A later narrow reader race fix
+passed type checks and four focused deferred-response tests; the browser
+artifact predates that final merge fix. Runner checks and seven tests passed.
+One initial fixture-seeding failure occurred before browser startup; its
+original suppressed cause could not be recovered. Later runs passed, and the
+runner now records the seed helper's safe method/path/status error.
+
+The disposable companion uses deterministic providers with the real router
+and archive worker, refusing database/media paths outside the helper-owned
+private runtime. These test providers do not enable preview integrations.
+This UI checkpoint is not deployed yet. Public offline/update support remains
+in acceptance, including an unresolved old-cache cleanup check after activation.
 The reviewed signup API now uses the signed pre-authentication CSRF bootstrap,
 existing auth limiter and explicit member role. It creates no browser session
 and stays unavailable when signup is disabled. Its six focused API tests, the

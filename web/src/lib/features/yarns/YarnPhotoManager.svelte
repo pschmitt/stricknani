@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ApiError } from "#lib/api.ts";
+  import OcrControl from "#lib/features/media/OcrControl.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { deleteYarnPhoto, uploadYarnPhoto, type YarnPhoto } from "./yarn-api";
@@ -8,6 +9,8 @@
     yarnId,
     photos,
     locale,
+    ownerId = null,
+    ocrEnabled = false,
     canEdit = true,
     onResourceUpdated,
     onMediaBusyChange,
@@ -15,6 +18,8 @@
     yarnId: number;
     photos: YarnPhoto[];
     locale: "en" | "de";
+    ownerId?: number | null;
+    ocrEnabled?: boolean;
     canEdit?: boolean;
     onResourceUpdated: (yarnId: number, ownerId: number) => Promise<void>;
     onMediaBusyChange?: (
@@ -191,6 +196,13 @@
               </button>
             {/if}
           </div>
+          <OcrControl
+            src={photo.url}
+            label={t("Recognized text from yarn photo", locale)}
+            ownerId={ownerId ?? null}
+            {locale}
+            enabled={ocrEnabled}
+          />
         </li>
       {/each}
     </ul>

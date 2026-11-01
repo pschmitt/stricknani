@@ -3,6 +3,8 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
+  import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
+  import OcrControl from "#lib/features/media/OcrControl.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -20,6 +22,10 @@
     stepHash,
     stepIdFromHash,
   } from "./reader-progress";
+  import {
+    mergeArchiveDetailPreservingFavorite,
+    mergeFavoriteMutationIntoCurrent,
+  } from "./reader-state";
 
   interface Props {
     id: number;
@@ -39,9 +45,16 @@
   let selectedImageId = $state<number | null>(null);
   let textSize = $state(1);
   let reload = $state(0);
+  let lastArchiveRefreshMarker: string | null = null;
+  let favoriteGeneration = 0;
+  let resourceGeneration = 0;
+  let archiveRefreshGeneration = 0;
+  let archiveRefreshController: AbortController | null = null;
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+  const canUseOcr = $derived(session.data?.capabilities.ocr === true);
+  const canArchive = $derived(session.data?.capabilities.archive === true);
   const textSizeClass = $derived(
     ["reading-small", "reading-medium", "reading-large"][textSize] ??
       "reading-medium",
@@ -65,8 +78,16 @@
 
   $effect(() => {
     const currentUserId = userId;
+    const generation = ++resourceGeneration;
     reload;
+    archiveRefreshGeneration += 1;
+    archiveRefreshController?.abort();
+    archiveRefreshController = null;
+    lastArchiveRefreshMarker = null;
     const controller = new AbortController();
+    favoriteGeneration += 1;
+    favoriteBusy = false;
+    favoriteError = "";
     project = null;
     currentStepId = null;
     yarns = [];
@@ -76,11 +97,17 @@
     if (currentUserId === null) {
       loadState = "error";
       errorMessage = t("Sign in to open this project.", locale);
-      return () => controller.abort();
+      return () => {
+        controller.abort();
+        if (resourceGeneration === generation) resourceGeneration += 1;
+      };
     }
     if (!Number.isSafeInteger(id) || id <= 0) {
       loadState = "not-found";
-      return () => controller.abort();
+      return () => {
+        controller.abort();
+        if (resourceGeneration === generation) resourceGeneration += 1;
+      };
     }
     void getProject(id, controller.signal)
       .then(async (result) => {
@@ -127,7 +154,13 @@
             : t("This project could not be loaded.", locale);
         loadState = "error";
       });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (resourceGeneration === generation) resourceGeneration += 1;
+      archiveRefreshGeneration += 1;
+      archiveRefreshController?.abort();
+      archiveRefreshController = null;
+    };
   });
 
   $effect(() => {
@@ -149,17 +182,19 @@
     if (!currentProject || !currentSession?.user || favoriteBusy) return;
     const currentUserId = currentSession.user.id;
     const favorite = !currentProject.is_favorite;
+    const generation = ++favoriteGeneration;
     favoriteBusy = true;
     favoriteError = "";
     try {
       await setProjectFavorite(currentProject.id, favorite, currentSession);
-      if (
-        session.data?.user?.id === currentUserId &&
-        project?.id === currentProject.id
-      ) {
-        project = { ...currentProject, is_favorite: favorite };
+      if (isCurrentFavorite(generation, currentProject.id, currentUserId)) {
+        const latestProject = project;
+        if (latestProject)
+          project = mergeFavoriteMutationIntoCurrent(latestProject, favorite);
       }
     } catch (error) {
+      if (!isCurrentFavorite(generation, currentProject.id, currentUserId))
+        return;
       favoriteError =
         error instanceof ApiError && error.status === 404
           ? t("This project is no longer available.", locale)
@@ -167,8 +202,20 @@
             ? error.message
             : t("The favorite could not be updated.", locale);
     } finally {
-      favoriteBusy = false;
+      if (generation === favoriteGeneration) favoriteBusy = false;
     }
+  }
+
+  function isCurrentFavorite(
+    generation: number,
+    projectId: number,
+    currentUserId: number,
+  ): boolean {
+    return (
+      generation === favoriteGeneration &&
+      project?.id === projectId &&
+      session.data?.user?.id === currentUserId
+    );
   }
 
   function safeExternalUrl(value: string | null): string | null {
@@ -204,6 +251,50 @@
 
   function openImage(image: ProjectImage) {
     selectedImageId = image.id;
+  }
+
+  async function refreshAfterArchive(marker: string) {
+    if (marker === lastArchiveRefreshMarker) return;
+    const currentProject = project;
+    const currentUserId = userId;
+    if (!currentProject || currentUserId === null) return;
+    const generation = ++archiveRefreshGeneration;
+    const currentResourceGeneration = resourceGeneration;
+    const favoriteStateAtRequest = {
+      generation: favoriteGeneration,
+      busy: favoriteBusy,
+    };
+    const controller = new AbortController();
+    archiveRefreshController?.abort();
+    archiveRefreshController = controller;
+    const refreshed = await getProject(currentProject.id, controller.signal);
+    if (
+      controller.signal.aborted ||
+      generation !== archiveRefreshGeneration ||
+      currentResourceGeneration !== resourceGeneration ||
+      project?.id !== currentProject.id ||
+      userId !== currentUserId
+    )
+      return;
+    const latestProject = project;
+    if (!latestProject) return;
+    lastArchiveRefreshMarker = marker;
+    project = mergeArchiveDetailPreservingFavorite(
+      refreshed,
+      latestProject,
+      favoriteStateAtRequest,
+      { generation: favoriteGeneration, busy: favoriteBusy },
+    );
+    if (
+      currentStepId !== null &&
+      !refreshed.steps.some((step) => step.id === currentStepId)
+    ) {
+      const firstStep = [...refreshed.steps].sort(
+        (left, right) => left.step_number - right.step_number,
+      )[0];
+      currentStepId = firstStep?.id ?? null;
+    }
+    archiveRefreshController = null;
   }
 </script>
 
@@ -337,43 +428,6 @@
       <p class="inline-error" role="alert">{favoriteError}</p>
     {/if}
 
-    {#if galleryImages.length}
-      <section class="image-gallery" aria-labelledby="gallery-heading">
-        <div class="section-heading-row">
-          <h2 id="gallery-heading">{t("Project photos", locale)}</h2>
-          <span>{galleryImages.length}</span>
-        </div>
-        <div class="gallery-grid">
-          {#each galleryImages as image (image.id)}
-            <button
-              class="gallery-image"
-              type="button"
-              aria-label={t("Open project photo", locale) +
-                `: ${image.alt_text || project.name}`}
-              onclick={() => openImage(image)}
-            >
-              <picture>
-                <source media="print" srcset={image.url} />
-                <img
-                  src={image.thumbnail_url}
-                  alt={image.alt_text || project.name}
-                  loading="lazy"
-                />
-              </picture>
-              {#if image.is_title_image}
-                <span class="title-image-label">{t("Cover photo", locale)}</span
-                >
-              {:else if image.is_stitch_sample}
-                <span class="title-image-label"
-                  >{t("Stitch sample", locale)}</span
-                >
-              {/if}
-            </button>
-          {/each}
-        </div>
-      </section>
-    {/if}
-
     <div class="reader-columns">
       <div class="pattern-column">
         <section class="pattern-section" aria-labelledby="pattern-heading">
@@ -472,22 +526,34 @@
                         aria-label={t("Step photos", locale)}
                       >
                         {#each stepImages(step.id) as image (image.id)}
-                          <button
-                            class="step-image"
-                            type="button"
-                            aria-label={t("Open step photo", locale) +
-                              `: ${image.alt_text || step.title}`}
-                            onclick={() => openImage(image)}
-                          >
-                            <picture>
-                              <source media="print" srcset={image.url} />
-                              <img
-                                src={image.thumbnail_url}
-                                alt={image.alt_text || step.title}
-                                loading="lazy"
-                              />
-                            </picture>
-                          </button>
+                          <div class="step-photo-card">
+                            <button
+                              class="step-image"
+                              type="button"
+                              aria-label={t("Open step photo", locale) +
+                                `: ${image.alt_text || step.title}`}
+                              onclick={() => openImage(image)}
+                            >
+                              <picture>
+                                <source media="print" srcset={image.url} />
+                                <img
+                                  src={image.thumbnail_url}
+                                  alt={image.alt_text || step.title}
+                                  loading="lazy"
+                                />
+                              </picture>
+                            </button>
+                            <OcrControl
+                              src={image.url}
+                              label={t(
+                                "Recognized text from step photo",
+                                locale,
+                              )}
+                              ownerId={userId}
+                              {locale}
+                              enabled={canUseOcr}
+                            />
+                          </div>
                         {/each}
                       </div>
                     {/if}
@@ -604,6 +670,18 @@
               {t("Open archived copy", locale)} ↗
             </a>
           {/if}
+          {#if safeExternalUrl(project.link) && canArchive}
+            <ArchiveControl
+              entity="projects"
+              id={project.id}
+              sourceLink={project.link ?? ""}
+              detailHasArchive={project.link_archive !== null}
+              ownerId={userId}
+              {locale}
+              enabled={canArchive}
+              onArchived={refreshAfterArchive}
+            />
+          {/if}
         </section>
 
         <section class="details-card attachments-card">
@@ -641,6 +719,53 @@
         </section>
       </aside>
     </div>
+
+    {#if galleryImages.length}
+      <section class="image-gallery" aria-labelledby="gallery-heading">
+        <div class="section-heading-row">
+          <h2 id="gallery-heading">{t("Project photos", locale)}</h2>
+          <span>{galleryImages.length}</span>
+        </div>
+        <div class="gallery-grid">
+          {#each galleryImages as image (image.id)}
+            <div class="gallery-photo-card">
+              <button
+                class="gallery-image"
+                type="button"
+                aria-label={t("Open project photo", locale) +
+                  `: ${image.alt_text || project.name}`}
+                onclick={() => openImage(image)}
+              >
+                <picture>
+                  <source media="print" srcset={image.url} />
+                  <img
+                    src={image.thumbnail_url}
+                    alt={image.alt_text || project.name}
+                    loading="lazy"
+                  />
+                </picture>
+                {#if image.is_title_image}
+                  <span class="title-image-label"
+                    >{t("Cover photo", locale)}</span
+                  >
+                {:else if image.is_stitch_sample}
+                  <span class="title-image-label"
+                    >{t("Stitch sample", locale)}</span
+                  >
+                {/if}
+              </button>
+              <OcrControl
+                src={image.url}
+                label={t("Recognized text from project photo", locale)}
+                ownerId={userId}
+                {locale}
+                enabled={canUseOcr}
+              />
+            </div>
+          {/each}
+        </div>
+      </section>
+    {/if}
 
     <footer class="reader-footer">
       <span>{t("Last updated", locale)} {formatDate(project.updated_at)}</span>
@@ -931,6 +1056,12 @@
     gap: 0.65rem;
   }
 
+  .gallery-photo-card {
+    display: grid;
+    min-width: 0;
+    align-content: start;
+  }
+
   .gallery-image,
   .step-image {
     position: relative;
@@ -1097,8 +1228,13 @@
     margin-top: 0.8rem;
   }
 
+  .step-photo-card {
+    width: min(10rem, 40vw);
+    min-width: 0;
+  }
+
   .step-image {
-    width: min(8rem, 30vw);
+    width: 100%;
     aspect-ratio: 1.2;
   }
 

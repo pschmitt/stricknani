@@ -17,6 +17,9 @@
 
   type LoadState = "loading" | "ready" | "error";
 
+  const idPrefix = $props.id();
+  const categorySelectId = `${idPrefix}-category`;
+
   let loadState = $state<LoadState>("loading");
   let items = $state<ProjectSummary[]>([]);
   let categoryNames = $state<string[]>([]);
@@ -172,9 +175,10 @@
         autocomplete="off"
       />
     </label>
-    <label class="category-field">
-      <span>{t("Category", locale)}</span>
+    <div class="category-field">
+      <label for={categorySelectId}>{t("Category", locale)}</label>
       <select
+        id={categorySelectId}
         value={filters.category}
         onchange={(event) =>
           applyFilters({ ...filters, category: event.currentTarget.value })}
@@ -187,7 +191,7 @@
           <option value={category}>{category}</option>
         {/each}
       </select>
-    </label>
+    </div>
     <label class="favorite-filter">
       <input
         type="checkbox"
