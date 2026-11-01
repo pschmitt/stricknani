@@ -22,10 +22,7 @@ import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.SettingsRepository
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
 import java.io.File
 import java.security.MessageDigest
 import java.util.UUID
@@ -66,7 +63,11 @@ class RustBackendReplayIntegrationTest {
         val password = fixture.getString("password")
         require(baseUrl.isNotBlank() && email.isNotBlank() && password.isNotBlank())
 
-        val graph = EntryPointAccessors.fromApplication(context, ReplayTestGraph::class.java)
+        val graph =
+            EntryPointAccessors.fromApplication(
+                context,
+                RustReplayTestEntryPoint::class.java,
+            )
         val settings = graph.settingsRepository()
         val originalCredentials = settings.credentials.value
         val http = OkHttpClient.Builder().followRedirects(false).build()
@@ -482,30 +483,6 @@ class RustBackendReplayIntegrationTest {
         }
 
     private data class BrowserSession(val cookie: String, val token: String, val csrf: String)
-
-    @EntryPoint
-    @InstallIn(SingletonComponent::class)
-    interface ReplayTestGraph {
-        fun appDatabase(): AppDatabase
-
-        fun projectRepository(): ProjectRepository
-
-        fun yarnRepository(): YarnRepository
-
-        fun settingsRepository(): SettingsRepository
-
-        fun pendingMutationDao(): PendingMutationDao
-
-        fun syncStateDao(): SyncStateDao
-
-        fun projectDao(): ProjectDao
-
-        fun yarnDao(): YarnDao
-
-        fun projectsApi(): ProjectsApi
-
-        fun yarnsApi(): YarnsApi
-    }
 
     private companion object {
         const val FIXTURE_FILENAME = "rust-replay-fixture.json"

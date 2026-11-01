@@ -269,6 +269,33 @@ async fn project_image_upload_serving_authorization_and_gc_are_safe() {
     let filename = url.rsplit('/').next().unwrap();
     assert!(!filename.contains("portrait"));
 
+    let second_gallery_upload = harness
+        .app
+        .clone()
+        .oneshot(multipart_request(
+            "POST",
+            &format!("/api/v1/projects/{}/images/title", harness.project_id),
+            OWNER_TOKEN,
+            "second.png",
+            "image/png",
+            &png,
+            Some("Second"),
+        ))
+        .await
+        .expect("router should respond");
+    assert_eq!(second_gallery_upload.status(), StatusCode::CREATED);
+    let second_gallery_upload = json_body(second_gallery_upload).await;
+    assert_eq!(second_gallery_upload["is_title_image"], false);
+    let second_primary: i64 = sqlx::query_scalar(
+        "SELECT is_primary FROM media_files WHERE public_id = ? AND project_id = ?",
+    )
+    .bind(second_gallery_upload["id"].as_i64().unwrap())
+    .bind(harness.project_id)
+    .fetch_one(&harness.pool)
+    .await
+    .expect("second gallery row should be present");
+    assert_eq!(second_primary, 0);
+
     let served = harness
         .app
         .clone()
@@ -378,6 +405,22 @@ async fn project_image_upload_serving_authorization_and_gc_are_safe() {
         .await
         .expect("router should respond");
     assert_eq!(deleted.status(), StatusCode::NO_CONTENT);
+    let media_audit_actions: Vec<String> = sqlx::query_scalar(
+        "SELECT action FROM audit_events WHERE actor_user_id = ? AND entity_type = 'project' \
+         AND entity_id = ? ORDER BY id",
+    )
+    .bind(harness.owner_id)
+    .bind(harness.project_id)
+    .fetch_all(&harness.pool)
+    .await
+    .expect("media audit events should be queryable");
+    assert_eq!(
+        media_audit_actions,
+        vec!["uploaded", "uploaded", "uploaded", "removed"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>()
+    );
     assert!(
         filename_on_disk.exists(),
         "GC must leave an escaping symlink alone"
@@ -473,6 +516,22 @@ async fn attachments_download_safely_and_yarn_photos_promote_primary() {
         .await
         .expect("router should respond");
     assert_eq!(deleted_attachment.status(), StatusCode::NO_CONTENT);
+    let attachment_audit: Vec<String> = sqlx::query_scalar(
+        "SELECT action FROM audit_events WHERE actor_user_id = ? AND entity_type = 'project' \
+         AND entity_id = ? ORDER BY id",
+    )
+    .bind(harness.owner_id)
+    .bind(harness.project_id)
+    .fetch_all(&harness.pool)
+    .await
+    .expect("attachment audit events should be queryable");
+    assert_eq!(
+        attachment_audit,
+        vec!["uploaded", "removed"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>()
+    );
     assert!(
         !root
             .path()
@@ -517,6 +576,16 @@ async fn attachments_download_safely_and_yarn_photos_promote_primary() {
     assert_eq!(second.status(), StatusCode::CREATED);
     let second = json_body(second).await;
     assert_eq!(second["is_primary"], false);
+    let yarn_upload_events: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM audit_events WHERE actor_user_id = ? AND entity_type = 'yarn' \
+         AND entity_id = ? AND action = 'uploaded'",
+    )
+    .bind(harness.owner_id)
+    .bind(harness.yarn_id)
+    .fetch_one(&harness.pool)
+    .await
+    .expect("yarn upload events should be queryable");
+    assert_eq!(yarn_upload_events, 2);
 
     let second_delete = harness
         .app
@@ -528,6 +597,16 @@ async fn attachments_download_safely_and_yarn_photos_promote_primary() {
         .await
         .expect("router should respond");
     assert_eq!(second_delete.status(), StatusCode::NO_CONTENT);
+    let yarn_remove_events: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM audit_events WHERE actor_user_id = ? AND entity_type = 'yarn' \
+         AND entity_id = ? AND action = 'removed'",
+    )
+    .bind(harness.owner_id)
+    .bind(harness.yarn_id)
+    .fetch_one(&harness.pool)
+    .await
+    .expect("yarn remove event should be queryable");
+    assert_eq!(yarn_remove_events, 1);
     let promoted: i64 = sqlx::query_scalar(
         "SELECT is_primary FROM media_files WHERE kind = 'photo' AND public_id = ? AND yarn_id = ?",
     )
@@ -560,4 +639,39 @@ async fn missing_media_storage_returns_service_unavailable() {
         .await
         .expect("router should respond");
     assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+}
+
+#[tokio::test]
+async fn imported_legacy_title_flag_keeps_later_gallery_upload_secondary() {
+    let root = tempfile::tempdir().expect("temporary media root should be created");
+    let harness = harness(&root).await;
+    sqlx::query(
+        "INSERT INTO media_files \
+         (owner_id, project_id, kind, public_id, filename, original_filename, content_type, \
+          size_bytes, is_primary, legacy_is_title_image) \
+         VALUES (?, ?, 'title', 90001, 'legacy-title.jpg', 'legacy-title.jpg', \
+                 'image/jpeg', 20, 0, 1)",
+    )
+    .bind(harness.owner_id)
+    .bind(harness.project_id)
+    .execute(&harness.pool)
+    .await
+    .expect("legacy title media should be seeded");
+
+    let response = harness
+        .app
+        .oneshot(multipart_request(
+            "POST",
+            &format!("/api/v1/projects/{}/images/title", harness.project_id),
+            OWNER_TOKEN,
+            "later.png",
+            "image/png",
+            &png_bytes(),
+            None,
+        ))
+        .await
+        .expect("router should respond");
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let uploaded = json_body(response).await;
+    assert_eq!(uploaded["is_title_image"], false);
 }

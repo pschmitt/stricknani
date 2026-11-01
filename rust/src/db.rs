@@ -1,6 +1,4 @@
 //! Rust-owned SQLite storage. Never open the Python application's live database.
-use argon2::{Argon2, PasswordHasher, password_hash::SaltString};
-use rand::rngs::OsRng;
 use sqlx::{
     SqlitePool,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
@@ -14,6 +12,8 @@ pub struct AppState {
     pub media_root: Option<std::path::PathBuf>,
     pub secure_cookies: bool,
     pub auth_limiter: Arc<crate::auth::RateLimiter>,
+    pub external_imports: bool,
+    pub image_fetcher: Arc<dyn crate::image_import::ImageFetcher>,
 }
 
 impl AppState {
@@ -27,6 +27,21 @@ impl AppState {
         self
     }
 
+    /// Enable server-side URL imports for API project creation.
+    pub fn with_external_imports(mut self, enabled: bool) -> Self {
+        self.external_imports = enabled;
+        self
+    }
+
+    /// Replace the URL fetcher, primarily for deterministic tests.
+    pub fn with_image_fetcher(
+        mut self,
+        fetcher: Arc<dyn crate::image_import::ImageFetcher>,
+    ) -> Self {
+        self.image_fetcher = fetcher;
+        self
+    }
+
     pub fn new(pool: SqlitePool) -> Self {
         Self {
             pool,
@@ -34,6 +49,8 @@ impl AppState {
             secure_cookies: false,
             build_id: format!("{:032x}", rand::random::<u128>()),
             auth_limiter: Arc::new(crate::auth::RateLimiter::default()),
+            external_imports: false,
+            image_fetcher: Arc::new(crate::image_import::HttpImageFetcher),
         }
     }
 }
@@ -54,6 +71,21 @@ pub enum DatabaseError {
     Account(#[source] sqlx::Error),
     #[error("password hashing failed")]
     Password,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Privilege assigned atomically when an account is created.
+pub enum AccountRole {
+    /// An ordinary account with access only to its own resources.
+    Member,
+    /// An administrator allowed to manage accounts and inspect audit events.
+    Admin,
+}
+
+impl AccountRole {
+    const fn is_admin(self) -> bool {
+        matches!(self, Self::Admin)
+    }
 }
 
 pub async fn connect(url: &str) -> Result<SqlitePool, DatabaseError> {
@@ -116,6 +148,16 @@ pub async fn create_user(
     email: &str,
     password: String,
 ) -> Result<i64, DatabaseError> {
+    create_account(pool, email, password, AccountRole::Member).await
+}
+
+/// Create an account with its role written atomically with the account row.
+pub async fn create_account(
+    pool: &SqlitePool,
+    email: &str,
+    password: String,
+    role: AccountRole,
+) -> Result<i64, DatabaseError> {
     let password = zeroize::Zeroizing::new(password);
     let email = email.trim().to_lowercase();
     if email.len() > 320
@@ -126,18 +168,14 @@ pub async fn create_user(
     {
         return Err(DatabaseError::InvalidAccount);
     }
-    let password_hash = tokio::task::spawn_blocking(move || {
-        let salt = SaltString::generate(&mut OsRng);
-        Argon2::default()
-            .hash_password(password.as_bytes(), &salt)
-            .map(|hash| hash.to_string())
-    })
-    .await
-    .map_err(|_| DatabaseError::Password)?
-    .map_err(|_| DatabaseError::Password)?;
-    let result = sqlx::query("INSERT INTO users (email, password_hash) VALUES (?, ?)")
+    crate::auth::validate_new_password(&password).map_err(|_| DatabaseError::InvalidAccount)?;
+    let password_hash = crate::auth::hash_password_for_account(password)
+        .await
+        .map_err(|_| DatabaseError::Password)?;
+    let result = sqlx::query("INSERT INTO users (email, password_hash, is_admin) VALUES (?, ?, ?)")
         .bind(email)
         .bind(password_hash)
+        .bind(role.is_admin())
         .execute(pool)
         .await
         .map_err(DatabaseError::Account)?;

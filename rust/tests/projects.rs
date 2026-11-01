@@ -180,6 +180,16 @@ async fn project_crud_preserves_step_ids_and_rejects_stale_updates() {
     assert!(updated_at > initial_updated_at.as_str());
     assert_eq!(updated_at.matches('.').count(), 1);
     assert_eq!(updated_at.len(), 27);
+    let actions: Vec<String> = sqlx::query_scalar(
+        "SELECT action FROM audit_events WHERE actor_user_id = ? AND entity_type = 'project' \
+         AND entity_id = ? ORDER BY id",
+    )
+    .bind(owner_id)
+    .bind(project_id)
+    .fetch_all(&pool)
+    .await
+    .expect("project audit history should be queryable");
+    assert_eq!(actions, vec!["created".to_owned(), "updated".to_owned()]);
 
     let stale = app
         .clone()
@@ -299,6 +309,16 @@ async fn project_favorites_are_idempotent_filterable_and_delete_keeps_ids_stable
     assert_eq!(event_type, "project");
     assert_eq!(deleted_id, project_id);
     assert!(changed_at.ends_with('Z'));
+    let actions: Vec<String> = sqlx::query_scalar(
+        "SELECT action FROM audit_events WHERE actor_user_id = ? AND entity_type = 'project' \
+         AND entity_id = ? ORDER BY id",
+    )
+    .bind(owner_id)
+    .bind(project_id)
+    .fetch_all(&pool)
+    .await
+    .expect("deleted project audit history should remain queryable");
+    assert_eq!(actions, vec!["created".to_owned(), "deleted".to_owned()]);
     let recreated = app
         .oneshot(request(
             "POST",

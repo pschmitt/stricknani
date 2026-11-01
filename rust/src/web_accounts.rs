@@ -13,10 +13,72 @@ use sqlx::{Row, SqlitePool};
 use zeroize::Zeroizing;
 
 const MAX_PASSWORD_BYTES: usize = 1024;
-const MIN_PASSWORD_BYTES: usize = 12;
 const MAX_TOKEN_NAME_BYTES: usize = 255;
 const MAX_TOKENS_PER_HOUR: i64 = 5;
 const MAX_AVATAR_REQUEST_BYTES: usize = 27 * 1024 * 1024;
+
+#[derive(Clone, Copy)]
+enum AccountMessage {
+    TokenNameTooLong,
+    TooManyTokens,
+    PasswordTooShort,
+    PasswordTooLong,
+    PasswordCommon,
+    CurrentPasswordIncorrect,
+    InvalidEmailOrPassword,
+    EmailAlreadyExists,
+}
+
+impl AccountMessage {
+    fn text(self, headers: &HeaderMap) -> &'static str {
+        let language = crate::language_from_headers(headers);
+        let (en, de) = match self {
+            Self::TokenNameTooLong => (
+                "Token names must be 255 characters or fewer.",
+                "Tokennamen dürfen höchstens 255 Zeichen lang sein.",
+            ),
+            Self::TooManyTokens => (
+                "Too many API tokens were created recently. Try again later.",
+                "Kürzlich wurden zu viele API-Tokens erstellt. Versuche es später erneut.",
+            ),
+            Self::PasswordTooShort => (
+                "The new password must contain at least 12 characters.",
+                "Das neue Passwort muss mindestens 12 Zeichen enthalten.",
+            ),
+            Self::PasswordTooLong => (
+                "Passwords must be 1024 characters or fewer.",
+                "Passwörter dürfen höchstens 1024 Zeichen lang sein.",
+            ),
+            Self::PasswordCommon => (
+                "Choose a less common password.",
+                "Wähle ein weniger häufig verwendetes Passwort.",
+            ),
+            Self::CurrentPasswordIncorrect => (
+                "Current password is incorrect.",
+                "Das aktuelle Passwort ist falsch.",
+            ),
+            Self::InvalidEmailOrPassword => (
+                "Enter a valid email and a password of at least 12 characters.",
+                "Gib eine gültige E-Mail-Adresse und ein Passwort mit mindestens 12 Zeichen ein.",
+            ),
+            Self::EmailAlreadyExists => (
+                "An account with that email already exists.",
+                "Für diese E-Mail-Adresse gibt es bereits ein Konto.",
+            ),
+        };
+        crate::i18n::text(language, en, de)
+    }
+}
+
+fn password_policy_message(password: &str, headers: &HeaderMap) -> Option<&'static str> {
+    match auth::validate_new_password(password) {
+        Ok(()) => None,
+        Err(auth::NewPasswordError::TooShort) => {
+            Some(AccountMessage::PasswordTooShort.text(headers))
+        }
+        Err(auth::NewPasswordError::Common) => Some(AccountMessage::PasswordCommon.text(headers)),
+    }
+}
 
 pub(crate) fn router(api: Router, app: AppState) -> Router {
     let state = web::WebState { api, app };
@@ -94,7 +156,7 @@ async fn create_token(
             &state,
             &headers,
             &session,
-            Some("Token names must be 255 characters or fewer."),
+            Some(AccountMessage::TokenNameTooLong.text(&headers)),
             None,
             StatusCode::UNPROCESSABLE_ENTITY,
         )
@@ -116,7 +178,7 @@ async fn create_token(
             &state,
             &headers,
             &session,
-            Some("Too many API tokens were created recently. Try again later."),
+            Some(AccountMessage::TooManyTokens.text(&headers)),
             None,
             StatusCode::TOO_MANY_REQUESTS,
         )
@@ -205,14 +267,34 @@ async fn change_password(
     if !web::valid_csrf(&session.token, &form.csrf) {
         return StatusCode::FORBIDDEN.into_response();
     }
-    if !password_length_valid(&current_password, 1)
-        || !password_length_valid(&new_password, MIN_PASSWORD_BYTES)
-    {
+    if !password_length_valid(&current_password, 1) {
         return render_account(
             &state,
             &headers,
             &session,
-            Some("The new password must contain at least 12 characters."),
+            Some(AccountMessage::PasswordTooShort.text(&headers)),
+            None,
+            StatusCode::UNPROCESSABLE_ENTITY,
+        )
+        .await;
+    }
+    if !password_max_valid(&new_password) {
+        return render_account(
+            &state,
+            &headers,
+            &session,
+            Some(AccountMessage::PasswordTooLong.text(&headers)),
+            None,
+            StatusCode::UNPROCESSABLE_ENTITY,
+        )
+        .await;
+    }
+    if let Some(message) = password_policy_message(&new_password, &headers) {
+        return render_account(
+            &state,
+            &headers,
+            &session,
+            Some(message),
             None,
             StatusCode::UNPROCESSABLE_ENTITY,
         )
@@ -236,7 +318,7 @@ async fn change_password(
                 &state,
                 &headers,
                 &session,
-                Some("Current password is incorrect."),
+                Some(AccountMessage::CurrentPasswordIncorrect.text(&headers)),
                 None,
                 StatusCode::UNPROCESSABLE_ENTITY,
             )
@@ -450,42 +532,62 @@ async fn create_user(
         return StatusCode::FORBIDDEN.into_response();
     }
     let email = form.email.trim().to_lowercase();
-    if !valid_email(&email) || !password_length_valid(&password, MIN_PASSWORD_BYTES) {
+    if !valid_email(&email) {
         return render_admin(
             &state,
             &headers,
             &session,
-            Some("Enter a valid email and a password of at least 12 characters."),
+            Some(AccountMessage::InvalidEmailOrPassword.text(&headers)),
             StatusCode::UNPROCESSABLE_ENTITY,
         )
         .await;
     }
-    let is_admin = form.is_admin.as_deref() == Some("1");
-    let user_id =
-        match crate::db::create_user(&state.app.pool, &email, std::mem::take(&mut *password)).await
-        {
-            Ok(id) => id,
-            Err(crate::db::DatabaseError::Account(_)) => {
-                return render_admin(
-                    &state,
-                    &headers,
-                    &session,
-                    Some("An account with that email already exists."),
-                    StatusCode::CONFLICT,
-                )
-                .await;
-            }
-            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        };
-    if is_admin
-        && sqlx::query("UPDATE users SET is_admin = 1 WHERE id = ?")
-            .bind(user_id)
-            .execute(&state.app.pool)
-            .await
-            .is_err()
-    {
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    if !password_max_valid(&password) {
+        return render_admin(
+            &state,
+            &headers,
+            &session,
+            Some(AccountMessage::PasswordTooLong.text(&headers)),
+            StatusCode::UNPROCESSABLE_ENTITY,
+        )
+        .await;
     }
+    if let Some(message) = password_policy_message(&password, &headers) {
+        return render_admin(
+            &state,
+            &headers,
+            &session,
+            Some(message),
+            StatusCode::UNPROCESSABLE_ENTITY,
+        )
+        .await;
+    }
+    let role = if form.is_admin.as_deref() == Some("1") {
+        crate::db::AccountRole::Admin
+    } else {
+        crate::db::AccountRole::Member
+    };
+    match crate::db::create_account(
+        &state.app.pool,
+        &email,
+        std::mem::take(&mut *password),
+        role,
+    )
+    .await
+    {
+        Ok(_) => {}
+        Err(crate::db::DatabaseError::Account(_)) => {
+            return render_admin(
+                &state,
+                &headers,
+                &session,
+                Some(AccountMessage::EmailAlreadyExists.text(&headers)),
+                StatusCode::CONFLICT,
+            )
+            .await;
+        }
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
     Redirect::to("/admin/users").into_response()
 }
 
@@ -609,12 +711,22 @@ async fn reset_password(
     if !web::valid_csrf(&session.token, &form.csrf) {
         return StatusCode::FORBIDDEN.into_response();
     }
-    if !password_length_valid(&password, MIN_PASSWORD_BYTES) {
+    if !password_max_valid(&password) {
         return render_admin(
             &state,
             &headers,
             &session,
-            Some("The new password must contain at least 12 characters."),
+            Some(AccountMessage::PasswordTooLong.text(&headers)),
+            StatusCode::UNPROCESSABLE_ENTITY,
+        )
+        .await;
+    }
+    if let Some(message) = password_policy_message(&password, &headers) {
+        return render_admin(
+            &state,
+            &headers,
+            &session,
+            Some(message),
             StatusCode::UNPROCESSABLE_ENTITY,
         )
         .await;
@@ -733,6 +845,10 @@ async fn is_admin(pool: &SqlitePool, user_id: i64) -> Result<bool, sqlx::Error> 
 
 fn password_length_valid(password: &str, minimum: usize) -> bool {
     (minimum..=MAX_PASSWORD_BYTES).contains(&password.len())
+}
+
+fn password_max_valid(password: &str) -> bool {
+    password.len() <= MAX_PASSWORD_BYTES
 }
 
 fn valid_email(email: &str) -> bool {
@@ -868,6 +984,7 @@ struct AccountPage {
     yarns: &'static str,
     account: &'static str,
     admin_users: &'static str,
+    audit_events: &'static str,
     sign_out: &'static str,
     signed_in_as: &'static str,
     users_heading: &'static str,
@@ -939,6 +1056,7 @@ impl AccountPage {
             yarns: tr("Yarns", "Garne"),
             account: tr("Account", "Konto"),
             admin_users: tr("Users", "Benutzerkonten"),
+            audit_events: tr("Audit events", "Audit-Protokoll"),
             sign_out: tr("Sign out", "Abmelden"),
             signed_in_as: tr("Signed in as", "Angemeldet als"),
             users_heading: tr("User accounts", "Benutzerkonten"),

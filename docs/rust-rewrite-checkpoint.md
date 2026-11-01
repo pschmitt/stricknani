@@ -54,3 +54,19 @@ The Kotlin JVM suite was explicitly rerun against the updated disposable Rust se
 and passed. Debug and instrumentation APKs build. Emulator replay is still pending.
 The earlier Nix CI failure identified formatting that is corrected in this checkpoint;
 the fresh Nix/container checks and dependency audit remain separate work.
+
+## Account, audit, and external-integration checkpoint
+
+Added public signup, shared new-password policy, atomic account roles, native audit
+recording/admin browsing, and bounded create-time URL image imports. Optional AI
+provider configuration and opt-in import enhancement are wired; native OCR core is
+present, with its route integration still in progress. External providers are off
+by default and tests use injected transports.
+
+Remote formatting and strict Clippy pass. The expanded Rust suite currently stops
+on three audit-view assertions requiring review; subsequent suites are pending.
+The Python replay-runner and health checks pass (17 tests). Real emulator replay
+now reaches instrumentation, but the app process crashes; this is not acceptance
+evidence. The previous pushed checkpoint e6fd81b passed CI. This is a work-in-progress
+checkpoint, with full Python checks, updated translations, Android crash diagnosis,
+and fresh package/image validation still pending. Production remains untouched.

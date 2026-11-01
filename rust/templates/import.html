@@ -35,6 +35,10 @@
             <span class="label-text">{{ labels.source_url }}</span>
             <input class="input input-bordered w-full" type="url" name="url" required>
           </label>
+          <label class="label cursor-pointer justify-start gap-2">
+            <input class="checkbox" type="checkbox" name="use_ai" value="true">
+            <span class="label-text">{{ labels.ai_enhance }}</span>
+          </label>
           <button class="btn btn-primary" type="submit">{{ labels.preview }}</button>
         </form>
         <form method="post" action="/imports/preview" class="space-y-3">
@@ -44,6 +48,10 @@
             <span class="label-text">{{ labels.text }}</span>
             <textarea class="textarea textarea-bordered w-full" name="text" rows="8" required></textarea>
           </label>
+          <label class="label cursor-pointer justify-start gap-2">
+            <input class="checkbox" type="checkbox" name="use_ai" value="true">
+            <span class="label-text">{{ labels.ai_enhance }}</span>
+          </label>
           <button class="btn btn-primary" type="submit">{{ labels.preview }}</button>
         </form>
         <form method="post" action="/imports/preview-file" enctype="multipart/form-data" class="space-y-3">
@@ -51,6 +59,10 @@
           <label class="form-control">
             <span class="label-text">{{ labels.file }}</span>
             <input class="file-input file-input-bordered w-full" type="file" name="file" accept=".html,.htm,.txt,.md,.markdown,.pdf,image/*" required>
+          </label>
+          <label class="label cursor-pointer justify-start gap-2">
+            <input class="checkbox" type="checkbox" name="use_ai" value="true">
+            <span class="label-text">{{ labels.ai_enhance }}</span>
           </label>
           <button class="btn btn-primary" type="submit">{{ labels.preview }}</button>
         </form>

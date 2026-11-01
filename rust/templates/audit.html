@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} · Stricknani</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <script src="/register-pwa.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a href="/projects" class="brand">Stricknani</a>
+    <nav aria-label="{{ audit }}">
+      <a href="/projects">{{ projects }}</a>
+      <a href="/yarns">{{ yarns }}</a>
+      <a href="/account">{{ account }}</a>
+      <a href="/admin/users">{{ users }}</a>
+      <a href="/admin/audit" aria-current="page">{{ audit }}</a>
+    </nav>
+  </header>
+  <main class="page-content">
+    <h1>{{ title }}</h1>
+    <p>{{ signed_in_as }} <strong>{{ current_email }}</strong></p>
+    <form method="get" action="/admin/audit" class="filter-form">
+      <label>{{ entity_label }}
+        <select name="entity">
+          <option value="all" {% if entity_filter == "all" %}selected{% endif %}>{{ all_entities }}</option>
+          <option value="project" {% if entity_filter == "project" %}selected{% endif %}>{{ project }}</option>
+          <option value="yarn" {% if entity_filter == "yarn" %}selected{% endif %}>{{ yarn }}</option>
+          <option value="category" {% if entity_filter == "category" %}selected{% endif %}>{{ category }}</option>
+        </select>
+      </label>
+      <label>{{ action_label }}
+        <input type="text" name="action" value="{{ action_filter }}" maxlength="64">
+      </label>
+      <button type="submit">{{ apply }}</button>
+    </form>
+    {% if rows.is_empty() %}
+      <p>{{ empty }}</p>
+    {% else %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>{{ created }}</th><th>{{ actor }}</th><th>{{ target }}</th><th>{{ action_label }}</th></tr>
+          </thead>
+          <tbody>
+          {% for row in rows %}
+            <tr data-event-id="{{ row.id }}">
+              <td><time datetime="{{ row.created_at }}">{{ row.created_at }}</time></td>
+              <td>{{ row.actor }}</td>
+              <td>{{ row.entity }} #{{ row.target_id }}</td>
+              <td>{{ row.action }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    <nav aria-label="{{ title }}" class="pagination">
+      {% match previous_url %}{% when Some with (url) %}<a href="{{ url }}">{{ previous }}</a>{% when None %}{% endmatch %}
+      <span>{{ page_label }}</span>
+      {% match next_url %}{% when Some with (url) %}<a href="{{ url }}">{{ next }}</a>{% when None %}{% endmatch %}
+    </nav>
+  </main>
+</body>
+</html>

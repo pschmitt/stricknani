@@ -49,6 +49,12 @@ async fn account_cli_creates_disables_and_revokes_without_exposing_passwords() {
         .fetch_one(&pool)
         .await
         .unwrap();
+    let is_admin: i64 = sqlx::query_scalar("SELECT is_admin FROM users WHERE id = ?")
+        .bind(user_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(is_admin, 0);
     sqlx::query("INSERT INTO api_tokens (user_id,name,token_hash,created_at) VALUES (?,'test','test-hash',unixepoch())")
         .bind(user_id).execute(&pool).await.unwrap();
     let token_id: i64 = sqlx::query_scalar("SELECT id FROM api_tokens")
@@ -80,6 +86,62 @@ async fn account_cli_creates_disables_and_revokes_without_exposing_passwords() {
     std::fs::remove_file(path).unwrap();
 }
 
+#[tokio::test]
+async fn create_admin_reads_password_from_stdin_and_stores_admin_role_atomically() {
+    let path =
+        std::env::temp_dir().join(format!("stricknani-admin-cli-{}.db", rand::random::<u64>()));
+    let url = format!("sqlite:{}", path.display());
+    let password = b"disposable-admin-password-for-test\n";
+    let created = cli(
+        &url,
+        &["create-admin", "bootstrap@example.invalid"],
+        Some(password),
+    );
+    assert!(created.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&created.stdout).trim(),
+        "admin created"
+    );
+    assert!(
+        !String::from_utf8_lossy(&created.stdout)
+            .contains(std::str::from_utf8(password).unwrap().trim())
+    );
+    assert!(
+        !String::from_utf8_lossy(&created.stderr)
+            .contains(std::str::from_utf8(password).unwrap().trim())
+    );
+
+    let pool = db::connect(&url).await.unwrap();
+    let account = sqlx::query_as::<_, (String, i64)>("SELECT email, is_admin FROM users")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(account, ("bootstrap@example.invalid".to_owned(), 1));
+
+    let invalid_password = b"short\n";
+    let rejected = cli(
+        &url,
+        &["create-admin", "rejected@example.invalid"],
+        Some(invalid_password),
+    );
+    assert!(!rejected.status.success());
+    assert!(
+        !String::from_utf8_lossy(&rejected.stdout)
+            .contains(std::str::from_utf8(invalid_password).unwrap().trim())
+    );
+    assert!(
+        !String::from_utf8_lossy(&rejected.stderr)
+            .contains(std::str::from_utf8(invalid_password).unwrap().trim())
+    );
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM users")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(count, 1);
+    pool.close().await;
+    std::fs::remove_file(path).unwrap();
+}
+
 #[test]
 fn help_needs_no_database_and_invalid_config_is_redacted() {
     let help = Command::new(env!("CARGO_BIN_EXE_stricknani-server"))
@@ -89,6 +151,7 @@ fn help_needs_no_database_and_invalid_config_is_redacted() {
         .output()
         .unwrap();
     assert!(help.status.success());
+    assert!(String::from_utf8_lossy(&help.stdout).contains("create-admin EMAIL"));
     let failed = cli("invalid-sensitive-test-value", &["serve"], None);
     assert!(!failed.status.success());
     assert!(!String::from_utf8_lossy(&failed.stderr).contains("invalid-sensitive-test-value"));

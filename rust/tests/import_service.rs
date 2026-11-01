@@ -1,4 +1,9 @@
-use std::path::PathBuf;
+use std::{
+    future::Future,
+    path::PathBuf,
+    pin::Pin,
+    sync::{Arc, Mutex},
+};
 
 use axum::{
     Router,
@@ -10,12 +15,51 @@ use scraper::{Html, Selector};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
-use stricknani_server::{auth, categories, db, import_service, projects, yarns};
+use stricknani_server::{
+    ai::{AiClient, AiConfig, AiError, AiTransport, ApiKey},
+    auth, categories, db, import_service, projects, yarns,
+};
 use tower::ServiceExt;
 
 const BROWSER_TOKEN: &str = "import-browser-fixture-token";
 
+type PostFuture<'a> = Pin<Box<dyn Future<Output = Result<Value, AiError>> + Send + 'a>>;
+
+struct FixtureAiTransport {
+    calls: Arc<Mutex<usize>>,
+}
+
+impl AiTransport for FixtureAiTransport {
+    fn post<'a>(
+        &'a self,
+        _endpoint: &'a url::Url,
+        _api_key: &'a ApiKey,
+        _body: &'a Value,
+    ) -> PostFuture<'a> {
+        Box::pin(async move {
+            *self.calls.lock().expect("fixture counter lock") += 1;
+            Ok(serde_json::json!({
+                "choices": [{"message": {"content": "{\"name\":\"AI improved title\",\"link\":\"https://untrusted.example/\"}"}}]
+            }))
+        })
+    }
+}
+
+fn fixture_ai(calls: Arc<Mutex<usize>>) -> AiClient {
+    let config = AiConfig::from_lookup(true, |key| match key {
+        "AI_API_KEY" => Some("fixture-key".to_owned()),
+        _ => None,
+    })
+    .expect("fixture AI config is valid")
+    .expect("AI config is enabled");
+    AiClient::with_transport(config, Arc::new(FixtureAiTransport { calls }))
+}
+
 async fn setup() -> (axum::Router, SqlitePool) {
+    setup_with_ai(None).await
+}
+
+async fn setup_with_ai(ai: Option<AiClient>) -> (axum::Router, SqlitePool) {
     let pool = db::connect("sqlite::memory:")
         .await
         .expect("test database migrates");
@@ -46,11 +90,12 @@ async fn setup() -> (axum::Router, SqlitePool) {
             .merge(projects::router())
             .with_state(state.clone()),
     );
-    let app = import_service::router(
+    let app = import_service::router_with_ai(
         api,
         state,
         PathBuf::from(env!("CARGO_BIN_EXE_stricknani-server")),
         false,
+        ai,
     );
     (app, pool)
 }
@@ -228,4 +273,56 @@ async fn browser_text_import_checks_csrf_then_previews_and_creates_through_api()
     assert_eq!(count, 1);
     let payload: Value = serde_json::from_str(&draft_json).expect("preview draft is JSON");
     assert_eq!(payload["project"]["description"], "A warm striped scarf.");
+}
+
+#[tokio::test]
+async fn browser_ai_preview_calls_provider_only_after_explicit_opt_in() {
+    let calls = Arc::new(Mutex::new(0));
+    let (app, _) = setup_with_ai(Some(fixture_ai(calls.clone()))).await;
+    let csrf = valid_csrf();
+    let cookie = format!("stricknani_session={BROWSER_TOKEN}; language=en");
+
+    let unchecked = app
+        .clone()
+        .oneshot(
+            Request::post("/imports/preview")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .header("cookie", cookie.clone())
+                .body(Body::from(form_body(&[
+                    ("csrf", &csrf),
+                    ("type", "text"),
+                    ("text", "A warm striped scarf."),
+                ])))
+                .expect("request builds"),
+        )
+        .await
+        .expect("router responds");
+    assert_eq!(unchecked.status(), StatusCode::OK);
+    assert_eq!(*calls.lock().expect("fixture counter lock"), 0);
+
+    let opted_in = app
+        .oneshot(
+            Request::post("/imports/preview")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .header("cookie", cookie)
+                .body(Body::from(form_body(&[
+                    ("csrf", &csrf),
+                    ("type", "text"),
+                    ("text", "A warm striped scarf."),
+                    ("use_ai", "true"),
+                ])))
+                .expect("request builds"),
+        )
+        .await
+        .expect("router responds");
+    assert_eq!(opted_in.status(), StatusCode::OK);
+    assert_eq!(*calls.lock().expect("fixture counter lock"), 1);
+    let html = html_body(opted_in).await;
+    let draft: Value = serde_json::from_str(&hidden_value(
+        &html,
+        "form[action='/imports/create-project'] input[name='draft_json']",
+    ))
+    .expect("preview draft is JSON");
+    assert_eq!(draft["project"]["name"], "AI improved title");
+    assert_ne!(draft["project"]["link"], "https://untrusted.example/");
 }

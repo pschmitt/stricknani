@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sqlx::{FromRow, Sqlite, Transaction};
 
+use crate::audit::{Action as AuditAction, Entity as AuditEntity};
 use crate::auth::bearer_user;
 use crate::db::AppState;
 
@@ -313,8 +314,29 @@ async fn create_project(
         Err(error) => return error.into_response(),
     };
     if payload_has_image_urls(&payload) {
-        return image_import_not_implemented();
+        if !state.external_imports {
+            return image_import_not_implemented();
+        }
+        if state.media_root.is_none() {
+            return database_error();
+        }
     }
+    let step_image_urls = payload
+        .steps
+        .iter()
+        .map(|step| step.image_urls.clone())
+        .collect::<Vec<_>>();
+    let prepared_images = if state.external_imports && state.media_root.is_some() {
+        crate::image_import::prepare_project_images(
+            &state,
+            payload.name.trim(),
+            &payload.image_urls,
+            &step_image_urls,
+        )
+        .await
+    } else {
+        Vec::new()
+    };
     let name = payload.name.trim().to_owned();
     let mut transaction = match state.pool.begin().await {
         Ok(transaction) => transaction,
@@ -361,14 +383,37 @@ async fn create_project(
         || bump_yarn_timestamps(&mut transaction, user_id, &yarn_ids)
             .await
             .is_err()
-        || insert_steps(&mut transaction, project_id, &payload.steps)
-            .await
-            .is_err()
+    {
+        return database_error();
+    }
+    let step_ids = match insert_steps(&mut transaction, project_id, &payload.steps).await {
+        Ok(step_ids) => step_ids,
+        Err(_) => return database_error(),
+    };
+    if crate::audit::record(
+        &mut transaction,
+        user_id,
+        AuditEntity::Project,
+        project_id,
+        AuditAction::Created,
+    )
+    .await
+    .is_err()
     {
         return database_error();
     }
     if transaction.commit().await.is_err() {
         return database_error();
+    }
+    if !prepared_images.is_empty() {
+        crate::image_import::persist_project_images(
+            &state,
+            user_id,
+            project_id,
+            &step_ids,
+            prepared_images,
+        )
+        .await;
     }
 
     match load_project(&state, user_id, project_id).await {
@@ -388,9 +433,6 @@ async fn update_project(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
-    if payload_has_image_urls(&payload) {
-        return image_import_not_implemented();
-    }
     let name = payload.name.trim().to_owned();
     let expected_updated_at = match payload.expected_updated_at.as_deref() {
         Some(value) => match parse_timestamp(value) {
@@ -488,6 +530,18 @@ async fn update_project(
     {
         return database_error();
     }
+    if crate::audit::record(
+        &mut transaction,
+        user_id,
+        AuditEntity::Project,
+        project_id,
+        AuditAction::Updated,
+    )
+    .await
+    .is_err()
+    {
+        return database_error();
+    }
     if transaction.commit().await.is_err() {
         return database_error();
     }
@@ -555,6 +609,18 @@ async fn delete_project(
         Ok(result) if result.rows_affected() == 1 => {}
         Ok(_) => return not_found(),
         Err(_) => return database_error(),
+    }
+    if crate::audit::record(
+        &mut transaction,
+        user_id,
+        AuditEntity::Project,
+        project_id,
+        AuditAction::Deleted,
+    )
+    .await
+    .is_err()
+    {
+        return database_error();
     }
     match transaction.commit().await {
         Ok(()) => StatusCode::NO_CONTENT.into_response(),
@@ -865,9 +931,10 @@ async fn insert_steps(
     transaction: &mut Transaction<'_, Sqlite>,
     project_id: i64,
     steps: &[StepWriteRequest],
-) -> Result<(), sqlx::Error> {
+) -> Result<Vec<i64>, sqlx::Error> {
+    let mut step_ids = Vec::with_capacity(steps.len());
     for step in steps {
-        sqlx::query(
+        let inserted = sqlx::query(
             "INSERT INTO project_steps (project_id, title, description, step_number) \
              VALUES (?, ?, ?, ?)",
         )
@@ -877,8 +944,9 @@ async fn insert_steps(
         .bind(step.step_number)
         .execute(&mut **transaction)
         .await?;
+        step_ids.push(inserted.last_insert_rowid());
     }
-    Ok(())
+    Ok(step_ids)
 }
 
 async fn replace_steps(

@@ -116,6 +116,19 @@ fn request(path: &str, token: &str, fields: &[(&str, &str)]) -> Request<Body> {
         .expect("request should build")
 }
 
+fn request_with_language(
+    path: &str,
+    token: &str,
+    fields: &[(&str, &str)],
+    language: &str,
+) -> Request<Body> {
+    let mut request = request(path, token, fields);
+    request
+        .headers_mut()
+        .insert("accept-language", language.parse().unwrap());
+    request
+}
+
 fn avatar_request(token: &str, csrf: &str, image: &[u8]) -> Request<Body> {
     let boundary = "account-avatar-boundary";
     let mut body = Vec::new();
@@ -575,6 +588,67 @@ async fn admin_can_create_disable_and_reset_accounts() {
             .await
             .unwrap();
     assert_eq!(pat_revoked, None);
+}
+
+#[tokio::test]
+async fn common_admin_password_is_rejected_without_creating_an_account() {
+    let app = test_app().await;
+    let before_password_hash: String =
+        sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ?")
+            .bind(app.admin_id)
+            .fetch_one(&app.pool)
+            .await
+            .unwrap();
+    let before_sessions: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM api_tokens WHERE user_id = ? AND purpose = 'browser' AND revoked_at IS NULL",
+    )
+    .bind(app.admin_id)
+    .fetch_one(&app.pool)
+    .await
+    .unwrap();
+
+    let response = app
+        .router
+        .oneshot(request_with_language(
+            "/admin/users",
+            ADMIN_TOKEN,
+            &[
+                ("csrf", &csrf(ADMIN_TOKEN)),
+                ("email", "common@example.test"),
+                ("password", "password123"),
+                ("is_admin", "1"),
+            ],
+            "de",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::UNPROCESSABLE_ENTITY
+    );
+    let page = html(response).await;
+    assert!(page.contains("Wähle ein weniger häufig verwendetes Passwort."));
+    let created: i64 = sqlx::query_scalar("SELECT count(*) FROM users WHERE email = ?")
+        .bind("common@example.test")
+        .fetch_one(&app.pool)
+        .await
+        .unwrap();
+    assert_eq!(created, 0);
+    let after_password_hash: String =
+        sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ?")
+            .bind(app.admin_id)
+            .fetch_one(&app.pool)
+            .await
+            .unwrap();
+    assert_eq!(after_password_hash, before_password_hash);
+    let after_sessions: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM api_tokens WHERE user_id = ? AND purpose = 'browser' AND revoked_at IS NULL",
+    )
+    .bind(app.admin_id)
+    .fetch_one(&app.pool)
+    .await
+    .unwrap();
+    assert_eq!(after_sessions, before_sessions);
 }
 
 #[tokio::test]

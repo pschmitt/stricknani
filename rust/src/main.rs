@@ -8,7 +8,7 @@ use stricknani_server::db;
 use stricknani_server::importer::{ImportOptions, import_snapshot};
 use stricknani_server::security;
 
-const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server create-user EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\ncreate-user reads the password from standard input. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    RUST_DATABASE_URL  SQLite database URL\n    RUST_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    STATIC_ROOT        Static asset directory\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n";
+const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\ncreate-user and create-admin read the password from standard input. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    RUST_DATABASE_URL  SQLite database URL\n    RUST_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    STATIC_ROOT        Static asset directory\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n";
 
 fn main() -> ExitCode {
     if std::env::args_os()
@@ -65,6 +65,15 @@ async fn run() -> Result<(), &'static str> {
                 return Err("usage: stricknani-server create-user EMAIL");
             }
             create_user(&email).await
+        }
+        "create-admin" => {
+            let Some(email) = arguments.next() else {
+                return Err("usage: stricknani-server create-admin EMAIL");
+            };
+            if arguments.next().is_some() {
+                return Err("usage: stricknani-server create-admin EMAIL");
+            }
+            create_admin(&email).await
         }
         "disable-user" => {
             let Some(email) = arguments.next() else {
@@ -168,11 +177,17 @@ async fn serve() -> Result<(), &'static str> {
         }
     });
     let worker_path = std::env::current_exe().map_err(|_| "cannot locate document worker")?;
-    let app = stricknani_server::app_with_imports(
+    let ai = config
+        .ai
+        .map(stricknani_server::ai::AiClient::new)
+        .transpose()
+        .map_err(|_| "cannot initialize AI provider")?;
+    let app = stricknani_server::app_with_imports_and_ai(
         config.static_root,
         state,
         worker_path,
         config.external_imports,
+        ai,
     );
     let app = security::with_host_validation(app, config.trusted_hosts.clone());
     let result = axum::serve(
@@ -200,11 +215,44 @@ async fn shutdown_signal() {
 }
 
 async fn create_user(email: &str) -> Result<(), &'static str> {
+    create_account_command(
+        email,
+        db::AccountRole::Member,
+        "user created",
+        "cannot create user",
+    )
+    .await
+}
+
+async fn create_admin(email: &str) -> Result<(), &'static str> {
+    create_account_command(
+        email,
+        db::AccountRole::Admin,
+        "admin created",
+        "cannot create admin",
+    )
+    .await
+}
+
+async fn create_account_command(
+    email: &str,
+    role: db::AccountRole,
+    success_message: &'static str,
+    failure_message: &'static str,
+) -> Result<(), &'static str> {
     let config = Config::from_env().map_err(|_| "invalid server configuration")?;
     let pool = db::connect(&config.database_url)
         .await
         .map_err(|_| "cannot initialize Rust database")?;
+    let mut password = read_account_password()?;
+    db::create_account(&pool, email, std::mem::take(&mut *password), role)
+        .await
+        .map_err(|_| failure_message)?;
+    println!("{success_message}");
+    Ok(())
+}
 
+fn read_account_password() -> Result<zeroize::Zeroizing<String>, &'static str> {
     let mut password = zeroize::Zeroizing::new(String::new());
     io::stdin()
         .take(1027)
@@ -216,18 +264,13 @@ async fn create_user(email: &str) -> Result<(), &'static str> {
             password.pop();
         }
     }
+    if password.len() < 12 {
+        return Err("password from standard input must be at least 12 bytes");
+    }
     if password.len() > 1024 {
         return Err("password from standard input is too long");
     }
-    if password.is_empty() {
-        return Err("password from standard input is empty");
-    }
-
-    db::create_user(&pool, email, std::mem::take(&mut *password))
-        .await
-        .map_err(|_| "cannot create user")?;
-    println!("user created");
-    Ok(())
+    Ok(password)
 }
 
 async fn disable_user(email: &str) -> Result<(), &'static str> {

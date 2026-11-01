@@ -1,5 +1,19 @@
 # One-time Python data migration
 
+## Initial administrator bootstrap
+
+For a fresh Rust database, create the first administrator explicitly with
+`stricknani-server create-admin EMAIL`. The command reads the password from
+standard input, enforces the same 12–1024 byte policy as account creation, and
+sets the administrator role in the same account insert. Keep the password out
+of command arguments; supply it through a protected input source, for example:
+
+```sh
+stricknani-server create-admin admin@example.invalid < /secure/path/admin-password
+```
+
+`create-user` continues to create a regular member account.
+
 The Rust schema is independent of the Python schema. Migrations `0007` through `0011`
 retain legacy metadata needed by the one-time importer and old media URL aliases. These
 migrations do not import records, access production storage, or authorize cutover.

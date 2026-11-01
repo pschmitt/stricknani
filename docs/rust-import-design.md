@@ -83,5 +83,28 @@ based on the digest.
 Browser users can preview URL, text, and uploaded-file imports at /imports. The browser routes
 require the existing session cookie and CSRF token. Project and yarn creation call the normal
 versioned API router with the browser session token; the import module does not write domain SQL.
-Remote images remain suggestions in the preview. The current project API rejects image URL writes,
-so the create-project adapter omits image imports until the media import API is available.
+Remote images remain suggestions in the preview. Project creation now accepts the existing v1
+`image_urls` list for gallery media and `steps[*].image_urls` for the newly created steps. Image
+imports are create-only: project updates ignore those arrays, matching Python API v1. The first
+successfully prepared gallery image becomes the primary title image; later gallery images remain
+title-kind, nonprimary rows, and step images attach to the corresponding newly inserted step.
+
+Image imports use the shared `imports::fetch_url` policy, so DNS answers are checked and pinned on
+every manually followed redirect, with no proxy inheritance or URL-bearing error logs. The media
+module applies its existing bounded image decoder and thumbnail/file-storage path, then persists
+through short owner-checked transactions after project creation. Invalid, unsupported, duplicate,
+too-small, oversized, and failed downloads are skipped best-effort; project creation still returns
+201 with any valid media. Exact-byte SHA-256 duplicates in the request are removed. Near-duplicate
+SSIM behavior from Python is deliberately not claimed or implemented here.
+
+Image-import resource bounds are at most 10 successful images per gallery/step target, 40 URL
+attempts total, five MiB per response, 25 MiB raw bodies retained across the request, and an
+eight-second batch deadline. Each fetch and image decode must finish within that shared deadline;
+processing stops as soon as it expires. The shared fetcher additionally caps each individual URL
+fetch at ten seconds and five MiB, and follows at most five redirects. The shorter batch deadline
+keeps create requests within the Android API client's ten-second timeout; imports remain best-effort
+and may skip candidates that do not finish in time. `AppState.external_imports` defaults to false. When
+disabled, a create request carrying image URLs keeps the existing 501 response and performs no
+fetch or database write; production wiring may enable it only through the explicit
+`RUST_EXTERNAL_IMPORTS_ENABLED` setting. Tests inject an image fetcher and use in-memory SQLite and
+temporary media directories; they do not contact public hosts.

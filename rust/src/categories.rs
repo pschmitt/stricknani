@@ -9,8 +9,11 @@ use chrono::{SecondsFormat, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 
-use crate::auth::bearer_user;
 use crate::db::AppState;
+use crate::{
+    audit::{self, Action, Entity},
+    auth::bearer_user,
+};
 
 /// Build the category endpoints, to be nested under `/api/v1`.
 pub fn router() -> Router<AppState> {
@@ -118,14 +121,40 @@ async fn create_category(
         return bad_name();
     };
 
-    // The unique constraint makes concurrent duplicate requests idempotent.
-    if sqlx::query("INSERT INTO categories (user_id, name) VALUES (?, ?) ON CONFLICT DO NOTHING")
-        .bind(user_id)
-        .bind(&name)
-        .execute(&state.pool)
+    // Keep the audit event atomic with the insert. A duplicate replay remains
+    // idempotent and must not create another event.
+    let mut tx = match state.pool.begin().await {
+        Ok(tx) => tx,
+        Err(_) => return database_error(),
+    };
+    let insert =
+        sqlx::query("INSERT INTO categories (user_id, name) VALUES (?, ?) ON CONFLICT DO NOTHING")
+            .bind(user_id)
+            .bind(&name)
+            .execute(&mut *tx)
+            .await;
+    let (inserted, category_id) = match insert {
+        Ok(result) => (result.rows_affected() == 1, result.last_insert_rowid()),
+        Err(_) => {
+            let _ = tx.rollback().await;
+            return database_error();
+        }
+    };
+    if inserted
+        && audit::record(
+            &mut tx,
+            user_id,
+            Entity::Category,
+            category_id,
+            Action::Created,
+        )
         .await
         .is_err()
     {
+        let _ = tx.rollback().await;
+        return database_error();
+    }
+    if tx.commit().await.is_err() {
         return database_error();
     }
 
@@ -198,8 +227,24 @@ async fn update_category(
     if bump_category_projects(&mut tx, user_id, category_id)
         .await
         .is_err()
-        || tx.commit().await.is_err()
     {
+        let _ = tx.rollback().await;
+        return database_error();
+    }
+    if audit::record(
+        &mut tx,
+        user_id,
+        Entity::Category,
+        category_id,
+        Action::Updated,
+    )
+    .await
+    .is_err()
+    {
+        let _ = tx.rollback().await;
+        return database_error();
+    }
+    if tx.commit().await.is_err() {
         return database_error();
     }
 
@@ -237,6 +282,19 @@ async fn delete_category(
         .await;
     match result {
         Ok(result) if result.rows_affected() == 1 => {
+            if audit::record(
+                &mut tx,
+                user_id,
+                Entity::Category,
+                category_id,
+                Action::Deleted,
+            )
+            .await
+            .is_err()
+            {
+                let _ = tx.rollback().await;
+                return database_error();
+            }
             if tx.commit().await.is_err() {
                 return database_error();
             }

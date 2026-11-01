@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }} · Stricknani</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <script src="/register-pwa.js" defer></script>
+</head>
+<body>
+<header class="site-header"><a href="/" class="brand">Stricknani</a></header>
+<main class="page-content max-w-md mx-auto">
+    <h1>{{ title }}</h1>
+    {% match error %}{% when Some with (message) %}<p class="alert alert-error" role="alert">{{ message }}</p>{% when None %}{% endmatch %}
+    {% match success %}
+    {% when Some with (message) %}
+    <p class="notice" role="status">{{ message }}</p>
+    <p><a class="btn btn-primary" href="/login">{{ login }}</a></p>
+    {% when None %}
+    <form action="/signup" method="post" class="space-y-4">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <label class="form-control"><span class="label-text">{{ email_label }}</span><input class="input input-bordered" type="email" name="email" value="{{ email }}" maxlength="320" autocomplete="email" required></label>
+        <label class="form-control"><span class="label-text">{{ password_label }}</span><input class="input input-bordered" type="password" name="password" minlength="12" maxlength="1024" autocomplete="new-password" required></label>
+        <p class="text-sm">{{ password_help }}</p>
+        <button class="btn btn-primary">{{ submit }}</button>
+    </form>
+    {% endmatch %}
+    <p class="mt-4"><a href="/login">{{ login }}</a></p>
+</main>
+</body>
+</html>

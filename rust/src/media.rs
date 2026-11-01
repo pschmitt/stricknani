@@ -19,6 +19,7 @@ use serde_json::Value;
 use sqlx::{FromRow, Sqlite, SqlitePool, Transaction};
 use tokio::io::AsyncWriteExt;
 
+use crate::audit::{Action as AuditAction, Entity as AuditEntity};
 use crate::auth::{AuthError, bearer_user};
 use crate::db::AppState;
 use crate::media_ids::{self, Namespace};
@@ -522,7 +523,9 @@ async fn upload_project_image(
     let is_primary = if kind == "title" {
         match sqlx::query_scalar::<_, i64>(
             "SELECT EXISTS(SELECT 1 FROM media_files \
-             WHERE project_id = ? AND kind = 'title' AND is_primary = 1)",
+             WHERE project_id = ? AND step_id IS NULL \
+               AND COALESCE(legacy_is_title_image, kind = 'title' AND is_primary) = 1 \
+               AND COALESCE(is_stitch_sample, 0) = 0)",
         )
         .bind(project_id)
         .fetch_one(&mut *tx)
@@ -584,6 +587,20 @@ async fn upload_project_image(
             return database_error();
         }
     };
+    if crate::audit::record(
+        &mut tx,
+        user_id,
+        AuditEntity::Project,
+        project_id,
+        AuditAction::Uploaded,
+    )
+    .await
+    .is_err()
+    {
+        let _ = tx.rollback().await;
+        cleanup_saved_files(&root, "projects", project_id, &files).await;
+        return database_error();
+    }
     if tx.commit().await.is_err() {
         cleanup_saved_files(&root, "projects", project_id, &files).await;
         return database_error();
@@ -608,6 +625,111 @@ async fn upload_project_image(
         legacy_is_title_image: None,
     };
     json_response(StatusCode::CREATED, image_dto(&row))
+}
+
+/// Decode imported content with the bounded uploader decoder and import's minimum dimensions.
+pub(crate) async fn prepare_imported_image(bytes: Vec<u8>) -> Result<PreparedImage, ()> {
+    let image = process_image(bytes).await.map_err(|_| ())?;
+    if image.width < 64 || image.height < 64 {
+        return Err(());
+    }
+    Ok(image)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ProjectImageStoreError {
+    NotFound,
+    Database,
+}
+
+pub(crate) struct ImportedImageMetadata<'a> {
+    pub original_filename: &'a str,
+    pub alt_text: &'a str,
+    pub is_primary: bool,
+}
+
+/// Persist an imported image through the upload storage registry and owner checks.
+pub(crate) async fn persist_imported_project_image(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    step_id: Option<i64>,
+    metadata: ImportedImageMetadata<'_>,
+    prepared: &PreparedImage,
+) -> Result<(), ProjectImageStoreError> {
+    let root = media_root(state).map_err(|_| ProjectImageStoreError::Database)?;
+    let files = save_image_files(&root, "projects", project_id, prepared)
+        .await
+        .map_err(|_| ProjectImageStoreError::Database)?;
+    let mut tx = match state.pool.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            cleanup_saved_files(&root, "projects", project_id, &files).await;
+            return Err(ProjectImageStoreError::Database);
+        }
+    };
+    match verify_image_target(&mut tx, user_id, project_id, step_id).await {
+        Ok(true) => {}
+        Ok(false) => {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "projects", project_id, &files).await;
+            return Err(ProjectImageStoreError::NotFound);
+        }
+        Err(_) => {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "projects", project_id, &files).await;
+            return Err(ProjectImageStoreError::Database);
+        }
+    }
+    let kind = if step_id.is_some() { "step" } else { "title" };
+    if bump_project_timestamp(&mut tx, user_id, project_id)
+        .await
+        .is_err()
+    {
+        let _ = tx.rollback().await;
+        cleanup_saved_files(&root, "projects", project_id, &files).await;
+        return Err(ProjectImageStoreError::Database);
+    }
+    let public_id = match media_ids::allocate(&mut tx, Namespace::Image).await {
+        Ok(public_id) => public_id,
+        Err(_) => {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "projects", project_id, &files).await;
+            return Err(ProjectImageStoreError::Database);
+        }
+    };
+    let inserted = sqlx::query(
+        "INSERT INTO media_files \
+         (owner_id, project_id, step_id, kind, public_id, filename, original_filename, content_type, \
+          size_bytes, width, height, alt_text, is_primary, created_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(user_id)
+    .bind(project_id)
+    .bind(step_id)
+    .bind(kind)
+    .bind(public_id)
+    .bind(&files.filename)
+    .bind(metadata.original_filename)
+    .bind(prepared.content_type)
+    .bind(prepared.bytes.len() as i64)
+    .bind(prepared.width as i64)
+    .bind(prepared.height as i64)
+    .bind(metadata.alt_text)
+    .bind(metadata.is_primary)
+    .bind(Utc::now().to_rfc3339_opts(SecondsFormat::Micros, true))
+    .execute(&mut *tx)
+    .await;
+    if inserted.is_err() {
+        let _ = tx.rollback().await;
+        cleanup_saved_files(&root, "projects", project_id, &files).await;
+        return Err(ProjectImageStoreError::Database);
+    }
+    if tx.commit().await.is_err() {
+        cleanup_saved_files(&root, "projects", project_id, &files).await;
+        return Err(ProjectImageStoreError::Database);
+    }
+    Ok(())
 }
 
 async fn upload_attachment(
@@ -716,6 +838,20 @@ async fn upload_attachment(
             return database_error();
         }
     };
+    if crate::audit::record(
+        &mut tx,
+        user_id,
+        AuditEntity::Project,
+        project_id,
+        AuditAction::Uploaded,
+    )
+    .await
+    .is_err()
+    {
+        let _ = tx.rollback().await;
+        cleanup_saved_files(&root, "projects", project_id, &files).await;
+        return database_error();
+    }
     if tx.commit().await.is_err() {
         cleanup_saved_files(&root, "projects", project_id, &files).await;
         return database_error();
@@ -856,6 +992,20 @@ async fn upload_yarn_photo(
             return database_error();
         }
     };
+    if crate::audit::record(
+        &mut tx,
+        user_id,
+        AuditEntity::Yarn,
+        yarn_id,
+        AuditAction::Uploaded,
+    )
+    .await
+    .is_err()
+    {
+        let _ = tx.rollback().await;
+        cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
+        return database_error();
+    }
     if tx.commit().await.is_err() {
         cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
         return database_error();
@@ -966,6 +1116,19 @@ async fn delete_project_media(
         let _ = tx.rollback().await;
         return database_error();
     }
+    if crate::audit::record(
+        &mut tx,
+        user_id,
+        AuditEntity::Project,
+        project_id,
+        AuditAction::Removed,
+    )
+    .await
+    .is_err()
+    {
+        let _ = tx.rollback().await;
+        return database_error();
+    }
     if tx.commit().await.is_err() {
         return database_error();
     }
@@ -1033,6 +1196,19 @@ async fn delete_yarn_photo(
         .execute(&mut *tx)
         .await
         .is_err()
+    {
+        let _ = tx.rollback().await;
+        return database_error();
+    }
+    if crate::audit::record(
+        &mut tx,
+        user_id,
+        AuditEntity::Yarn,
+        yarn_id,
+        AuditAction::Removed,
+    )
+    .await
+    .is_err()
     {
         let _ = tx.rollback().await;
         return database_error();
@@ -1364,7 +1540,9 @@ fn image_dto(row: &MediaRow) -> ImageResponse {
             .legacy_image_type
             .clone()
             .unwrap_or_else(|| "photo".to_owned()),
-        is_title_image: row.legacy_is_title_image.unwrap_or(row.kind == "title"),
+        is_title_image: row
+            .legacy_is_title_image
+            .unwrap_or(row.kind == "title" && row.is_primary),
         is_stitch_sample: row.is_stitch_sample.unwrap_or(false),
         step_id: row.step_id,
     }
@@ -1701,7 +1879,7 @@ async fn classify_attachment(
     (claimed_type.to_owned(), None, false, None)
 }
 
-fn safe_original_filename(value: &str) -> String {
+pub(crate) fn safe_original_filename(value: &str) -> String {
     let basename = value.rsplit(['/', '\\']).next().unwrap_or("file");
     let cleaned: String = basename
         .chars()

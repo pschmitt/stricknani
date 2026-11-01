@@ -1,21 +1,27 @@
+pub mod ai;
+mod audit;
 pub mod auth;
 pub mod categories;
 pub mod config;
 pub mod db;
 pub mod document_worker;
 mod i18n;
+pub mod image_import;
 pub mod import_document;
 pub mod import_service;
 pub mod importer;
 pub mod imports;
 pub mod media;
 pub mod media_ids;
+pub mod ocr;
 pub mod projects;
 pub mod pwa;
 pub mod security;
 pub mod sync;
 mod web;
 mod web_accounts;
+mod web_audit;
+mod web_signup;
 pub mod yarns;
 use std::num::NonZeroU32;
 use std::path::PathBuf;
@@ -63,6 +69,18 @@ pub fn app_with_imports(
     worker_path: PathBuf,
     external_imports: bool,
 ) -> Router {
+    app_with_imports_and_ai(static_root, state, worker_path, external_imports, None)
+}
+
+/// Build optional AI imports with an explicitly configured provider client.
+pub fn app_with_imports_and_ai(
+    static_root: PathBuf,
+    state: db::AppState,
+    worker_path: PathBuf,
+    external_imports: bool,
+    ai: Option<ai::AiClient>,
+) -> Router {
+    let state = state.with_external_imports(external_imports);
     let core = Router::new()
         .nest(
             "/api/v1",
@@ -79,11 +97,14 @@ pub fn app_with_imports(
     app_with_static_root(static_root)
         .merge(web::router(core.clone(), state.clone()))
         .merge(web_accounts::router(core.clone(), state.clone()))
-        .merge(import_service::router(
+        .merge(web_audit::router(core.clone(), state.clone()))
+        .merge(web_signup::router(state.clone()))
+        .merge(import_service::router_with_ai(
             core.clone(),
             state,
             worker_path,
             external_imports,
+            ai,
         ))
         .merge(core)
         .layer(axum::middleware::from_fn(security::security_headers))

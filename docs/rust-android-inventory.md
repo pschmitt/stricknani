@@ -59,36 +59,36 @@ outbox rows, sync cursors, the temporary fixture file, and the saved app credent
 restored or removed in `finally`.
 
 The instrumentation process cannot read the host's `STRICKNANI_RUST_TEST_*` environment
-directly. The runner should create a temporary JSON fixture from those three variables,
-write it to the app's private `files/rust-replay-fixture.json` over `adb` stdin, and pass
-only the test class as an instrumentation argument. For example, this Bash snippet keeps
-the values out of shell arguments and output:
+directly. Use [`run_rust_replay.py`](../ci/stricknani/run_rust_replay.py) to pass the
+fixture through stdin into the debug app's private `files/rust-replay-fixture.json`.
+It accepts only an emulator serial and a plain loopback HTTP(S) URL, validates
+`ro.kernel.qemu=1` before installing either APK, configures `adb reverse`, and runs only
+`RustBackendReplayIntegrationTest`. It does not clear or uninstall app data. The runner
+removes its fixture and reverse rule in a `finally` path; instrumentation output is kept
+in a mode-0600 temporary log and failures are bounded and redacted.
+
+Build the debug app and instrumentation APK using the Android remote build procedure.
+Select the split APK matching the emulator ABI (for example, an `app-x86_64-debug.apk`)
+and the matching instrumentation APK emitted by that build; pass their actual paths
+explicitly rather than assuming a universal `app-debug.apk` filename. Export the three
+fixture variables from the disposable Rust test setup without putting their values in a
+command line, then run:
 
 ```bash
-set -eu
-fixture_file="$(mktemp)"
-trap 'rm -f "$fixture_file"' EXIT
-chmod 600 "$fixture_file"
-python3 - > "$fixture_file" <<'PY'
-import json
-import os
-
-print(json.dumps({
-    "url": os.environ["STRICKNANI_RUST_TEST_URL"],
-    "email": os.environ["STRICKNANI_RUST_TEST_EMAIL"],
-    "password": os.environ["STRICKNANI_RUST_TEST_PASSWORD"],
-}))
-PY
-adb -s "$DEVICE_SERIAL" shell run-as blue.anika.wolle.debug sh -c 'cat > files/rust-replay-fixture.json' < "$fixture_file"
-adb -s "$DEVICE_SERIAL" shell am instrument -w -e class blue.anika.wolle.sync.RustBackendReplayIntegrationTest blue.anika.wolle.debug.test/androidx.test.runner.AndroidJUnitRunner
+python3 ci/stricknani/run_rust_replay.py \
+  --adb /path/to/adb \
+  --serial emulator-5554 \
+  --apk /path/to/app-x86_64-debug.apk \
+  --test-apk /path/to/app-debug-androidTest.apk
 ```
 
-The URL must be reachable from the emulator, for example through `10.0.2.2` with a
-forwarded host port or `adb reverse`. The test logs in through the Rust browser session
-flow and logs out after cleanup; this revokes the temporary session credential. Project
-and yarn deletes also create durable sync tombstones, and revoked token rows are retained
-by the backend schema, so the Rust database used by this test must be a disposable isolated
-fixture. No test fixture file or credential belongs in source control.
+The runner rejects remote hosts, URL userinfo, query strings, and fragments. The
+loopback port is forwarded into the emulator for the test. The test logs in through the
+Rust browser session flow and logs out after cleanup; this revokes the temporary session
+credential. Project and yarn deletes also create durable sync tombstones, and revoked
+token rows are retained by the backend schema, so the Rust database used by this test must
+be a disposable isolated fixture. No test fixture file or credential belongs in source
+control.
 
 ## Concrete integration test plan
 

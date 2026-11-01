@@ -1,6 +1,6 @@
 //! Browser and Android import endpoints backed by the isolated document worker.
 
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 use askama::Template;
 use axum::{
@@ -16,7 +16,9 @@ use serde_json::{Value, json};
 use tower::ServiceExt;
 
 use crate::{
-    Language, auth,
+    Language,
+    ai::{AiClient, AiImage, AiInput, enhance_or_fallback},
+    auth,
     db::AppState,
     document_worker::{DocumentRequest, WorkerError, parse_isolated},
     import_document::{ImportDocumentDraft, ProjectImportDraft, YarnImportDraft},
@@ -34,15 +36,29 @@ struct ImportState {
     api: Router,
     worker_path: PathBuf,
     external_enabled: bool,
+    ai: Option<Arc<AiClient>>,
 }
 
 /// Build the Android and browser import routes around the shared API router.
 pub fn router(api: Router, app: AppState, worker_path: PathBuf, external_enabled: bool) -> Router {
+    router_with_ai(api, app, worker_path, external_enabled, None)
+}
+
+/// Build import routes with an optional configured AI client. Callers still need
+/// to opt in on each import request before any provider call is possible.
+pub fn router_with_ai(
+    api: Router,
+    app: AppState,
+    worker_path: PathBuf,
+    external_enabled: bool,
+    ai: Option<AiClient>,
+) -> Router {
     let state = ImportState {
         app,
         api,
         worker_path,
         external_enabled,
+        ai: ai.map(Arc::new),
     };
     Router::new()
         .route(
@@ -139,10 +155,11 @@ async fn android_import(
     }
 
     let ai_requested = form.use_ai;
-    let draft = match parse_url(&state, &form.url).await {
-        Ok(draft) => draft,
+    let (mut draft, source_text) = match parse_url_with_source(&state, &form.url).await {
+        Ok(parsed) => parsed,
         Err(error) => return import_error(error),
     };
+    let enhanced = enhance_draft(&state, &mut draft, ai_requested, source_text, Vec::new()).await;
     let project = draft.project;
     Json(AndroidImportResponse {
         name: project.name.clone(),
@@ -155,8 +172,8 @@ async fn android_import(
         other_materials: project.other_materials.or(project.yarn),
         tags: Vec::new(),
         link: project.link.or(draft.source_url),
-        is_ai_enhanced: false,
-        ai_fallback: false,
+        is_ai_enhanced: enhanced,
+        ai_fallback: ai_requested && !enhanced,
         ai_requested,
         content_sha256: draft.sha256,
         image_urls: project.image_urls,
@@ -225,11 +242,15 @@ enum ImportFailure {
     Worker(WorkerError),
 }
 
-async fn parse_url(state: &ImportState, input: &str) -> Result<ImportDocumentDraft, ImportFailure> {
+async fn parse_url_with_source(
+    state: &ImportState,
+    input: &str,
+) -> Result<(ImportDocumentDraft, String), ImportFailure> {
     let fetched = imports::fetch_url(input)
         .await
         .map_err(ImportFailure::Fetch)?;
-    parse_isolated(
+    let source_text = fetched.text.clone().unwrap_or_default();
+    let draft = parse_isolated(
         &state.worker_path,
         DocumentRequest {
             bytes: fetched.body,
@@ -241,7 +262,31 @@ async fn parse_url(state: &ImportState, input: &str) -> Result<ImportDocumentDra
         },
     )
     .await
-    .map_err(ImportFailure::Worker)
+    .map_err(ImportFailure::Worker)?;
+    Ok((draft, source_text))
+}
+
+async fn enhance_draft(
+    state: &ImportState,
+    draft: &mut ImportDocumentDraft,
+    requested: bool,
+    source_text: String,
+    images: Vec<AiImage>,
+) -> bool {
+    if !requested {
+        return false;
+    }
+    let outcome = enhance_or_fallback(
+        state.ai.as_deref(),
+        AiInput {
+            source_text,
+            draft: draft.project.clone(),
+            images,
+        },
+    )
+    .await;
+    draft.project = outcome.draft;
+    outcome.enhanced
 }
 
 async fn parse_bytes(
@@ -312,6 +357,7 @@ struct ImportLabels {
     source_url: &'static str,
     text: &'static str,
     file: &'static str,
+    ai_enhance: &'static str,
     preview: &'static str,
     draft: &'static str,
     create_project: &'static str,
@@ -346,6 +392,7 @@ impl ImportLabels {
             source_url: tr("Pattern URL", "Anleitungs-URL"),
             text: tr("Pattern text", "Anleitungstext"),
             file: tr("Pattern file", "Anleitungsdatei"),
+            ai_enhance: tr("Improve this draft with AI", "Entwurf mit KI verbessern"),
             preview: tr("Preview import", "Importvorschau"),
             draft: tr("Review the extracted details", "Extrahierte Angaben prüfen"),
             create_project: tr("Create project", "Projekt erstellen"),
@@ -401,6 +448,8 @@ struct PreviewForm {
     url: String,
     #[serde(default)]
     text: String,
+    #[serde(default)]
+    use_ai: bool,
 }
 
 async fn preview_form(
@@ -443,7 +492,7 @@ async fn preview_form(
                 false,
             );
         }
-        "url" => parse_url(&state, &form.url).await,
+        "url" => parse_url_with_source(&state, &form.url).await,
         "text" if form.text.trim().is_empty() => {
             return render_import_page(
                 &headers,
@@ -462,15 +511,19 @@ async fn preview_form(
                 false,
             );
         }
-        "text" => parse_bytes(
-            &state,
-            form.text.into_bytes(),
-            Some("text/plain".to_owned()),
-            Some("pattern.txt".to_owned()),
-            None,
-        )
-        .await
-        .map_err(ImportFailure::Worker),
+        "text" => {
+            let source_text = form.text.clone();
+            parse_bytes(
+                &state,
+                form.text.into_bytes(),
+                Some("text/plain".to_owned()),
+                Some("pattern.txt".to_owned()),
+                None,
+            )
+            .await
+            .map(|draft| (draft, source_text))
+            .map_err(ImportFailure::Worker)
+        }
         _ => {
             return render_import_page(
                 &headers,
@@ -482,13 +535,16 @@ async fn preview_form(
         }
     };
     match result {
-        Ok(draft) => render_import_page(
-            &headers,
-            &session.token,
-            ImportPreview::from_draft(&draft),
-            None,
-            true,
-        ),
+        Ok((mut draft, source_text)) => {
+            enhance_draft(&state, &mut draft, form.use_ai, source_text, Vec::new()).await;
+            render_import_page(
+                &headers,
+                &session.token,
+                ImportPreview::from_draft(&draft),
+                None,
+                true,
+            )
+        }
         Err(_) => render_import_page(
             &headers,
             &session.token,
@@ -527,14 +583,22 @@ async fn preview_file(
         return StatusCode::FORBIDDEN.into_response();
     }
     let mut file: Option<(String, String, Vec<u8>)> = None;
+    let mut use_ai = false;
+    let mut ai_field_seen = false;
     loop {
         let field = match multipart.next_field().await {
             Ok(Some(field)) => field,
             Ok(None) => break,
             Err(_) => return StatusCode::BAD_REQUEST.into_response(),
         };
-        if field.name() != Some("file") || file.is_some() {
-            return StatusCode::BAD_REQUEST.into_response();
+        match field.name() {
+            Some("use_ai") if !ai_field_seen => {
+                ai_field_seen = true;
+                use_ai = matches!(field.text().await.as_deref(), Ok("true" | "1" | "on"));
+                continue;
+            }
+            Some("file") if file.is_none() => {}
+            _ => return StatusCode::BAD_REQUEST.into_response(),
         }
         let filename = field.file_name().unwrap_or("upload").to_owned();
         let content_type = field
@@ -551,14 +615,31 @@ async fn preview_file(
     let Some((filename, content_type, bytes)) = file else {
         return StatusCode::BAD_REQUEST.into_response();
     };
+    let ai_image = use_ai
+        .then(|| AiImage {
+            media_type: content_type.clone(),
+            bytes: bytes.clone(),
+        })
+        .filter(|image| image.media_type.starts_with("image/"));
     match parse_bytes(&state, bytes, Some(content_type), Some(filename), None).await {
-        Ok(draft) => render_import_page(
-            &headers,
-            &session.token,
-            ImportPreview::from_draft(&draft),
-            None,
-            true,
-        ),
+        Ok(mut draft) => {
+            let source_text = String::new();
+            enhance_draft(
+                &state,
+                &mut draft,
+                use_ai,
+                source_text,
+                ai_image.into_iter().collect(),
+            )
+            .await;
+            render_import_page(
+                &headers,
+                &session.token,
+                ImportPreview::from_draft(&draft),
+                None,
+                true,
+            )
+        }
         Err(_) => render_import_page(
             &headers,
             &session.token,

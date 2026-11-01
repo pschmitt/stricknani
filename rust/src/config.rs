@@ -4,6 +4,7 @@ use std::fmt;
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 
+use crate::ai::AiConfig;
 use crate::security::TrustedHosts;
 
 const DEFAULT_BIND_HOST: &str = "127.0.0.1";
@@ -16,6 +17,8 @@ pub struct Config {
     pub static_root: PathBuf,
     pub secure_cookies: bool,
     pub external_imports: bool,
+    /// Validated provider configuration, absent unless `RUST_AI_ENABLED=true`.
+    pub ai: Option<AiConfig>,
     pub trusted_hosts: TrustedHosts,
 }
 
@@ -122,6 +125,13 @@ impl Config {
                 ));
             }
         };
+        let ai_enabled = match get("RUST_AI_ENABLED").as_deref() {
+            None | Some("false" | "0") => false,
+            Some("true" | "1") => true,
+            _ => return Err(ConfigError("RUST_AI_ENABLED must be true or false")),
+        };
+        let ai = AiConfig::from_lookup(ai_enabled, &mut get)
+            .map_err(|_| ConfigError("AI provider configuration is invalid"))?;
         if !bind_ip.is_loopback() && !secure_cookies {
             return Err(ConfigError(
                 "SESSION_COOKIE_SECURE must be true when BIND_HOST is not loopback",
@@ -138,6 +148,7 @@ impl Config {
             static_root,
             secure_cookies,
             external_imports,
+            ai,
             trusted_hosts,
         })
     }
@@ -318,5 +329,58 @@ mod tests {
         .expect("loopback defaults are safe");
         assert!(config.trusted_hosts.allows_host("localhost:7674"));
         assert!(!config.trusted_hosts.allows_host("localhost.attacker.test"));
+    }
+
+    #[test]
+    fn ai_is_disabled_by_default_without_reading_provider_credentials() {
+        let mut reads = Vec::new();
+        let values = [
+            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+            ("OPENAI_API_KEY", "fixture-secret"),
+        ];
+        let config = Config::from_lookup(|key| {
+            reads.push(key.to_owned());
+            values
+                .iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| (*value).to_owned())
+        })
+        .expect("AI-disabled config is valid");
+
+        assert!(config.ai.is_none());
+        assert!(!reads.iter().any(|key| key.contains("API_KEY")));
+    }
+
+    #[test]
+    fn ai_requires_a_key_only_when_enabled_and_does_not_debug_secrets() {
+        let required = parse(&[
+            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+            ("RUST_AI_ENABLED", "true"),
+        ])
+        .expect_err("enabled AI requires an API key");
+        assert_eq!(required.to_string(), "AI provider configuration is invalid");
+
+        let config = parse(&[
+            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+            ("RUST_AI_ENABLED", "true"),
+            ("AI_API_KEY", "fixture-secret"),
+        ])
+        .expect("enabled AI config accepts a key");
+        let debug = format!("{config:?}");
+        assert!(!debug.contains("fixture-secret"));
+    }
+
+    #[test]
+    fn rejects_invalid_ai_feature_flag() {
+        let error = parse(&[
+            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+            ("RUST_AI_ENABLED", "yes"),
+        ])
+        .expect_err("invalid feature flag must fail closed");
+        assert_eq!(error.to_string(), "RUST_AI_ENABLED must be true or false");
     }
 }

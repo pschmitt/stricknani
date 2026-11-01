@@ -20,7 +20,7 @@ use zeroize::Zeroize;
 use crate::db::AppState;
 
 const RATE_LIMIT_ATTEMPTS: usize = 5;
-const RATE_LIMIT_WINDOW: Duration = Duration::from_secs(5 * 60);
+pub(crate) const RATE_LIMIT_WINDOW: Duration = Duration::from_secs(5 * 60);
 const MAX_RATE_LIMIT_KEYS: usize = 4096;
 const MAX_PARALLEL_PASSWORD_CHECKS: usize = 4;
 const MAX_EMAIL_BYTES: usize = 320;
@@ -38,7 +38,7 @@ pub struct RateLimiter {
 }
 
 impl RateLimiter {
-    fn reserve(&self, keys: &[String]) -> Option<u64> {
+    pub(crate) fn reserve(&self, keys: &[String]) -> Option<u64> {
         let now = Instant::now();
         let mut entries = self.entries.lock().unwrap_or_else(PoisonError::into_inner);
         entries.retain(|_, attempts| {
@@ -411,6 +411,7 @@ pub(crate) async fn verify_password_for_account(
 pub(crate) async fn hash_password_for_account(
     password: zeroize::Zeroizing<String>,
 ) -> Result<String, ()> {
+    validate_new_password(&password).map_err(|_| ())?;
     let permit = password_semaphore().acquire_owned().await.map_err(|_| ())?;
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
@@ -442,14 +443,80 @@ pub(crate) fn token_hash(token: &[u8]) -> String {
     hex::encode(Sha256::digest(token))
 }
 
-fn rate_key(kind: &str, value: &str) -> String {
+pub(crate) fn rate_key(kind: &str, value: &str) -> String {
     let digest = Sha256::digest(value.as_bytes());
     format!("{kind}:{}", hex::encode(digest))
 }
 
+const COMMON_WEAK_PASSWORDS: [&str; 20] = [
+    "password",
+    "password1",
+    "password123",
+    "12345678",
+    "123456789",
+    "1234567890",
+    "qwertyui",
+    "qwerty123",
+    "letmein1",
+    "iloveyou1",
+    "admin1234",
+    "welcome1",
+    "welcome123",
+    "abcd1234",
+    "11111111",
+    "00000000",
+    "changeme1",
+    "trustno1",
+    "sunshine1",
+    "monkey123",
+];
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum NewPasswordError {
+    TooShort,
+    Common,
+}
+
+/// Validate a password for a newly created or changed account.
+///
+/// Existing password verification intentionally does not call this policy.
+pub(crate) fn validate_new_password(password: &str) -> Result<(), NewPasswordError> {
+    let normalized = zeroize::Zeroizing::new(password.trim().to_lowercase());
+    if COMMON_WEAK_PASSWORDS.contains(&normalized.as_str()) {
+        return Err(NewPasswordError::Common);
+    }
+    if password.len() < 12 {
+        return Err(NewPasswordError::TooShort);
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::RateLimiter;
+    use super::{NewPasswordError, RateLimiter, hash_password_for_account, validate_new_password};
+
+    #[test]
+    fn new_password_policy_rejects_trimmed_case_insensitive_common_passwords() {
+        assert_eq!(
+            validate_new_password("  PaSsWoRd123  "),
+            Err(NewPasswordError::Common)
+        );
+    }
+
+    #[test]
+    fn new_password_policy_keeps_the_native_minimum_length() {
+        assert_eq!(
+            validate_new_password("short-pass"),
+            Err(NewPasswordError::TooShort)
+        );
+        assert_eq!(validate_new_password("long-enough-password"), Ok(()));
+    }
+
+    #[tokio::test]
+    async fn new_password_hashing_rejects_common_passwords_before_hashing() {
+        let password = zeroize::Zeroizing::new(" Password123 ".to_owned());
+        assert!(hash_password_for_account(password).await.is_err());
+    }
 
     #[test]
     fn limiter_reserves_atomically_and_refunds_successful_mints() {

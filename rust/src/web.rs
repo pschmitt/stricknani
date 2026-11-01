@@ -159,11 +159,7 @@ fn login_view(state: &WebState, headers: &HeaderMap, failed: bool, status: Statu
     let response = render(page, status);
     with_cookie(
         response,
-        if state.app.secure_cookies {
-            HOST_LOGIN_CSRF_COOKIE
-        } else {
-            LOGIN_CSRF_COOKIE
-        },
+        unauth_csrf_cookie_name(state.app.secure_cookies),
         &csrf,
         600,
         state.app.secure_cookies,
@@ -191,16 +187,7 @@ async fn login(
     Form(mut form): Form<LoginForm>,
 ) -> Response {
     let password = zeroize::Zeroizing::new(std::mem::take(&mut form.password));
-    let expected = auth::cookie(
-        &headers,
-        if state.app.secure_cookies {
-            HOST_LOGIN_CSRF_COOKIE
-        } else {
-            LOGIN_CSRF_COOKIE
-        },
-    )
-    .unwrap_or_default();
-    if expected.is_empty() || !bool::from(expected.as_bytes().ct_eq(form.csrf.as_bytes())) {
+    if !valid_unauth_csrf(&headers, &form.csrf, state.app.secure_cookies) {
         return StatusCode::FORBIDDEN.into_response();
     }
     let body = match serde_json::to_vec(&LoginRequest {
@@ -323,7 +310,22 @@ pub(crate) fn valid_csrf(token: &str, supplied: &str) -> bool {
     bool::from(csrf(token).as_bytes().ct_eq(supplied.as_bytes()))
 }
 
-fn with_cookie(
+pub(crate) fn unauth_csrf_cookie_name(secure: bool) -> &'static str {
+    if secure {
+        HOST_LOGIN_CSRF_COOKIE
+    } else {
+        LOGIN_CSRF_COOKIE
+    }
+}
+
+pub(crate) fn valid_unauth_csrf(headers: &HeaderMap, supplied: &str, secure: bool) -> bool {
+    let Some(expected) = auth::cookie(headers, unauth_csrf_cookie_name(secure)) else {
+        return false;
+    };
+    !expected.is_empty() && bool::from(expected.as_bytes().ct_eq(supplied.as_bytes()))
+}
+
+pub(crate) fn with_cookie(
     mut response: Response,
     name: &str,
     value: &str,
@@ -2049,6 +2051,7 @@ struct Labels {
     yarn: &'static str,
     gauge: &'static str,
     sign_in: &'static str,
+    create_account: &'static str,
     sign_out: &'static str,
     email: &'static str,
     password: &'static str,
@@ -2096,6 +2099,7 @@ struct Labels {
     apply_filters: &'static str,
     account: &'static str,
     admin_users: &'static str,
+    audit_events: &'static str,
     conflict_error: &'static str,
     validation_error: &'static str,
     upload: &'static str,
@@ -2114,6 +2118,7 @@ impl Labels {
             yarn: tr("Yarn", "Garn"),
             gauge: tr("Gauge calculator", "Maschenprobe berechnen"),
             sign_in: tr("Sign in", "Anmelden"),
+            create_account: tr("Create an account", "Konto erstellen"),
             sign_out: tr("Sign out", "Abmelden"),
             email: tr("Email", "E-Mail"),
             password: tr("Password", "Passwort"),
@@ -2164,6 +2169,7 @@ impl Labels {
             apply_filters: tr("Apply filters", "Filter anwenden"),
             account: tr("Account", "Konto"),
             admin_users: tr("User accounts", "Benutzerkonten"),
+            audit_events: tr("Audit events", "Audit-Protokoll"),
             conflict_error: tr(
                 "This item changed since you opened it. Your entries are still shown. Review the current saved version before saving again.",
                 "Dieser Eintrag wurde geändert, seit du ihn geöffnet hast. Deine Eingaben bleiben erhalten. Prüfe die aktuelle Version, bevor du erneut speicherst.",

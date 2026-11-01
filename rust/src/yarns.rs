@@ -10,8 +10,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::{FromRow, Sqlite, SqlitePool, Transaction};
 
-use crate::auth::bearer_user;
-use crate::db::AppState;
+use crate::{
+    audit::{self, Action, Entity},
+    auth::bearer_user,
+    db::AppState,
+};
 
 const PAGE_SIZE: i64 = 50;
 
@@ -274,6 +277,10 @@ async fn create_yarn(
     };
     let name = clean_name(&payload.name);
     let now = timestamp(Utc::now());
+    let mut tx = match state.pool.begin().await {
+        Ok(tx) => tx,
+        Err(_) => return database_error(),
+    };
     let result = sqlx::query(
         "INSERT INTO yarns (owner_id, name, description, brand, colorway, dye_lot, \
          fiber_content, weight_category, recommended_needles, weight_grams, length_meters, \
@@ -296,12 +303,25 @@ async fn create_yarn(
     .bind(payload.is_ai_enhanced)
     .bind(&now)
     .bind(&now)
-    .execute(&state.pool)
+    .execute(&mut *tx)
     .await;
     let id = match result {
         Ok(result) => result.last_insert_rowid(),
-        Err(_) => return database_error(),
+        Err(_) => {
+            let _ = tx.rollback().await;
+            return database_error();
+        }
     };
+    if audit::record(&mut tx, user_id, Entity::Yarn, id, Action::Created)
+        .await
+        .is_err()
+    {
+        let _ = tx.rollback().await;
+        return database_error();
+    }
+    if tx.commit().await.is_err() {
+        return database_error();
+    }
     match get_yarn_response(&state.pool, user_id, id).await {
         Ok(Some(yarn)) => (StatusCode::CREATED, Json(yarn)).into_response(),
         Ok(None) => database_error(),
@@ -407,6 +427,13 @@ async fn update_yarn(
         let _ = tx.rollback().await;
         return database_error();
     }
+    if audit::record(&mut tx, user_id, Entity::Yarn, yarn_id, Action::Updated)
+        .await
+        .is_err()
+    {
+        let _ = tx.rollback().await;
+        return database_error();
+    }
     if tx.commit().await.is_err() {
         return database_error();
     }
@@ -478,6 +505,13 @@ async fn delete_yarn(
             let _ = tx.rollback().await;
             return database_error();
         }
+    }
+    if audit::record(&mut tx, user_id, Entity::Yarn, yarn_id, Action::Deleted)
+        .await
+        .is_err()
+    {
+        let _ = tx.rollback().await;
+        return database_error();
     }
     if tx.commit().await.is_ok() {
         StatusCode::NO_CONTENT.into_response()
