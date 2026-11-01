@@ -11,7 +11,7 @@ primary checkout and the user's uncommitted `REWRITE.md` edits are preserved.
 | --- | --- | --- |
 | Standalone native Rust service; no Python bridge | `rust/Cargo.toml`, `rust/src/main.rs`, Axum/Tokio/SQLx/Askama modules. The default package and Docker runtime contain no Python. | Verified |
 | Useful web workflows; replaceable presentation | `rust/src/web.rs`, `web_accounts.rs`, `web_signup.rs`; separate Askama templates and `static/css/rust.css`. Router integration tests exercise CRUD, steps, categories, favorites, accounts, media, validation, CSRF and ownership. Live desktop/mobile styling checks passed. Offline stylesheet precaching was corrected and its six PWA tests pass. | Verified |
-| Existing Android v1 contract; future breaks under v2 | `projects.rs`, `yarns.rs`, `categories.rs`, `sync.rs`, `media.rs`, authentication and dedicated DTO projections. Tests cover conflicts, idempotent favorites, foreign owners, nested steps, media namespaces/aliases, token expiry, pagination and bound cursors. Version policy is in `rust-port-decisions.md`. Kotlin HTTP/JVM checks and the actual Room/WorkManager replay passed. | Core verified; final broader UI run pending |
+| Existing Android v1 contract; future breaks under v2 | `projects.rs`, `yarns.rs`, `categories.rs`, `sync.rs`, `media.rs`, authentication and dedicated DTO projections. Tests cover conflicts, idempotent favorites, foreign owners, nested steps, media namespaces/aliases, token expiry, pagination and bound cursors. Version policy is in `rust-port-decisions.md`. Kotlin HTTP/JVM checks, Room/WorkManager replay, and both full Android UI journey classes passed against a disposable Rust fixture. | Verified |
 | Fresh native data model and one-time migration | Embedded SQLx migrations plus `importer.rs`. Fixture import tests cover publication, relationships and malformed inputs. The independent read-only verifier checked the actual isolated copied snapshot: all 34 checks pass; a further 38 deployed API checks covered ownership and original media bytes. | Verified |
 | Reassessed security, imports, configuration, CLI and background work | Dedicated tests for authentication, hosts/headers/cache, sanitization, SSRF redirects, bounded document subprocesses, AI/OCR, durable archive jobs and import images. Optional external services are off in staging. Operator CLI selection, API/browser alternatives and intentional differences are recorded in `rust-cli-selection.md`. | Verified |
 | Nix/package/app/check/dev-shell/container use Python-free Rust | Default flake package/app/image/dev shell, root Dockerfile and NixOS module select Rust. Explicit Python reference artifacts remain separate. Fresh NixOS evaluation confirms the Rust executable and independent default storage; explicit Python still evaluates correctly. Production imports its separately pinned old Python revision. | Verified |
@@ -60,9 +60,9 @@ primary checkout and the user's uncommitted `REWRITE.md` edits are preserved.
 - Dependency audit findings are explicitly retained with scoped decisions and
   review dates in `rust-security-review.md`; the dependency audit is not clean.
 
-## Remaining acceptance
+## Completed implementation acceptance and operational boundary
 
-The following Android checks passed on revision `2cd090e`:
+The Android acceptance suite completed successfully on revision `2cd090e`:
 
 - [Room/WorkManager replay](https://github.com/pschmitt/stricknani/actions/runs/41315290345)
   passed against a disposable Rust fixture.
@@ -72,10 +72,11 @@ The following Android checks passed on revision `2cd090e`:
   ran unit tests, the Gradle build, and four APK artifact uploads successfully.
 - The full Android UI workflow
   [41315348917](https://github.com/pschmitt/stricknani/actions/runs/41315348917)
-  remains pending behind autoSmoke run
-  [41315290332](https://github.com/pschmitt/stricknani/actions/runs/41315290332),
-  which was still in progress at this audit. Keep T119.9 open until the full UI
-  result is known.
+  passed after the autoSmoke workflow
+  [41315290332](https://github.com/pschmitt/stricknani/actions/runs/41315290332).
+  Both `connectedDebugAndroidTest` invocations completed successfully, covering
+  `StricknaniFullE2eTest` and `StricknaniLiveWriteE2eTest`. CI reported no test
+  count summary, so no instrumentation count is stated here.
 
 Earlier full-UI attempts found an invalid PNG IDAT CRC and an editor visibility
 timeout. The original PNG returns 400 without adding a photo; the corrected file
@@ -92,14 +93,16 @@ CLI; browser print/save is not equivalent to the legacy generated PDF. The
 dependency audit retains scoped findings and review dates in
 `rust-security-review.md`; it is not clean.
 
+Implementation acceptance is complete for this checkpoint: the final full UI
+journeys, native Rust checks, Room replay, Android lint, and Android build pass.
+This does not include a final production snapshot or production cutover.
+
 Final production write-freeze, fresh snapshot, import/verification, same-origin
 routing and rollback procedures are documented in `rust-migration-plan.md`.
 They are conditional future operations requiring the user's explicit approval;
 this audit does not execute or authorize them.
 
-At `dc3d78c`, Nix, native checks, Android build/lint, Room replay and the UI smoke
-run passed. A manual full UI attempt then failed with a 30-second wait timeout in
+An earlier full UI attempt at `dc3d78c` failed with a 30-second wait timeout in
 the offline-edit journey. The journey now waits for the detail screen, scrolls
-the edited Markdown into view and asserts it is displayed. Failure summaries
-retain an application frame and text-wait errors identify the expected text.
-The current full run is linked above; assertions and timeouts were not relaxed.
+the edited Markdown into view and asserts it is displayed. The successful run
+above confirms the fix; assertions and timeouts were not relaxed.

@@ -54,7 +54,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T119 | P1 | wip | rust-port | refactor | Rebuild Stricknani as a Rust-first application with Android integration; follow `REWRITE.md` |
+| T119 | P1 | done | rust-port | refactor | Rebuild Stricknani as a Rust-first application with Android integration; follow `REWRITE.md` |
 | T119.1 | P1 | done | rust-port | feat | Rust service foundation and gauge workflow; Askama page, health/static routes, and candidate Nix package/image |
 | T119.2 | P1 | done | rust-port/data | feat | Design fresh Rust schema/migrations and implement authentication, accounts, sessions, and configuration |
 | T119.3 | P1 | done | rust-port/api | feat | Implement initial `/api/v1/` project, yarn, category, upload, and media contract |
@@ -63,7 +63,7 @@ Execution-oriented backlog for Stricknani.
 | T119.6 | P1 | done | rust-port/product | feat | Port imports, administrative/CLI operations, security controls, background work, translations, and PWA capabilities selected by inventory |
 | T119.7 | P1 | done | rust-port/migration | feat | Build and rehearse a one-time importer using separate copies of production database and media; verify imported records, ownership, and original media bytes |
 | T119.8 | P1 | done | rust-port/build | refactor | Make Rust package/app/check/dev-shell/image and NixOS module outputs the default; keep production on its separate Python revision until approved cutover |
-| T119.9 | P1 | wip | rust-port/acceptance | test | Complete final-candidate Android/container acceptance and document snapshot/backup/rollback steps; production cutover remains separately gated |
+| T119.9 | P1 | done | rust-port/acceptance | test | Complete final-candidate Android/container acceptance and document snapshot/backup/rollback steps; production cutover remains separately gated |
 | T39 | P0 | done | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
 | T41 | P1 | done | ux | bug | Fix remaining print layout issues (Wayback buttons, footer, spacing) |
 | T38 | P2 | done | ux | refactor | Improve print layout to save space and show only relevant content |
@@ -2016,12 +2016,13 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port
 - **Priority**: P1
-- **Status**: wip
+- **Status**: done
 - **Category**: refactor
 - **Brief**: Follow [`REWRITE.md`](REWRITE.md) and the `port-to-rust`, `port-from-python`, `rust-testing`, and `rust-code-review` skills.
 - **Scope**: Rebuild the backend and web application as a standalone, Rust-first service. The repository's Nix flake, package/check/dev-shell outputs, deployment-facing definitions, and container workflow are in scope. Treat Python internals, SQLAlchemy schema, and Alembic history as product evidence rather than constraints. Keep current `/api/v1/` routes and Android-facing request/response semantics as initial Rust v1; test the Kotlin app against it. Put future breaking API changes in `/api/v2/`; use native Rust approaches for internals and data storage. A broader UI redesign is planned separately; structure the presentation layer so it can evolve independently.
 - **Execution**: Work in an isolated git worktree on branch `rust`. Break the work into bounded TODO subtasks (`T119.1`, `T119.2`, ...) with scope, dependencies, acceptance criteria, and status. The agent owns Rust stack choices and reviews each slice using the listed Rust skills; record rationale and findings instead of requiring the user to review Rust internals. Use `aimemory.sh` or the configured ai-memory integration for concise cross-session decisions and handoffs. Inventory product needs and Nix flake outputs, implement vertical slices, test the Android app against Rust `/api/v1/`, and build a one-time importer from copied production database/media into the fresh Rust schema. Update the flake and container to use the Rust runtime; remove Python from the final runtime.
 - **Safety**: Keep any staging instance at `https://rust.anika.blue` separate from production configuration, database, media, and jobs. A copy of production data may be used there, but Rust must never share or write to live production storage; protect staging access and disable/isolate external side effects. Rehearse migration on a separate copy. Do not switch production traffic to Rust until migration and acceptance are complete and the user explicitly approves. Preserve unrelated worktree changes.
+- **Verified (2026-11-01)**: Implementation and isolated candidate acceptance completed; see [`docs/rust-acceptance.md`](docs/rust-acceptance.md). Exact candidate `2cd090e` passed native checks, Android build/lint, replay, smoke and [full UI journeys](https://github.com/pschmitt/stricknani/actions/runs/41315348917). Copied-data migration, Python-free Nix/container runtime and live preview isolation are verified. Production cutover remains unexecuted and requires separate approval.
 - **Acceptance**: Implement the selected product capabilities with Rust-native designs, keep web presentation independent from domain/API logic, run Rust, Android, Nix flake, and container checks, and test the Kotlin client against Rust `/api/v1/`. Rehearse migration of copied production database/media and verify relationships and media references. A full visual redesign is out of scope. Demonstrate the candidate can run alongside production at `rust.anika.blue` without affecting the live instance. The Nix package and container must use the Rust runtime without Python. At approved cutover, migrate a final production-data copy and route the production `/api/v1/` URL to Rust without a client-visible redirect. Production cutover requires a separate explicit go-ahead.
 
 ### T119.1: Rust service foundation and gauge workflow
@@ -2111,8 +2112,9 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port/acceptance
 - **Priority**: P1
-- **Status**: wip
+- **Status**: done
 - **Category**: test
 - **Dependencies**: T119.1, T119.2, T119.3, T119.4, T119.5, T119.6, T119.7, T119.8
 - **Scope**: Validate the complete app and Android client against Rust, then use the authorized `rust.anika.blue` candidate with isolated config, database, media, credentials, and background jobs. The candidate may use a separate production data copy after the importer is safe. Document bootstrap, backup, rollback, and data handling.
 - **Acceptance**: All product and engineering checks in `REWRITE.md` pass; Android flows work against candidate `/api/v1/`; candidate isolation and access protection are verified; migration rehearsals are complete; production traffic/state remain untouched. Production cutover requires separate explicit approval.
+- **Verified (2026-11-01)**: [Full Android UI](https://github.com/pschmitt/stricknani/actions/runs/41315348917), [Room replay](https://github.com/pschmitt/stricknani/actions/runs/41315290345), [native checks](https://github.com/pschmitt/stricknani/actions/runs/41315290376), [Android lint](https://github.com/pschmitt/stricknani/actions/runs/41315352294) and [build](https://github.com/pschmitt/stricknani/actions/runs/41315355350) passed on `2cd090e`; container/Nix and copied-snapshot evidence is recorded in [`docs/rust-acceptance.md`](docs/rust-acceptance.md). Final production snapshot, routing and rollback operations are separately gated.

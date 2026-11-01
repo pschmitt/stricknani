@@ -51,17 +51,20 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 - [x] Scroll the cached detail to the Markdown description before asserting it, and include the
       expected text in timeout diagnostics.
 - [x] Re-run Android formatting and APK assembly on the designated remote build host.
-- [ ] Verify the full Rust Android E2E suite in CI.
+- [x] Verify the full Rust Android E2E suite in CI.
 
 **Why:** Rust correctly rejected the Android photo fixture's invalid IDAT CRC, and the full lane
 must preserve the seeded project name for later navigation while verifying the offline-edited
 Markdown description in its visible LazyColumn card.
 **How to apply:** no user action; this repairs test data and makes the full test suite independent.
 
-Status: **in progress**, 2026-11-01 - PNG checks and packaged API proof passed (old payload 400
-with no added photo; corrected payload 201 and count +1). The latest full UI run exposed that the
-Markdown description needs a substring scroll and visible-node assertion; the fixed test is ready
-for CI rerun. Remote ktfmt and APK assembly passed.
+Status: **done**, 2026-11-01 - PNG checks and packaged API proof passed (old payload 400 with no
+added photo; corrected payload 201 and count +1). The full Rust Android E2E suite passed on
+[commit 2cd090e](https://github.com/pschmitt/stricknani/commit/2cd090e) in
+[CI run 41315348917](https://github.com/pschmitt/stricknani/actions/runs/41315348917), including
+both `connectedDebugAndroidTest` invocations and fixture cleanup. Android lint
+[41315352294](https://github.com/pschmitt/stricknani/actions/runs/41315352294) and build
+[41315355350](https://github.com/pschmitt/stricknani/actions/runs/41315355350) also passed.
 
 ## SNA-72: Allow longer Android pattern import requests
 

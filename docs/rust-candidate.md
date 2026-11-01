@@ -72,9 +72,9 @@ test passed; the Rust runtime closure has eight paths and no Python interpreter.
 These are incremental results from an earlier integration checkpoint, not
 current final acceptance evidence.
 
-## Current acceptance and remaining work
+## Current acceptance and operational boundary
 
-The current evidence and remaining gates are summarized in
+The current evidence and separate production-approval boundary are summarized in
 [`rust-rewrite-checkpoint.md`](rust-rewrite-checkpoint.md) and tracked by
 [`TODO.md`](../TODO.md#L57-L66). The implementation now includes the browser,
 import, administrative, optional-provider, translation, PWA, importer, and
@@ -91,14 +91,14 @@ Android unit tests, Gradle build, and APK artifact uploads passed in
 [run 41315355350](https://github.com/pschmitt/stricknani/actions/runs/41315355350).
 The full Android UI workflow
 [41315348917](https://github.com/pschmitt/stricknani/actions/runs/41315348917)
-is pending behind autoSmoke run
-[41315290332](https://github.com/pschmitt/stricknani/actions/runs/41315290332);
-keep T119.9 open until that result is available.
+passed after autoSmoke run
+[41315290332](https://github.com/pschmitt/stricknani/actions/runs/41315290332).
+Both full journey classes passed. The workflow emitted no instrumentation test
+count summary, so this document does not state one.
 
 The deployed candidate has its own native login and storage. The copied-data
 migration rehearsal completed: 34 independent checks and 38 candidate API checks
-passed against an isolated snapshot. This is distinct from the final production
-snapshot, write freeze, import, and cutover, which remain unexecuted. The styled
-preview passed desktop and mobile viewport checks, while production continues
-to use Python and separate storage. Production cutover requires the user's
-explicit approval.
+passed against an isolated snapshot. A final production snapshot, write freeze,
+fresh import, and cutover remain unexecuted. The styled preview passed desktop
+and mobile viewport checks, while production continues to use Python and
+separate storage. Production cutover requires the user's explicit approval.
