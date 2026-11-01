@@ -11,7 +11,7 @@ primary checkout and the user's uncommitted `REWRITE.md` edits are preserved.
 | --- | --- | --- |
 | Standalone native Rust service; no Python bridge | `rust/Cargo.toml`, `rust/src/main.rs`, Axum/Tokio/SQLx/Askama modules. The default package and Docker runtime contain no Python. | Verified |
 | Useful web workflows; replaceable presentation | `rust/src/web.rs`, `web_accounts.rs`, `web_signup.rs`; separate Askama templates and `static/css/rust.css`. Router integration tests exercise CRUD, steps, categories, favorites, accounts, media, validation, CSRF and ownership. Live desktop/mobile styling checks passed. Offline stylesheet precaching was corrected and its six PWA tests pass. | Verified |
-| Existing Android v1 contract; future breaks under v2 | `projects.rs`, `yarns.rs`, `categories.rs`, `sync.rs`, `media.rs`, authentication and dedicated DTO projections. Tests cover conflicts, idempotent favorites, foreign owners, nested steps, media namespaces/aliases, token expiry, pagination and bound cursors. Version policy is in `rust-port-decisions.md`. Kotlin HTTP/JVM checks and the actual Room/WorkManager replay passed. | Verified core; broader UI run failed and is being diagnosed |
+| Existing Android v1 contract; future breaks under v2 | `projects.rs`, `yarns.rs`, `categories.rs`, `sync.rs`, `media.rs`, authentication and dedicated DTO projections. Tests cover conflicts, idempotent favorites, foreign owners, nested steps, media namespaces/aliases, token expiry, pagination and bound cursors. Version policy is in `rust-port-decisions.md`. Kotlin HTTP/JVM checks and the actual Room/WorkManager replay passed. | Core verified; final broader UI run pending |
 | Fresh native data model and one-time migration | Embedded SQLx migrations plus `importer.rs`. Fixture import tests cover publication, relationships and malformed inputs. The independent read-only verifier checked the actual isolated copied snapshot: all 34 checks pass; a further 38 deployed API checks covered ownership and original media bytes. | Verified |
 | Reassessed security, imports, configuration, CLI and background work | Dedicated tests for authentication, hosts/headers/cache, sanitization, SSRF redirects, bounded document subprocesses, AI/OCR, durable archive jobs and import images. Optional external services are off in staging. Operator CLI selection, API/browser alternatives and intentional differences are recorded in `rust-cli-selection.md`. | Verified |
 | Nix/package/app/check/dev-shell/container use Python-free Rust | Default flake package/app/image/dev shell, root Dockerfile and NixOS module select Rust. Explicit Python reference artifacts remain separate. Fresh NixOS evaluation confirms the Rust executable and independent default storage; explicit Python still evaluates correctly. Production imports its separately pinned old Python revision. | Verified |
@@ -34,21 +34,21 @@ primary checkout and the user's uncommitted `REWRITE.md` edits are preserved.
   gate, while the Nix Python parity lane remains test-only. Default development
   commands now test Rust and its shipping tooling; explicit `test-python` and
   `check-python` retain the legacy coverage commands.
-- The Dockerfile image for `064f9cd` built and ran as UID/GID 65532:65532 with a
-  read-only root. HTTP `/healthz`, the native health CLI and container health
-  passed. Its 40 store paths contained no Python packages. Disposable containers,
-  image tag and build fixtures from that check were removed.
+- The Dockerfile image for `dc3d78c` built and ran as UID/GID 65532:65532 with a read-only
+  root. HTTP health, the native health CLI and container health passed; the
+  runtime closure contains no Python paths. Disposable containers and build
+  fixtures from that check were removed.
 - The live preview uses native application login, disables signup and external
   side effects, and has independent database/media storage. Public root requests
   redirect to `/login`; unauthenticated API requests return 401, signup 404.
   The production application continues to use Python and separate storage/routing.
-- The preview was updated to `3004996` through candidate-only infrastructure
-  commit `ab5ca2117`. The target system build and upgrade passed; the production
-  executable path was compared before and after and is identical. A real browser
-  offline check loaded the styled public fallback and cached CSS successfully,
-  while a private API request remained unavailable offline. Online mobile layout
-  also passed without overflow. The later source changes affect check recipes
-  and documentation, not the preview's application code.
+- The styled preview was updated through candidate-only infrastructure
+  [commit `4780494aa`](https://github.com/pschmitt/nixos-config/commit/4780494aa);
+  the system upgrade succeeded. A live anonymous browser
+  check saw the four expected navigation labels and no Projects or Yarns links;
+  the authenticated navigation regression and all 13 web tests passed. The preview
+  uses native login, disabled signup and independent storage. Production still
+  runs Python with separate storage and routing.
 - The migration report and independent verifier report remain in protected
   operations storage outside every source/build snapshot. The verifier report
   was rechecked during this audit and still contains 34 passing checks.
@@ -57,17 +57,20 @@ primary checkout and the user's uncommitted `REWRITE.md` edits are preserved.
 
 ## Remaining acceptance
 
-The first broader Android UI run reached instrumentation but failed without
-exposing the failing assertion. Bounded, sanitized JUnit diagnostics are now
-installed. The [replacement full run](https://github.com/pschmitt/stricknani/actions/runs/41305936894)
-identified a queued yarn-photo timeout. The test's embedded PNG has an invalid
-IDAT CRC, which the Rust image decoder rejects. The corrected fixture was checked
-through the packaged API: old bytes return 400 without adding a photo; corrected
-bytes return 201 and add one photo. The offline journey now edits a description
-while keeping the shared project name stable for subsequent journeys. Validation,
-CRUD assertions and timeouts remain intact; the full UI rerun remains the gate.
-The fixture helper also keeps GitHub masking directives out of local output,
-with startup-boundary regression coverage. The CLI
+The earlier broader Android UI run
+([run 41305936894](https://github.com/pschmitt/stricknani/actions/runs/41305936894))
+exposed a queued yarn-photo timeout caused by an invalid IDAT CRC in its PNG.
+The fixture was corrected and independently checked through the packaged API:
+the original bytes return 400 without adding a photo, while the corrected bytes
+return 201 and add one. The offline journey now edits a description while
+preserving the shared project name for later journeys. The final broader UI run
+is pending in [run 41311343609](https://github.com/pschmitt/stricknani/actions/runs/41311343609);
+the paired lint and build runs are also pending:
+[41311346438](https://github.com/pschmitt/stricknani/actions/runs/41311346438) and
+[41311349505](https://github.com/pschmitt/stricknani/actions/runs/41311349505).
+The fixture helper masks generated credentials only in GitHub Actions; its
+startup-boundary tests and mandatory health tests pass (8 and 4 tests).
+The CLI
 inventory records the intentional command-surface changes; generated project PDF
 export is replaced by non-equivalent browser print/save, and that limitation is
 retained explicitly rather than claimed as parity.
@@ -77,6 +80,5 @@ routing and rollback procedures are documented in `rust-migration-plan.md`.
 They are conditional future operations requiring the user's explicit approval;
 this audit does not execute or authorize them.
 
-The signed-out header now hides Projects and Yarns, while authenticated
-navigation retains them. All 13 focused web tests, formatting and strict Clippy
-pass for this correction; preview deployment and final combined CI are pending.
+The final broader UI, lint, and build workflow results remain pending as listed
+above.

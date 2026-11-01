@@ -12,13 +12,17 @@ boundary.
   check, and strict Clippy check successfully after the bounded loopback TCP
   health probe was added. This supersedes the earlier 205-test result.
 - The Room/WorkManager replay passed on a disposable API 34 x86_64 emulator.
-  The deployed revision also passed the KVM-backed
+  Earlier revision `7162771` also passed the KVM-backed
   [Android Rust Replay CI job](https://github.com/pschmitt/stricknani/actions/runs/41300342197)
   and [Nix Build](https://github.com/pschmitt/stricknani/actions/runs/41300342149).
-- The Python reference/harness suite passed 336 tests plus one skip; Ruff and
-  mypy passed for 197 files. The migration verifier passed 34 independent
-  checks and 38 checks through the actual candidate API, including ownership,
-  record, and original-media-byte verification on an isolated copied snapshot.
+- The Rust-first native CI job
+  [3745154](https://github.com/pschmitt/stricknani/actions/runs/41307787025)
+  passed 206 Rust tests and 55 shipping-harness tests.
+- The Python reference suite passed 357 tests plus one skip. Python 3.13
+  coverage was 74.23%, below the unchanged 80% reference gate. Ruff and mypy
+  passed for the Rust shipping harness; the independent migration verifier
+  passed 34 checks and the candidate API passed 38 checks on an isolated copied
+  snapshot, including ownership, records and original media bytes.
 - The styled source passed focused browser-route and desktop/mobile layout
   checks. The `rust.css` Biome check, full Nix flake check, and Rust package
   build passed. The target system closure also built with the isolated Rust
@@ -29,18 +33,36 @@ boundary.
   also passed with a 1152px main content width. This is not production
   acceptance.
 - A real Tesseract OCR request passed against a disposable fixture, which was
-  removed afterward. The Dockerfile image built from the deployed revision and
-  passed HTTP, CLI, and container health checks as UID/GID 65532:65532 with a
-  read-only root. Its 40 store paths contain no Python package; all optional
-  external integrations were disabled. The disposable container/state were removed.
+  removed afterward. The `dc3d78c` Dockerfile image passed HTTP, CLI, and container
+  health checks as UID/GID 65532:65532 with a read-only root; its runtime closure
+  contains no Python paths. Optional external integrations were disabled, and
+  disposable container state was removed.
 - The copied production snapshot and verification report remain outside source
   trees. No live production database or media was connected to Rust or changed.
 
-Broader Android UI journeys are being connected to a disposable Rust fixture;
-the existing replay coverage is already green. The final snapshot/write-freeze
-and rollback procedure is documented in the migration plan; it has not been
-executed. Production cutover remains a separate user-approved decision. The dependency findings and
-their review dates are recorded in `rust-security-review.md`.
+The styled preview was updated through candidate-only infrastructure
+[commit `4780494aa`](https://github.com/pschmitt/nixos-config/commit/4780494aa);
+the system upgrade succeeded. Live anonymous navigation showed
+four expected labels and hid Projects and Yarns. The authenticated navigation
+regression and all 13 web tests passed. Production continues to serve Python with
+separate storage and routing.
+
+The previous full Android UI run exposed an invalid PNG IDAT CRC. The corrected
+fixture now returns 201 through the packaged API, while the original bytes
+return 400 without adding a photo. The offline edit now changes the description
+and keeps the shared project name stable. The fixture helper's startup-boundary
+tests prove local output contains neither generated credential and GitHub
+Actions still masks both (8 fixture tests plus 4 health tests passed).
+The final broader UI run remains pending:
+[41311343609](https://github.com/pschmitt/stricknani/actions/runs/41311343609).
+Its lint and build runs are also pending:
+[41311346438](https://github.com/pschmitt/stricknani/actions/runs/41311346438) and
+[41311349505](https://github.com/pschmitt/stricknani/actions/runs/41311349505).
+
+The final snapshot/write-freeze and rollback procedure is documented in the
+migration plan; it has not been executed. Production cutover remains a separate
+user-approved decision. Dependency findings and review dates are recorded in
+`rust-security-review.md`.
 
 ## Historical integration notes
 
