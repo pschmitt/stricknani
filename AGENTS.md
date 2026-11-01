@@ -33,7 +33,25 @@ Use this file as the operational source of truth for working in Stricknani.
 - Keep Python production and Rust candidate storage separate. Production migration and cutover require the explicit approval described in `REWRITE.md`.
 - Investigate credential-scanner alerts before recording an incident; distinguish intentional public test fixtures, validation blacklists, and source identifiers from actual credential values.
 
+### Web UI rewrite workflow
+
+- Follow [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md) and track implementation under
+  T120. The T119 limit on visual redesign applied to the Rust rewrite, not T120.
+- Use scoped GPT-6 Luna agents for implementation. The coordinator owns the
+  shared contracts, integration, and review of authentication, API changes,
+  accessibility, performance, and packaging. Freeze shared interfaces before
+  parallel feature work; give each agent non-overlapping files.
+- Planning does not start implementation or authorize production cutover.
+  Keep the existing preview usable while building and reviewing the new UI.
+
 ### Vendored Web Dependencies
+
+- The new web UI is planned in [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md), tracked
+  under T120. This is a fresh frontend; the previous vanilla-JS preference does
+  not constrain it. Use the chosen framework and build tool with a committed
+  npm lockfile, reproducible installs, and locally bundled assets. These bundled
+  dependencies do not need separate `vendir.yml` entries. The rules below still
+  apply to standalone dependencies added to the legacy frontend.
 
 - All new frontend dependencies (JS/CSS) must be vendored via `vendir.yml` (no new CDN links).
 - After changing `vendir.yml`, run `just vendor-sync` and commit `vendir.lock.yml` and `stricknani/static/vendor/**`.
@@ -134,6 +152,7 @@ expensive. Keep `UV_PYTHON=python3.13` in the dev-shell command environment so
 
 - Operational rules: `AGENTS.md`
 - Work queue: `TODO.md`
+- New web UI brief and implementation checklist: `WEB-UI-REWRITE.md` (T120)
 - User/developer runbook: `README.md`
 - Product spec + implementation snapshot: `docs/spec-and-implementation.md`
 - Android app (offline-first native client, `android/`, package `blue.anika.wolle`): its own

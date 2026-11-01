@@ -28,6 +28,16 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T120 | P1 | todo | web-rewrite | feat | Rebuild the web UI for smartphones first; follow `WEB-UI-REWRITE.md` |
+| T120.1 | P1 | todo | web-rewrite/design | design | Define key mobile journeys, restrained design system, route map and browser API contracts |
+| T120.2 | P1 | todo | web-rewrite/foundation | feat | Add the SvelteKit/TypeScript static build, shared shell and session-aware frontend foundation |
+| T120.3 | P1 | todo | web-rewrite/api | feat | Implement focused cookie-authenticated browser API v2 with shared Rust services and contract tests |
+| T120.4 | P1 | todo | web-rewrite/projects | feat | Build project browsing, search and a comfortable mobile pattern reader |
+| T120.5 | P1 | todo | web-rewrite/editor | feat | Build touch-friendly project editing, steps, uploads and conflict recovery |
+| T120.6 | P1 | todo | web-rewrite/yarns | feat | Build yarn browsing/editing, project associations and category management |
+| T120.7 | P1 | todo | web-rewrite/imports | feat | Build import review, optional OCR/archive controls and bounded job progress feedback |
+| T120.8 | P1 | todo | web-rewrite/settings | feat | Build account/security, gauge and responsive admin workflows |
+| T120.9 | P1 | todo | web-rewrite/acceptance | test | Verify mobile usability, accessibility, performance, packaging and isolated preview rollout |
 | T52 | P0 | done | security | bug | Add SSRF guard to import fetch layer (block private/loopback/link-local, re-validate redirects) |
 | T54 | P0 | done | import | bug | Return friendly 4xx/502 on import fetch failures instead of 500 with raw error text |
 | T99 | P3 | done | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |
@@ -2118,3 +2128,15 @@ Execution-oriented backlog for Stricknani.
 - **Scope**: Validate the complete app and Android client against Rust, then use the authorized `rust.anika.blue` candidate with isolated config, database, media, credentials, and background jobs. The candidate may use a separate production data copy after the importer is safe. Document bootstrap, backup, rollback, and data handling.
 - **Acceptance**: All product and engineering checks in `REWRITE.md` pass; Android flows work against candidate `/api/v1/`; candidate isolation and access protection are verified; migration rehearsals are complete; production traffic/state remain untouched. Production cutover requires separate explicit approval.
 - **Verified (2026-11-01)**: [Full Android UI](https://github.com/pschmitt/stricknani/actions/runs/41315348917), [Room replay](https://github.com/pschmitt/stricknani/actions/runs/41315290345), [native checks](https://github.com/pschmitt/stricknani/actions/runs/41315290376), [Android lint](https://github.com/pschmitt/stricknani/actions/runs/41315352294) and [build](https://github.com/pschmitt/stricknani/actions/runs/41315355350) passed on `2cd090e`; container/Nix and copied-snapshot evidence is recorded in [`docs/rust-acceptance.md`](docs/rust-acceptance.md). Final production snapshot, routing and rollback operations are separately gated.
+
+### T120: Rebuild the web UI for smartphones first
+
+- **Area**: web-rewrite
+- **Priority**: P1
+- **Status**: todo
+- **Category**: feat
+- **Brief and checklist**: [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md) defines the journeys, architecture, visual direction, T120.1–T120.9 scopes, Luna ownership waves and acceptance criteria.
+- **Scope**: A fresh responsive web application using SvelteKit/TypeScript static assets served by Rust, with focused browser API v2 support where useful. Prioritize phone navigation, reading patterns, editing and uploads. Preserve useful product capabilities, with no requirement to retain old web layouts or interaction conventions. Keep Android API v1 independent.
+- **Design**: Modern, fast and restrained. Opaque surfaces, readable content and accessible controls; subtle motion only when it explains a state change. No glass/transparency effects or ornamental animation.
+- **Execution**: Planning is prepared; implementation has not started. Delegate scoped implementation to GPT-6 Luna agents; coordinator integrates and reviews shared contracts, security, accessibility, performance and deployment. Start with T120.1, then follow the waves in the brief.
+- **Acceptance**: Complete workflows on phone and desktop, English/German coverage, meaningful browser/API tests, explicit performance and accessibility checks, reproducible static assets in the Rust package/container, and rollout to the isolated Rust preview. Production cutover remains separate.

@@ -1,0 +1,339 @@
+# Rust Web UI Rewrite Brief
+
+## Goal
+
+Replace the current Rust browser UI with a fresh, fast, smartphone-first web
+application for managing knitting projects and yarn. The work is a deliberate
+product UI redesign, not a visual reskin of the old Python web pages. Existing
+web URLs, page structure, and interaction details may change. Preserve useful
+product workflows and security guarantees; do not preserve web compatibility
+for its own sake.
+
+The Android client and `/api/v1/` contract are separate. Keep API v1 behavior
+stable for Android while the new browser uses a purpose-built `/api/v2/`
+contract. Do not cut features that exist today without recording the product
+decision and getting the user’s approval.
+
+## Product and source map
+
+The source of truth for current Rust behavior is the composed Axum application,
+not `web.rs` alone:
+
+- `rust/src/lib.rs` composes the browser, account, signup, audit, archive, OCR,
+  import, API, media, and PWA routers.
+- `rust/src/web.rs` implements project, yarn, category, and login pages,
+  plus current project and yarn mutations.
+- `rust/src/lib.rs` also exposes the current standalone gauge page/calculation.
+- `rust/src/web_accounts.rs` implements account and administrator workflows.
+- `rust/src/web_audit.rs` implements the administrator audit view.
+- `rust/src/web_signup.rs` implements optional public signup.
+- `rust/src/import_service.rs` implements `/imports`, preview, file preview,
+  and project/yarn creation; `rust/templates/import.html` is its current UI.
+- `rust/src/archive_service.rs` and `rust/src/ocr_service.rs` expose optional
+  archive and OCR operations. `rust/src/pwa.rs` serves public PWA resources and
+  a non-personalized offline fallback.
+- `rust/templates/web.html`, `accounts.html`, `audit.html`, `gauge.html`,
+  `signup.html`, `import.html`, and `offline.html` are the current page
+  references. They are behavior evidence, not layout constraints.
+- `docs/spec-and-implementation.md` describes the product; `REWRITE.md`
+  describes Rust rewrite boundaries and security/product requirements.
+
+Keep project and yarn pages consistent. A project detail is also a pattern
+reader used while knitting, often on a phone with one hand; it must prioritize
+legibility and quick return to the current step over dense metadata.
+
+## Core journeys to preserve
+
+### Everyday project work
+
+1. Sign in and land in the project library. Search, filter by category, tags,
+   and favorites, browse useful empty states, and open a project.
+2. Read the project name, materials, needles, gauge/stitch sample, notes,
+   instructions, ordered steps, and reference images. Follow linked yarns and
+   source/archive links when present. Zoom a diagram or photograph without
+   losing the current reading position. Print the complete instructions.
+3. Create or edit a project, associate existing yarns, edit ordered steps,
+   tags, instructions and notes, and understand whether changes were saved.
+   Validation and conflict errors must preserve entered content. Warn before
+   navigation can discard unsaved edits.
+4. Add and remove a title image, step image, and attachment. Show file
+   selection, upload progress, completion, and actionable failures. Keep image
+   alt text and image ownership semantics.
+5. Favorite, unfavorite, and delete projects, with confirmation for destructive
+   actions and a clear return path.
+
+### Everyday yarn work
+
+1. Browse/search/filter yarn inventory and open an item with brand, colorway,
+   dye lot, fiber, weight, length, needle recommendation, notes, and photos.
+2. Create/edit yarn, add/remove photos, favorite/unfavorite, and delete with
+   confirmation. Link yarns to projects and navigate back to the project.
+
+### Secondary and settings journeys
+
+- Manage categories; create, rename, and delete while communicating any
+  validation or dependency errors.
+- Import a project from a URL, pasted text, or HTML/text/Markdown/PDF/image
+  file; preview and correct extracted fields before creating a project. Offer
+  yarn creation when the import draft contains yarn details. Make optional AI
+  enhancement explicit and opt-in. Keep source fetching SSRF-safe.
+- Show pending, completion, and actionable failure states for imports and OCR;
+  these currently use bounded synchronous requests. For the existing durable
+  archive job, poll owner-scoped status only while its screen is active, with
+  backoff and a retry limit. Add a status endpoint only if the view needs it.
+  Do not create a generic job platform. Consider SSE only for a demonstrated
+  benefit; WebSockets and collaborative editing are deferred.
+- Use the standalone gauge calculator and any inline gauge assistance. Show
+  invalid input and calculation results clearly.
+- Account: change password, manage avatar, create an API token (show it only
+  once), and revoke tokens. Sign out and handle session expiration.
+- Admin: create users, enable/disable accounts, reset passwords, and inspect
+  filtered/paginated audit events. Keep all admin navigation and actions behind
+  authorization checks.
+- Optional OCR and archive controls appear only when their capabilities are
+  enabled. Provide clear busy, result, and failure states.
+- Support English and German from the first UI release, including form errors,
+  async feedback, accessibility labels, and browser-level empty/loading states.
+
+## Interaction and visual direction
+
+Initial phone layout (structure to validate in T120.1, not a pixel specification):
+
+```text
+Project library                 Pattern reader
+Projects            Account     Back       Project actions
+Search projects                 Project title / useful summary
+Filters       Sort              Instructions / current step
+Project photo + name            Readable text, reference image
+Project photo + name            Previous step / Next step
+Projects  Yarns  Create  More    Projects  Yarns  Create  More
+```
+
+- Design mobile-first for 320, 390, 768, and 1280 CSS-pixel viewports. Respect
+  safe areas, virtual keyboards, zoom, and scroll restoration. Keep primary
+  actions reachable; use a compact bottom navigation on phones for Projects,
+  Yarns, Create, and More, with a clear desktop navigation/rail. Hide or group
+  account and administrator links by role.
+- Use semantic HTML and plain CSS design tokens. Start with an opaque, calm
+  light/dark system theme; use high-contrast surfaces and restrained color.
+  Starting light-theme tokens: canvas `#f7f9fb`, surface `#ffffff`, text
+  `#17242d`, secondary text `#566874`, accent `#176a68`, border `#cbd5df`.
+  Use a native system sans-serif stack; start at 16px for controls and 18px for
+  reading, with a reader measure of 60–70 characters. Actual project photos and
+  yarn colors provide the visual interest. Validate contrast, matching dark
+  tokens, and the palette on real content before building the full UI.
+  Do not use glass, backdrop blur,
+  translucent panels, or ornamental gradients.
+- Use purposeful motion for state changes and navigation feedback, generally
+  120–180 ms. Avoid continuous or decorative animation. Honor
+  `prefers-reduced-motion: reduce` by removing nonessential movement.
+- Target at least 44×44 CSS-pixel touch controls. Maintain visible focus,
+  logical keyboard order, screen-reader labels, dialog focus handling, and
+  readable contrast. Verify 200% zoom and narrow-screen reflow.
+- Keep the pattern reader quiet and readable: comfortable text measure,
+  adjustable text sizing, persistent step context, easy image zoom, and a print
+  stylesheet/output that includes collapsed or otherwise hidden instructions.
+- Provide skeletons only where they prevent layout shift. Prefer useful empty
+  states with a direct next action. Distinguish no content, no search results,
+  loading, stale content, permission denial, validation failure, conflict,
+  network failure, and offline fallback.
+
+## Proposed frontend and runtime boundary
+
+Use Svelte 5, SvelteKit, TypeScript, and Vite with `@sveltejs/adapter-static`.
+Build the browser application as static assets and have the existing Rust
+binary serve those assets and the same-origin API. There is no Node process or
+Python dependency in the deployed runtime. Prerender public/sign-in shells where
+feasible, keep authenticated data out of generated HTML, and measure cold mobile
+startup before choosing client-only rendering for every route. Use addressable client routes for
+project lists/details/editors, yarn lists/details/editors, imports, account,
+admin, audit, and tools. A client-side navigation miss may fall back to the
+application shell only for known browser routes; `/api/*`, media, health, and
+unknown asset requests must retain their real HTTP status and must never become
+the SPA shell.
+
+Use Bits UI selectively for accessible headless primitives such as dialogs,
+menus, comboboxes, and select controls. Keep simple controls as native semantic
+HTML. Avoid a heavy component system or animation suite. Centralize typed
+`fetch` calls and response/error decoding in one API client. Add
+TanStack Svelte Query only if demonstrated needs require cache invalidation or
+deduplicated requests; do not build a bespoke cache framework.
+
+Existing repository policy says frontend dependencies are vendored with
+`vendir`. The Svelte/Vite build is an explicit exception: pin dependencies in
+`package-lock.json`, build them into static assets in the package/CI pipeline,
+and commit the lockfile. Do not vendor the full toolchain as individual browser
+files. Ship the generated JS/CSS/assets; exclude Node, npm, source build tools,
+and development dependencies from the final runtime image.
+
+Keep the existing EN/DE PO catalogs as translation source of truth and generate
+browser JSON at build time, extending the existing Rust catalog generator and
+extraction/completeness checks to Svelte strings. No PO parser is needed in the
+browser. The new browser translates stable API error codes rather than scraping
+HTML messages. Reuse terminology without preserving the old layout or copy.
+
+### Browser session and API boundary
+
+- Use the app’s browser session cookie as `HttpOnly`, `Secure` when HTTPS is
+  configured, and `SameSite=Lax`; never put bearer tokens or API tokens in
+  `localStorage`, URLs, or JavaScript-readable persistent storage.
+- Define pre-authentication CSRF bootstrap and JSON login explicitly, rather
+  than submitting through the old HTML form. Use same-origin checks and a
+  short-lived signed double-submit CSRF token for login; issue a browser-purpose
+  session only after successful authentication. Preserve secure `__Host-`
+  cookie naming, `Path=/`, and no `Domain` attribute. Session bootstrap may
+  return user summary, capabilities and a CSRF token, never the session secret.
+- Keep CSRF protection on every state-changing request. Handle `401` by
+  clearing client session state, showing a clear expiry message, and returning
+  to sign-in. Logout must revoke the browser session and clear client state.
+- Define a stable v2 API contract before page implementation. Use predictable
+  JSON errors with machine-readable `code`, user-safe `message`, and optional
+  field errors. Cover `401`, `403`, ownership-safe `404`, validation `422`,
+  conflict `409`, rate limiting, and server failures.
+- Use bounded page-number pagination with deterministic order, page size and
+  `has_more`; keep search/filter/page state in the URL. Include capability flags
+  for optional integrations, media upload/delete, synchronous import preview,
+  archive state, and account/admin actions. Avoid leaking whether a foreign user's
+  resource exists.
+- Auth/session and authenticated API responses use `Cache-Control: no-store`;
+  do not enable permissive CORS. Rate-limit authentication and expensive work.
+- Keep gauge calculation on the tested Rust helper; a small JSON endpoint can
+  replace its HTML handler if needed. Do not duplicate the arithmetic in two
+  languages merely to replace the form.
+- Extract and reuse domain/service logic incrementally from current handlers.
+  Do not implement v2 by making the Rust server call its own v1 router through
+  `tower::ServiceExt`; do not rewrite the whole backend as a prerequisite for
+  the UI.
+- Preserve current API v1 semantics and tests for Android. Document v2
+  versioning and error semantics alongside its schema/handlers.
+
+### Resilience and performance
+
+- PWA behavior caches only the public application shell and static assets. Do
+  not persist authenticated API responses, private pages, or media in the
+  service worker cache. Support in-memory draft state and warn about unsaved
+  edits; do not claim offline writes or sync.
+- Initial performance budgets: first-route JavaScript ≤150 KiB gzip and CSS
+  ≤50 KiB gzip. Lazy-load editors, large media, and admin areas. Record
+  controlled lab measurements and target LCP ≤2.5 s, INP ≤200 ms, and CLS ≤0.1;
+  do not present lab targets as production p75 data.
+- Set a restrictive Content Security Policy without `unsafe-eval` or
+  `unsafe-inline`. Verify the actual generated fallback HTML and interactive
+  components under Rust's HTTP CSP header. If SvelteKit needs bootstrap hashes,
+  generate and integrate them into that header during the build; a meta CSP
+  cannot relax a stricter HTTP policy. Keep uploaded and remote images on the established safe
+  media/import paths. Do not weaken CSRF, authorization, upload limits, SSRF
+  protections, or private cache headers to simplify UI integration.
+- Develop and test with synthetic fixtures. After checks, deploy to the existing
+  isolated Rust preview, retaining its separate storage and native application
+  login. Protect any existing copied private data; do not overwrite it with
+  fixtures. Production migration and cutover remain separately authorized.
+
+## Backlog
+
+Track the work as T120.1–T120.9 in `TODO.md`. Each slice owns a clear area and
+lands as a small reviewable checkpoint. Coordinate under the repository’s
+Concord workspace; the Luna implementation waves below own only their named
+frontend area, while the parent integrates and reviews API, authorization,
+performance, and acceptance decisions. Keep file claims disjoint before
+parallel implementation. Luna agents implement the Rust API/service slices too;
+the coordinator reviews their contracts and security-sensitive changes.
+
+- [ ] **T120.1 — UX/design and contract freeze.** Produce phone and desktop
+  screen flows, reader/editor interaction notes, navigation and role model,
+  loading/empty/error/upload state inventory, palette/type/spacing tokens, and
+  v2 route/error/capability contract. Record approved scope decisions. Freeze
+  contracts before page slices depend on them.
+- [ ] **T120.2 — Frontend foundation and auth shell.** Add Svelte 5/SvelteKit,
+  TypeScript, Vite, static adapter, lockfile, build integration, typed API
+  client, theme/responsive primitives, navigation shell, sign-in/signup,
+  session expiry/logout, route guards, generated EN/DE catalogs, and test/lint scripts.
+  Rust serves built assets; deployed runtime remains Rust-only.
+- [ ] **T120.3 — Focused browser API v2.** Scoped Luna Rust slice: implement
+  only the v2 operations the browser needs, with typed/schema documentation,
+  shared domain services, cookie/CSRF auth, authorization, pagination,
+  capabilities, predictable errors, and API tests. Leave v1/Android semantics
+  intact. Do not add generalized endpoints without a concrete journey.
+- [ ] **T120.4 — Project library and reader.** Deliver searchable/filterable
+  project library, favorites, pagination, empty/loading/error states, compact
+  project summary, readable detail/step reader, linked yarns, image zoom,
+  print-complete instructions, and optional OCR/archive states. Preserve
+  ownership and not-found behavior.
+- [ ] **T120.5 — Project editor and media.** Deliver create/edit with validation,
+  conflict preservation, unsaved-change warning, step ordering/editing,
+  yarn association, tags, descriptions/notes, project title and step photos,
+  attachments, accessible upload progress/retry/error/delete flows, and
+  destructive-action confirmation.
+- [ ] **T120.6 — Yarns and categories.** Deliver yarn inventory search/filter,
+  list/detail/create/edit/photo/favorite/delete flows, linked-project
+  navigation, category create/rename/delete management, and shared responsive
+  patterns with projects.
+- [ ] **T120.7 — Imports and jobs.** Deliver URL, pasted text, and file import
+  entry; preview/edit extracted project and yarn fields; opt-in AI control;
+  create project/yarn; and progress/success/failure/retry behavior for any
+  synchronous imports/OCR and the existing asynchronous archive work. Keep
+  SSRF/size/type boundaries; no new queue is required for import or OCR.
+- [ ] **T120.8 — Account, tools, admin, and i18n completion.** Deliver profile
+  avatar, password, one-time API token reveal/revoke, standalone gauge, optional
+  signup, admin user management, audit filter/pagination, role-gated navigation,
+  complete English/German strings, and consistent async/validation feedback.
+- [ ] **T120.9 — Acceptance, preview, and cleanup.** Run focused Rust tests and
+  Vitest logic/component tests, type/lint/build checks, then browser acceptance in Playwright on
+  Chromium/Firefox/WebKit at phone/tablet/desktop sizes. Include real-phone
+  browser acceptance, keyboard and screen-reader checks, 200% zoom, safe-area
+  and soft-keyboard checks, print, theme, offline shell/cache inspection,
+  performance bundle/lab reports, CSP/auth checks, and full journey smoke
+  coverage. Fix issues, remove replaced Rust templates/styles/scripts only
+  after route consumers are gone, update docs/screenshots, and report remaining
+  limitations. Keep preview data isolated; do not cut over production.
+
+### Luna implementation waves and ownership
+
+The paths below are proposed new ownership boundaries, finalized in T120.1.
+Implementation has not started; all T120 checkboxes are intentionally open.
+
+| Wave | Luna scopes (up to three in parallel) | Integration condition |
+| --- | --- | --- |
+| 1 | UX flows/tokens; browser API contracts/auth review; frontend build/packaging inventory | Coordinator reconciles contracts and one visual direction before feature work. |
+| 2 | Foundation: `web/` config, shared components, client, auth routes; API: new `rust/src/api_v2/` and tests; packaging: scoped Nix/Docker/CI files | Shared types/paths frozen first; coordinator owns cross-router wiring and resolves shared-file edits. Use labeled mocks only until real endpoints pass. |
+| 3 | Project list/reader routes; project editor/media routes; yarn/category routes | Agents consume frozen shared components/client. Each owns its route directories and corresponding tests, with no competing edits to the shell or client. |
+| 4 | Imports/OCR/archive routes; account/tools/admin routes; browser acceptance/performance review | Coordinator integrates cross-feature fixes; API additions get a separate scoped Rust owner. |
+
+`web/` is the proposed frontend source root. Shared design tokens, API schemas,
+root routes, lockfiles and build configuration always have one named owner;
+feature agents request changes instead of editing them concurrently. Commit
+and push small checkpoints regularly. Each handoff reports changed files,
+checks, screenshots when relevant, and known gaps. No feature is marked done
+from mock-only tests.
+
+## Acceptance criteria
+
+- A user can complete every everyday and secondary journey listed above on a
+  smartphone and desktop without relying on the legacy web UI.
+- No current product workflow disappears silently; optional features are
+  clearly capability-gated and existing API v1 remains compatible with
+  Android.
+- Every route has explicit loading, empty, error, forbidden/not-found, and
+  signed-out behavior as relevant. Forms preserve input on validation,
+  conflict, and recoverable network errors.
+- Touch, keyboard, zoom, contrast, reduced-motion, and print behavior meet the
+  interaction requirements above. Test assembled dialog/combobox focus and
+  keyboard behavior; accessible primitives alone do not prove accessible flows.
+  Both locales cover all user-facing text. Record cold startup under a stated
+  mobile network/CPU profile as well as warm navigation and bundle sizes.
+- Built output is static and served by Rust. APIs, media, health checks, and
+  unknown paths never receive a misleading SPA fallback. No Node/Python
+  runtime, local-storage token, private service-worker cache, unsafe CSP
+  escape, external analytics, or unapproved production operation is introduced.
+- Keep checks and preview evidence attached to each checkpoint. Use remote
+  build resources for expensive Nix/Cargo/Playwright work as directed by
+  `AGENTS.md`; do not run expensive builds on the agent host.
+
+## Framework references
+
+- [SvelteKit single-page apps](https://svelte.dev/docs/kit/single-page-apps)
+- [SvelteKit static adapter](https://svelte.dev/docs/kit/adapter-static)
+- [Bits UI introduction](https://bits-ui.com/docs/introduction)
+- [Vite backend integration](https://vite.dev/guide/backend-integration)
+- [Core Web Vitals targets and lab/field distinction](https://web.dev/articles/vitals)
+- [WCAG 2.2 reference](https://www.w3.org/WAI/WCAG22/quickref/)
