@@ -223,6 +223,7 @@
         bind:value={newName}
         maxlength="256"
         autocomplete="off"
+        disabled={saving}
         aria-invalid={Boolean(fieldError)}
         aria-describedby={fieldError ? "category-field-error" : undefined}
       />
@@ -273,6 +274,7 @@
                 bind:value={editName}
                 maxlength="256"
                 autocomplete="off"
+                disabled={saving}
                 aria-invalid={Boolean(fieldError)}
                 aria-describedby={fieldError
                   ? `category-${category.id}-error`

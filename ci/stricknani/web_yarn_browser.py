@@ -641,10 +641,41 @@ def run_acceptance(
             page.get_by_text(seed_rust.CATEGORY_NAME, exact=True).wait_for(
                 state="visible"
             )
-            page.get_by_label("New category").fill("Browser category")
+            category_cdp = context.new_cdp_session(page)
+            category_cdp.send("Network.enable")
+            category_cdp.send(
+                "Network.emulateNetworkConditions",
+                {
+                    "offline": False,
+                    "latency": 900,
+                    "downloadThroughput": 1_000_000,
+                    "uploadThroughput": 1_000_000,
+                    "connectionType": "cellular3g",
+                },
+            )
+            new_category = page.get_by_label("New category")
+            new_category.fill("Browser category")
             mark_stage("creating category")
             page.get_by_role("button", name="Add category").click()
+            _require(
+                new_category.is_disabled(),
+                "new category input remained editable while save was pending",
+            )
             page.get_by_text("Browser category", exact=True).wait_for(state="visible")
+            _require(
+                new_category.input_value() == "",
+                "successful category create did not clear the submitted name",
+            )
+            category_cdp.send(
+                "Network.emulateNetworkConditions",
+                {
+                    "offline": False,
+                    "latency": 0,
+                    "downloadThroughput": -1,
+                    "uploadThroughput": -1,
+                },
+            )
+            category_cdp.detach()
             category_row = page.locator(".category-row").filter(
                 has_text="Browser category"
             )
@@ -730,10 +761,36 @@ def run_acceptance(
             )
             edit_category.fill("Fresh browser category")
             mark_stage("saving category rename")
+            category_cdp = context.new_cdp_session(page)
+            category_cdp.send("Network.enable")
+            category_cdp.send(
+                "Network.emulateNetworkConditions",
+                {
+                    "offline": False,
+                    "latency": 900,
+                    "downloadThroughput": 1_000_000,
+                    "uploadThroughput": 1_000_000,
+                    "connectionType": "cellular3g",
+                },
+            )
             category_form.get_by_role("button", name="Save", exact=True).click()
+            _require(
+                edit_category.is_disabled(),
+                "category rename input remained editable while save was pending",
+            )
             page.get_by_text("Fresh browser category", exact=True).wait_for(
                 state="visible"
             )
+            category_cdp.send(
+                "Network.emulateNetworkConditions",
+                {
+                    "offline": False,
+                    "latency": 0,
+                    "downloadThroughput": -1,
+                    "uploadThroughput": -1,
+                },
+            )
+            category_cdp.detach()
             category_row = page.locator(".category-row").filter(
                 has_text="Fresh browser category"
             )
