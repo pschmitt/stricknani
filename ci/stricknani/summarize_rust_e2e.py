@@ -167,15 +167,30 @@ def _failure_details(
         details.append(f"- {label}: {summary or kind}")
         detailed_case_count += 1
         if failure.text:
-            frame_count = 0
-            for line in failure.text.splitlines():
-                stripped = line.strip()
-                if not stripped.startswith("at "):
-                    continue
-                details.append(f"  {redactor.clean(stripped)}")
-                frame_count += 1
-                if frame_count == 2:
-                    break
+            frames = [
+                line.strip()
+                for line in failure.text.splitlines()
+                if line.strip().startswith("at ")
+            ]
+            app_frame = next(
+                (
+                    index
+                    for index, frame in enumerate(frames)
+                    if frame.startswith("at blue.anika.wolle.")
+                ),
+                None,
+            )
+            framework_frames = [
+                index
+                for index, frame in enumerate(frames)
+                if not frame.startswith("at blue.anika.wolle.")
+            ][:2]
+            selected_frames = set(framework_frames)
+            if app_frame is not None:
+                selected_frames.add(app_frame)
+            for index, frame in enumerate(frames):
+                if index in selected_frames:
+                    details.append(f"  {redactor.clean(frame)}")
     if failed_case_count > detailed_case_count:
         omitted_count = failed_case_count - detailed_case_count
         details.append(f"- {omitted_count} additional failed test cases omitted.")

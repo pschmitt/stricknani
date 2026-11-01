@@ -7,6 +7,7 @@ import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText as hasTextMatcher
@@ -81,7 +82,14 @@ abstract class StricknaniE2eTest {
     }
 
     protected fun waitForText(text: String, timeoutMillis: Long = 30_000) {
-        composeRule.waitUntil(timeoutMillis) { hasText(text) }
+        try {
+            composeRule.waitUntil(timeoutMillis) { hasText(text) }
+        } catch (failure: ComposeTimeoutException) {
+            throw AssertionError(
+                "Timed out waiting for text '$text' after ${timeoutMillis}ms",
+                failure,
+            )
+        }
     }
 
     private fun hasTag(tag: String): Boolean =
@@ -198,7 +206,17 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
                 .onNodeWithTag("e2e-project-editor-description")
                 .performTextReplacement(queuedDescription)
             composeRule.onNodeWithContentDescription("Save").performClick()
-            waitForText(queuedDescription)
+            composeRule.waitUntil(30_000) {
+                runCatching {
+                        composeRule.onNodeWithTag("e2e-project-detail").assertIsDisplayed()
+                        true
+                    }
+                    .getOrDefault(false)
+            }
+            composeRule
+                .onNodeWithTag("e2e-project-detail")
+                .performScrollToNode(hasTextMatcher(queuedDescription, substring = true))
+            composeRule.onNodeWithText(queuedDescription, substring = true).assertIsDisplayed()
 
             // Returning to the cached list and Home proves both the read path and pending-write
             // status survive without a network response. Keep the seeded name stable because

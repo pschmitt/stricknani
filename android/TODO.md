@@ -48,29 +48,33 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
       the corrected upload.
 - [x] Keep the shared seeded project name stable across the full suite by editing its description
       in the offline journey; assert the cached description and unchanged baseline name.
+- [x] Scroll the cached detail to the Markdown description before asserting it, and include the
+      expected text in timeout diagnostics.
 - [x] Re-run Android formatting and APK assembly on the designated remote build host.
 - [ ] Verify the full Rust Android E2E suite in CI.
 
-**Why:** Rust correctly rejected the Android photo fixture's invalid IDAT CRC, and the offline
-journey renamed a seeded row that a later test needs as its navigation marker.
+**Why:** Rust correctly rejected the Android photo fixture's invalid IDAT CRC, and the full lane
+must preserve the seeded project name for later navigation while verifying the offline-edited
+Markdown description in its visible LazyColumn card.
 **How to apply:** no user action; this repairs test data and makes the full test suite independent.
 
 Status: **in progress**, 2026-11-01 - PNG checks and packaged API proof passed (old payload 400
-with no added photo; corrected payload 201 and count +1). Remote ktfmt and APK assembly passed;
-CI instrumentation verification is pending.
+with no added photo; corrected payload 201 and count +1). The latest full UI run exposed that the
+Markdown description needs a substring scroll and visible-node assertion; the fixed test is ready
+for CI rerun. Remote ktfmt and APK assembly passed.
 
 ## SNA-72: Allow longer Android pattern import requests
 
 - [x] Give `ProjectImportApi` a dedicated OkHttp client with a 65-second read timeout and
       75-second call timeout, preserving the app's existing Retrofit converters and interceptors.
-- [ ] Verify Android formatting and lint on the designated remote build host.
+- [x] Verify Android formatting and lint on the designated remote build host.
 
 **Why:** the import path may spend up to 10 seconds fetching and 10 seconds parsing before its
 optional 30-second AI enhancement, which exceeds the shared 10-second HTTP client timeout.
 **How to apply:** no user action; only pattern import requests use the longer timeout.
 
-Status: **in progress**, 2026-11-01 - dedicated import client implemented; remote Android checks
-are pending.
+Status: **done**, 2026-11-01 - dedicated import client implemented; Android Build and Lint CI
+checks passed (runs 41311349505 and 41311346438).
 
 ## SNA-71: Exercise offline queued writes against the Rust backend (T119.4)
 

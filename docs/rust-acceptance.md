@@ -80,5 +80,9 @@ routing and rollback procedures are documented in `rust-migration-plan.md`.
 They are conditional future operations requiring the user's explicit approval;
 this audit does not execute or authorize them.
 
-The final broader UI, lint, and build workflow results remain pending as listed
-above.
+At `dc3d78c`, Nix, native checks, Android build/lint, Room replay and the UI smoke
+run passed. The manual full UI run failed with a 30-second wait timeout in the
+offline-edit journey. That journey now waits for the detail screen, scrolls the
+edited Markdown into view and asserts it is displayed. Failure summaries retain
+an application frame and text-wait errors identify the expected text. The full
+rerun remains an acceptance gate; the assertions and timeouts were not relaxed.

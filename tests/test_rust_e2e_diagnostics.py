@@ -83,6 +83,53 @@ def test_summary_shows_failure_and_short_frames_without_fixture_values(
     assert "127.0.0.1:4321" not in output
 
 
+def test_summary_keeps_app_callsite_after_framework_frames_and_redacts_it(
+    tmp_path: Path,
+) -> None:
+    email = "offline" + "@example.invalid"
+    password = "private-fixture-password"
+    token = "sna_" + "cd" * 12
+    fixture_file = tmp_path / "fixture.json"
+    write_private(
+        fixture_file,
+        {"url": "http://127.0.0.1:4321", "email": email, "password": password},
+    )
+    token_file = tmp_path / "token.json"
+    write_private(token_file, {"token": token})
+    results = tmp_path / "results"
+    results.mkdir()
+    app_frame = (
+        "at blue.anika.wolle.sync.SyncWorker.retry(SyncWorker.kt:55) "
+        f"email={email} password={password} Bearer {token}"
+    )
+    (results / "TEST-app-frame.xml").write_text(
+        f"""<testsuite tests="1" failures="1">
+        <testcase classname="blue.anika.wolle.e2e.FullJourney" name="offlineRetry">
+          <failure type="ComposeTimeout" message="timed out">
+            at androidx.compose.ui.test.Compose.wait(Compose.kt:10)
+            at org.junit.runners.ParentRunner.run(ParentRunner.java:20)
+            {escape(app_frame)}
+            at blue.anika.wolle.sync.SyncWorker.execute(SyncWorker.kt:60)
+          </failure>
+        </testcase></testsuite>""",
+        encoding="utf-8",
+    )
+
+    output = "\n".join(
+        summarize_rust_e2e.summarize_results(
+            results, summarize_rust_e2e.load_redactor(fixture_file, token_file)
+        )
+    )
+
+    assert "Compose.wait(Compose.kt:10)" in output
+    assert "ParentRunner.run(ParentRunner.java:20)" in output
+    assert "SyncWorker.retry(SyncWorker.kt:55)" in output
+    assert email not in output
+    assert password not in output
+    assert token not in output
+    assert output.count("  at ") == 3
+
+
 def test_missing_reports_emit_only_constant_message(tmp_path: Path) -> None:
     assert summarize_rust_e2e.summarize_results(tmp_path / "missing") == [
         "No Android instrumentation XML report was found."
