@@ -155,4 +155,43 @@ describe("same-origin API client", () => {
       "The email or password is incorrect.",
     );
   });
+
+  it.each([
+    [
+      "csrf_failed",
+      "Your session check failed. Refresh the page and try again.",
+    ],
+    ["session_expired", "Your session expired. Sign in again."],
+    [
+      "conflict",
+      "This item changed in another window. Your unsaved changes are still here.",
+    ],
+    ["payload_too_large", "This upload is larger than the allowed size."],
+  ])("localizes the %s response", async (code, expectedMessage) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            error: {
+              code,
+              message: "English backend message",
+              ...(code === "conflict" ? { current: { id: 42 } } : {}),
+            },
+          },
+          { status: code === "conflict" ? 409 : 403 },
+        ),
+      ),
+    );
+
+    const error = await apiRequest("/api/v2/projects/42", {
+      method: "PUT",
+      body: {},
+    }).catch((cause: unknown) => cause);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ message: expectedMessage });
+    if (code === "conflict")
+      expect(error).toMatchObject({ current: { id: 42 } });
+  });
 });

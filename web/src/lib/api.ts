@@ -32,24 +32,28 @@ interface ErrorPayload {
   code: string;
   message: string;
   fields?: Record<string, string>;
+  current?: unknown;
 }
 
 export class ApiError extends Error {
   readonly code: string;
   readonly status: number;
   readonly fields?: Record<string, string>;
+  readonly current?: unknown;
 
   constructor(
     message: string,
     status: number,
     code = "request_failed",
     fields?: Record<string, string>,
+    current?: unknown,
   ) {
     super(message);
     this.name = "ApiError";
     this.code = code;
     this.status = status;
     this.fields = fields;
+    this.current = current;
   }
 }
 
@@ -149,6 +153,7 @@ export async function apiRequest<T = unknown>(
       response.status,
       code,
       failure?.fields,
+      failure?.current,
     );
   }
   return payload as T;
@@ -185,6 +190,9 @@ function readErrorPayload(value: unknown): ErrorPayload | undefined {
     code: candidate.code,
     message: candidate.message,
     ...(isStringMap(fields) ? { fields } : {}),
+    ...(Object.hasOwn(candidate, "current")
+      ? { current: candidate.current }
+      : {}),
   };
 }
 
@@ -194,14 +202,26 @@ function localizedError(code: string): string {
     csrf_invalid: t(
       "Your session has expired. Refresh the page and try again.",
     ),
+    csrf_failed: t(
+      "Your session check failed. Refresh the page and try again.",
+    ),
     csrf_missing: t(
       "Your session has expired. Refresh the page and try again.",
     ),
+    session_expired: t("Your session expired. Sign in again."),
     unauthorized: t("Your session has expired. Sign in again."),
     forbidden: t("You do not have permission to do that."),
     validation_error: t("Check the highlighted fields and try again."),
     not_found: t("That item could not be found."),
     rate_limited: t("Too many attempts. Wait a moment and try again."),
+    conflict: t(
+      "This item changed in another window. Your unsaved changes are still here.",
+    ),
+    payload_too_large: t("This upload is larger than the allowed size."),
+    image_import_unavailable: t(
+      "External image importing is not available right now.",
+    ),
+    internal_error: t("The server could not complete this request. Try again."),
   };
   return known[code] ?? t("The request could not be completed.");
 }

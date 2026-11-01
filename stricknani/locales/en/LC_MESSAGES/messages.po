@@ -1322,7 +1322,16 @@ msgstr ""
 
 #: stricknani/templates/projects/detail.html:12
 #: stricknani/templates/projects/form.html:13
-#: stricknani/templates/projects/form.html:60 web/src/routes/+layout.svelte:256
+#: stricknani/templates/projects/form.html:60
+#: web/src/lib/features/projects/ProjectReader.svelte:159
+#: web/src/lib/features/projects/ProjectReader.svelte:165
+#: web/src/lib/features/projects/ProjectReader.svelte:174
+#: web/src/lib/features/projects/ProjectReader.svelte:175
+#: web/src/lib/features/projects/ProjectReader.svelte:183
+#: web/src/lib/features/projects/ProjectReader.svelte:187
+#: web/src/lib/features/projects/ProjectReader.svelte:199
+#: web/src/lib/features/projects/ProjectReader.svelte:220
+#: web/src/routes/+layout.svelte:256
 msgid "Back to projects"
 msgstr "Back to projects"
 
@@ -1350,8 +1359,10 @@ msgstr "Open gallery"
 
 #: rust/src/web.rs:2166 stricknani/templates/projects/detail.html:139
 #: stricknani/templates/projects/form.html:211
+#: web/src/lib/features/projects/ProjectReader.svelte:415
+#: web/src/lib/features/projects/ProjectReader.svelte:511
 msgid "Attachments"
-msgstr ""
+msgstr "Attachments"
 
 #: stricknani/templates/projects/detail.html:142
 msgid "files"
@@ -1372,6 +1383,8 @@ msgstr "Project deleted"
 #: stricknani/templates/projects/detail.html:254
 #: stricknani/templates/projects/form.html:304
 #: stricknani/templates/projects/form.html:645
+#: web/src/lib/features/projects/ProjectLibrary.svelte:169
+#: web/src/lib/features/projects/ProjectLibrary.svelte:175
 msgid "Category"
 msgstr "Category"
 
@@ -1446,8 +1459,10 @@ msgstr ""
 #: stricknani/templates/projects/form.html:158
 #: stricknani/templates/yarn/detail.html:353
 #: stricknani/templates/yarn/form.html:237
+#: web/src/lib/features/projects/ProjectReader.svelte:287
+#: web/src/lib/features/projects/ProjectReader.svelte:338
 msgid "Notes"
-msgstr ""
+msgstr "Notes"
 
 #: stricknani/templates/projects/detail.html:380
 #: stricknani/templates/yarn/detail.html:358
@@ -1749,8 +1764,10 @@ msgid "Describe your stitch sample / gauge swatch..."
 msgstr ""
 
 #: rust/src/web.rs:2164 stricknani/templates/projects/form.html:531
+#: web/src/lib/features/projects/ProjectReader.svelte:303
+#: web/src/lib/features/projects/ProjectReader.svelte:354
 msgid "Steps"
-msgstr ""
+msgstr "Steps"
 
 #: stricknani/templates/projects/form.html:546
 #: stricknani/templates/projects/form.html:548
@@ -1807,6 +1824,10 @@ msgstr ""
 #: stricknani/templates/projects/list.html:46
 #: stricknani/templates/shared/unified_navbar.html:61
 #: stricknani/templates/shared/unified_navbar.html:125
+#: web/src/lib/features/projects/ProjectLibrary.svelte:128
+#: web/src/lib/features/projects/ProjectLibrary.svelte:134
+#: web/src/lib/features/projects/ProjectLibrary.svelte:139
+#: web/src/lib/features/projects/ProjectLibrary.svelte:145
 #: web/src/routes/+layout.svelte:24 web/src/routes/projects/+page.svelte:8
 #: web/src/routes/projects/+page.svelte:10
 msgid "Projects"
@@ -1814,15 +1835,20 @@ msgstr "Projects"
 
 #: rust/src/web.rs:2190 stricknani/templates/projects/list.html:56
 #: stricknani/templates/yarn/list.html:54
-#, fuzzy
+#: web/src/lib/features/projects/ProjectLibrary.svelte:193
+#: web/src/lib/features/projects/ProjectLibrary.svelte:199
 msgid "Search"
-msgstr "Clear search"
+msgstr "Search"
 
 #: stricknani/templates/shared/_empty_search_state.html:2
 msgid "No matching results"
 msgstr "No matching results"
 
 #: stricknani/templates/shared/_empty_search_state.html:8
+#: web/src/lib/features/projects/ProjectLibrary.svelte:207
+#: web/src/lib/features/projects/ProjectLibrary.svelte:213
+#: web/src/lib/features/projects/ProjectLibrary.svelte:258
+#: web/src/lib/features/projects/ProjectLibrary.svelte:264
 msgid "Clear filters"
 msgstr "Clear filters"
 
@@ -1831,8 +1857,10 @@ msgid "Unfavorite"
 msgstr ""
 
 #: stricknani/templates/shared/_favorite_toggle.html:3
+#: web/src/lib/features/projects/ProjectReader.svelte:233
+#: web/src/lib/features/projects/ProjectReader.svelte:277
 msgid "Favorite"
-msgstr ""
+msgstr "Favorite"
 
 #: stricknani/templates/shared/_favorite_toggle.html:4
 msgid "Removed from favorites"
@@ -2143,8 +2171,14 @@ msgstr ""
 #: rust/src/import_service.rs:408 rust/src/web.rs:2145
 #: rust/src/web_audit.rs:258 stricknani/templates/yarn/detail.html:6
 #: stricknani/templates/yarn/form.html:7 stricknani/templates/yarn/list.html:5
+#: web/src/lib/features/projects/ProjectReader.svelte:353
+#: web/src/lib/features/projects/ProjectReader.svelte:379
+#: web/src/lib/features/projects/ProjectReader.svelte:381
+#: web/src/lib/features/projects/ProjectReader.svelte:414
+#: web/src/lib/features/projects/ProjectReader.svelte:451
+#: web/src/lib/features/projects/ProjectReader.svelte:456
 msgid "Yarn"
-msgstr ""
+msgstr "Yarn"
 
 #: stricknani/templates/yarn/detail.html:12
 #: stricknani/templates/yarn/form.html:62
@@ -2368,16 +2402,22 @@ msgid "Content fingerprint"
 msgstr ""
 
 #: rust/src/import_service.rs:405 rust/src/web.rs:2162
+#: web/src/lib/features/projects/ProjectReader.svelte:388
+#: web/src/lib/features/projects/ProjectReader.svelte:467
 msgid "Needles"
-msgstr ""
+msgstr "Needles"
 
 #: rust/src/import_service.rs:406
+#: web/src/lib/features/projects/ProjectReader.svelte:263
+#: web/src/lib/features/projects/ProjectReader.svelte:311
 msgid "Stitch sample"
-msgstr ""
+msgstr "Stitch sample"
 
 #: rust/src/import_service.rs:407 rust/src/web.rs:2179
+#: web/src/lib/features/projects/ProjectReader.svelte:295
+#: web/src/lib/features/projects/ProjectReader.svelte:346
 msgid "Other materials"
-msgstr ""
+msgstr "Other materials"
 
 #: rust/src/import_service.rs:411 rust/src/web.rs:2180
 #, fuzzy
@@ -2395,25 +2435,36 @@ msgid "Your collection is empty."
 msgstr ""
 
 #: rust/src/web.rs:2157 rust/src/web_audit.rs:265
-#, fuzzy
+#: web/src/lib/features/projects/ProjectLibrary.svelte:338
+#: web/src/lib/features/projects/ProjectLibrary.svelte:347
 msgid "Previous"
-msgstr "Preview"
+msgstr "Previous"
 
 #: rust/src/web.rs:2158 rust/src/web_audit.rs:266
+#: web/src/lib/features/projects/ProjectLibrary.svelte:345
+#: web/src/lib/features/projects/ProjectLibrary.svelte:355
 msgid "Next"
-msgstr ""
+msgstr "Next"
 
 #: rust/src/web.rs:2167
 msgid "Original source"
 msgstr ""
 
-#: rust/src/web.rs:2172
+#: rust/src/web.rs:2172 web/src/lib/features/projects/ProjectLibrary.svelte:324
+#: web/src/lib/features/projects/ProjectLibrary.svelte:332
+#: web/src/lib/features/projects/ProjectReader.svelte:229
+#: web/src/lib/features/projects/ProjectReader.svelte:233
+#: web/src/lib/features/projects/ProjectReader.svelte:272
+#: web/src/lib/features/projects/ProjectReader.svelte:278
 msgid "Add to favorites"
-msgstr ""
+msgstr "Add to favorites"
 
-#: rust/src/web.rs:2173
+#: rust/src/web.rs:2173 web/src/lib/features/projects/ProjectLibrary.svelte:323
+#: web/src/lib/features/projects/ProjectLibrary.svelte:331
+#: web/src/lib/features/projects/ProjectReader.svelte:228
+#: web/src/lib/features/projects/ProjectReader.svelte:271
 msgid "Remove from favorites"
-msgstr ""
+msgstr "Remove from favorites"
 
 #: rust/src/web.rs:2174
 #, fuzzy
@@ -2456,14 +2507,15 @@ msgstr "Clear category"
 msgid "Imports"
 msgstr "Imports"
 
-#: rust/src/web.rs:2191
-#, fuzzy
+#: rust/src/web.rs:2191 web/src/lib/features/projects/ProjectLibrary.svelte:214
+#: web/src/lib/features/projects/ProjectLibrary.svelte:220
 msgid "Tag"
-msgstr "Tags"
+msgstr "Tag"
 
-#: rust/src/web.rs:2192
+#: rust/src/web.rs:2192 web/src/lib/features/projects/ProjectLibrary.svelte:191
+#: web/src/lib/features/projects/ProjectLibrary.svelte:197
 msgid "Favorites"
-msgstr ""
+msgstr "Favorites"
 
 #: rust/src/web.rs:2193
 msgid "All items"
@@ -2686,7 +2738,7 @@ msgstr "Categories"
 msgid "Category management will be added in a later slice."
 msgstr "Category management will be added in a later slice."
 
-#: web/src/lib/api.ts:202
+#: web/src/lib/api.ts:202 web/src/lib/api.ts:208 web/src/lib/api.ts:214
 msgid "Check the highlighted fields and try again."
 msgstr "Check the highlighted fields and try again."
 
@@ -2723,6 +2775,8 @@ msgstr "More"
 msgid "More pages"
 msgstr "More pages"
 
+#: web/src/lib/features/projects/ProjectLibrary.svelte:146
+#: web/src/lib/features/projects/ProjectLibrary.svelte:152
 #: web/src/routes/create/+page.svelte:20
 #: web/src/routes/projects/new/+page.svelte:8
 #: web/src/routes/projects/new/+page.svelte:11
@@ -2783,7 +2837,7 @@ msgstr "Signing in…"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: web/src/lib/api.ts:203
+#: web/src/lib/api.ts:203 web/src/lib/api.ts:209 web/src/lib/api.ts:215
 msgid "That item could not be found."
 msgstr "That item could not be found."
 
@@ -2791,7 +2845,7 @@ msgstr "That item could not be found."
 msgid "The administrator audit view will be added in a later slice."
 msgstr "The administrator audit view will be added in a later slice."
 
-#: web/src/lib/api.ts:193
+#: web/src/lib/api.ts:193 web/src/lib/api.ts:199 web/src/lib/api.ts:201
 msgid "The email or password is incorrect."
 msgstr "The email or password is incorrect."
 
@@ -2803,15 +2857,17 @@ msgstr "The gauge calculator will be brought into the new web UI."
 msgid "The project editor will be added in a later slice."
 msgstr "The project editor will be added in a later slice."
 
-#: web/src/lib/api.ts:206
+#: web/src/lib/api.ts:206 web/src/lib/api.ts:212 web/src/lib/api.ts:226
 msgid "The request could not be completed."
 msgstr "The request could not be completed."
 
-#: web/src/lib/api.ts:126
+#: web/src/lib/api.ts:126 web/src/lib/api.ts:130
 msgid "The server could not be reached. Check your connection and try again."
 msgstr "The server could not be reached. Check your connection and try again."
 
-#: web/src/lib/api.ts:246
+#: web/src/lib/api.ts:246 web/src/lib/api.ts:252 web/src/lib/api.ts:266
+#: web/src/lib/features/projects/project-api.ts:397
+#: web/src/lib/features/projects/project-api.ts:410
 msgid "The server returned an unexpected response."
 msgstr "The server returned an unexpected response."
 
@@ -2831,10 +2887,14 @@ msgstr "These creation forms are part of a later preview slice."
 msgid "This area is not connected yet."
 msgstr "This area is not connected yet."
 
-#: web/src/lib/api.ts:204
+#: web/src/lib/api.ts:204 web/src/lib/api.ts:210 web/src/lib/api.ts:216
 msgid "Too many attempts. Wait a moment and try again."
 msgstr "Too many attempts. Wait a moment and try again."
 
+#: web/src/lib/features/projects/ProjectLibrary.svelte:227
+#: web/src/lib/features/projects/ProjectLibrary.svelte:233
+#: web/src/lib/features/projects/ProjectReader.svelte:180
+#: web/src/lib/features/projects/ProjectReader.svelte:212
 #: web/src/routes/+layout.svelte:144
 msgid "Try again"
 msgstr "Try again"
@@ -2875,7 +2935,7 @@ msgstr "You are already signed in."
 msgid "You do not have access to this page."
 msgstr "You do not have access to this page."
 
-#: web/src/lib/api.ts:201
+#: web/src/lib/api.ts:201 web/src/lib/api.ts:207 web/src/lib/api.ts:213
 msgid "You do not have permission to do that."
 msgstr "You do not have permission to do that."
 
@@ -2887,6 +2947,8 @@ msgstr "Your knitting workspace"
 msgid "Your knitting, in one place."
 msgstr "Your knitting, in one place."
 
+#: web/src/lib/features/projects/ProjectLibrary.svelte:138
+#: web/src/lib/features/projects/ProjectLibrary.svelte:144
 #: web/src/routes/+layout.svelte:160
 msgid "Your library"
 msgstr "Your library"
@@ -2903,11 +2965,12 @@ msgstr "Your projects stay on your own Stricknani server."
 msgid "Your session expired. Sign in again to continue."
 msgstr "Your session expired. Sign in again to continue."
 
-#: web/src/lib/api.ts:194 web/src/lib/api.ts:197
+#: web/src/lib/api.ts:194 web/src/lib/api.ts:197 web/src/lib/api.ts:200
+#: web/src/lib/api.ts:202 web/src/lib/api.ts:203 web/src/lib/api.ts:208
 msgid "Your session has expired. Refresh the page and try again."
 msgstr "Your session has expired. Refresh the page and try again."
 
-#: web/src/lib/api.ts:200
+#: web/src/lib/api.ts:200 web/src/lib/api.ts:206 web/src/lib/api.ts:212
 msgid "Your session has expired. Sign in again."
 msgstr "Your session has expired. Sign in again."
 
@@ -2918,6 +2981,345 @@ msgstr "Your workspace"
 #: web/src/routes/+layout.svelte:133
 msgid "Your workspace is taking a moment."
 msgstr "Your workspace is taking a moment."
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:264
+#: web/src/lib/features/projects/ProjectLibrary.svelte:275
+msgid "Add a project"
+msgstr "Add a project"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:175
+#: web/src/lib/features/projects/ProjectLibrary.svelte:181
+msgid "All categories"
+msgstr "All categories"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:439
+#: web/src/lib/features/projects/ProjectReader.svelte:548
+msgid "Back to project library"
+msgstr "Back to project library"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:131
+#: web/src/lib/features/projects/ProjectLibrary.svelte:137
+msgid "Browse and find your knitting projects."
+msgstr "Browse and find your knitting projects."
+
+#: web/src/lib/features/media/ProjectLightbox.svelte:55
+#: web/src/lib/features/media/ProjectLightbox.svelte:58
+msgid "Close image viewer"
+msgstr "Close image viewer"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:261
+#: web/src/lib/features/projects/ProjectReader.svelte:307
+msgid "Cover photo"
+msgstr "Cover photo"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:192
+#: web/src/lib/features/projects/ProjectReader.svelte:229
+msgid "Decrease text size"
+msgstr "Decrease text size"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:141
+#: web/src/lib/features/projects/ProjectLibrary.svelte:147
+msgid "Find a project, pick up a row, and keep your notes close."
+msgstr "Find a project, pick up a row, and keep your notes close."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:393
+#: web/src/lib/features/projects/ProjectReader.svelte:477
+msgid "Gauge"
+msgstr "Gauge"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:198
+#: web/src/lib/features/projects/ProjectReader.svelte:235
+msgid "Increase text size"
+msgstr "Increase text size"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:211
+#: web/src/lib/features/projects/ProjectReader.svelte:253
+msgid "Knitting project"
+msgstr "Knitting project"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:438
+#: web/src/lib/features/projects/ProjectReader.svelte:547
+msgid "Last updated"
+msgstr "Last updated"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:348
+#: web/src/lib/features/projects/ProjectReader.svelte:409
+msgid "Materials"
+msgstr "Materials"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:164
+#: web/src/lib/features/projects/ProjectLibrary.svelte:170
+msgid "Name, notes, yarn, or tag"
+msgstr "Name, notes, yarn, or tag"
+
+#: web/src/lib/features/media/ProjectLightbox.svelte:81
+#: web/src/lib/features/media/ProjectLightbox.svelte:84
+msgid "Next image"
+msgstr "Next image"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:431
+#: web/src/lib/features/projects/ProjectReader.svelte:539
+msgid "No attachments have been added yet."
+msgstr "No attachments have been added yet."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:405
+#: web/src/lib/features/projects/ProjectReader.svelte:496
+msgid "No pattern link has been saved."
+msgstr "No pattern link has been saved."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:282
+#: web/src/lib/features/projects/ProjectReader.svelte:332
+msgid "No pattern notes have been added yet."
+msgstr "No pattern notes have been added yet."
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:244
+#: web/src/lib/features/projects/ProjectLibrary.svelte:250
+msgid "No projects match those filters."
+msgstr "No projects match those filters."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:341
+#: web/src/lib/features/projects/ProjectReader.svelte:401
+msgid "No steps have been added yet."
+msgstr "No steps have been added yet."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:381
+#: web/src/lib/features/projects/ProjectReader.svelte:457
+msgid "Not recorded"
+msgstr "Not recorded"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:409
+#: web/src/lib/features/projects/ProjectReader.svelte:505
+msgid "Open archived copy"
+msgstr "Open archived copy"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:402
+#: web/src/lib/features/projects/ProjectReader.svelte:492
+msgid "Open original pattern"
+msgstr "Open original pattern"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:252
+#: web/src/lib/features/projects/ProjectReader.svelte:297
+msgid "Open project photo"
+msgstr "Open project photo"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:324
+#: web/src/lib/features/projects/ProjectReader.svelte:382
+msgid "Open step photo"
+msgstr "Open step photo"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:161
+#: web/src/lib/features/projects/ProjectReader.svelte:178
+msgid "Opening your pattern…"
+msgstr "Opening your pattern…"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:279
+#: web/src/lib/features/projects/ProjectLibrary.svelte:290
+#: web/src/lib/features/projects/ProjectLibrary.svelte:340
+#: web/src/lib/features/projects/ProjectLibrary.svelte:349
+msgid "Page"
+msgstr "Page"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:275
+#: web/src/lib/features/projects/ProjectReader.svelte:324
+msgid "Pattern and notes"
+msgstr "Pattern and notes"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:399
+#: web/src/lib/features/projects/ProjectReader.svelte:485
+msgid "Pattern source"
+msgstr "Pattern source"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:189
+#: web/src/lib/features/projects/ProjectReader.svelte:225
+msgid "Pattern text size"
+msgstr "Pattern text size"
+
+#: web/src/lib/features/media/ProjectLightbox.svelte:64
+#: web/src/lib/features/media/ProjectLightbox.svelte:67
+msgid "Previous image"
+msgstr "Previous image"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:204
+#: web/src/lib/features/projects/ProjectReader.svelte:245
+msgid "Print pattern"
+msgstr "Print pattern"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:186
+#: web/src/lib/features/projects/ProjectReader.svelte:218
+msgid "Project actions"
+msgstr "Project actions"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:346
+#: web/src/lib/features/projects/ProjectReader.svelte:407
+msgid "Project details"
+msgstr "Project details"
+
+#: web/src/lib/features/media/ProjectLightbox.svelte:40
+#: web/src/lib/features/media/ProjectLightbox.svelte:43
+msgid "Project image viewer"
+msgstr "Project image viewer"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:168
+#: web/src/lib/features/projects/ProjectReader.svelte:187
+msgid "Project not found"
+msgstr "Project not found"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:333
+#: web/src/lib/features/projects/ProjectLibrary.svelte:341
+msgid "Project pages"
+msgstr "Project pages"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:244
+#: web/src/lib/features/projects/ProjectReader.svelte:289
+msgid "Project photos"
+msgstr "Project photos"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:301
+#: web/src/lib/features/projects/ProjectLibrary.svelte:315
+#: web/src/lib/features/projects/ProjectReader.svelte:216
+#: web/src/lib/features/projects/ProjectReader.svelte:259
+msgid "Project tags"
+msgstr "Project tags"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:217
+#: web/src/lib/features/projects/ProjectLibrary.svelte:223
+msgid "Remove tag filter"
+msgstr "Remove tag filter"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:272
+#: web/src/lib/features/projects/ProjectLibrary.svelte:283
+msgid "Results for"
+msgstr "Results for"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:153
+#: web/src/lib/features/projects/ProjectLibrary.svelte:159
+msgid "Search projects"
+msgstr "Search projects"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:160
+#: web/src/lib/features/projects/ProjectLibrary.svelte:166
+msgid "Search your projects"
+msgstr "Search your projects"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:58
+#: web/src/lib/features/projects/ProjectReader.svelte:62
+msgid "Sign in to open this project."
+msgstr "Sign in to open this project."
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:53
+#: web/src/lib/features/projects/ProjectLibrary.svelte:55
+msgid "Sign in to view your projects."
+msgstr "Sign in to view your projects."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:384
+#: web/src/lib/features/projects/ProjectReader.svelte:462
+msgid "Some yarn details could not be loaded."
+msgstr "Some yarn details could not be loaded."
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:262
+#: web/src/lib/features/projects/ProjectLibrary.svelte:269
+msgid "Start with one project to keep its pattern and progress together."
+msgstr "Start with one project to keep its pattern and progress together."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:319
+#: web/src/lib/features/projects/ProjectReader.svelte:376
+msgid "Step photos"
+msgstr "Step photos"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:114
+#: web/src/lib/features/projects/ProjectLibrary.svelte:118
+#: web/src/lib/features/projects/ProjectReader.svelte:113
+#: web/src/lib/features/projects/ProjectReader.svelte:124
+msgid "The favorite could not be updated."
+msgstr "The favorite could not be updated."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:177
+#: web/src/lib/features/projects/ProjectReader.svelte:204
+msgid "The pattern could not be opened."
+msgstr "The pattern could not be opened."
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:72
+#: web/src/lib/features/projects/ProjectLibrary.svelte:75
+msgid "The project list could not be loaded."
+msgstr "The project list could not be loaded."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:88
+#: web/src/lib/features/projects/ProjectReader.svelte:92
+msgid "This project could not be loaded."
+msgstr "This project could not be loaded."
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:111
+#: web/src/lib/features/projects/ProjectLibrary.svelte:115
+#: web/src/lib/features/projects/ProjectReader.svelte:110
+#: web/src/lib/features/projects/ProjectReader.svelte:121
+msgid "This project is no longer available."
+msgstr "This project is no longer available."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:169
+#: web/src/lib/features/projects/ProjectReader.svelte:189
+msgid "This project may have been removed or may not belong to your account."
+msgstr "This project may have been removed or may not belong to your account."
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:245
+#: web/src/lib/features/projects/ProjectLibrary.svelte:251
+msgid "Try a different name, category, or tag."
+msgstr "Try a different name, category, or tag."
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:298
+#: web/src/lib/features/projects/ProjectLibrary.svelte:309
+#: web/src/lib/features/projects/ProjectReader.svelte:214
+#: web/src/lib/features/projects/ProjectReader.svelte:257
+msgid "Updated"
+msgstr "Updated"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:372
+#: web/src/lib/features/projects/ProjectReader.svelte:443
+msgid "Yarn source"
+msgstr "Yarn source"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:274
+#: web/src/lib/features/projects/ProjectLibrary.svelte:285
+msgid "Your favorites"
+msgstr "Your favorites"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:261
+#: web/src/lib/features/projects/ProjectLibrary.svelte:267
+msgid "Your project library is ready."
+msgstr "Your project library is ready."
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:276
+#: web/src/lib/features/projects/ProjectLibrary.svelte:287
+msgid "Your projects"
+msgstr "Your projects"
+
+#: web/src/lib/features/projects/ProjectReader.svelte:276
+#: web/src/lib/features/projects/ProjectReader.svelte:325
+msgid "Your reference"
+msgstr "Your reference"
+
+#: web/src/lib/api.ts:221
+msgid "External image importing is not available right now."
+msgstr "External image importing is not available right now."
+
+#: web/src/lib/api.ts:224
+msgid "The server could not complete this request. Try again."
+msgstr "The server could not complete this request. Try again."
+
+#: web/src/lib/api.ts:217
+msgid "This item changed in another window. Your unsaved changes are still here."
+msgstr "This item changed in another window. Your unsaved changes are still here."
+
+#: web/src/lib/api.ts:220
+msgid "This upload is larger than the allowed size."
+msgstr "This upload is larger than the allowed size."
+
+#: web/src/lib/api.ts:205
+msgid "Your session check failed. Refresh the page and try again."
+msgstr "Your session check failed. Refresh the page and try again."
+
+#: web/src/lib/api.ts:211
+msgid "Your session expired. Sign in again."
+msgstr "Your session expired. Sign in again."
 
 # Navigation and General
 #~ msgid "Stricknani"

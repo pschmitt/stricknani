@@ -400,6 +400,43 @@ async fn attachment_upload_preserves_classification_and_owner_scoped_delete() {
 }
 
 #[tokio::test]
+async fn attachment_upload_accepts_valid_files_larger_than_two_mib() {
+    let fixture = fixture().await;
+    let (session, csrf) = signed_in(
+        &fixture.app,
+        "media-owner@example.test",
+        "media-owner-password",
+    )
+    .await;
+    let mut bytes = vec![b'x'; 3 * 1024 * 1024];
+    bytes[..8].copy_from_slice(b"%PDF-1.4");
+    let trailer_start = bytes.len() - 5;
+    bytes[trailer_start..].copy_from_slice(b"%%EOF");
+
+    let uploaded = fixture
+        .app
+        .clone()
+        .oneshot(multipart_request(MultipartSpec {
+            method: "POST",
+            path: &format!("/projects/{}/attachments", fixture.project_id),
+            session: &session,
+            csrf: Some(&csrf),
+            origin: Some(ORIGIN),
+            file_name: "large-pattern.pdf",
+            content_type: "application/pdf",
+            bytes: &bytes,
+            alt_text: None,
+        }))
+        .await
+        .unwrap();
+
+    assert_eq!(uploaded.status(), StatusCode::CREATED);
+    let attachment = json(uploaded).await["data"].clone();
+    assert_eq!(attachment["content_type"], "application/pdf");
+    assert_eq!(attachment["original_filename"], "large-pattern.pdf");
+}
+
+#[tokio::test]
 async fn yarn_photo_upload_delete_promotes_primary_photo() {
     let fixture = fixture().await;
     let (session, csrf) = signed_in(

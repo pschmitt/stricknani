@@ -66,9 +66,15 @@ Signal notification after HTTPS and version checks passed.
 
 The project library and pattern reader are being verified against the real
 Rust API with synthetic fixtures. Their current frontend checks, static build
-and 22 unit tests pass. Browser acceptance and coordinator review are pending:
-the browser runs exposed a library lifecycle problem and a category-filter
-interaction failure, which must be resolved before the feature is deployed.
+and 22 unit tests passed in the isolated project snapshot. Real Chromium
+acceptance now passes after correcting the library lifecycle and synchronizing
+browser assertions with rendered data. It covers search/category/tag/favorite
+filters, sanitized instructions, ordered steps, linked yarns, the single-image
+320px viewer with Escape/focus restoration, text sizing, print, and logout under
+strict CSP. The runner passes MyPy, Ruff and 21 focused Python tests. The
+coordinator reviewed masked phone screenshots. The final clean-source full
+gate and the next feature rollout remain pending; concurrent yarn work is
+excluded from this project checkpoint.
 The reader includes sanitized instructions, ordered steps, linked yarn details,
 reference images, attachments, text sizing and print output. Editing, deletion,
 media mutations and persistent current-step navigation remain separate work.

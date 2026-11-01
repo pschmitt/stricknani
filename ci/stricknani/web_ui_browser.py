@@ -9,11 +9,12 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from playwright.sync_api import Page, Response, sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from ci.stricknani import rust_fixture
+from ci.stricknani import rust_fixture, seed_rust
 
 
 class AcceptanceFailure(RuntimeError):
@@ -79,6 +80,72 @@ def _response_path(response: Response) -> str:
     return urlsplit(response.url).path
 
 
+def _prepare_project_reader_fixture(page: Page) -> int:
+    result: object = page.evaluate(
+        """async () => {
+          const sessionResponse = await fetch('/api/v2/session');
+          if (!sessionResponse.ok) return { status: sessionResponse.status, id: 0 };
+          const sessionEnvelope = await sessionResponse.json();
+          const token = sessionEnvelope?.data?.csrf_token;
+          const listResponse = await fetch('/api/v2/projects');
+          if (!listResponse.ok) return { status: listResponse.status, id: 0 };
+          const listEnvelope = await listResponse.json();
+          const id = listEnvelope?.data?.[0]?.id;
+          if (!Number.isSafeInteger(id) || id < 1 || typeof token !== 'string') {
+            return { status: 0, id: 0 };
+          }
+          const detailResponse = await fetch(`/api/v2/projects/${id}`);
+          if (!detailResponse.ok) return { status: detailResponse.status, id: 0 };
+          const detailEnvelope = await detailResponse.json();
+          const project = detailEnvelope?.data;
+          const updateResponse = await fetch(`/api/v2/projects/${id}`, {
+            method: 'PUT',
+            headers: {
+              'accept': 'application/json',
+              'content-type': 'application/json',
+              'x-csrf-token': token,
+            },
+            body: JSON.stringify({
+              name: project.name,
+              category: project.category,
+              needles: '4 mm circular needles',
+              stitch_sample: '18 stitches and 24 rows over 10 cm',
+              description: 'Knit a soft **textured blanket** with broad, even bands.',
+              notes: 'After the border, pause and check the width before continuing.',
+              other_materials: 'Two stitch markers and a tapestry needle.',
+              tags: ['heirloom', 'textured'],
+              link: project.link,
+              is_ai_enhanced: false,
+              yarn_ids: project.yarn_ids,
+              steps: [
+                {
+                  title: 'Cast on and knit the border',
+                  description: 'Cast on 120 stitches and work the lower border.',
+                  step_number: 1,
+                },
+                {
+                  title: 'Work the textured panel',
+                  description: 'Repeat the four-row pattern to length.',
+                  step_number: 2,
+                },
+              ],
+              expected_updated_at: project.updated_at,
+            }),
+          });
+          return { status: updateResponse.status, id };
+        }"""
+    )
+    if (
+        not isinstance(result, dict)
+        or result.get("status") != 200
+        or not isinstance(result.get("id"), int)
+        or isinstance(result.get("id"), bool)
+        or result["id"] < 1
+    ):
+        raise AcceptanceFailure("the synthetic project fixture could not be prepared")
+    return int(result["id"])
+
+
 def _assert_no_horizontal_overflow(page: Page, viewport_width: int) -> None:
     dimensions = page.evaluate(
         """() => ({
@@ -108,6 +175,32 @@ def _visible_heights(page: Page, selector: str) -> list[float]:
     return [float(value) for value in values]
 
 
+def _mask_fixture_identity(page: Page) -> None:
+    """Mask disposable account identifiers before screenshot capture."""
+    page.locator(".header-user").evaluate_all(
+        "nodes => nodes.forEach(node => node.textContent = 'Demo account')"
+    )
+    page.locator(".account-email").evaluate_all(
+        "nodes => nodes.forEach(node => { "
+        "node.textContent = 'Demo account'; node.title = 'Demo account'; })"
+    )
+    page.locator(".avatar").evaluate_all(
+        "nodes => nodes.forEach(node => node.textContent = 'D')"
+    )
+    page.locator("#email, #password").evaluate_all(
+        "nodes => nodes.forEach(node => { node.value = ''; })"
+    )
+
+
+def _prepare_screenshot(page: Page) -> None:
+    """Capture the viewport from the top without a focused skip-link overlay."""
+    page.evaluate(
+        "() => { window.scrollTo(0, 0); "
+        "if (document.activeElement instanceof HTMLElement) "
+        "document.activeElement.blur(); }"
+    )
+
+
 def run_live_fixture(
     binary: Path,
     web_root: Path,
@@ -117,6 +210,7 @@ def run_live_fixture(
     """Start, exercise, and safely stop one disposable server fixture."""
     fixture_file = private_dir / "fixture.json"
     state_file = private_dir / "fixture-state.json"
+    token_file = private_dir / "browser-seed-token.json"
     started = False
     try:
         rust_fixture.start_fixture(
@@ -127,6 +221,14 @@ def run_live_fixture(
             web_root=web_root,
         )
         started = True
+        try:
+            seed_rust.seed_fixture(fixture_file, token_file)
+        except seed_rust.SeedError as error:
+            raise AcceptanceFailure(
+                "synthetic project and photo fixture could not be seeded"
+            ) from error
+        finally:
+            token_file.unlink(missing_ok=True)
         return run_acceptance(
             fixture_file,
             private_dir / "screenshots",
@@ -163,6 +265,11 @@ def run_acceptance(
     session_observations: list[tuple[int, bool, bool, bool]] = []
     csrf_requests: list[tuple[str, bool]] = []
     auth_responses: list[tuple[str, int]] = []
+    project_responses: list[tuple[str, int]] = []
+    project_list_sizes: list[int | None] = []
+    project_list_queries: list[dict[str, list[str]]] = []
+    yarn_responses: list[tuple[str, int]] = []
+    category_responses: list[tuple[str, int]] = []
     app_asset_statuses: list[int] = []
     catalog_statuses: list[int] = []
     csp_errors: list[str] = []
@@ -174,8 +281,13 @@ def run_acceptance(
 
     def observe_request(request: object) -> None:
         url = getattr(request, "url", "")
-        path = urlsplit(url).path
-        if path not in {"/api/v2/auth/login", "/api/v2/auth/logout"}:
+        request_url = urlsplit(url)
+        path = request_url.path
+        if path == "/api/v2/projects":
+            project_list_queries.append(parse_qs(request_url.query))
+        if path not in {"/api/v2/auth/login", "/api/v2/auth/logout"} and not (
+            path.startswith("/api/v2/projects/") and path.endswith("/favorite")
+        ):
             return
         headers = getattr(request, "headers", {})
         csrf_requests.append((path, bool(headers.get("x-csrf-token"))))
@@ -184,6 +296,23 @@ def run_acceptance(
         path = _response_path(response)
         if path in {"/api/v2/auth/login", "/api/v2/auth/logout"}:
             auth_responses.append((path, response.status))
+        if path.startswith("/api/v2/projects/") or path == "/api/v2/projects":
+            project_responses.append((path, response.status))
+        if path == "/api/v2/projects" and response.request.method == "GET":
+            size: int | None = None
+            if response.status == 200:
+                try:
+                    payload = response.json()
+                    data = payload.get("data") if isinstance(payload, dict) else None
+                    if isinstance(data, list):
+                        size = len(data)
+                except Exception:
+                    pass
+            project_list_sizes.append(size)
+        if path.startswith("/api/v2/yarns/") or path == "/api/v2/yarns":
+            yarn_responses.append((path, response.status))
+        if path.startswith("/api/v2/categories"):
+            category_responses.append((path, response.status))
         if path in {"/api/v2/session", "/api/v2/auth/login"}:
             session_user_is_null = False
             csrf_present = False
@@ -341,17 +470,25 @@ def run_acceptance(
                     "a sign-in control is below the 44px target size",
                 )
             page.set_viewport_size({"width": 390, "height": 844})
+            _prepare_screenshot(page)
             page.screenshot(
-                path=str(screenshots / "signed-out-mobile.png"), full_page=True
+                path=str(screenshots / "signed-out-mobile.png"), caret="initial"
             )
 
             mark_stage("real password login and session cookie")
             page.locator("#email").fill(email)
             page.locator("#password").fill(password)
             page.get_by_role("button", name="Sign in").click()
+            mark_stage("waiting for authenticated app shell")
             page.locator(".app-shell").wait_for(state="visible")
+            mark_stage("waiting for authenticated mobile navigation")
             page.locator(".mobile-navigation").wait_for(state="visible")
-            page.wait_for_url("**/app/projects")
+            current_route = urlsplit(page.url).path
+            mark_stage(f"checking project route after login at {current_route}")
+            _require(
+                current_route.rstrip("/") == "/app/projects",
+                "password login did not open the project library route",
+            )
             _require(
                 any(
                     path == "/api/v2/auth/login" and has_csrf
@@ -396,6 +533,48 @@ def run_acceptance(
             )
             cookies.clear()
             session_cookie = None
+            mark_stage("preparing the synthetic project reader fixture")
+            project_id = _prepare_project_reader_fixture(page)
+            mark_stage("opening the authenticated project library")
+            page.goto(f"{origin}/app/projects", wait_until="networkidle")
+            mark_stage("waiting for the seeded project card")
+            try:
+                page.get_by_role(
+                    "heading", name="Heirloom Baby Blanket", exact=True
+                ).wait_for(state="visible", timeout=10_000)
+            except PlaywrightTimeoutError:
+                list_statuses = [
+                    status
+                    for path, status in project_responses
+                    if path == "/api/v2/projects"
+                ]
+                api_status = list_statuses[-1] if list_statuses else "not observed"
+                list_size = (
+                    project_list_sizes[-1] if project_list_sizes else "not observed"
+                )
+                card_count = page.locator(".project-card").count()
+                empty_count = page.locator(".empty-state").count()
+                loading = page.locator(".loading-grid").count() > 0
+                ui_error_visible = page.locator(".notice-error").count() > 0
+                library_count = page.locator(".library").count()
+                debug_screenshot = screenshots / "project-library-debug.png"
+                _mask_fixture_identity(page)
+                _prepare_screenshot(page)
+                page.screenshot(path=str(debug_screenshot), caret="initial")
+                raise AcceptanceFailure(
+                    "seeded project did not render "
+                    f"(API status {api_status}; list items={list_size}; "
+                    f"cards={card_count}; empty state={empty_count}; "
+                    f"still loading={loading}; UI error visible={ui_error_visible}; "
+                    f"library component={library_count}; screenshot={debug_screenshot})"
+                ) from None
+            _require(
+                any(
+                    path == "/api/v2/projects" and status == 200
+                    for path, status in project_responses
+                ),
+                "the real project library API did not load",
+            )
 
             mobile_links = page.locator(".mobile-navigation a")
             _require(
@@ -413,6 +592,213 @@ def run_acceptance(
                     link.count() == 1 and link.get_attribute("href") == href,
                     "a mobile navigation link has the wrong destination",
                 )
+            mark_stage("project library search and URL filters")
+            project_card = page.locator(".project-card").filter(
+                has=page.get_by_role(
+                    "heading", name="Heirloom Baby Blanket", exact=True
+                )
+            )
+            _require(project_card.count() == 1, "the seeded project card is missing")
+            project_photo = project_card.locator(".project-image img")
+            _require(
+                project_photo.count() == 1
+                and project_photo.evaluate("image => image.src.includes('/media/')"),
+                "the project card did not use the seeded same-origin photo",
+            )
+            search_box = page.get_by_role("searchbox", name="Search your projects")
+            search_box.fill("Heirloom")
+            mark_stage("searching project library by name")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == "/api/v2/projects"
+                    and parse_qs(urlsplit(response.url).query).get("q") == ["Heirloom"]
+                )
+            ) as search_response_info:
+                page.get_by_role("button", name="Search", exact=True).click()
+            _require(
+                search_response_info.value.status == 200,
+                "project-name search did not succeed against the Rust API",
+            )
+            page.locator(".project-card").wait_for(state="visible")
+            _require(
+                page.locator(".project-card").count() == 1,
+                "project search did not return the matching card",
+            )
+            mark_stage("filtering project library by category")
+            selected_category: list[str] = []
+            category_select = page.get_by_role("combobox")
+            try:
+                category_select.wait_for(state="visible", timeout=5_000)
+            except PlaywrightTimeoutError:
+                _mask_fixture_identity(page)
+                _prepare_screenshot(page)
+                category_debug = page.evaluate(
+                    """() => ({
+                      selectCount: document.querySelectorAll('select').length,
+                      libraryCount: document.querySelectorAll('.library').length,
+                      visible: document.visibilityState === 'visible',
+                      hasBody: Boolean(document.body),
+                    })"""
+                )
+                category_debug_screenshot = screenshots / "category-stage-debug.png"
+                page.screenshot(path=str(category_debug_screenshot), caret="initial")
+                raise AcceptanceFailure(
+                    "project category control did not become visible "
+                    f"(diagnostics={category_debug}; "
+                    f"native select count={page.locator('select').count()}; "
+                    f"accessible combobox count={category_select.count()})"
+                ) from None
+            _require(category_select.count() == 1, "category filter is ambiguous")
+            _require(
+                category_select.evaluate("select => select.labels.length > 0"),
+                "the project category filter is not programmatically labeled",
+            )
+            try:
+                with page.expect_response(
+                    lambda response: (
+                        urlsplit(response.url).path == "/api/v2/projects"
+                        and parse_qs(urlsplit(response.url).query).get("category")
+                        == ["Schal"]
+                    ),
+                    timeout=10_000,
+                ) as category_filter_response_info:
+                    selected_category = category_select.select_option(
+                        label="Schal", timeout=5_000
+                    )
+            except PlaywrightTimeoutError:
+                category_in_url = parse_qs(urlsplit(page.url).query).get(
+                    "category"
+                ) == ["Schal"]
+                category_request_seen = any(
+                    query.get("category") == ["Schal"] for query in project_list_queries
+                )
+                category_value_selected = (
+                    category_select.input_value(timeout=1_000) == "Schal"
+                )
+                raise AcceptanceFailure(
+                    "category filter did not reach the project API "
+                    f"(URL updated={category_in_url}; "
+                    f"request observed={category_request_seen}; "
+                    f"select returned value={selected_category == ['Schal']}; "
+                    f"selected in DOM={category_value_selected})"
+                ) from None
+            _require(
+                category_filter_response_info.value.status == 200,
+                "category filtering did not succeed against the Rust API",
+            )
+            page.locator(".project-card").wait_for(state="visible")
+            _require(
+                any(
+                    path == "/api/v2/categories" and status == 200
+                    for path, status in category_responses
+                ),
+                "project categories did not load from the Rust API",
+            )
+            mark_stage("filtering project library by tag")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == "/api/v2/projects"
+                    and parse_qs(urlsplit(response.url).query).get("tag")
+                    == ["heirloom"]
+                )
+            ) as tag_filter_response_info:
+                page.get_by_role("button", name="heirloom", exact=True).click()
+            _require(
+                tag_filter_response_info.value.status == 200,
+                "tag filtering did not succeed against the Rust API",
+            )
+            page.locator(".project-card").wait_for(state="visible")
+            search_box = page.get_by_role("searchbox", name="Search your projects")
+            search_box.fill("no such knitting project")
+            mark_stage("checking the project no-match state")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == "/api/v2/projects"
+                    and parse_qs(urlsplit(response.url).query).get("q")
+                    == ["no such knitting project"]
+                )
+            ) as no_match_response_info:
+                page.get_by_role("button", name="Search", exact=True).click()
+            _require(
+                no_match_response_info.value.status == 200,
+                "no-match search did not succeed against the Rust API",
+            )
+            page.get_by_role(
+                "heading", name="No projects match those filters."
+            ).wait_for(state="visible")
+            _require(
+                page.locator(".project-card").count() == 0,
+                "the no-match state still showed a project",
+            )
+            mark_stage("clearing project filters")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == "/api/v2/projects"
+                    and not urlsplit(response.url).query
+                )
+            ) as clear_filters_response_info:
+                page.locator(".filters").get_by_role(
+                    "button", name="Clear filters", exact=True
+                ).click()
+            _require(
+                clear_filters_response_info.value.status == 200,
+                "clearing filters did not reload the project list",
+            )
+            page.get_by_role(
+                "heading", name="Heirloom Baby Blanket", exact=True
+            ).wait_for(state="visible")
+            project_card = page.locator(".project-card").filter(
+                has=page.get_by_role(
+                    "heading", name="Heirloom Baby Blanket", exact=True
+                )
+            )
+            mark_stage("saving a project favorite")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path.endswith("/favorite")
+                    and response.request.method == "PUT"
+                )
+            ) as favorite_response_info:
+                page.get_by_role("button", name="Add to favorites").click()
+            _require(
+                favorite_response_info.value.status == 200,
+                "saving the project favorite failed against the Rust API",
+            )
+            page.get_by_role("button", name="Remove from favorites").wait_for(
+                state="visible"
+            )
+            mark_stage("filtering project library by favorites")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == "/api/v2/projects"
+                    and parse_qs(urlsplit(response.url).query).get("favorite")
+                    == ["true"]
+                )
+            ) as favorite_filter_response_info:
+                page.get_by_label("Favorites", exact=True).check()
+            _require(
+                favorite_filter_response_info.value.status == 200,
+                "favorite filtering did not succeed against the Rust API",
+            )
+            page.locator(".project-card").wait_for(state="visible")
+            _require(
+                page.locator(".project-card").count() == 1,
+                "favorite filtering did not keep the saved project",
+            )
+            _require(
+                any(
+                    path.endswith("/favorite") and has_csrf
+                    for path, has_csrf in csrf_requests
+                ),
+                "the favorite action did not send CSRF",
+            )
+            _require(
+                any(
+                    path.endswith("/favorite") and status == 200
+                    for path, status in project_responses
+                ),
+                "the favorite action did not persist through the Rust API",
+            )
             mark_stage("authenticated responsive layout")
             for width in (320, 390, 1280):
                 page.set_viewport_size({"width": width, "height": 844})
@@ -446,20 +832,167 @@ def run_acceptance(
                     "reduced-motion scroll behavior was not applied",
                 )
             page.set_viewport_size({"width": 390, "height": 844})
-            page.locator(".header-user").evaluate(
-                "node => node.textContent = 'Test account'"
-            )
-            page.locator(".account-email").evaluate(
-                "node => node.textContent = 'Test account'"
-            )
-            page.locator(".account-email").evaluate(
-                "node => node.title = 'Test account'"
-            )
-            page.locator(".avatar").evaluate_all(
-                "nodes => nodes.forEach(node => node.textContent = 'T')"
-            )
+            _mask_fixture_identity(page)
+            _prepare_screenshot(page)
             page.screenshot(
-                path=str(screenshots / "signed-in-mobile.png"), full_page=True
+                path=str(screenshots / "signed-in-mobile.png"),
+                caret="initial",
+            )
+
+            mark_stage("project reader, ordered steps, media, and print")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == f"/api/v2/projects/{project_id}"
+                    and response.request.method == "GET"
+                )
+            ) as reader_response_info:
+                page.locator(
+                    f".project-card a[href='/app/projects/{project_id}']"
+                ).click()
+            page.wait_for_url(f"**/app/projects/{project_id}")
+            reader_response = reader_response_info.value
+            _require(reader_response.status == 200, "project detail API failed")
+            mark_stage("checking project reader title and ordered steps")
+            page.get_by_role(
+                "heading", name="Heirloom Baby Blanket", exact=True
+            ).wait_for(state="visible")
+            step_titles = page.locator(".steps-list h3").all_inner_texts()
+            _require(
+                step_titles
+                == [
+                    "Cast on and knit the border",
+                    "Work the textured panel",
+                ],
+                "the reader did not display pattern steps in order",
+            )
+            mark_stage("checking sanitized pattern text")
+            description = page.locator(".pattern-section > .reading-copy > .rich-text")
+            sanitized_text = description.locator("strong")
+            if sanitized_text.count() != 1 or sanitized_text.inner_text() != (
+                "textured blanket"
+            ):
+                text_debug = page.locator(".pattern-section .rich-text").evaluate_all(
+                    "nodes => nodes.map(node => ({"
+                    "strongCount: node.querySelectorAll('strong').length, "
+                    "textLength: node.textContent?.length ?? 0, "
+                    "hasFixturePhrase: "
+                    "node.textContent?.includes('textured blanket') ?? false, "
+                    "hasMarkdownMarkers: node.textContent?.includes('**') ?? false"
+                    "}))"
+                )
+                _mask_fixture_identity(page)
+                _prepare_screenshot(page)
+                page.screenshot(
+                    path=str(screenshots / "reader-text-debug.png"),
+                    caret="initial",
+                )
+                raise AcceptanceFailure(
+                    "sanitized description structure did not match "
+                    f"the fixture (blocks={text_debug}; "
+                    f"strong elements={sanitized_text.count()})"
+                )
+            _require(
+                "**" not in description.inner_text(),
+                "raw Markdown was displayed in the pattern reader",
+            )
+            mark_stage("checking linked yarn API details")
+            page.get_by_text("Riverbend Merino DK", exact=True).wait_for(
+                state="visible", timeout=5_000
+            )
+            _require(
+                any(
+                    path.startswith("/api/v2/yarns/") and status == 200
+                    for path, status in yarn_responses
+                ),
+                "linked yarn details did not load from the Rust API",
+            )
+            _require(
+                page.locator(".gallery-image").count() == 1,
+                "the single-image project fixture changed unexpectedly",
+            )
+            page.set_viewport_size({"width": 320, "height": 844})
+            mark_stage("opening the single seeded project photo at 320px")
+            page.locator(".gallery-image").first.scroll_into_view_if_needed()
+            page.locator(".gallery-image").first.click()
+            dialog = page.get_by_role("dialog", name="Project image viewer")
+            dialog.wait_for(state="visible")
+            lightbox_image = dialog.locator("img")
+            lightbox_image.wait_for(state="visible")
+            lightbox_image.evaluate("image => image.decode()")
+            image_bounds = lightbox_image.bounding_box()
+            _require(
+                lightbox_image.evaluate(
+                    "image => image.complete && image.naturalWidth > 0"
+                )
+                and image_bounds is not None
+                and image_bounds["width"] >= 180
+                and image_bounds["height"] >= 140,
+                "the seeded photo did not load at a useful size in the 320px viewer",
+            )
+            mark_stage("checking Escape close and focus restoration")
+            page.keyboard.press("Escape")
+            dialog.wait_for(state="hidden")
+            _require(
+                page.evaluate(
+                    "document.activeElement === "
+                    "document.querySelector('.gallery-image')"
+                ),
+                "closing the image viewer did not restore focus",
+            )
+            page.set_viewport_size({"width": 390, "height": 844})
+            mark_stage("checking reader text size and print layout")
+            reading_copy = page.locator(".pattern-section > .reading-copy")
+            small_font = float(
+                reading_copy.evaluate(
+                    "element => getComputedStyle(element).fontSize"
+                ).removesuffix("px")
+            )
+            page.get_by_role("button", name="Increase text size").click()
+            try:
+                page.wait_for_function(
+                    "initial => {"
+                    "const element = document.querySelector("
+                    "'.pattern-section > .reading-copy'); "
+                    "return element !== null && "
+                    "parseFloat(getComputedStyle(element).fontSize) > initial;"
+                    "}",
+                    arg=small_font,
+                    timeout=5_000,
+                )
+            except PlaywrightTimeoutError:
+                raise AcceptanceFailure(
+                    "reader text-size control did not update the description text "
+                    f"(class={reading_copy.get_attribute('class')}; "
+                    f"font size={
+                        reading_copy.evaluate(
+                            'element => getComputedStyle(element).fontSize'
+                        )
+                    })"
+                ) from None
+            large_font = float(
+                reading_copy.evaluate(
+                    "element => getComputedStyle(element).fontSize"
+                ).removesuffix("px")
+            )
+            _require(
+                large_font > small_font, "reader text-size control did not grow text"
+            )
+            page.emulate_media(media="print")
+            _require(
+                not page.locator(".reader-topline").is_visible()
+                and page.locator(".steps-list > li").nth(1).is_visible(),
+                "print layout hid reader controls but omitted pattern instructions",
+            )
+            page.emulate_media(media="screen")
+            page.get_by_role("button", name="Remove from favorites").click()
+            page.get_by_role("button", name="Add to favorites").wait_for(
+                state="visible"
+            )
+            _mask_fixture_identity(page)
+            _prepare_screenshot(page)
+            page.screenshot(
+                path=str(screenshots / "project-reader-mobile.png"),
+                caret="initial",
             )
 
             mark_stage("direct routes and explicit unfinished states")
@@ -550,8 +1083,10 @@ def run_acceptance(
             page.locator("#email").fill("")
             page.locator("#password").fill("")
             page.set_viewport_size({"width": 390, "height": 844})
+            _prepare_screenshot(page)
             page.screenshot(
-                path=str(screenshots / "signed-out-after-logout.png"), full_page=True
+                path=str(screenshots / "signed-out-after-logout.png"),
+                caret="initial",
             )
 
             _require(
