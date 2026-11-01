@@ -164,7 +164,12 @@ async fn disabled_controls_are_hidden_and_untrusted_archive_links_are_not_render
 
 #[test]
 fn utility_script_uses_text_sinks_and_never_html_injection() {
-    let script = include_str!("../../stricknani/static/rust-utilities.js");
+    let static_root = std::env::var_os("STATIC_ROOT")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| {
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static")
+        });
+    let script = std::fs::read_to_string(static_root.join("rust-utilities.js")).unwrap();
     assert!(script.contains("X-CSRF-Token"));
     assert!(script.contains("status.textContent"));
     assert!(script.contains("output.value"));
