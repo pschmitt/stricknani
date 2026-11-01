@@ -1,6 +1,6 @@
 name: Release
 
-# Hand-written rather than delegating to pschmitt/android-app-ci's reusable release.yaml: that
+# Hand-written rather than delegating to pschmitt/ci-workflows's reusable release.yaml: that
 # workflow assumes the Gradle project sits at the repo root, which isn't true here (it's at
 # android/, alongside the unrelated Python web app at the repo root) - same reason as
 # android-build.yaml/android-lint.yaml (see their header comments). This mirrors that reusable
@@ -49,11 +49,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+      - uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
 
       - name: Decode CI signing keystore
         id: ci_keystore
-        uses: pschmitt/android-app-ci/.github/actions/decode-ci-keystore@main
+        uses: pschmitt/ci-workflows/.github/actions/decode-ci-keystore@main
         with:
           keystore-base64: ${{ secrets.CI_KEYSTORE_BASE64 }}
           file-name: stricknani-ci.jks

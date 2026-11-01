@@ -2,7 +2,7 @@
 
 The Android Gradle project lives in `android/` below the repository root. The hosted workflows
 therefore keep only Stricknani-specific triggers and parameters; shared build logic comes from
-[`pschmitt/android-app-ci`](https://github.com/pschmitt/android-app-ci).
+[`pschmitt/ci-workflows`](https://github.com/pschmitt/ci-workflows).
 
 ## Shared lanes
 

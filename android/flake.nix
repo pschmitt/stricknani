@@ -12,7 +12,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     android-app-ci = {
-      url = "github:pschmitt/android-app-ci";
+      url = "github:pschmitt/ci-workflows";
       flake = false;
     };
   };

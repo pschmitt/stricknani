@@ -43,7 +43,7 @@ jobs:
 
       # Use the same Android SDK/JDK setup as the checked-in Android build and
       # lint workflows; the emulator runner only owns the emulator lifecycle.
-      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+      - uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
 
       - name: Build disposable Stricknani image
         run: docker build --file Dockerfile.python --tag "$E2E_IMAGE" .
@@ -66,7 +66,7 @@ jobs:
         run: ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace
         working-directory: android
 
-      - uses: pschmitt/android-app-ci/.github/actions/enable-kvm@main
+      - uses: pschmitt/ci-workflows/.github/actions/enable-kvm@main
 
       - name: Run Android instrumentation journey
         uses: reactivecircus/android-emulator-runner@v2
@@ -84,7 +84,7 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           working-directory: android
           script: |
-            curl -fsSL https://raw.githubusercontent.com/pschmitt/android-app-ci/main/scripts/wait-for-android-emulator.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/pschmitt/ci-workflows/main/scripts/wait-for-android-emulator.sh | bash
             adb reverse tcp:7674 tcp:7674
             ./scripts/run-e2e-tests.sh
 

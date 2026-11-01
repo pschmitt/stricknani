@@ -68,7 +68,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+      - uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
 
       - name: Build disposable Stricknani image
         run: docker build --tag "$E2E_IMAGE" .
@@ -90,7 +90,7 @@ jobs:
         run: ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace
         working-directory: android
 
-      - uses: pschmitt/android-app-ci/.github/actions/enable-kvm@main
+      - uses: pschmitt/ci-workflows/.github/actions/enable-kvm@main
 
       - name: Capture screenshots in ${{ matrix.device }} / ${{ env.SCREENSHOT_THEME }} emulator
         uses: reactivecircus/android-emulator-runner@v2
@@ -108,7 +108,7 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           working-directory: android
           script: |
-            curl -fsSL https://raw.githubusercontent.com/pschmitt/android-app-ci/main/scripts/wait-for-android-emulator.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/pschmitt/ci-workflows/main/scripts/wait-for-android-emulator.sh | bash
             adb reverse tcp:7674 tcp:7674
             adb shell cmd uimode night "$NIGHT_MODE"
             ./scripts/run-screenshot-test.sh
@@ -271,7 +271,7 @@ jobs:
   open-pr:
     needs: aggregate-play-store-screenshots
     if: ${{ !cancelled() && !failure() && inputs.open_pr }}
-    uses: pschmitt/android-app-ci/.github/workflows/screenshots-open-pr.yaml@main
+    uses: pschmitt/ci-workflows/.github/workflows/screenshots-open-pr.yaml@main
     with:
       artifact-label: stricknani
       commit-message: "chore: update Play Store screenshots (phone, 7in, 10in tablet)"

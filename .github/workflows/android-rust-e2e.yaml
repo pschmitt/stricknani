@@ -53,7 +53,7 @@ jobs:
         uses: cachix/install-nix-action@v31
 
       - name: Set up Android SDK and Gradle
-        uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
+        uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
 
       # Compile the Rust candidate and both APKs before emulator startup.
       - name: Build Rust candidate
@@ -133,7 +133,7 @@ jobs:
           printf 'RUST_FIXTURE_PORT=%s\n' "$port" >> "$GITHUB_ENV"
 
       - name: Enable KVM
-        uses: pschmitt/android-app-ci/.github/actions/enable-kvm@main
+        uses: pschmitt/ci-workflows/.github/actions/enable-kvm@main
 
       - name: Run existing Android journeys against Rust
         uses: reactivecircus/android-emulator-runner@v2
