@@ -14,6 +14,7 @@ async fn security_headers_cache_static_assets_and_protect_dynamic_and_media_resp
         .route("/", get(|| async { "page" }))
         .route("/api/v1/private", get(|| async { "private" }))
         .route("/media/image", get(|| async { "media" }))
+        .route("/app/messages.json", get(|| async { "{}" }))
         .route(
             "/static/app.css",
             get(|| async { "body { color: black; }" }),
@@ -58,6 +59,7 @@ async fn security_headers_cache_static_assets_and_protect_dynamic_and_media_resp
         .unwrap();
     assert_eq!(media.headers()["cache-control"], "private, no-store");
     let static_asset = app
+        .clone()
         .oneshot(Request::get("/static/app.css").body(Body::empty()).unwrap())
         .await
         .unwrap();
@@ -66,6 +68,17 @@ async fn security_headers_cache_static_assets_and_protect_dynamic_and_media_resp
         static_asset.headers()["cache-control"],
         "public, max-age=3600, stale-while-revalidate=86400"
     );
+
+    let catalog = app
+        .oneshot(
+            Request::get("/app/messages.json")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(catalog.status(), StatusCode::OK);
+    assert_eq!(catalog.headers()["cache-control"], "private, no-store");
 }
 
 #[tokio::test]

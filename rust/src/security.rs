@@ -201,7 +201,7 @@ pub async fn security_headers(request: axum::extract::Request, next: Next) -> Re
     let path = request.uri().path();
     let is_static = path.starts_with("/static/")
         || path.starts_with("/app/_app/")
-        || matches!(path, "/app/messages.json" | "/app/favicon.svg");
+        || path == "/app/favicon.svg";
     let is_public_pwa = matches!(
         request.uri().path(),
         "/sw.js" | "/register-pwa.js" | "/manifest.webmanifest" | "/offline"

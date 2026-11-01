@@ -139,10 +139,7 @@ async fn app_assets_keep_file_mime_types_and_missing_assets_stay_404() {
 
     let messages = request(fixture.router(), "/app/messages.json").await;
     assert_eq!(messages.status(), axum::http::StatusCode::OK);
-    assert_eq!(
-        messages.headers()["cache-control"],
-        "public, max-age=3600, stale-while-revalidate=86400"
-    );
+    assert_eq!(messages.headers()["cache-control"], "private, no-store");
     let favicon = request(fixture.router(), "/app/favicon.svg").await;
     assert_eq!(favicon.status(), axum::http::StatusCode::OK);
     assert_eq!(favicon.headers()["content-type"], "image/svg+xml");
