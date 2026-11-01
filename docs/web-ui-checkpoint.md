@@ -53,5 +53,46 @@ The user requests regular verified milestone deployments and a Signal message
 after each new preview version lands, with a short summary and working link.
 The deployment Luna owns that notification after HTTPS/version verification.
 
+## Current integration wave
+
+The committed foundation candidate is `2d3b663`. Its clean-source `just check`
+passed, and the reproducible Rust/static-asset package built successfully.
+Both registered CI runs passed. Flake checks and the candidate container build
+also passed. The isolated host closure built and the preview rollout was
+verified on 2026-11-01. The new UI is available at `/app`; native login, strict
+CSP, disabled signup and separate preview storage remain in place. Production
+keeps its previous service executable. The deployment Luna sent the requested
+Signal notification after HTTPS and version checks passed.
+
+The project library and pattern reader are being verified against the real
+Rust API with synthetic fixtures. Their current frontend checks, static build
+and 22 unit tests pass. Browser acceptance and coordinator review are pending:
+the browser runs exposed a library lifecycle problem and a category-filter
+interaction failure, which must be resolved before the feature is deployed.
+The reader includes sanitized instructions, ordered steps, linked yarn details,
+reference images, attachments, text sizing and print output. Editing, deletion,
+media mutations and persistent current-step navigation remain separate work.
+
+Shared yarn/category operations and browser adapters are committed in
+`facf1db`, without schema changes. Additional ownership, CSRF, cross-origin and
+body-limit tests pass; the full Rust suite passes 229 tests, with formatting
+and strict Clippy clean. The four Python health tests also pass. The API Luna
+has completed the browser media operations. The frontend Luna owns the project
+screens and translation catalogs. The deployment Luna now
+implements yarn/category screens in disjoint feature directories and retains
+responsibility for the next verified preview rollout and Signal notification.
+
+The browser media operations are committed in `16ab089`: project title/step
+images, attachments, yarn photos and deletion reuse the existing typed storage
+operations. Their ownership, CSRF, image processing, file limits, audit and
+cleanup behavior remain shared with v1. The full Rust suite passes 233 tests,
+formatting and strict Clippy pass, and the four health tests pass. Frontend
+upload workflows are still being implemented.
+
+A preliminary project-screen build measured 61,003 gzip bytes across all 31
+JavaScript assets and 9,758 gzip bytes across seven CSS assets. This measures
+the whole current static asset set, not a browser's first-route transfer or
+mobile startup performance. The acceptance lab measurements remain pending.
+
 Production continues to serve Python with separate storage. Preserve the user's
 uncommitted `REWRITE.md` and unrelated primary-checkout changes.
