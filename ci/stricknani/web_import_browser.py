@@ -306,9 +306,7 @@ def run_acceptance(
                 note_fields.count() > 0,
                 "review page rendered without editable text areas",
             )
-            note_fields.last.fill(
-                "Created after checking every imported field."
-            )
+            note_fields.last.fill("Created after checking every imported field.")
             for width in (320, 390, 1280):
                 page.set_viewport_size({"width": width, "height": 844})
                 _assert_no_overflow(page, width)
@@ -325,9 +323,7 @@ def run_acceptance(
             page.set_viewport_size({"width": 390, "height": 844})
             web_ui_browser._mask_fixture_identity(page)
             page.keyboard.press("Escape")
-            review_heading = page.get_by_role(
-                "heading", name="Review and correct"
-            )
+            review_heading = page.get_by_role("heading", name="Review and correct")
             review_heading.evaluate(
                 "element => { element.tabIndex = -1; element.focus(); }"
             )
@@ -445,12 +441,9 @@ def run_acceptance(
                     for path, status in import_responses
                     if path == "/api/v2/imports/preview-file"
                 ]
-                file_status = (
-                    file_statuses[-1] if file_statuses else "not observed"
-                )
+                file_status = file_statuses[-1] if file_statuses else "not observed"
                 raise AcceptanceFailure(
-                    "HTML file preview did not show review "
-                    f"(API status {file_status})"
+                    f"HTML file preview did not show review (API status {file_status})"
                 ) from None
             mark_stage("checking extracted yarn in HTML review")
             try:
