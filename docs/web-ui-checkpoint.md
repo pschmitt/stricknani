@@ -6,15 +6,17 @@ The existing Rust preview remains usable while new routes are built at `/app`.
 
 ## Latest verified state
 
-The live preview runs `c77eb88`, deployed through infrastructure commit
-`dfe46f97aa0d8096662baca29f0ab869107a7dc8`. HTTPS, native login, assets,
+The live preview runs `c81fc16`, deployed through infrastructure commit
+`317310f982a69a6b3a964364ddee22de7121b51c`. HTTPS, native login, assets,
 strict CSP, isolated storage and unchanged production executable were verified.
 The deployment agent sent the requested Signal notification with the preview
-link. The exact committed source passed `just check` (258 Rust tests, 72
-shipping-harness tests, 83 Vitest tests, frontend/i18n checks and static build),
+link. The exact committed source passed `just check` (the full Rust suite, 75
+shipping-harness tests, 94 Vitest tests, frontend/i18n checks and static build),
 the application flake check, package/container builds and target host build.
-The parent independently checked live catalog/cache headers, safe anonymous
-session state, public gauge results, service status and the exact host closure.
+The parent independently checked the live 546-key bilingual catalog/cache
+headers, strict CSP, safe anonymous session state, disabled optional services,
+all service states and the exact host closure. The upgrade unit exited
+successfully. Package and all container layers exclude the dev-only companion.
 Earlier sections below retain historical
 checkpoint evidence; their pending deployment statements describe that time.
 
@@ -63,14 +65,14 @@ The live milestone includes these reviewed checkpoints:
   additional assertions confirm the restored step is actually in the usable
   viewport. More retains secondary links and identifies unfinished screens.
 
-The newer account API checkpoint `66d90a9` is committed but is not in this
-deployment. It shares typed token, password and avatar operations with legacy
+The deployed account API checkpoint `66d90a9` shares typed token, password and
+avatar operations with legacy
 adapters. The full Rust run passed 264 tests before an additional stale-password
 CAS regression; that focused regression, formatting, strict Clippy and 26
 targeted Python tests also passed. Token quota is atomic under concurrent
 requests; password update and browser-session revocation commit together.
 
-Two further frontend checkpoints are pushed, but are not yet deployed:
+The deployment also includes these frontend checkpoints:
 
 - `33d0ad6`: public gauge calculator and English/German language controls.
   Isolated frontend checks passed 91 Vitest tests, type/format checks and the
@@ -128,7 +130,8 @@ Rust-backed journeys in addition to existing static frontend checks.
 Deployment limitations are recorded separately from application checks. The
 public infrastructure no-build flake check fails on a missing Termux Home
 Manager derivation, reproduced on clean `d580a6033` and the candidate. This is
-not reported as a passed gate. The `c77eb88` upgrade unit completed successfully.
+not reported as a passed gate. The `c77eb88` and `c81fc16` upgrade units completed
+successfully.
 During the earlier `6cb58fb` rollout, the wrapper exited unsuccessfully after
 activation, while the switch
 unit, exact running closure and both application services were verified; the

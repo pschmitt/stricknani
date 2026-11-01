@@ -263,10 +263,7 @@
 
     <div class="content-column">
       <header class="page-header">
-        <div>
-          <p class="header-greeting">{t("Welcome back", locale)}</p>
-          <p class="header-user">{user.email}</p>
-        </div>
+        <p class="header-user">{user.email}</p>
         <div class="header-actions">
           <LocaleSwitcher />
           <button

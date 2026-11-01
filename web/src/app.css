@@ -377,13 +377,8 @@ button:disabled {
   background: var(--surface);
 }
 
-.header-greeting,
 .header-user {
   margin: 0;
-}
-
-.header-greeting {
-  font-weight: 650;
 }
 
 .header-user {
