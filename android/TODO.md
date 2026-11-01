@@ -41,6 +41,24 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-73: Keep Rust Android E2E fixtures valid and independent
+
+- [x] Correct the embedded 1x1 PNG's IDAT checksum without changing the upload assertion.
+- [x] Verify PNG structure and image decoding, and confirm Rust rejects the old bytes but accepts
+      the corrected upload.
+- [x] Keep the shared seeded project name stable across the full suite by editing its description
+      in the offline journey; assert the cached description and unchanged baseline name.
+- [x] Re-run Android formatting and APK assembly on the designated remote build host.
+- [ ] Verify the full Rust Android E2E suite in CI.
+
+**Why:** Rust correctly rejected the Android photo fixture's invalid IDAT CRC, and the offline
+journey renamed a seeded row that a later test needs as its navigation marker.
+**How to apply:** no user action; this repairs test data and makes the full test suite independent.
+
+Status: **in progress**, 2026-11-01 - PNG checks and packaged API proof passed (old payload 400
+with no added photo; corrected payload 201 and count +1). Remote ktfmt and APK assembly passed;
+CI instrumentation verification is pending.
+
 ## SNA-72: Allow longer Android pattern import requests
 
 - [x] Give `ProjectImportApi` a dedicated OkHttp client with a 65-second read timeout and

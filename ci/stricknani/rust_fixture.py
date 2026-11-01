@@ -105,6 +105,12 @@ def run_cmd(
         raise FixtureError("fixture command failed")
 
 
+def _mask_github_secret(value: str) -> None:
+    """Register a value with the GitHub Actions log masker when running there."""
+    if os.environ.get("GITHUB_ACTIONS", "").lower() == "true":
+        print(f"::add-mask::{value}", flush=True)
+
+
 def _process_start_time(pid: int) -> str | None:
     try:
         contents = Path(f"/proc/{pid}/stat").read_text(encoding="ascii")
@@ -230,8 +236,8 @@ def start_fixture(
 
         email = f"rust-replay-{secrets.token_hex(8)}@example.invalid"
         password = secrets.token_urlsafe(32)
-        print(f"::add-mask::{email}", flush=True)
-        print(f"::add-mask::{password}", flush=True)
+        _mask_github_secret(email)
+        _mask_github_secret(password)
         run_cmd(
             [str(binary_path), "create-user", email],
             env=env,

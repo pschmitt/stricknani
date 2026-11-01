@@ -14,8 +14,7 @@
 <header class="site-header border-b border-base-300">
     <nav class="max-w-6xl mx-auto p-4 flex flex-wrap items-center gap-4" aria-label="Stricknani">
         <a href="/projects" class="font-bold text-xl">Stricknani</a>
-        <a href="/projects">{{ labels.projects }}</a>
-        <a href="/yarns">{{ labels.yarns }}</a>
+        {% if email.is_some() %}<a href="/projects">{{ labels.projects }}</a><a href="/yarns">{{ labels.yarns }}</a>{% endif %}
         {% if email.is_some() %}<a href="/categories">{{ labels.category_management }}</a>{% endif %}
         {% if email.is_some() %}<a href="/account">{{ labels.account }}</a>{% endif %}
         {% if email.is_some() %}<a href="/imports">{{ labels.imports }}</a>{% endif %}

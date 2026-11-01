@@ -94,6 +94,54 @@ def test_run_cmd_sends_password_on_stdin_and_suppresses_output(
     assert "test-password-value" not in argv
 
 
+@pytest.mark.parametrize("github_actions", [False, True])
+def test_start_fixture_masks_generated_credentials_only_in_actions(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    github_actions: bool,
+) -> None:
+    binary = tmp_path / "stricknani-server"
+    binary.write_bytes(b"fixture binary placeholder")
+    binary.chmod(0o700)
+    fixture_file = tmp_path / "private" / "fixture.json"
+    state_file = tmp_path / "private" / "state.json"
+
+    class FakeProcess:
+        pid = 424242
+
+        def poll(self) -> None:
+            return None
+
+    def fake_popen(*_args: object, **_kwargs: object) -> FakeProcess:
+        return FakeProcess()
+
+    monkeypatch.setenv("GITHUB_ACTIONS", str(github_actions).lower())
+    monkeypatch.setattr(subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(rust_fixture, "_unused_port", lambda: 56789)
+    monkeypatch.setattr(rust_fixture, "_process_start_time", lambda _pid: "start")
+    monkeypatch.setattr(rust_fixture, "_safe_terminate", lambda _pid, _start: None)
+    monkeypatch.setattr(rust_fixture, "_wait_for_health", lambda _port, _process: None)
+    monkeypatch.setattr(rust_fixture, "run_cmd", lambda *_args, **_kwargs: None)
+
+    rust_fixture.start_fixture(
+        binary=binary,
+        temp_dir=tmp_path / "runtime",
+        fixture_file=fixture_file,
+        state_file=state_file,
+    )
+
+    credentials = json.loads(fixture_file.read_text(encoding="utf-8"))
+    output = capsys.readouterr().out
+    if github_actions:
+        assert f"::add-mask::{credentials['email']}\n" in output
+        assert f"::add-mask::{credentials['password']}\n" in output
+    else:
+        assert credentials["email"] not in output
+        assert credentials["password"] not in output
+        assert output == ""
+
+
 def test_stop_fixture_rejects_mismatched_owner_without_deleting_files(
     tmp_path: Path,
 ) -> None:

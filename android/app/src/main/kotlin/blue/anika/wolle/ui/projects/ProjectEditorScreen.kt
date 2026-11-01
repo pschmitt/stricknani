@@ -134,7 +134,8 @@ fun ProjectEditorScreen(
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            modifier =
+                Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-project-editor-form"),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -299,7 +300,8 @@ fun ProjectEditorScreen(
                             label = {
                                 Text(stringResource(R.string.project_detail_description_title))
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier =
+                                Modifier.fillMaxWidth().testTag("e2e-project-editor-description"),
                             minLines = 3,
                         )
                         OutlinedTextField(

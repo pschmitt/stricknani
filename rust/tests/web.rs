@@ -106,6 +106,16 @@ async fn body(response: axum::response::Response) -> String {
     .expect("response body should be UTF-8")
 }
 
+fn header_navigation_labels(html: &str) -> Vec<String> {
+    let document = scraper::Html::parse_document(html);
+    let selector = scraper::Selector::parse("header nav[aria-label='Stricknani'] a")
+        .expect("header navigation selector is valid");
+    document
+        .select(&selector)
+        .map(|link| link.text().collect::<String>().trim().to_owned())
+        .collect()
+}
+
 async fn login_page(app: &axum::Router) -> (String, String) {
     let response = app
         .clone()
@@ -206,6 +216,29 @@ async fn login_page_sets_matching_csrf_cookie_and_hidden_field() {
     let (app, _) = real_app().await;
     let (cookie, field) = login_page(&app).await;
     assert_eq!(cookie, field);
+}
+
+#[tokio::test]
+async fn project_and_yarn_header_links_require_authentication() {
+    let (app, _) = real_app().await;
+    let signed_out = get_html_with_language(&app, "/login", "", "en").await;
+    let signed_out_links = header_navigation_labels(&signed_out);
+    for label in ["Projects", "Yarns"] {
+        assert!(
+            !signed_out_links.iter().any(|link| link == label),
+            "signed-out header should not show {label}"
+        );
+    }
+
+    let session = authenticated(&app).await;
+    let signed_in = get_html_with_language(&app, "/projects", &session, "en").await;
+    let signed_in_links = header_navigation_labels(&signed_in);
+    for label in ["Projects", "Yarns"] {
+        assert!(
+            signed_in_links.iter().any(|link| link == label),
+            "authenticated header should show {label}"
+        );
+    }
 }
 
 #[tokio::test]
@@ -417,6 +450,27 @@ async fn get_html(app: &axum::Router, path: &str, session: &str) -> String {
         .oneshot(
             Request::get(path)
                 .header("cookie", format!("__Host-stricknani_session={session}"))
+                .body(Body::empty())
+                .expect("request is valid"),
+        )
+        .await
+        .expect("router should respond");
+    assert_eq!(response.status(), StatusCode::OK);
+    body(response).await
+}
+
+async fn get_html_with_language(
+    app: &axum::Router,
+    path: &str,
+    session: &str,
+    language: &str,
+) -> String {
+    let response = app
+        .clone()
+        .oneshot(
+            Request::get(path)
+                .header("cookie", format!("__Host-stricknani_session={session}"))
+                .header("accept-language", language)
                 .body(Body::empty())
                 .expect("request is valid"),
         )

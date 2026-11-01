@@ -8,6 +8,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -182,6 +183,7 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
         connectToFixture()
         openHeirloomProject()
 
+        val queuedDescription = "Offline queued description"
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         setAirplaneMode(device, enabled = true)
         try {
@@ -190,18 +192,22 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
             composeRule.onNodeWithText("Edit").performClick()
             waitForText("Edit project")
             composeRule
-                .onNodeWithText("Heirloom Baby Blanket", useUnmergedTree = true)
-                .performTextReplacement("Offline queued project")
+                .onNodeWithTag("e2e-project-editor-form")
+                .performScrollToNode(hasTestTag("e2e-project-editor-description"))
+            composeRule
+                .onNodeWithTag("e2e-project-editor-description")
+                .performTextReplacement(queuedDescription)
             composeRule.onNodeWithContentDescription("Save").performClick()
-            waitForText("Offline queued project")
+            waitForText(queuedDescription)
 
             // Returning to the cached list and Home proves both the read path and pending-write
-            // status survive without a network response.
+            // status survive without a network response. Keep the seeded name stable because
+            // other full-lane journeys use it as a project-list navigation marker.
             composeRule.onNodeWithText("Projects").performClick()
             composeRule
                 .onNodeWithTag("e2e-projects-list")
-                .performScrollToNode(hasTextMatcher("Offline queued project"))
-            waitForText("Offline queued project")
+                .performScrollToNode(hasTextMatcher("Heirloom Baby Blanket"))
+            waitForText("Heirloom Baby Blanket")
             composeRule.onNodeWithText("Home").performClick()
             waitForText("Changes pending")
             captureE2eScreenshot("full-04-offline-queued-edit")
@@ -690,10 +696,10 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
                 0x00,
                 0x01,
                 0xff.toByte(),
-                0x89.toByte(),
-                0x99.toByte(),
-                0x3d,
-                0x1d,
+                0x72,
+                0x9c.toByte(),
+                0x52,
+                0x67,
                 0x00,
                 0x00,
                 0x00,
