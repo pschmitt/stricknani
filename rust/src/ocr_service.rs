@@ -148,7 +148,7 @@ async fn ocr(
     }
 }
 
-fn validated_media_path(src: &str) -> Result<Uri, ()> {
+pub(crate) fn validated_media_path(src: &str) -> Result<Uri, ()> {
     if src.contains('#') || src.contains('?') {
         return Err(());
     }

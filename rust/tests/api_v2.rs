@@ -141,7 +141,7 @@ async fn anonymous_bootstrap_sets_signed_csrf_cookie_and_reports_real_capabiliti
     assert_eq!(json["data"]["capabilities"]["signup"], true);
     assert_eq!(json["data"]["capabilities"]["external_imports"], true);
     assert_eq!(json["data"]["capabilities"]["ai"], false);
-    assert_eq!(json["data"]["capabilities"]["ocr"], true);
+    assert_eq!(json["data"]["capabilities"]["ocr"], false);
     assert_eq!(json["data"]["capabilities"]["archive"], true);
 }
 

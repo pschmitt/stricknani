@@ -1,10 +1,6 @@
 //! Same-origin document import previews for the browser API.
 
-use std::{
-    collections::{BTreeMap, HashMap, VecDeque},
-    sync::{Arc, Mutex, PoisonError},
-    time::{Duration, Instant},
-};
+use std::{collections::BTreeMap, time::Duration};
 
 use axum::{
     Json, Router,
@@ -13,7 +9,7 @@ use axum::{
         DefaultBodyLimit, Multipart, State,
         multipart::{MultipartError, MultipartRejection},
     },
-    http::{HeaderMap, HeaderValue, Request, StatusCode},
+    http::{HeaderMap, Request, StatusCode},
     response::{IntoResponse, Response},
     routing::post,
 };
@@ -27,7 +23,10 @@ use crate::{
     imports::FetchError,
 };
 
-use super::{ApiV2State, Envelope, access::mutation_user};
+use super::{
+    ApiV2State, Envelope,
+    access::{self, OwnerRequestLimiter, mutation_user},
+};
 
 const MAX_PREVIEW_JSON_BYTES: usize = 32 * 1024 * 1024;
 const MAX_PREVIEW_MULTIPART_BYTES: usize = import_service::MAX_UPLOAD_BYTES + 64 * 1024;
@@ -35,31 +34,22 @@ const IMPORT_RATE_LIMIT: usize = 20;
 const IMPORT_RATE_WINDOW: Duration = Duration::from_secs(10 * 60);
 const MAX_IMPORT_RATE_KEYS: usize = 4096;
 
-#[derive(Clone, Default)]
-pub(super) struct PreviewLimiter(Arc<Mutex<HashMap<i64, VecDeque<Instant>>>>);
+#[derive(Clone)]
+pub(super) struct PreviewLimiter(OwnerRequestLimiter);
+
+impl Default for PreviewLimiter {
+    fn default() -> Self {
+        Self(OwnerRequestLimiter::new(
+            IMPORT_RATE_LIMIT,
+            IMPORT_RATE_WINDOW,
+            MAX_IMPORT_RATE_KEYS,
+        ))
+    }
+}
 
 impl PreviewLimiter {
     fn reserve(&self, owner_id: i64) -> Result<(), u64> {
-        let now = Instant::now();
-        let mut entries = self.0.lock().unwrap_or_else(PoisonError::into_inner);
-        entries.retain(|_, attempts| {
-            attempts.retain(|attempt| now.duration_since(*attempt) < IMPORT_RATE_WINDOW);
-            !attempts.is_empty()
-        });
-        if let Some(attempts) = entries.get(&owner_id)
-            && attempts.len() >= IMPORT_RATE_LIMIT
-        {
-            let remaining = IMPORT_RATE_WINDOW
-                .saturating_sub(now.duration_since(attempts[0]))
-                .as_secs()
-                .max(1);
-            return Err(remaining);
-        }
-        if !entries.contains_key(&owner_id) && entries.len() >= MAX_IMPORT_RATE_KEYS {
-            return Err(IMPORT_RATE_WINDOW.as_secs());
-        }
-        entries.entry(owner_id).or_default().push_back(now);
-        Ok(())
+        self.0.reserve(owner_id)
     }
 }
 
@@ -400,15 +390,7 @@ fn payload_too_large() -> Response {
 }
 
 fn rate_limited(retry_after: u64) -> Response {
-    let mut response = api_error(
-        StatusCode::TOO_MANY_REQUESTS,
-        "rate_limited",
-        "Too many import previews; try again later",
-    );
-    if let Ok(value) = HeaderValue::from_str(&retry_after.to_string()) {
-        response.headers_mut().insert("retry-after", value);
-    }
-    response
+    access::rate_limited(retry_after, "Too many import previews; try again later")
 }
 
 fn api_error(status: StatusCode, code: &'static str, message: &'static str) -> Response {

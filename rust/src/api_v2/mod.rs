@@ -3,7 +3,7 @@
 use std::{
     collections::BTreeMap,
     net::SocketAddr,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use axum::{
@@ -27,13 +27,15 @@ use zeroize::Zeroizing;
 use crate::{auth, db::AppState, import_service::ImportContext};
 
 mod access;
+mod archive;
 mod categories;
 mod imports;
 mod media;
+mod ocr;
 mod projects;
 mod yarns;
 
-use self::imports::PreviewLimiter;
+use self::{access::OwnerRequestLimiter, imports::PreviewLimiter};
 
 const SESSION_SECONDS: i64 = 14 * 24 * 60 * 60;
 const LOGIN_CSRF_SECONDS: i64 = 10 * 60;
@@ -47,7 +49,9 @@ struct ApiV2State {
     csrf_key: Option<[u8; 32]>,
     ai_enabled: bool,
     imports: Option<ImportContext>,
+    ocr_service: Option<crate::ocr::OcrService>,
     import_preview_limiter: PreviewLimiter,
+    ocr_limiter: OwnerRequestLimiter,
 }
 
 /// Build API v2 routes without optional import services.
@@ -57,19 +61,30 @@ struct ApiV2State {
 /// Use the application constructor to mount import previews with their parser
 /// worker and optional AI client.
 pub fn router(app: AppState, ai_enabled: bool) -> Router {
-    router_with_context(app, ai_enabled, None)
+    router_with_context(app, ai_enabled, None, None)
 }
 
-pub(crate) fn router_with_imports(
+pub(crate) fn router_with_optional_services(
     app: AppState,
     worker_path: PathBuf,
     ai: Option<Arc<crate::ai::AiClient>>,
+    ocr_service: Option<crate::ocr::OcrService>,
 ) -> Router {
     let ai_enabled = ai.is_some();
-    router_with_context(app, ai_enabled, Some(ImportContext::new(worker_path, ai)))
+    router_with_context(
+        app,
+        ai_enabled,
+        Some(ImportContext::new(worker_path, ai)),
+        ocr_service,
+    )
 }
 
-fn router_with_context(app: AppState, ai_enabled: bool, imports: Option<ImportContext>) -> Router {
+fn router_with_context(
+    app: AppState,
+    ai_enabled: bool,
+    imports: Option<ImportContext>,
+    ocr_service: Option<crate::ocr::OcrService>,
+) -> Router {
     let mut csrf_key = [0_u8; 32];
     let csrf_key = OsRng.try_fill_bytes(&mut csrf_key).ok().map(|()| csrf_key);
     let state = ApiV2State {
@@ -77,7 +92,9 @@ fn router_with_context(app: AppState, ai_enabled: bool, imports: Option<ImportCo
         csrf_key,
         ai_enabled,
         imports,
+        ocr_service,
         import_preview_limiter: PreviewLimiter::default(),
+        ocr_limiter: OwnerRequestLimiter::new(5, Duration::from_secs(5 * 60), 4096),
     };
     Router::new()
         .route("/session", get(session))
@@ -89,6 +106,8 @@ fn router_with_context(app: AppState, ai_enabled: bool, imports: Option<ImportCo
         .merge(categories::router())
         .merge(media::router())
         .merge(imports::router())
+        .merge(ocr::router())
+        .merge(archive::router())
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }
@@ -133,7 +152,7 @@ impl Capabilities {
                     .as_ref()
                     .and_then(|imports| imports.ai.as_ref())
                     .is_some(),
-            ocr: state.app.ocr_enabled,
+            ocr: state.app.ocr_enabled && state.ocr_service.is_some(),
             archive: state.app.archive_enabled,
         }
     }

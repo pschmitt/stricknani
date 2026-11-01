@@ -121,7 +121,12 @@ pub fn app_with_services(
     app_with_static_root(static_root)
         .nest(
             "/api/v2",
-            api_v2::router_with_imports(state.clone(), worker_path.clone(), ai.clone()),
+            api_v2::router_with_optional_services(
+                state.clone(),
+                worker_path.clone(),
+                ai.clone(),
+                ocr.clone(),
+            ),
         )
         .merge(web::router(core.clone(), state.clone()))
         .merge(web_accounts::router(core.clone(), state.clone()))

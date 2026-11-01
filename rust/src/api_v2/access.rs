@@ -1,5 +1,11 @@
 //! Shared browser-session and CSRF checks for same-origin API v2 resources.
 
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::{Arc, Mutex, PoisonError},
+    time::{Duration, Instant},
+};
+
 use axum::{
     http::{HeaderMap, StatusCode},
     response::Response,
@@ -9,6 +15,58 @@ use subtle::ConstantTimeEq;
 use crate::{auth, db::AppState};
 
 use super::api_error;
+
+/// A bounded in-memory request quota keyed by authenticated owner.
+#[derive(Clone)]
+pub(super) struct OwnerRequestLimiter {
+    attempts: Arc<Mutex<HashMap<i64, VecDeque<Instant>>>>,
+    limit: usize,
+    window: Duration,
+    max_keys: usize,
+}
+
+impl OwnerRequestLimiter {
+    pub(super) fn new(limit: usize, window: Duration, max_keys: usize) -> Self {
+        Self {
+            attempts: Arc::default(),
+            limit,
+            window,
+            max_keys,
+        }
+    }
+
+    pub(super) fn reserve(&self, owner_id: i64) -> Result<(), u64> {
+        let now = Instant::now();
+        let mut entries = self.attempts.lock().unwrap_or_else(PoisonError::into_inner);
+        entries.retain(|_, attempts| {
+            attempts.retain(|attempt| now.duration_since(*attempt) < self.window);
+            !attempts.is_empty()
+        });
+        if let Some(attempts) = entries.get(&owner_id)
+            && attempts.len() >= self.limit
+        {
+            let retry_after = self
+                .window
+                .saturating_sub(now.duration_since(attempts[0]))
+                .as_secs()
+                .max(1);
+            return Err(retry_after);
+        }
+        if !entries.contains_key(&owner_id) && entries.len() >= self.max_keys {
+            return Err(self.window.as_secs().max(1));
+        }
+        entries.entry(owner_id).or_default().push_back(now);
+        Ok(())
+    }
+}
+
+pub(super) fn rate_limited(retry_after: u64, message: &'static str) -> Response {
+    let mut response = api_error(StatusCode::TOO_MANY_REQUESTS, "rate_limited", message);
+    if let Ok(value) = retry_after.to_string().parse() {
+        response.headers_mut().insert("retry-after", value);
+    }
+    response
+}
 
 #[derive(Clone, Copy)]
 enum AuthFailure {

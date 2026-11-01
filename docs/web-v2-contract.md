@@ -6,7 +6,8 @@ handlers must not accept API tokens from the cookie, return browser session
 secrets in JSON, or call the v1 router internally.
 
 The application-composed v2 router mounts authentication, projects, yarns,
-categories, media, and synchronous import previews. The standalone router used
+categories, media, synchronous import previews, OCR, and archive status/request
+routes. The standalone router used
 by API tests has no document worker or AI client; its imports return
 `import_unavailable` and its AI capability is false, even if the compatibility
 availability hint is true. Composed applications pass the actual worker and
@@ -309,6 +310,44 @@ with a bounded 4096-owner in-memory table; excess requests return `429
 rate_limited` with `Retry-After`. This limiter is separate from password-login
 attempt accounting.
 
+## OCR API
+
+`POST /utils/ocr` accepts `{ "src": "/media/projects/42/image.png", "lang":
+"deu+eng", "force": false }` and returns `{ "data": { "text": "..." } }`.
+The route requires a browser session and same-origin CSRF. It accepts only
+canonical project title/step images or yarn photos owned by the current active
+user, verifies the stored media type and canonical path, and reads at most 25
+MiB. Attachments and foreign or missing media return `404`. The existing OCR
+decoder pixel/allocation limits, two-process concurrency bound, and 30-second
+process timeout apply. `force` is accepted for compatibility; OCR is not
+cached. The configured OCR service and `ocr_enabled` flag must both be present,
+otherwise the route returns `503 ocr_unavailable` and the session capability
+is false. OCR is limited to five requests per authenticated owner per five
+minutes using a bounded in-memory limiter separate from login and import
+accounting; excess requests return `429 rate_limited` with `Retry-After`. The
+v1 OCR endpoint and its bearer-token behavior are unchanged.
+
+Invalid JSON/source/language returns `422`; oversized input returns `413`;
+invalid images return `422 invalid_image`; OCR timeout returns `504
+ocr_timeout`. Other OCR failures use stable v2 error codes without exposing
+process output.
+
+## Archive request and status API
+
+`POST /projects/{id}/archive` and `POST /yarns/{id}/archive` enqueue the
+current source link using the existing durable, idempotent archive service and
+return `202 { "data": { "state": "pending" } }`. These writes require the
+browser session and same-origin CSRF. `GET` on either path returns
+`{ "data": { "state": "pending", "updated_at": 1793558400 } }` for the
+current source link, or `{ "data": { "state": null, "updated_at": null } }`
+when the owned entity has no link or has no archive job yet. State is one of
+`pending`, `running`, `archived`, `failed`, or `superseded`. Missing and
+foreign-owned entities both return `404`; a missing source link cannot be
+enqueued and returns `404`. Disabled archive support returns `503
+archive_unavailable`. The owner-scoped status response excludes source URLs,
+worker errors, leases, and job identifiers. Clients can poll this durable
+status; no streaming connection is needed.
+
 ## Proposed contract for remaining resource slices
 
 These resource routes are a starting contract for frontend/backend slices;
@@ -316,7 +355,6 @@ they are not part of the initial authentication implementation.
 
 | Resource | Proposed operations |
 | --- | --- |
-| Archive | Enqueue route and owner-scoped status only if the UI needs polling |
 | Account/admin | Only the self-service and administrator operations used by the UI |
 
 List endpoints use bounded page-number pagination, stable ordering, and an
@@ -339,5 +377,5 @@ V2 responses use the common error envelope.
 
 All resource lookups and mutations are scoped to the authenticated owner.
 Missing and foreign-owned IDs both return `404`. Import previews remain
-bounded synchronous requests; the existing archive queue is the only durable
-asynchronous job in the current Rust candidate.
+bounded synchronous requests; archive status exposes the existing durable job
+without adding a queue or streaming transport.

@@ -17,7 +17,7 @@ use rand::rngs::OsRng;
 use serde::Serialize;
 use serde_json::Value;
 use sqlx::{FromRow, Sqlite, SqlitePool, Transaction};
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use crate::audit::{Action as AuditAction, Entity as AuditEntity};
 use crate::auth::{AuthError, bearer_user};
@@ -90,6 +90,27 @@ struct MediaRow {
     legacy_image_type: Option<String>,
     is_stitch_sample: Option<bool>,
     legacy_is_title_image: Option<bool>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum OcrMediaParent {
+    Project(i64),
+    Yarn(i64),
+}
+
+#[derive(Debug)]
+pub(crate) struct OcrImage {
+    pub(crate) bytes: Vec<u8>,
+    pub(crate) content_type: String,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum OcrMediaError {
+    NotFound,
+    Database,
+    Unavailable,
+    TooLarge,
+    InvalidImage,
 }
 
 #[derive(Debug, Serialize)]
@@ -353,6 +374,85 @@ async fn registered_media(
         .bind(requested_name)
         .fetch_optional(pool)
         .await
+}
+
+/// Read one canonical image only when both its media row and parent belong to the active owner.
+pub(crate) async fn read_owned_ocr_image(
+    state: &AppState,
+    owner_id: i64,
+    parent: OcrMediaParent,
+    filename: &str,
+) -> Result<OcrImage, OcrMediaError> {
+    if owner_id <= 0 || !safe_filename(filename) {
+        return Err(OcrMediaError::NotFound);
+    }
+    let row = match parent {
+        OcrMediaParent::Project(project_id) if project_id > 0 => {
+            sqlx::query_as::<_, MediaRow>(
+                "SELECT media_files.* FROM media_files \
+                 JOIN projects ON projects.id = media_files.project_id \
+                   AND projects.owner_id = media_files.owner_id \
+                 JOIN users ON users.id = media_files.owner_id AND users.active = 1 \
+                 WHERE media_files.owner_id = ? AND media_files.project_id = ? \
+                   AND media_files.filename = ? AND media_files.kind IN ('title', 'step')",
+            )
+            .bind(owner_id)
+            .bind(project_id)
+            .bind(filename)
+            .fetch_optional(&state.pool)
+            .await
+        }
+        OcrMediaParent::Yarn(yarn_id) if yarn_id > 0 => {
+            sqlx::query_as::<_, MediaRow>(
+                "SELECT media_files.* FROM media_files \
+                 JOIN yarns ON yarns.id = media_files.yarn_id \
+                   AND yarns.owner_id = media_files.owner_id \
+                 JOIN users ON users.id = media_files.owner_id AND users.active = 1 \
+                 WHERE media_files.owner_id = ? AND media_files.yarn_id = ? \
+                   AND media_files.filename = ? AND media_files.kind = 'photo'",
+            )
+            .bind(owner_id)
+            .bind(yarn_id)
+            .bind(filename)
+            .fetch_optional(&state.pool)
+            .await
+        }
+        _ => return Err(OcrMediaError::NotFound),
+    }
+    .map_err(|_| OcrMediaError::Database)?
+    .ok_or(OcrMediaError::NotFound)?;
+
+    let declared_size = usize::try_from(row.size_bytes).map_err(|_| OcrMediaError::TooLarge)?;
+    if declared_size > crate::ocr::MAX_OCR_BYTES {
+        return Err(OcrMediaError::TooLarge);
+    }
+    let content_type = safe_mime_type(Some(&row.content_type))
+        .filter(|value| value.starts_with("image/"))
+        .ok_or(OcrMediaError::InvalidImage)?;
+    let (subdir, parent_id) = match parent {
+        OcrMediaParent::Project(project_id) => ("projects", project_id),
+        OcrMediaParent::Yarn(yarn_id) => ("yarns", yarn_id),
+    };
+    let root = media_root(state).map_err(|_| OcrMediaError::Unavailable)?;
+    let path = existing_file_path(&root, subdir, parent_id, &row.filename)
+        .await
+        .map_err(|_| OcrMediaError::NotFound)?
+        .ok_or(OcrMediaError::NotFound)?;
+    let file = tokio::fs::File::open(path)
+        .await
+        .map_err(|_| OcrMediaError::NotFound)?;
+    let mut bytes = Vec::with_capacity(declared_size);
+    file.take((crate::ocr::MAX_OCR_BYTES + 1) as u64)
+        .read_to_end(&mut bytes)
+        .await
+        .map_err(|_| OcrMediaError::Database)?;
+    if bytes.len() > crate::ocr::MAX_OCR_BYTES {
+        return Err(OcrMediaError::TooLarge);
+    }
+    Ok(OcrImage {
+        bytes,
+        content_type,
+    })
 }
 
 fn upload_error(error: UploadError) -> Response {

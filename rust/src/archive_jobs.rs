@@ -67,6 +67,12 @@ pub struct EnqueuedArchiveJob {
     pub state: ArchiveJobState,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ArchiveJobStatus {
+    pub state: Option<ArchiveJobState>,
+    pub updated_at: Option<i64>,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ArchiveProcessResult {
     Idle,
@@ -113,6 +119,52 @@ pub async fn enqueue(
         .await
         .map_err(ArchiveJobError::Database)?;
     Ok(enqueued)
+}
+
+/// Return the current-link job state only for the active owner of the entity.
+pub async fn status_for_owner(
+    pool: &SqlitePool,
+    owner_id: i64,
+    kind: ArchiveEntityKind,
+    entity_id: i64,
+) -> Result<Option<ArchiveJobStatus>, ArchiveJobError> {
+    let row =
+        match kind {
+            ArchiveEntityKind::Project => sqlx::query_as::<_, (Option<String>, Option<i64>)>(
+                "SELECT CASE WHEN trim(p.link) = '' THEN NULL ELSE jobs.state END, jobs.updated_at \
+                 FROM projects AS p \
+                 JOIN users AS u ON u.id = p.owner_id \
+                 LEFT JOIN archive_jobs AS jobs ON jobs.owner_id = p.owner_id \
+                   AND jobs.entity_type = 'project' AND jobs.entity_id = p.id \
+                   AND jobs.source_url = p.link \
+                 WHERE p.id = ? AND p.owner_id = ? AND u.active = 1",
+            )
+            .bind(entity_id)
+            .bind(owner_id)
+            .fetch_optional(pool)
+            .await,
+            ArchiveEntityKind::Yarn => sqlx::query_as::<_, (Option<String>, Option<i64>)>(
+                "SELECT CASE WHEN trim(y.link) = '' THEN NULL ELSE jobs.state END, jobs.updated_at \
+                 FROM yarns AS y \
+                 JOIN users AS u ON u.id = y.owner_id \
+                 LEFT JOIN archive_jobs AS jobs ON jobs.owner_id = y.owner_id \
+                   AND jobs.entity_type = 'yarn' AND jobs.entity_id = y.id \
+                   AND jobs.source_url = y.link \
+                 WHERE y.id = ? AND y.owner_id = ? AND u.active = 1",
+            )
+            .bind(entity_id)
+            .bind(owner_id)
+            .fetch_optional(pool)
+            .await,
+        }
+        .map_err(ArchiveJobError::Database)?;
+    let Some((state, updated_at)) = row else {
+        return Ok(None);
+    };
+    let state = state
+        .map(|state| ArchiveJobState::try_from(state.as_str()))
+        .transpose()?;
+    Ok(Some(ArchiveJobStatus { state, updated_at }))
 }
 
 /// Enqueue within a caller-owned transaction. Use this from entity create and
