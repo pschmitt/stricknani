@@ -79,8 +79,8 @@ The current evidence and remaining gates are summarized in
 import, administrative, optional-provider, translation, PWA, importer, and
 Android replay work described there. The final Rust package build passed its
 default `cargo test` phase, formatting check, and strict Clippy check after the
-health-probe change. The final candidate still needs a repeated Android replay
-and rebuilt container health/closure check. The styled preview is deployed and
-has passed desktop and mobile viewport checks. The final snapshot, backup, and
-rollback procedure and any production cutover decision remain separate
-operational gates. Production cutover requires the user's explicit approval.
+health-probe change. The deployed candidate also passed Android replay CI and
+the Docker image health/closure check. Broader Android UI journeys are being
+connected to Rust. The styled preview passed desktop and mobile viewport
+checks. The final snapshot, backup, and rollback procedure is documented but
+unexecuted. Production cutover requires the user's explicit approval.

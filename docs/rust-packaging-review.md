@@ -18,14 +18,14 @@ directory, and expects staging to supply isolated persistent storage.
 
 The Rust package check runs formatting, strict Clippy, and Rust tests. The
 current package has no Python runtime dependency. A remote `nix flake check`,
-Rust package build, and `rofl-10` system closure build passed after the latest
-styled-source update. The final container image still needs a rebuild and
-health/closure check after the health-probe and CSS changes.
+Rust package build, and target system closure build passed after the latest
+styled-source update. The Dockerfile image from that revision also passed
+HTTP, CLI, and container health checks with a read-only root as UID/GID
+65532:65532. Its 40 store paths contain no Python packages.
 
 ## Remaining packaging and acceptance work
 
-- Build the final container image and verify health, its non-root UID/GID,
-  read-only-root operation, and a Python-free runtime closure.
+- Keep the passing container health and Python-free closure checks as release gates.
 - Keep the deployed styled candidate separated from production storage and
   routing; its desktop and mobile viewport checks have passed.
 - Keep the NixOS production module's Python default until acceptance is

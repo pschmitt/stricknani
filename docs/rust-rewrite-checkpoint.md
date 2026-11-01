@@ -12,15 +12,16 @@ boundary.
   check, and strict Clippy check successfully after the bounded loopback TCP
   health probe was added. This supersedes the earlier 205-test result.
 - The Room/WorkManager replay passed on a disposable API 34 x86_64 emulator.
-  Repeat it against the exact final candidate and complete the pending KVM CI
-  replay lane.
+  The deployed revision also passed the KVM-backed
+  [Android Rust Replay CI job](https://github.com/pschmitt/stricknani/actions/runs/41300342197)
+  and [Nix Build](https://github.com/pschmitt/stricknani/actions/runs/41300342149).
 - The Python reference/harness suite passed 336 tests plus one skip; Ruff and
   mypy passed for 197 files. The migration verifier passed 34 independent
   checks and 38 checks through the actual candidate API, including ownership,
   record, and original-media-byte verification on an isolated copied snapshot.
 - The styled source passed focused browser-route and desktop/mobile layout
   checks. The `rust.css` Biome check, full Nix flake check, and Rust package
-  build passed. The `rofl-10` system closure also built with the isolated Rust
+  build passed. The target system closure also built with the isolated Rust
   service enabled. The updated styling is deployed to the isolated preview:
   `/static/css/rust.css` returns 200, the root redirects to login, the API
   returns 401 without authentication, and signup returns 404 while disabled.
@@ -28,15 +29,17 @@ boundary.
   also passed with a 1152px main content width. This is not production
   acceptance.
 - A real Tesseract OCR request passed against a disposable fixture, which was
-  removed afterward. An earlier candidate image passed non-root, read-only-root
-  health checks and had no Python runtime paths; rebuild and verify the image
-  after the latest health-probe and CSS changes.
+  removed afterward. The Dockerfile image built from the deployed revision and
+  passed HTTP, CLI, and container health checks as UID/GID 65532:65532 with a
+  read-only root. Its 40 store paths contain no Python package; all optional
+  external integrations were disabled. The disposable container/state were removed.
 - The copied production snapshot and verification report remain outside source
   trees. No live production database or media was connected to Rust or changed.
 
-Remaining acceptance includes final-candidate Android replay, final container
-build/health/closure check, and final snapshot/backup/rollback procedures. Production
-cutover remains a separate user-approved decision. The dependency findings and
+Broader Android UI journeys are being connected to a disposable Rust fixture;
+the existing replay coverage is already green. The final snapshot/write-freeze
+and rollback procedure is documented in the migration plan; it has not been
+executed. Production cutover remains a separate user-approved decision. The dependency findings and
 their review dates are recorded in `rust-security-review.md`.
 
 ## Historical integration notes
