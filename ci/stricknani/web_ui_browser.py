@@ -1702,6 +1702,7 @@ def run_acceptance(
                 viewport={"width": 390, "height": 844},
                 reduced_motion="reduce",
                 color_scheme="light",
+                locale="en-US",
             )
             page = context.new_page()
             page.on("request", observe_request)
