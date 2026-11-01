@@ -28,7 +28,10 @@
             inherit fastapi-csrf-protect;
           };
 
-          stricknaniRust = pkgs.callPackage ./nix/rust-package.nix { };
+          stricknaniWeb = pkgs.callPackage ./nix/web-package.nix { };
+          stricknaniRust = pkgs.callPackage ./nix/rust-package.nix {
+            webPackage = stricknaniWeb;
+          };
 
           rustContainerConfig = {
             Cmd = [ "${stricknaniRust}/bin/stricknani-server" ];
@@ -90,6 +93,7 @@
             stricknani = stricknaniRust;
             stricknani-python = stricknaniPython;
             stricknani-rust = stricknaniRust;
+            stricknani-web = stricknaniWeb;
 
             stricknani-rust-docker = pkgs.dockerTools.buildLayeredImage {
               name = "ghcr.io/pschmitt/stricknani-rust-candidate";

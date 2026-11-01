@@ -72,6 +72,7 @@ lint-css:
 i18n-check:
   uv run python -m stricknani.scripts.check_translations
   uv run python -m scripts.generate_rust_i18n --check
+  uv run python -m scripts.generate_web_i18n --check
 
 # Extract translation strings from source files
 [group: 'i18n']
@@ -80,6 +81,7 @@ i18n-extract:
     -F babel.cfg \
     -o stricknani/locales/messages.pot stricknani
   uv run python -m scripts.extract_rust_i18n
+  uv run python -m scripts.generate_web_i18n --extract
 
 # Update translation catalogs from the template
 [group: 'i18n']
@@ -89,12 +91,14 @@ i18n-update: i18n-extract
     -d stricknani/locales
   uv run python -m scripts.generate_rust_i18n --seed-german
   uv run python -m scripts.generate_rust_i18n
+  uv run python -m scripts.generate_web_i18n --update
 
 # Compile catalogs after edits
 [group: 'i18n']
 i18n-compile:
   uv run python -m babel.messages.frontend compile -d stricknani/locales
   uv run python -m scripts.generate_rust_i18n
+  uv run python -m scripts.generate_web_i18n
 
 # Format code
 [group: 'fmt']
@@ -173,7 +177,8 @@ test-harness:
     tests/test_rust_replay_runner.py \
     tests/test_rust_e2e_diagnostics.py \
     tests/test_rust_import_verifier.py \
-    tests/test_rust_i18n.py
+    tests/test_rust_i18n.py \
+    tests/test_web_i18n.py
 
 # Native Rust suite plus the small Python shipping-harness test set.
 [group: 'test']
@@ -235,7 +240,25 @@ vendor-tiptap:
   cd stricknani/static/vendor-tiptap && npm install && npm run build
 
 # Run the Rust-first native app and repository checks.
-check: lint lint-nix rust-lint test i18n-check
+check: lint lint-nix rust-lint test i18n-check web-check web-test web-build
+
+# Browser dependencies are locked and installed only for development/builds.
+[group: 'web']
+web-install:
+  npm --prefix web ci
+
+[group: 'web']
+web-check: web-install
+  npm --prefix web run check
+  npm --prefix web run format:check
+
+[group: 'web']
+web-test: web-install
+  npm --prefix web test
+
+[group: 'web']
+web-build: web-install
+  npm --prefix web run build
 
 # Lint Nix files
 [group: 'lint']

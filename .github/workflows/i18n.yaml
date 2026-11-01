@@ -2,9 +2,12 @@ name: i18n
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, rust ]
     paths:
       - "stricknani/**"
+      - "web/**"
+      - "scripts/generate_web_i18n.py"
+      - "tests/test_web_i18n.py"
       - "babel.cfg"
       - "pyproject.toml"
       - "justfile"
@@ -13,6 +16,9 @@ on:
     branches: [ main ]
     paths:
       - "stricknani/**"
+      - "web/**"
+      - "scripts/generate_web_i18n.py"
+      - "tests/test_web_i18n.py"
       - "babel.cfg"
       - "pyproject.toml"
       - "justfile"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-01 10:41+0100\n"
+"POT-Creation-Date: 2026-11-01 16:30+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -406,6 +406,9 @@ msgstr ""
 #: stricknani/templates/admin/users.html:7
 #: stricknani/templates/shared/unified_navbar.html:88
 #: stricknani/templates/shared/unified_navbar.html:152
+#: web/src/routes/+layout.svelte:189 web/src/routes/admin/users/+page.svelte:8
+#: web/src/routes/admin/users/+page.svelte:10
+#: web/src/routes/more/+page.svelte:24
 msgid "Admin"
 msgstr ""
 
@@ -500,6 +503,7 @@ msgstr ""
 #: rust/src/web.rs:2150 rust/src/web_accounts.rs:1063
 #: rust/src/web_signup.rs:273 stricknani/templates/admin/users.html:49
 #: stricknani/templates/admin/users.html:102
+#: web/src/lib/components/SignInForm.svelte:75
 msgid "Email"
 msgstr ""
 
@@ -543,6 +547,7 @@ msgstr ""
 #: stricknani/templates/admin/users.html:109
 #: stricknani/templates/auth/login.html:53
 #: stricknani/templates/auth/login.html:106
+#: web/src/lib/components/SignInForm.svelte:89
 msgid "Password"
 msgstr ""
 
@@ -596,6 +601,10 @@ msgstr ""
 
 #: rust/src/web.rs:2147 rust/src/web_signup.rs:276
 #: stricknani/templates/auth/login.html:22
+#: web/src/lib/components/SignInForm.svelte:37
+#: web/src/lib/components/SignInForm.svelte:52
+#: web/src/lib/components/SignInForm.svelte:109
+#: web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr ""
 
@@ -1228,6 +1237,7 @@ msgstr ""
 
 #: rust/src/web.rs:2168 rust/src/web_accounts.rs:1076
 #: stricknani/templates/projects/categories.html:44
+#: web/src/routes/+layout.svelte:26 web/src/routes/create/+page.svelte:8
 msgid "Create"
 msgstr ""
 
@@ -1277,7 +1287,7 @@ msgstr ""
 
 #: stricknani/templates/projects/detail.html:12
 #: stricknani/templates/projects/form.html:13
-#: stricknani/templates/projects/form.html:60
+#: stricknani/templates/projects/form.html:60 web/src/routes/+layout.svelte:256
 msgid "Back to projects"
 msgstr ""
 
@@ -1750,6 +1760,8 @@ msgstr ""
 #: stricknani/templates/projects/list.html:46
 #: stricknani/templates/shared/unified_navbar.html:61
 #: stricknani/templates/shared/unified_navbar.html:125
+#: web/src/routes/+layout.svelte:24 web/src/routes/projects/+page.svelte:8
+#: web/src/routes/projects/+page.svelte:10
 msgid "Projects"
 msgstr ""
 
@@ -1837,6 +1849,7 @@ msgstr ""
 
 #: rust/src/import_service.rs:391 rust/src/web_accounts.rs:1054
 #: stricknani/templates/shared/unified_navbar.html:16
+#: web/src/routes/+layout.svelte:154 web/src/routes/+layout.svelte:266
 msgid "Main navigation"
 msgstr ""
 
@@ -1845,6 +1858,8 @@ msgstr ""
 #: stricknani/templates/shared/unified_navbar.html:67
 #: stricknani/templates/shared/unified_navbar.html:131
 #: stricknani/templates/yarn/list.html:9 stricknani/templates/yarn/list.html:36
+#: web/src/routes/+layout.svelte:25 web/src/routes/yarns/+page.svelte:8
+#: web/src/routes/yarns/+page.svelte:10
 msgid "Yarns"
 msgstr ""
 
@@ -2244,7 +2259,8 @@ msgid "Import a pattern"
 msgstr ""
 
 #: rust/src/import_service.rs:394 rust/src/web.rs:2149
-#: rust/src/web_accounts.rs:1060
+#: rust/src/web_accounts.rs:1060 web/src/routes/+layout.svelte:209
+#: web/src/routes/+layout.svelte:239
 msgid "Sign out"
 msgstr ""
 
@@ -2300,7 +2316,9 @@ msgstr ""
 msgid "Link"
 msgstr ""
 
-#: rust/src/web.rs:2146
+#: rust/src/web.rs:2146 web/src/routes/+layout.svelte:33
+#: web/src/routes/gauge/+page.svelte:9 web/src/routes/gauge/+page.svelte:12
+#: web/src/routes/more/+page.svelte:21
 msgid "Gauge calculator"
 msgstr ""
 
@@ -2360,7 +2378,9 @@ msgstr ""
 msgid "Manage categories"
 msgstr ""
 
-#: rust/src/web.rs:2189
+#: rust/src/web.rs:2189 web/src/routes/+layout.svelte:31
+#: web/src/routes/imports/+page.svelte:8 web/src/routes/imports/+page.svelte:10
+#: web/src/routes/more/+page.svelte:19
 msgid "Imports"
 msgstr ""
 
@@ -2389,6 +2409,9 @@ msgid "Apply filters"
 msgstr ""
 
 #: rust/src/web.rs:2197 rust/src/web_accounts.rs:1057 rust/src/web_audit.rs:249
+#: web/src/routes/+layout.svelte:34 web/src/routes/+layout.svelte:222
+#: web/src/routes/account/+page.svelte:8 web/src/routes/account/+page.svelte:10
+#: web/src/routes/more/+page.svelte:22
 msgid "Account"
 msgstr ""
 
@@ -2530,5 +2553,272 @@ msgstr ""
 
 #: rust/src/web_signup.rs:275
 msgid "Create account"
+msgstr ""
+
+#: web/src/lib/components/SignInForm.svelte:50
+msgid "A calm place for the work in your hands."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:103
+msgid "A quiet place to keep your knitting projects and yarn close."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:250
+msgid "Account access"
+msgstr ""
+
+#: web/src/routes/account/+page.svelte:11
+msgid "Account settings will be added after the authentication foundation."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:254
+msgid "Ask an administrator if you need access."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:194 web/src/routes/admin/audit/+page.svelte:8
+#: web/src/routes/admin/audit/+page.svelte:10
+#: web/src/routes/more/+page.svelte:25
+msgid "Audit log"
+msgstr ""
+
+#: web/src/routes/+layout.svelte:32 web/src/routes/categories/+page.svelte:8
+#: web/src/routes/categories/+page.svelte:10
+#: web/src/routes/more/+page.svelte:20
+msgid "Categories"
+msgstr ""
+
+#: web/src/routes/categories/+page.svelte:11
+msgid "Category management will be added in a later slice."
+msgstr ""
+
+#: web/src/lib/api.ts:202
+msgid "Check the highlighted fields and try again."
+msgstr ""
+
+#: web/src/routes/create/+page.svelte:14
+msgid "Choose a project or add yarn to your inventory."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:89
+msgid "Could not sign out."
+msgstr ""
+
+#: web/src/routes/imports/+page.svelte:11
+msgid "Import tools will be added in a later slice."
+msgstr ""
+
+#: web/src/routes/more/+page.svelte:12
+msgid "Imports, tools and account settings will be added in later slices."
+msgstr ""
+
+#: web/src/routes/create/+page.svelte:29
+msgid "Keep a note of a yarn you own."
+msgstr ""
+
+#: web/src/routes/+page.svelte:18
+msgid "Keep your projects, notes and yarn details close while you knit."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:27 web/src/routes/more/+page.svelte:9
+#: web/src/routes/more/+page.svelte:11
+msgid "More"
+msgstr ""
+
+#: web/src/routes/more/+page.svelte:18
+msgid "More pages"
+msgstr ""
+
+#: web/src/routes/create/+page.svelte:20
+#: web/src/routes/projects/new/+page.svelte:8
+#: web/src/routes/projects/new/+page.svelte:11
+msgid "New project"
+msgstr ""
+
+#: web/src/routes/create/+page.svelte:28
+#: web/src/routes/yarns/new/+page.svelte:8
+#: web/src/routes/yarns/new/+page.svelte:10
+msgid "New yarn"
+msgstr ""
+
+#: web/src/lib/components/SignInForm.svelte:124
+msgid "One row at a time."
+msgstr ""
+
+#: web/src/routes/+page.svelte:24 web/src/routes/login/+page.svelte:15
+msgid "Open projects"
+msgstr ""
+
+#: web/src/routes/login/+page.svelte:13
+msgid "Open your project library to continue."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:121
+msgid "Opening your workspace…"
+msgstr ""
+
+#: web/src/lib/components/SignInForm.svelte:53
+msgid "Pick up where you left off."
+msgstr ""
+
+#: web/src/routes/create/+page.svelte:21
+msgid "Plan the next thing you want to knit."
+msgstr ""
+
+#: web/src/routes/+page.svelte:49
+msgid "Preview foundation"
+msgstr ""
+
+#: web/src/lib/components/SignInForm.svelte:29
+msgid "Sign in failed."
+msgstr ""
+
+#: web/src/routes/+page.svelte:51
+msgid ""
+"Sign-in, session handling and navigation are connected. Project and yarn "
+"workflows are being built next."
+msgstr ""
+
+#: web/src/lib/components/SignInForm.svelte:107
+msgid "Signing in…"
+msgstr ""
+
+#: web/src/routes/+layout.svelte:110
+msgid "Skip to content"
+msgstr ""
+
+#: web/src/lib/api.ts:203
+msgid "That item could not be found."
+msgstr ""
+
+#: web/src/routes/admin/audit/+page.svelte:11
+msgid "The administrator audit view will be added in a later slice."
+msgstr ""
+
+#: web/src/lib/api.ts:193
+msgid "The email or password is incorrect."
+msgstr ""
+
+#: web/src/routes/gauge/+page.svelte:13
+msgid "The gauge calculator will be brought into the new web UI."
+msgstr ""
+
+#: web/src/routes/projects/new/+page.svelte:12
+msgid "The project editor will be added in a later slice."
+msgstr ""
+
+#: web/src/lib/api.ts:206
+msgid "The request could not be completed."
+msgstr ""
+
+#: web/src/lib/api.ts:126
+msgid "The server could not be reached. Check your connection and try again."
+msgstr ""
+
+#: web/src/lib/api.ts:246
+msgid "The server returned an unexpected response."
+msgstr ""
+
+#: web/src/lib/session.svelte.ts:97 web/src/routes/+layout.svelte:137
+msgid "The session could not be loaded."
+msgstr ""
+
+#: web/src/lib/session.svelte.ts:70 web/src/lib/session.svelte.ts:84
+msgid "The session token is missing. Refresh and try again."
+msgstr ""
+
+#: web/src/routes/create/+page.svelte:35
+msgid "These creation forms are part of a later preview slice."
+msgstr ""
+
+#: web/src/lib/components/PreviewSection.svelte:16
+msgid "This area is not connected yet."
+msgstr ""
+
+#: web/src/lib/api.ts:204
+msgid "Too many attempts. Wait a moment and try again."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:144
+msgid "Try again"
+msgstr ""
+
+#: web/src/routes/admin/users/+page.svelte:11
+msgid "User administration is reserved for a later slice."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:233
+msgid "Welcome back"
+msgstr ""
+
+#: web/src/routes/create/+page.svelte:12
+msgid "What would you like to add?"
+msgstr ""
+
+#: web/src/routes/+layout.svelte:174
+msgid "Workspace"
+msgstr ""
+
+#: web/src/routes/+layout.svelte:175
+msgid "Workspace navigation"
+msgstr ""
+
+#: web/src/routes/yarns/new/+page.svelte:11
+msgid "Yarn creation will be added in a later slice."
+msgstr ""
+
+#: web/src/routes/yarns/+page.svelte:11
+msgid "Yarn inventory and project links are planned for a later slice."
+msgstr ""
+
+#: web/src/routes/login/+page.svelte:12
+msgid "You are already signed in."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:252
+msgid "You do not have access to this page."
+msgstr ""
+
+#: web/src/lib/api.ts:201
+msgid "You do not have permission to do that."
+msgstr ""
+
+#: web/src/routes/+page.svelte:10
+msgid "Your knitting workspace"
+msgstr ""
+
+#: web/src/routes/+page.svelte:16
+msgid "Your knitting, in one place."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:160
+msgid "Your library"
+msgstr ""
+
+#: web/src/routes/projects/+page.svelte:11
+msgid "Your project library is the next part of this preview."
+msgstr ""
+
+#: web/src/lib/components/SignInForm.svelte:115
+msgid "Your projects stay on your own Stricknani server."
+msgstr ""
+
+#: web/src/lib/components/SignInForm.svelte:57
+msgid "Your session expired. Sign in again to continue."
+msgstr ""
+
+#: web/src/lib/api.ts:194 web/src/lib/api.ts:197
+msgid "Your session has expired. Refresh the page and try again."
+msgstr ""
+
+#: web/src/lib/api.ts:200
+msgid "Your session has expired. Sign in again."
+msgstr ""
+
+#: web/src/routes/+page.svelte:15 web/src/routes/create/+page.svelte:11
+msgid "Your workspace"
+msgstr ""
+
+#: web/src/routes/+layout.svelte:133
+msgid "Your workspace is taking a moment."
 msgstr ""
 

@@ -7,6 +7,8 @@
 !rust/**
 !stricknani/
 !stricknani/**
+!web/
+!web/**
 !demo_assets/
 !demo_assets/**
 !README.md
@@ -19,6 +21,11 @@
 **/.venv
 **/target
 **/node_modules
+web/.svelte-kit
+web/build
+web/coverage
+web/test-results
+web/playwright-report
 **/__pycache__
 **/*.py[cod]
 **/*.sqlite*

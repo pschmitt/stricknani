@@ -1,0 +1,16 @@
+<script lang="ts">
+  import PreviewSection from "#lib/components/PreviewSection.svelte";
+  import { t } from "#lib/i18n.svelte.ts";
+  import { session } from "#lib/session.svelte.ts";
+  const locale = $derived(session.data?.locale ?? "en");
+</script>
+
+<svelte:head><title>Stricknani · {t("Projects", locale)}</title></svelte:head>
+<PreviewSection
+  title={t("Projects", locale)}
+  description={t(
+    "Your project library is the next part of this preview.",
+    locale,
+  )}
+  {locale}
+/>

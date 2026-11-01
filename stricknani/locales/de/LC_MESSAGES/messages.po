@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-01 10:41+0100\n"
+"POT-Creation-Date: 2026-11-01 16:30+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -411,6 +411,9 @@ msgstr "Profilbild für %(email)s"
 #: stricknani/templates/admin/users.html:7
 #: stricknani/templates/shared/unified_navbar.html:88
 #: stricknani/templates/shared/unified_navbar.html:152
+#: web/src/routes/+layout.svelte:189 web/src/routes/admin/users/+page.svelte:8
+#: web/src/routes/admin/users/+page.svelte:10
+#: web/src/routes/more/+page.svelte:24
 msgid "Admin"
 msgstr "Admin"
 
@@ -505,6 +508,7 @@ msgstr "Profil aktualisiert"
 #: rust/src/web.rs:2150 rust/src/web_accounts.rs:1063
 #: rust/src/web_signup.rs:273 stricknani/templates/admin/users.html:49
 #: stricknani/templates/admin/users.html:102
+#: web/src/lib/components/SignInForm.svelte:75
 msgid "Email"
 msgstr "E-Mail"
 
@@ -548,6 +552,7 @@ msgstr "Benutzer erstellt"
 #: stricknani/templates/admin/users.html:109
 #: stricknani/templates/auth/login.html:53
 #: stricknani/templates/auth/login.html:106
+#: web/src/lib/components/SignInForm.svelte:89
 msgid "Password"
 msgstr "Passwort"
 
@@ -601,6 +606,10 @@ msgstr "Bitte melde dich unten an"
 
 #: rust/src/web.rs:2147 rust/src/web_signup.rs:276
 #: stricknani/templates/auth/login.html:22
+#: web/src/lib/components/SignInForm.svelte:37
+#: web/src/lib/components/SignInForm.svelte:52
+#: web/src/lib/components/SignInForm.svelte:109
+#: web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr "Anmelden"
 
@@ -1344,6 +1353,7 @@ msgstr "z. B. Socken, Schal, Amigurumi"
 
 #: rust/src/web.rs:2168 rust/src/web_accounts.rs:1076
 #: stricknani/templates/projects/categories.html:44
+#: web/src/routes/+layout.svelte:26 web/src/routes/create/+page.svelte:8
 msgid "Create"
 msgstr "Erstellen"
 
@@ -1395,7 +1405,7 @@ msgstr ""
 
 #: stricknani/templates/projects/detail.html:12
 #: stricknani/templates/projects/form.html:13
-#: stricknani/templates/projects/form.html:60
+#: stricknani/templates/projects/form.html:60 web/src/routes/+layout.svelte:256
 msgid "Back to projects"
 msgstr "Zurück zu Projekten"
 
@@ -1871,6 +1881,8 @@ msgstr "Alle Garne auswählen"
 #: stricknani/templates/projects/list.html:46
 #: stricknani/templates/shared/unified_navbar.html:61
 #: stricknani/templates/shared/unified_navbar.html:125
+#: web/src/routes/+layout.svelte:24 web/src/routes/projects/+page.svelte:8
+#: web/src/routes/projects/+page.svelte:10
 msgid "Projects"
 msgstr "Projekte"
 
@@ -1958,6 +1970,7 @@ msgstr "Loslassen, um KI-Analyse zu starten"
 
 #: rust/src/import_service.rs:391 rust/src/web_accounts.rs:1054
 #: stricknani/templates/shared/unified_navbar.html:16
+#: web/src/routes/+layout.svelte:154 web/src/routes/+layout.svelte:266
 msgid "Main navigation"
 msgstr "Hauptnavigation"
 
@@ -1966,6 +1979,8 @@ msgstr "Hauptnavigation"
 #: stricknani/templates/shared/unified_navbar.html:67
 #: stricknani/templates/shared/unified_navbar.html:131
 #: stricknani/templates/yarn/list.html:9 stricknani/templates/yarn/list.html:36
+#: web/src/routes/+layout.svelte:25 web/src/routes/yarns/+page.svelte:8
+#: web/src/routes/yarns/+page.svelte:10
 msgid "Yarns"
 msgstr "Garne"
 
@@ -2384,7 +2399,8 @@ msgid "Import a pattern"
 msgstr "Anleitung importieren"
 
 #: rust/src/import_service.rs:394 rust/src/web.rs:2149
-#: rust/src/web_accounts.rs:1060
+#: rust/src/web_accounts.rs:1060 web/src/routes/+layout.svelte:209
+#: web/src/routes/+layout.svelte:239
 msgid "Sign out"
 msgstr "Abmelden"
 
@@ -2440,7 +2456,9 @@ msgstr "Weitere Materialien"
 msgid "Link"
 msgstr "Link"
 
-#: rust/src/web.rs:2146
+#: rust/src/web.rs:2146 web/src/routes/+layout.svelte:33
+#: web/src/routes/gauge/+page.svelte:9 web/src/routes/gauge/+page.svelte:12
+#: web/src/routes/more/+page.svelte:21
 msgid "Gauge calculator"
 msgstr "Maschenprobe berechnen"
 
@@ -2500,7 +2518,9 @@ msgstr "Schritt hinzufügen"
 msgid "Manage categories"
 msgstr "Kategorien verwalten"
 
-#: rust/src/web.rs:2189
+#: rust/src/web.rs:2189 web/src/routes/+layout.svelte:31
+#: web/src/routes/imports/+page.svelte:8 web/src/routes/imports/+page.svelte:10
+#: web/src/routes/more/+page.svelte:19
 msgid "Imports"
 msgstr "Daten importieren"
 
@@ -2529,6 +2549,9 @@ msgid "Apply filters"
 msgstr "Filter anwenden"
 
 #: rust/src/web.rs:2197 rust/src/web_accounts.rs:1057 rust/src/web_audit.rs:249
+#: web/src/routes/+layout.svelte:34 web/src/routes/+layout.svelte:222
+#: web/src/routes/account/+page.svelte:8 web/src/routes/account/+page.svelte:10
+#: web/src/routes/more/+page.svelte:22
 msgid "Account"
 msgstr "Konto"
 
@@ -2671,6 +2694,283 @@ msgstr "Keine Audit-Einträge gefunden."
 #: rust/src/web_signup.rs:275
 msgid "Create account"
 msgstr "Konto erstellen"
+
+#: web/src/lib/components/SignInForm.svelte:50
+msgid "A calm place for the work in your hands."
+msgstr "Ein ruhiger Ort für dein aktuelles Handarbeitsprojekt."
+
+#: web/src/routes/+layout.svelte:103
+msgid "A quiet place to keep your knitting projects and yarn close."
+msgstr "Ein ruhiger Ort für deine Strickprojekte und dein Garn."
+
+#: web/src/routes/+layout.svelte:250
+msgid "Account access"
+msgstr "Kontozugriff"
+
+#: web/src/routes/account/+page.svelte:11
+msgid "Account settings will be added after the authentication foundation."
+msgstr "Die Kontoeinstellungen folgen nach der Grundlage für die Anmeldung."
+
+#: web/src/routes/+layout.svelte:254
+msgid "Ask an administrator if you need access."
+msgstr "Wende dich an die Administration, wenn du Zugriff benötigst."
+
+#: web/src/routes/+layout.svelte:194 web/src/routes/admin/audit/+page.svelte:8
+#: web/src/routes/admin/audit/+page.svelte:10
+#: web/src/routes/more/+page.svelte:25
+msgid "Audit log"
+msgstr "Prüfprotokoll"
+
+#: web/src/routes/+layout.svelte:32 web/src/routes/categories/+page.svelte:8
+#: web/src/routes/categories/+page.svelte:10
+#: web/src/routes/more/+page.svelte:20
+msgid "Categories"
+msgstr "Kategorien"
+
+#: web/src/routes/categories/+page.svelte:11
+msgid "Category management will be added in a later slice."
+msgstr "Die Kategorienverwaltung folgt in einem späteren Entwicklungsschritt."
+
+#: web/src/lib/api.ts:202
+msgid "Check the highlighted fields and try again."
+msgstr "Prüfe die markierten Felder und versuche es erneut."
+
+#: web/src/routes/create/+page.svelte:14
+msgid "Choose a project or add yarn to your inventory."
+msgstr "Wähle ein Projekt aus oder füge Garn zu deinem Vorrat hinzu."
+
+#: web/src/routes/+layout.svelte:89
+msgid "Could not sign out."
+msgstr "Abmelden nicht möglich."
+
+#: web/src/routes/imports/+page.svelte:11
+msgid "Import tools will be added in a later slice."
+msgstr "Die Importwerkzeuge folgen in einem späteren Entwicklungsschritt."
+
+#: web/src/routes/more/+page.svelte:12
+msgid "Imports, tools and account settings will be added in later slices."
+msgstr ""
+"Importe, Werkzeuge und Kontoeinstellungen folgen in späteren "
+"Entwicklungsschritten."
+
+#: web/src/routes/create/+page.svelte:29
+msgid "Keep a note of a yarn you own."
+msgstr "Notiere ein Garn aus deinem Vorrat."
+
+#: web/src/routes/+page.svelte:18
+msgid "Keep your projects, notes and yarn details close while you knit."
+msgstr "Behalte deine Projekte, Notizen und Garnangaben beim Stricken im Blick."
+
+#: web/src/routes/+layout.svelte:27 web/src/routes/more/+page.svelte:9
+#: web/src/routes/more/+page.svelte:11
+msgid "More"
+msgstr "Mehr"
+
+#: web/src/routes/more/+page.svelte:18
+msgid "More pages"
+msgstr "Weitere Seiten"
+
+#: web/src/routes/create/+page.svelte:20
+#: web/src/routes/projects/new/+page.svelte:8
+#: web/src/routes/projects/new/+page.svelte:11
+msgid "New project"
+msgstr "Neues Projekt"
+
+#: web/src/routes/create/+page.svelte:28
+#: web/src/routes/yarns/new/+page.svelte:8
+#: web/src/routes/yarns/new/+page.svelte:10
+msgid "New yarn"
+msgstr "Neues Garn"
+
+#: web/src/lib/components/SignInForm.svelte:124
+msgid "One row at a time."
+msgstr "Masche für Masche."
+
+#: web/src/routes/+page.svelte:24 web/src/routes/login/+page.svelte:15
+msgid "Open projects"
+msgstr "Projekte öffnen"
+
+#: web/src/routes/login/+page.svelte:13
+msgid "Open your project library to continue."
+msgstr "Öffne deine Projektübersicht, um weiterzumachen."
+
+#: web/src/routes/+layout.svelte:121
+msgid "Opening your workspace…"
+msgstr "Dein Arbeitsbereich wird geöffnet …"
+
+#: web/src/lib/components/SignInForm.svelte:53
+msgid "Pick up where you left off."
+msgstr "Mach dort weiter, wo du aufgehört hast."
+
+#: web/src/routes/create/+page.svelte:21
+msgid "Plan the next thing you want to knit."
+msgstr "Plane dein nächstes Strickprojekt."
+
+#: web/src/routes/+page.svelte:49
+msgid "Preview foundation"
+msgstr "Grundlage der Vorschau"
+
+#: web/src/lib/components/SignInForm.svelte:29
+msgid "Sign in failed."
+msgstr "Anmeldung fehlgeschlagen."
+
+#: web/src/routes/+page.svelte:51
+msgid ""
+"Sign-in, session handling and navigation are connected. Project and yarn "
+"workflows are being built next."
+msgstr ""
+"Anmeldung, Sitzung und Navigation sind eingerichtet. Als Nächstes folgen "
+"Projekte und Garne."
+
+#: web/src/lib/components/SignInForm.svelte:107
+msgid "Signing in…"
+msgstr "Anmeldung läuft …"
+
+#: web/src/routes/+layout.svelte:110
+msgid "Skip to content"
+msgstr "Zum Inhalt springen"
+
+#: web/src/lib/api.ts:203
+msgid "That item could not be found."
+msgstr "Dieser Eintrag wurde nicht gefunden."
+
+#: web/src/routes/admin/audit/+page.svelte:11
+msgid "The administrator audit view will be added in a later slice."
+msgstr ""
+"Das Prüfprotokoll für die Administration folgt in einem späteren "
+"Entwicklungsschritt."
+
+#: web/src/lib/api.ts:193
+msgid "The email or password is incorrect."
+msgstr "E-Mail-Adresse oder Passwort ist falsch."
+
+#: web/src/routes/gauge/+page.svelte:13
+msgid "The gauge calculator will be brought into the new web UI."
+msgstr "Der Maschenprobenrechner wird in die neue Weboberfläche übernommen."
+
+#: web/src/routes/projects/new/+page.svelte:12
+msgid "The project editor will be added in a later slice."
+msgstr "Die Projektbearbeitung folgt in einem späteren Entwicklungsschritt."
+
+#: web/src/lib/api.ts:206
+msgid "The request could not be completed."
+msgstr "Die Anfrage konnte nicht abgeschlossen werden."
+
+#: web/src/lib/api.ts:126
+msgid "The server could not be reached. Check your connection and try again."
+msgstr ""
+"Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es "
+"erneut."
+
+#: web/src/lib/api.ts:246
+msgid "The server returned an unexpected response."
+msgstr "Der Server hat unerwartet geantwortet."
+
+#: web/src/lib/session.svelte.ts:97 web/src/routes/+layout.svelte:137
+msgid "The session could not be loaded."
+msgstr "Die Sitzung konnte nicht geladen werden."
+
+#: web/src/lib/session.svelte.ts:70 web/src/lib/session.svelte.ts:84
+msgid "The session token is missing. Refresh and try again."
+msgstr "Das Sitzungstoken fehlt. Lade die Seite neu und versuche es erneut."
+
+#: web/src/routes/create/+page.svelte:35
+msgid "These creation forms are part of a later preview slice."
+msgstr "Diese Formulare zum Anlegen folgen in einem späteren Entwicklungsschritt."
+
+#: web/src/lib/components/PreviewSection.svelte:16
+msgid "This area is not connected yet."
+msgstr "Dieser Bereich ist noch nicht angebunden."
+
+#: web/src/lib/api.ts:204
+msgid "Too many attempts. Wait a moment and try again."
+msgstr "Zu viele Versuche. Warte kurz und versuche es erneut."
+
+#: web/src/routes/+layout.svelte:144
+msgid "Try again"
+msgstr "Erneut versuchen"
+
+#: web/src/routes/admin/users/+page.svelte:11
+msgid "User administration is reserved for a later slice."
+msgstr "Die Benutzerverwaltung folgt in einem späteren Entwicklungsschritt."
+
+#: web/src/routes/+layout.svelte:233
+msgid "Welcome back"
+msgstr "Willkommen zurück"
+
+#: web/src/routes/create/+page.svelte:12
+msgid "What would you like to add?"
+msgstr "Was möchtest du hinzufügen?"
+
+#: web/src/routes/+layout.svelte:174
+msgid "Workspace"
+msgstr "Arbeitsbereich"
+
+#: web/src/routes/+layout.svelte:175
+msgid "Workspace navigation"
+msgstr "Navigation im Arbeitsbereich"
+
+#: web/src/routes/yarns/new/+page.svelte:11
+msgid "Yarn creation will be added in a later slice."
+msgstr "Das Anlegen von Garnen folgt in einem späteren Entwicklungsschritt."
+
+#: web/src/routes/yarns/+page.svelte:11
+msgid "Yarn inventory and project links are planned for a later slice."
+msgstr ""
+"Der Garnvorrat und Verknüpfungen zu Projekten folgen in einem späteren "
+"Entwicklungsschritt."
+
+#: web/src/routes/login/+page.svelte:12
+msgid "You are already signed in."
+msgstr "Du bist bereits angemeldet."
+
+#: web/src/routes/+layout.svelte:252
+msgid "You do not have access to this page."
+msgstr "Du hast keinen Zugriff auf diese Seite."
+
+#: web/src/lib/api.ts:201
+msgid "You do not have permission to do that."
+msgstr "Du darfst diese Aktion nicht ausführen."
+
+#: web/src/routes/+page.svelte:10
+msgid "Your knitting workspace"
+msgstr "Dein Strickbereich"
+
+#: web/src/routes/+page.svelte:16
+msgid "Your knitting, in one place."
+msgstr "Dein Stricken an einem Ort."
+
+#: web/src/routes/+layout.svelte:160
+msgid "Your library"
+msgstr "Deine Übersicht"
+
+#: web/src/routes/projects/+page.svelte:11
+msgid "Your project library is the next part of this preview."
+msgstr "Als Nächstes folgt in dieser Vorschau deine Projektübersicht."
+
+#: web/src/lib/components/SignInForm.svelte:115
+msgid "Your projects stay on your own Stricknani server."
+msgstr "Deine Projekte bleiben auf deinem eigenen Stricknani-Server."
+
+#: web/src/lib/components/SignInForm.svelte:57
+msgid "Your session expired. Sign in again to continue."
+msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an, um fortzufahren."
+
+#: web/src/lib/api.ts:194 web/src/lib/api.ts:197
+msgid "Your session has expired. Refresh the page and try again."
+msgstr "Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es erneut."
+
+#: web/src/lib/api.ts:200
+msgid "Your session has expired. Sign in again."
+msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an."
+
+#: web/src/routes/+page.svelte:15 web/src/routes/create/+page.svelte:11
+msgid "Your workspace"
+msgstr "Dein Arbeitsbereich"
+
+#: web/src/routes/+layout.svelte:133
+msgid "Your workspace is taking a moment."
+msgstr "Dein Arbeitsbereich braucht noch einen Moment."
 
 # Navigation and General
 #~ msgid "Stricknani"

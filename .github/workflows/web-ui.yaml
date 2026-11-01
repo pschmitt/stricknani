@@ -1,0 +1,55 @@
+name: Web UI
+
+on:
+  push:
+    branches: [main, rust]
+    paths:
+      - "web/**"
+      - "nix/web-package.nix"
+      - "nix/rust-package.nix"
+      - "rust/src/frontend.rs"
+      - "rust/src/security.rs"
+      - "rust/tests/frontend.rs"
+      - ".github/workflows/web-ui.yaml"
+  pull_request:
+    branches: [main, rust]
+    paths:
+      - "web/**"
+      - "nix/web-package.nix"
+      - "nix/rust-package.nix"
+      - "rust/src/frontend.rs"
+      - "rust/src/security.rs"
+      - "rust/tests/frontend.rs"
+      - ".github/workflows/web-ui.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+
+      - name: Verify static app contract
+        run: |
+          test -s build/200.html
+          test -s build/csp.json
+          test -d build/_app
+          node -e 'const csp = require("./build/csp.json"); if (!Array.isArray(csp.script_hashes) || !Array.isArray(csp.style_hashes)) process.exit(1);'

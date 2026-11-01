@@ -6,6 +6,7 @@
   clippy,
   cacert,
   tesseract,
+  webPackage,
 }:
 
 let
@@ -36,12 +37,15 @@ rustPlatform.buildRustPackage {
   postInstall = ''
     install -d "$out/share/stricknani/static"
     cp -a --no-preserve=mode ${../stricknani/static}/. "$out/share/stricknani/static/"
+    install -d "$out/share/stricknani/web"
+    cp -a --no-preserve=mode ${webPackage}/. "$out/share/stricknani/web/"
     # The Rust pages use their own forms, OCR script, and service worker.
     rm -rf "$out/share/stricknani/static/js" \
       "$out/share/stricknani/static/vendor/htmx" \
       "$out/share/stricknani/static/vendor-tiptap"
     wrapProgram "$out/bin/stricknani-server" \
       --set STATIC_ROOT "$out/share/stricknani/static" \
+      --set WEB_ROOT "$out/share/stricknani/web" \
       --set-default SSL_CERT_FILE "${cacert}/etc/ssl/certs/ca-bundle.crt" \
       --prefix PATH : "${lib.makeBinPath [ ocrEngine ]}"
   '';

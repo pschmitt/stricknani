@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod api_v2;
 pub mod archive_jobs;
 pub mod archive_service;
 mod audit;
@@ -7,6 +8,7 @@ pub mod categories;
 pub mod config;
 pub mod db;
 pub mod document_worker;
+pub mod frontend;
 mod i18n;
 pub mod image_import;
 pub mod import_document;
@@ -53,12 +55,16 @@ pub fn app() -> Router {
 }
 
 pub fn app_with_static_root(static_root: PathBuf) -> Router {
-    Router::new()
+    let app = Router::new()
         .route("/healthz", get(healthz))
         .route("/gauge/", get(gauge_page))
         .route("/gauge/calculate", post(calculate))
         .nest_service("/static", ServeDir::new(static_root))
-        .merge(pwa::router())
+        .merge(pwa::router());
+    match std::env::var_os("WEB_ROOT") {
+        Some(root) => app.merge(frontend::router(PathBuf::from(root))),
+        None => app,
+    }
 }
 
 /// Build the persistent candidate while keeping the existing stateless gauge app usable.
@@ -111,6 +117,7 @@ pub fn app_with_services(
         .merge(media::router().with_state(state.clone()));
 
     app_with_static_root(static_root)
+        .nest("/api/v2", api_v2::router(state.clone(), ai.is_some()))
         .merge(web::router(core.clone(), state.clone()))
         .merge(web_accounts::router(core.clone(), state.clone()))
         .merge(web_audit::router(core.clone(), state.clone()))

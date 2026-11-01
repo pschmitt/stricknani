@@ -15,8 +15,13 @@ The existing Rust preview remains usable while new routes are built at `/app`.
 - Coordinator: shared interfaces, router wiring, ownership conflict resolution,
   code review and acceptance evidence.
 
-These are active implementation scopes. No new frontend feature has yet passed
-integration acceptance. Remaining work includes project/yarn workflows, editing,
+The first native checks passed 220 Rust tests, formatting and strict Clippy,
+including browser-purpose cookie authentication, signed pre-authentication
+CSRF, v1 isolation, and six static-route/CSP tests. Python health checks passed
+(4 tests). The frontend passed type/format checks, 12 API-client tests and its
+static build. Real browser login/logout/CSP verification and the reproducible
+asset-package build are still in progress; these results are not full UI
+acceptance. Remaining work includes project/yarn workflows, editing,
 uploads, imports, settings/admin, translation completion, browser testing,
 performance measurements and isolated preview rollout.
 

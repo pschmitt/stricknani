@@ -5,10 +5,59 @@ use std::{collections::BTreeSet, net::IpAddr, str::FromStr};
 use axum::{
     Router,
     extract::State,
-    http::{StatusCode, header},
+    http::{HeaderValue, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response},
 };
+use base64::{Engine, engine::general_purpose::STANDARD};
+
+/// Validated CSP hashes produced by the static frontend build.
+///
+/// This response extension is the only way to add generated inline hashes to
+/// the otherwise unchanged global CSP. It is crate-private so request-driven
+/// routes cannot create policy exceptions.
+#[derive(Clone, Debug)]
+pub(crate) struct FrontendCsp(HeaderValue);
+
+impl FrontendCsp {
+    pub(crate) fn from_hashes(script_hashes: &[String], style_hashes: &[String]) -> Option<Self> {
+        if script_hashes.len() > 64 || style_hashes.len() > 64 {
+            return None;
+        }
+        let script_hashes = script_hashes
+            .iter()
+            .map(|hash| validate_hash(hash))
+            .collect::<Option<Vec<_>>>()?;
+        let style_hashes = style_hashes
+            .iter()
+            .map(|hash| validate_hash(hash))
+            .collect::<Option<Vec<_>>>()?;
+        let script_hashes = script_hashes
+            .iter()
+            .map(|hash| format!("'{hash}'"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let style_hashes = style_hashes
+            .iter()
+            .map(|hash| format!("'{hash}'"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let policy = format!(
+            "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; style-src 'self' {style_hashes}; script-src 'self' {script_hashes}; font-src 'self' data:; connect-src 'self'"
+        );
+        HeaderValue::from_str(&policy).ok().map(Self)
+    }
+
+    fn header_value(&self) -> &HeaderValue {
+        &self.0
+    }
+}
+
+fn validate_hash(value: &str) -> Option<&str> {
+    let encoded = value.strip_prefix("sha256-")?;
+    let decoded = STANDARD.decode(encoded).ok()?;
+    (decoded.len() == 32 && STANDARD.encode(decoded) == encoded).then_some(value)
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TrustedHosts(BTreeSet<HostAuthority>);
@@ -120,7 +169,10 @@ impl HostAuthority {
 
 /// Add browser response headers while keeping successful static assets cacheable.
 pub async fn security_headers(request: axum::extract::Request, next: Next) -> Response {
-    let is_static = request.uri().path().starts_with("/static/");
+    let path = request.uri().path();
+    let is_static = path.starts_with("/static/")
+        || path.starts_with("/app/_app/")
+        || matches!(path, "/app/messages.json" | "/app/favicon.svg");
     let is_public_pwa = matches!(
         request.uri().path(),
         "/sw.js" | "/register-pwa.js" | "/manifest.webmanifest" | "/offline"
@@ -128,12 +180,19 @@ pub async fn security_headers(request: axum::extract::Request, next: Next) -> Re
     let mut response = next.run(request).await;
     let cache_static = is_static && response.status().is_success();
     let preserve_pwa_cache = is_public_pwa && response.status().is_success();
+    let frontend_csp = response
+        .extensions()
+        .get::<FrontendCsp>()
+        .map(FrontendCsp::header_value)
+        .cloned();
     let headers = response.headers_mut();
     headers.insert(
         "content-security-policy",
-        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; font-src 'self' data:; connect-src 'self'"
-            .parse()
-            .expect("static CSP header is valid"),
+        frontend_csp.unwrap_or_else(|| {
+            "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; font-src 'self' data:; connect-src 'self'"
+                .parse()
+                .expect("static CSP header is valid")
+        }),
     );
     headers.insert(
         "x-content-type-options",

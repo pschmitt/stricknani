@@ -210,13 +210,10 @@ async fn mint_token(
     Json(mut request): Json<TokenRequest>,
 ) -> Response {
     let password = zeroize::Zeroizing::new(std::mem::take(&mut request.password));
-    let email = request.email.trim().to_lowercase();
-    if email.len() > MAX_EMAIL_BYTES
-        || password.len() > MAX_PASSWORD_BYTES
-        || request
-            .token_name
-            .as_ref()
-            .is_some_and(|name| name.len() > MAX_TOKEN_NAME_BYTES)
+    if request
+        .token_name
+        .as_ref()
+        .is_some_and(|name| name.len() > MAX_TOKEN_NAME_BYTES)
     {
         return (
             StatusCode::UNPROCESSABLE_ENTITY,
@@ -229,10 +226,26 @@ async fn mint_token(
     let ip = peer
         .map(|Extension(ConnectInfo(address))| address.ip().to_string())
         .unwrap_or_else(|| "unknown".to_owned());
-    let keys = [rate_key("ip", &ip), rate_key("email", &email)];
-
-    let Some(attempt_id) = state.auth_limiter.reserve(&keys) else {
-        return (
+    let name = request
+        .token_name
+        .map(|name| name.trim().to_owned())
+        .filter(|name| !name.is_empty())
+        .unwrap_or_else(|| "Android (password login)".to_owned());
+    match mint_password_token(&state, &ip, &request.email, password, &name, "api", None).await {
+        Ok(token) => (
+            StatusCode::OK,
+            [(axum::http::header::CACHE_CONTROL, "no-store")],
+            Json(TokenResponse { token: token.token }),
+        )
+            .into_response(),
+        Err(PasswordTokenError::InvalidRequest) => (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(ErrorResponse {
+                detail: "Invalid request".to_owned(),
+            }),
+        )
+            .into_response(),
+        Err(PasswordTokenError::RateLimited) => (
             StatusCode::TOO_MANY_REQUESTS,
             [(
                 axum::http::header::RETRY_AFTER,
@@ -242,21 +255,91 @@ async fn mint_token(
                 detail: "Too many attempts. Please try again later.".to_owned(),
             }),
         )
-            .into_response();
+            .into_response(),
+        Err(PasswordTokenError::InvalidCredentials) => (
+            StatusCode::UNAUTHORIZED,
+            Json(ErrorResponse {
+                detail: "Invalid email or password".to_owned(),
+            }),
+        )
+            .into_response(),
+        Err(PasswordTokenError::Database) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                detail: "database error".to_owned(),
+            }),
+        )
+            .into_response(),
+        Err(PasswordTokenError::Internal) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+pub(crate) struct MintedToken {
+    pub(crate) user_id: i64,
+    pub(crate) token: String,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub(crate) enum PasswordTokenError {
+    InvalidRequest,
+    RateLimited,
+    InvalidCredentials,
+    Database,
+    Internal,
+}
+
+/// Verify a password and create a purpose-limited token for a browser session.
+pub(crate) async fn mint_browser_token(
+    state: &AppState,
+    ip: &str,
+    email: &str,
+    password: zeroize::Zeroizing<String>,
+    expires_in: i64,
+) -> Result<MintedToken, PasswordTokenError> {
+    mint_password_token(
+        state,
+        ip,
+        email,
+        password,
+        "Browser session",
+        "browser",
+        Some(expires_in),
+    )
+    .await
+}
+
+async fn mint_password_token(
+    state: &AppState,
+    ip: &str,
+    raw_email: &str,
+    password: zeroize::Zeroizing<String>,
+    name: &str,
+    purpose: &str,
+    expires_in: Option<i64>,
+) -> Result<MintedToken, PasswordTokenError> {
+    let email = raw_email.trim().to_lowercase();
+    if email.len() > MAX_EMAIL_BYTES
+        || password.len() > MAX_PASSWORD_BYTES
+        || name.len() > MAX_TOKEN_NAME_BYTES
+    {
+        return Err(PasswordTokenError::InvalidRequest);
+    }
+    let keys = [rate_key("ip", ip), rate_key("email", &email)];
+    let Some(attempt_id) = state.auth_limiter.reserve(&keys) else {
+        return Err(PasswordTokenError::RateLimited);
     };
 
-    let query = sqlx::query_as::<_, (i64, String, i64)>(
+    let user = match sqlx::query_as::<_, (i64, String, i64)>(
         "SELECT id, password_hash, active FROM users WHERE email = ?",
     )
     .bind(&email)
     .fetch_optional(&state.pool)
-    .await;
-
-    let user = match query {
+    .await
+    {
         Ok(user) => user,
-        Err(error) => {
+        Err(_) => {
             state.auth_limiter.refund(&keys, attempt_id);
-            return AuthError::Database(error).into_response();
+            return Err(PasswordTokenError::Database);
         }
     };
 
@@ -269,22 +352,15 @@ async fn mint_token(
         Ok(verification) => verification,
         Err(()) => {
             state.auth_limiter.refund(&keys, attempt_id);
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            return Err(PasswordTokenError::Internal);
         }
     };
 
     let Some((user_id, current_hash, _)) =
         user.filter(|(_, _, active)| *active != 0 && verification.valid)
     else {
-        return (
-            StatusCode::UNAUTHORIZED,
-            Json(ErrorResponse {
-                detail: "Invalid email or password".to_owned(),
-            }),
-        )
-            .into_response();
+        return Err(PasswordTokenError::InvalidCredentials);
     };
-
     if let Some(upgraded_hash) = verification.upgraded_hash {
         let upgrade =
             sqlx::query("UPDATE users SET password_hash = ? WHERE id = ? AND password_hash = ?")
@@ -295,18 +371,10 @@ async fn mint_token(
                 .await;
         match upgrade {
             Ok(result) if result.rows_affected() == 1 => {}
-            Ok(_) => {
-                return (
-                    StatusCode::UNAUTHORIZED,
-                    Json(ErrorResponse {
-                        detail: "Invalid email or password".to_owned(),
-                    }),
-                )
-                    .into_response();
-            }
-            Err(error) => {
+            Ok(_) => return Err(PasswordTokenError::InvalidCredentials),
+            Err(_) => {
                 state.auth_limiter.refund(&keys, attempt_id);
-                return AuthError::Database(error).into_response();
+                return Err(PasswordTokenError::Database);
             }
         }
     }
@@ -315,38 +383,29 @@ async fn mint_token(
         Ok(token) => token,
         Err(()) => {
             state.auth_limiter.refund(&keys, attempt_id);
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            return Err(PasswordTokenError::Internal);
         }
     };
-    let hash = token_hash(token.as_bytes());
-    let name = request
-        .token_name
-        .map(|name| name.trim().to_owned())
-        .filter(|name| !name.is_empty())
-        .unwrap_or_else(|| "Android (password login)".to_owned());
-
-    match sqlx::query(
-        "INSERT INTO api_tokens (user_id, name, token_hash, created_at) \
-         VALUES (?, ?, ?, unixepoch())",
+    let result = sqlx::query(
+        "INSERT INTO api_tokens (user_id, name, token_hash, created_at, purpose, expires_at) \
+         VALUES (?, ?, ?, unixepoch(), ?, CASE WHEN ? IS NULL THEN NULL ELSE unixepoch() + ? END)",
     )
     .bind(user_id)
     .bind(name)
-    .bind(hash)
+    .bind(token_hash(token.as_bytes()))
+    .bind(purpose)
+    .bind(expires_in)
+    .bind(expires_in)
     .execute(&state.pool)
-    .await
-    {
+    .await;
+    match result {
         Ok(_) => {
             state.auth_limiter.refund(&keys, attempt_id);
-            (
-                StatusCode::OK,
-                [(axum::http::header::CACHE_CONTROL, "no-store")],
-                Json(TokenResponse { token }),
-            )
-                .into_response()
+            Ok(MintedToken { user_id, token })
         }
-        Err(error) => {
+        Err(_) => {
             state.auth_limiter.refund(&keys, attempt_id);
-            AuthError::Database(error).into_response()
+            Err(PasswordTokenError::Database)
         }
     }
 }
