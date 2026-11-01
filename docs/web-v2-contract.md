@@ -167,6 +167,43 @@ Example create response:
 }
 ```
 
+## Yarn API slice
+
+Yarn routes use the browser session and same-origin CSRF checks for mutations:
+
+| Method and path | Result |
+| --- | --- |
+| `GET /yarns?page=1&q=...&favorite=true` | `{data: YarnSummary[], meta: {page, per_page, has_more}}` |
+| `POST /yarns` | `201 {data: Yarn}` |
+| `GET /yarns/{id}` | `{data: Yarn}` |
+| `PUT /yarns/{id}` | `{data: Yarn}` |
+| `DELETE /yarns/{id}` | `204` |
+| `PUT /yarns/{id}/favorite` | `{data: Yarn}` |
+| `DELETE /yarns/{id}/favorite` | `{data: Yarn}` |
+
+Yarn summaries contain `id`, `name`, `brand`, `colorway`, `weight_category`,
+`is_favorite`, `updated_at`, and `preview_url`. Detail and write DTOs retain the
+v1 names and fields, including `project_ids` and `photos`; v2 adds sanitized
+`description_html` and `notes_html` alongside their Markdown source strings.
+IDs are JSON numbers. Updates retain optional `expected_updated_at` CAS; a
+stale write returns `409` and the latest DTO in `error.current`.
+
+## Category API slice
+
+Category routes also use browser-session auth and CSRF for writes:
+
+| Method and path | Result |
+| --- | --- |
+| `GET /categories` | `{data: [{id, name}]}` |
+| `POST /categories` | `201 {data: {id, name}}` |
+| `PUT /categories/{id}` | `{data: {id, name}}` |
+| `DELETE /categories/{id}` | `204` |
+
+Repeated creation of the same case-insensitive name returns the existing
+category with `201` and does not duplicate its audit event. A rename collision
+returns `409` with a `name` field error. Foreign-owned category IDs are hidden
+as `404`.
+
 ## Proposed contract for remaining resource slices
 
 These resource routes are a starting contract for frontend/backend slices;
@@ -174,8 +211,6 @@ they are not part of the initial authentication implementation.
 
 | Resource | Proposed operations |
 | --- | --- |
-| Yarns | `GET/POST /yarns`, `GET/PUT/DELETE /yarns/{id}`, favorite/unfavorite |
-| Categories | `GET/POST /categories`, `PUT/DELETE /categories/{id}` |
 | Media | Multipart upload and delete routes under the owning project, step, or yarn |
 | Imports | Synchronous URL/text/file preview routes; creation uses normal project/yarn writes |
 | Archive | Enqueue route and owner-scoped status only if the UI needs polling |

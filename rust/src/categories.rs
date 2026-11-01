@@ -27,14 +27,32 @@ pub fn router() -> Router<AppState> {
 }
 
 #[derive(Debug, Deserialize)]
-struct CategoryWriteRequest {
-    name: String,
+pub(crate) struct CategoryWriteRequest {
+    pub(crate) name: String,
 }
 
 #[derive(Debug, Serialize)]
-struct CategoryResponse {
-    id: i64,
-    name: String,
+pub(crate) struct CategoryResponse {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+}
+
+pub(crate) enum CategoryError {
+    InvalidName,
+    Conflict,
+    NotFound,
+    Database,
+}
+
+impl CategoryError {
+    fn into_v1_response(self) -> Response {
+        match self {
+            Self::InvalidName => bad_name(),
+            Self::Conflict => category_conflict(),
+            Self::NotFound => not_found(),
+            Self::Database => database_error(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,21 +78,28 @@ async fn list_categories(State(state): State<AppState>, headers: HeaderMap) -> R
         Err(error) => return error.into_response(),
     };
 
-    match sqlx::query_as::<_, (i64, String)>(
+    match list_for_owner(&state, user_id).await {
+        Ok(categories) => Json(categories).into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn list_for_owner(
+    state: &AppState,
+    user_id: i64,
+) -> Result<Vec<CategoryResponse>, CategoryError> {
+    sqlx::query_as::<_, (i64, String)>(
         "SELECT id, name FROM categories WHERE user_id = ? ORDER BY name",
     )
     .bind(user_id)
     .fetch_all(&state.pool)
     .await
-    {
-        Ok(rows) => Json(
-            rows.into_iter()
-                .map(|(id, name)| CategoryResponse { id, name })
-                .collect::<Vec<_>>(),
-        )
-        .into_response(),
-        Err(_) => database_error(),
-    }
+    .map(|rows| {
+        rows.into_iter()
+            .map(|(id, name)| CategoryResponse { id, name })
+            .collect()
+    })
+    .map_err(|_| CategoryError::Database)
 }
 
 async fn sync_categories(
@@ -117,16 +142,28 @@ async fn create_category(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
+    match create_for_owner(&state, user_id, payload).await {
+        Ok(category) => (StatusCode::CREATED, Json(category)).into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn create_for_owner(
+    state: &AppState,
+    user_id: i64,
+    payload: CategoryWriteRequest,
+) -> Result<CategoryResponse, CategoryError> {
     let Some(name) = cleaned_name(&payload.name) else {
-        return bad_name();
+        return Err(CategoryError::InvalidName);
     };
 
     // Keep the audit event atomic with the insert. A duplicate replay remains
     // idempotent and must not create another event.
-    let mut tx = match state.pool.begin().await {
-        Ok(tx) => tx,
-        Err(_) => return database_error(),
-    };
+    let mut tx = state
+        .pool
+        .begin()
+        .await
+        .map_err(|_| CategoryError::Database)?;
     let insert =
         sqlx::query("INSERT INTO categories (user_id, name) VALUES (?, ?) ON CONFLICT DO NOTHING")
             .bind(user_id)
@@ -135,10 +172,7 @@ async fn create_category(
             .await;
     let (inserted, category_id) = match insert {
         Ok(result) => (result.rows_affected() == 1, result.last_insert_rowid()),
-        Err(_) => {
-            let _ = tx.rollback().await;
-            return database_error();
-        }
+        Err(_) => return Err(CategoryError::Database),
     };
     if inserted
         && audit::record(
@@ -151,18 +185,14 @@ async fn create_category(
         .await
         .is_err()
     {
-        let _ = tx.rollback().await;
-        return database_error();
+        return Err(CategoryError::Database);
     }
-    if tx.commit().await.is_err() {
-        return database_error();
-    }
+    tx.commit().await.map_err(|_| CategoryError::Database)?;
 
-    match find_category(&state.pool, user_id, &name).await {
-        Ok(Some(category)) => (StatusCode::CREATED, Json(category)).into_response(),
-        Ok(None) => database_error(),
-        Err(_) => database_error(),
-    }
+    find_category(&state.pool, user_id, &name)
+        .await
+        .map_err(|_| CategoryError::Database)?
+        .ok_or(CategoryError::Database)
 }
 
 async fn update_category(
@@ -175,6 +205,18 @@ async fn update_category(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
+    match update_for_owner(&state, user_id, category_id, payload).await {
+        Ok(category) => Json(category).into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn update_for_owner(
+    state: &AppState,
+    user_id: i64,
+    category_id: i64,
+    payload: CategoryWriteRequest,
+) -> Result<CategoryResponse, CategoryError> {
     let existing =
         sqlx::query_scalar::<_, i64>("SELECT id FROM categories WHERE id = ? AND user_id = ?")
             .bind(category_id)
@@ -183,12 +225,12 @@ async fn update_category(
             .await;
     match existing {
         Ok(Some(_)) => {}
-        Ok(None) => return not_found(),
-        Err(_) => return database_error(),
+        Ok(None) => return Err(CategoryError::NotFound),
+        Err(_) => return Err(CategoryError::Database),
     }
 
     let Some(name) = cleaned_name(&payload.name) else {
-        return bad_name();
+        return Err(CategoryError::InvalidName);
     };
 
     let conflict = sqlx::query_scalar::<_, i64>(
@@ -201,15 +243,16 @@ async fn update_category(
     .fetch_optional(&state.pool)
     .await;
     match conflict {
-        Ok(Some(_)) => return category_conflict(),
+        Ok(Some(_)) => return Err(CategoryError::Conflict),
         Ok(None) => {}
-        Err(_) => return database_error(),
+        Err(_) => return Err(CategoryError::Database),
     }
 
-    let mut tx = match state.pool.begin().await {
-        Ok(tx) => tx,
-        Err(_) => return database_error(),
-    };
+    let mut tx = state
+        .pool
+        .begin()
+        .await
+        .map_err(|_| CategoryError::Database)?;
     let update = sqlx::query("UPDATE categories SET name = ? WHERE id = ? AND user_id = ?")
         .bind(&name)
         .bind(category_id)
@@ -217,19 +260,19 @@ async fn update_category(
         .execute(&mut *tx)
         .await;
     match update {
-        Ok(result) if result.rows_affected() == 0 => return not_found(),
+        Ok(result) if result.rows_affected() == 0 => return Err(CategoryError::NotFound),
         Ok(_) => {}
         Err(sqlx::Error::Database(error)) if error.is_unique_violation() => {
-            return category_conflict();
+            return Err(CategoryError::Conflict);
         }
-        Err(_) => return database_error(),
+        Err(_) => return Err(CategoryError::Database),
     }
     if bump_category_projects(&mut tx, user_id, category_id)
         .await
         .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(CategoryError::Database);
     }
     if audit::record(
         &mut tx,
@@ -242,17 +285,14 @@ async fn update_category(
     .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(CategoryError::Database);
     }
-    if tx.commit().await.is_err() {
-        return database_error();
-    }
+    tx.commit().await.map_err(|_| CategoryError::Database)?;
 
-    match find_category_by_id(&state.pool, user_id, category_id).await {
-        Ok(Some(category)) => Json(category).into_response(),
-        Ok(None) => not_found(),
-        Err(_) => database_error(),
-    }
+    find_category_by_id(&state.pool, user_id, category_id)
+        .await
+        .map_err(|_| CategoryError::Database)?
+        .ok_or(CategoryError::NotFound)
 }
 
 async fn delete_category(
@@ -265,15 +305,27 @@ async fn delete_category(
         Err(error) => return error.into_response(),
     };
 
-    let mut tx = match state.pool.begin().await {
-        Ok(tx) => tx,
-        Err(_) => return database_error(),
-    };
+    match delete_for_owner(&state, user_id, category_id).await {
+        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn delete_for_owner(
+    state: &AppState,
+    user_id: i64,
+    category_id: i64,
+) -> Result<(), CategoryError> {
+    let mut tx = state
+        .pool
+        .begin()
+        .await
+        .map_err(|_| CategoryError::Database)?;
     if bump_category_projects(&mut tx, user_id, category_id)
         .await
         .is_err()
     {
-        return database_error();
+        return Err(CategoryError::Database);
     }
     let result = sqlx::query("DELETE FROM categories WHERE id = ? AND user_id = ?")
         .bind(category_id)
@@ -293,15 +345,12 @@ async fn delete_category(
             .is_err()
             {
                 let _ = tx.rollback().await;
-                return database_error();
+                return Err(CategoryError::Database);
             }
-            if tx.commit().await.is_err() {
-                return database_error();
-            }
-            StatusCode::NO_CONTENT.into_response()
+            tx.commit().await.map_err(|_| CategoryError::Database)
         }
-        Ok(_) => not_found(),
-        Err(_) => database_error(),
+        Ok(_) => Err(CategoryError::NotFound),
+        Err(_) => Err(CategoryError::Database),
     }
 }
 

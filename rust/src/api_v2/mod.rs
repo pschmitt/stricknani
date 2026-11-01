@@ -25,7 +25,10 @@ use zeroize::Zeroizing;
 
 use crate::{auth, db::AppState};
 
+mod access;
+mod categories;
 mod projects;
+mod yarns;
 
 const SESSION_SECONDS: i64 = 14 * 24 * 60 * 60;
 const LOGIN_CSRF_SECONDS: i64 = 10 * 60;
@@ -55,6 +58,8 @@ pub fn router(app: AppState, ai_enabled: bool) -> Router {
         .route("/auth/logout", post(logout))
         .layer(DefaultBodyLimit::max(8 * 1024))
         .merge(projects::router())
+        .merge(yarns::router())
+        .merge(categories::router())
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }

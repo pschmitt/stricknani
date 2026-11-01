@@ -33,41 +33,41 @@ pub fn router() -> Router<AppState> {
 }
 
 #[derive(Debug, Deserialize)]
-struct YarnWriteRequest {
-    name: String,
+pub(crate) struct YarnWriteRequest {
+    pub(crate) name: String,
     #[serde(default)]
-    description: Option<String>,
+    pub(crate) description: Option<String>,
     #[serde(default)]
-    brand: Option<String>,
+    pub(crate) brand: Option<String>,
     #[serde(default)]
-    colorway: Option<String>,
+    pub(crate) colorway: Option<String>,
     #[serde(default)]
-    dye_lot: Option<String>,
+    pub(crate) dye_lot: Option<String>,
     #[serde(default)]
-    fiber_content: Option<String>,
+    pub(crate) fiber_content: Option<String>,
     #[serde(default)]
-    weight_category: Option<String>,
+    pub(crate) weight_category: Option<String>,
     #[serde(default)]
-    recommended_needles: Option<String>,
+    pub(crate) recommended_needles: Option<String>,
     #[serde(default)]
-    weight_grams: Option<i64>,
+    pub(crate) weight_grams: Option<i64>,
     #[serde(default)]
-    length_meters: Option<i64>,
+    pub(crate) length_meters: Option<i64>,
     #[serde(default)]
-    notes: Option<String>,
+    pub(crate) notes: Option<String>,
     #[serde(default)]
-    link: Option<String>,
+    pub(crate) link: Option<String>,
     #[serde(default)]
-    is_ai_enhanced: bool,
+    pub(crate) is_ai_enhanced: bool,
     #[serde(default)]
-    expected_updated_at: Option<String>,
+    pub(crate) expected_updated_at: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct ListQuery {
-    page: Option<i64>,
-    favorite: Option<bool>,
-    q: Option<String>,
+pub(crate) struct ListQuery {
+    pub(crate) page: Option<i64>,
+    pub(crate) favorite: Option<bool>,
+    pub(crate) q: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -92,47 +92,70 @@ struct YarnRow {
 }
 
 #[derive(Debug, Serialize)]
-struct YarnResponse {
-    id: i64,
-    name: String,
-    description: Option<String>,
-    brand: Option<String>,
-    colorway: Option<String>,
-    dye_lot: Option<String>,
-    fiber_content: Option<String>,
-    weight_category: Option<String>,
-    recommended_needles: Option<String>,
-    weight_grams: Option<i64>,
-    length_meters: Option<i64>,
-    notes: Option<String>,
-    link: Option<String>,
-    link_archive: Option<String>,
-    is_ai_enhanced: bool,
-    is_favorite: bool,
-    created_at: String,
-    updated_at: String,
-    project_ids: Vec<i64>,
-    photos: Vec<serde_json::Value>,
+pub(crate) struct YarnResponse {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) description: Option<String>,
+    pub(crate) brand: Option<String>,
+    pub(crate) colorway: Option<String>,
+    pub(crate) dye_lot: Option<String>,
+    pub(crate) fiber_content: Option<String>,
+    pub(crate) weight_category: Option<String>,
+    pub(crate) recommended_needles: Option<String>,
+    pub(crate) weight_grams: Option<i64>,
+    pub(crate) length_meters: Option<i64>,
+    pub(crate) notes: Option<String>,
+    pub(crate) link: Option<String>,
+    pub(crate) link_archive: Option<String>,
+    pub(crate) is_ai_enhanced: bool,
+    pub(crate) is_favorite: bool,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
+    pub(crate) project_ids: Vec<i64>,
+    pub(crate) photos: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize)]
-struct YarnListItemResponse {
-    id: i64,
-    name: String,
-    brand: Option<String>,
-    colorway: Option<String>,
-    weight_category: Option<String>,
-    is_favorite: bool,
-    updated_at: String,
-    preview_url: Option<String>,
+pub(crate) struct YarnListItemResponse {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) brand: Option<String>,
+    pub(crate) colorway: Option<String>,
+    pub(crate) weight_category: Option<String>,
+    pub(crate) is_favorite: bool,
+    pub(crate) updated_at: String,
+    pub(crate) preview_url: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
-struct YarnPage {
-    items: Vec<YarnListItemResponse>,
-    page: i64,
-    per_page: i64,
-    has_more: bool,
+pub(crate) struct YarnPage {
+    pub(crate) items: Vec<YarnListItemResponse>,
+    pub(crate) page: i64,
+    pub(crate) per_page: i64,
+    pub(crate) has_more: bool,
+}
+
+pub(crate) enum YarnError {
+    NotFound,
+    Database,
+    Invalid(&'static str),
+    Conflict(Box<YarnResponse>),
+}
+
+impl YarnError {
+    fn into_v1_response(self) -> Response {
+        match self {
+            Self::NotFound => yarn_not_found(),
+            Self::Database => database_error(),
+            Self::Invalid(detail) => {
+                error_response(StatusCode::UNPROCESSABLE_ENTITY, json!(detail))
+            }
+            Self::Conflict(yarn) => error_response(
+                StatusCode::CONFLICT,
+                serde_json::to_value(*yarn).unwrap_or(serde_json::Value::Null),
+            ),
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -153,16 +176,26 @@ async fn list_yarns(
         Ok(query) => query,
         Err(_) => return error_response(StatusCode::UNPROCESSABLE_ENTITY, json!("Invalid query")),
     };
+    match list_for_owner(&state, user_id, query).await {
+        Ok(page) => Json(page).into_response(),
+        Err(YarnError::Invalid(detail)) => {
+            error_response(StatusCode::UNPROCESSABLE_ENTITY, json!(detail))
+        }
+        Err(_) => database_error(),
+    }
+}
+
+pub(crate) async fn list_for_owner(
+    state: &AppState,
+    user_id: i64,
+    query: ListQuery,
+) -> Result<YarnPage, YarnError> {
     let page = query.page.unwrap_or(1);
     if page < 1 {
-        return error_response(StatusCode::UNPROCESSABLE_ENTITY, json!("Invalid page"));
+        return Err(YarnError::Invalid("Invalid page"));
     }
-
     if query.q.as_ref().is_some_and(|value| value.len() > 256) {
-        return error_response(
-            StatusCode::UNPROCESSABLE_ENTITY,
-            json!("Search query is too long"),
-        );
+        return Err(YarnError::Invalid("Search query is too long"));
     }
     let search = query
         .q
@@ -170,7 +203,7 @@ async fn list_yarns(
         .filter(|value| !value.is_empty());
     let search_pattern = search.as_deref().map(literal_like_pattern);
 
-    let rows = match sqlx::query_as::<_, YarnRow>(
+    let rows = sqlx::query_as::<_, YarnRow>(
         "SELECT yarns.* FROM yarns \
          WHERE owner_id = ? \
            AND (? IS NULL OR EXISTS (SELECT 1 FROM user_favorite_yarns f \
@@ -204,20 +237,16 @@ async fn list_yarns(
     .bind((page - 1).saturating_mul(PAGE_SIZE))
     .fetch_all(&state.pool)
     .await
-    {
-        Ok(rows) => rows,
-        Err(_) => return database_error(),
-    };
+    .map_err(|_| YarnError::Database)?;
     let has_more = rows.len() > PAGE_SIZE as usize;
-    let favorite_ids = match favorite_ids(&state.pool, user_id).await {
-        Ok(ids) => ids,
-        Err(_) => return database_error(),
-    };
+    let favorite_ids = favorite_ids(&state.pool, user_id)
+        .await
+        .map_err(|_| YarnError::Database)?;
     let mut items = Vec::new();
     for yarn in rows.into_iter().take(PAGE_SIZE as usize) {
         let photos = match crate::media::yarn_photos(&state.pool, user_id, yarn.id).await {
             Ok(photos) => photos,
-            Err(_) => return database_error(),
+            Err(_) => return Err(YarnError::Database),
         };
         items.push(YarnListItemResponse {
             id: yarn.id,
@@ -231,13 +260,12 @@ async fn list_yarns(
         });
     }
 
-    Json(YarnPage {
+    Ok(YarnPage {
         items,
         page,
         per_page: PAGE_SIZE,
         has_more,
     })
-    .into_response()
 }
 
 fn literal_like_pattern(value: &str) -> String {
@@ -259,7 +287,7 @@ async fn get_yarn(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
-    match get_yarn_response(&state.pool, user_id, yarn_id).await {
+    match load_for_owner(&state, user_id, yarn_id).await {
         Ok(Some(yarn)) => Json(yarn).into_response(),
         Ok(None) => yarn_not_found(),
         Err(_) => database_error(),
@@ -275,12 +303,20 @@ async fn create_yarn(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
+    match create_for_owner(&state, user_id, payload).await {
+        Ok(yarn) => (StatusCode::CREATED, Json(yarn)).into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn create_for_owner(
+    state: &AppState,
+    user_id: i64,
+    payload: YarnWriteRequest,
+) -> Result<YarnResponse, YarnError> {
     let name = clean_name(&payload.name);
     let now = timestamp(Utc::now());
-    let mut tx = match state.pool.begin().await {
-        Ok(tx) => tx,
-        Err(_) => return database_error(),
-    };
+    let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
     let result = sqlx::query(
         "INSERT INTO yarns (owner_id, name, description, brand, colorway, dye_lot, \
          fiber_content, weight_category, recommended_needles, weight_grams, length_meters, \
@@ -305,19 +341,12 @@ async fn create_yarn(
     .bind(&now)
     .execute(&mut *tx)
     .await;
-    let id = match result {
-        Ok(result) => result.last_insert_rowid(),
-        Err(_) => {
-            let _ = tx.rollback().await;
-            return database_error();
-        }
-    };
+    let id = result.map_err(|_| YarnError::Database)?.last_insert_rowid();
     if audit::record(&mut tx, user_id, Entity::Yarn, id, Action::Created)
         .await
         .is_err()
     {
-        let _ = tx.rollback().await;
-        return database_error();
+        return Err(YarnError::Database);
     }
     if state.archive_enabled
         && crate::archive_jobs::enqueue_in_transaction(
@@ -329,16 +358,15 @@ async fn create_yarn(
         .await
         .is_err()
     {
-        return database_error();
+        return Err(YarnError::Database);
     }
     if tx.commit().await.is_err() {
-        return database_error();
+        return Err(YarnError::Database);
     }
-    match get_yarn_response(&state.pool, user_id, id).await {
-        Ok(Some(yarn)) => (StatusCode::CREATED, Json(yarn)).into_response(),
-        Ok(None) => database_error(),
-        Err(_) => database_error(),
-    }
+    load_for_owner(state, user_id, id)
+        .await
+        .map_err(|_| YarnError::Database)?
+        .ok_or(YarnError::Database)
 }
 
 async fn update_yarn(
@@ -351,35 +379,40 @@ async fn update_yarn(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
+    match update_for_owner(&state, user_id, yarn_id, payload).await {
+        Ok(yarn) => Json(yarn).into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn update_for_owner(
+    state: &AppState,
+    user_id: i64,
+    yarn_id: i64,
+    payload: YarnWriteRequest,
+) -> Result<YarnResponse, YarnError> {
     let name = clean_name(&payload.name);
     let expected = match payload.expected_updated_at.as_deref() {
         Some(value) => match parse_timestamp(value) {
             Some(value) => Some(timestamp(value)),
-            None => {
-                return error_response(
-                    StatusCode::UNPROCESSABLE_ENTITY,
-                    json!("Invalid expected_updated_at"),
-                );
-            }
+            None => return Err(YarnError::Invalid("Invalid expected_updated_at")),
         },
         None => None,
     };
 
-    let mut tx = match state.pool.begin().await {
-        Ok(tx) => tx,
-        Err(_) => return database_error(),
-    };
+    let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
     let current = match get_owned_yarn_in(&mut tx, user_id, yarn_id).await {
         Ok(Some(yarn)) => yarn,
-        Ok(None) => return yarn_not_found(),
-        Err(_) => return database_error(),
+        Ok(None) => return Err(YarnError::NotFound),
+        Err(_) => return Err(YarnError::Database),
     };
     if expected
         .as_deref()
         .is_some_and(|value| value != current.updated_at)
     {
         let _ = tx.rollback().await;
-        return current_yarn_conflict(&state.pool, user_id, yarn_id).await;
+        let current = current_for_conflict(state, user_id, yarn_id).await?;
+        return Err(YarnError::Conflict(Box::new(current)));
     }
 
     let name_changed = name != current.name.as_str();
@@ -421,14 +454,17 @@ async fn update_yarn(
         Ok(_) => {
             let _ = tx.rollback().await;
             return if expected.is_some() {
-                current_yarn_conflict(&state.pool, user_id, yarn_id).await
+                match current_for_conflict(state, user_id, yarn_id).await {
+                    Ok(current) => Err(YarnError::Conflict(Box::new(current))),
+                    Err(error) => Err(error),
+                }
             } else {
-                yarn_not_found()
+                Err(YarnError::NotFound)
             };
         }
         Err(_) => {
             let _ = tx.rollback().await;
-            return database_error();
+            return Err(YarnError::Database);
         }
     }
     if name_changed
@@ -437,14 +473,14 @@ async fn update_yarn(
             .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(YarnError::Database);
     }
     if audit::record(&mut tx, user_id, Entity::Yarn, yarn_id, Action::Updated)
         .await
         .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(YarnError::Database);
     }
     if state.archive_enabled
         && crate::archive_jobs::enqueue_in_transaction(
@@ -456,16 +492,15 @@ async fn update_yarn(
         .await
         .is_err()
     {
-        return database_error();
+        return Err(YarnError::Database);
     }
     if tx.commit().await.is_err() {
-        return database_error();
+        return Err(YarnError::Database);
     }
-    match get_yarn_response(&state.pool, user_id, yarn_id).await {
-        Ok(Some(yarn)) => Json(yarn).into_response(),
-        Ok(None) => yarn_not_found(),
-        Err(_) => database_error(),
-    }
+    load_for_owner(state, user_id, yarn_id)
+        .await
+        .map_err(|_| YarnError::Database)?
+        .ok_or(YarnError::NotFound)
 }
 
 async fn delete_yarn(
@@ -477,19 +512,27 @@ async fn delete_yarn(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
-    let mut tx = match state.pool.begin().await {
-        Ok(tx) => tx,
-        Err(_) => return database_error(),
-    };
+    match delete_for_owner(&state, user_id, yarn_id).await {
+        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn delete_for_owner(
+    state: &AppState,
+    user_id: i64,
+    yarn_id: i64,
+) -> Result<(), YarnError> {
+    let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
     match get_owned_yarn_in(&mut tx, user_id, yarn_id).await {
         Ok(Some(_)) => {}
         Ok(None) => {
             let _ = tx.rollback().await;
-            return yarn_not_found();
+            return Err(YarnError::NotFound);
         }
         Err(_) => {
             let _ = tx.rollback().await;
-            return database_error();
+            return Err(YarnError::Database);
         }
     }
     if bump_linked_project_timestamps(&mut tx, user_id, yarn_id)
@@ -497,7 +540,7 @@ async fn delete_yarn(
         .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(YarnError::Database);
     }
     let deleted_at = timestamp(Utc::now());
     if sqlx::query(
@@ -512,7 +555,7 @@ async fn delete_yarn(
     .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(YarnError::Database);
     }
     let deleted = sqlx::query("DELETE FROM yarns WHERE id = ? AND owner_id = ?")
         .bind(yarn_id)
@@ -523,11 +566,11 @@ async fn delete_yarn(
         Ok(result) if result.rows_affected() == 1 => {}
         Ok(_) => {
             let _ = tx.rollback().await;
-            return yarn_not_found();
+            return Err(YarnError::NotFound);
         }
         Err(_) => {
             let _ = tx.rollback().await;
-            return database_error();
+            return Err(YarnError::Database);
         }
     }
     if audit::record(&mut tx, user_id, Entity::Yarn, yarn_id, Action::Deleted)
@@ -535,13 +578,9 @@ async fn delete_yarn(
         .is_err()
     {
         let _ = tx.rollback().await;
-        return database_error();
+        return Err(YarnError::Database);
     }
-    if tx.commit().await.is_ok() {
-        StatusCode::NO_CONTENT.into_response()
-    } else {
-        database_error()
-    }
+    tx.commit().await.map_err(|_| YarnError::Database)
 }
 
 async fn favorite_yarn(
@@ -570,10 +609,22 @@ async fn set_favorite(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
+    match set_favorite_for_owner(&state, user_id, yarn_id, favorite).await {
+        Ok(yarn) => Json(yarn).into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn set_favorite_for_owner(
+    state: &AppState,
+    user_id: i64,
+    yarn_id: i64,
+    favorite: bool,
+) -> Result<YarnResponse, YarnError> {
     match get_owned_yarn(&state.pool, user_id, yarn_id).await {
         Ok(Some(_)) => {}
-        Ok(None) => return yarn_not_found(),
-        Err(_) => return database_error(),
+        Ok(None) => return Err(YarnError::NotFound),
+        Err(_) => return Err(YarnError::Database),
     }
     let result = if favorite {
         sqlx::query("INSERT INTO user_favorite_yarns (user_id, yarn_id) VALUES (?, ?) ON CONFLICT DO NOTHING")
@@ -586,13 +637,12 @@ async fn set_favorite(
             .await
     };
     if result.is_err() {
-        return database_error();
+        return Err(YarnError::Database);
     }
-    match get_yarn_response(&state.pool, user_id, yarn_id).await {
-        Ok(Some(yarn)) => Json(yarn).into_response(),
-        Ok(None) => yarn_not_found(),
-        Err(_) => database_error(),
-    }
+    load_for_owner(state, user_id, yarn_id)
+        .await
+        .map_err(|_| YarnError::Database)?
+        .ok_or(YarnError::NotFound)
 }
 
 async fn get_owned_yarn(
@@ -605,6 +655,25 @@ async fn get_owned_yarn(
         .bind(user_id)
         .fetch_optional(pool)
         .await
+}
+
+pub(crate) async fn load_for_owner(
+    state: &AppState,
+    user_id: i64,
+    yarn_id: i64,
+) -> Result<Option<YarnResponse>, sqlx::Error> {
+    get_yarn_response(&state.pool, user_id, yarn_id).await
+}
+
+async fn current_for_conflict(
+    state: &AppState,
+    user_id: i64,
+    yarn_id: i64,
+) -> Result<YarnResponse, YarnError> {
+    load_for_owner(state, user_id, yarn_id)
+        .await
+        .map_err(|_| YarnError::Database)?
+        .ok_or(YarnError::NotFound)
 }
 
 async fn get_yarn_response(
@@ -651,17 +720,6 @@ async fn favorite_ids(
         .fetch_all(pool)
         .await
         .map(|ids| ids.into_iter().collect())
-}
-
-async fn current_yarn_conflict(pool: &SqlitePool, user_id: i64, yarn_id: i64) -> Response {
-    match get_yarn_response(pool, user_id, yarn_id).await {
-        Ok(Some(yarn)) => error_response(
-            StatusCode::CONFLICT,
-            serde_json::to_value(yarn).unwrap_or(serde_json::Value::Null),
-        ),
-        Ok(None) => yarn_not_found(),
-        _ => database_error(),
-    }
 }
 
 async fn yarn_response(

@@ -2,6 +2,7 @@
 
 use std::collections::BTreeMap;
 
+use crate::projects as project_service;
 use axum::{
     Json, Router,
     extract::{
@@ -11,13 +12,13 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use serde::{Deserialize, Serialize};
-use subtle::ConstantTimeEq;
-
-use crate::{auth, db::AppState, projects as project_service};
 use project_service::{ListQuery, ProjectError, ProjectResponse, ProjectWriteRequest};
+use serde::{Deserialize, Serialize};
 
-use super::{ApiV2State, Envelope, api_error};
+use super::{
+    ApiV2State, Envelope,
+    access::{browser_user, mutation_user},
+};
 
 pub(super) fn router() -> Router<ApiV2State> {
     Router::new()
@@ -381,53 +382,6 @@ async fn set_favorite(
         .into_response(),
         Err(error) => project_error(error),
     }
-}
-
-async fn browser_user(state: &AppState, headers: &HeaderMap) -> Result<i64, Box<Response>> {
-    match auth::browser_user(&state.pool, headers, state.secure_cookies).await {
-        Ok(user_id) => Ok(user_id),
-        Err(auth::AuthError::Unauthorized) => Err(Box::new(api_error(
-            StatusCode::UNAUTHORIZED,
-            "session_expired",
-            "Sign in to continue",
-        ))),
-        Err(auth::AuthError::Database(_)) => Err(Box::new(api_error(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "internal_error",
-            "Request failed",
-        ))),
-    }
-}
-
-async fn mutation_user(state: &AppState, headers: &HeaderMap) -> Result<i64, Box<Response>> {
-    if !super::same_origin_request(headers, state.secure_cookies) {
-        return Err(Box::new(api_error(
-            StatusCode::FORBIDDEN,
-            "csrf_failed",
-            "Request origin was rejected",
-        )));
-    }
-    let user_id = browser_user(state, headers).await?;
-    let Some(token) = auth::cookie(headers, auth::session_cookie_name(state.secure_cookies)) else {
-        return Err(Box::new(api_error(
-            StatusCode::UNAUTHORIZED,
-            "session_expired",
-            "Sign in to continue",
-        )));
-    };
-    let expected = crate::web::csrf(token);
-    let supplied = headers
-        .get("x-csrf-token")
-        .and_then(|value| value.to_str().ok())
-        .unwrap_or_default();
-    if !bool::from(expected.as_bytes().ct_eq(supplied.as_bytes())) {
-        return Err(Box::new(api_error(
-            StatusCode::FORBIDDEN,
-            "csrf_failed",
-            "CSRF token is missing or invalid",
-        )));
-    }
-    Ok(user_id)
 }
 
 fn validate_project(payload: &ProjectWriteRequest) -> Option<Response> {
