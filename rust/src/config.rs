@@ -4,6 +4,8 @@ use std::fmt;
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 
+use crate::security::TrustedHosts;
+
 const DEFAULT_BIND_HOST: &str = "127.0.0.1";
 const DEFAULT_BIND_PORT: u16 = 7674;
 
@@ -12,6 +14,8 @@ pub struct Config {
     pub media_root: PathBuf,
     pub bind_address: SocketAddr,
     pub static_root: PathBuf,
+    pub secure_cookies: bool,
+    pub trusted_hosts: TrustedHosts,
 }
 
 impl fmt::Debug for Config {
@@ -22,6 +26,7 @@ impl fmt::Debug for Config {
             .field("media_root", &self.media_root)
             .field("bind_address", &self.bind_address)
             .field("static_root", &self.static_root)
+            .field("trusted_hosts", &"[CONFIGURED]")
             .finish()
     }
 }
@@ -78,6 +83,20 @@ impl Config {
             .parse::<IpAddr>()
             .map_err(|_| ConfigError("BIND_HOST must be an IP address"))?;
 
+        let trusted_hosts = match get("TRUSTED_HOSTS") {
+            Some(value) => TrustedHosts::parse(&value).map_err(|_| {
+                ConfigError(
+                    "TRUSTED_HOSTS must be a comma-separated list of valid host authorities",
+                )
+            })?,
+            None if bind_ip.is_loopback() => TrustedHosts::loopback_defaults(),
+            None => {
+                return Err(ConfigError(
+                    "TRUSTED_HOSTS must be set when BIND_HOST is not loopback",
+                ));
+            }
+        };
+
         let port = get("BIND_PORT")
             .or_else(|| get("PORT"))
             .map(|value| {
@@ -88,6 +107,16 @@ impl Config {
             .transpose()?
             .unwrap_or(DEFAULT_BIND_PORT);
 
+        let secure_cookies = match get("SESSION_COOKIE_SECURE").as_deref() {
+            None | Some("false" | "0") => false,
+            Some("true" | "1") => true,
+            _ => return Err(ConfigError("SESSION_COOKIE_SECURE must be true or false")),
+        };
+        if !bind_ip.is_loopback() && !secure_cookies {
+            return Err(ConfigError(
+                "SESSION_COOKIE_SECURE must be true when BIND_HOST is not loopback",
+            ));
+        }
         let static_root = get("STATIC_ROOT")
             .map(PathBuf::from)
             .unwrap_or_else(default_static_root);
@@ -97,6 +126,8 @@ impl Config {
             media_root,
             bind_address: SocketAddr::new(bind_ip, port),
             static_root,
+            secure_cookies,
+            trusted_hosts,
         })
     }
 }
@@ -169,7 +200,7 @@ mod tests {
     #[test]
     fn rejects_non_sqlite_database_urls() {
         let error = parse(&[
-            ("RUST_DATABASE_URL", "postgres://user:secret@host/db"),
+            ("RUST_DATABASE_URL", "postgres://db.invalid/test"),
             ("RUST_MEDIA_ROOT", "/media"),
         ])
         .expect_err("non-SQLite databases must be rejected");
@@ -249,5 +280,32 @@ mod tests {
             ])
             .is_err()
         );
+    }
+
+    #[test]
+    fn external_listener_requires_explicit_hosts_and_secure_cookies() {
+        let base = [
+            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+            ("BIND_HOST", "0.0.0.0"),
+        ];
+        assert!(parse(&base).is_err());
+        let mut values = base.to_vec();
+        values.push(("TRUSTED_HOSTS", "rust.example.test,[2001:db8::2]:8443"));
+        assert!(parse(&values).is_err());
+        values.push(("SESSION_COOKIE_SECURE", "true"));
+        let config = parse(&values).expect("external listener has an explicit secure host policy");
+        assert_eq!(config.bind_address, "0.0.0.0:7674".parse().unwrap());
+    }
+
+    #[test]
+    fn loopback_configuration_uses_safe_exact_host_defaults() {
+        let config = parse(&[
+            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+        ])
+        .expect("loopback defaults are safe");
+        assert!(config.trusted_hosts.allows_host("localhost:7674"));
+        assert!(!config.trusted_hosts.allows_host("localhost.attacker.test"));
     }
 }

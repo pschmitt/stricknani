@@ -2,9 +2,18 @@ pub mod auth;
 pub mod categories;
 pub mod config;
 pub mod db;
+pub mod document_worker;
+mod i18n;
+pub mod import_document;
+pub mod importer;
+pub mod imports;
 pub mod media;
+pub mod media_ids;
 pub mod projects;
+pub mod security;
 pub mod sync;
+mod web;
+mod web_accounts;
 pub mod yarns;
 use std::num::NonZeroU32;
 use std::path::PathBuf;
@@ -28,7 +37,7 @@ pub fn app() -> Router {
     let static_root = std::env::var_os("STATIC_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static"));
-    app_with_static_root(static_root)
+    app_with_static_root(static_root).layer(axum::middleware::from_fn(security::security_headers))
 }
 
 pub fn app_with_static_root(static_root: PathBuf) -> Router {
@@ -41,7 +50,7 @@ pub fn app_with_static_root(static_root: PathBuf) -> Router {
 
 /// Build the persistent candidate while keeping the existing stateless gauge app usable.
 pub fn app_with_state(static_root: PathBuf, state: db::AppState) -> Router {
-    app_with_static_root(static_root)
+    let core = Router::new()
         .nest(
             "/api/v1",
             auth::router()
@@ -52,7 +61,13 @@ pub fn app_with_state(static_root: PathBuf, state: db::AppState) -> Router {
                 .route("/meta", get(meta))
                 .with_state(state.clone()),
         )
-        .merge(media::router().with_state(state))
+        .merge(media::router().with_state(state.clone()));
+
+    app_with_static_root(static_root)
+        .merge(web::router(core.clone(), state.clone()))
+        .merge(web_accounts::router(core.clone(), state))
+        .merge(core)
+        .layer(axum::middleware::from_fn(security::security_headers))
 }
 
 async fn meta(

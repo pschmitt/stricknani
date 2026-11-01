@@ -9,7 +9,24 @@ Use this file as the operational source of truth for working in Stricknani.
 3. `README.md` for runtime/configuration
 4. `docs/spec-and-implementation.md` for full product spec and historical implementation context
 
+## Concord Workspace
+
+- Coordinate under the primary Stricknani Concord workspace:
+  - Workspace ID: `ws_L2hvbWUvcHNjaG1pdHQvZGV2ZWwvcHJpdmF0ZS9wc2NobWl0dC9zdHJpY2tuYW5pLmdpdA`
+  - Repo root: `/home/pschmitt/devel/private/pschmitt/stricknani.git`
+- When working from worktrees (such as `stricknani-rust-port.worktree`) or subdirectories, pass `workspace_id: "ws_L2hvbWUvcHNjaG1pdHQvZGV2ZWwvcHJpdmF0ZS9wc2NobWl0dC9zdHJpY2tuYW5pLmdpdA"` (or export `CONCORD_REPO_ROOT=/home/pschmitt/devel/private/pschmitt/stricknani.git`) so active tasks, claims, and overlap checks are shared.
+
 ## Critical Requirements
+
+### Rust rewrite workflow
+
+- Follow [`REWRITE.md`](REWRITE.md) and track progress under T119 in `TODO.md`.
+- Keep rewrite work in the dedicated `rust` branch/worktree; preserve unrelated changes in the primary checkout.
+- Delegate isolated implementation and inventory tasks to GPT-6 Luna (`gpt-6-luna`) agents with explicit file ownership. The coordinator integrates their work and reviews API contracts, authorization, and data migration safety.
+- Commit and push small checkpoints regularly, including work in progress. Do not wait for the entire rewrite to be complete. State which checks passed, failed, or remain pending in the checkpoint notes; a checkpoint is not a release or deployment approval.
+- After each push, use the `ci-watch` skill and continue independent work while CI runs.
+- Run expensive Cargo, Gradle, and Nix work on a designated remote build host. Evaluate Nix dev shells from a clean source snapshot, then run tools in a separate working directory containing build caches. Keep credentials and copied data outside both source trees.
+- Keep Python production and Rust candidate storage separate. Production migration and cutover require the explicit approval described in `REWRITE.md`.
 
 ### Vendored Web Dependencies
 

@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+use zeroize::Zeroize;
 
 use crate::db::AppState;
 
@@ -132,6 +133,42 @@ pub async fn bearer_user(pool: &SqlitePool, headers: &HeaderMap) -> Result<i64, 
         return Err(AuthError::Unauthorized);
     };
 
+    token_user(pool, token, None).await
+}
+
+/// Browser cookies are accepted only by browser/media handlers, never by API v1.
+pub(crate) fn session_cookie_name(secure: bool) -> &'static str {
+    if secure {
+        "__Host-stricknani_session"
+    } else {
+        "stricknani_session"
+    }
+}
+
+pub(crate) async fn browser_user(
+    pool: &SqlitePool,
+    headers: &HeaderMap,
+    secure: bool,
+) -> Result<i64, AuthError> {
+    let token = cookie(headers, session_cookie_name(secure)).ok_or(AuthError::Unauthorized)?;
+    token_user(pool, token, Some("browser")).await
+}
+
+pub(crate) fn cookie<'a>(headers: &'a HeaderMap, name: &str) -> Option<&'a str> {
+    headers
+        .get_all(axum::http::header::COOKIE)
+        .iter()
+        .filter_map(|header| header.to_str().ok())
+        .flat_map(|value| value.split(';'))
+        .filter_map(|pair| pair.trim().split_once('='))
+        .find_map(|(key, value)| (key == name).then_some(value))
+}
+
+async fn token_user(
+    pool: &SqlitePool,
+    token: &str,
+    purpose: Option<&str>,
+) -> Result<i64, AuthError> {
     let hash = token_hash(token.as_bytes());
     sqlx::query_scalar::<_, i64>(
         "SELECT users.id FROM api_tokens \
@@ -139,9 +176,12 @@ pub async fn bearer_user(pool: &SqlitePool, headers: &HeaderMap) -> Result<i64, 
          WHERE api_tokens.token_hash = ? \
            AND api_tokens.revoked_at IS NULL \
            AND (api_tokens.expires_at IS NULL OR api_tokens.expires_at > unixepoch()) \
+           AND (? = 0 OR api_tokens.purpose = ?) \
            AND users.active = 1",
     )
     .bind(hash)
+    .bind(purpose.is_some())
+    .bind(purpose)
     .fetch_optional(pool)
     .await?
     .ok_or(AuthError::Unauthorized)
@@ -271,9 +311,13 @@ async fn mint_token(
         }
     }
 
-    let mut token_bytes = [0_u8; 32];
-    OsRng.fill_bytes(&mut token_bytes);
-    let token = format!("{TOKEN_PREFIX}{}", hex::encode(token_bytes));
+    let token = match generate_token() {
+        Ok(token) => token,
+        Err(()) => {
+            state.auth_limiter.refund(&keys, attempt_id);
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
     let hash = token_hash(token.as_bytes());
     let name = request
         .token_name
@@ -316,14 +360,8 @@ async fn verify_password(
     password: zeroize::Zeroizing<String>,
     hash: String,
 ) -> Result<PasswordVerification, ()> {
-    static PASSWORD_CHECKS: std::sync::LazyLock<Arc<Semaphore>> =
-        std::sync::LazyLock::new(|| Arc::new(Semaphore::new(MAX_PARALLEL_PASSWORD_CHECKS)));
-
-    let permit: OwnedSemaphorePermit = PASSWORD_CHECKS
-        .clone()
-        .acquire_owned()
-        .await
-        .map_err(|_| ())?;
+    let permit: OwnedSemaphorePermit =
+        password_semaphore().acquire_owned().await.map_err(|_| ())?;
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
         if is_bcrypt_hash(&hash) {
@@ -353,13 +391,54 @@ async fn verify_password(
     .map_err(|_| ())?
 }
 
+fn password_semaphore() -> Arc<Semaphore> {
+    static PASSWORD_CHECKS: std::sync::LazyLock<Arc<Semaphore>> =
+        std::sync::LazyLock::new(|| Arc::new(Semaphore::new(MAX_PARALLEL_PASSWORD_CHECKS)));
+    PASSWORD_CHECKS.clone()
+}
+
+/// Verify a current password for browser account management.
+pub(crate) async fn verify_password_for_account(
+    password: zeroize::Zeroizing<String>,
+    hash: String,
+) -> Result<bool, ()> {
+    verify_password(password, hash)
+        .await
+        .map(|verification| verification.valid)
+}
+
+/// Hash a replacement password under the same bounded blocking-work budget as login checks.
+pub(crate) async fn hash_password_for_account(
+    password: zeroize::Zeroizing<String>,
+) -> Result<String, ()> {
+    let permit = password_semaphore().acquire_owned().await.map_err(|_| ())?;
+    tokio::task::spawn_blocking(move || {
+        let _permit = permit;
+        let salt = SaltString::generate(&mut OsRng);
+        Argon2::default()
+            .hash_password(password.as_bytes(), &salt)
+            .map(|hash| hash.to_string())
+            .map_err(|_| ())
+    })
+    .await
+    .map_err(|_| ())?
+}
+
 fn is_bcrypt_hash(hash: &str) -> bool {
     ["$2a$", "$2b$", "$2y$"]
         .iter()
         .any(|prefix| hash.starts_with(prefix))
 }
 
-fn token_hash(token: &[u8]) -> String {
+pub(crate) fn generate_token() -> Result<String, ()> {
+    let mut token_bytes = [0_u8; 32];
+    OsRng.try_fill_bytes(&mut token_bytes).map_err(|_| ())?;
+    let token = format!("{TOKEN_PREFIX}{}", hex::encode(token_bytes));
+    token_bytes.zeroize();
+    Ok(token)
+}
+
+pub(crate) fn token_hash(token: &[u8]) -> String {
     hex::encode(Sha256::digest(token))
 }
 

@@ -1,27 +1,37 @@
 # T119 Nix and container packaging review
 
-Read-only review of the candidate outputs in the current worktree. No Nix
-evaluation, build, container run, or test suite was executed.
+Source review and candidate-image hardening in the current worktree. No Nix
+evaluation, build, container run, or test suite was executed for this update.
 
 ## Findings
 
-- **Future module switch must align the port setting.** The module currently
-  remains intentionally Python-backed, but it exports `PORT` from
-  `services.stricknani.port`, while Rust reads `BIND_PORT`. If the module is
-  switched to Rust without changing this, a non-default configured port will
-  still bind to `7674`, while the proxy and health check use the configured
-  port. [nix/module.nix](../nix/module.nix#L206-L210),
-  [rust/src/main.rs](../rust/src/main.rs#L8-L12)
-- **Rust formatting and Clippy are not checked in CI.** `buildRustPackage`
-  runs Cargo tests by default, so the flake's `rust-build` check builds and
-  runs the existing Rust tests. Those tests cover the current gauge and health
-  slice; the image smoke check exercises `/healthz` only. Add `cargo fmt
-  --check` and Clippy to CI/flake checks, and later add API/integration tests
-  for the `/api/v1/` and Android workflows before treating Rust CI as full
-  acceptance evidence. [nix/rust-package.nix](../nix/rust-package.nix#L7-L21),
+- **The existing NixOS module remains Python-backed.** It exports `PORT` from
+  `services.stricknani.port`; the Rust configuration now accepts `PORT` as a
+  fallback when `BIND_PORT` is unset. The earlier mismatch finding is
+  resolved, but the module/package default must still be switched together
+  after Rust acceptance. [nix/module.nix](../nix/module.nix#L206-L210),
+  [rust/src/config.rs](../rust/src/config.rs#L82-L90)
+- **Rust format and Clippy checks are wired into the package check.**
+  `buildRustPackage` runs `preCheck`, which executes `cargo fmt --check` and
+  offline Clippy with warnings denied before its default Cargo test phase. The
+  `rust-build` flake check therefore covers these checks and Rust tests.
+  [.github/workflows/nix.yaml](../.github/workflows/nix.yaml#L36-L40),
   [flake.nix](../flake.nix#L141-L145),
-  [.github/workflows/nix.yaml](../.github/workflows/nix.yaml#L45-L55),
-  [.github/workflows/nix.yaml](../.github/workflows/nix.yaml#L74-L90)
+  [nix/rust-package.nix](../nix/rust-package.nix#L15-L25)
+- **The Rust workflow runs on pushes to `rust`.** The Nix workflow's push
+  trigger includes both `main` and `rust`, with relevant Rust, Nix, flake, and
+  container files in its path filter. Its candidate-image smoke check verifies
+  `/healthz`; this alone does not establish full product or staging
+  acceptance. [.github/workflows/nix.yaml](../.github/workflows/nix.yaml#L4-L26),
+  [.github/workflows/nix.yaml](../.github/workflows/nix.yaml#L54-L90)
+- **The Rust candidate OCI image now runs as an unprivileged numeric user.**
+  Its image config sets `User = "65532:65532"` and a dedicated working
+  directory. `fakeRootCommands` creates `/var/lib/stricknani`, assigns it to
+  that UID/GID, and makes `/tmp` mode `1777`. The image intentionally does not
+  set database or media locations: staging must supply explicit paths on
+  dedicated isolated storage. This source change is pending the coordinator's
+  remote image build and runtime check; no check is claimed for this update.
+  [flake.nix](../flake.nix#L60-L77)
 
 ## State and remaining transition work
 
@@ -35,18 +45,25 @@ dependency. [flake.nix](../flake.nix#L55-L92),
 [nix/rust-package.nix](../nix/rust-package.nix#L7-L21),
 [nix/module.nix](../nix/module.nix#L93-L97)
 
-The candidate currently implements health and the gauge page, not the
-`/api/v1/` Android contract or the remaining authenticated web workflows.
-The one-time importer, isolated staging run, data verification, and cutover
-runbook are still outstanding. T119.8 and T119.9 track the final build switch
-and acceptance work. [docs/rust-port-decisions.md](rust-port-decisions.md#L138-L155),
+The candidate has advanced beyond the earlier health-and-gauge-only snapshot.
+The coordinator reports 51 Rust tests and formatting/Clippy passing, the
+Kotlin Retrofit HTTP contract and full Android JVM suite passing, and the Rust
+candidate flake check, image build, and Podman health check passing. The
+coordinator also reports that the inspected runtime closure has eight paths
+and no Python. These are integration results reported by the coordinator, not
+commands rerun for this document update. They do not establish the one-time
+importer, isolated staging run with protected production data, migration data
+verification, or cutover runbook. T119.8 and T119.9 track the final build
+switch and acceptance work. [docs/rust-port-decisions.md](rust-port-decisions.md#L138-L155),
 [TODO.md](../TODO.md#L58-L66)
 
 The root Dockerfile and existing production image workflow remain Python by
-design for now. When acceptance is complete, switch the existing package/app,
-NixOS module default, Dockerfile and GHCR release path together; remove
-Python from the final runtime closure and remove obsolete HTMX-specific assets
-only after the Rust web implementation no longer uses them. [Dockerfile](../Dockerfile#L1-L2),
+design for now. A root Dockerfile build is currently being monitored by the
+coordinator; no result is asserted here. When acceptance is complete, switch
+the existing package/app, NixOS module default, Dockerfile and GHCR release
+path together; remove Python from the final runtime closure and remove obsolete
+HTMX-specific assets only after the Rust web implementation no longer uses
+them. [Dockerfile](../Dockerfile#L1-L2),
 [docs/rust-port-decisions.md](rust-port-decisions.md#L125-L136)
 
 ## Checks required before final switch
@@ -66,12 +83,17 @@ only after the Rust web implementation no longer uses them. [Dockerfile](../Dock
   explicitly approves cutover. At cutover, import a final post-freeze snapshot
   and verify it before routing the existing production URL to Rust.
 
-## Integration review evidence (2026-10-31)
+## Integration review evidence (2026-11-01)
 
-The coordinator checked the findings against the package and module sources.
-In a separate remote copy of this worktree, `cargo fmt --check`,
-`cargo clippy --all-targets --all-features -- -D warnings`, and
-`cargo test --all-features` passed (8 tests, 0 failures). This verifies only
-the existing health/static/gauge foundation; it does not establish API,
-Android, migration, container, or production-cutover acceptance. Nix package
-and container builds were not repeated as part of this review.
+The coordinator checked the current package, port configuration, and workflow
+sources. The coordinator reports 51 Rust tests, formatting and Clippy,
+Retrofit contract tests, the full Android JVM suite, `nix flake check`, the
+Rust image build and Podman health check passing; it also reports an eight-path
+runtime closure without Python. The coordinator is monitoring the root
+Dockerfile build. No CI watch was started or polled for this document update.
+These reports do not cover the importer, staging data validation, or
+production cutover, and production defaults remain Python pending acceptance.
+
+The candidate-image hardening above has not been built or run in this update.
+The coordinator will validate it remotely. No Nix evaluation, build, container
+run, or test suite was run here.

@@ -1,6 +1,6 @@
 # Android and API v1 inventory for the Rust port
 
-Scope: observed contract of the current Kotlin app and Python API, plus concrete Rust integration-test coverage to add. This is a read-only inventory; no tests or builds were run. The Rust tree currently has no API routes (only health/gauge), so there is no Rust route behavior to compare yet.
+Scope: observed contract of the Kotlin app and the original Python v1 API, current Rust route coverage, and remaining app/Rust integration gaps. The endpoint matrix below remains the contract reference; the Rust backend now implements versioned API routes under `rust/src/`. Remote Rust and Android validation is run separately from this inventory.
 
 ## Endpoint matrix
 
@@ -44,7 +44,51 @@ Kotlin's project and yarn sync DTOs already decode `full_resync_required` (with 
 
 Backend evidence is strong for Python behavior: [`test_api_v1.py`](../tests/test_api_v1.py) covers bearer auth, meta, import PAT use, category CRUD, yarn/project CRUD, favorites, optimistic concurrency, image upload/delete, and owner isolation. [`test_api_sync.py`](../tests/test_api_sync.py) covers initial/delta sync, bounded pagination, merged deletes, invalid cursor/limits, tombstones, and categories. [`test_api_auth_token.py`](../tests/test_api_auth_token.py) covers mint success/failure/rate limiting; [`test_api_tokens.py`](../tests/test_api_tokens.py) covers one-time token display/revocation. These validate Python only.
 
-Android has broad local behavior tests (write replay, pending uploads/deletes, repositories, DTO photo ordering, cache/offline flows) and Compose journeys. However, there are no Retrofit/API contract tests for the production service interfaces; MockWebServer is only used for update-checking. The E2E harness in [`android-e2e.yaml`](../.github/workflows/android-e2e.yaml) always builds and seeds the Python Docker image and passes a fixture token to the emulator. Therefore its current green result cannot establish Rust v1 compatibility. Existing E2E does cover user workflows against Python (onboarding, project/yarn detail/edit/delete, photos, attachment flows and offline/cache-oriented journeys); see [`StricknaniE2eTest.kt`](../android/app/src/androidTest/kotlin/blue/anika/wolle/e2e/StricknaniE2eTest.kt).
+Android has broad local behavior tests (write replay, pending uploads/deletes, repositories, DTO photo ordering, cache/offline flows) and Compose journeys. MockWebServer is only used for update-checking, and the existing E2E harness in [`android-e2e.yaml`](../.github/workflows/android-e2e.yaml) still builds and seeds the Python Docker image. Those checks do not establish Rust v1 compatibility. Existing E2E covers onboarding, project/yarn detail/edit/delete, photos, attachment flows and offline/cache journeys against Python; see [`StricknaniE2eTest.kt`](../android/app/src/androidTest/kotlin/blue/anika/wolle/e2e/StricknaniE2eTest.kt). The opt-in replay instrumentation below adds direct Rust coverage for the outbox path, while broader Compose journeys and remaining endpoints still need a Rust fixture lane.
+
+## Rust backend offline replay instrumentation
+
+[`RustBackendReplayIntegrationTest.kt`](../android/app/src/androidTest/kotlin/blue/anika/wolle/sync/RustBackendReplayIntegrationTest.kt)
+is an opt-in instrumentation test that uses the installed app's Hilt graph, Room
+repositories, `WriteReplayWorker`, and real Retrofit clients. It first points the app
+at an unreachable local URL, creates and edits project/yarn rows through the repositories,
+then restores the disposable Rust URL and runs the worker. It checks temp-ID replacement,
+server and Room state, normal delta sync, queued project/yarn deletion, and 409 conflict
+adoption/non-retry behavior. A unique name prefix scopes server cleanup; local cache rows,
+outbox rows, sync cursors, the temporary fixture file, and the saved app credentials are
+restored or removed in `finally`.
+
+The instrumentation process cannot read the host's `STRICKNANI_RUST_TEST_*` environment
+directly. The runner should create a temporary JSON fixture from those three variables,
+write it to the app's private `files/rust-replay-fixture.json` over `adb` stdin, and pass
+only the test class as an instrumentation argument. For example, this Bash snippet keeps
+the values out of shell arguments and output:
+
+```bash
+set -eu
+fixture_file="$(mktemp)"
+trap 'rm -f "$fixture_file"' EXIT
+chmod 600 "$fixture_file"
+python3 - > "$fixture_file" <<'PY'
+import json
+import os
+
+print(json.dumps({
+    "url": os.environ["STRICKNANI_RUST_TEST_URL"],
+    "email": os.environ["STRICKNANI_RUST_TEST_EMAIL"],
+    "password": os.environ["STRICKNANI_RUST_TEST_PASSWORD"],
+}))
+PY
+adb -s "$DEVICE_SERIAL" shell run-as blue.anika.wolle.debug sh -c 'cat > files/rust-replay-fixture.json' < "$fixture_file"
+adb -s "$DEVICE_SERIAL" shell am instrument -w -e class blue.anika.wolle.sync.RustBackendReplayIntegrationTest blue.anika.wolle.debug.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+The URL must be reachable from the emulator, for example through `10.0.2.2` with a
+forwarded host port or `adb reverse`. The test logs in through the Rust browser session
+flow and logs out after cleanup; this revokes the temporary session credential. Project
+and yarn deletes also create durable sync tombstones, and revoked token rows are retained
+by the backend schema, so the Rust database used by this test must be a disposable isolated
+fixture. No test fixture file or credential belongs in source control.
 
 ## Concrete integration test plan
 
@@ -52,5 +96,5 @@ Android has broad local behavior tests (write replay, pending uploads/deletes, r
 2. **Sync compatibility tests:** seed tied timestamps, more than one page of updates plus tombstones, and create/update/delete during pagination. Check bounded pages are unique and complete, share one `server_time`, preserve cursor binding (user/entity), reject `since+cursor`, invalid/oversized limits and malformed/oversized cursors, and that repeating `since=server_time` neither misses equal-time rows nor replays changes forever. Test offset-aware timestamps and exact timestamp precision against server output. Test categories as complete replacement. Verify the full-resync flag handling with the Kotlin client; do not infer it from a process build ID.
 3. **Media tests:** upload each supported image type and a malformed/forged MIME body; verify byte cap, canonical extension, response URLs, thumbnails, and served bytes. Test attachment PDF/image/unknown and active-content extensions for correct headers/download behavior. With two users test source and thumbnail GET ownership, guessed IDs, parent/child mismatch on delete, path traversal/internal directory denial, and authentication after token revocation. Include server subpath base URLs because Android intentionally resolves media paths differently from Retrofit API paths.
 4. **Kotlin wire tests:** use MockWebServer around each Retrofit interface plus onboarding clients. Pin methods, content types, exact query/form/multipart field names, optional-field omission, timestamp pass-through, auth header routing (not on meta/token mint, present on API and media), 201/204 handling, additive unknown response fields, `409.detail` decoding, and media URL resolution. In particular test bounded sync DTOs (`has_more`, `next_cursor`) before enabling pagination in the client.
-5. **Real app-to-Rust E2E:** parameterize the disposable fixture in `.github/workflows/android-e2e.yaml` and its seed helper so the same smoke/full emulator journeys can run against the Rust binary/container. Seed/mint a Rust PAT, exercise onboarding, cache-first sync, create/edit/conflict/delete, favorites, project step/title images, yarn photos, attachment upload/delete, URL import behavior or a deterministic local import fixture, restart/re-sync, and cross-user denial. Keep external URL/AI calls stubbed or disabled. Run against a fresh disposable DB/media root, never production state.
+5. **Broader app-to-Rust E2E:** parameterize the disposable fixture in `.github/workflows/android-e2e.yaml` and its seed helper so the same smoke/full emulator journeys can run against the Rust binary/container. The new replay instrumentation covers project/yarn queueing, temp IDs, sync, deletion and conflict adoption; extend the Rust lane with onboarding, favorites, project step/title images, yarn photos, attachment upload/delete, URL import behavior or a deterministic local import fixture, restart/re-sync, and cross-user denial. Keep external URL/AI calls stubbed or disabled. Run against a fresh disposable DB/media root, never production state.
 6. **Parity checkpoint:** run the existing Python API tests as contract-source evidence and the Kotlin E2E suite against Rust; report any deliberate differences. Do not count Python-only tests or UI-only JVM tests as Android/Rust integration evidence.

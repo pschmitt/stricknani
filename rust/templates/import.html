@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="{{ labels.language }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ labels.title }} · Stricknani</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="bg-base-100 text-base-content">
+  <header class="site-header">
+    <a class="brand" href="/projects">Stricknani</a>
+    <nav aria-label="{{ labels.navigation }}">
+      <a href="/projects">{{ labels.projects }}</a>
+      <a href="/yarns">{{ labels.yarns }}</a>
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button type="submit">{{ labels.sign_out }}</button>
+      </form>
+    </nav>
+  </header>
+  <main class="max-w-4xl mx-auto p-4 md:p-8">
+    <h1 class="text-3xl font-bold mb-6">{{ labels.title }}</h1>
+    {% if has_error %}
+      <p class="alert alert-error mb-6" role="alert">{{ error }}</p>
+    {% endif %}
+
+    <section class="card bg-base-200 shadow-xl mb-8">
+      <div class="card-body space-y-6">
+        <form method="post" action="/imports/preview" class="space-y-3">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="type" value="url">
+          <label class="form-control">
+            <span class="label-text">{{ labels.source_url }}</span>
+            <input class="input input-bordered w-full" type="url" name="url" required>
+          </label>
+          <button class="btn btn-primary" type="submit">{{ labels.preview }}</button>
+        </form>
+        <form method="post" action="/imports/preview" class="space-y-3">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="type" value="text">
+          <label class="form-control">
+            <span class="label-text">{{ labels.text }}</span>
+            <textarea class="textarea textarea-bordered w-full" name="text" rows="8" required></textarea>
+          </label>
+          <button class="btn btn-primary" type="submit">{{ labels.preview }}</button>
+        </form>
+        <form method="post" action="/imports/preview-file" enctype="multipart/form-data" class="space-y-3">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <label class="form-control">
+            <span class="label-text">{{ labels.file }}</span>
+            <input class="file-input file-input-bordered w-full" type="file" name="file" accept=".html,.htm,.txt,.md,.markdown,.pdf,image/*" required>
+          </label>
+          <button class="btn btn-primary" type="submit">{{ labels.preview }}</button>
+        </form>
+      </div>
+    </section>
+
+    {% if has_preview %}
+    <section class="card bg-base-200 shadow-xl" aria-labelledby="import-preview-heading">
+      <div class="card-body">
+        <h2 id="import-preview-heading" class="text-2xl font-semibold">{{ labels.draft }}</h2>
+        <p>{{ labels.content_hash }}: <code>{{ preview.sha256 }}</code></p>
+        <form method="post" action="/imports/create-project" class="space-y-3">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="draft_json" value="{{ preview.draft_json }}">
+          <label class="form-control">
+            <span class="label-text">{{ labels.name }}</span>
+            <input class="input input-bordered w-full" name="name" value="{{ preview.name }}" required>
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.description }}</span>
+            <textarea class="textarea textarea-bordered w-full" name="description" rows="4">{{ preview.description }}</textarea>
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.category }}</span>
+            <input class="input input-bordered w-full" name="category" value="{{ preview.category }}">
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.needles }}</span>
+            <input class="input input-bordered w-full" name="needles" value="{{ preview.needles }}">
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.stitch_sample }}</span>
+            <textarea class="textarea textarea-bordered w-full" name="stitch_sample" rows="2">{{ preview.stitch_sample }}</textarea>
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.other_materials }}</span>
+            <textarea class="textarea textarea-bordered w-full" name="other_materials" rows="3">{{ preview.other_materials }}</textarea>
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.yarn }}</span>
+            <input class="input input-bordered w-full" name="yarn" value="{{ preview.yarn }}">
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.link }}</span>
+            <input class="input input-bordered w-full" name="link" value="{{ preview.link }}">
+          </label>
+          <p>{{ preview.step_count }} steps · {{ preview.image_count }} suggested images</p>
+          <button class="btn btn-primary" type="submit">{{ labels.create_project }}</button>
+        </form>
+
+        {% if preview.has_yarn %}
+        <form method="post" action="/imports/create-yarn" class="space-y-3 border-t border-base-300 pt-6 mt-6">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="draft_json" value="{{ preview.draft_json }}">
+          <label class="form-control">
+            <span class="label-text">{{ labels.name }}</span>
+            <input class="input input-bordered w-full" name="yarn_name" value="{{ preview.yarn_name }}" required>
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.brand }}</span>
+            <input class="input input-bordered w-full" name="yarn_brand" value="{{ preview.yarn_brand }}">
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.colorway }}</span>
+            <input class="input input-bordered w-full" name="yarn_colorway" value="{{ preview.yarn_colorway }}">
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.weight }}</span>
+            <input class="input input-bordered w-full" name="yarn_weight" value="{{ preview.yarn_weight }}">
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.length }}</span>
+            <input class="input input-bordered w-full" name="yarn_length" value="{{ preview.yarn_length }}">
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.weight_category }}</span>
+            <input class="input input-bordered w-full" name="yarn_weight_category" value="{{ preview.yarn_weight_category }}">
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.fiber_content }}</span>
+            <input class="input input-bordered w-full" name="yarn_fiber_content" value="{{ preview.yarn_fiber_content }}">
+          </label>
+          <label class="form-control">
+            <span class="label-text">{{ labels.link }}</span>
+            <input class="input input-bordered w-full" name="yarn_link" value="{{ preview.yarn_link }}">
+          </label>
+          <button class="btn" type="submit">{{ labels.create_yarn }}</button>
+        </form>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+  </main>
+</body>
+</html>

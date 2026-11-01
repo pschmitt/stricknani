@@ -37,6 +37,7 @@ struct ListQuery {
     category: Option<String>,
     tag: Option<String>,
     favorite: Option<bool>,
+    q: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -196,6 +197,17 @@ async fn list_projects(
 
     let category = query.category.filter(|value| !value.is_empty());
     let tag = query.tag.filter(|value| !value.is_empty());
+    if query.q.as_ref().is_some_and(|value| value.len() > 256) {
+        return error_response(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            json!("Search query is too long"),
+        );
+    }
+    let search = query
+        .q
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty());
+    let search_pattern = search.as_deref().map(literal_like_pattern);
     let favorite = query
         .favorite
         .map(|favorite| if favorite { 1_i64 } else { 0_i64 });
@@ -208,6 +220,10 @@ async fn list_projects(
          WHERE p.owner_id = ? \
            AND (? IS NULL OR c.name = ?) \
            AND (? IS NULL OR instr(lower(p.tags), lower(?)) > 0) \
+           AND (? IS NULL OR p.name LIKE ? ESCAPE '!' \
+                OR COALESCE(c.name, '') LIKE ? ESCAPE '!' \
+                OR p.tags LIKE ? ESCAPE '!' \
+                OR COALESCE(p.notes, '') LIKE ? ESCAPE '!') \
            AND (? IS NULL OR EXISTS(SELECT 1 FROM user_favorites f \
                                     WHERE f.user_id = ? AND f.project_id = p.id) = ?) \
          ORDER BY p.updated_at DESC, p.id DESC LIMIT ? OFFSET ?",
@@ -218,6 +234,11 @@ async fn list_projects(
     .bind(category.as_deref())
     .bind(tag.as_deref())
     .bind(tag.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
     .bind(favorite)
     .bind(user_id)
     .bind(favorite)
@@ -254,6 +275,16 @@ async fn list_projects(
         has_more,
     })
     .into_response()
+}
+
+fn literal_like_pattern(value: &str) -> String {
+    format!(
+        "%{}%",
+        value
+            .replace('!', "!!")
+            .replace('%', "!%")
+            .replace('_', "!_")
+    )
 }
 
 async fn get_project(

@@ -32,9 +32,29 @@ advisory suppression or new license policy was added.
   durable media deletion queue.
 - Canonical UTC microsecond timestamps and owner-bound pagination cursors.
 
+## Web security policy
+
+The public `serve` listener accepts exactly one `Host` authority from the
+`TRUSTED_HOSTS` allowlist. Host names compare case-insensitively and exactly;
+suffixes do not match. Entries may be written as `name` or `name:port`, and
+IPv6 literals must use brackets. An entry without a port accepts that exact
+host on any port. Loopback binds default to `localhost`, `127.0.0.1`, and
+`[::1]`; non-loopback binds require an explicit allowlist and
+`SESSION_COOKIE_SECURE=true`.
+
+The server does not trust `X-Forwarded-Host`, `X-Forwarded-Proto`, or forwarded
+client addresses. A reverse proxy must preserve a validated public `Host` and
+connect to the listener directly. Trusted-proxy support needs its own explicit
+proxy address allowlist before forwarded headers can affect security decisions.
+
+Responses set a same-origin CSP, `X-Content-Type-Options: nosniff`, frame and
+referrer restrictions, and a restrictive Permissions Policy. Dynamic, API,
+authentication, health, and media responses use `private, no-store`; successful
+`/static/` assets use a one-hour public cache with stale revalidation.
+
 ## Remaining release work
 
-Browser sessions/CSRF, trusted proxy/host configuration, full browser security
-headers and sanitization, URL-import SSRF/redirect policy, copied-data
-migration verification, and staging isolation must pass their own acceptance
-checks before the candidate is a production replacement.
+Browser sessions/CSRF, full browser security headers and sanitization,
+URL-import SSRF/redirect policy, copied-data migration verification, and
+staging isolation must pass their own acceptance checks before the candidate is
+a production replacement.

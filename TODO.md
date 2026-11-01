@@ -60,8 +60,8 @@ Execution-oriented backlog for Stricknani.
 | T119.3 | P1 | wip | rust-port/api | feat | Implement initial `/api/v1/` project, yarn, category, upload, and media contract |
 | T119.4 | P1 | wip | rust-port/sync | feat | Implement v1 pagination/delta sync and verify offline mutation semantics with the Android client |
 | T119.5 | P1 | wip | rust-port/web | feat | Implement core browser account, project, yarn, category, favorite, steps, and media workflows with a replaceable presentation layer |
-| T119.6 | P1 | todo | rust-port/product | feat | Port imports, administrative/CLI operations, security controls, background work, translations, and PWA capabilities selected by inventory |
-| T119.7 | P1 | todo | rust-port/migration | feat | Build and rehearse a one-time importer using separate copies of production database and media |
+| T119.6 | P1 | wip | rust-port/product | feat | Port imports, administrative/CLI operations, security controls, background work, translations, and PWA capabilities selected by inventory |
+| T119.7 | P1 | wip | rust-port/migration | feat | Build and rehearse a one-time importer using separate copies of production database and media |
 | T119.8 | P1 | todo | rust-port/build | refactor | Switch final Nix package/app/check/dev-shell, deployment module, and container workflow to the complete Python-free Rust runtime |
 | T119.9 | P1 | todo | rust-port/acceptance | test | Run full Rust/Android/Nix/container acceptance, isolated candidate validation, and document operational rollback/cutover readiness |
 | T39 | P0 | done | search | bug | Fix universal search (Ctrl-K) CSRF 500 error |
@@ -2079,7 +2079,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port/product
 - **Priority**: P1
-- **Status**: todo
+- **Status**: wip
 - **Category**: feat
 - **Dependencies**: T119.2, T119.3, T119.5
 - **Scope**: Port selected import and deduplication flows, SSRF protections, PDF/image/OCR/Wayback integrations, admin actions, CLI operations, background jobs, security headers, translations, and PWA/service-worker behavior. Inventory required capabilities and record intentional removals/tradeoffs.
@@ -2089,7 +2089,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port/migration
 - **Priority**: P1
-- **Status**: todo
+- **Status**: wip
 - **Category**: feat
 - **Dependencies**: T119.2, T119.3
 - **Scope**: Implement an importer from a separate snapshot/copy of production database and media into the fresh Rust schema. Never point Rust at or share the live database or media. Rehearse with an isolated copy and ensure staging access is protected because copied data may be private.

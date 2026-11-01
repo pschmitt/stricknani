@@ -12,10 +12,16 @@ pub struct AppState {
     pub pool: SqlitePool,
     pub build_id: String,
     pub media_root: Option<std::path::PathBuf>,
+    pub secure_cookies: bool,
     pub auth_limiter: Arc<crate::auth::RateLimiter>,
 }
 
 impl AppState {
+    pub fn with_secure_cookies(mut self, secure: bool) -> Self {
+        self.secure_cookies = secure;
+        self
+    }
+
     pub fn with_media_root(mut self, root: std::path::PathBuf) -> Self {
         self.media_root = Some(root);
         self
@@ -25,6 +31,7 @@ impl AppState {
         Self {
             pool,
             media_root: None,
+            secure_cookies: false,
             build_id: format!("{:032x}", rand::random::<u128>()),
             auth_limiter: Arc::new(crate::auth::RateLimiter::default()),
         }
@@ -53,8 +60,16 @@ pub async fn connect(url: &str) -> Result<SqlitePool, DatabaseError> {
     if !url.starts_with("sqlite:") {
         return Err(DatabaseError::InvalidUrl);
     }
-    let options = SqliteConnectOptions::from_str(url)
-        .map_err(|_| DatabaseError::InvalidUrl)?
+    let options = SqliteConnectOptions::from_str(url).map_err(|_| DatabaseError::InvalidUrl)?;
+    connect_options(options).await
+}
+
+pub(crate) async fn connect_file(path: &std::path::Path) -> Result<SqlitePool, DatabaseError> {
+    connect_options(SqliteConnectOptions::new().filename(path)).await
+}
+
+async fn connect_options(options: SqliteConnectOptions) -> Result<SqlitePool, DatabaseError> {
+    let options = options
         .create_if_missing(true)
         .foreign_keys(true)
         .busy_timeout(Duration::from_secs(5));

@@ -60,6 +60,7 @@ lint-css:
 [group: 'i18n']
 i18n-check:
   uv run python -m stricknani.scripts.check_translations
+  uv run python -m scripts.generate_rust_i18n --check
 
 # Extract translation strings from source files
 [group: 'i18n']
@@ -67,6 +68,7 @@ i18n-extract:
   uv run python -m babel.messages.frontend extract \
     -F babel.cfg \
     -o stricknani/locales/messages.pot stricknani
+  uv run python -m scripts.extract_rust_i18n
 
 # Update translation catalogs from the template
 [group: 'i18n']
@@ -74,11 +76,14 @@ i18n-update: i18n-extract
   uv run python -m babel.messages.frontend update \
     -i stricknani/locales/messages.pot \
     -d stricknani/locales
+  uv run python -m scripts.generate_rust_i18n --seed-german
+  uv run python -m scripts.generate_rust_i18n
 
 # Compile catalogs after edits
 [group: 'i18n']
 i18n-compile:
   uv run python -m babel.messages.frontend compile -d stricknani/locales
+  uv run python -m scripts.generate_rust_i18n
 
 # Format code
 [group: 'fmt']

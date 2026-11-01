@@ -64,6 +64,7 @@ struct YarnWriteRequest {
 struct ListQuery {
     page: Option<i64>,
     favorite: Option<bool>,
+    q: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -154,11 +155,28 @@ async fn list_yarns(
         return error_response(StatusCode::UNPROCESSABLE_ENTITY, json!("Invalid page"));
     }
 
+    if query.q.as_ref().is_some_and(|value| value.len() > 256) {
+        return error_response(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            json!("Search query is too long"),
+        );
+    }
+    let search = query
+        .q
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty());
+    let search_pattern = search.as_deref().map(literal_like_pattern);
+
     let rows = match sqlx::query_as::<_, YarnRow>(
         "SELECT yarns.* FROM yarns \
          WHERE owner_id = ? \
            AND (? IS NULL OR EXISTS (SELECT 1 FROM user_favorite_yarns f \
                                      WHERE f.user_id = ? AND f.yarn_id = yarns.id) = ?) \
+           AND (? IS NULL OR yarns.name LIKE ? ESCAPE '!' \
+                OR COALESCE(yarns.brand, '') LIKE ? ESCAPE '!' \
+                OR COALESCE(yarns.colorway, '') LIKE ? ESCAPE '!' \
+                OR COALESCE(yarns.fiber_content, '') LIKE ? ESCAPE '!' \
+                OR COALESCE(yarns.notes, '') LIKE ? ESCAPE '!') \
          ORDER BY updated_at DESC, id DESC LIMIT ? OFFSET ?",
     )
     .bind(user_id)
@@ -173,6 +191,12 @@ async fn list_yarns(
             .favorite
             .map(|favorite| if favorite { 1_i64 } else { 0_i64 }),
     )
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
+    .bind(search_pattern.as_deref())
     .bind(PAGE_SIZE + 1)
     .bind((page - 1).saturating_mul(PAGE_SIZE))
     .fetch_all(&state.pool)
@@ -211,6 +235,16 @@ async fn list_yarns(
         has_more,
     })
     .into_response()
+}
+
+fn literal_like_pattern(value: &str) -> String {
+    format!(
+        "%{}%",
+        value
+            .replace('!', "!!")
+            .replace('%', "!%")
+            .replace('_', "!_")
+    )
 }
 
 async fn get_yarn(

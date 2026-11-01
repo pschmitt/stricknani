@@ -61,8 +61,15 @@
               name = "ghcr.io/pschmitt/stricknani-rust-candidate";
               tag = "latest";
               contents = [ stricknaniRust ];
+              fakeRootCommands = ''
+                mkdir -p ./tmp ./var/lib/stricknani
+                chmod 1777 ./tmp
+                chown 65532:65532 ./var/lib/stricknani
+              '';
               config = {
                 Cmd = [ "${stricknaniRust}/bin/stricknani-server" ];
+                User = "65532:65532";
+                WorkingDir = "/var/lib/stricknani";
                 ExposedPorts = {
                   "7674/tcp" = { };
                 };

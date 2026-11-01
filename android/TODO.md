@@ -41,6 +41,25 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-71: Exercise offline queued writes against the Rust backend (T119.4)
+
+- [x] Add an opt-in instrumentation test using the app's Room repositories, Hilt graph,
+      `WriteReplayWorker`, and real Rust HTTP endpoints for queued project/yarn writes, delta sync,
+      deletion, and project update conflict resolution.
+- [x] Keep fixture credentials in a short-lived file under the debug app's private `filesDir`,
+      provisioned over `adb` stdin; clean up only fixture-prefixed or explicitly tracked rows.
+- [ ] Run the instrumentation test on a disposable emulator and isolated Rust fixture, then record
+      the result.
+
+**Why:** verify actual Android offline replay and conflict behavior against the Rust candidate,
+beyond the existing Retrofit-only JVM contract test.
+**How to apply:** provision `files/rust-replay-fixture.json` in the debug app's private data from
+the three `STRICKNANI_RUST_TEST_*` environment variables, then run the class with
+`blue.anika.wolle.debug.test/androidx.test.runner.AndroidJUnitRunner`.
+
+Status: **in progress**, 2026-11-01 - instrumentation and fixture cleanup are implemented; an
+emulator run is pending.
+
 ## SNA-70: Exercise the Android v1 APIs against the Rust candidate
 
 - [x] Add an opt-in JVM integration test using the app's Retrofit APIs and Kotlin serialization;

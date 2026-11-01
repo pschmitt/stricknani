@@ -4,6 +4,7 @@
   makeWrapper,
   rustfmt,
   clippy,
+  cacert,
 }:
 
 rustPlatform.buildRustPackage {
@@ -27,7 +28,8 @@ rustPlatform.buildRustPackage {
     install -d "$out/share/stricknani/static"
     cp -a ${../stricknani/static}/. "$out/share/stricknani/static/"
     wrapProgram "$out/bin/stricknani-server" \
-      --set STATIC_ROOT "$out/share/stricknani/static"
+      --set STATIC_ROOT "$out/share/stricknani/static" \
+      --set-default SSL_CERT_FILE "${cacert}/etc/ssl/certs/ca-bundle.crt"
   '';
 
   meta = {

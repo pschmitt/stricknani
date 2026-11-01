@@ -1,14 +1,30 @@
 use std::io::{self, Read};
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use stricknani_server::config::Config;
 use stricknani_server::db;
+use stricknani_server::importer::{ImportOptions, import_snapshot};
+use stricknani_server::security;
 
-const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server create-user EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server revoke-token ID\n\ncreate-user reads the password from standard input.\n\nREQUIRED ENVIRONMENT:\n    RUST_DATABASE_URL  SQLite database URL\n    RUST_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    STATIC_ROOT        Static asset directory\n";
+const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server create-user EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\ncreate-user reads the password from standard input. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    RUST_DATABASE_URL  SQLite database URL\n    RUST_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    STATIC_ROOT        Static asset directory\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n";
+
+fn main() -> ExitCode {
+    if std::env::args_os().nth(1).is_some_and(|arg| arg == "document-worker") {
+        if std::env::args_os().count() != 2 {
+            return ExitCode::FAILURE;
+        }
+        return match stricknani_server::document_worker::run_stdio() {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(_) => ExitCode::FAILURE,
+        };
+    }
+    server_main()
+}
 
 #[tokio::main]
-async fn main() -> ExitCode {
+async fn server_main() -> ExitCode {
     tracing_subscriber::fmt()
         .json()
         .with_writer(std::io::stderr)
@@ -65,7 +81,58 @@ async fn run() -> Result<(), &'static str> {
             }
             revoke_token(&id).await
         }
+        "import-snapshot" => import_snapshot_command(arguments.collect()).await,
         _ => Err("unknown command; use --help for usage"),
+    }
+}
+
+async fn import_snapshot_command(arguments: Vec<String>) -> Result<(), &'static str> {
+    let (source_db, source_media, destination) = parse_import_options(arguments)?;
+    let report = import_snapshot(ImportOptions {
+        source_db,
+        source_media,
+        destination,
+    })
+    .await
+    .map_err(|error| {
+        eprintln!("import-snapshot: {error}");
+        "snapshot import failed"
+    })?;
+    let report = serde_json::to_string_pretty(&report)
+        .map_err(|_| "snapshot imported, but its aggregate report could not be rendered")?;
+    println!("{report}");
+    Ok(())
+}
+
+fn parse_import_options(
+    arguments: Vec<String>,
+) -> Result<(PathBuf, PathBuf, PathBuf), &'static str> {
+    let mut source_db = None;
+    let mut source_media = None;
+    let mut destination = None;
+    let mut args = arguments.into_iter();
+    while let Some(option) = args.next() {
+        let value = args
+            .next()
+            .filter(|value| !value.is_empty())
+            .ok_or("usage: stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR")?;
+        let target = match option.as_str() {
+            "--source-db" => &mut source_db,
+            "--source-media" => &mut source_media,
+            "--destination" => &mut destination,
+            _ => return Err("unknown import option; use --help for usage"),
+        };
+        if target.replace(PathBuf::from(value)).is_some() {
+            return Err("duplicate import option; use --help for usage");
+        }
+    }
+    match (source_db, source_media, destination) {
+        (Some(source_db), Some(source_media), Some(destination)) => {
+            Ok((source_db, source_media, destination))
+        }
+        _ => Err(
+            "usage: stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR",
+        ),
     }
 }
 
@@ -74,7 +141,9 @@ async fn serve() -> Result<(), &'static str> {
     let pool = db::connect(&config.database_url)
         .await
         .map_err(|_| "cannot initialize Rust database")?;
-    let state = db::AppState::new(pool).with_media_root(config.media_root);
+    let state = db::AppState::new(pool)
+        .with_media_root(config.media_root)
+        .with_secure_cookies(config.secure_cookies);
 
     let listener = tokio::net::TcpListener::bind(config.bind_address)
         .await
@@ -95,10 +164,11 @@ async fn serve() -> Result<(), &'static str> {
             tokio::time::sleep(std::time::Duration::from_secs(30)).await;
         }
     });
+    let app = stricknani_server::app_with_state(config.static_root, state);
+    let app = security::with_host_validation(app, config.trusted_hosts.clone());
     let result = axum::serve(
         listener,
-        stricknani_server::app_with_state(config.static_root, state)
-            .into_make_service_with_connect_info::<SocketAddr>(),
+        app.into_make_service_with_connect_info::<SocketAddr>(),
     )
     .with_graceful_shutdown(shutdown_signal())
     .await;
