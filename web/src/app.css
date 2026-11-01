@@ -242,7 +242,7 @@ button:disabled {
 .primary-nav a,
 .secondary-nav a {
   display: flex;
-  min-height: 2.9rem;
+  min-height: 44px;
   align-items: center;
   gap: 0.8rem;
   border-radius: 0.7rem;
@@ -300,7 +300,7 @@ button:disabled {
 }
 
 .secondary-nav a {
-  min-height: 2.65rem;
+  min-height: 44px;
   padding-left: 0.7rem;
 }
 

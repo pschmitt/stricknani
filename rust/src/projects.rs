@@ -33,108 +33,128 @@ pub fn router() -> Router<AppState> {
 }
 
 #[derive(Debug, Deserialize)]
-struct ListQuery {
-    page: Option<i64>,
-    category: Option<String>,
-    tag: Option<String>,
-    favorite: Option<bool>,
-    q: Option<String>,
+pub(crate) struct ListQuery {
+    pub(crate) page: Option<i64>,
+    pub(crate) category: Option<String>,
+    pub(crate) tag: Option<String>,
+    pub(crate) favorite: Option<bool>,
+    pub(crate) q: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct ProjectWriteRequest {
-    name: String,
+pub(crate) struct ProjectWriteRequest {
+    pub(crate) name: String,
     #[serde(default)]
-    category: Option<String>,
+    pub(crate) category: Option<String>,
     #[serde(default)]
-    needles: Option<String>,
+    pub(crate) needles: Option<String>,
     #[serde(default)]
-    stitch_sample: Option<String>,
+    pub(crate) stitch_sample: Option<String>,
     #[serde(default)]
-    description: Option<String>,
+    pub(crate) description: Option<String>,
     #[serde(default)]
-    notes: Option<String>,
+    pub(crate) notes: Option<String>,
     #[serde(default)]
-    other_materials: Option<String>,
+    pub(crate) other_materials: Option<String>,
     #[serde(default)]
-    tags: Vec<String>,
+    pub(crate) tags: Vec<String>,
     #[serde(default)]
-    link: Option<String>,
+    pub(crate) link: Option<String>,
     #[serde(default)]
-    is_ai_enhanced: bool,
+    pub(crate) is_ai_enhanced: bool,
     #[serde(default)]
-    yarn_ids: Vec<i64>,
+    pub(crate) yarn_ids: Vec<i64>,
     #[serde(default)]
-    steps: Vec<StepWriteRequest>,
+    pub(crate) steps: Vec<StepWriteRequest>,
     #[serde(default)]
-    image_urls: Vec<String>,
+    pub(crate) image_urls: Vec<String>,
     #[serde(default)]
-    expected_updated_at: Option<String>,
+    pub(crate) expected_updated_at: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct StepWriteRequest {
+pub(crate) struct StepWriteRequest {
     #[serde(default)]
-    id: Option<i64>,
-    title: String,
+    pub(crate) id: Option<i64>,
+    pub(crate) title: String,
     #[serde(default)]
-    description: Option<String>,
+    pub(crate) description: Option<String>,
     #[serde(default)]
-    step_number: i64,
+    pub(crate) step_number: i64,
     #[serde(default)]
-    image_urls: Vec<String>,
+    pub(crate) image_urls: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
-struct ProjectPage {
-    items: Vec<ProjectListItem>,
-    page: i64,
-    per_page: i64,
-    has_more: bool,
+pub(crate) struct ProjectPage {
+    pub(crate) items: Vec<ProjectListItem>,
+    pub(crate) page: i64,
+    pub(crate) per_page: i64,
+    pub(crate) has_more: bool,
 }
 
 #[derive(Debug, Serialize)]
-struct ProjectListItem {
-    id: i64,
-    name: String,
-    category: Option<String>,
-    tags: Vec<String>,
-    is_favorite: bool,
-    updated_at: String,
-    preview_url: Option<String>,
+pub(crate) struct ProjectListItem {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) category: Option<String>,
+    pub(crate) tags: Vec<String>,
+    pub(crate) is_favorite: bool,
+    pub(crate) updated_at: String,
+    pub(crate) preview_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
-struct ProjectResponse {
-    id: i64,
-    name: String,
-    category: Option<String>,
-    yarn: Option<String>,
-    needles: Option<String>,
-    stitch_sample: Option<String>,
-    description: Option<String>,
-    notes: Option<String>,
-    other_materials: Option<String>,
-    tags: Vec<String>,
-    link: Option<String>,
-    link_archive: Option<String>,
-    is_ai_enhanced: bool,
-    is_favorite: bool,
-    created_at: String,
-    updated_at: String,
-    yarn_ids: Vec<i64>,
-    steps: Vec<StepResponse>,
+pub(crate) struct ProjectResponse {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) category: Option<String>,
+    pub(crate) yarn: Option<String>,
+    pub(crate) needles: Option<String>,
+    pub(crate) stitch_sample: Option<String>,
+    pub(crate) description: Option<String>,
+    pub(crate) notes: Option<String>,
+    pub(crate) other_materials: Option<String>,
+    pub(crate) tags: Vec<String>,
+    pub(crate) link: Option<String>,
+    pub(crate) link_archive: Option<String>,
+    pub(crate) is_ai_enhanced: bool,
+    pub(crate) is_favorite: bool,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
+    pub(crate) yarn_ids: Vec<i64>,
+    pub(crate) steps: Vec<StepResponse>,
     // Media upload/import routes land in a later slice; this DTO returns empty arrays meanwhile.
-    images: Vec<Value>,
-    attachments: Vec<Value>,
+    pub(crate) images: Vec<Value>,
+    pub(crate) attachments: Vec<Value>,
 }
 
 #[derive(Debug, Serialize, Clone)]
-struct StepResponse {
-    id: i64,
-    title: String,
-    description: Option<String>,
-    step_number: i64,
+pub(crate) struct StepResponse {
+    pub(crate) id: i64,
+    pub(crate) title: String,
+    pub(crate) description: Option<String>,
+    pub(crate) step_number: i64,
+}
+
+pub(crate) enum ProjectError {
+    NotFound,
+    Database,
+    Invalid(&'static str),
+    Conflict(Box<ProjectResponse>),
+    ImageImportUnavailable,
+}
+
+impl ProjectError {
+    fn into_v1_response(self) -> Response {
+        match self {
+            Self::NotFound => not_found(),
+            Self::Database => database_error(),
+            Self::Invalid(detail) => invalid_project(detail),
+            Self::Conflict(project) => conflict(*project),
+            Self::ImageImportUnavailable => image_import_not_implemented(),
+        }
+    }
 }
 
 #[derive(Debug, FromRow)]
@@ -191,27 +211,36 @@ async fn list_projects(
         Ok(query) => query,
         Err(_) => return error_response(StatusCode::UNPROCESSABLE_ENTITY, json!("Invalid query")),
     };
+    match list_for_owner(&state, user_id, query).await {
+        Ok(page) => Json(page).into_response(),
+        Err(ProjectError::Invalid(detail)) => {
+            error_response(StatusCode::UNPROCESSABLE_ENTITY, json!(detail))
+        }
+        Err(ProjectError::Database) => database_error(),
+        Err(_) => database_error(),
+    }
+}
+
+pub(crate) async fn list_for_owner(
+    state: &AppState,
+    user_id: i64,
+    query: ListQuery,
+) -> Result<ProjectPage, ProjectError> {
     let page = query.page.unwrap_or(1);
     if page < 1 {
-        return error_response(StatusCode::UNPROCESSABLE_ENTITY, json!("Invalid page"));
+        return Err(ProjectError::Invalid("Invalid page"));
     }
-
     let category = query.category.filter(|value| !value.is_empty());
     let tag = query.tag.filter(|value| !value.is_empty());
     if query.q.as_ref().is_some_and(|value| value.len() > 256) {
-        return error_response(
-            StatusCode::UNPROCESSABLE_ENTITY,
-            json!("Search query is too long"),
-        );
+        return Err(ProjectError::Invalid("Search query is too long"));
     }
     let search = query
         .q
         .map(|value| value.trim().to_owned())
         .filter(|value| !value.is_empty());
     let search_pattern = search.as_deref().map(literal_like_pattern);
-    let favorite = query
-        .favorite
-        .map(|favorite| if favorite { 1_i64 } else { 0_i64 });
+    let favorite = query.favorite.map(i64::from);
     let rows = sqlx::query_as::<_, ProjectListRow>(
         "SELECT p.id, p.name, c.name AS category, p.tags, \
                 EXISTS(SELECT 1 FROM user_favorites f \
@@ -247,16 +276,13 @@ async fn list_projects(
     .bind((page - 1).saturating_mul(PAGE_SIZE))
     .fetch_all(&state.pool)
     .await;
-    let rows = match rows {
-        Ok(rows) => rows,
-        Err(_) => return database_error(),
-    };
+    let rows = rows.map_err(|_| ProjectError::Database)?;
     let has_more = rows.len() > PAGE_SIZE as usize;
     let mut items = Vec::new();
     for row in rows.into_iter().take(PAGE_SIZE as usize) {
         let (images, _) = match crate::media::project_media(&state.pool, user_id, row.id).await {
             Ok(media) => media,
-            Err(_) => return database_error(),
+            Err(_) => return Err(ProjectError::Database),
         };
         items.push(ProjectListItem {
             id: row.id,
@@ -269,13 +295,12 @@ async fn list_projects(
         });
     }
 
-    Json(ProjectPage {
+    Ok(ProjectPage {
         items,
         page,
         per_page: PAGE_SIZE,
         has_more,
     })
-    .into_response()
 }
 
 fn literal_like_pattern(value: &str) -> String {
@@ -313,13 +338,23 @@ async fn create_project(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
-    if payload_has_image_urls(&payload) {
-        if !state.external_imports {
-            return image_import_not_implemented();
-        }
-        if state.media_root.is_none() {
-            return database_error();
-        }
+    match create_for_owner(&state, user_id, payload).await {
+        Ok(project) => (StatusCode::CREATED, Json(project)).into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn create_for_owner(
+    state: &AppState,
+    user_id: i64,
+    payload: ProjectWriteRequest,
+) -> Result<ProjectResponse, ProjectError> {
+    if payload_has_image_urls(&payload) && (!state.external_imports || state.media_root.is_none()) {
+        return Err(if state.external_imports {
+            ProjectError::Database
+        } else {
+            ProjectError::ImageImportUnavailable
+        });
     }
     let step_image_urls = payload
         .steps
@@ -328,7 +363,7 @@ async fn create_project(
         .collect::<Vec<_>>();
     let prepared_images = if state.external_imports && state.media_root.is_some() {
         crate::image_import::prepare_project_images(
-            &state,
+            state,
             payload.name.trim(),
             &payload.image_urls,
             &step_image_urls,
@@ -338,19 +373,17 @@ async fn create_project(
         Vec::new()
     };
     let name = payload.name.trim().to_owned();
-    let mut transaction = match state.pool.begin().await {
-        Ok(transaction) => transaction,
-        Err(_) => return database_error(),
-    };
-    let yarn_ids = match owned_yarn_ids(&mut transaction, user_id, &payload.yarn_ids).await {
-        Ok(yarn_ids) => yarn_ids,
-        Err(_) => return database_error(),
-    };
-    let category_id =
-        match ensure_category(&mut transaction, user_id, payload.category.as_deref()).await {
-            Ok(category_id) => category_id,
-            Err(_) => return database_error(),
-        };
+    let mut transaction = state
+        .pool
+        .begin()
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let yarn_ids = owned_yarn_ids(&mut transaction, user_id, &payload.yarn_ids)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let category_id = ensure_category(&mut transaction, user_id, payload.category.as_deref())
+        .await
+        .map_err(|_| ProjectError::Database)?;
     let now = timestamp(Utc::now());
     let tags = encode_tags(&payload.tags);
     let inserted = sqlx::query(
@@ -373,10 +406,9 @@ async fn create_project(
     .bind(&now)
     .execute(&mut *transaction)
     .await;
-    let project_id = match inserted {
-        Ok(result) => result.last_insert_rowid(),
-        Err(_) => return database_error(),
-    };
+    let project_id = inserted
+        .map_err(|_| ProjectError::Database)?
+        .last_insert_rowid();
     if insert_project_yarns(&mut transaction, project_id, &yarn_ids)
         .await
         .is_err()
@@ -384,12 +416,11 @@ async fn create_project(
             .await
             .is_err()
     {
-        return database_error();
+        return Err(ProjectError::Database);
     }
-    let step_ids = match insert_steps(&mut transaction, project_id, &payload.steps).await {
-        Ok(step_ids) => step_ids,
-        Err(_) => return database_error(),
-    };
+    let step_ids = insert_steps(&mut transaction, project_id, &payload.steps)
+        .await
+        .map_err(|_| ProjectError::Database)?;
     if crate::audit::record(
         &mut transaction,
         user_id,
@@ -400,7 +431,7 @@ async fn create_project(
     .await
     .is_err()
     {
-        return database_error();
+        return Err(ProjectError::Database);
     }
     if state.archive_enabled
         && crate::archive_jobs::enqueue_in_transaction(
@@ -412,14 +443,14 @@ async fn create_project(
         .await
         .is_err()
     {
-        return database_error();
+        return Err(ProjectError::Database);
     }
     if transaction.commit().await.is_err() {
-        return database_error();
+        return Err(ProjectError::Database);
     }
     if !prepared_images.is_empty() {
         crate::image_import::persist_project_images(
-            &state,
+            state,
             user_id,
             project_id,
             &step_ids,
@@ -428,11 +459,10 @@ async fn create_project(
         .await;
     }
 
-    match load_project(&state, user_id, project_id).await {
-        Ok(Some(project)) => (StatusCode::CREATED, Json(project)).into_response(),
-        Ok(None) => database_error(),
-        Err(_) => database_error(),
-    }
+    load_project(state, user_id, project_id)
+        .await
+        .map_err(|_| ProjectError::Database)?
+        .ok_or(ProjectError::Database)
 }
 
 async fn update_project(
@@ -445,50 +475,53 @@ async fn update_project(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
+    match update_for_owner(&state, user_id, project_id, payload).await {
+        Ok(project) => Json(project).into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn update_for_owner(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    payload: ProjectWriteRequest,
+) -> Result<ProjectResponse, ProjectError> {
     let name = payload.name.trim().to_owned();
     let expected_updated_at = match payload.expected_updated_at.as_deref() {
-        Some(value) => match parse_timestamp(value) {
-            Some(value) => Some(value),
-            None => return invalid_project("Invalid expected_updated_at"),
-        },
+        Some(value) => Some(
+            parse_timestamp(value).ok_or(ProjectError::Invalid("Invalid expected_updated_at"))?,
+        ),
         None => None,
     };
-    let current = match load_project(&state, user_id, project_id).await {
-        Ok(Some(project)) => project,
-        Ok(None) => return not_found(),
-        Err(_) => return database_error(),
-    };
+    let current = load_project(state, user_id, project_id)
+        .await
+        .map_err(|_| ProjectError::Database)?
+        .ok_or(ProjectError::NotFound)?;
     if expected_updated_at.is_some_and(|expected| {
         parse_timestamp(&current.updated_at).is_some_and(|actual| actual != expected)
     }) {
-        return conflict(current);
+        return Err(ProjectError::Conflict(Box::new(current)));
     }
 
-    let current_step_ids = match project_step_ids(&state, project_id).await {
-        Ok(ids) => ids,
-        Err(_) => return database_error(),
-    };
-    let mut transaction = match state.pool.begin().await {
-        Ok(transaction) => transaction,
-        Err(_) => return database_error(),
-    };
-    let old_yarn_ids = match linked_yarn_ids(&mut transaction, project_id).await {
-        Ok(ids) => ids,
-        Err(_) => return database_error(),
-    };
-    let yarn_ids = match owned_yarn_ids(&mut transaction, user_id, &payload.yarn_ids).await {
-        Ok(yarn_ids) => yarn_ids,
-        Err(_) => return database_error(),
-    };
-    let category_id =
-        match ensure_category(&mut transaction, user_id, payload.category.as_deref()).await {
-            Ok(category_id) => category_id,
-            Err(_) => return database_error(),
-        };
-    let updated_at = match next_timestamp(&current.updated_at) {
-        Some(value) => value,
-        None => return database_error(),
-    };
+    let current_step_ids = project_step_ids(state, project_id)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let mut transaction = state
+        .pool
+        .begin()
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let old_yarn_ids = linked_yarn_ids(&mut transaction, project_id)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let yarn_ids = owned_yarn_ids(&mut transaction, user_id, &payload.yarn_ids)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let category_id = ensure_category(&mut transaction, user_id, payload.category.as_deref())
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let updated_at = next_timestamp(&current.updated_at).ok_or(ProjectError::Database)?;
     let tags = encode_tags(&payload.tags);
     let updated = sqlx::query(
         "UPDATE projects SET category_id = ?, name = ?, needles = ?, stitch_sample = ?, \
@@ -516,13 +549,13 @@ async fn update_project(
         Ok(result) if result.rows_affected() == 1 => {}
         Ok(_) => {
             let _ = transaction.rollback().await;
-            return match load_project(&state, user_id, project_id).await {
-                Ok(Some(project)) => conflict(project),
-                Ok(None) => not_found(),
-                Err(_) => database_error(),
+            return match load_project(state, user_id, project_id).await {
+                Ok(Some(project)) => Err(ProjectError::Conflict(Box::new(project))),
+                Ok(None) => Err(ProjectError::NotFound),
+                Err(_) => Err(ProjectError::Database),
             };
         }
-        Err(_) => return database_error(),
+        Err(_) => return Err(ProjectError::Database),
     }
     let changed_yarn_ids = changed_ids(&old_yarn_ids, &yarn_ids);
     if replace_project_yarns(&mut transaction, project_id, &yarn_ids)
@@ -540,7 +573,7 @@ async fn update_project(
         .await
         .is_err()
     {
-        return database_error();
+        return Err(ProjectError::Database);
     }
     if crate::audit::record(
         &mut transaction,
@@ -552,7 +585,7 @@ async fn update_project(
     .await
     .is_err()
     {
-        return database_error();
+        return Err(ProjectError::Database);
     }
     if state.archive_enabled
         && crate::archive_jobs::enqueue_in_transaction(
@@ -564,16 +597,15 @@ async fn update_project(
         .await
         .is_err()
     {
-        return database_error();
+        return Err(ProjectError::Database);
     }
     if transaction.commit().await.is_err() {
-        return database_error();
+        return Err(ProjectError::Database);
     }
-    match load_project(&state, user_id, project_id).await {
-        Ok(Some(project)) => Json(project).into_response(),
-        Ok(None) => not_found(),
-        Err(_) => database_error(),
-    }
+    load_project(state, user_id, project_id)
+        .await
+        .map_err(|_| ProjectError::Database)?
+        .ok_or(ProjectError::NotFound)
 }
 
 async fn delete_project(
@@ -585,10 +617,22 @@ async fn delete_project(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
-    let mut transaction = match state.pool.begin().await {
-        Ok(transaction) => transaction,
-        Err(_) => return database_error(),
-    };
+    match delete_for_owner(&state, user_id, project_id).await {
+        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn delete_for_owner(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+) -> Result<(), ProjectError> {
+    let mut transaction = state
+        .pool
+        .begin()
+        .await
+        .map_err(|_| ProjectError::Database)?;
     let exists =
         sqlx::query_scalar::<_, i64>("SELECT id FROM projects WHERE id = ? AND owner_id = ?")
             .bind(project_id)
@@ -597,18 +641,18 @@ async fn delete_project(
             .await;
     match exists {
         Ok(Some(_)) => {}
-        Ok(None) => return not_found(),
-        Err(_) => return database_error(),
+        Ok(None) => return Err(ProjectError::NotFound),
+        Err(_) => return Err(ProjectError::Database),
     }
     let linked_yarn_ids = match linked_yarn_ids(&mut transaction, project_id).await {
         Ok(ids) => ids,
-        Err(_) => return database_error(),
+        Err(_) => return Err(ProjectError::Database),
     };
     if bump_yarn_timestamps(&mut transaction, user_id, &linked_yarn_ids)
         .await
         .is_err()
     {
-        return database_error();
+        return Err(ProjectError::Database);
     }
     let changed_at = timestamp(Utc::now());
     if sqlx::query(
@@ -622,7 +666,7 @@ async fn delete_project(
     .await
     .is_err()
     {
-        return database_error();
+        return Err(ProjectError::Database);
     }
     match sqlx::query("DELETE FROM projects WHERE id = ? AND owner_id = ?")
         .bind(project_id)
@@ -631,8 +675,8 @@ async fn delete_project(
         .await
     {
         Ok(result) if result.rows_affected() == 1 => {}
-        Ok(_) => return not_found(),
-        Err(_) => return database_error(),
+        Ok(_) => return Err(ProjectError::NotFound),
+        Err(_) => return Err(ProjectError::Database),
     }
     if crate::audit::record(
         &mut transaction,
@@ -644,12 +688,12 @@ async fn delete_project(
     .await
     .is_err()
     {
-        return database_error();
+        return Err(ProjectError::Database);
     }
-    match transaction.commit().await {
-        Ok(()) => StatusCode::NO_CONTENT.into_response(),
-        Err(_) => database_error(),
-    }
+    transaction
+        .commit()
+        .await
+        .map_err(|_| ProjectError::Database)
 }
 
 async fn favorite_project(
@@ -678,6 +722,18 @@ async fn set_favorite(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
+    match set_favorite_for_owner(&state, user_id, project_id, favorite).await {
+        Ok(project) => Json(project).into_response(),
+        Err(error) => error.into_v1_response(),
+    }
+}
+
+pub(crate) async fn set_favorite_for_owner(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    favorite: bool,
+) -> Result<ProjectResponse, ProjectError> {
     let project_exists =
         sqlx::query_scalar::<_, i64>("SELECT id FROM projects WHERE id = ? AND owner_id = ?")
             .bind(project_id)
@@ -686,8 +742,8 @@ async fn set_favorite(
             .await;
     match project_exists {
         Ok(Some(_)) => {}
-        Ok(None) => return not_found(),
-        Err(_) => return database_error(),
+        Ok(None) => return Err(ProjectError::NotFound),
+        Err(_) => return Err(ProjectError::Database),
     }
     let result = if favorite {
         sqlx::query(
@@ -706,16 +762,15 @@ async fn set_favorite(
             .await
     };
     if result.is_err() {
-        return database_error();
+        return Err(ProjectError::Database);
     }
-    match load_project(&state, user_id, project_id).await {
-        Ok(Some(project)) => Json(project).into_response(),
-        Ok(None) => not_found(),
-        Err(_) => database_error(),
-    }
+    load_project(state, user_id, project_id)
+        .await
+        .map_err(|_| ProjectError::Database)?
+        .ok_or(ProjectError::NotFound)
 }
 
-async fn load_project(
+pub(crate) async fn load_project(
     state: &AppState,
     user_id: i64,
     project_id: i64,

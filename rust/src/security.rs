@@ -20,8 +20,13 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 pub(crate) struct FrontendCsp(HeaderValue);
 
 impl FrontendCsp {
-    pub(crate) fn from_hashes(script_hashes: &[String], style_hashes: &[String]) -> Option<Self> {
-        if script_hashes.len() > 64 || style_hashes.len() > 64 {
+    pub(crate) fn from_hashes(
+        script_hashes: &[String],
+        style_hashes: &[String],
+        style_attribute_hashes: &[String],
+    ) -> Option<Self> {
+        if script_hashes.len() > 64 || style_hashes.len() > 64 || style_attribute_hashes.len() > 64
+        {
             return None;
         }
         let script_hashes = script_hashes
@@ -32,6 +37,10 @@ impl FrontendCsp {
             .iter()
             .map(|hash| validate_hash(hash))
             .collect::<Option<Vec<_>>>()?;
+        let style_attribute_hashes = style_attribute_hashes
+            .iter()
+            .map(|hash| validate_hash(hash))
+            .collect::<Option<Vec<_>>>()?;
         let script_hashes = script_hashes
             .iter()
             .map(|hash| format!("'{hash}'"))
@@ -42,8 +51,28 @@ impl FrontendCsp {
             .map(|hash| format!("'{hash}'"))
             .collect::<Vec<_>>()
             .join(" ");
+        let script_sources = if script_hashes.is_empty() {
+            "'self'".to_owned()
+        } else {
+            format!("'self' {script_hashes}")
+        };
+        let style_sources = if style_hashes.is_empty() {
+            "'self'".to_owned()
+        } else {
+            format!("'self' {style_hashes}")
+        };
+        let style_attribute_hashes = if style_attribute_hashes.is_empty() {
+            "'none'".to_owned()
+        } else {
+            let hashes = style_attribute_hashes
+                .iter()
+                .map(|hash| format!("'{hash}'"))
+                .collect::<Vec<_>>()
+                .join(" ");
+            format!("'unsafe-hashes' {hashes}")
+        };
         let policy = format!(
-            "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; style-src 'self' {style_hashes}; script-src 'self' {script_hashes}; font-src 'self' data:; connect-src 'self'"
+            "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; style-src {style_sources}; style-src-attr {style_attribute_hashes}; script-src {script_sources}; font-src 'self' data:; connect-src 'self'"
         );
         HeaderValue::from_str(&policy).ok().map(Self)
     }

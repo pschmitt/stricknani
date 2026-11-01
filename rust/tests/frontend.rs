@@ -22,7 +22,7 @@ impl BuildFixture {
         .expect("fallback shell should be written");
         fs::write(
             root.path().join("csp.json"),
-            r#"{"script_hashes":["sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="],"style_hashes":["sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="]}"#,
+            r#"{"script_hashes":["sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="],"style_hashes":["sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="],"style_attribute_hashes":["sha256-S8qMpvofolR8Mpjy4kQvEm7m1q8clzU4dfDH0AmvZjo="]}"#,
         )
         .expect("CSP manifest should be written");
         fs::write(
@@ -78,7 +78,7 @@ async fn known_app_routes_use_a_private_shell_and_manifest_hashes() {
         assert_eq!(response.headers()["cache-control"], "private, no-store");
         assert_eq!(
             response.headers()["content-security-policy"],
-            "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; style-src 'self' 'sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='; script-src 'self' 'sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='; font-src 'self' data:; connect-src 'self'"
+            "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; style-src 'self' 'sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='; style-src-attr 'unsafe-hashes' 'sha256-S8qMpvofolR8Mpjy4kQvEm7m1q8clzU4dfDH0AmvZjo='; script-src 'self' 'sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='; font-src 'self' data:; connect-src 'self'"
         );
         assert_eq!(
             response.headers()["content-type"],
@@ -154,9 +154,14 @@ async fn app_paths_do_not_capture_api_media_or_health_routes() {
     let app = Router::new()
         .route("/api/v2/ping", axum::routing::get(|| async { "api" }))
         .route("/healthz", axum::routing::get(|| async { "ok" }))
-        .merge(fixture.router());
+        .merge(fixture.router())
+        .layer(middleware::from_fn(security_headers));
     for (path, expected) in [("/api/v2/ping", "api"), ("/healthz", "ok")] {
         let response = request(app.clone(), path).await;
+        assert_eq!(
+            response.headers()["content-security-policy"],
+            "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; font-src 'self' data:; connect-src 'self'"
+        );
         let body = response.into_body().collect().await.unwrap().to_bytes();
         assert_eq!(String::from_utf8_lossy(&body), expected);
     }
@@ -177,9 +182,20 @@ async fn invalid_csp_manifest_fails_closed_without_serving_html() {
         .collect::<Vec<_>>()
         .join(",")
     );
+    let too_many_style_attribute_hashes = format!(
+        "{{\"script_hashes\":[],\"style_hashes\":[],\"style_attribute_hashes\":[{}]}}",
+        std::iter::repeat_n(
+            "\"sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"",
+            65
+        )
+        .collect::<Vec<_>>()
+        .join(",")
+    );
     for invalid in [
         r#"{"script_hashes":["sha256-short"],"style_hashes":[]}"#,
+        r#"{"script_hashes":[],"style_hashes":[],"style_attribute_hashes":["sha256-short"]}"#,
         too_many_hashes.as_str(),
+        too_many_style_attribute_hashes.as_str(),
     ] {
         fs::write(&manifest, invalid).unwrap();
         let response = request(fixture.router(), "/app").await;
@@ -190,6 +206,23 @@ async fn invalid_csp_manifest_fails_closed_without_serving_html() {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         assert!(body.is_empty());
     }
+}
+
+#[tokio::test]
+async fn old_manifest_defaults_to_disallowing_style_attributes() {
+    let fixture = BuildFixture::new();
+    fs::write(
+        fixture.root.path().join("csp.json"),
+        r#"{"script_hashes":[],"style_hashes":[]}"#,
+    )
+    .unwrap();
+
+    let response = request(fixture.router(), "/app").await;
+    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(
+        response.headers()["content-security-policy"],
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; style-src 'self'; style-src-attr 'none'; script-src 'self'; font-src 'self' data:; connect-src 'self'"
+    );
 }
 
 #[tokio::test]

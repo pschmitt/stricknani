@@ -1915,7 +1915,7 @@ async fn confirm_category_delete(
 fn string(value: &Value, key: &str) -> String {
     value[key].as_str().unwrap_or_default().to_owned()
 }
-fn rich_text(source: &str) -> String {
+pub(crate) fn rich_text(source: &str) -> String {
     let mut html = String::new();
     pulldown_cmark::html::push_html(
         &mut html,

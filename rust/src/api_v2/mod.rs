@@ -25,6 +25,8 @@ use zeroize::Zeroizing;
 
 use crate::{auth, db::AppState};
 
+mod projects;
+
 const SESSION_SECONDS: i64 = 14 * 24 * 60 * 60;
 const LOGIN_CSRF_SECONDS: i64 = 10 * 60;
 const LOGIN_CSRF_COOKIE: &str = "stricknani_v2_login_csrf";
@@ -52,6 +54,7 @@ pub fn router(app: AppState, ai_enabled: bool) -> Router {
         .route("/auth/login", post(login))
         .route("/auth/logout", post(logout))
         .layer(DefaultBodyLimit::max(8 * 1024))
+        .merge(projects::router())
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }

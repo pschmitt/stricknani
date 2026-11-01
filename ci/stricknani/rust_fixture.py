@@ -139,8 +139,10 @@ def _safe_terminate(pid: int, expected_start: str) -> None:
             pass
 
 
-def _server_environment(runtime: Path, port: int) -> dict[str, str]:
-    return {
+def _server_environment(
+    runtime: Path, port: int, web_root: Path | None = None
+) -> dict[str, str]:
+    environment = {
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
         "HOME": str(runtime),
         "TMPDIR": str(runtime),
@@ -153,6 +155,12 @@ def _server_environment(runtime: Path, port: int) -> dict[str, str]:
         "RUST_EXTERNAL_IMPORTS_ENABLED": "false",
         "RUST_WAYBACK_ENABLED": "false",
     }
+    if web_root is not None:
+        resolved_web_root = web_root.expanduser().resolve()
+        if not resolved_web_root.is_dir():
+            raise FixtureError("web root must be an existing directory")
+        environment["WEB_ROOT"] = str(resolved_web_root)
+    return environment
 
 
 def _unused_port() -> int:
@@ -182,11 +190,16 @@ def start_fixture(
     temp_dir: Path,
     fixture_file: Path,
     state_file: Path,
+    web_root: Path | None = None,
 ) -> None:
     """Start one local server and write private replay credentials for the runner."""
     binary_path = binary.expanduser().resolve()
     if not binary_path.is_file() or not os.access(binary_path, os.X_OK):
         raise FixtureError("Rust server binary is not executable")
+    if web_root is not None:
+        web_root = web_root.expanduser().resolve()
+        if not web_root.is_dir():
+            raise FixtureError("web root must be an existing directory")
     fixture_target = _outside_repository(fixture_file, "fixture file")
     state_target = _outside_repository(state_file, "state file")
     base = _outside_repository(temp_dir, "runtime directory")
@@ -197,7 +210,7 @@ def start_fixture(
     _private_write(runtime / OWNER_FILE, owner.encode("ascii"))
     (runtime / "media").mkdir(mode=0o700)
     port = _unused_port()
-    env = _server_environment(runtime, port)
+    env = _server_environment(runtime, port, web_root)
     server_log = os.open(
         runtime / "server.log", os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600
     )
@@ -322,6 +335,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     start.add_argument("--temp-dir", type=Path, required=True)
     start.add_argument("--fixture-file", type=Path, required=True)
     start.add_argument("--state-file", type=Path, required=True)
+    start.add_argument("--web-root", type=Path)
     stop = commands.add_parser("stop")
     stop.add_argument("--state-file", type=Path, required=True)
     replay = commands.add_parser("run-replay")
@@ -339,6 +353,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 temp_dir=args.temp_dir,
                 fixture_file=args.fixture_file,
                 state_file=args.state_file,
+                web_root=args.web_root,
             )
             print("Rust replay fixture started.")
         elif args.command == "stop":

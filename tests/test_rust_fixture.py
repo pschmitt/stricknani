@@ -67,6 +67,28 @@ def test_fixture_environment_rejects_group_or_world_readable_file(
         rust_fixture.load_fixture_environment(fixture)
 
 
+def test_web_root_is_only_added_when_explicit_and_must_be_a_directory(
+    tmp_path: Path,
+) -> None:
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+    web_root = tmp_path / "web-build"
+    web_root.mkdir()
+
+    default_environment = rust_fixture._server_environment(runtime, 32123)
+    web_environment = rust_fixture._server_environment(runtime, 32123, web_root)
+
+    assert "WEB_ROOT" not in default_environment
+    assert web_environment["WEB_ROOT"] == str(web_root.resolve())
+    assert (
+        web_environment["RUST_DATABASE_URL"] == default_environment["RUST_DATABASE_URL"]
+    )
+    with pytest.raises(
+        rust_fixture.FixtureError, match="web root must be an existing directory"
+    ):
+        rust_fixture._server_environment(runtime, 32123, tmp_path / "missing")
+
+
 def test_run_cmd_sends_password_on_stdin_and_suppresses_output(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

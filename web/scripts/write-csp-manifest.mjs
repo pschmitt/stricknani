@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { svelteKitAnnouncerStyle } from "./sveltekit-announcer-style.mjs";
 
 const buildRoot = fileURLToPath(new URL("../build/", import.meta.url));
 const htmlFiles = await listHtmlFiles(buildRoot);
@@ -30,6 +31,7 @@ for (const file of htmlFiles) {
 const manifest = {
   script_hashes: [...scriptHashes].sort(),
   style_hashes: [...styleHashes].sort(),
+  style_attribute_hashes: [(await svelteKitAnnouncerStyle()).hash],
 };
 
 await writeFile(

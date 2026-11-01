@@ -43,6 +43,16 @@ Use this file as the operational source of truth for working in Stricknani.
   parallel feature work; give each agent non-overlapping files.
 - Planning does not start implementation or authorize production cutover.
   Keep the existing preview usable while building and reviewing the new UI.
+- Deploy verified UI milestones to the authorized isolated Rust preview so
+  progress is visible. Delegate deployment work to a scoped Luna agent and
+  review the exact candidate pin, checks and isolation before switching it.
+  Do not wait for the entire UI rewrite to deploy useful increments. Production
+  cutover remains a separate decision.
+- The user explicitly requests a Signal notification after every successful
+  preview version rollout. The deployment agent loads `signal-notify`, verifies
+  the deployed version and HTTPS route, then sends a short change summary with
+  the working clickable preview link. Send one notification per deployed
+  version; do not announce a deployment before it is verified.
 
 ### Vendored Web Dependencies
 
@@ -104,6 +114,11 @@ Use this file as the operational source of truth for working in Stricknani.
 
 ### Release/CI Parity
 
+- For shared GitHub Actions components, load the `ci-workflows` skill and read
+  the current [shared catalog](https://github.com/pschmitt/ci-workflows) and exact
+  workflow/action interface before editing callers. Use
+  `pschmitt/ci-workflows/...@main`, preserving caller triggers, permissions,
+  checks, artifacts and publish gates. Keep application-specific checks here.
 - `just check` runs lint, Nix lint, strict Rust checks, the Rust suite,
   shipping-harness Python tests, and i18n checks. It does not run the full
   Python reference suite.

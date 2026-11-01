@@ -91,14 +91,89 @@ well-formed requests with invalid field values; `429` for rate limits (with
 signed-out `GET /session` is the intentional exception: it returns an anonymous
 bootstrap rather than `401`.
 
-## Proposed resource contract for subsequent slices
+## Projects API slice
+
+The first resource slice implements browser projects on the same cookie and
+CSRF model as authentication:
+
+| Method and path | Authentication | Result |
+| --- | --- | --- |
+| `GET /projects?page=1&category=...&tag=...&favorite=true&q=...` | Browser session | `{data: ProjectSummary[], meta: {page, per_page, has_more}}` |
+| `POST /projects` | Browser session and CSRF | `201 {data: Project}` |
+| `GET /projects/{id}` | Browser session | `{data: Project}` |
+| `PUT /projects/{id}` | Browser session and CSRF | `{data: Project}` |
+| `DELETE /projects/{id}` | Browser session and CSRF | `204` |
+| `PUT /projects/{id}/favorite` | Browser session and CSRF | `{data: Project}` |
+| `DELETE /projects/{id}/favorite` | Browser session and CSRF | `{data: Project}` |
+
+The project DTO keeps v1 project field names and numeric IDs. It includes
+`id`, `name`, `category`, `yarn`, `needles`, `stitch_sample`, `description`,
+`notes`, `other_materials`, `tags`, `link`, `link_archive`,
+`is_ai_enhanced`, `is_favorite`, `created_at`, `updated_at`, `yarn_ids`,
+`steps`, `images`, and `attachments`. V2 adds `description_html`,
+`notes_html`, `other_materials_html`, and each step's `description_html`;
+these values are rendered and sanitized by the same Rust Markdown helper used
+by server-rendered pages. The UI must render these safe HTML companion fields
+instead of interpreting raw Markdown or trusting authored HTML itself.
+
+Project creation accepts the established project fields, `yarn_ids`, and
+`steps`. If the existing external image import capability is enabled, gallery
+and step `image_urls` use the existing bounded import path. Project updates
+accept project, yarn, and step fields; image URL updates are rejected until the
+media API slice is available. Existing image and attachment metadata is
+returned by detail and write responses.
+
+Every project lookup is owner-scoped; missing and foreign-owned IDs both
+return `404`. Mutations require a same-origin `Origin`, a browser-purpose
+session, and the matching `X-CSRF-Token`. Updates may send
+`expected_updated_at`; stale writes return `409` with `error.code: "conflict"`
+and the current DTO under `error.current`.
+
+Example create response:
+
+```json
+{
+  "data": {
+    "id": 42,
+    "name": "Wool socks",
+    "category": "Socks",
+    "yarn": "Blue wool",
+    "needles": "4 mm",
+    "stitch_sample": null,
+    "description": "**warm**",
+    "description_html": "<p><strong>warm</strong></p>\n",
+    "notes": null,
+    "notes_html": null,
+    "other_materials": null,
+    "other_materials_html": null,
+    "tags": ["socks"],
+    "link": null,
+    "link_archive": null,
+    "is_ai_enhanced": false,
+    "is_favorite": false,
+    "created_at": "2026-11-01T12:00:00.000000Z",
+    "updated_at": "2026-11-01T12:00:00.000000Z",
+    "yarn_ids": [7],
+    "steps": [{
+      "id": 81,
+      "title": "Cast on",
+      "description": "*64 stitches*",
+      "description_html": "<p><em>64 stitches</em></p>\n",
+      "step_number": 1
+    }],
+    "images": [],
+    "attachments": []
+  }
+}
+```
+
+## Proposed contract for remaining resource slices
 
 These resource routes are a starting contract for frontend/backend slices;
 they are not part of the initial authentication implementation.
 
 | Resource | Proposed operations |
 | --- | --- |
-| Projects | `GET/POST /projects`, `GET/PUT/DELETE /projects/{id}`, favorite/unfavorite |
 | Yarns | `GET/POST /yarns`, `GET/PUT/DELETE /yarns/{id}`, favorite/unfavorite |
 | Categories | `GET/POST /categories`, `PUT/DELETE /categories/{id}` |
 | Media | Multipart upload and delete routes under the owning project, step, or yarn |

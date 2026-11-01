@@ -27,6 +27,8 @@ struct FrontendState {
 struct CspManifest {
     script_hashes: Vec<String>,
     style_hashes: Vec<String>,
+    #[serde(default)]
+    style_attribute_hashes: Vec<String>,
 }
 
 /// Serve the browser app from a static build directory.
@@ -121,7 +123,11 @@ fn valid_id(value: &str) -> bool {
 fn read_csp_manifest(path: &std::path::Path) -> Option<FrontendCsp> {
     let contents = read_bounded_file(path, MAX_CSP_MANIFEST_BYTES)?;
     let manifest = serde_json::from_slice::<CspManifest>(&contents).ok()?;
-    FrontendCsp::from_hashes(&manifest.script_hashes, &manifest.style_hashes)
+    FrontendCsp::from_hashes(
+        &manifest.script_hashes,
+        &manifest.style_hashes,
+        &manifest.style_attribute_hashes,
+    )
 }
 
 fn read_bounded_file(path: &std::path::Path, max_bytes: u64) -> Option<Vec<u8>> {
