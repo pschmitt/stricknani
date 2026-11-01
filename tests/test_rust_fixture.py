@@ -126,6 +126,9 @@ def test_start_fixture_masks_generated_credentials_only_in_actions(
     binary = tmp_path / "stricknani-server"
     binary.write_bytes(b"fixture binary placeholder")
     binary.chmod(0o700)
+    fixture_server = tmp_path / "optional-fixture"
+    fixture_server.write_bytes(b"fixture companion placeholder")
+    fixture_server.chmod(0o700)
     fixture_file = tmp_path / "private" / "fixture.json"
     state_file = tmp_path / "private" / "state.json"
 
@@ -135,8 +138,13 @@ def test_start_fixture_masks_generated_credentials_only_in_actions(
         def poll(self) -> None:
             return None
 
-    def fake_popen(*_args: object, **_kwargs: object) -> FakeProcess:
+    popen_args: list[object] = []
+
+    def fake_popen(*args: object, **_kwargs: object) -> FakeProcess:
+        popen_args.extend(args)
         return FakeProcess()
+
+    create_user_args: list[list[str]] = []
 
     monkeypatch.setenv("GITHUB_ACTIONS", str(github_actions).lower())
     monkeypatch.setattr(subprocess, "Popen", fake_popen)
@@ -144,14 +152,37 @@ def test_start_fixture_masks_generated_credentials_only_in_actions(
     monkeypatch.setattr(rust_fixture, "_process_start_time", lambda _pid: "start")
     monkeypatch.setattr(rust_fixture, "_safe_terminate", lambda _pid, _start: None)
     monkeypatch.setattr(rust_fixture, "_wait_for_health", lambda _port, _process: None)
-    monkeypatch.setattr(rust_fixture, "run_cmd", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        rust_fixture,
+        "run_cmd",
+        lambda args, **_kwargs: create_user_args.append(list(args)),
+    )
 
     rust_fixture.start_fixture(
         binary=binary,
         temp_dir=tmp_path / "runtime",
         fixture_file=fixture_file,
         state_file=state_file,
+        server_binary=fixture_server,
+        ocr_mode="failure",
     )
+
+    runtime = Path(json.loads(state_file.read_text(encoding="utf-8"))["runtime"])
+    assert popen_args == [
+        [
+            str(fixture_server.resolve()),
+            "--document-worker",
+            str(binary.resolve()),
+            "--fixture-runtime",
+            str(runtime),
+            "--ocr-mode",
+            "failure",
+            "--archive-mode",
+            "success",
+        ]
+    ]
+    assert len(create_user_args) == 1
+    assert create_user_args[0][:2] == [str(binary.resolve()), "create-user"]
 
     credentials = json.loads(fixture_file.read_text(encoding="utf-8"))
     output = capsys.readouterr().out
@@ -162,6 +193,48 @@ def test_start_fixture_masks_generated_credentials_only_in_actions(
         assert credentials["email"] not in output
         assert credentials["password"] not in output
         assert output == ""
+
+
+def test_start_fixture_rejects_non_executable_companion(tmp_path: Path) -> None:
+    binary = tmp_path / "stricknani-server"
+    binary.write_bytes(b"server")
+    binary.chmod(0o700)
+    companion = tmp_path / "not-executable"
+    companion.write_bytes(b"companion")
+
+    with pytest.raises(
+        rust_fixture.FixtureError, match="fixture server binary is not executable"
+    ):
+        rust_fixture.start_fixture(
+            binary=binary,
+            server_binary=companion,
+            temp_dir=tmp_path / "runtime",
+            fixture_file=tmp_path / "fixture.json",
+            state_file=tmp_path / "state.json",
+        )
+
+
+@pytest.mark.parametrize("option", ["ocr_mode", "archive_mode"])
+def test_start_fixture_rejects_invalid_service_mode(
+    tmp_path: Path, option: str
+) -> None:
+    binary = tmp_path / "stricknani-server"
+    binary.write_bytes(b"server")
+    binary.chmod(0o700)
+    companion = tmp_path / "fixture-server"
+    companion.write_bytes(b"fixture server")
+    companion.chmod(0o700)
+    arguments: dict[str, object] = {
+        "binary": binary,
+        "server_binary": companion,
+        "temp_dir": tmp_path / "runtime",
+        "fixture_file": tmp_path / "fixture.json",
+        "state_file": tmp_path / "state.json",
+        option: "arbitrary-argument",
+    }
+
+    with pytest.raises(rust_fixture.FixtureError, match="fixture mode must be"):
+        rust_fixture.start_fixture(**arguments)  # type: ignore[arg-type]
 
 
 def test_stop_fixture_rejects_mismatched_owner_without_deleting_files(

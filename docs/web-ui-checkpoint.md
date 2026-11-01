@@ -70,10 +70,28 @@ CAS regression; that focused regression, formatting, strict Clippy and 26
 targeted Python tests also passed. Token quota is atomic under concurrent
 requests; password update and browser-session revocation commit together.
 
-Account screens, the public gauge/language controls and public offline/update
-support are in browser acceptance. Signup, admin/audit, OCR/archive controls
-and the complete
-accessibility/performance/multi-browser/real-phone acceptance remain open.
+Two further frontend checkpoints are pushed, but are not yet deployed:
+
+- `33d0ad6`: public gauge calculator and English/German language controls.
+  Isolated frontend checks passed 91 Vitest tests, type/format checks and the
+  static build. Real browser journeys verified anonymous and authenticated
+  access, language persistence, validation, narrow layouts and cancellation of
+  stale calculations after input changes.
+- `01165e5`: account profile/avatar, password changes and API token management.
+  Real browser journeys verified avatar changes, password changes and renewed
+  sign-in, one-time token reveal/revocation, denied-clipboard fallback, dialog
+  focus and sensitive-draft navigation guards. Account API client tests,
+  frontend checks/build, Python runner checks and four health tests passed.
+  The staged runtime catalog and both source catalogs agree on 546 UI keys.
+
+Public offline/update support and enabled-service OCR/archive journeys are
+still in acceptance. Their disposable test companion uses deterministic
+providers with the real application router and archive worker; it must refuse
+database/media paths outside the helper-owned private runtime. These test
+providers do not enable integrations on the preview.
+Signup, admin/audit and the complete accessibility/performance/multi-browser/
+real-phone acceptance remain open. The browser CI lane still needs the actual
+Rust-backed journeys in addition to existing static frontend checks.
 
 Deployment limitations are recorded separately from application checks. The
 public infrastructure no-build flake check fails on a missing Termux Home

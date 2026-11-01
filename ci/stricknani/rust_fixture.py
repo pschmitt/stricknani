@@ -191,11 +191,25 @@ def start_fixture(
     fixture_file: Path,
     state_file: Path,
     web_root: Path | None = None,
+    server_binary: Path | None = None,
+    ocr_mode: str = "success",
+    archive_mode: str = "success",
 ) -> None:
     """Start one local server and write private replay credentials for the runner."""
     binary_path = binary.expanduser().resolve()
     if not binary_path.is_file() or not os.access(binary_path, os.X_OK):
         raise FixtureError("Rust server binary is not executable")
+    server_path = binary_path
+    if server_binary is not None:
+        server_path = server_binary.expanduser().resolve()
+        if not server_path.is_file() or not os.access(server_path, os.X_OK):
+            raise FixtureError("Rust fixture server binary is not executable")
+    if ocr_mode not in {"success", "failure"}:
+        raise FixtureError("OCR fixture mode must be success or failure")
+    if archive_mode not in {"success", "failure"}:
+        raise FixtureError("archive fixture mode must be success or failure")
+    if server_binary is None and (ocr_mode != "success" or archive_mode != "success"):
+        raise FixtureError("fixture service modes require a fixture server binary")
     if web_root is not None:
         web_root = web_root.expanduser().resolve()
         if not web_root.is_dir():
@@ -218,11 +232,34 @@ def start_fixture(
     fixture_created = False
     state_created = False
     try:
+        email = f"rust-replay-{secrets.token_hex(8)}@example.invalid"
+        password = secrets.token_urlsafe(32)
+        _mask_github_secret(email)
+        _mask_github_secret(password)
+        run_cmd(
+            [str(binary_path), "create-user", email],
+            env=env,
+            input_bytes=f"{password}\n".encode(),
+        )
         old_umask = os.umask(0o077)
         try:
             with os.fdopen(server_log, "wb") as log:
                 process = subprocess.Popen(
-                    [str(binary_path)],
+                    (
+                        [str(server_path)]
+                        if server_binary is None
+                        else [
+                            str(server_path),
+                            "--document-worker",
+                            str(binary_path),
+                            "--fixture-runtime",
+                            str(runtime),
+                            "--ocr-mode",
+                            ocr_mode,
+                            "--archive-mode",
+                            archive_mode,
+                        ]
+                    ),
                     env=env,
                     stdin=subprocess.DEVNULL,
                     stdout=log,
@@ -247,15 +284,6 @@ def start_fixture(
         state_created = True
         _wait_for_health(port, process)
 
-        email = f"rust-replay-{secrets.token_hex(8)}@example.invalid"
-        password = secrets.token_urlsafe(32)
-        _mask_github_secret(email)
-        _mask_github_secret(password)
-        run_cmd(
-            [str(binary_path), "create-user", email],
-            env=env,
-            input_bytes=f"{password}\n".encode(),
-        )
         write_private_json(
             fixture_target,
             {
@@ -336,6 +364,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     start.add_argument("--fixture-file", type=Path, required=True)
     start.add_argument("--state-file", type=Path, required=True)
     start.add_argument("--web-root", type=Path)
+    start.add_argument("--server-binary", type=Path)
+    start.add_argument("--ocr-mode", choices=("success", "failure"), default="success")
+    start.add_argument(
+        "--archive-mode", choices=("success", "failure"), default="success"
+    )
     stop = commands.add_parser("stop")
     stop.add_argument("--state-file", type=Path, required=True)
     replay = commands.add_parser("run-replay")
@@ -354,6 +387,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 fixture_file=args.fixture_file,
                 state_file=args.state_file,
                 web_root=args.web_root,
+                server_binary=args.server_binary,
+                ocr_mode=args.ocr_mode,
+                archive_mode=args.archive_mode,
             )
             print("Rust replay fixture started.")
         elif args.command == "stop":
