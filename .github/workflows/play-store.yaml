@@ -4,7 +4,7 @@ name: Play Store Release
 # testing tracks in one upload, matching the fleet's other Android apps (syncwich/augh/jollyfin/
 # nyetbox) - closed testing is the highest track this app is currently eligible for, so every
 # tagged release goes out to both simultaneously. Delegates the actual build/publish to
-# pschmitt/android-app-ci's reusable play-store.yaml, which additionally requires the repository
+# pschmitt/ci-workflows's reusable play-store.yaml, which additionally requires the repository
 # variable PLAY_PUBLISH_ENABLED=true (already set - see android/docs/play-store-release.md) and a
 # PLAY_SERVICE_ACCOUNT_JSON secret; a tag push safely fails loudly instead of silently publishing
 # on a fresh checkout if either is ever missing. Local metadata validation (declarations,
@@ -144,7 +144,7 @@ jobs:
   play-store:
     name: Build and publish signed Android App Bundle
     needs: [version, validate]
-    uses: pschmitt/android-app-ci/.github/workflows/play-store.yaml@main
+    uses: pschmitt/ci-workflows/.github/workflows/play-store.yaml@main
     with:
       application-id: blue.anika.wolle
       artifact-label: stricknani

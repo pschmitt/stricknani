@@ -18,7 +18,7 @@ on:
 
 jobs:
   assemble:
-    uses: pschmitt/android-app-ci/.github/workflows/build.yaml@main
+    uses: pschmitt/ci-workflows/.github/workflows/build.yaml@main
     with:
       project-directory: android
       unit-test-task: :app:testDebugUnitTest

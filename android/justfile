@@ -83,7 +83,7 @@ play-store-validate:
 play-store-assets-upload:
     PLAY_PACKAGE={{play_package}} scripts/upload-play-store-assets.sh --upload
 
-# --- Shared recipes (pschmitt/android-app-ci) -------------------------------
+# --- Shared recipes (pschmitt/ci-workflows) -------------------------------
 
 # Advance the .just/android-app-ci submodule to the tip of its tracked branch (main) and stage the
 # result - review the diff like any other dependency bump before committing it.

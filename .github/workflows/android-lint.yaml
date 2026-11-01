@@ -19,7 +19,7 @@ on:
 
 jobs:
   lint:
-    uses: pschmitt/android-app-ci/.github/workflows/lint.yaml@main
+    uses: pschmitt/ci-workflows/.github/workflows/lint.yaml@main
     with:
       project-directory: android
       lint-baseline-path: ''
