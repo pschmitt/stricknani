@@ -161,9 +161,27 @@ todo-todo:
 test-python:
   uv run pytest -v --cov=stricknani --cov-report=term-missing --cov-report=xml
 
-# CI keeps `just test` as the Python reference suite and coverage gate.
+# Tests for Python tooling retained to support Rust shipping and migration.
+# Keep this set focused on helpers and disable the legacy application coverage
+# threshold; the full Python reference suite remains `just test-python`.
 [group: 'test']
-test: test-python
+test-harness:
+  uv run pytest -q --no-cov \
+    tests/test_health.py \
+    tests/test_rust_fixture.py \
+    tests/test_rust_e2e_seed.py \
+    tests/test_rust_replay_runner.py \
+    tests/test_rust_e2e_diagnostics.py \
+    tests/test_rust_import_verifier.py \
+    tests/test_rust_i18n.py
+
+# Native Rust suite plus the small Python shipping-harness test set.
+[group: 'test']
+test: rust-test test-harness
+
+# Full lint, coverage, and translation gate for the legacy Python app.
+[group: 'test']
+check-python: lint test-python i18n-check
 
 # Run Rust tests on the remote build host described in AGENTS.md.
 [group: 'test']
@@ -216,8 +234,8 @@ vendir-check: vendir-sync
 vendor-tiptap:
   cd stricknani/static/vendor-tiptap && npm install && npm run build
 
-# Run all checks (lint + test)
-check: lint lint-nix rust-lint rust-test test i18n-check
+# Run the Rust-first native app and repository checks.
+check: lint lint-nix rust-lint test i18n-check
 
 # Lint Nix files
 [group: 'lint']

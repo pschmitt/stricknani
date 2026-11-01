@@ -2,9 +2,12 @@ name: Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, rust ]
     paths:
       - "stricknani/**"
+      - "rust/**"
+      - "nix/**"
+      - "ci/stricknani/**"
       - "tests/**"
       - "pyproject.toml"
       - "uv.lock"
@@ -16,6 +19,9 @@ on:
     branches: [ main ]
     paths:
       - "stricknani/**"
+      - "rust/**"
+      - "nix/**"
+      - "ci/stricknani/**"
       - "tests/**"
       - "pyproject.toml"
       - "uv.lock"
@@ -26,6 +32,7 @@ on:
 
 jobs:
   test:
+    if: github.event_name == 'pull_request' || github.ref_name == 'main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -47,8 +54,8 @@ jobs:
       - name: Install dependencies
         run: just ci-setup-py
 
-      - name: Run tests with coverage
-        run: just test
+      - name: Run Python 3.15 reference tests with coverage
+        run: just test-python
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v7
@@ -59,6 +66,7 @@ jobs:
           if-no-files-found: ignore
 
   test-nix:
+    if: github.event_name == 'pull_request' || github.ref_name == 'main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -74,8 +82,21 @@ jobs:
       # Runs the suite inside the Nix devShell so the shellHook's
       # libstdc++ LD_LIBRARY_PATH export is exercised (prebuilt binary
       # wheels such as numpy/greenlet fail to load without it). Keep this as
-      # a test-only parity lane: the primary Python 3.14 job above owns the
-      # coverage gate, while coverage.py reports different line data under
-      # the Nix Python runtime for the same passing test set.
+      # a test-only parity lane: the primary Python 3.15 job above owns the
+      # 80% coverage gate. The last Nix Python 3.13 run passed its tests but
+      # reported 74.23% coverage; coverage.py records different line data there.
+      # Keep this lane coverage-free without weakening the primary gate.
       - name: Run tests in Nix devShell
-        run: nix develop --command bash -c 'just ci-setup-py && uv run pytest -v'
+        run: nix develop '.#rust' --command env UV_PYTHON=python3.13 bash -c 'just ci-setup-py && uv run pytest -v'
+
+  test-rust:
+    name: Rust-first checks and shipping harness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Run Rust-first checks
+        run: nix develop '.#rust' --command env UV_PYTHON=python3.13 bash -c 'just ci-setup-py && just check'

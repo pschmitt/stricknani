@@ -70,7 +70,10 @@ Use this file as the operational source of truth for working in Stricknani.
   - Lint: `uv run ruff check .`
   - Type check: `uv run mypy .`
   - Format: `just fmt`
-  - Tests: `uv run pytest -v`
+  - Native Rust and shipping-harness tests: `just test`
+  - Rust-first full check: `just check`
+  - Full Python reference suite with its 80% coverage gate: `just test-python`
+  - Python reference lint, coverage, and translation gate: `just check-python`
   - Nix lint: `statix check`
 - Mandatory after any code change:
   - `uv run pytest tests/test_health.py`
@@ -83,7 +86,11 @@ Use this file as the operational source of truth for working in Stricknani.
 
 ### Release/CI Parity
 
-- `just check` runs lint, tests, and i18n checks.
+- `just check` runs lint, Nix lint, strict Rust checks, the Rust suite,
+  shipping-harness Python tests, and i18n checks. It does not run the full
+  Python reference suite.
+- `just check-python` preserves the full Python reference lint, coverage, and
+  translation gate; `just test-python` keeps its 80% coverage threshold.
 - When touching build/deploy/release paths, also run:
   - `nix flake check`
   - `just build-image`
@@ -94,10 +101,34 @@ Use this file as the operational source of truth for working in Stricknani.
 - Dev server: `just run`
 - Lint: `just lint`
 - Format: `just fmt`
-- Tests: `just test`
+- Native tests: `just test`
+- Python reference suite: `just test-python`
+- Python reference gate: `just check-python`
 - i18n Update: `just i18n-update`
 - i18n Compile: `just i18n-compile`
 - Full checks: `just check`
+
+## Rust-first checks and Python reference lane
+
+The Rust dev shell is the default runtime and provides Rust and repository
+check tools. For Python helper tests or the reference app suite inside that
+shell, set `UV_PYTHON=python3.13` before `uv sync` or `uv run`; this selects the
+supported Nix Python and its available wheels.
+
+The primary Python coverage job uses Python 3.15 and retains the existing 80%
+coverage threshold. The most recent Python 3.13 reference run passed its tests
+but reported 74.23% coverage, below that threshold. The Nix Python 3.13 lane
+therefore runs the same full reference tests without coverage because
+coverage.py reports different line data under that interpreter. This does not
+weaken the Python 3.15 gate. Both reference commands remain available
+independently of the Rust-first `just test` and `just check` recipes.
+
+For remote Nix evaluation, create a small filtered snapshot from the current
+source and evaluate the dev shell there; run checks from a separate cached
+checkout. Do not point Nix evaluation at the large Cargo-cache checkout, since
+its `target` and virtual environment make source evaluation unnecessarily
+expensive. Keep `UV_PYTHON=python3.13` in the dev-shell command environment so
+`uv` does not try to build unsupported source wheels for a host-selected Python.
 
 ## Documentation Layout
 

@@ -117,18 +117,33 @@ records its authentication, CRUD, media, and sync contract in
 
 Rust formatting, tests, Nix evaluation, and builds belong on the designated
 remote build host; see [`AGENTS.md`](AGENTS.md). From that host, the Rust
-development shell and package are available as:
+development shell and native checks are available as:
 
 ```bash
 nix develop '.#rust'
-cargo fmt --manifest-path rust/Cargo.toml -- --check
-cargo test --manifest-path rust/Cargo.toml
-nix build '.#stricknani'
+export UV_PYTHON=python3.13
+just ci-setup-py
+just test
+just check
 ```
 
+`just test` runs the Rust suite and a focused set of Python shipping-harness
+tests without applying the legacy app's coverage threshold. `just check` adds
+lint, strict Clippy, Nix lint, and translation checks. Build the package
+separately with `nix build '.#stricknani'`.
+
 The Python implementation remains available for legacy development and
-reference work as `.#stricknani-python`. Its existing local workflow uses
-Python 3.13+, `uv`, and `just`:
+reference work as `.#stricknani-python`. `just test-python` runs its full suite
+with the existing 80% coverage gate, and `just check-python` adds Python lint
+and translation checks. Primary Python CI runs this gate under Python 3.15.
+The most recent Python 3.13 reference run passed its tests but reported 74.23%
+coverage, below the unchanged threshold. The Nix Python 3.13 reference lane
+therefore runs the same tests without coverage because coverage.py produces
+different line data under that interpreter. Its workflow sets
+`UV_PYTHON=python3.13` so `uv` selects the Nix dev-shell interpreter; this does
+not weaken the Python 3.15 gate.
+
+The legacy local development workflow still uses `uv` and `just`:
 
 ```bash
 nix develop '.#python'
