@@ -121,8 +121,13 @@ impl HostAuthority {
 /// Add browser response headers while keeping successful static assets cacheable.
 pub async fn security_headers(request: axum::extract::Request, next: Next) -> Response {
     let is_static = request.uri().path().starts_with("/static/");
+    let is_public_pwa = matches!(
+        request.uri().path(),
+        "/sw.js" | "/register-pwa.js" | "/manifest.webmanifest" | "/offline"
+    );
     let mut response = next.run(request).await;
     let cache_static = is_static && response.status().is_success();
+    let preserve_pwa_cache = is_public_pwa && response.status().is_success();
     let headers = response.headers_mut();
     headers.insert(
         "content-security-policy",
@@ -165,7 +170,7 @@ pub async fn security_headers(request: axum::extract::Request, next: Next) -> Re
                 .parse()
                 .expect("static cache header is valid"),
         );
-    } else {
+    } else if !preserve_pwa_cache {
         headers.insert(
             header::CACHE_CONTROL,
             "private, no-store"

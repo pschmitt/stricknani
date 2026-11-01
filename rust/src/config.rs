@@ -15,6 +15,7 @@ pub struct Config {
     pub bind_address: SocketAddr,
     pub static_root: PathBuf,
     pub secure_cookies: bool,
+    pub external_imports: bool,
     pub trusted_hosts: TrustedHosts,
 }
 
@@ -112,6 +113,15 @@ impl Config {
             Some("true" | "1") => true,
             _ => return Err(ConfigError("SESSION_COOKIE_SECURE must be true or false")),
         };
+        let external_imports = match get("RUST_EXTERNAL_IMPORTS_ENABLED").as_deref() {
+            None | Some("false" | "0") => false,
+            Some("true" | "1") => true,
+            _ => {
+                return Err(ConfigError(
+                    "RUST_EXTERNAL_IMPORTS_ENABLED must be true or false",
+                ));
+            }
+        };
         if !bind_ip.is_loopback() && !secure_cookies {
             return Err(ConfigError(
                 "SESSION_COOKIE_SECURE must be true when BIND_HOST is not loopback",
@@ -127,6 +137,7 @@ impl Config {
             bind_address: SocketAddr::new(bind_ip, port),
             static_root,
             secure_cookies,
+            external_imports,
             trusted_hosts,
         })
     }

@@ -50,7 +50,10 @@ async fn manifest() -> Response<Body> {
 }
 
 async fn offline() -> Response<Body> {
-    let body = match OfflineTemplate.render() {
+    let template = OfflineTemplate {
+        labels: OfflineLabels::new(),
+    };
+    let body = match template.render() {
         Ok(body) => body,
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     };
@@ -79,4 +82,41 @@ fn asset_response(
 
 #[derive(Template)]
 #[template(path = "offline.html")]
-struct OfflineTemplate;
+struct OfflineTemplate {
+    labels: OfflineLabels,
+}
+
+struct OfflineLabels {
+    heading: LabelPair,
+    status: LabelPair,
+    reason: LabelPair,
+    message: LabelPair,
+    action: LabelPair,
+}
+
+impl OfflineLabels {
+    fn new() -> Self {
+        Self {
+            heading: tr("You are offline", "Du bist offline"),
+            status: tr("Offline", "Offline"),
+            reason: tr("No connection", "Keine Verbindung"),
+            message: tr(
+                "This page is not available while you're offline. Private pages, API responses, and media are not cached.",
+                "Diese Seite ist offline nicht verfügbar. Private Seiten, API-Antworten und Medien werden nicht zwischengespeichert.",
+            ),
+            action: tr("Try Again", "Erneut versuchen"),
+        }
+    }
+}
+
+struct LabelPair {
+    en: &'static str,
+    de: &'static str,
+}
+
+fn tr(english: &'static str, german: &'static str) -> LabelPair {
+    LabelPair {
+        en: crate::i18n::text(crate::Language::English, english, german),
+        de: crate::i18n::text(crate::Language::German, english, german),
+    }
+}

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-01 00:57+0100\n"
+"POT-Creation-Date: 2026-11-01 08:35+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -38,8 +38,7 @@ msgstr ""
 msgid "Stricknani"
 msgstr ""
 
-#: rust/src/web.rs:1989 rust/src/web.rs:2012
-#: stricknani/templates/admin/users.html:66
+#: rust/src/web.rs:2135 stricknani/templates/admin/users.html:66
 #: stricknani/templates/admin/users.html:88
 #: stricknani/templates/admin/users.html:125
 #: stricknani/templates/admin/users.html:142 stricknani/templates/base.html:21
@@ -374,15 +373,15 @@ msgstr ""
 msgid "Save Crop"
 msgstr ""
 
-#: stricknani/templates/offline.html:3
+#: rust/src/pwa.rs:100 stricknani/templates/offline.html:3
 msgid "You are offline"
 msgstr ""
 
-#: stricknani/templates/offline.html:6
+#: rust/src/pwa.rs:101 stricknani/templates/offline.html:6
 msgid "Offline"
 msgstr ""
 
-#: stricknani/templates/offline.html:7
+#: rust/src/pwa.rs:102 stricknani/templates/offline.html:7
 msgid "No connection"
 msgstr ""
 
@@ -392,7 +391,7 @@ msgid ""
 "available yet. Previously viewed projects and yarns still work offline."
 msgstr ""
 
-#: stricknani/templates/offline.html:14
+#: rust/src/pwa.rs:107 stricknani/templates/offline.html:14
 msgid "Try Again"
 msgstr ""
 
@@ -414,11 +413,11 @@ msgstr ""
 msgid "You"
 msgstr ""
 
-#: rust/src/web_accounts.rs:736 stricknani/templates/admin/_user_card.html:30
+#: rust/src/web_accounts.rs:934 stricknani/templates/admin/_user_card.html:30
 msgid "Disabled"
 msgstr ""
 
-#: rust/src/web_accounts.rs:735 stricknani/templates/admin/_user_card.html:34
+#: rust/src/web_accounts.rs:933 stricknani/templates/admin/_user_card.html:34
 msgid "Active"
 msgstr ""
 
@@ -432,12 +431,12 @@ msgstr ""
 msgid "User activated"
 msgstr ""
 
-#: rust/src/web_accounts.rs:739 stricknani/templates/admin/_user_card.html:58
+#: rust/src/web_accounts.rs:937 stricknani/templates/admin/_user_card.html:58
 #: stricknani/templates/admin/_user_card.html:116
 msgid "Disable"
 msgstr ""
 
-#: rust/src/web_accounts.rs:740 stricknani/templates/admin/_user_card.html:64
+#: rust/src/web_accounts.rs:938 stricknani/templates/admin/_user_card.html:64
 #: stricknani/templates/admin/_user_card.html:119
 msgid "Enable"
 msgstr ""
@@ -448,7 +447,7 @@ msgstr ""
 msgid "Edit profile"
 msgstr ""
 
-#: rust/src/web_accounts.rs:742 stricknani/templates/admin/_user_card.html:78
+#: rust/src/web_accounts.rs:940 stricknani/templates/admin/_user_card.html:78
 #: stricknani/templates/admin/_user_card.html:138
 #: stricknani/templates/admin/users.html:72
 #: stricknani/templates/admin/users.html:89
@@ -486,7 +485,7 @@ msgstr ""
 msgid "New User"
 msgstr ""
 
-#: rust/src/web_accounts.rs:727 stricknani/templates/admin/users.html:25
+#: rust/src/web_accounts.rs:925 stricknani/templates/admin/users.html:25
 msgid "Users"
 msgstr ""
 
@@ -498,7 +497,7 @@ msgstr ""
 msgid "Profile updated"
 msgstr ""
 
-#: rust/src/web.rs:1964 rust/src/web.rs:1987 rust/src/web_accounts.rs:731
+#: rust/src/web.rs:2110 rust/src/web_accounts.rs:929
 #: stricknani/templates/admin/users.html:49
 #: stricknani/templates/admin/users.html:102
 msgid "Email"
@@ -524,7 +523,7 @@ msgstr ""
 msgid "Password reset"
 msgstr ""
 
-#: rust/src/web_accounts.rs:741 stricknani/templates/admin/users.html:82
+#: rust/src/web_accounts.rs:939 stricknani/templates/admin/users.html:82
 msgid "New password"
 msgstr ""
 
@@ -540,8 +539,7 @@ msgstr ""
 msgid "User created"
 msgstr ""
 
-#: rust/src/web.rs:1965 rust/src/web.rs:1988
-#: stricknani/templates/admin/users.html:109
+#: rust/src/web.rs:2111 stricknani/templates/admin/users.html:109
 #: stricknani/templates/auth/login.html:53
 #: stricknani/templates/auth/login.html:106
 msgid "Password"
@@ -595,8 +593,7 @@ msgstr ""
 msgid "Please sign in below"
 msgstr ""
 
-#: rust/src/web.rs:1962 rust/src/web.rs:1985
-#: stricknani/templates/auth/login.html:22
+#: rust/src/web.rs:2108 stricknani/templates/auth/login.html:22
 msgid "Sign in"
 msgstr ""
 
@@ -623,7 +620,7 @@ msgstr ""
 msgid "OR"
 msgstr ""
 
-#: rust/src/web_accounts.rs:743 stricknani/templates/auth/login.html:78
+#: rust/src/web_accounts.rs:941 stricknani/templates/auth/login.html:78
 msgid "Create an account"
 msgstr ""
 
@@ -1114,8 +1111,7 @@ msgstr ""
 msgid "Edit %(name)s"
 msgstr ""
 
-#: rust/src/web.rs:1983 rust/src/web.rs:2006
-#: stricknani/templates/projects/_cards_page.html:67
+#: rust/src/web.rs:2129 stricknani/templates/projects/_cards_page.html:67
 #: stricknani/templates/projects/_cards_page.html:113
 #: stricknani/templates/projects/detail.html:17
 #: stricknani/templates/projects/form.html:7
@@ -1160,8 +1156,7 @@ msgstr ""
 msgid "Re-import"
 msgstr ""
 
-#: rust/src/web.rs:1985 rust/src/web.rs:2008
-#: stricknani/templates/projects/_cards_page.html:131
+#: rust/src/web.rs:2131 stricknani/templates/projects/_cards_page.html:131
 #: stricknani/templates/projects/detail.html:48
 #: stricknani/templates/projects/form.html:267
 #: stricknani/templates/projects/form.html:821
@@ -1228,7 +1223,7 @@ msgstr ""
 msgid "e.g., Socks, Shawl, Amigurumi"
 msgstr ""
 
-#: rust/src/web.rs:1982 rust/src/web.rs:2005 rust/src/web_accounts.rs:744
+#: rust/src/web.rs:2128 rust/src/web_accounts.rs:942
 #: stricknani/templates/projects/categories.html:44
 msgid "Create"
 msgstr ""
@@ -1240,8 +1235,7 @@ msgid_plural "%(num)d projects"
 msgstr[0] ""
 msgstr[1] ""
 
-#: rust/src/web.rs:1984 rust/src/web.rs:2007
-#: stricknani/templates/projects/categories.html:67
+#: rust/src/web.rs:2130 stricknani/templates/projects/categories.html:67
 #: stricknani/templates/projects/form.html:18
 #: stricknani/templates/projects/form.html:79
 #: stricknani/templates/projects/form.html:82
@@ -1304,8 +1298,7 @@ msgstr ""
 msgid "Open gallery"
 msgstr ""
 
-#: rust/src/web.rs:1980 rust/src/web.rs:2003
-#: stricknani/templates/projects/detail.html:139
+#: rust/src/web.rs:2126 stricknani/templates/projects/detail.html:139
 #: stricknani/templates/projects/form.html:211
 msgid "Attachments"
 msgstr ""
@@ -1323,7 +1316,7 @@ msgstr ""
 msgid "Project Details"
 msgstr ""
 
-#: rust/src/web.rs:1973 rust/src/web.rs:1996
+#: rust/src/import_service.rs:359 rust/src/web.rs:2119
 #: stricknani/templates/projects/detail.html:216
 #: stricknani/templates/projects/detail.html:254
 #: stricknani/templates/projects/form.html:304
@@ -1338,7 +1331,7 @@ msgstr ""
 msgid "Tags"
 msgstr ""
 
-#: rust/src/web_accounts.rs:751 stricknani/templates/projects/detail.html:227
+#: rust/src/web_accounts.rs:949 stricknani/templates/projects/detail.html:227
 #: stricknani/templates/projects/detail.html:279
 #: stricknani/templates/user/api_tokens.html:117
 msgid "Created"
@@ -1396,8 +1389,7 @@ msgstr ""
 msgid "Request snapshot"
 msgstr ""
 
-#: rust/src/web.rs:1977 rust/src/web.rs:2000
-#: stricknani/templates/projects/detail.html:375
+#: rust/src/web.rs:2123 stricknani/templates/projects/detail.html:375
 #: stricknani/templates/projects/form.html:158
 #: stricknani/templates/yarn/detail.html:353
 #: stricknani/templates/yarn/form.html:237
@@ -1418,7 +1410,7 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: rust/src/web.rs:1991 rust/src/web.rs:2014
+#: rust/src/import_service.rs:364 rust/src/web.rs:2137
 #: stricknani/templates/projects/detail.html:401
 #: stricknani/templates/projects/form.html:147
 #: stricknani/templates/yarn/detail.html:322
@@ -1696,8 +1688,7 @@ msgstr ""
 msgid "Describe your stitch sample / gauge swatch..."
 msgstr ""
 
-#: rust/src/web.rs:1978 rust/src/web.rs:2001
-#: stricknani/templates/projects/form.html:531
+#: rust/src/web.rs:2124 stricknani/templates/projects/form.html:531
 msgid "Steps"
 msgstr ""
 
@@ -1748,8 +1739,8 @@ msgstr ""
 msgid "Select all yarns"
 msgstr ""
 
-#: rust/src/web.rs:1958 rust/src/web.rs:1981 rust/src/web_accounts.rs:724
-#: stricknani/templates/projects/list.html:4
+#: rust/src/import_service.rs:348 rust/src/web.rs:2104
+#: rust/src/web_accounts.rs:922 stricknani/templates/projects/list.html:4
 #: stricknani/templates/projects/list.html:11
 #: stricknani/templates/projects/list.html:46
 #: stricknani/templates/shared/unified_navbar.html:61
@@ -1757,7 +1748,7 @@ msgstr ""
 msgid "Projects"
 msgstr ""
 
-#: stricknani/templates/projects/list.html:56
+#: rust/src/web.rs:2150 stricknani/templates/projects/list.html:56
 #: stricknani/templates/yarn/list.html:54
 msgid "Search"
 msgstr ""
@@ -1839,12 +1830,13 @@ msgstr ""
 msgid "Release to start AI analysis"
 msgstr ""
 
-#: rust/src/web_accounts.rs:723
+#: rust/src/import_service.rs:347 rust/src/web_accounts.rs:921
 #: stricknani/templates/shared/unified_navbar.html:16
 msgid "Main navigation"
 msgstr ""
 
-#: rust/src/web.rs:1959 rust/src/web.rs:1982 rust/src/web_accounts.rs:725
+#: rust/src/import_service.rs:349 rust/src/web.rs:2105
+#: rust/src/web_accounts.rs:923
 #: stricknani/templates/shared/unified_navbar.html:67
 #: stricknani/templates/shared/unified_navbar.html:131
 #: stricknani/templates/yarn/list.html:9 stricknani/templates/yarn/list.html:36
@@ -1910,7 +1902,7 @@ msgid ""
 "through the API, so treat it like a password."
 msgstr ""
 
-#: rust/src/web_accounts.rs:756 stricknani/templates/user/api_tokens.html:30
+#: rust/src/web_accounts.rs:954 stricknani/templates/user/api_tokens.html:30
 msgid "Token created"
 msgstr ""
 
@@ -1970,7 +1962,7 @@ msgstr ""
 msgid "Never used"
 msgstr ""
 
-#: rust/src/web_accounts.rs:752 stricknani/templates/user/api_tokens.html:125
+#: rust/src/web_accounts.rs:950 stricknani/templates/user/api_tokens.html:125
 #: stricknani/templates/user/api_tokens.html:132
 #: stricknani/templates/user/api_tokens.html:139
 msgid "Revoke"
@@ -2075,7 +2067,7 @@ msgstr ""
 msgid "AI-powered extraction enabled"
 msgstr ""
 
-#: rust/src/web.rs:1960 rust/src/web.rs:1983
+#: rust/src/import_service.rs:363 rust/src/web.rs:2106
 #: stricknani/templates/yarn/detail.html:6
 #: stricknani/templates/yarn/form.html:7 stricknani/templates/yarn/list.html:5
 msgid "Yarn"
@@ -2102,7 +2094,7 @@ msgstr ""
 msgid "Yarn Details"
 msgstr ""
 
-#: rust/src/web.rs:1974 rust/src/web.rs:1997
+#: rust/src/import_service.rs:367 rust/src/web.rs:2120
 #: stricknani/templates/yarn/detail.html:139
 #: stricknani/templates/yarn/form.html:119
 #: stricknani/templates/yarn/form.html:351
@@ -2113,7 +2105,7 @@ msgstr ""
 msgid "Added"
 msgstr ""
 
-#: rust/src/web.rs:1975 rust/src/web.rs:1998
+#: rust/src/import_service.rs:368 rust/src/web.rs:2121
 #: stricknani/templates/yarn/detail.html:169
 #: stricknani/templates/yarn/form.html:127
 #: stricknani/templates/yarn/form.html:362
@@ -2134,11 +2126,11 @@ msgstr ""
 msgid "Weight Category"
 msgstr ""
 
-#: stricknani/templates/yarn/detail.html:225
+#: rust/src/import_service.rs:369 stricknani/templates/yarn/detail.html:225
 msgid "Weight"
 msgstr ""
 
-#: stricknani/templates/yarn/detail.html:235
+#: rust/src/import_service.rs:370 stricknani/templates/yarn/detail.html:235
 msgid "Length"
 msgstr ""
 
@@ -2180,12 +2172,12 @@ msgstr ""
 msgid "New yarn entry"
 msgstr ""
 
-#: rust/src/web.rs:1990 rust/src/web.rs:2013 rust/src/web_accounts.rs:750
-#: stricknani/templates/yarn/form.html:103
+#: rust/src/import_service.rs:365 rust/src/web.rs:2136
+#: rust/src/web_accounts.rs:948 stricknani/templates/yarn/form.html:103
 msgid "Name"
 msgstr ""
 
-#: rust/src/web.rs:1995 rust/src/web.rs:2018
+#: rust/src/import_service.rs:372 rust/src/web.rs:2141
 #: stricknani/templates/yarn/form.html:140
 #: stricknani/templates/yarn/form.html:384
 msgid "Fiber content"
@@ -2201,7 +2193,7 @@ msgstr ""
 msgid "Length (m)"
 msgstr ""
 
-#: rust/src/web.rs:1996 rust/src/web.rs:2019
+#: rust/src/import_service.rs:371 rust/src/web.rs:2142
 #: stricknani/templates/yarn/form.html:160
 #: stricknani/templates/yarn/form.html:395
 msgid "Weight category"
@@ -2212,8 +2204,7 @@ msgstr ""
 msgid "e.g. Fingering, DK..."
 msgstr ""
 
-#: rust/src/web.rs:1979 rust/src/web.rs:2002
-#: stricknani/templates/yarn/form.html:276
+#: rust/src/web.rs:2125 stricknani/templates/yarn/form.html:276
 msgid "Photos"
 msgstr ""
 
@@ -2243,143 +2234,236 @@ msgid ""
 "cannot be undone."
 msgstr ""
 
-#: rust/src/web.rs:1961 rust/src/web.rs:1984
-msgid "Gauge calculator"
+#: rust/src/import_service.rs:346
+msgid "Import a pattern"
 msgstr ""
 
-#: rust/src/web.rs:1963 rust/src/web.rs:1986 rust/src/web_accounts.rs:728
+#: rust/src/import_service.rs:350 rust/src/web.rs:2109
+#: rust/src/web_accounts.rs:926
 msgid "Sign out"
 msgstr ""
 
-#: rust/src/web.rs:1970 rust/src/web.rs:1993
-msgid "Your collection is empty."
+#: rust/src/import_service.rs:351
+msgid "Pattern URL"
 msgstr ""
 
-#: rust/src/web.rs:1971 rust/src/web.rs:1994
-msgid "Previous"
+#: rust/src/import_service.rs:352
+msgid "Pattern text"
 msgstr ""
 
-#: rust/src/web.rs:1972 rust/src/web.rs:1995
-msgid "Next"
+#: rust/src/import_service.rs:353
+msgid "Pattern file"
 msgstr ""
 
-#: rust/src/web.rs:1976 rust/src/web.rs:1999
+#: rust/src/import_service.rs:354
+msgid "Preview import"
+msgstr ""
+
+#: rust/src/import_service.rs:355
+msgid "Review the extracted details"
+msgstr ""
+
+#: rust/src/import_service.rs:356
+msgid "Create project"
+msgstr ""
+
+#: rust/src/import_service.rs:357
+msgid "Create yarn"
+msgstr ""
+
+#: rust/src/import_service.rs:358
+msgid "Content fingerprint"
+msgstr ""
+
+#: rust/src/import_service.rs:360 rust/src/web.rs:2122
 msgid "Needles"
 msgstr ""
 
-#: rust/src/web.rs:1981 rust/src/web.rs:2004
-msgid "Original source"
+#: rust/src/import_service.rs:361
+msgid "Stitch sample"
 msgstr ""
 
-#: rust/src/web.rs:1986 rust/src/web.rs:2009
-msgid "Add to favorites"
-msgstr ""
-
-#: rust/src/web.rs:1987 rust/src/web.rs:2010
-msgid "Remove from favorites"
-msgstr ""
-
-#: rust/src/web.rs:1988 rust/src/web.rs:2011
-msgid "Delete this item?"
-msgstr ""
-
-#: rust/src/web.rs:1992 rust/src/web.rs:2015
-msgid "Tags (one per line)"
-msgstr ""
-
-#: rust/src/web.rs:1993 rust/src/web.rs:2016
+#: rust/src/import_service.rs:362 rust/src/web.rs:2139
 msgid "Other materials"
 msgstr ""
 
-#: rust/src/web.rs:1994 rust/src/web.rs:2017
+#: rust/src/import_service.rs:366 rust/src/web.rs:2140
 msgid "Link"
 msgstr ""
 
-#: rust/src/web.rs:1997 rust/src/web.rs:2020
+#: rust/src/web.rs:2107
+msgid "Gauge calculator"
+msgstr ""
+
+#: rust/src/web.rs:2116
+msgid "Your collection is empty."
+msgstr ""
+
+#: rust/src/web.rs:2117
+msgid "Previous"
+msgstr ""
+
+#: rust/src/web.rs:2118
+msgid "Next"
+msgstr ""
+
+#: rust/src/web.rs:2127
+msgid "Original source"
+msgstr ""
+
+#: rust/src/web.rs:2132
+msgid "Add to favorites"
+msgstr ""
+
+#: rust/src/web.rs:2133
+msgid "Remove from favorites"
+msgstr ""
+
+#: rust/src/web.rs:2134
+msgid "Delete this item?"
+msgstr ""
+
+#: rust/src/web.rs:2138
+msgid "Tags (one per line)"
+msgstr ""
+
+#: rust/src/web.rs:2143
 msgid "Dye lot"
 msgstr ""
 
-#: rust/src/web.rs:1998 rust/src/web.rs:2021
+#: rust/src/web.rs:2144
 msgid "Weight in grams"
 msgstr ""
 
-#: rust/src/web.rs:1999 rust/src/web.rs:2022
+#: rust/src/web.rs:2145
 msgid "Length in meters"
 msgstr ""
 
-#: rust/src/web.rs:2000 rust/src/web.rs:2023
+#: rust/src/web.rs:2146
 msgid "AI enhanced"
 msgstr ""
 
-#: rust/src/web.rs:2001 rust/src/web.rs:2024
+#: rust/src/web.rs:2147
 msgid "Add step"
 msgstr ""
 
-#: rust/src/web.rs:2002 rust/src/web.rs:2025
+#: rust/src/web.rs:2148
 msgid "Manage categories"
 msgstr ""
 
-#: rust/src/web.rs:2011 rust/src/web.rs:2036
-msgid "Upload"
+#: rust/src/web.rs:2149
+msgid "Imports"
 msgstr ""
 
-#: rust/src/web.rs:2012 rust/src/web.rs:2037
-msgid "File"
+#: rust/src/web.rs:2151
+msgid "Tag"
 msgstr ""
 
-#: rust/src/web.rs:2013 rust/src/web.rs:2038
-msgid "Alternative text"
+#: rust/src/web.rs:2152
+msgid "Favorites"
 msgstr ""
 
-#: rust/src/web.rs:2026 rust/src/web_accounts.rs:726
+#: rust/src/web.rs:2153
+msgid "All items"
+msgstr ""
+
+#: rust/src/web.rs:2154
+msgid "Favorites only"
+msgstr ""
+
+#: rust/src/web.rs:2155
+msgid "Exclude favorites"
+msgstr ""
+
+#: rust/src/web.rs:2156
+msgid "Apply filters"
+msgstr ""
+
+#: rust/src/web.rs:2157 rust/src/web_accounts.rs:924
 msgid "Account"
 msgstr ""
 
-#: rust/src/web.rs:2027 rust/src/web_accounts.rs:730
+#: rust/src/web.rs:2158 rust/src/web_accounts.rs:928
 msgid "User accounts"
 msgstr ""
 
-#: rust/src/web_accounts.rs:722
+#: rust/src/web.rs:2167
+msgid "Upload"
+msgstr ""
+
+#: rust/src/web.rs:2168
+msgid "File"
+msgstr ""
+
+#: rust/src/web.rs:2169
+msgid "Alternative text"
+msgstr ""
+
+#: rust/src/web_accounts.rs:920
 msgid "Account settings"
 msgstr ""
 
-#: rust/src/web_accounts.rs:729
+#: rust/src/web_accounts.rs:927
 msgid "Signed in as"
 msgstr ""
 
-#: rust/src/web_accounts.rs:732
+#: rust/src/web_accounts.rs:930
 msgid "Status"
 msgstr ""
 
-#: rust/src/web_accounts.rs:733
+#: rust/src/web_accounts.rs:931
 msgid "Role"
 msgstr ""
 
-#: rust/src/web_accounts.rs:734
+#: rust/src/web_accounts.rs:932
 msgid "Actions"
 msgstr ""
 
-#: rust/src/web_accounts.rs:737
+#: rust/src/web_accounts.rs:935
 msgid "Administrator"
 msgstr ""
 
-#: rust/src/web_accounts.rs:738
+#: rust/src/web_accounts.rs:936
 msgid "Member"
 msgstr ""
 
-#: rust/src/web_accounts.rs:745
+#: rust/src/web_accounts.rs:943
 msgid "API tokens"
 msgstr ""
 
-#: rust/src/web_accounts.rs:753
+#: rust/src/web_accounts.rs:951
 msgid "Create API token"
 msgstr ""
 
-#: rust/src/web_accounts.rs:754
+#: rust/src/web_accounts.rs:952
 msgid "Change password"
 msgstr ""
 
-#: rust/src/web_accounts.rs:755
+#: rust/src/web_accounts.rs:953
 msgid "Current password"
+msgstr ""
+
+#: rust/src/web_accounts.rs:959
+msgid "Profile image"
+msgstr ""
+
+#: rust/src/web_accounts.rs:960
+msgid "Your profile image"
+msgstr ""
+
+#: rust/src/web_accounts.rs:965
+msgid "Image file"
+msgstr ""
+
+#: rust/src/web_accounts.rs:966
+msgid "Upload or replace image"
+msgstr ""
+
+#: rust/src/web_accounts.rs:967
+msgid "Delete profile image"
+msgstr ""
+
+#: rust/src/web_accounts.rs:968
+msgid "No profile image set."
 msgstr ""
 

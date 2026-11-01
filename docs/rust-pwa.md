@@ -4,7 +4,8 @@ The Rust candidate exposes `/sw.js`, `/register-pwa.js`, `/manifest.webmanifest`
 through `pwa::router()`. The service worker is served from the origin root with
 `Service-Worker-Allowed: /`; pages opt in by loading the local registration script. The offline
 page contains English and German text, has no inline JavaScript, does not personalize on cookies,
-and is marked `Cache-Control: no-store` for ordinary HTTP caches.
+and is marked `Cache-Control: no-store` for ordinary HTTP caches. Its typed label pairs use the Rust
+gettext catalog with source-defined German fallbacks, while retaining both languages on screen.
 
 The service worker precaches only an explicit public set: the generic offline page, PWA manifest,
 registration script, app CSS, favicon, and icons. It fetches those URLs without cookies and caches

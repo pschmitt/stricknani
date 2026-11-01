@@ -6,7 +6,7 @@ use askama::Template;
 use axum::{
     Form, Json, Router,
     body::{Body, to_bytes},
-    extract::{DefaultBodyLimit, FormRejection, Multipart, State},
+    extract::{DefaultBodyLimit, Multipart, State, rejection::FormRejection},
     http::{HeaderMap, Method, Request, StatusCode, header},
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
@@ -36,13 +36,8 @@ struct ImportState {
     external_enabled: bool,
 }
 
-/// Build the API and browser import routes.
-pub(crate) fn router(
-    api: Router,
-    app: AppState,
-    worker_path: PathBuf,
-    external_enabled: bool,
-) -> Router {
+/// Build the Android and browser import routes around the shared API router.
+pub fn router(api: Router, app: AppState, worker_path: PathBuf, external_enabled: bool) -> Router {
     let state = ImportState {
         app,
         api,
@@ -796,11 +791,10 @@ async fn api_call(
         .header(header::CONTENT_TYPE, "application/json")
         .body(Body::from(body))
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let response = api
-        .clone()
-        .oneshot(request)
-        .await
-        .map_err(|never| match never {})?;
+    let response = match api.clone().oneshot(request).await {
+        Ok(response) => response,
+        Err(never) => match never {},
+    };
     let status = response.status();
     let bytes = to_bytes(response.into_body(), API_RESPONSE_BYTES)
         .await

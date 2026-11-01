@@ -4,22 +4,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#2f6fed">
-    <title>Offline · Stricknani</title>
+    <title>{{ labels.heading.en }} · Stricknani</title>
     <link rel="stylesheet" href="/static/css/material.css">
     <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body class="bg-base-100 text-base-content">
 <main class="max-w-2xl mx-auto p-6 md:p-10">
-    <h1 class="text-3xl font-bold mb-6">You're offline</h1>
+    <h1 class="text-3xl font-bold mb-6">{{ labels.heading.en }}</h1>
     <section lang="en" aria-labelledby="offline-en-title">
-        <h2 id="offline-en-title" class="text-xl font-semibold">No connection</h2>
-        <p class="my-3">This page is not available while you're offline. Your private data is not included in this offline page.</p>
-        <p><a class="link" href="/">Try again</a></p>
+        <span>{{ labels.status.en }}</span>
+        <h2 id="offline-en-title" class="text-xl font-semibold">{{ labels.reason.en }}</h2>
+        <p class="my-3">{{ labels.message.en }}</p>
+        <p><a class="link" href="/">{{ labels.action.en }}</a></p>
     </section>
     <section lang="de" aria-labelledby="offline-de-title" class="mt-8">
-        <h2 id="offline-de-title" class="text-xl font-semibold">Keine Verbindung</h2>
-        <p class="my-3">Diese Seite ist offline nicht verfügbar. Deine privaten Daten sind nicht Teil dieser Offline-Seite.</p>
-        <p><a class="link" href="/">Erneut versuchen</a></p>
+        <span>{{ labels.status.de }}</span>
+        <h2 id="offline-de-title" class="text-xl font-semibold">{{ labels.reason.de }}</h2>
+        <p class="my-3">{{ labels.message.de }}</p>
+        <p><a class="link" href="/">{{ labels.action.de }}</a></p>
     </section>
 </main>
 </body>

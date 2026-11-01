@@ -28,3 +28,17 @@ No production data has been imported. Copied-production rehearsal, complete exte
 integrations, staging acceptance, final Python-free default outputs, and production
 cutover remain outstanding. The dependency-audit findings are tracked separately in
 `rust-security-review.md`.
+
+## Follow-up integration
+
+The import preview/service and PWA routers are now connected to the application.
+The document worker is selected explicitly by the server; URL imports remain disabled
+unless `RUST_EXTERNAL_IMPORTS_ENABLED=true`. Public PWA resources retain their own
+cache policy; private routes remain `no-store`.
+
+The updated gettext extraction found 99 Rust messages. Catalog generation, compilation,
+translation checks, and the ten translation/health tests pass. The new Android replay
+instrumentation test compiles after formatting. Rust worker, document parser, import
+preview/create, snapshot import, and media integration tests pass in the current remote
+run. PWA assertions needed adjustment for generated cache names and reviewed German
+translations; the full Rust suite and strict Clippy check are still being completed.

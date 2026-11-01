@@ -5,11 +5,13 @@ pub mod db;
 pub mod document_worker;
 mod i18n;
 pub mod import_document;
+pub mod import_service;
 pub mod importer;
 pub mod imports;
 pub mod media;
 pub mod media_ids;
 pub mod projects;
+pub mod pwa;
 pub mod security;
 pub mod sync;
 mod web;
@@ -46,10 +48,21 @@ pub fn app_with_static_root(static_root: PathBuf) -> Router {
         .route("/gauge/", get(gauge_page))
         .route("/gauge/calculate", post(calculate))
         .nest_service("/static", ServeDir::new(static_root))
+        .merge(pwa::router())
 }
 
 /// Build the persistent candidate while keeping the existing stateless gauge app usable.
 pub fn app_with_state(static_root: PathBuf, state: db::AppState) -> Router {
+    app_with_imports(static_root, state, PathBuf::new(), false)
+}
+
+/// Build the server with explicit document-worker and external-import settings.
+pub fn app_with_imports(
+    static_root: PathBuf,
+    state: db::AppState,
+    worker_path: PathBuf,
+    external_imports: bool,
+) -> Router {
     let core = Router::new()
         .nest(
             "/api/v1",
@@ -65,7 +78,13 @@ pub fn app_with_state(static_root: PathBuf, state: db::AppState) -> Router {
 
     app_with_static_root(static_root)
         .merge(web::router(core.clone(), state.clone()))
-        .merge(web_accounts::router(core.clone(), state))
+        .merge(web_accounts::router(core.clone(), state.clone()))
+        .merge(import_service::router(
+            core.clone(),
+            state,
+            worker_path,
+            external_imports,
+        ))
         .merge(core)
         .layer(axum::middleware::from_fn(security::security_headers))
 }

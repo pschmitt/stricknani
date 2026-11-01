@@ -6,6 +6,8 @@
     <title>{{ title }} · Stricknani</title>
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/css/material.css">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <script src="/register-pwa.js" defer></script>
 </head>
 <body class="bg-base-100 text-base-content">
 <header class="border-b border-base-300">
@@ -15,6 +17,7 @@
         <a href="/yarns">{{ labels.yarns }}</a>
         {% if email.is_some() %}<a href="/categories">{{ labels.category_management }}</a>{% endif %}
         {% if email.is_some() %}<a href="/account">{{ labels.account }}</a>{% endif %}
+        {% if email.is_some() %}<a href="/imports">{{ labels.imports }}</a>{% endif %}
         {% if is_admin %}<a href="/admin/users">{{ labels.admin_users }}</a>{% endif %}
         <a href="/gauge/">{{ labels.gauge }}</a>
         <a href="/language/en" lang="en">English</a>

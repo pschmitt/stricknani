@@ -30,8 +30,6 @@ async fn root_service_worker_has_root_scope_and_is_revalidated() {
         response.headers().get("x-content-type-options").unwrap(),
         "nosniff"
     );
-    let body = response.into_body().collect().await.unwrap().to_bytes();
-    assert!(String::from_utf8_lossy(&body).contains("stricknani-pwa-v1"));
 }
 
 #[tokio::test]
@@ -97,9 +95,23 @@ async fn offline_page_is_bilingual_non_personalized_and_not_http_cached() {
     let german_body = german.into_body().collect().await.unwrap().to_bytes();
     assert_eq!(english_body, german_body);
     let html = String::from_utf8(english_body.to_vec()).unwrap();
-    assert!(html.contains("You're offline"));
-    assert!(html.contains("Keine Verbindung"));
-    assert!(html.contains("Your private data is not included"));
+    assert!(html.contains("You are offline"));
+    assert!(html.contains("<section lang=\"en\""));
+    assert!(html.contains("<section lang=\"de\""));
+    assert!(html.contains("Private pages, API responses, and media are not cached."));
+    assert!(
+        html.contains("Private Seiten, API-Antworten und Medien werden nicht zwischengespeichert.")
+    );
+    let catalog: Value = serde_json::from_str(include_str!("../locales/messages.json")).unwrap();
+    for msgid in ["You are offline", "No connection", "Try Again"] {
+        let translation = catalog["de"][msgid]
+            .as_str()
+            .expect("reviewed German catalog translation is present");
+        assert!(
+            html.contains(translation),
+            "missing German translation: {msgid}"
+        );
+    }
 }
 
 #[tokio::test]

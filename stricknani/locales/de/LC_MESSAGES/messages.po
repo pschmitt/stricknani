@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-01 00:57+0100\n"
+"POT-Creation-Date: 2026-11-01 08:35+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -40,7 +40,7 @@ msgstr ""
 msgid "Stricknani"
 msgstr "Stricknani"
 
-#: rust/src/web.rs:1989 stricknani/templates/admin/users.html:66
+#: rust/src/web.rs:2135 stricknani/templates/admin/users.html:66
 #: stricknani/templates/admin/users.html:88
 #: stricknani/templates/admin/users.html:125
 #: stricknani/templates/admin/users.html:142 stricknani/templates/base.html:21
@@ -375,15 +375,15 @@ msgstr "Zum Zuschneiden ziehen, zum Zoomen scrollen"
 msgid "Save Crop"
 msgstr "Ausschnitt speichern"
 
-#: stricknani/templates/offline.html:3
+#: rust/src/pwa.rs:100 stricknani/templates/offline.html:3
 msgid "You are offline"
 msgstr "Du bist offline"
 
-#: stricknani/templates/offline.html:6
+#: rust/src/pwa.rs:101 stricknani/templates/offline.html:6
 msgid "Offline"
 msgstr "Offline"
 
-#: stricknani/templates/offline.html:7
+#: rust/src/pwa.rs:102 stricknani/templates/offline.html:7
 msgid "No connection"
 msgstr "Keine Verbindung"
 
@@ -396,7 +396,7 @@ msgstr ""
 "sie noch nicht verfügbar. Bereits angesehene Projekte und Garne "
 "funktionieren weiterhin offline."
 
-#: stricknani/templates/offline.html:14
+#: rust/src/pwa.rs:107 stricknani/templates/offline.html:14
 msgid "Try Again"
 msgstr "Erneut versuchen"
 
@@ -418,11 +418,11 @@ msgstr "Admin"
 msgid "You"
 msgstr "Du"
 
-#: stricknani/templates/admin/_user_card.html:30
+#: rust/src/web_accounts.rs:934 stricknani/templates/admin/_user_card.html:30
 msgid "Disabled"
 msgstr "Deaktiviert"
 
-#: stricknani/templates/admin/_user_card.html:34
+#: rust/src/web_accounts.rs:933 stricknani/templates/admin/_user_card.html:34
 msgid "Active"
 msgstr "Aktiv"
 
@@ -436,12 +436,12 @@ msgstr "Benutzer deaktiviert"
 msgid "User activated"
 msgstr "Benutzer aktiviert"
 
-#: stricknani/templates/admin/_user_card.html:58
+#: rust/src/web_accounts.rs:937 stricknani/templates/admin/_user_card.html:58
 #: stricknani/templates/admin/_user_card.html:116
 msgid "Disable"
 msgstr "Deaktivieren"
 
-#: stricknani/templates/admin/_user_card.html:64
+#: rust/src/web_accounts.rs:938 stricknani/templates/admin/_user_card.html:64
 #: stricknani/templates/admin/_user_card.html:119
 msgid "Enable"
 msgstr "Aktivieren"
@@ -452,7 +452,7 @@ msgstr "Aktivieren"
 msgid "Edit profile"
 msgstr "Profil bearbeiten"
 
-#: stricknani/templates/admin/_user_card.html:78
+#: rust/src/web_accounts.rs:940 stricknani/templates/admin/_user_card.html:78
 #: stricknani/templates/admin/_user_card.html:138
 #: stricknani/templates/admin/users.html:72
 #: stricknani/templates/admin/users.html:89
@@ -490,7 +490,7 @@ msgstr "Benutzer löschen"
 msgid "New User"
 msgstr "Neuer Benutzer"
 
-#: stricknani/templates/admin/users.html:25
+#: rust/src/web_accounts.rs:925 stricknani/templates/admin/users.html:25
 msgid "Users"
 msgstr "Benutzer"
 
@@ -502,7 +502,8 @@ msgstr "Profildetails aktualisieren für"
 msgid "Profile updated"
 msgstr "Profil aktualisiert"
 
-#: rust/src/web.rs:1964 stricknani/templates/admin/users.html:49
+#: rust/src/web.rs:2110 rust/src/web_accounts.rs:929
+#: stricknani/templates/admin/users.html:49
 #: stricknani/templates/admin/users.html:102
 msgid "Email"
 msgstr "E-Mail"
@@ -527,7 +528,7 @@ msgstr "Neues Passwort festlegen für"
 msgid "Password reset"
 msgstr "Passwort zurückgesetzt"
 
-#: stricknani/templates/admin/users.html:82
+#: rust/src/web_accounts.rs:939 stricknani/templates/admin/users.html:82
 msgid "New password"
 msgstr "Neues Passwort"
 
@@ -543,7 +544,7 @@ msgstr "Neues Konto mit einem temporären Passwort hinzufügen."
 msgid "User created"
 msgstr "Benutzer erstellt"
 
-#: rust/src/web.rs:1965 stricknani/templates/admin/users.html:109
+#: rust/src/web.rs:2111 stricknani/templates/admin/users.html:109
 #: stricknani/templates/auth/login.html:53
 #: stricknani/templates/auth/login.html:106
 msgid "Password"
@@ -597,7 +598,7 @@ msgstr "Willkommen bei Stricknani"
 msgid "Please sign in below"
 msgstr "Bitte melde dich unten an"
 
-#: rust/src/web.rs:1962 stricknani/templates/auth/login.html:22
+#: rust/src/web.rs:2108 stricknani/templates/auth/login.html:22
 msgid "Sign in"
 msgstr "Anmelden"
 
@@ -624,7 +625,7 @@ msgstr "Anmelden"
 msgid "OR"
 msgstr "ODER"
 
-#: stricknani/templates/auth/login.html:78
+#: rust/src/web_accounts.rs:941 stricknani/templates/auth/login.html:78
 msgid "Create an account"
 msgstr "Konto erstellen"
 
@@ -1226,7 +1227,7 @@ msgstr "Projektdetails für %(name)s öffnen"
 msgid "Edit %(name)s"
 msgstr "%(name)s bearbeiten"
 
-#: rust/src/web.rs:1983 stricknani/templates/projects/_cards_page.html:67
+#: rust/src/web.rs:2129 stricknani/templates/projects/_cards_page.html:67
 #: stricknani/templates/projects/_cards_page.html:113
 #: stricknani/templates/projects/detail.html:17
 #: stricknani/templates/projects/form.html:7
@@ -1271,7 +1272,7 @@ msgstr "Drucken"
 msgid "Re-import"
 msgstr "Erneut importieren"
 
-#: rust/src/web.rs:1985 stricknani/templates/projects/_cards_page.html:131
+#: rust/src/web.rs:2131 stricknani/templates/projects/_cards_page.html:131
 #: stricknani/templates/projects/detail.html:48
 #: stricknani/templates/projects/form.html:267
 #: stricknani/templates/projects/form.html:821
@@ -1338,7 +1339,8 @@ msgstr "Kategoriename"
 msgid "e.g., Socks, Shawl, Amigurumi"
 msgstr "z. B. Socken, Schal, Amigurumi"
 
-#: rust/src/web.rs:1982 stricknani/templates/projects/categories.html:44
+#: rust/src/web.rs:2128 rust/src/web_accounts.rs:942
+#: stricknani/templates/projects/categories.html:44
 msgid "Create"
 msgstr "Erstellen"
 
@@ -1349,7 +1351,7 @@ msgid_plural "%(num)d projects"
 msgstr[0] "%(num)d Projekt"
 msgstr[1] "%(num)d Projekte"
 
-#: rust/src/web.rs:1984 stricknani/templates/projects/categories.html:67
+#: rust/src/web.rs:2130 stricknani/templates/projects/categories.html:67
 #: stricknani/templates/projects/form.html:18
 #: stricknani/templates/projects/form.html:79
 #: stricknani/templates/projects/form.html:82
@@ -1414,7 +1416,7 @@ msgstr "Bilder"
 msgid "Open gallery"
 msgstr "Galerie öffnen"
 
-#: rust/src/web.rs:1980 stricknani/templates/projects/detail.html:139
+#: rust/src/web.rs:2126 stricknani/templates/projects/detail.html:139
 #: stricknani/templates/projects/form.html:211
 msgid "Attachments"
 msgstr "Anhänge"
@@ -1432,7 +1434,8 @@ msgstr "Dateien"
 msgid "Project Details"
 msgstr "Projektdetails"
 
-#: rust/src/web.rs:1973 stricknani/templates/projects/detail.html:216
+#: rust/src/import_service.rs:359 rust/src/web.rs:2119
+#: stricknani/templates/projects/detail.html:216
 #: stricknani/templates/projects/detail.html:254
 #: stricknani/templates/projects/form.html:304
 #: stricknani/templates/projects/form.html:645
@@ -1446,7 +1449,7 @@ msgstr "Kategorie"
 msgid "Tags"
 msgstr "Tags"
 
-#: stricknani/templates/projects/detail.html:227
+#: rust/src/web_accounts.rs:949 stricknani/templates/projects/detail.html:227
 #: stricknani/templates/projects/detail.html:279
 #: stricknani/templates/user/api_tokens.html:117
 msgid "Created"
@@ -1504,7 +1507,7 @@ msgstr "In der Wayback Machine öffnen"
 msgid "Request snapshot"
 msgstr "Snapshot anfordern"
 
-#: rust/src/web.rs:1977 stricknani/templates/projects/detail.html:375
+#: rust/src/web.rs:2123 stricknani/templates/projects/detail.html:375
 #: stricknani/templates/projects/form.html:158
 #: stricknani/templates/yarn/detail.html:353
 #: stricknani/templates/yarn/form.html:237
@@ -1525,7 +1528,8 @@ msgstr "Notizen kopieren"
 msgid "Copy"
 msgstr "Kopieren"
 
-#: rust/src/web.rs:1991 stricknani/templates/projects/detail.html:401
+#: rust/src/import_service.rs:364 rust/src/web.rs:2137
+#: stricknani/templates/projects/detail.html:401
 #: stricknani/templates/projects/form.html:147
 #: stricknani/templates/yarn/detail.html:322
 #: stricknani/templates/yarn/form.html:225
@@ -1805,7 +1809,7 @@ msgstr "z. B.: 4.0mm rund"
 msgid "Describe your stitch sample / gauge swatch..."
 msgstr "Beschreibe deine Maschenprobe..."
 
-#: rust/src/web.rs:1978 stricknani/templates/projects/form.html:531
+#: rust/src/web.rs:2124 stricknani/templates/projects/form.html:531
 msgid "Steps"
 msgstr "Schritte"
 
@@ -1856,7 +1860,8 @@ msgstr "Wähle die Garne aus, die du löschen möchtest:"
 msgid "Select all yarns"
 msgstr "Alle Garne auswählen"
 
-#: rust/src/web.rs:1958 stricknani/templates/projects/list.html:4
+#: rust/src/import_service.rs:348 rust/src/web.rs:2104
+#: rust/src/web_accounts.rs:922 stricknani/templates/projects/list.html:4
 #: stricknani/templates/projects/list.html:11
 #: stricknani/templates/projects/list.html:46
 #: stricknani/templates/shared/unified_navbar.html:61
@@ -1864,7 +1869,7 @@ msgstr "Alle Garne auswählen"
 msgid "Projects"
 msgstr "Projekte"
 
-#: stricknani/templates/projects/list.html:56
+#: rust/src/web.rs:2150 stricknani/templates/projects/list.html:56
 #: stricknani/templates/yarn/list.html:54
 msgid "Search"
 msgstr "Suchen"
@@ -1946,11 +1951,14 @@ msgstr "Zum Importieren loslassen"
 msgid "Release to start AI analysis"
 msgstr "Loslassen, um KI-Analyse zu starten"
 
+#: rust/src/import_service.rs:347 rust/src/web_accounts.rs:921
 #: stricknani/templates/shared/unified_navbar.html:16
 msgid "Main navigation"
 msgstr "Hauptnavigation"
 
-#: rust/src/web.rs:1959 stricknani/templates/shared/unified_navbar.html:67
+#: rust/src/import_service.rs:349 rust/src/web.rs:2105
+#: rust/src/web_accounts.rs:923
+#: stricknani/templates/shared/unified_navbar.html:67
 #: stricknani/templates/shared/unified_navbar.html:131
 #: stricknani/templates/yarn/list.html:9 stricknani/templates/yarn/list.html:36
 msgid "Yarns"
@@ -2019,7 +2027,7 @@ msgstr ""
 "kann auf dein Konto über die API zugegriffen werden - behandle es also "
 "wie ein Passwort."
 
-#: stricknani/templates/user/api_tokens.html:30
+#: rust/src/web_accounts.rs:954 stricknani/templates/user/api_tokens.html:30
 msgid "Token created"
 msgstr "Token erstellt"
 
@@ -2086,7 +2094,7 @@ msgstr "Zuletzt verwendet"
 msgid "Never used"
 msgstr "Nie verwendet"
 
-#: stricknani/templates/user/api_tokens.html:125
+#: rust/src/web_accounts.rs:950 stricknani/templates/user/api_tokens.html:125
 #: stricknani/templates/user/api_tokens.html:132
 #: stricknani/templates/user/api_tokens.html:139
 msgid "Revoke"
@@ -2197,7 +2205,8 @@ msgstr ""
 msgid "AI-powered extraction enabled"
 msgstr "KI-gestützte Extraktion aktiviert"
 
-#: rust/src/web.rs:1960 stricknani/templates/yarn/detail.html:6
+#: rust/src/import_service.rs:363 rust/src/web.rs:2106
+#: stricknani/templates/yarn/detail.html:6
 #: stricknani/templates/yarn/form.html:7 stricknani/templates/yarn/list.html:5
 msgid "Yarn"
 msgstr "Garn"
@@ -2223,7 +2232,8 @@ msgstr "Noch keine Fotos"
 msgid "Yarn Details"
 msgstr "Garndetails"
 
-#: rust/src/web.rs:1974 stricknani/templates/yarn/detail.html:139
+#: rust/src/import_service.rs:367 rust/src/web.rs:2120
+#: stricknani/templates/yarn/detail.html:139
 #: stricknani/templates/yarn/form.html:119
 #: stricknani/templates/yarn/form.html:351
 msgid "Brand"
@@ -2233,7 +2243,8 @@ msgstr "Marke"
 msgid "Added"
 msgstr "Hinzugefügt"
 
-#: rust/src/web.rs:1975 stricknani/templates/yarn/detail.html:169
+#: rust/src/import_service.rs:368 rust/src/web.rs:2121
+#: stricknani/templates/yarn/detail.html:169
 #: stricknani/templates/yarn/form.html:127
 #: stricknani/templates/yarn/form.html:362
 msgid "Colorway"
@@ -2253,11 +2264,11 @@ msgstr "Faseranteil"
 msgid "Weight Category"
 msgstr "Garnstärke"
 
-#: stricknani/templates/yarn/detail.html:225
+#: rust/src/import_service.rs:369 stricknani/templates/yarn/detail.html:225
 msgid "Weight"
 msgstr "Gewicht"
 
-#: stricknani/templates/yarn/detail.html:235
+#: rust/src/import_service.rs:370 stricknani/templates/yarn/detail.html:235
 msgid "Length"
 msgstr "Länge"
 
@@ -2299,11 +2310,13 @@ msgstr "Zurück zu den Garnen"
 msgid "New yarn entry"
 msgstr "Neuer Garneintrag"
 
-#: rust/src/web.rs:1990 stricknani/templates/yarn/form.html:103
+#: rust/src/import_service.rs:365 rust/src/web.rs:2136
+#: rust/src/web_accounts.rs:948 stricknani/templates/yarn/form.html:103
 msgid "Name"
 msgstr "Name"
 
-#: rust/src/web.rs:1995 stricknani/templates/yarn/form.html:140
+#: rust/src/import_service.rs:372 rust/src/web.rs:2141
+#: stricknani/templates/yarn/form.html:140
 #: stricknani/templates/yarn/form.html:384
 msgid "Fiber content"
 msgstr "Faseranteil"
@@ -2318,7 +2331,8 @@ msgstr "Gewicht (g)"
 msgid "Length (m)"
 msgstr "Lauflänge (m)"
 
-#: rust/src/web.rs:1996 stricknani/templates/yarn/form.html:160
+#: rust/src/import_service.rs:371 rust/src/web.rs:2142
+#: stricknani/templates/yarn/form.html:160
 #: stricknani/templates/yarn/form.html:395
 msgid "Weight category"
 msgstr "Garnstärke"
@@ -2328,7 +2342,7 @@ msgstr "Garnstärke"
 msgid "e.g. Fingering, DK..."
 msgstr "z. B. Fingering, DK..."
 
-#: rust/src/web.rs:1979 stricknani/templates/yarn/form.html:276
+#: rust/src/web.rs:2125 stricknani/templates/yarn/form.html:276
 msgid "Photos"
 msgstr "Fotos"
 
@@ -2360,132 +2374,238 @@ msgstr ""
 "Dadurch werden auch alle mit diesem Garn verknüpften Fotos gelöscht. "
 "Diese Aktion kann nicht rückgängig gemacht werden."
 
-#: rust/src/web.rs:1961
-msgid "Gauge calculator"
-msgstr "Maschenprobe berechnen"
+#: rust/src/import_service.rs:346
+msgid "Import a pattern"
+msgstr "Anleitung importieren"
 
-#: rust/src/web.rs:1963
+#: rust/src/import_service.rs:350 rust/src/web.rs:2109
+#: rust/src/web_accounts.rs:926
 msgid "Sign out"
 msgstr "Abmelden"
 
-#: rust/src/web.rs:1970
-msgid "Your collection is empty."
-msgstr "Deine Sammlung ist leer."
+#: rust/src/import_service.rs:351
+msgid "Pattern URL"
+msgstr "Anleitungs-URL"
 
-#: rust/src/web.rs:1971
-msgid "Previous"
-msgstr "Zurück"
+#: rust/src/import_service.rs:352
+msgid "Pattern text"
+msgstr "Anleitungstext"
 
-#: rust/src/web.rs:1972
-msgid "Next"
-msgstr "Weiter"
+#: rust/src/import_service.rs:353
+msgid "Pattern file"
+msgstr "Anleitungsdatei"
 
-#: rust/src/web.rs:1976
+#: rust/src/import_service.rs:354
+msgid "Preview import"
+msgstr "Importvorschau"
+
+#: rust/src/import_service.rs:355
+msgid "Review the extracted details"
+msgstr "Extrahierte Angaben prüfen"
+
+#: rust/src/import_service.rs:356
+msgid "Create project"
+msgstr "Projekt erstellen"
+
+#: rust/src/import_service.rs:357
+msgid "Create yarn"
+msgstr "Garn erstellen"
+
+#: rust/src/import_service.rs:358
+msgid "Content fingerprint"
+msgstr "Inhaltsfingerabdruck"
+
+#: rust/src/import_service.rs:360 rust/src/web.rs:2122
 msgid "Needles"
 msgstr "Nadeln"
 
-#: rust/src/web.rs:1981
-msgid "Original source"
-msgstr "Originalquelle"
+#: rust/src/import_service.rs:361
+msgid "Stitch sample"
+msgstr "Maschenprobe"
 
-#: rust/src/web.rs:1986
-msgid "Add to favorites"
-msgstr "Zu Favoriten hinzufügen"
-
-#: rust/src/web.rs:1987
-msgid "Remove from favorites"
-msgstr "Aus Favoriten entfernen"
-
-#: rust/src/web.rs:1988
-msgid "Delete this item?"
-msgstr "Diesen Eintrag löschen?"
-
-#: rust/src/web.rs:1992
-msgid "Tags (one per line)"
-msgstr "Schlagwörter (eins pro Zeile)"
-
-#: rust/src/web.rs:1993
+#: rust/src/import_service.rs:362 rust/src/web.rs:2139
 msgid "Other materials"
 msgstr "Weitere Materialien"
 
-#: rust/src/web.rs:1994
+#: rust/src/import_service.rs:366 rust/src/web.rs:2140
 msgid "Link"
 msgstr "Link"
 
-#: rust/src/web.rs:1997
+#: rust/src/web.rs:2107
+msgid "Gauge calculator"
+msgstr "Maschenprobe berechnen"
+
+#: rust/src/web.rs:2116
+msgid "Your collection is empty."
+msgstr "Deine Sammlung ist leer."
+
+#: rust/src/web.rs:2117
+msgid "Previous"
+msgstr "Zurück"
+
+#: rust/src/web.rs:2118
+msgid "Next"
+msgstr "Weiter"
+
+#: rust/src/web.rs:2127
+msgid "Original source"
+msgstr "Originalquelle"
+
+#: rust/src/web.rs:2132
+msgid "Add to favorites"
+msgstr "Zu Favoriten hinzufügen"
+
+#: rust/src/web.rs:2133
+msgid "Remove from favorites"
+msgstr "Aus Favoriten entfernen"
+
+#: rust/src/web.rs:2134
+msgid "Delete this item?"
+msgstr "Diesen Eintrag löschen?"
+
+#: rust/src/web.rs:2138
+msgid "Tags (one per line)"
+msgstr "Schlagwörter (eins pro Zeile)"
+
+#: rust/src/web.rs:2143
 msgid "Dye lot"
 msgstr "Partie"
 
-#: rust/src/web.rs:1998
+#: rust/src/web.rs:2144
 msgid "Weight in grams"
 msgstr "Gewicht in Gramm"
 
-#: rust/src/web.rs:1999
+#: rust/src/web.rs:2145
 msgid "Length in meters"
 msgstr "Länge in Metern"
 
-#: rust/src/web.rs:2000
+#: rust/src/web.rs:2146
 msgid "AI enhanced"
 msgstr "Mit KI ergänzt"
 
-#: rust/src/web.rs:2001
+#: rust/src/web.rs:2147
 msgid "Add step"
 msgstr "Schritt hinzufügen"
 
-#: rust/src/web.rs:2002
+#: rust/src/web.rs:2148
 msgid "Manage categories"
 msgstr "Kategorien verwalten"
 
-#: rust/src/web.rs:2011
-msgid "Upload"
-msgstr "Hochladen"
+#: rust/src/web.rs:2149
+msgid "Imports"
+msgstr "Daten importieren"
 
-#: rust/src/web.rs:2012
-msgid "File"
-msgstr "Datei"
+#: rust/src/web.rs:2151
+msgid "Tag"
+msgstr "Schlagwort"
 
-#: rust/src/web.rs:2013
-msgid "Alternative text"
-msgstr "Alternativtext"
+#: rust/src/web.rs:2152
+msgid "Favorites"
+msgstr "Favoriten"
 
+#: rust/src/web.rs:2153
+msgid "All items"
+msgstr "Alle Einträge"
+
+#: rust/src/web.rs:2154
+msgid "Favorites only"
+msgstr "Nur Favoriten"
+
+#: rust/src/web.rs:2155
+msgid "Exclude favorites"
+msgstr "Favoriten ausschließen"
+
+#: rust/src/web.rs:2156
+msgid "Apply filters"
+msgstr "Filter anwenden"
+
+#: rust/src/web.rs:2157 rust/src/web_accounts.rs:924
 msgid "Account"
 msgstr "Konto"
 
+#: rust/src/web.rs:2158 rust/src/web_accounts.rs:928
 msgid "User accounts"
 msgstr "Benutzerkonten"
 
+#: rust/src/web.rs:2167
+msgid "Upload"
+msgstr "Hochladen"
+
+#: rust/src/web.rs:2168
+msgid "File"
+msgstr "Datei"
+
+#: rust/src/web.rs:2169
+msgid "Alternative text"
+msgstr "Alternativtext"
+
+#: rust/src/web_accounts.rs:920
 msgid "Account settings"
 msgstr "Kontoeinstellungen"
 
+#: rust/src/web_accounts.rs:927
 msgid "Signed in as"
 msgstr "Angemeldet als"
 
+#: rust/src/web_accounts.rs:930
 msgid "Status"
 msgstr "Status"
 
+#: rust/src/web_accounts.rs:931
 msgid "Role"
 msgstr "Rolle"
 
+#: rust/src/web_accounts.rs:932
 msgid "Actions"
 msgstr "Aktionen"
 
+#: rust/src/web_accounts.rs:935
 msgid "Administrator"
 msgstr "Administrator"
 
+#: rust/src/web_accounts.rs:936
 msgid "Member"
 msgstr "Mitglied"
 
+#: rust/src/web_accounts.rs:943
 msgid "API tokens"
 msgstr "API-Tokens"
 
+#: rust/src/web_accounts.rs:951
 msgid "Create API token"
 msgstr "API-Token erstellen"
 
+#: rust/src/web_accounts.rs:952
 msgid "Change password"
 msgstr "Passwort ändern"
 
+#: rust/src/web_accounts.rs:953
 msgid "Current password"
 msgstr "Aktuelles Passwort"
+
+#: rust/src/web_accounts.rs:959
+msgid "Profile image"
+msgstr "Profilbild"
+
+#: rust/src/web_accounts.rs:960
+msgid "Your profile image"
+msgstr "Dein Profilbild"
+
+#: rust/src/web_accounts.rs:965
+msgid "Image file"
+msgstr "Bilddatei"
+
+#: rust/src/web_accounts.rs:966
+msgid "Upload or replace image"
+msgstr "Bild hochladen oder ersetzen"
+
+#: rust/src/web_accounts.rs:967
+msgid "Delete profile image"
+msgstr "Profilbild löschen"
+
+#: rust/src/web_accounts.rs:968
+msgid "No profile image set."
+msgstr "Kein Profilbild festgelegt."
 
 # Navigation and General
 #~ msgid "Stricknani"
