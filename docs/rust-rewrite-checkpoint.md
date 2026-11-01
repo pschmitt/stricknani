@@ -8,16 +8,19 @@ boundary.
 
 ## Current evidence and open gates (2026-11-01)
 
-- The final Rust package build ran the default `cargo test` phase, formatting
-  check, and strict Clippy check successfully after the bounded loopback TCP
-  health probe was added. This supersedes the earlier 205-test result.
-- The Room/WorkManager replay passed on a disposable API 34 x86_64 emulator.
-  Earlier revision `7162771` also passed the KVM-backed
-  [Android Rust Replay CI job](https://github.com/pschmitt/stricknani/actions/runs/41300342197)
-  and [Nix Build](https://github.com/pschmitt/stricknani/actions/runs/41300342149).
-- The Rust-first native CI job
-  [3745154](https://github.com/pschmitt/stricknani/actions/runs/41307787025)
-  passed 206 Rust tests and 55 shipping-harness tests.
+- On revision `2cd090e`, the native check
+  [41315290376](https://github.com/pschmitt/stricknani/actions/runs/41315290376)
+  ran and passed 207 Rust tests across 34 targets and 58 shipping-harness tests.
+  The package check includes formatting and strict Clippy.
+- The Room/WorkManager replay passed against a disposable Rust fixture in
+  [41315290345](https://github.com/pschmitt/stricknani/actions/runs/41315290345).
+  The earlier [Nix Build](https://github.com/pschmitt/stricknani/actions/runs/41300342149)
+  and [Android Rust Replay](https://github.com/pschmitt/stricknani/actions/runs/41300342197)
+  also passed on revision `7162771`.
+- ktfmt and Android Lint passed in
+  [41315352294](https://github.com/pschmitt/stricknani/actions/runs/41315352294).
+  Android unit tests, Gradle build, and four APK artifact uploads passed in
+  [41315355350](https://github.com/pschmitt/stricknani/actions/runs/41315355350).
 - The Python reference suite passed 357 tests plus one skip. Python 3.13
   coverage was 74.23%, below the unchanged 80% reference gate. Ruff and mypy
   passed for the Rust shipping harness; the independent migration verifier
@@ -47,17 +50,19 @@ four expected labels and hid Projects and Yarns. The authenticated navigation
 regression and all 13 web tests passed. Production continues to serve Python with
 separate storage and routing.
 
-The previous full Android UI run exposed an invalid PNG IDAT CRC. The corrected
-fixture now returns 201 through the packaged API, while the original bytes
-return 400 without adding a photo. The offline edit now changes the description
-and keeps the shared project name stable. The fixture helper's startup-boundary
-tests prove local output contains neither generated credential and GitHub
-Actions still masks both (8 fixture tests plus 4 health tests passed).
-The final broader UI run remains pending:
-[41311343609](https://github.com/pschmitt/stricknani/actions/runs/41311343609).
-Its lint and build runs are also pending:
-[41311346438](https://github.com/pschmitt/stricknani/actions/runs/41311346438) and
-[41311349505](https://github.com/pschmitt/stricknani/actions/runs/41311349505).
+Earlier Android full-UI attempts exposed an invalid PNG IDAT CRC and an offline
+editor visibility timeout. The corrected fixture returns 201 through the
+packaged API, while the original bytes return 400 without adding a photo. The
+offline edit changes the description and keeps the shared project name stable;
+its scroll/assertion and timeout remain enabled. The fixture helper's
+startup-boundary tests prove local output contains neither generated credential
+and GitHub Actions still masks both (8 fixture tests plus 4 health tests passed).
+The latest full Android UI workflow
+[41315348917](https://github.com/pschmitt/stricknani/actions/runs/41315348917)
+is pending behind autoSmoke
+[41315290332](https://github.com/pschmitt/stricknani/actions/runs/41315290332),
+which was still in progress at this checkpoint. T119.9 remains open until the
+full-UI result is confirmed.
 
 The final snapshot/write-freeze and rollback procedure is documented in the
 migration plan; it has not been executed. Production cutover remains a separate

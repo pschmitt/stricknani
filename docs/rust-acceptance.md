@@ -28,6 +28,11 @@ primary checkout and the user's uncommitted `REWRITE.md` edits are preserved.
   The Rust-first `CI=1 just check` also passed with 55 shipping-harness tests.
   The [native CI job at `3745154`](https://github.com/pschmitt/stricknani/actions/runs/41307787025)
   independently confirms 206 Rust tests and 55 harness tests passed.
+- The latest native job on `2cd090e`
+  ([run 41315290376](https://github.com/pschmitt/stricknani/actions/runs/41315290376))
+  passed 207 Rust tests across 34 targets and 58 shipping-harness tests.
+  The actual Rust-first test job ran; the legacy `test` and `test-nix` jobs were
+  skipped by the workflow filters.
 - The full Python reference suite passed 357 tests with one skip. Its Python
   3.13 coverage was 74.23%, below the unchanged 80% reference gate; that coverage
   run is not a passing gate. The existing Python 3.15 coverage job retains the
@@ -57,23 +62,35 @@ primary checkout and the user's uncommitted `REWRITE.md` edits are preserved.
 
 ## Remaining acceptance
 
-The earlier broader Android UI run
-([run 41305936894](https://github.com/pschmitt/stricknani/actions/runs/41305936894))
-exposed a queued yarn-photo timeout caused by an invalid IDAT CRC in its PNG.
-The fixture was corrected and independently checked through the packaged API:
-the original bytes return 400 without adding a photo, while the corrected bytes
-return 201 and add one. The offline journey now edits a description while
-preserving the shared project name for later journeys. The final broader UI run
-is pending in [run 41311343609](https://github.com/pschmitt/stricknani/actions/runs/41311343609);
-the paired lint and build runs are also pending:
-[41311346438](https://github.com/pschmitt/stricknani/actions/runs/41311346438) and
-[41311349505](https://github.com/pschmitt/stricknani/actions/runs/41311349505).
-The fixture helper masks generated credentials only in GitHub Actions; its
-startup-boundary tests and mandatory health tests pass (8 and 4 tests).
-The CLI
-inventory records the intentional command-surface changes; generated project PDF
-export is replaced by non-equivalent browser print/save, and that limitation is
-retained explicitly rather than claimed as parity.
+The following Android checks passed on revision `2cd090e`:
+
+- [Room/WorkManager replay](https://github.com/pschmitt/stricknani/actions/runs/41315290345)
+  passed against a disposable Rust fixture.
+- [Android lint](https://github.com/pschmitt/stricknani/actions/runs/41315352294)
+  ran both ktfmt and Android Lint successfully.
+- [Android build](https://github.com/pschmitt/stricknani/actions/runs/41315355350)
+  ran unit tests, the Gradle build, and four APK artifact uploads successfully.
+- The full Android UI workflow
+  [41315348917](https://github.com/pschmitt/stricknani/actions/runs/41315348917)
+  remains pending behind autoSmoke run
+  [41315290332](https://github.com/pschmitt/stricknani/actions/runs/41315290332),
+  which was still in progress at this audit. Keep T119.9 open until the full UI
+  result is known.
+
+Earlier full-UI attempts found an invalid PNG IDAT CRC and an editor visibility
+timeout. The original PNG returns 400 without adding a photo; the corrected file
+returns 201. The offline journey now edits the description while preserving the
+shared project name, and scrolls/asserts the edited text without weakening its
+timeout. Failure diagnostics retain an application frame and redact known
+fixture values. Fixture startup tests confirm local output contains no generated
+credentials while GitHub Actions masks them; 8 fixture tests and 4 health tests
+passed.
+
+The CLI inventory records intentional command-surface changes. Domain
+automation uses the authenticated API/browser instead of a second direct-DB
+CLI; browser print/save is not equivalent to the legacy generated PDF. The
+dependency audit retains scoped findings and review dates in
+`rust-security-review.md`; it is not clean.
 
 Final production write-freeze, fresh snapshot, import/verification, same-origin
 routing and rollback procedures are documented in `rust-migration-plan.md`.
@@ -81,8 +98,8 @@ They are conditional future operations requiring the user's explicit approval;
 this audit does not execute or authorize them.
 
 At `dc3d78c`, Nix, native checks, Android build/lint, Room replay and the UI smoke
-run passed. The manual full UI run failed with a 30-second wait timeout in the
-offline-edit journey. That journey now waits for the detail screen, scrolls the
-edited Markdown into view and asserts it is displayed. Failure summaries retain
-an application frame and text-wait errors identify the expected text. The full
-rerun remains an acceptance gate; the assertions and timeouts were not relaxed.
+run passed. A manual full UI attempt then failed with a 30-second wait timeout in
+the offline-edit journey. The journey now waits for the detail screen, scrolls
+the edited Markdown into view and asserts it is displayed. Failure summaries
+retain an application frame and text-wait errors identify the expected text.
+The current full run is linked above; assertions and timeouts were not relaxed.

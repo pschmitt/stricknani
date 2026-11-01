@@ -80,8 +80,25 @@ The current evidence and remaining gates are summarized in
 import, administrative, optional-provider, translation, PWA, importer, and
 Android replay work described there. The final Rust package build passed its
 default `cargo test` phase, formatting check, and strict Clippy check after the
-health-probe change. The deployed candidate also passed Android replay CI and
-the Docker image health/closure check. Broader Android UI journeys are being
-connected to Rust. The styled preview passed desktop and mobile viewport
-checks. The final snapshot, backup, and rollback procedure is documented but
-unexecuted. Production cutover requires the user's explicit approval.
+health-probe change. On revision `2cd090e`, the native check passed 207 Rust
+tests across 34 targets and 58 shipping-harness tests in
+[run 41315290376](https://github.com/pschmitt/stricknani/actions/runs/41315290376).
+Android Room/WorkManager replay passed in
+[run 41315290345](https://github.com/pschmitt/stricknani/actions/runs/41315290345);
+ktfmt and Android Lint passed in
+[run 41315352294](https://github.com/pschmitt/stricknani/actions/runs/41315352294);
+Android unit tests, Gradle build, and APK artifact uploads passed in
+[run 41315355350](https://github.com/pschmitt/stricknani/actions/runs/41315355350).
+The full Android UI workflow
+[41315348917](https://github.com/pschmitt/stricknani/actions/runs/41315348917)
+is pending behind autoSmoke run
+[41315290332](https://github.com/pschmitt/stricknani/actions/runs/41315290332);
+keep T119.9 open until that result is available.
+
+The deployed candidate has its own native login and storage. The copied-data
+migration rehearsal completed: 34 independent checks and 38 candidate API checks
+passed against an isolated snapshot. This is distinct from the final production
+snapshot, write freeze, import, and cutover, which remain unexecuted. The styled
+preview passed desktop and mobile viewport checks, while production continues
+to use Python and separate storage. Production cutover requires the user's
+explicit approval.
