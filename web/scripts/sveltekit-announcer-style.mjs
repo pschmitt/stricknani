@@ -12,7 +12,7 @@ const rootTemplate = fileURLToPath(
 /**
  * Read the one known inline style on SvelteKit's client-side live region.
  * Fail closed when the pinned framework template changes.
- * @returns {Promise<{style: string, hash: string}>}
+ * @returns {Promise<{style: string, hash: `sha256-${string}`}>}
  */
 export async function svelteKitAnnouncerStyle() {
   const source = await readFile(rootTemplate, "utf8");
@@ -29,6 +29,7 @@ export async function svelteKitAnnouncerStyle() {
   }
 
   const style = decodeAttribute(matches[0][1]);
+  /** @type {`sha256-${string}`} */
   const hash = `sha256-${createHash("sha256").update(style, "utf8").digest("base64")}`;
   return { style, hash };
 }
@@ -37,7 +38,9 @@ export async function svelteKitAnnouncerStyle() {
 function decodeAttribute(value) {
   return value.replace(
     /&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos);/gi,
+    /** @param {string} entity @param {string} name */
     (entity, name) => {
+      /** @type {Record<string, string>} */
       const named = {
         amp: "&",
         lt: "<",
