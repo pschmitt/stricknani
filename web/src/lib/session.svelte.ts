@@ -37,8 +37,11 @@ export const session = $state<SessionState>({
   expired: false,
 });
 
+let sessionGeneration = 0;
+
 setUnauthorizedHandler(() => {
   if (!session.data?.user) return;
+  sessionGeneration += 1;
   session.data = anonymousSession;
   session.expired = true;
   void refreshSession(undefined, true);
@@ -48,15 +51,18 @@ export async function refreshSession(
   signal?: AbortSignal,
   preserveExpiration = false,
 ): Promise<void> {
+  const generation = ++sessionGeneration;
   const wasExpired = preserveExpiration || session.expired;
   session.status = "loading";
   session.error = null;
   try {
-    session.data = await getSession(signal);
+    const data = await getSession(signal);
+    if (signal?.aborted || generation !== sessionGeneration) return;
+    session.data = data;
     session.status = "ready";
     session.expired = wasExpired;
   } catch (error) {
-    if (signal?.aborted) return;
+    if (signal?.aborted || generation !== sessionGeneration) return;
     session.status = "error";
     session.error = asError(error);
     session.expired = wasExpired;
@@ -71,8 +77,11 @@ export async function signIn(email: string, password: string): Promise<void> {
       400,
       "csrf_missing",
     );
+  const generation = ++sessionGeneration;
   session.error = null;
-  session.data = await postLogin(email, password, csrfToken);
+  const data = await postLogin(email, password, csrfToken);
+  if (generation !== sessionGeneration) return;
+  session.data = data;
   session.status = "ready";
   session.expired = false;
 }
@@ -85,7 +94,9 @@ export async function signOut(): Promise<void> {
       400,
       "csrf_missing",
     );
+  const generation = ++sessionGeneration;
   await postLogout(csrfToken);
+  if (generation !== sessionGeneration) return;
   session.data = anonymousSession;
   session.status = "ready";
   await refreshSession();

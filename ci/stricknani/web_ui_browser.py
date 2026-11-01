@@ -182,6 +182,53 @@ def _prepare_project_reader_fixture(page: Page) -> int:
     return int(result["id"])
 
 
+def _save_remote_project_version(page: Page, project_id: int, name: str) -> None:
+    result: object = page.evaluate(
+        """async ({ id, name }) => {
+          const sessionResponse = await fetch('/api/v2/session');
+          if (!sessionResponse.ok) return { status: sessionResponse.status };
+          const session = await sessionResponse.json();
+          const currentResponse = await fetch(`/api/v2/projects/${id}`);
+          if (!currentResponse.ok) return { status: currentResponse.status };
+          const current = (await currentResponse.json())?.data;
+          const response = await fetch(`/api/v2/projects/${id}`, {
+            method: 'PUT',
+            headers: {
+              'accept': 'application/json',
+              'content-type': 'application/json',
+              'x-csrf-token': session?.data?.csrf_token,
+            },
+            body: JSON.stringify({
+              name,
+              category: current.category,
+              needles: current.needles,
+              stitch_sample: current.stitch_sample,
+              description: current.description,
+              notes: current.notes,
+              other_materials: current.other_materials,
+              tags: current.tags,
+              link: current.link,
+              is_ai_enhanced: current.is_ai_enhanced,
+              yarn_ids: current.yarn_ids,
+              steps: current.steps.map(step => ({
+                id: step.id,
+                title: step.title,
+                description: step.description,
+                step_number: step.step_number,
+              })),
+              expected_updated_at: current.updated_at,
+            }),
+          });
+          return { status: response.status };
+        }""",
+        {"id": project_id, "name": name},
+    )
+    _require(
+        isinstance(result, dict) and result.get("status") == 200,
+        "a second client could not save the synthetic conflict version",
+    )
+
+
 def _assert_no_horizontal_overflow(page: Page, viewport_width: int) -> None:
     dimensions = page.evaluate(
         """() => ({
@@ -314,6 +361,8 @@ def run_acceptance(
     responsive_failures: list[str] = []
     expected_404_path = "/app/this-route-does-not-exist"
     expected_404_window = [False]
+    expected_conflict_window = [False]
+    expected_conflict_paths: set[str] = set()
 
     def observe_request(request: object) -> None:
         url = getattr(request, "url", "")
@@ -334,6 +383,13 @@ def run_acceptance(
             auth_responses.append((path, response.status))
         if path.startswith("/api/v2/projects/") or path == "/api/v2/projects":
             project_responses.append((path, response.status))
+            if (
+                expected_conflict_window[0]
+                and path.startswith("/api/v2/projects/")
+                and response.request.method == "PUT"
+                and response.status == 409
+            ):
+                expected_conflict_paths.add(path)
         if path == "/api/v2/projects" and response.request.method == "GET":
             size: int | None = None
             if response.status == 200:
@@ -416,8 +472,29 @@ def run_acceptance(
             and source_path == expected_404_path
         ):
             console_errors.append("expected_unknown_route_404")
+        elif (
+            source_path in expected_conflict_paths
+            and "failed to load resource" in text
+            and any(
+                response_path == source_path and status == 409
+                for response_path, status in project_responses
+            )
+        ):
+            console_errors.append("expected_project_conflict_409")
         else:
-            console_errors.append("unexpected_console_error")
+            if source_path.startswith("/api/v2/projects/"):
+                source_class = "project-api"
+            elif source_path == "/api/v2/projects":
+                source_class = "project-list-api"
+            elif source_path.startswith("/api/v2/"):
+                source_class = "resource-api"
+            elif source_path.startswith("/app/_app/"):
+                source_class = "app-asset"
+            elif source_path.startswith("/app/"):
+                source_class = "app-route"
+            else:
+                source_class = "browser"
+            console_errors.append(f"unexpected_console_error:{source_class}")
 
     def observe_page_error(_error: object) -> None:
         page_errors.append(True)
@@ -1069,6 +1146,21 @@ def run_acceptance(
                 caret="initial",
             )
 
+            mark_stage("opening the project editor from the reader")
+            reader_edit_link = page.get_by_role("link", name="Edit project", exact=True)
+            reader_edit_link.wait_for(state="visible")
+            _require(
+                reader_edit_link.evaluate(
+                    "element => element.getBoundingClientRect().height >= 44"
+                ),
+                "the reader edit link is smaller than the 44 px target minimum",
+            )
+            reader_edit_link.click()
+            page.wait_for_url(f"**/app/projects/{project_id}/edit")
+            page.get_by_role("heading", name="Edit project", exact=True).wait_for(
+                state="visible"
+            )
+
             mark_stage("direct routes and explicit unfinished states")
             route_headings = {
                 "/app/": "Your knitting, in one place.",
@@ -1100,6 +1192,292 @@ def run_acceptance(
                         ).is_visible(),
                         "unfinished creation forms were presented as complete",
                     )
+            mark_stage("creating a project through the browser editor")
+            library_response = page.goto(
+                f"{origin}/app/projects", wait_until="networkidle"
+            )
+            _require(
+                library_response is not None and library_response.status == 200,
+                "the project library did not load before project creation",
+            )
+            page.get_by_role("heading", name="Projects", exact=True).wait_for(
+                state="visible"
+            )
+            page.get_by_role("link", name="New project", exact=True).click()
+            page.wait_for_url("**/app/projects/new")
+            page.get_by_role("heading", name="New project", exact=True).wait_for(
+                state="visible"
+            )
+            mark_stage("filling the new project form")
+            mark_stage("filling the project name")
+            page.get_by_label("Project name", exact=True).fill("Soft winter throw")
+            mark_stage("filling the project category")
+            page.get_by_label("Category", exact=True).fill("Blankets")
+            mark_stage("filling the project needles")
+            page.get_by_label("Needles", exact=True).fill("4 mm circular needles")
+            mark_stage("filling the project stitch sample")
+            page.get_by_label("Stitch sample", exact=True).fill(
+                "18 stitches over 10 cm"
+            )
+            mark_stage("filling the project tags")
+            page.get_by_label("Tags", exact=True).fill("winter, textured, winter")
+            mark_stage("filling the project pattern")
+            page.get_by_label("Pattern", exact=True).fill(
+                "Work an even textured panel."
+            )
+            mark_stage("filling the project notes")
+            page.get_by_label("Notes", exact=True).fill(
+                "Check the width after each repeat."
+            )
+            mark_stage("filling the project materials")
+            page.get_by_label("Other materials", exact=True).fill("Two stitch markers.")
+            mark_stage("adding the first project step")
+            page.get_by_role("button", name="Add step", exact=True).click()
+            mark_stage("checking client-side project validation")
+            first_step_title = page.get_by_label("Step title", exact=True).first
+            first_step_title.fill("")
+            page.get_by_label("Step instructions", exact=True).first.fill(
+                "Cast on and establish the border."
+            )
+            page.get_by_role("button", name="Create project", exact=True).click()
+            page.get_by_text(
+                "Each step needs a title of 256 characters or fewer.", exact=True
+            ).wait_for(state="visible")
+            first_step_title.fill("Cast on")
+            mark_stage("searching for a yarn to associate")
+            page.get_by_label("Find yarn", exact=True).fill("Riverbend")
+            page.get_by_role("button", name="Search", exact=True).click()
+            page.get_by_text("Riverbend Merino DK", exact=True).wait_for(
+                state="visible", timeout=5_000
+            )
+            page.get_by_role("button", name="Add yarn", exact=True).click()
+            mark_stage("submitting the new project")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == "/api/v2/projects"
+                    and response.request.method == "POST"
+                )
+            ) as create_project_response_info:
+                page.get_by_role("button", name="Create project", exact=True).click()
+            create_project_response = create_project_response_info.value
+            _require(
+                create_project_response.status == 201,
+                "project creation did not succeed against the Rust API",
+            )
+            created_payload = create_project_response.json()
+            created_project = (
+                created_payload.get("data")
+                if isinstance(created_payload, dict)
+                else None
+            )
+            if not isinstance(created_project, dict):
+                raise AcceptanceFailure("project creation returned an invalid resource")
+            created_id = created_project.get("id")
+            if not isinstance(created_id, int) or isinstance(created_id, bool):
+                raise AcceptanceFailure(
+                    "project creation did not return a numeric resource ID"
+                )
+            editor_project_id = created_id
+            mark_stage("opening the saved project editor")
+            page.get_by_role("heading", name="Edit project", exact=True).wait_for(
+                state="visible"
+            )
+            page.get_by_label("Project name").wait_for(state="visible")
+            page.locator("#project-image-file").wait_for(state="visible")
+            _require(
+                page.locator("#project-image-file").is_enabled(),
+                "clean saved projects did not enable media management",
+            )
+
+            mark_stage("preserving editor drafts through dirty navigation and conflict")
+            project_name = page.get_by_label("Project name", exact=True)
+            project_name.fill("Chosen local draft")
+            mark_stage("checking that media controls are disabled for an unsaved draft")
+            _require(
+                page.locator("#project-image-file").is_disabled(),
+                "media management stayed enabled with an unsaved project draft",
+            )
+            page.once("dialog", lambda dialog: dialog.dismiss())
+            mark_stage("checking the dirty navigation confirmation")
+            page.get_by_role("link", name="Back to project", exact=True).click()
+            mark_stage("checking that a canceled navigation preserves the draft")
+            _require(
+                urlsplit(page.url).path.endswith(
+                    f"/app/projects/{editor_project_id}/edit"
+                )
+                and project_name.input_value() == "Chosen local draft",
+                "the dirty-navigation guard did not keep the local project draft",
+            )
+            mark_stage("saving the concurrent project version")
+            _save_remote_project_version(
+                page, editor_project_id, "Concurrent saved version"
+            )
+            mark_stage("checking stale project save conflict")
+            expected_conflict_window[0] = True
+            try:
+                with page.expect_response(
+                    lambda response: (
+                        urlsplit(response.url).path
+                        == f"/api/v2/projects/{editor_project_id}"
+                        and response.request.method == "PUT"
+                    )
+                ) as project_conflict_response_info:
+                    page.get_by_role("button", name="Save changes", exact=True).click()
+            finally:
+                expected_conflict_window[0] = False
+            _require(
+                project_conflict_response_info.value.status == 409,
+                "a stale project edit did not return a conflict",
+            )
+            mark_stage("checking that the conflict retains the project draft")
+            _mask_fixture_identity(page)
+            _prepare_screenshot(page)
+            page.screenshot(
+                path=str(screenshots / "project-editor-conflict-debug.png"),
+                caret="initial",
+            )
+            if page.locator(".conflict-panel").count() != 1:
+                raise AcceptanceFailure(
+                    "a 409 response did not show the project conflict choices"
+                )
+            conflict_heading = page.get_by_role(
+                "heading",
+                name="This project changed in another window.",
+                exact=True,
+            )
+            if conflict_heading.count() != 1:
+                raise AcceptanceFailure(
+                    "the conflict choices did not include their expected heading"
+                )
+            conflict_heading.wait_for(state="visible")
+            mark_stage("explicitly saving the project draft over latest")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path
+                    == f"/api/v2/projects/{editor_project_id}"
+                    and response.request.method == "PUT"
+                )
+            ) as keep_draft_response_info:
+                page.get_by_role(
+                    "button", name="Save my draft over latest", exact=True
+                ).click()
+            _require(
+                keep_draft_response_info.value.status == 200,
+                "explicitly saving the project draft over latest did not succeed",
+            )
+            page.get_by_text("Project changes saved.", exact=True).wait_for(
+                state="visible"
+            )
+            _require(
+                project_name.input_value() == "Chosen local draft",
+                "saving the editor draft over latest changed its contents",
+            )
+
+            mark_stage("preparing a second project conflict")
+            project_name.fill("Draft to discard")
+            _save_remote_project_version(
+                page, editor_project_id, "Latest server version"
+            )
+            mark_stage("checking the second stale project save")
+            expected_conflict_window[0] = True
+            try:
+                with page.expect_response(
+                    lambda response: (
+                        urlsplit(response.url).path
+                        == f"/api/v2/projects/{editor_project_id}"
+                        and response.request.method == "PUT"
+                    )
+                ) as second_project_conflict_info:
+                    page.get_by_role("button", name="Save changes", exact=True).click()
+            finally:
+                expected_conflict_window[0] = False
+            _require(
+                second_project_conflict_info.value.status == 409,
+                "a second stale project edit did not return a conflict",
+            )
+            mark_stage("loading latest project values by explicit choice")
+            page.get_by_role("button", name="Load latest values", exact=True).click()
+            _require(
+                project_name.input_value() == "Latest server version",
+                "explicitly loading latest values did not replace the saved draft",
+            )
+
+            mark_stage("saving ordered project steps and refreshing project media")
+            page.get_by_role("button", name="Add step", exact=True).click()
+            page.get_by_label("Step title").nth(1).fill("Finish the border")
+            page.get_by_label("Step instructions").nth(1).fill(
+                "Bind off loosely and weave in the ends."
+            )
+            page.get_by_role("button", name="Move up Step 2", exact=True).click()
+            step_title_inputs = page.get_by_label("Step title", exact=True)
+            _require(
+                step_title_inputs.nth(0).input_value() == "Finish the border"
+                and step_title_inputs.nth(1).input_value() == "Cast on",
+                "project step reordering did not update the draft order",
+            )
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path
+                    == f"/api/v2/projects/{editor_project_id}"
+                    and response.request.method == "PUT"
+                )
+            ) as ordered_steps_response_info:
+                page.get_by_role("button", name="Save changes", exact=True).click()
+            _require(
+                ordered_steps_response_info.value.status == 200,
+                "ordered project steps did not save",
+            )
+            ordered_project_payload = ordered_steps_response_info.value.json()
+            ordered_project = ordered_project_payload.get("data", {})
+            ordered_steps = ordered_project.get("steps", [])
+            _require(
+                [step.get("title") for step in ordered_steps]
+                == ["Finish the border", "Cast on"],
+                "the Rust API did not persist the reordered project steps",
+            )
+
+            image_asset = seed_rust.REPO_ROOT / "demo_assets" / "demo_image_3.jpg"
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path
+                    == f"/api/v2/projects/{editor_project_id}/images/title"
+                    and response.request.method == "POST"
+                )
+            ) as editor_media_response_info:
+                page.locator("#project-image-file").set_input_files(image_asset)
+            _require(
+                editor_media_response_info.value.status == 201,
+                "the clean project editor could not upload a project photo",
+            )
+            page.get_by_text("Project media updated.", exact=True).wait_for(
+                state="visible"
+            )
+            page.locator(".media-list img").wait_for(state="visible")
+            _require(
+                page.locator(".media-list img").count() == 1,
+                "the project media list did not refresh after upload",
+            )
+
+            mark_stage("confirming project deletion through the editor")
+            page.once("dialog", lambda dialog: dialog.accept())
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path
+                    == f"/api/v2/projects/{editor_project_id}"
+                    and response.request.method == "DELETE"
+                )
+            ) as editor_delete_response_info:
+                page.get_by_role("button", name="Delete project", exact=True).click()
+            _require(
+                editor_delete_response_info.value.status == 204,
+                "project deletion did not complete with 204",
+            )
+            page.locator(".project-grid").wait_for(state="visible")
+            _require(
+                page.get_by_role("heading", name="Soft winter throw").count() == 0,
+                "the deleted editor project remained in the library",
+            )
+
             mark_stage("checking unknown route rejection")
             expected_404_window[0] = True
             try:
@@ -1169,8 +1547,16 @@ def run_acceptance(
             )
             _require(not page_errors, "the browser reported a page error")
             _require(
-                all(error == "expected_unknown_route_404" for error in console_errors),
-                "the browser reported an unexpected console error",
+                all(
+                    error
+                    in {
+                        "expected_unknown_route_404",
+                        "expected_project_conflict_409",
+                    }
+                    for error in console_errors
+                ),
+                "the browser reported an unexpected console error: "
+                + ", ".join(sorted(set(console_errors))),
             )
             _require(
                 not responsive_failures,

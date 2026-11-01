@@ -40,6 +40,7 @@ export class ApiError extends Error {
   readonly status: number;
   readonly fields?: Record<string, string>;
   readonly current?: unknown;
+  readonly retryAfterSeconds?: number;
 
   constructor(
     message: string,
@@ -47,6 +48,7 @@ export class ApiError extends Error {
     code = "request_failed",
     fields?: Record<string, string>,
     current?: unknown,
+    retryAfterSeconds?: number,
   ) {
     super(message);
     this.name = "ApiError";
@@ -54,6 +56,7 @@ export class ApiError extends Error {
     this.status = status;
     this.fields = fields;
     this.current = current;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -136,11 +139,14 @@ export async function apiRequest<T = unknown>(
   }
 
   if (response.status === 204) return undefined as T;
+  const retryAfterSeconds = parseRetryAfter(
+    response.headers.get("retry-after"),
+  );
   let payload: unknown;
   try {
     payload = await response.json();
   } catch {
-    throw invalidResponse(response.status);
+    throw invalidResponse(response.status, retryAfterSeconds);
   }
 
   if (!response.ok) {
@@ -154,6 +160,7 @@ export async function apiRequest<T = unknown>(
       code,
       failure?.fields,
       failure?.current,
+      retryAfterSeconds,
     );
   }
   return payload as T;
@@ -194,6 +201,31 @@ function readErrorPayload(value: unknown): ErrorPayload | undefined {
       ? { current: candidate.current }
       : {}),
   };
+}
+
+const MAX_RETRY_AFTER_SECONDS = 86_400;
+const HTTP_DATE_PATTERN =
+  /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/;
+
+function parseRetryAfter(value: string | null): number | undefined {
+  const header = value?.trim();
+  if (!header) return;
+
+  if (/^\d+$/.test(header)) {
+    const seconds = Number(header);
+    if (!Number.isSafeInteger(seconds)) return;
+    return Math.min(seconds, MAX_RETRY_AFTER_SECONDS);
+  }
+
+  if (!HTTP_DATE_PATTERN.test(header)) return;
+  const retryAt = Date.parse(header);
+  if (!Number.isFinite(retryAt)) return;
+  const retryDate = new Date(retryAt);
+  if (retryDate.toUTCString() !== header) return;
+
+  const seconds = (retryAt - Date.now()) / 1000;
+  if (seconds < 0) return;
+  return Math.min(Math.ceil(seconds), MAX_RETRY_AFTER_SECONDS);
 }
 
 function localizedError(code: string): string {
@@ -261,10 +293,13 @@ function isStringMap(value: unknown): value is Record<string, string> {
   );
 }
 
-function invalidResponse(status = 200): ApiError {
+function invalidResponse(status = 200, retryAfterSeconds?: number): ApiError {
   return new ApiError(
     t("The server returned an unexpected response."),
     status,
     "invalid_response",
+    undefined,
+    undefined,
+    retryAfterSeconds,
   );
 }

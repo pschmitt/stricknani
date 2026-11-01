@@ -261,21 +261,29 @@
           {/if}
         </div>
       </div>
-      <button
-        class="reader-favorite"
-        type="button"
-        disabled={favoriteBusy}
-        aria-pressed={project.is_favorite}
-        aria-label={project.is_favorite
-          ? t("Remove from favorites", locale)
-          : t("Add to favorites", locale)}
-        onclick={toggleFavorite}
-      >
-        <span aria-hidden="true">{project.is_favorite ? "★" : "☆"}</span>
-        {project.is_favorite
-          ? t("Favorite", locale)
-          : t("Add to favorites", locale)}
-      </button>
+      <div class="reader-heading-actions">
+        <a
+          class="reader-edit-link"
+          href={resolve("/projects/[id]/edit", { id: String(project.id) })}
+        >
+          {t("Edit project", locale)}
+        </a>
+        <button
+          class="reader-favorite"
+          type="button"
+          disabled={favoriteBusy}
+          aria-pressed={project.is_favorite}
+          aria-label={project.is_favorite
+            ? t("Remove from favorites", locale)
+            : t("Add to favorites", locale)}
+          onclick={toggleFavorite}
+        >
+          <span aria-hidden="true">{project.is_favorite ? "★" : "☆"}</span>
+          {project.is_favorite
+            ? t("Favorite", locale)
+            : t("Add to favorites", locale)}
+        </button>
+      </div>
     </header>
 
     {#if favoriteError}
@@ -658,7 +666,8 @@
 
   .text-size-controls button,
   .print-button,
-  .reader-favorite {
+  .reader-favorite,
+  .reader-edit-link {
     min-height: 44px;
     border: 1px solid var(--line);
     border-radius: 0.65rem;
@@ -668,6 +677,12 @@
     font: inherit;
     font-weight: 640;
     cursor: pointer;
+  }
+
+  .reader-edit-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
   }
 
   .text-size-controls button {
@@ -681,6 +696,13 @@
     align-items: flex-end;
     justify-content: space-between;
     gap: 1rem;
+  }
+
+  .reader-heading-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .reader-heading h1 {
@@ -1101,7 +1123,7 @@
       flex-direction: column;
     }
 
-    .reader-favorite {
+    .reader-heading-actions {
       align-self: flex-start;
     }
 

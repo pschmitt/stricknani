@@ -1,10 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  createProject,
+  deleteProjectAttachment,
+  deleteProjectImage,
   filtersFromSearch,
   getProject,
   listProjects,
+  parseProjectDetail,
   searchFromFilters,
   setProjectFavorite,
+  updateProject,
+  uploadProjectAttachment,
+  uploadProjectImage,
 } from "./project-api";
 
 const summary = {
@@ -55,6 +62,41 @@ const detail = {
     },
   ],
   attachments: [],
+};
+
+const session = {
+  user: { id: 9, email: "synthetic@example.test", is_admin: false },
+  csrf_token: "csrf-fixture",
+  capabilities: {
+    signup: false,
+    external_imports: false,
+    ai: false,
+    ocr: false,
+    archive: false,
+  },
+  locale: "en" as const,
+};
+
+const write = {
+  name: "River path socks",
+  category: "Socks",
+  needles: "3.5 mm",
+  stitch_sample: "24 stitches over 10 cm",
+  description: "**Knit in the round.**",
+  notes: null,
+  other_materials: null,
+  tags: ["cables", "weekend"],
+  link: "https://patterns.example.test/socks",
+  is_ai_enhanced: false,
+  yarn_ids: [7],
+  steps: [
+    {
+      id: 80,
+      title: "Heel flap",
+      description: "Knit 24 rows.",
+      step_number: 1,
+    },
+  ],
 };
 
 afterEach(() => {
@@ -174,5 +216,139 @@ describe("project URL state and API DTOs", () => {
     expect(init.method).toBe("PUT");
     expect(new Headers(init.headers).get("x-csrf-token")).toBe("csrf-fixture");
     expect(init.body).toBeUndefined();
+  });
+
+  it("creates and updates project fields through the real v2 mutations", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ data: detail }, { status: 201 }))
+      .mockResolvedValueOnce(Response.json({ data: detail }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(createProject(write, session)).resolves.toMatchObject({
+      id: 42,
+    });
+    await expect(
+      updateProject(42, write, detail.updated_at, session),
+    ).resolves.toMatchObject({ id: 42 });
+
+    const [createUrl, createInit] = fetchMock.mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    expect(createUrl).toBe("/api/v2/projects");
+    expect(createInit.method).toBe("POST");
+    expect(new Headers(createInit.headers).get("x-csrf-token")).toBe(
+      "csrf-fixture",
+    );
+    expect(JSON.parse(String(createInit.body))).toEqual(write);
+
+    const [updateUrl, updateInit] = fetchMock.mock.calls[1] as [
+      string,
+      RequestInit,
+    ];
+    expect(updateUrl).toBe("/api/v2/projects/42");
+    expect(updateInit.method).toBe("PUT");
+    expect(JSON.parse(String(updateInit.body))).toEqual({
+      ...write,
+      expected_updated_at: detail.updated_at,
+    });
+  });
+
+  it("forwards optional project and step image URLs unchanged on create", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json({ data: detail }, { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const value = {
+      ...write,
+      image_urls: ["https://images.example.test/project.jpg"],
+      steps: [
+        {
+          ...write.steps[0]!,
+          image_urls: ["https://images.example.test/step.jpg"],
+        },
+      ],
+    };
+
+    await createProject(value, session);
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toEqual(value);
+  });
+
+  it("keeps the latest conflict DTO available for an explicit draft choice", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            error: { code: "conflict", message: "changed", current: detail },
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    await expect(
+      updateProject(42, write, detail.updated_at, session),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "conflict",
+      current: { id: 42, updated_at: detail.updated_at },
+    });
+    expect(parseProjectDetail(detail).id).toBe(42);
+  });
+
+  it("uploads image and attachment multipart bodies with CSRF and deletes media", async () => {
+    const image = detail.images[0];
+    if (!image) throw new Error("fixture image missing");
+    const attachment = {
+      id: 18,
+      filename: "pattern.pdf",
+      original_filename: "pattern.pdf",
+      content_type: "application/pdf",
+      size_bytes: 1024,
+      url: "/media/projects/42/pattern.pdf",
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ data: image }, { status: 201 }))
+      .mockResolvedValueOnce(
+        Response.json({ data: attachment }, { status: 201 }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const imageFile = new File(["image"], "cover.png", { type: "image/png" });
+    const attachmentFile = new File(["pattern"], "pattern.pdf", {
+      type: "application/pdf",
+    });
+
+    await expect(
+      uploadProjectImage(42, imageFile, "Cover image", session),
+    ).resolves.toMatchObject({ id: 15, is_title_image: true });
+    await expect(
+      uploadProjectAttachment(42, attachmentFile, session),
+    ).resolves.toMatchObject({ id: 18, original_filename: "pattern.pdf" });
+    await deleteProjectImage(42, 15, session);
+    await deleteProjectAttachment(42, 18, session);
+
+    const [, imageInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "/api/v2/projects/42/images/title",
+    );
+    expect(new Headers(imageInit.headers).get("x-csrf-token")).toBe(
+      "csrf-fixture",
+    );
+    expect(imageInit.body).toBeInstanceOf(FormData);
+    expect(new Headers(imageInit.headers).get("content-type")).toBeNull();
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      "/api/v2/projects/42/attachments",
+    );
+    expect(fetchMock.mock.calls[2]?.[0]).toBe("/api/v2/projects/42/images/15");
+    expect(fetchMock.mock.calls[3]?.[0]).toBe(
+      "/api/v2/projects/42/attachments/18",
+    );
   });
 });

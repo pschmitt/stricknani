@@ -78,6 +78,32 @@ export interface ProjectDetail extends ProjectSummary {
   attachments: ProjectAttachment[];
 }
 
+export interface ProjectStepWrite {
+  id?: number;
+  title: string;
+  description: string | null;
+  step_number: number;
+  /** Optional create-time URL suggestions used by the external import flow. */
+  image_urls?: string[];
+}
+
+export interface ProjectWrite {
+  name: string;
+  category: string | null;
+  needles: string | null;
+  stitch_sample: string | null;
+  description: string | null;
+  notes: string | null;
+  other_materials: string | null;
+  tags: string[];
+  link: string | null;
+  is_ai_enhanced: boolean;
+  yarn_ids: number[];
+  steps: ProjectStepWrite[];
+  /** Optional project image URLs used only during project creation/import. */
+  image_urls?: string[];
+}
+
 export interface ProjectFilters {
   query: string;
   category: string;
@@ -178,6 +204,140 @@ export async function getProject(
   return parseProjectDetail(payload.data);
 }
 
+export function parseProjectDetail(value: unknown): ProjectDetail {
+  return parseProjectDetailValue(value);
+}
+
+export async function createProject(
+  value: ProjectWrite,
+  session: SessionData,
+  signal?: AbortSignal,
+): Promise<ProjectDetail> {
+  const payload: unknown = await apiRequest("/api/v2/projects", {
+    method: "POST",
+    csrfToken: session.csrf_token,
+    body: value,
+    signal,
+  });
+  if (!isRecord(payload)) throw invalidResponse();
+  return parseProjectDetailValue(payload.data);
+}
+
+export async function updateProject(
+  id: number,
+  value: ProjectWrite,
+  expectedUpdatedAt: string,
+  session: SessionData,
+  signal?: AbortSignal,
+): Promise<ProjectDetail> {
+  const payload: unknown = await apiRequest(`/api/v2/projects/${id}`, {
+    method: "PUT",
+    csrfToken: session.csrf_token,
+    body: { ...value, expected_updated_at: expectedUpdatedAt },
+    signal,
+  });
+  if (!isRecord(payload)) throw invalidResponse();
+  return parseProjectDetailValue(payload.data);
+}
+
+export async function deleteProject(
+  id: number,
+  session: SessionData,
+  signal?: AbortSignal,
+): Promise<void> {
+  await apiRequest(`/api/v2/projects/${id}`, {
+    method: "DELETE",
+    csrfToken: session.csrf_token,
+    signal,
+  });
+}
+
+export async function uploadProjectImage(
+  projectId: number,
+  file: File,
+  altText: string,
+  session: SessionData,
+  stepId?: number,
+  signal?: AbortSignal,
+): Promise<ProjectImage> {
+  assertProjectMediaSize(file);
+  const body = new FormData();
+  body.append("file", file);
+  if (altText.trim()) body.append("alt_text", altText.trim());
+  const path = stepId
+    ? `/api/v2/projects/${projectId}/steps/${stepId}/images`
+    : `/api/v2/projects/${projectId}/images/title`;
+  const payload: unknown = await apiRequest(path, {
+    method: "POST",
+    csrfToken: session.csrf_token,
+    body,
+    signal,
+  });
+  if (!isRecord(payload)) throw invalidResponse();
+  return parseImage(payload.data);
+}
+
+export async function uploadProjectAttachment(
+  projectId: number,
+  file: File,
+  session: SessionData,
+  signal?: AbortSignal,
+): Promise<ProjectAttachment> {
+  assertProjectMediaSize(file);
+  const body = new FormData();
+  body.append("file", file);
+  const payload: unknown = await apiRequest(
+    `/api/v2/projects/${projectId}/attachments`,
+    {
+      method: "POST",
+      csrfToken: session.csrf_token,
+      body,
+      signal,
+    },
+  );
+  if (!isRecord(payload)) throw invalidResponse();
+  return parseAttachment(payload.data);
+}
+
+export async function deleteProjectImage(
+  projectId: number,
+  imageId: number,
+  session: SessionData,
+  signal?: AbortSignal,
+): Promise<void> {
+  await apiRequest(`/api/v2/projects/${projectId}/images/${imageId}`, {
+    method: "DELETE",
+    csrfToken: session.csrf_token,
+    signal,
+  });
+}
+
+export async function deleteProjectAttachment(
+  projectId: number,
+  attachmentId: number,
+  session: SessionData,
+  signal?: AbortSignal,
+): Promise<void> {
+  await apiRequest(
+    `/api/v2/projects/${projectId}/attachments/${attachmentId}`,
+    {
+      method: "DELETE",
+      csrfToken: session.csrf_token,
+      signal,
+    },
+  );
+}
+
+function assertProjectMediaSize(file: File): void {
+  if (file.size > 25 * 1024 * 1024) {
+    throw new ApiError(
+      t("This upload is larger than the 25 MiB limit."),
+      413,
+      "payload_too_large",
+    );
+  }
+}
+
 export async function getYarn(
   id: number,
   signal: AbortSignal,
@@ -248,7 +408,7 @@ function parseProjectSummary(value: unknown): ProjectSummary {
   };
 }
 
-function parseProjectDetail(value: unknown): ProjectDetail {
+function parseProjectDetailValue(value: unknown): ProjectDetail {
   if (
     !isRecord(value) ||
     !isSafePositiveInteger(value.id) ||

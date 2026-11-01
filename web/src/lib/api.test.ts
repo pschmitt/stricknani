@@ -28,6 +28,7 @@ const sessionFixture = {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
   setUnauthorizedHandler(() => {});
 });
 
@@ -154,6 +155,122 @@ describe("same-origin API client", () => {
     expect((error as ApiError).message).toBe(
       "The email or password is incorrect.",
     );
+  });
+
+  it("parses delta Retry-After and never retries a mutation automatically", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { error: { code: "rate_limited", message: "try later" } },
+          { status: 429, headers: { "Retry-After": "17" } },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const error = await apiRequest("/api/v2/projects", {
+      method: "POST",
+      body: { name: "Sample" },
+    }).catch((cause: unknown) => cause);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ retryAfterSeconds: 17 });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("parses an HTTP-date Retry-After into bounded seconds", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          { error: { code: "rate_limited", message: "try later" } },
+          {
+            status: 429,
+            headers: { "Retry-After": "Thu, 01 Jan 2026 00:00:30 GMT" },
+          },
+        ),
+      ),
+    );
+
+    const error = await apiRequest("/api/v2/projects").catch(
+      (cause: unknown) => cause,
+    );
+
+    expect(error).toMatchObject({ retryAfterSeconds: 30 });
+  });
+
+  it.each([
+    "-1",
+    "1.5",
+    "not a date",
+    "Wed, 01 Jan 2026 00:00:30 GMT",
+    "Wed, 31 Dec 2025 23:59:59 GMT",
+  ])("ignores invalid or negative Retry-After values (%s)", async (header) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { error: { code: "rate_limited", message: "try later" } },
+            { status: 429, headers: { "Retry-After": header } },
+          ),
+        ),
+    );
+
+    const error = await apiRequest("/api/v2/projects").catch(
+      (cause: unknown) => cause,
+    );
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).retryAfterSeconds).toBeUndefined();
+  });
+
+  it("caps excessive Retry-After values", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { error: { code: "rate_limited", message: "try later" } },
+            { status: 429, headers: { "Retry-After": "999999" } },
+          ),
+        ),
+    );
+
+    const error = await apiRequest("/api/v2/projects").catch(
+      (cause: unknown) => cause,
+    );
+
+    expect(error).toMatchObject({ retryAfterSeconds: 86_400 });
+  });
+
+  it("retains a valid Retry-After on malformed error JSON", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("not json", {
+          status: 503,
+          headers: { "Retry-After": "9" },
+        }),
+      ),
+    );
+
+    const error = await apiRequest("/api/v2/projects").catch(
+      (cause: unknown) => cause,
+    );
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({
+      status: 503,
+      code: "invalid_response",
+      retryAfterSeconds: 9,
+    });
   });
 
   it.each([
