@@ -61,9 +61,15 @@ export class ApiError extends Error {
 }
 
 let unauthorizedHandler: (() => void) | undefined;
+let authEpoch = 0;
 
 export function setUnauthorizedHandler(handler: () => void): void {
   unauthorizedHandler = handler;
+}
+
+/** Invalidate pending requests before the current authentication state changes. */
+export function advanceAuthEpoch(): void {
+  authEpoch += 1;
 }
 
 export async function getSession(signal?: AbortSignal): Promise<SessionData> {
@@ -107,6 +113,7 @@ export async function apiRequest<T = unknown>(
   options: RequestOptions = {},
 ): Promise<T> {
   const method = options.method ?? "GET";
+  const requestAuthEpoch = authEpoch;
   const headers = new Headers({ accept: "application/json" });
   let body: BodyInit | undefined;
   if (options.body instanceof FormData) {
@@ -151,7 +158,12 @@ export async function apiRequest<T = unknown>(
 
   if (!response.ok) {
     const failure = readErrorPayload(payload);
-    if (response.status === 401 && path !== "/api/v2/auth/login")
+    if (
+      response.status === 401 &&
+      path !== "/api/v2/auth/login" &&
+      !options.signal?.aborted &&
+      requestAuthEpoch === authEpoch
+    )
       unauthorizedHandler?.();
     const code = failure?.code ?? "request_failed";
     throw new ApiError(
@@ -250,6 +262,37 @@ function localizedError(code: string): string {
       "This item changed in another window. Your unsaved changes are still here.",
     ),
     payload_too_large: t("This upload is larger than the allowed size."),
+    invalid_json: t("The request could not be read. Refresh and try again."),
+    feature_disabled: t("This feature is not enabled for this account."),
+    invalid_multipart: t(
+      "The uploaded form could not be read. Choose the file again.",
+    ),
+    invalid_image: t("This is not a valid image. Choose a different file."),
+    media_unavailable: t("Media storage is unavailable. Try again later."),
+    ocr_unavailable: t(
+      "Text recognition is unavailable right now. You can enter the text manually.",
+    ),
+    ocr_timeout: t(
+      "Text recognition took too long. Try again or enter the text manually.",
+    ),
+    ocr_failed: t(
+      "Text recognition could not complete. You can enter the text manually.",
+    ),
+    invalid_language: t("Choose a supported language for text recognition."),
+    invalid_src: t("This image is not available for text recognition."),
+    import_unavailable: t(
+      "Import preview is unavailable right now. Try again later.",
+    ),
+    import_timeout: t("The source took too long to import. Try again later."),
+    import_fetch_failed: t(
+      "The source could not be downloaded. Check the link and try again.",
+    ),
+    unsafe_url: t("This link cannot be imported for security reasons."),
+    unsupported_document: t(
+      "This document type is not supported. Try a web page, text, Markdown, PDF, or image.",
+    ),
+    invalid_document: t("This document could not be read. Try another file."),
+    archive_unavailable: t("Archiving is unavailable right now."),
     image_import_unavailable: t(
       "External image importing is not available right now.",
     ),

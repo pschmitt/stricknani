@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   apiRequest,
   ApiError,
+  advanceAuthEpoch,
   getSession,
   login,
   logout,
@@ -113,6 +114,46 @@ describe("same-origin API client", () => {
       login("a@example.test", "bad", "csrf-fixture"),
     ).rejects.toMatchObject({ status: 401 });
     expect(unauthorized).toHaveBeenCalledOnce();
+  });
+
+  it("does not let an obsolete or aborted 401 expire the current session", async () => {
+    const unauthorized = vi.fn();
+    setUnauthorizedHandler(unauthorized);
+    let resolveResponse!: (response: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveResponse = resolve;
+          }),
+      ),
+    );
+
+    const obsoleteRequest = apiRequest("/api/v2/projects");
+    advanceAuthEpoch();
+    resolveResponse(
+      Response.json(
+        { error: { code: "unauthorized", message: "expired" } },
+        { status: 401 },
+      ),
+    );
+    await expect(obsoleteRequest).rejects.toMatchObject({ status: 401 });
+    expect(unauthorized).not.toHaveBeenCalled();
+
+    const controller = new AbortController();
+    const abortedRequest = apiRequest("/api/v2/projects", {
+      signal: controller.signal,
+    });
+    controller.abort();
+    resolveResponse(
+      Response.json(
+        { error: { code: "unauthorized", message: "expired" } },
+        { status: 401 },
+      ),
+    );
+    await expect(abortedRequest).rejects.toMatchObject({ status: 401 });
+    expect(unauthorized).not.toHaveBeenCalled();
   });
 
   it("does not set multipart content-type for FormData", async () => {
@@ -310,5 +351,65 @@ describe("same-origin API client", () => {
     expect(error).toMatchObject({ message: expectedMessage });
     if (code === "conflict")
       expect(error).toMatchObject({ current: { id: 42 } });
+  });
+
+  it.each([
+    ["invalid_json", "The request could not be read. Refresh and try again."],
+    ["feature_disabled", "This feature is not enabled for this account."],
+    [
+      "invalid_multipart",
+      "The uploaded form could not be read. Choose the file again.",
+    ],
+    ["media_unavailable", "Media storage is unavailable. Try again later."],
+    ["invalid_image", "This is not a valid image. Choose a different file."],
+    [
+      "ocr_unavailable",
+      "Text recognition is unavailable right now. You can enter the text manually.",
+    ],
+    [
+      "ocr_timeout",
+      "Text recognition took too long. Try again or enter the text manually.",
+    ],
+    [
+      "ocr_failed",
+      "Text recognition could not complete. You can enter the text manually.",
+    ],
+    ["invalid_language", "Choose a supported language for text recognition."],
+    ["invalid_src", "This image is not available for text recognition."],
+    [
+      "import_unavailable",
+      "Import preview is unavailable right now. Try again later.",
+    ],
+    ["import_timeout", "The source took too long to import. Try again later."],
+    [
+      "import_fetch_failed",
+      "The source could not be downloaded. Check the link and try again.",
+    ],
+    ["unsafe_url", "This link cannot be imported for security reasons."],
+    [
+      "unsupported_document",
+      "This document type is not supported. Try a web page, text, Markdown, PDF, or image.",
+    ],
+    ["invalid_document", "This document could not be read. Try another file."],
+    ["archive_unavailable", "Archiving is unavailable right now."],
+  ])("maps %s to helpful app copy", async (code, expectedMessage) => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { error: { code, message: "English backend message" } },
+            { status: 503 },
+          ),
+        ),
+    );
+
+    const error = await apiRequest("/api/v2/resource").catch(
+      (cause: unknown) => cause,
+    );
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ message: expectedMessage });
   });
 });

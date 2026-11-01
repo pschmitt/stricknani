@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
+  advanceAuthEpoch: vi.fn(),
   getSession: vi.fn(),
   login: vi.fn(),
   logout: vi.fn(),
@@ -8,6 +9,7 @@ const api = vi.hoisted(() => ({
 }));
 
 vi.mock("./api", () => ({
+  advanceAuthEpoch: api.advanceAuthEpoch,
   ApiError: class ApiError extends Error {
     constructor(message: string) {
       super(message);
@@ -57,6 +59,7 @@ describe("session request ordering", () => {
     api.login.mockReset();
     api.logout.mockReset();
     api.setUnauthorizedHandler.mockClear();
+    api.advanceAuthEpoch.mockClear();
     session.status = "ready";
     session.data = anonymous;
     session.error = null;

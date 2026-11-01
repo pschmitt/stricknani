@@ -1,4 +1,5 @@
 import {
+  advanceAuthEpoch,
   ApiError,
   getSession,
   login as postLogin,
@@ -41,6 +42,7 @@ let sessionGeneration = 0;
 
 setUnauthorizedHandler(() => {
   if (!session.data?.user) return;
+  advanceAuthEpoch();
   sessionGeneration += 1;
   session.data = anonymousSession;
   session.expired = true;
@@ -52,6 +54,7 @@ export async function refreshSession(
   preserveExpiration = false,
 ): Promise<void> {
   const generation = ++sessionGeneration;
+  advanceAuthEpoch();
   const wasExpired = preserveExpiration || session.expired;
   session.status = "loading";
   session.error = null;
@@ -78,9 +81,11 @@ export async function signIn(email: string, password: string): Promise<void> {
       "csrf_missing",
     );
   const generation = ++sessionGeneration;
+  advanceAuthEpoch();
   session.error = null;
   const data = await postLogin(email, password, csrfToken);
   if (generation !== sessionGeneration) return;
+  advanceAuthEpoch();
   session.data = data;
   session.status = "ready";
   session.expired = false;
@@ -95,8 +100,10 @@ export async function signOut(): Promise<void> {
       "csrf_missing",
     );
   const generation = ++sessionGeneration;
+  advanceAuthEpoch();
   await postLogout(csrfToken);
   if (generation !== sessionGeneration) return;
+  advanceAuthEpoch();
   session.data = anonymousSession;
   session.status = "ready";
   await refreshSession();
