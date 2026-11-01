@@ -210,10 +210,10 @@ fn parse_html(input: &DocumentInput<'_>) -> ProjectImportDraft {
                 .unwrap_or_default()
                 .to_ascii_lowercase();
             let value = node.value().attr("content").and_then(nonempty);
-            if !key.is_empty() {
-                if let Some(value) = value {
-                    map.entry(key).or_insert_with(|| value.to_owned());
-                }
+            if !key.is_empty()
+                && let Some(value) = value
+            {
+                map.entry(key).or_insert_with(|| value.to_owned());
             }
             map
         });
@@ -297,28 +297,33 @@ fn parse_html(input: &DocumentInput<'_>) -> ProjectImportDraft {
 fn parse_text(input: &DocumentInput<'_>, markdown: bool) -> ProjectImportDraft {
     let text = String::from_utf8_lossy(input.bytes);
     let text = text.trim();
-    let mut project = ProjectImportDraft::default();
-    project.link = input.source_url.and_then(safe_web_url).map(Url::to_string);
-    if markdown {
-        let first_heading = text.lines().find_map(|line| {
-            line.trim()
-                .strip_prefix('#')
-                .map(|heading| heading.trim_start_matches('#').trim())
-                .filter(|heading| !heading.is_empty())
-        });
-        project.name = first_heading.map(str::to_owned);
+    let name = if markdown {
+        text.lines()
+            .find_map(|line| {
+                line.trim()
+                    .strip_prefix('#')
+                    .map(|heading| heading.trim_start_matches('#').trim())
+                    .filter(|heading| !heading.is_empty())
+            })
+            .map(str::to_owned)
+    } else {
+        None
     }
-    project.name = project
-        .name
-        .or_else(|| input.filename.and_then(filename_stem));
-    project.description = nonempty(text).map(short_text);
+    .or_else(|| input.filename.and_then(filename_stem));
+    let mut extras = BTreeMap::new();
     if !text.is_empty() {
-        project.extras.insert(
+        extras.insert(
             "full_text".into(),
             Value::String(text.chars().take(MAX_EXTRACTED_TEXT_CHARS).collect()),
         );
     }
-    project
+    ProjectImportDraft {
+        name,
+        description: nonempty(text).map(short_text),
+        link: input.source_url.and_then(safe_web_url).map(Url::to_string),
+        extras,
+        ..ProjectImportDraft::default()
+    }
 }
 
 fn parse_pdf(input: &DocumentInput<'_>) -> Result<ProjectImportDraft, DocumentParseError> {
@@ -349,36 +354,37 @@ fn parse_pdf(input: &DocumentInput<'_>) -> Result<ProjectImportDraft, DocumentPa
         processed_pages += 1;
     }
     let text = text.trim();
-    let mut project = ProjectImportDraft::default();
-    project.name = input
-        .fetched_title
-        .and_then(nonempty)
-        .map(str::to_owned)
-        .or_else(|| input.filename.and_then(filename_stem));
-    project.description = nonempty(text).map(short_text);
-    project.link = input.source_url.and_then(safe_web_url).map(Url::to_string);
-    project
-        .extras
-        .insert("full_text".into(), Value::String(text.to_owned()));
-    project
-        .extras
-        .insert("page_count".into(), Value::from(page_count));
-    project.extras.insert(
-        "pages_truncated".into(),
-        Value::Bool(page_count > processed_pages),
-    );
-    Ok(project)
+    let extras = BTreeMap::from([
+        ("full_text".into(), Value::String(text.to_owned())),
+        ("page_count".into(), Value::from(page_count)),
+        (
+            "pages_truncated".into(),
+            Value::Bool(page_count > processed_pages),
+        ),
+    ]);
+    Ok(ProjectImportDraft {
+        name: input
+            .fetched_title
+            .and_then(nonempty)
+            .map(str::to_owned)
+            .or_else(|| input.filename.and_then(filename_stem)),
+        description: nonempty(text).map(short_text),
+        link: input.source_url.and_then(safe_web_url).map(Url::to_string),
+        extras,
+        ..ProjectImportDraft::default()
+    })
 }
 
 fn parse_image(input: &DocumentInput<'_>) -> Result<ProjectImportDraft, DocumentParseError> {
-    let mut project = ProjectImportDraft::default();
-    project.name = input
-        .fetched_title
-        .and_then(nonempty)
-        .map(str::to_owned)
-        .or_else(|| input.filename.and_then(filename_stem));
-    project.link = input.source_url.and_then(safe_web_url).map(Url::to_string);
-    Ok(project)
+    Ok(ProjectImportDraft {
+        name: input
+            .fetched_title
+            .and_then(nonempty)
+            .map(str::to_owned)
+            .or_else(|| input.filename.and_then(filename_stem)),
+        link: input.source_url.and_then(safe_web_url).map(Url::to_string),
+        ..ProjectImportDraft::default()
+    })
 }
 
 fn image_facts(bytes: &[u8]) -> Result<ImageFacts, DocumentParseError> {

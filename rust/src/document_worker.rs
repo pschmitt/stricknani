@@ -78,7 +78,7 @@ pub enum WorkerError {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 enum WorkerResponse {
-    Ok { document: ImportDocumentDraft },
+    Ok { document: Box<ImportDocumentDraft> },
     Error { error: WorkerError },
 }
 
@@ -135,7 +135,7 @@ pub async fn parse_isolated(
     let response: WorkerResponse =
         serde_json::from_slice(&output).map_err(|_| WorkerError::InvalidResponse)?;
     match response {
-        WorkerResponse::Ok { document } => Ok(document),
+        WorkerResponse::Ok { document } => Ok(*document),
         WorkerResponse::Error { error } => Err(error),
     }
 }
@@ -218,7 +218,9 @@ pub fn run_stdio() -> Result<(), WorkerError> {
         }
     } else {
         match parse_request(&input) {
-            Ok(document) => WorkerResponse::Ok { document },
+            Ok(document) => WorkerResponse::Ok {
+                document: Box::new(document),
+            },
             Err(error) => WorkerResponse::Error { error },
         }
     };

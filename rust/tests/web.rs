@@ -295,8 +295,12 @@ async fn private_catalog_escapes_names_and_detail_sanitizes_markdown() {
         .await
         .expect("router should respond");
     let catalog = body(catalog).await;
-    assert!(catalog.contains("&lt;script&gt;alert(1)&lt;/script&gt; &amp; Socks"));
-    assert!(!catalog.contains("<script>alert(1)</script>"));
+    let parsed_catalog = scraper::Html::parse_document(&catalog);
+    let catalog_text = parsed_catalog.root_element().text().collect::<String>();
+    assert!(catalog_text.contains("<script>alert(1)</script> & Socks"));
+    let script_selector =
+        scraper::Selector::parse("script:not([src])").expect("script selector is valid");
+    assert!(parsed_catalog.select(&script_selector).next().is_none());
 
     let detail = app
         .oneshot(
@@ -884,8 +888,34 @@ async fn browser_catalog_filters_keep_encoded_values_across_pages() {
         &session,
     )
     .await;
-    assert!(page.contains("name=\"q\" value=\"Needle 100% &amp; warm\""));
-    assert!(page.contains("category=Cardigan&amp;tag=blue&amp;favorite=favorites&amp;page=2"));
+    let parsed_page = scraper::Html::parse_document(&page);
+    let query_selector =
+        scraper::Selector::parse("input[name='q']").expect("query selector is valid");
+    let query_input = parsed_page
+        .select(&query_selector)
+        .next()
+        .expect("query input is present");
+    assert_eq!(
+        query_input.value().attr("value"),
+        Some("Needle 100% & warm")
+    );
+    let next_link_selector =
+        scraper::Selector::parse("a[href*='page=2']").expect("next-link selector is valid");
+    let next_link = parsed_page
+        .select(&next_link_selector)
+        .find_map(|link| link.value().attr("href"))
+        .expect("second-page link is present");
+    let next_url = url::Url::parse(&format!("http://localhost{next_link}"))
+        .expect("pagination link should be a valid relative URL");
+    let query: std::collections::HashMap<_, _> = next_url.query_pairs().into_owned().collect();
+    assert_eq!(query.get("page").map(String::as_str), Some("2"));
+    assert_eq!(
+        query.get("q").map(String::as_str),
+        Some("Needle 100% & warm")
+    );
+    assert_eq!(query.get("category").map(String::as_str), Some("Cardigan"));
+    assert_eq!(query.get("tag").map(String::as_str), Some("blue"));
+    assert_eq!(query.get("favorite").map(String::as_str), Some("favorites"));
 
     let second_page = app
         .oneshot(
@@ -925,14 +955,18 @@ async fn browser_media_upload_and_delete_forward_with_session_pat_and_csrf() {
     let id = project["id"].as_i64().expect("project id");
     let detail = get_html(&app, &format!("/projects/{id}"), &session).await;
     let csrf = hidden(&detail, "csrf");
+    let mut bad_request = browser_upload_request(
+        &format!("/projects/{id}/media/title"),
+        &session,
+        "bad",
+        &test_png(),
+    );
+    bad_request
+        .headers_mut()
+        .insert("accept-language", "en".parse().unwrap());
     let bad = app
         .clone()
-        .oneshot(browser_upload_request(
-            &format!("/projects/{id}/media/title"),
-            &session,
-            "bad",
-            &test_png(),
-        ))
+        .oneshot(bad_request)
         .await
         .expect("router responds");
     assert_eq!(bad.status(), StatusCode::OK);
@@ -1043,11 +1077,13 @@ async fn browser_media_upload_and_delete_forward_with_session_pat_and_csrf() {
     let yarn_id = yarn["id"].as_i64().expect("yarn id");
     let photo = app
         .clone()
-        .oneshot(browser_upload_request(
+        .oneshot(browser_upload_request_as(
             &format!("/yarns/{yarn_id}/media/photos"),
             &session,
             &csrf,
             &test_png(),
+            "image/png",
+            None,
         ))
         .await
         .expect("router responds");

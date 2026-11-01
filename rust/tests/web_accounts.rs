@@ -168,6 +168,7 @@ async fn account_page_is_authenticated_and_no_store() {
         .clone()
         .oneshot(
             Request::get("/account")
+                .header("accept-language", "en")
                 .header("cookie", format!("__Host-stricknani_session={USER_TOKEN}"))
                 .body(Body::empty())
                 .unwrap(),
@@ -176,7 +177,7 @@ async fn account_page_is_authenticated_and_no_store() {
         .unwrap();
 
     assert_eq!(response.status(), axum::http::StatusCode::OK);
-    assert_eq!(response.headers()["cache-control"], "no-store");
+    assert_cache_directive(&response, "no-store");
     let html = html(response).await;
     assert!(html.contains("API tokens"));
     assert!(html.contains("Change password"));
@@ -230,7 +231,7 @@ async fn created_token_is_shown_once_and_can_be_revoked() {
         .await
         .unwrap();
     assert_eq!(response.status(), axum::http::StatusCode::OK);
-    assert_eq!(response.headers()["cache-control"], "no-store");
+    assert_cache_directive(&response, "no-store");
     let page = html(response).await;
     let token = page
         .split("<code>")
@@ -283,6 +284,17 @@ async fn created_token_is_shown_once_and_can_be_revoked() {
             .await
             .unwrap();
     assert!(revoked_at.is_some());
+}
+
+fn assert_cache_directive(response: &axum::http::Response<Body>, expected: &str) {
+    let directives = response.headers()["cache-control"]
+        .to_str()
+        .expect("cache-control should be valid ASCII");
+    assert!(
+        directives
+            .split(',')
+            .any(|directive| { directive.trim().eq_ignore_ascii_case(expected) })
+    );
 }
 
 #[tokio::test]

@@ -1499,7 +1499,7 @@ async fn upload_yarn_photo(
         id,
         Kind::Yarn,
         format!("/api/v1/yarns/{id}/photos"),
-        true,
+        false,
         multipart,
     )
     .await
@@ -1584,6 +1584,14 @@ async fn upload_media(
                     return detail(state, headers, id, kind, Some("upload")).await;
                 }
                 upload.alt_text = Some(String::from_utf8_lossy(&bytes).into_owned());
+            }
+            "alt_text" if !has_alt_text => {
+                let Ok(bytes) = field.bytes().await else {
+                    return detail(state, headers, id, kind, Some("upload")).await;
+                };
+                if bytes.len() > 4096 {
+                    return detail(state, headers, id, kind, Some("upload")).await;
+                }
             }
             _ => return detail(state, headers, id, kind, Some("upload")).await,
         }

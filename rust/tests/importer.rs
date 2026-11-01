@@ -1,12 +1,18 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
+use http_body_util::BodyExt;
 use image::{DynamicImage, ImageFormat, Rgba, RgbaImage};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{Row, SqlitePool};
 use stricknani_server::importer::{ImportError, ImportOptions, import_snapshot};
+use stricknani_server::{app_with_state, db};
 use tempfile::TempDir;
+use tower::ServiceExt;
 
 const FIXTURE_SQL: &str = include_str!("fixtures/legacy_snapshot.sql");
 const PDF_BYTES: &[u8] = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF\n";
@@ -368,6 +374,88 @@ async fn imports_all_legacy_records_and_media_without_mutating_the_snapshot() {
         hash_file(&fixture.destination.join("media/users/7/avatar.png")),
     );
 
+    // Exercise imported media through the same API and file-serving routes Android uses. These
+    // credentials are disposable test fixtures: only their hashes are inserted into the target DB.
+    let owner_token = "importer-owner-test-only-token";
+    let foreign_token = "importer-foreign-test-only-token";
+    insert_test_token(&target, 7, owner_token).await;
+    sqlx::query(
+        "INSERT INTO users (id,email,password_hash) VALUES (8,'foreign@example.invalid','test-only-hash')",
+    )
+    .execute(&target)
+    .await
+    .expect("foreign test account should be added to the imported target only");
+    insert_test_token(&target, 8, foreign_token).await;
+
+    let app = app_with_state(
+        fixture.destination.join("static"),
+        db::AppState::new(target.clone()).with_media_root(fixture.destination.join("media")),
+    );
+    let (project_status, project) =
+        authenticated_json(&app, "/api/v1/projects/19", owner_token).await;
+    assert_eq!(project_status, StatusCode::OK);
+    let images = project["images"]
+        .as_array()
+        .expect("project images are an array");
+    assert_eq!(images.len(), 3);
+    assert_eq!(images[0]["image_type"], "diagram");
+    assert_eq!(images[0]["is_title_image"], false);
+    assert_eq!(images[0]["is_stitch_sample"], false);
+    assert_eq!(images[0]["step_id"], 23);
+    assert_eq!(images[1]["image_type"], "title");
+    assert_eq!(images[1]["is_title_image"], true);
+    assert_eq!(images[2]["image_type"], "title");
+    assert_eq!(images[2]["is_title_image"], true);
+
+    let (list_status, project_page) =
+        authenticated_json(&app, "/api/v1/projects", owner_token).await;
+    assert_eq!(list_status, StatusCode::OK);
+    let listed = project_page["items"]
+        .as_array()
+        .expect("project items are an array")
+        .iter()
+        .find(|item| item["id"] == 19)
+        .expect("imported project is in the owner list");
+    assert_eq!(listed["preview_url"], images[1]["thumbnail_url"]);
+
+    let (foreign_project_status, _) =
+        authenticated_json(&app, "/api/v1/projects/19", foreign_token).await;
+    assert_eq!(foreign_project_status, StatusCode::NOT_FOUND);
+
+    let legacy_image =
+        authenticated_request(&app, "/media/projects/19/shared.png", Some(owner_token)).await;
+    assert_eq!(legacy_image.status(), StatusCode::OK);
+    assert_eq!(legacy_image.headers()["content-type"], "image/png");
+    assert_eq!(
+        legacy_image.into_body().collect().await.unwrap().to_bytes(),
+        valid_png()
+    );
+    let legacy_thumbnail = authenticated_request(
+        &app,
+        "/media/thumbnails/projects/19/thumb_shared.jpg",
+        Some(owner_token),
+    )
+    .await;
+    assert_eq!(legacy_thumbnail.status(), StatusCode::OK);
+    assert!(
+        legacy_thumbnail
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .starts_with(&[0xff, 0xd8])
+    );
+    let foreign_legacy_image =
+        authenticated_request(&app, "/media/projects/19/shared.png", Some(foreign_token)).await;
+    assert_eq!(foreign_legacy_image.status(), StatusCode::FORBIDDEN);
+    let unauthenticated_legacy_image =
+        authenticated_request(&app, "/media/projects/19/shared.png", None).await;
+    assert_eq!(
+        unauthenticated_legacy_image.status(),
+        StatusCode::UNAUTHORIZED
+    );
+
     let report_contents = fs::read_to_string(fixture.destination.join("migration-report.json"))
         .expect("aggregate report exists");
     assert!(!report_contents.contains("fixture@example.invalid"));
@@ -375,6 +463,71 @@ async fn imports_all_legacy_records_and_media_without_mutating_the_snapshot() {
     target.close().await;
     assert_eq!(hash_file(&fixture.source_db), db_before);
     assert_eq!(hash_tree(&fixture.source_media), media_before);
+    drop(fixture.directory);
+}
+
+#[tokio::test]
+async fn imports_top_level_false_title_flag_into_the_project_api_dto() {
+    let fixture = Fixture::new().await;
+    let source = source_pool(&fixture.source_db).await;
+    sqlx::query(
+        "INSERT INTO images \
+         (id,filename,original_filename,image_type,alt_text,is_title_image,is_stitch_sample, \
+          width,height,created_at,project_id,step_id) \
+         VALUES (4,'not-title.png','not-title-original.png','diagram','Non-title diagram', \
+                 0,0,1,1,'2026-01-13 14:15:19.000009',19,NULL)",
+    )
+    .execute(&source)
+    .await
+    .expect("top-level false-title source row should be added to the fixture");
+    source.close().await;
+    write_source_file(
+        &fixture.source_media,
+        "projects",
+        19,
+        "not-title.png",
+        &valid_png(),
+    );
+
+    import_snapshot(fixture.options())
+        .await
+        .expect("fixture with a top-level false-title image imports");
+
+    let target = target_pool(&fixture.destination).await;
+    let token = "importer-top-level-false-test-only-token";
+    insert_test_token(&target, 7, token).await;
+    let app = app_with_state(
+        fixture.destination.join("static"),
+        db::AppState::new(target.clone()).with_media_root(fixture.destination.join("media")),
+    );
+    let (status, project) = authenticated_json(&app, "/api/v1/projects/19", token).await;
+    assert_eq!(status, StatusCode::OK);
+    let images = project["images"]
+        .as_array()
+        .expect("project images are an array");
+    let top_level_non_title = images
+        .iter()
+        .find(|image| image["alt_text"] == "Non-title diagram")
+        .expect("top-level non-title image is in the DTO");
+    assert_eq!(top_level_non_title["image_type"], "diagram");
+    assert_eq!(top_level_non_title["is_title_image"], false);
+    assert_eq!(top_level_non_title["is_stitch_sample"], false);
+    assert!(top_level_non_title["step_id"].is_null());
+
+    let (list_status, project_page) = authenticated_json(&app, "/api/v1/projects", token).await;
+    assert_eq!(list_status, StatusCode::OK);
+    let listed = project_page["items"]
+        .as_array()
+        .expect("project items are an array")
+        .iter()
+        .find(|item| item["id"] == 19)
+        .expect("imported project is in the owner list");
+    let first_title = images
+        .iter()
+        .find(|image| image["is_title_image"] == true)
+        .expect("fixture retains a separate true title image");
+    assert_eq!(listed["preview_url"], first_title["thumbnail_url"]);
+    target.close().await;
     drop(fixture.directory);
 }
 
@@ -618,6 +771,40 @@ async fn target_pool(destination: &Path) -> SqlitePool {
     stricknani_server::db::connect(&url)
         .await
         .expect("published Rust database opens")
+}
+
+async fn insert_test_token(pool: &SqlitePool, user_id: i64, token: &str) {
+    sqlx::query(
+        "INSERT INTO api_tokens (user_id,name,token_hash,created_at) VALUES (?, 'test', ?, 0)",
+    )
+    .bind(user_id)
+    .bind(hex::encode(Sha256::digest(token.as_bytes())))
+    .execute(pool)
+    .await
+    .expect("test-only token hash should be inserted");
+}
+
+async fn authenticated_request(
+    app: &axum::Router,
+    path: &str,
+    token: Option<&str>,
+) -> axum::response::Response {
+    let mut request = Request::get(path);
+    if let Some(token) = token {
+        request = request.header("authorization", format!("Bearer {token}"));
+    }
+    app.clone()
+        .oneshot(request.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
+async fn authenticated_json(app: &axum::Router, path: &str, token: &str) -> (StatusCode, Value) {
+    let response = authenticated_request(app, path, Some(token)).await;
+    let status = response.status();
+    let bytes = response.into_body().collect().await.unwrap().to_bytes();
+    let value = serde_json::from_slice(&bytes).expect("API response is JSON");
+    (status, value)
 }
 
 fn write_source_file(root: &Path, subdir: &str, parent_id: i64, filename: &str, bytes: &[u8]) {

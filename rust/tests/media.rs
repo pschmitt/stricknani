@@ -528,12 +528,14 @@ async fn attachments_download_safely_and_yarn_photos_promote_primary() {
         .await
         .expect("router should respond");
     assert_eq!(second_delete.status(), StatusCode::NO_CONTENT);
-    let promoted: i64 = sqlx::query_scalar("SELECT is_primary FROM media_files WHERE kind = 'photo' AND public_id = ? AND yarn_id = ?")
-        .bind(second["id"].as_i64().unwrap())
-        .bind(harness.yarn_id)
-        .fetch_one(&harness.pool)
-        .await
-        .expect("remaining photo should be promoted");
+    let promoted: i64 = sqlx::query_scalar(
+        "SELECT is_primary FROM media_files WHERE kind = 'photo' AND public_id = ? AND yarn_id = ?",
+    )
+    .bind(second["id"].as_i64().unwrap())
+    .bind(harness.yarn_id)
+    .fetch_one(&harness.pool)
+    .await
+    .expect("remaining photo should be promoted");
     assert_eq!(promoted, 1);
 }
 

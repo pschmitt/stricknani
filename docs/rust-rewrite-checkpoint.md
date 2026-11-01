@@ -42,3 +42,15 @@ instrumentation test compiles after formatting. Rust worker, document parser, im
 preview/create, snapshot import, and media integration tests pass in the current remote
 run. PWA assertions needed adjustment for generated cache names and reviewed German
 translations; the full Rust suite and strict Clippy check are still being completed.
+
+## Verified browser and import checkpoint
+
+The complete current Rust suite passes: 130 tests, formatting, and Clippy across all
+targets/features with warnings denied. This includes valid PDF extraction and compressed
+page limits, imported records exercised through actual API/media responses, browser
+search/pagination, uploads, account changes, and avatar replacement/cleanup.
+
+The Kotlin JVM suite was explicitly rerun against the updated disposable Rust server
+and passed. Debug and instrumentation APKs build. Emulator replay is still pending.
+The earlier Nix CI failure identified formatting that is corrected in this checkpoint;
+the fresh Nix/container checks and dependency audit remain separate work.

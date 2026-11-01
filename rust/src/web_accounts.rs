@@ -303,7 +303,7 @@ async fn upload_avatar(
             return StatusCode::INTERNAL_SERVER_ERROR.into_response();
         }
     };
-    let registered = sqlx::query(
+    match sqlx::query(
         "INSERT INTO user_avatars \
          (user_id, filename, original_filename, content_type, width, height, created_at) \
          VALUES (?, ?, ?, ?, ?, ?, ?) \
@@ -319,9 +319,9 @@ async fn upload_avatar(
     .bind(i64::from(image.height))
     .bind(&created_at)
     .execute(&mut *tx)
-    .await;
-    let registered = match registered {
-        Ok(result) => result,
+    .await
+    {
+        Ok(_) => {}
         Err(_) => {
             let _ = tx.rollback().await;
             media::cleanup_avatar(&root, session.user_id, &filename).await;
@@ -444,7 +444,7 @@ async fn create_user(
     let mut password = Zeroizing::new(std::mem::take(&mut form.password));
     let session = match require_admin(&state, &headers).await {
         Ok(session) => session,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     if !web::valid_csrf(&session.token, &form.csrf) {
         return StatusCode::FORBIDDEN.into_response();
@@ -503,7 +503,7 @@ async fn set_user_active(
 ) -> Response {
     let session = match require_admin(&state, &headers).await {
         Ok(session) => session,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     if !web::valid_csrf(&session.token, &form.csrf) {
         return StatusCode::FORBIDDEN.into_response();
@@ -604,7 +604,7 @@ async fn reset_password(
     let password = Zeroizing::new(std::mem::take(&mut form.new_password));
     let session = match require_admin(&state, &headers).await {
         Ok(session) => session,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     if !web::valid_csrf(&session.token, &form.csrf) {
         return StatusCode::FORBIDDEN.into_response();
@@ -693,16 +693,32 @@ fn clear_browser_session(state: &web::WebState, mut response: Response) -> Respo
 async fn require_admin(
     state: &web::WebState,
     headers: &HeaderMap,
-) -> Result<web::Session, Response> {
+) -> Result<web::Session, AccountAccessError> {
     let session = match web::session(state, headers).await {
         Ok(session) => session,
-        Err(auth::AuthError::Unauthorized) => return Err(Redirect::to("/login").into_response()),
-        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+        Err(auth::AuthError::Unauthorized) => return Err(AccountAccessError::Unauthenticated),
+        Err(_) => return Err(AccountAccessError::Internal),
     };
     match is_admin(&state.app.pool, session.user_id).await {
         Ok(true) => Ok(session),
-        Ok(false) => Err(StatusCode::FORBIDDEN.into_response()),
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+        Ok(false) => Err(AccountAccessError::Forbidden),
+        Err(_) => Err(AccountAccessError::Internal),
+    }
+}
+
+enum AccountAccessError {
+    Unauthenticated,
+    Forbidden,
+    Internal,
+}
+
+impl IntoResponse for AccountAccessError {
+    fn into_response(self) -> Response {
+        match self {
+            Self::Unauthenticated => Redirect::to("/login").into_response(),
+            Self::Forbidden => StatusCode::FORBIDDEN.into_response(),
+            Self::Internal => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        }
     }
 }
 

@@ -1,6 +1,8 @@
 use std::io::Cursor;
 
 use image::{DynamicImage, ImageFormat};
+use lopdf::content::{Content, Operation};
+use lopdf::{Document, Object, Stream, dictionary};
 use stricknani_server::import_document::{
     DocumentInput, DocumentKind, DocumentParseError, parse_document,
 };
@@ -8,6 +10,61 @@ use url::Url;
 
 fn source_url() -> Url {
     Url::parse("https://patterns.example/knit/cardigan").expect("fixture URL is valid")
+}
+
+fn pdf_with_text(text: &str, copies: usize) -> Vec<u8> {
+    let mut document = Document::with_version("1.5");
+    let pages_id = document.new_object_id();
+    let font_id = document.add_object(dictionary! {
+        "Type" => "Font",
+        "Subtype" => "Type1",
+        "BaseFont" => "Courier",
+    });
+    let resources_id = document.add_object(dictionary! {
+        "Font" => dictionary! { "F1" => font_id },
+    });
+    let mut operations = vec![
+        Operation::new("BT", vec![]),
+        Operation::new("Tf", vec!["F1".into(), 12.into()]),
+        Operation::new("Td", vec![72.into(), 720.into()]),
+    ];
+    operations.extend(
+        (0..copies)
+            .map(|_| Operation::new("Tj", vec![Object::string_literal(text.as_bytes().to_vec())])),
+    );
+    operations.push(Operation::new("ET", vec![]));
+    let content = Content { operations };
+    let content_id = document.add_object(Stream::new(
+        dictionary! {},
+        content.encode().expect("fixture PDF content encodes"),
+    ));
+    let page_id = document.add_object(dictionary! {
+        "Type" => "Page",
+        "Parent" => pages_id,
+        "Contents" => content_id,
+        "Resources" => resources_id,
+        "MediaBox" => vec![0.into(), 0.into(), 595.into(), 842.into()],
+    });
+    document.objects.insert(
+        pages_id,
+        Object::Dictionary(dictionary! {
+            "Type" => "Pages",
+            "Kids" => vec![page_id.into()],
+            "Count" => 1,
+        }),
+    );
+    let catalog_id = document.add_object(dictionary! {
+        "Type" => "Catalog",
+        "Pages" => pages_id,
+    });
+    document.trailer.set("Root", catalog_id);
+    document.compress();
+
+    let mut bytes = Vec::new();
+    document
+        .save_to(&mut bytes)
+        .expect("fixture PDF serializes");
+    bytes
 }
 
 #[test]
@@ -188,4 +245,62 @@ fn malformed_pdf_unsupported_content_and_oversize_inputs_fail_closed() {
         .err(),
         Some(DocumentParseError::TooLarge)
     );
+}
+
+#[test]
+fn valid_pdf_extracts_text_and_uses_a_reviewable_filename() {
+    let bytes = pdf_with_text("A useful PDF pattern", 1);
+    let parsed = parse_document(DocumentInput {
+        bytes: &bytes,
+        content_type: Some("application/pdf"),
+        filename: Some("scarf-pattern.pdf"),
+        source_url: None,
+        fetched_title: None,
+        fetched_text: None,
+    })
+    .expect("valid PDF fixture parses");
+
+    assert_eq!(parsed.kind, DocumentKind::Pdf);
+    assert_eq!(parsed.project.name.as_deref(), Some("scarf-pattern"));
+    assert!(
+        parsed
+            .project
+            .description
+            .as_deref()
+            .expect("PDF has extracted description")
+            .contains("A useful PDF pattern")
+    );
+    assert!(
+        parsed.project.extras["full_text"]
+            .as_str()
+            .expect("PDF full text is stored as a string")
+            .contains("A useful PDF pattern")
+    );
+    assert_eq!(parsed.project.extras["page_count"], 1);
+    assert_eq!(parsed.project.extras["pages_truncated"], false);
+}
+
+#[test]
+fn compressed_pdf_page_content_over_limit_fails_closed() {
+    // The compressed content decodes to over 1 MiB and exceeds the 256 KiB per-page cap.
+    let large_text = "A".repeat(3_000);
+    let bytes = pdf_with_text(&large_text, 400);
+    assert!(bytes.len() < 5 * 1024 * 1024);
+    assert!(
+        bytes
+            .windows(b"/FlateDecode".len())
+            .any(|window| window == b"/FlateDecode")
+    );
+
+    let error = parse_document(DocumentInput {
+        bytes: &bytes,
+        content_type: Some("application/pdf"),
+        filename: Some("large-pattern.pdf"),
+        source_url: None,
+        fetched_title: None,
+        fetched_text: None,
+    })
+    .expect_err("page content over the configured decompression limit is rejected");
+
+    assert_eq!(error, DocumentParseError::InvalidDocument);
 }

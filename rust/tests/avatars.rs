@@ -110,8 +110,13 @@ async fn body_bytes(response: axum::response::Response) -> Vec<u8> {
 }
 
 fn avatar_paths(root: &TempDir, user_id: i64, filename: &str) -> (PathBuf, PathBuf) {
-    let source = root.path().join("users").join(user_id.to_string()).join(filename);
-    let thumbnail = root.path()
+    let source = root
+        .path()
+        .join("users")
+        .join(user_id.to_string())
+        .join(filename);
+    let thumbnail = root
+        .path()
         .join("thumbnails")
         .join("users")
         .join(user_id.to_string())

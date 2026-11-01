@@ -1,5 +1,4 @@
 use std::collections::{HashMap, VecDeque};
-use std::future::Future;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Mutex;
 use std::time::Duration;
@@ -39,20 +38,15 @@ impl StaticResolver {
 }
 
 impl DnsResolver for StaticResolver {
-    fn resolve<'a>(
-        &'a self,
-        hostname: &'a str,
-    ) -> impl Future<Output = Result<Vec<IpAddr>, FetchError>> + Send + 'a {
-        async move {
-            self.lookups
-                .lock()
-                .expect("lookup list lock is healthy")
-                .push(hostname.to_owned());
-            self.answers
-                .get(hostname)
-                .cloned()
-                .ok_or(FetchError::ResolutionFailed)
-        }
+    async fn resolve(&self, hostname: &str) -> Result<Vec<IpAddr>, FetchError> {
+        self.lookups
+            .lock()
+            .expect("lookup list lock is healthy")
+            .push(hostname.to_owned());
+        self.answers
+            .get(hostname)
+            .cloned()
+            .ok_or(FetchError::ResolutionFailed)
     }
 }
 
@@ -79,29 +73,27 @@ impl FixtureTransport {
 }
 
 impl HttpTransport for FixtureTransport {
-    fn get<'a>(
-        &'a self,
-        url: &'a Url,
-        approved_addresses: &'a [SocketAddr],
+    async fn get(
+        &self,
+        url: &Url,
+        approved_addresses: &[SocketAddr],
         max_body_bytes: usize,
         timeout: Duration,
-    ) -> impl Future<Output = Result<TransportResponse, FetchError>> + Send + 'a {
-        async move {
-            self.requests
-                .lock()
-                .expect("request list lock is healthy")
-                .push(RecordedRequest {
-                    url: url.clone(),
-                    addresses: approved_addresses.to_vec(),
-                    max_body_bytes,
-                    timeout,
-                });
-            self.responses
-                .lock()
-                .expect("response queue lock is healthy")
-                .pop_front()
-                .ok_or(FetchError::Transport)
-        }
+    ) -> Result<TransportResponse, FetchError> {
+        self.requests
+            .lock()
+            .expect("request list lock is healthy")
+            .push(RecordedRequest {
+                url: url.clone(),
+                addresses: approved_addresses.to_vec(),
+                max_body_bytes,
+                timeout,
+            });
+        self.responses
+            .lock()
+            .expect("response queue lock is healthy")
+            .pop_front()
+            .ok_or(FetchError::Transport)
     }
 }
 
