@@ -1680,11 +1680,8 @@ def run_acceptance(
                     gauge_available = gauge_link.get_by_text(
                         "Available now", exact=True
                     ).count()
-                    account_pending = account_link.get_by_text(
-                        "In progress", exact=True
-                    ).count()
-                    in_progress_labels = page.get_by_text(
-                        "In progress", exact=True
+                    account_available = account_link.get_by_text(
+                        "Available now", exact=True
                     ).count()
                     stale_notices = page.get_by_text(
                         "This area is not connected yet."
@@ -1693,8 +1690,7 @@ def run_acceptance(
                         gauge_links != 1
                         or account_links != 1
                         or gauge_available != 1
-                        or account_pending != 1
-                        or in_progress_labels < 1
+                        or account_available != 1
                         or stale_notices != 0
                     ):
                         _mask_fixture_identity(page)
@@ -1707,8 +1703,7 @@ def run_acceptance(
                             "More-route counts did not match expectations "
                             f"(gauge={gauge_links}, account={account_links}, "
                             f"gauge_available={gauge_available}, "
-                            f"account_pending={account_pending}, "
-                            f"in_progress={in_progress_labels}, "
+                            f"account_available={account_available}, "
                             f"stale_notice={stale_notices})"
                         )
                 if route == "/app/create":

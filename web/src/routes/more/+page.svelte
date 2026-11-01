@@ -29,7 +29,7 @@
     </a>
     <a href={resolve("/account")}>
       <strong>{t("Account", locale)}</strong>
-      <small>{t("In progress", locale)}</small>
+      <small>{t("Available now", locale)}</small>
     </a>
     {#if session.data?.user?.is_admin}
       <a href={resolve("/admin/users")}>
