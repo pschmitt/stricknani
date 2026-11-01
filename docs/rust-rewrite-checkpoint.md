@@ -123,3 +123,18 @@ Nix/container checks are being completed after removing unused legacy frontend
 assets. The KVM replay workflow's initial failure was its action executing each
 script line in a separate POSIX shell; it now invokes one checked Bash script.
 That final CI replay is still pending. Production cutover remains a separate decision.
+
+## Usable styling follow-up
+
+The Rust templates now consistently load the shared Material stylesheet and a
+small Rust-scoped stylesheet. The new rules fill missing layout/component classes
+for navigation, page widths, forms, cards, tables, responsive grids and readable
+project text. This is a usability fix; pixel-perfect matching and the future UI
+overhaul remain out of scope, as the user clarified.
+
+The focused browser-route tests pass. Desktop and 390px mobile browser checks
+show the expected bounded content width and no horizontal overflow. The new CSS
+passes Biome with zero diagnostics, and statix, the full Nix flake check and the
+Rust package build pass. The install step also stops preserving source read-only
+permissions before pruning unused legacy assets. Existing app.css/material.css
+warnings were left untouched. The styled package is ready for preview deployment.

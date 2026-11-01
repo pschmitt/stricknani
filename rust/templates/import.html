@@ -7,8 +7,10 @@
   <link rel="stylesheet" href="/static/css/app.css">
     <link rel="manifest" href="/manifest.webmanifest">
     <script src="/register-pwa.js" defer></script>
+    <link rel="stylesheet" href="/static/css/material.css">
+    <link rel="stylesheet" href="/static/css/rust.css">
 </head>
-<body class="bg-base-100 text-base-content">
+<body class="rust-app bg-base-100 text-base-content">
   <header class="site-header">
     <a class="brand" href="/projects">Stricknani</a>
     <nav aria-label="{{ labels.navigation }}">
@@ -20,7 +22,7 @@
       </form>
     </nav>
   </header>
-  <main class="max-w-4xl mx-auto p-4 md:p-8">
+  <main class="page-content max-w-4xl mx-auto p-4 md:p-8">
     <h1 class="text-3xl font-bold mb-6">{{ labels.title }}</h1>
     {% if has_error %}
       <p class="alert alert-error mb-6" role="alert">{{ error }}</p>
