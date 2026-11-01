@@ -88,7 +88,8 @@ jobs:
             while IFS= read -r serial; do
               emulators+=("$serial")
             done < <(adb devices | awk '$2 == "device" && $1 ~ /^emulator-[0-9]+$/ { print $1 }')
-            if (( ${#emulators[@]} != 1 )); then
+            if (( ${#emulators[@]} != 1 ))
+            then
               echo "Expected exactly one ready emulator; found ${#emulators[@]}." >&2
               adb devices -l >&2
               exit 1

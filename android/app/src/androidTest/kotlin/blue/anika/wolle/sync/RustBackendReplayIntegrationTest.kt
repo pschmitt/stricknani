@@ -21,7 +21,6 @@ import blue.anika.wolle.data.db.entity.MutationEntityType
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
-import blue.anika.wolle.data.settings.SettingsRepository
 import dagger.hilt.android.EntryPointAccessors
 import java.io.File
 import java.security.MessageDigest
