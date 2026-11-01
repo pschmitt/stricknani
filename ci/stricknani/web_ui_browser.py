@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -113,7 +114,7 @@ def _prepare_project_reader_fixture(page: Page) -> int:
               description: 'Knit a soft **textured blanket** with broad, even bands.',
               notes: 'After the border, pause and check the width before continuing.',
               other_materials: 'Two stitch markers and a tapestry needle.',
-              tags: ['heirloom', 'textured'],
+              tags: ['heirloom', 'textured', 'textured'],
               link: project.link,
               is_ai_enhanced: false,
               yarn_ids: project.yarn_ids,
@@ -688,6 +689,20 @@ def run_acceptance(
                 ),
                 "the real project library API did not load",
             )
+            duplicate_tag_buttons = (
+                page.locator(".project-card")
+                .filter(
+                    has=page.get_by_role(
+                        "heading", name="Heirloom Baby Blanket", exact=True
+                    )
+                )
+                .locator(".tag-list button")
+            )
+            _require(
+                duplicate_tag_buttons.all_inner_texts()
+                == ["heirloom", "textured", "textured"],
+                "the project library collapsed or misrendered repeated tag labels",
+            )
 
             mobile_links = page.locator(".mobile-navigation a")
             _require(
@@ -978,6 +993,84 @@ def run_acceptance(
                 ],
                 "the reader did not display pattern steps in order",
             )
+            reader_steps = reader_response.json().get("data", {}).get("steps", [])
+            step_ids = [step.get("id") for step in reader_steps]
+            _require(
+                len(step_ids) == 2
+                and all(isinstance(step_id, int) for step_id in step_ids),
+                "the reader fixture did not return two numeric step IDs",
+            )
+            reader_tags = page.locator(".reader-tags li").all_inner_texts()
+            _require(
+                reader_tags == ["heirloom", "textured", "textured"],
+                "the project reader collapsed or misrendered repeated tag labels",
+            )
+            mark_stage(
+                "checking step progress, hash links, and previous/next navigation"
+            )
+            step_progress = page.locator(".step-progress")
+            step_progress.wait_for(state="visible")
+            _require(
+                step_progress.inner_text() == "Step 1 of 2",
+                "reader progress did not start at the first ordered step",
+            )
+            next_step = page.locator(".next-step-link")
+            _require(
+                next_step.get_attribute("href") == f"#step-{step_ids[1]}",
+                "next-step control did not expose the expected addressable hash",
+            )
+            next_step.click()
+            page.wait_for_function(
+                "stepId => location.hash === `#step-${stepId}`",
+                arg=step_ids[1],
+            )
+            _require(
+                step_progress.inner_text() == "Step 2 of 2"
+                and page.locator(f"#step-{step_ids[1]}").get_attribute("aria-current")
+                == "step",
+                "next-step navigation did not update the current-step indicator",
+            )
+            page.get_by_role("link", name=re.compile("Previous step")).click()
+            page.wait_for_function(
+                "stepId => location.hash === `#step-${stepId}`",
+                arg=step_ids[0],
+            )
+            _require(
+                step_progress.inner_text() == "Step 1 of 2",
+                "previous-step navigation did not restore the first step",
+            )
+            page.locator(".next-step-link").click()
+            page.wait_for_function(
+                "stepId => location.hash === `#step-${stepId}`",
+                arg=step_ids[1],
+            )
+            mark_stage("restoring step position after returning to the library")
+            page.get_by_role("link", name="Back to projects").first.click()
+            page.wait_for_url("**/app/projects")
+            page.locator(
+                f".project-card a.project-open[href='/app/projects/{project_id}']"
+            ).click()
+            page.wait_for_url(f"**/app/projects/{project_id}**")
+            page.wait_for_function(
+                "stepId => location.hash === `#step-${stepId}`",
+                arg=step_ids[1],
+            )
+            page.locator(".step-progress").wait_for(state="visible")
+            _require(
+                page.locator(".step-progress").inner_text() == "Step 2 of 2",
+                "the reader did not restore the last step after "
+                "returning from the library",
+            )
+            mark_stage("opening a direct reader step link")
+            page.goto(
+                f"{origin}/app/projects/{project_id}#step-{step_ids[0]}",
+                wait_until="networkidle",
+            )
+            page.locator(".step-progress").wait_for(state="visible")
+            _require(
+                page.locator(".step-progress").inner_text() == "Step 1 of 2",
+                "direct hash navigation did not open the requested step",
+            )
             mark_stage("checking the seeded project-step reference photo")
             step_photo = page.locator(".steps-list .step-image img")
             step_photo.wait_for(state="visible", timeout=5_000)
@@ -1163,7 +1256,7 @@ def run_acceptance(
 
             mark_stage("direct routes and explicit unfinished states")
             route_headings = {
-                "/app/": "Your knitting, in one place.",
+                "/app/": "Projects",
                 "/app/login": "You are already signed in.",
                 "/app/more": "More",
                 "/app/create": "What would you like to add?",
@@ -1179,18 +1272,51 @@ def run_acceptance(
                 )
                 page.get_by_role("heading", name=heading).wait_for(state="visible")
                 if route == "/app/more":
-                    _require(
-                        page.get_by_text(
-                            "This area is not connected yet."
-                        ).is_visible(),
-                        "an unfinished feature was presented as complete",
-                    )
+                    more_links = page.locator(".more-links")
+                    gauge_links = more_links.get_by_role(
+                        "link", name="Gauge calculator", exact=False
+                    ).count()
+                    account_links = more_links.get_by_role(
+                        "link", name="Account", exact=False
+                    ).count()
+                    in_progress_labels = page.get_by_text(
+                        "In progress", exact=True
+                    ).count()
+                    stale_notices = page.get_by_text(
+                        "This area is not connected yet."
+                    ).count()
+                    if (
+                        gauge_links != 1
+                        or account_links != 1
+                        or in_progress_labels < 2
+                        or stale_notices != 0
+                    ):
+                        _mask_fixture_identity(page)
+                        _prepare_screenshot(page)
+                        page.screenshot(
+                            path=str(screenshots / "more-route-debug.png"),
+                            caret="initial",
+                        )
+                        raise AcceptanceFailure(
+                            "More-route counts did not match expectations "
+                            f"(gauge={gauge_links}, account={account_links}, "
+                            f"in_progress={in_progress_labels}, "
+                            f"stale_notice={stale_notices})"
+                        )
                 if route == "/app/create":
                     _require(
-                        page.get_by_text(
+                        page.locator(".create-options a[href$='/projects/new']").count()
+                        == 1
+                        and page.locator(
+                            ".create-options a[href$='/yarns/new']"
+                        ).count()
+                        == 1
+                        and page.get_by_text(
                             "These creation forms are part of a later preview slice."
-                        ).is_visible(),
-                        "unfinished creation forms were presented as complete",
+                        ).count()
+                        == 0,
+                        "the create page showed stale preview copy or "
+                        "missing creation links",
                     )
             mark_stage("creating a project through the browser editor")
             library_response = page.goto(
@@ -1220,7 +1346,10 @@ def run_acceptance(
                 "18 stitches over 10 cm"
             )
             mark_stage("filling the project tags")
-            page.get_by_label("Tags", exact=True).fill("winter, textured, winter")
+            page.locator("#project-tag-entry").fill("color, texture")
+            page.get_by_role("button", name="Add tag", exact=True).click()
+            page.locator("#project-tag-entry").fill("winter")
+            page.get_by_role("button", name="Add tag", exact=True).click()
             mark_stage("filling the project pattern")
             page.get_by_label("Pattern", exact=True).fill(
                 "Work an even textured panel."
@@ -1272,6 +1401,11 @@ def run_acceptance(
             )
             if not isinstance(created_project, dict):
                 raise AcceptanceFailure("project creation returned an invalid resource")
+            expected_tags = ["color, texture", "winter"]
+            _require(
+                created_project.get("tags") == expected_tags,
+                "project creation changed a tag containing a comma",
+            )
             created_id = created_project.get("id")
             if not isinstance(created_id, int) or isinstance(created_id, bool):
                 raise AcceptanceFailure(
@@ -1287,6 +1421,32 @@ def run_acceptance(
             _require(
                 page.locator("#project-image-file").is_enabled(),
                 "clean saved projects did not enable media management",
+            )
+
+            mark_stage("preserving comma-containing tags during an unrelated edit")
+            page.get_by_label("Needles", exact=True).fill("5 mm circular needles")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == f"/api/v2/projects/{created_id}"
+                    and response.request.method == "PUT"
+                )
+            ) as tag_preservation_response_info:
+                page.get_by_role("button", name="Save changes", exact=True).click()
+            tag_preservation_response = tag_preservation_response_info.value
+            _require(
+                tag_preservation_response.status == 200,
+                "an unrelated project edit did not save",
+            )
+            tag_preservation_payload = tag_preservation_response.json()
+            tag_preserved_project = (
+                tag_preservation_payload.get("data")
+                if isinstance(tag_preservation_payload, dict)
+                else None
+            )
+            _require(
+                isinstance(tag_preserved_project, dict)
+                and tag_preserved_project.get("tags") == expected_tags,
+                "an unrelated edit split or otherwise changed an existing tag label",
             )
 
             mark_stage("preserving editor drafts through dirty navigation and conflict")

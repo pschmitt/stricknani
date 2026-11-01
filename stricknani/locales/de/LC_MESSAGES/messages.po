@@ -416,7 +416,7 @@ msgstr "Profilbild für %(email)s"
 #: stricknani/templates/shared/unified_navbar.html:152
 #: web/src/routes/+layout.svelte:189 web/src/routes/admin/users/+page.svelte:8
 #: web/src/routes/admin/users/+page.svelte:10
-#: web/src/routes/more/+page.svelte:24
+#: web/src/routes/more/+page.svelte:24 web/src/routes/more/+page.svelte:36
 msgid "Admin"
 msgstr "Admin"
 
@@ -1440,8 +1440,11 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:219
 #: web/src/lib/features/projects/ProjectReader.svelte:220
 #: web/src/lib/features/projects/ProjectReader.svelte:223
+#: web/src/lib/features/projects/ProjectReader.svelte:227
 #: web/src/lib/features/projects/ProjectReader.svelte:231
+#: web/src/lib/features/projects/ProjectReader.svelte:243
 #: web/src/lib/features/projects/ProjectReader.svelte:247
+#: web/src/lib/features/projects/ProjectReader.svelte:264
 #: web/src/lib/features/projects/ProjectReader.svelte:268
 #: web/src/routes/+layout.svelte:256
 msgid "Back to projects"
@@ -1474,6 +1477,7 @@ msgstr "Galerie öffnen"
 #: web/src/lib/features/projects/ProjectReader.svelte:415
 #: web/src/lib/features/projects/ProjectReader.svelte:511
 #: web/src/lib/features/projects/ProjectReader.svelte:516
+#: web/src/lib/features/projects/ProjectReader.svelte:610
 #: web/src/lib/features/projects/ProjectReader.svelte:612
 msgid "Attachments"
 msgstr "Anhänge"
@@ -1584,6 +1588,7 @@ msgstr "Snapshot anfordern"
 #: web/src/lib/features/projects/ProjectReader.svelte:287
 #: web/src/lib/features/projects/ProjectReader.svelte:338
 #: web/src/lib/features/projects/ProjectReader.svelte:340
+#: web/src/lib/features/projects/ProjectReader.svelte:395
 #: web/src/lib/features/projects/ProjectReader.svelte:397
 #: web/src/lib/features/yarns/YarnDetail.svelte:302
 #: web/src/lib/features/yarns/YarnForm.svelte:611
@@ -1692,6 +1697,7 @@ msgstr "Audit-Protokoll"
 #: web/src/lib/features/projects/ProjectEditor.svelte:940
 #: web/src/lib/features/projects/ProjectEditor.svelte:1077
 #: web/src/lib/features/projects/ProjectEditor.svelte:1194
+#: web/src/lib/features/projects/ProjectReader.svelte:432
 #: web/src/lib/features/projects/ProjectReader.svelte:434
 msgid "Step"
 msgstr "Schritt"
@@ -1899,6 +1905,7 @@ msgstr "Beschreibe deine Maschenprobe..."
 #: web/src/lib/features/projects/ProjectReader.svelte:303
 #: web/src/lib/features/projects/ProjectReader.svelte:354
 #: web/src/lib/features/projects/ProjectReader.svelte:356
+#: web/src/lib/features/projects/ProjectReader.svelte:411
 #: web/src/lib/features/projects/ProjectReader.svelte:413
 msgid "Steps"
 msgstr "Schritte"
@@ -2009,6 +2016,7 @@ msgstr "Entfavorisieren"
 #: web/src/lib/features/projects/ProjectReader.svelte:233
 #: web/src/lib/features/projects/ProjectReader.svelte:276
 #: web/src/lib/features/projects/ProjectReader.svelte:277
+#: web/src/lib/features/projects/ProjectReader.svelte:330
 #: web/src/lib/features/projects/ProjectReader.svelte:332
 msgid "Favorite"
 msgstr "Favorisieren"
@@ -2349,8 +2357,11 @@ msgstr "KI-gestützte Extraktion aktiviert"
 #: web/src/lib/features/projects/ProjectReader.svelte:451
 #: web/src/lib/features/projects/ProjectReader.svelte:456
 #: web/src/lib/features/projects/ProjectReader.svelte:461
+#: web/src/lib/features/projects/ProjectReader.svelte:513
 #: web/src/lib/features/projects/ProjectReader.svelte:515
+#: web/src/lib/features/projects/ProjectReader.svelte:550
 #: web/src/lib/features/projects/ProjectReader.svelte:552
+#: web/src/lib/features/projects/ProjectReader.svelte:555
 #: web/src/lib/features/projects/ProjectReader.svelte:557
 #: web/src/lib/features/yarns/YarnDetail.svelte:228
 msgid "Yarn"
@@ -2597,6 +2608,7 @@ msgstr "Inhaltsfingerabdruck"
 #: web/src/lib/features/projects/ProjectReader.svelte:388
 #: web/src/lib/features/projects/ProjectReader.svelte:467
 #: web/src/lib/features/projects/ProjectReader.svelte:472
+#: web/src/lib/features/projects/ProjectReader.svelte:566
 #: web/src/lib/features/projects/ProjectReader.svelte:568
 msgid "Needles"
 msgstr "Nadeln"
@@ -2608,6 +2620,7 @@ msgstr "Nadeln"
 #: web/src/lib/features/projects/ProjectReader.svelte:263
 #: web/src/lib/features/projects/ProjectReader.svelte:311
 #: web/src/lib/features/projects/ProjectReader.svelte:313
+#: web/src/lib/features/projects/ProjectReader.svelte:368
 #: web/src/lib/features/projects/ProjectReader.svelte:370
 msgid "Stitch sample"
 msgstr "Maschenprobe"
@@ -2619,6 +2632,7 @@ msgstr "Maschenprobe"
 #: web/src/lib/features/projects/ProjectReader.svelte:295
 #: web/src/lib/features/projects/ProjectReader.svelte:346
 #: web/src/lib/features/projects/ProjectReader.svelte:348
+#: web/src/lib/features/projects/ProjectReader.svelte:403
 #: web/src/lib/features/projects/ProjectReader.svelte:405
 msgid "Other materials"
 msgstr "Weitere Materialien"
@@ -2629,7 +2643,7 @@ msgstr "Link"
 
 #: rust/src/web.rs:2146 web/src/routes/+layout.svelte:33
 #: web/src/routes/gauge/+page.svelte:9 web/src/routes/gauge/+page.svelte:12
-#: web/src/routes/more/+page.svelte:21
+#: web/src/routes/more/+page.svelte:21 web/src/routes/more/+page.svelte:27
 msgid "Gauge calculator"
 msgstr "Maschenprobe berechnen"
 
@@ -2666,7 +2680,9 @@ msgstr "Originalquelle"
 #: web/src/lib/features/projects/ProjectReader.svelte:272
 #: web/src/lib/features/projects/ProjectReader.svelte:277
 #: web/src/lib/features/projects/ProjectReader.svelte:278
+#: web/src/lib/features/projects/ProjectReader.svelte:325
 #: web/src/lib/features/projects/ProjectReader.svelte:327
+#: web/src/lib/features/projects/ProjectReader.svelte:331
 #: web/src/lib/features/projects/ProjectReader.svelte:333
 #: web/src/lib/features/yarns/YarnDetail.svelte:262
 #: web/src/lib/features/yarns/YarnLibrary.svelte:272
@@ -2679,6 +2695,7 @@ msgstr "Zu Favoriten hinzufügen"
 #: web/src/lib/features/projects/ProjectReader.svelte:228
 #: web/src/lib/features/projects/ProjectReader.svelte:270
 #: web/src/lib/features/projects/ProjectReader.svelte:271
+#: web/src/lib/features/projects/ProjectReader.svelte:324
 #: web/src/lib/features/projects/ProjectReader.svelte:326
 #: web/src/lib/features/yarns/YarnLibrary.svelte:271
 msgid "Remove from favorites"
@@ -2756,7 +2773,7 @@ msgstr "Filter anwenden"
 #: rust/src/web.rs:2197 rust/src/web_accounts.rs:1057 rust/src/web_audit.rs:249
 #: web/src/routes/+layout.svelte:34 web/src/routes/+layout.svelte:222
 #: web/src/routes/account/+page.svelte:8 web/src/routes/account/+page.svelte:10
-#: web/src/routes/more/+page.svelte:22
+#: web/src/routes/more/+page.svelte:22 web/src/routes/more/+page.svelte:31
 msgid "Account"
 msgstr "Konto"
 
@@ -2922,7 +2939,7 @@ msgstr "Wende dich an die Administration, wenn du Zugriff benötigst."
 
 #: web/src/routes/+layout.svelte:194 web/src/routes/admin/audit/+page.svelte:8
 #: web/src/routes/admin/audit/+page.svelte:10
-#: web/src/routes/more/+page.svelte:25
+#: web/src/routes/more/+page.svelte:25 web/src/routes/more/+page.svelte:40
 msgid "Audit log"
 msgstr "Prüfprotokoll"
 
@@ -2931,6 +2948,7 @@ msgstr "Prüfprotokoll"
 #: web/src/routes/+layout.svelte:32 web/src/routes/categories/+page.svelte:8
 #: web/src/routes/categories/+page.svelte:10
 #: web/src/routes/more/+page.svelte:20 web/src/routes/more/+page.svelte:22
+#: web/src/routes/more/+page.svelte:23
 msgid "Categories"
 msgstr "Kategorien"
 
@@ -2939,7 +2957,7 @@ msgid "Category management will be added in a later slice."
 msgstr "Die Kategorienverwaltung folgt in einem späteren Entwicklungsschritt."
 
 #: web/src/lib/api.ts:202 web/src/lib/api.ts:208 web/src/lib/api.ts:214
-#: web/src/lib/api.ts:246
+#: web/src/lib/api.ts:246 web/src/lib/api.ts:258
 #: web/src/lib/features/projects/ProjectEditor.svelte:427
 #: web/src/lib/features/projects/ProjectEditor.svelte:460
 msgid "Check the highlighted fields and try again."
@@ -2976,7 +2994,8 @@ msgstr "Behalte deine Projekte, Notizen und Garnangaben beim Stricken im Blick."
 msgid "More"
 msgstr "Mehr"
 
-#: web/src/routes/more/+page.svelte:18 web/src/routes/more/+page.svelte:20
+#: web/src/routes/more/+page.svelte:17 web/src/routes/more/+page.svelte:18
+#: web/src/routes/more/+page.svelte:20
 msgid "More pages"
 msgstr "Weitere Seiten"
 
@@ -3049,7 +3068,7 @@ msgid "Skip to content"
 msgstr "Zum Inhalt springen"
 
 #: web/src/lib/api.ts:203 web/src/lib/api.ts:209 web/src/lib/api.ts:215
-#: web/src/lib/api.ts:247
+#: web/src/lib/api.ts:247 web/src/lib/api.ts:259
 msgid "That item could not be found."
 msgstr "Dieser Eintrag wurde nicht gefunden."
 
@@ -3060,7 +3079,7 @@ msgstr ""
 "Entwicklungsschritt."
 
 #: web/src/lib/api.ts:193 web/src/lib/api.ts:199 web/src/lib/api.ts:201
-#: web/src/lib/api.ts:233
+#: web/src/lib/api.ts:233 web/src/lib/api.ts:245
 msgid "The email or password is incorrect."
 msgstr "E-Mail-Adresse oder Passwort ist falsch."
 
@@ -3073,18 +3092,20 @@ msgid "The project editor will be added in a later slice."
 msgstr "Die Projektbearbeitung folgt in einem späteren Entwicklungsschritt."
 
 #: web/src/lib/api.ts:206 web/src/lib/api.ts:212 web/src/lib/api.ts:226
-#: web/src/lib/api.ts:289
+#: web/src/lib/api.ts:289 web/src/lib/api.ts:301
 msgid "The request could not be completed."
 msgstr "Die Anfrage konnte nicht abgeschlossen werden."
 
 #: web/src/lib/api.ts:126 web/src/lib/api.ts:130 web/src/lib/api.ts:133
+#: web/src/lib/api.ts:140
 msgid "The server could not be reached. Check your connection and try again."
 msgstr ""
 "Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es "
 "erneut."
 
 #: web/src/lib/api.ts:246 web/src/lib/api.ts:252 web/src/lib/api.ts:266
-#: web/src/lib/api.ts:329 web/src/lib/features/categories/category-api.ts:20
+#: web/src/lib/api.ts:329 web/src/lib/api.ts:341
+#: web/src/lib/features/categories/category-api.ts:20
 #: web/src/lib/features/categories/category-api.ts:75
 #: web/src/lib/features/projects/project-api.ts:397
 #: web/src/lib/features/projects/project-api.ts:410
@@ -3095,12 +3116,13 @@ msgid "The server returned an unexpected response."
 msgstr "Der Server hat unerwartet geantwortet."
 
 #: web/src/lib/session.svelte.ts:97 web/src/lib/session.svelte.ts:108
-#: web/src/routes/+layout.svelte:137
+#: web/src/lib/session.svelte.ts:115 web/src/routes/+layout.svelte:137
 msgid "The session could not be loaded."
 msgstr "Die Sitzung konnte nicht geladen werden."
 
 #: web/src/lib/session.svelte.ts:70 web/src/lib/session.svelte.ts:76
-#: web/src/lib/session.svelte.ts:84 web/src/lib/session.svelte.ts:93
+#: web/src/lib/session.svelte.ts:79 web/src/lib/session.svelte.ts:84
+#: web/src/lib/session.svelte.ts:93 web/src/lib/session.svelte.ts:98
 msgid "The session token is missing. Refresh and try again."
 msgstr "Das Sitzungstoken fehlt. Lade die Seite neu und versuche es erneut."
 
@@ -3113,7 +3135,7 @@ msgid "This area is not connected yet."
 msgstr "Dieser Bereich ist noch nicht angebunden."
 
 #: web/src/lib/api.ts:204 web/src/lib/api.ts:210 web/src/lib/api.ts:216
-#: web/src/lib/api.ts:248
+#: web/src/lib/api.ts:248 web/src/lib/api.ts:260
 msgid "Too many attempts. Wait a moment and try again."
 msgstr "Zu viele Versuche. Warte kurz und versuche es erneut."
 
@@ -3124,6 +3146,7 @@ msgstr "Zu viele Versuche. Warte kurz und versuche es erneut."
 #: web/src/lib/features/projects/ProjectReader.svelte:180
 #: web/src/lib/features/projects/ProjectReader.svelte:211
 #: web/src/lib/features/projects/ProjectReader.svelte:212
+#: web/src/lib/features/projects/ProjectReader.svelte:256
 #: web/src/lib/features/projects/ProjectReader.svelte:260
 #: web/src/lib/features/yarns/YarnDetail.svelte:232
 #: web/src/lib/features/yarns/YarnForm.svelte:374
@@ -3172,7 +3195,7 @@ msgid "You do not have access to this page."
 msgstr "Du hast keinen Zugriff auf diese Seite."
 
 #: web/src/lib/api.ts:201 web/src/lib/api.ts:207 web/src/lib/api.ts:213
-#: web/src/lib/api.ts:245
+#: web/src/lib/api.ts:245 web/src/lib/api.ts:257
 msgid "You do not have permission to do that."
 msgstr "Du darfst diese Aktion nicht ausführen."
 
@@ -3205,12 +3228,13 @@ msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an, um fortzufahren."
 
 #: web/src/lib/api.ts:194 web/src/lib/api.ts:197 web/src/lib/api.ts:200
 #: web/src/lib/api.ts:202 web/src/lib/api.ts:203 web/src/lib/api.ts:208
-#: web/src/lib/api.ts:234 web/src/lib/api.ts:240
+#: web/src/lib/api.ts:234 web/src/lib/api.ts:240 web/src/lib/api.ts:246
+#: web/src/lib/api.ts:252
 msgid "Your session has expired. Refresh the page and try again."
 msgstr "Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es erneut."
 
 #: web/src/lib/api.ts:200 web/src/lib/api.ts:206 web/src/lib/api.ts:212
-#: web/src/lib/api.ts:244
+#: web/src/lib/api.ts:244 web/src/lib/api.ts:256
 msgid "Your session has expired. Sign in again."
 msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an."
 
@@ -3237,6 +3261,7 @@ msgstr "Alle Kategorien"
 #: web/src/lib/features/projects/ProjectReader.svelte:439
 #: web/src/lib/features/projects/ProjectReader.svelte:548
 #: web/src/lib/features/projects/ProjectReader.svelte:553
+#: web/src/lib/features/projects/ProjectReader.svelte:647
 #: web/src/lib/features/projects/ProjectReader.svelte:649
 msgid "Back to project library"
 msgstr "Zurück zur Projektübersicht"
@@ -3257,6 +3282,7 @@ msgstr "Bildansicht schließen"
 #: web/src/lib/features/projects/ProjectReader.svelte:261
 #: web/src/lib/features/projects/ProjectReader.svelte:307
 #: web/src/lib/features/projects/ProjectReader.svelte:309
+#: web/src/lib/features/projects/ProjectReader.svelte:364
 #: web/src/lib/features/projects/ProjectReader.svelte:366
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:181
 msgid "Cover photo"
@@ -3265,6 +3291,7 @@ msgstr "Titelbild"
 #: web/src/lib/features/projects/ProjectReader.svelte:192
 #: web/src/lib/features/projects/ProjectReader.svelte:228
 #: web/src/lib/features/projects/ProjectReader.svelte:229
+#: web/src/lib/features/projects/ProjectReader.svelte:273
 #: web/src/lib/features/projects/ProjectReader.svelte:277
 msgid "Decrease text size"
 msgstr "Text verkleinern"
@@ -3280,6 +3307,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:393
 #: web/src/lib/features/projects/ProjectReader.svelte:477
 #: web/src/lib/features/projects/ProjectReader.svelte:482
+#: web/src/lib/features/projects/ProjectReader.svelte:576
 #: web/src/lib/features/projects/ProjectReader.svelte:578
 msgid "Gauge"
 msgstr "Maschenprobe"
@@ -3287,6 +3315,7 @@ msgstr "Maschenprobe"
 #: web/src/lib/features/projects/ProjectReader.svelte:198
 #: web/src/lib/features/projects/ProjectReader.svelte:234
 #: web/src/lib/features/projects/ProjectReader.svelte:235
+#: web/src/lib/features/projects/ProjectReader.svelte:279
 #: web/src/lib/features/projects/ProjectReader.svelte:283
 msgid "Increase text size"
 msgstr "Text vergrößern"
@@ -3294,6 +3323,7 @@ msgstr "Text vergrößern"
 #: web/src/lib/features/projects/ProjectReader.svelte:211
 #: web/src/lib/features/projects/ProjectReader.svelte:252
 #: web/src/lib/features/projects/ProjectReader.svelte:253
+#: web/src/lib/features/projects/ProjectReader.svelte:297
 #: web/src/lib/features/projects/ProjectReader.svelte:301
 msgid "Knitting project"
 msgstr "Strickprojekt"
@@ -3301,6 +3331,7 @@ msgstr "Strickprojekt"
 #: web/src/lib/features/projects/ProjectReader.svelte:438
 #: web/src/lib/features/projects/ProjectReader.svelte:547
 #: web/src/lib/features/projects/ProjectReader.svelte:552
+#: web/src/lib/features/projects/ProjectReader.svelte:646
 #: web/src/lib/features/projects/ProjectReader.svelte:648
 msgid "Last updated"
 msgstr "Zuletzt aktualisiert"
@@ -3308,6 +3339,7 @@ msgstr "Zuletzt aktualisiert"
 #: web/src/lib/features/projects/ProjectReader.svelte:348
 #: web/src/lib/features/projects/ProjectReader.svelte:409
 #: web/src/lib/features/projects/ProjectReader.svelte:414
+#: web/src/lib/features/projects/ProjectReader.svelte:508
 #: web/src/lib/features/projects/ProjectReader.svelte:510
 msgid "Materials"
 msgstr "Materialien"
@@ -3326,6 +3358,7 @@ msgstr "Nächstes Bild"
 #: web/src/lib/features/projects/ProjectReader.svelte:431
 #: web/src/lib/features/projects/ProjectReader.svelte:539
 #: web/src/lib/features/projects/ProjectReader.svelte:544
+#: web/src/lib/features/projects/ProjectReader.svelte:638
 #: web/src/lib/features/projects/ProjectReader.svelte:640
 msgid "No attachments have been added yet."
 msgstr "Es wurden noch keine Anhänge hinzugefügt."
@@ -3333,6 +3366,7 @@ msgstr "Es wurden noch keine Anhänge hinzugefügt."
 #: web/src/lib/features/projects/ProjectReader.svelte:405
 #: web/src/lib/features/projects/ProjectReader.svelte:496
 #: web/src/lib/features/projects/ProjectReader.svelte:501
+#: web/src/lib/features/projects/ProjectReader.svelte:595
 #: web/src/lib/features/projects/ProjectReader.svelte:597
 msgid "No pattern link has been saved."
 msgstr "Es wurde kein Link zur Anleitung gespeichert."
@@ -3340,6 +3374,7 @@ msgstr "Es wurde kein Link zur Anleitung gespeichert."
 #: web/src/lib/features/projects/ProjectReader.svelte:282
 #: web/src/lib/features/projects/ProjectReader.svelte:332
 #: web/src/lib/features/projects/ProjectReader.svelte:334
+#: web/src/lib/features/projects/ProjectReader.svelte:389
 #: web/src/lib/features/projects/ProjectReader.svelte:391
 msgid "No pattern notes have been added yet."
 msgstr "Es wurden noch keine Anleitungsnotizen hinzugefügt."
@@ -3355,6 +3390,7 @@ msgstr "Keine Projekte passen zu diesen Filtern."
 #: web/src/lib/features/projects/ProjectReader.svelte:341
 #: web/src/lib/features/projects/ProjectReader.svelte:401
 #: web/src/lib/features/projects/ProjectReader.svelte:406
+#: web/src/lib/features/projects/ProjectReader.svelte:500
 #: web/src/lib/features/projects/ProjectReader.svelte:502
 msgid "No steps have been added yet."
 msgstr "Es wurden noch keine Schritte hinzugefügt."
@@ -3362,6 +3398,7 @@ msgstr "Es wurden noch keine Schritte hinzugefügt."
 #: web/src/lib/features/projects/ProjectReader.svelte:381
 #: web/src/lib/features/projects/ProjectReader.svelte:457
 #: web/src/lib/features/projects/ProjectReader.svelte:462
+#: web/src/lib/features/projects/ProjectReader.svelte:556
 #: web/src/lib/features/projects/ProjectReader.svelte:558
 msgid "Not recorded"
 msgstr "Nicht angegeben"
@@ -3369,6 +3406,7 @@ msgstr "Nicht angegeben"
 #: web/src/lib/features/projects/ProjectReader.svelte:409
 #: web/src/lib/features/projects/ProjectReader.svelte:505
 #: web/src/lib/features/projects/ProjectReader.svelte:510
+#: web/src/lib/features/projects/ProjectReader.svelte:604
 #: web/src/lib/features/projects/ProjectReader.svelte:606
 msgid "Open archived copy"
 msgstr "Archivierte Kopie öffnen"
@@ -3376,6 +3414,7 @@ msgstr "Archivierte Kopie öffnen"
 #: web/src/lib/features/projects/ProjectReader.svelte:402
 #: web/src/lib/features/projects/ProjectReader.svelte:492
 #: web/src/lib/features/projects/ProjectReader.svelte:497
+#: web/src/lib/features/projects/ProjectReader.svelte:591
 #: web/src/lib/features/projects/ProjectReader.svelte:593
 msgid "Open original pattern"
 msgstr "Originalanleitung öffnen"
@@ -3383,6 +3422,7 @@ msgstr "Originalanleitung öffnen"
 #: web/src/lib/features/projects/ProjectReader.svelte:252
 #: web/src/lib/features/projects/ProjectReader.svelte:296
 #: web/src/lib/features/projects/ProjectReader.svelte:297
+#: web/src/lib/features/projects/ProjectReader.svelte:351
 #: web/src/lib/features/projects/ProjectReader.svelte:353
 msgid "Open project photo"
 msgstr "Projektfoto öffnen"
@@ -3390,6 +3430,7 @@ msgstr "Projektfoto öffnen"
 #: web/src/lib/features/projects/ProjectReader.svelte:324
 #: web/src/lib/features/projects/ProjectReader.svelte:382
 #: web/src/lib/features/projects/ProjectReader.svelte:384
+#: web/src/lib/features/projects/ProjectReader.svelte:478
 #: web/src/lib/features/projects/ProjectReader.svelte:480
 msgid "Open step photo"
 msgstr "Schrittfoto öffnen"
@@ -3397,6 +3438,7 @@ msgstr "Schrittfoto öffnen"
 #: web/src/lib/features/projects/ProjectReader.svelte:161
 #: web/src/lib/features/projects/ProjectReader.svelte:177
 #: web/src/lib/features/projects/ProjectReader.svelte:178
+#: web/src/lib/features/projects/ProjectReader.svelte:222
 #: web/src/lib/features/projects/ProjectReader.svelte:226
 msgid "Opening your pattern…"
 msgstr "Deine Anleitung wird geöffnet …"
@@ -3417,6 +3459,7 @@ msgstr "Seite"
 #: web/src/lib/features/projects/ProjectReader.svelte:275
 #: web/src/lib/features/projects/ProjectReader.svelte:324
 #: web/src/lib/features/projects/ProjectReader.svelte:326
+#: web/src/lib/features/projects/ProjectReader.svelte:381
 #: web/src/lib/features/projects/ProjectReader.svelte:383
 msgid "Pattern and notes"
 msgstr "Anleitung und Notizen"
@@ -3425,6 +3468,7 @@ msgstr "Anleitung und Notizen"
 #: web/src/lib/features/projects/ProjectReader.svelte:399
 #: web/src/lib/features/projects/ProjectReader.svelte:485
 #: web/src/lib/features/projects/ProjectReader.svelte:490
+#: web/src/lib/features/projects/ProjectReader.svelte:584
 #: web/src/lib/features/projects/ProjectReader.svelte:586
 msgid "Pattern source"
 msgstr "Anleitungsquelle"
@@ -3432,6 +3476,7 @@ msgstr "Anleitungsquelle"
 #: web/src/lib/features/projects/ProjectReader.svelte:189
 #: web/src/lib/features/projects/ProjectReader.svelte:224
 #: web/src/lib/features/projects/ProjectReader.svelte:225
+#: web/src/lib/features/projects/ProjectReader.svelte:269
 #: web/src/lib/features/projects/ProjectReader.svelte:273
 msgid "Pattern text size"
 msgstr "Textgröße der Anleitung"
@@ -3444,6 +3489,7 @@ msgstr "Vorheriges Bild"
 #: web/src/lib/features/projects/ProjectReader.svelte:204
 #: web/src/lib/features/projects/ProjectReader.svelte:244
 #: web/src/lib/features/projects/ProjectReader.svelte:245
+#: web/src/lib/features/projects/ProjectReader.svelte:289
 #: web/src/lib/features/projects/ProjectReader.svelte:293
 msgid "Print pattern"
 msgstr "Anleitung drucken"
@@ -3451,6 +3497,7 @@ msgstr "Anleitung drucken"
 #: web/src/lib/features/projects/ProjectReader.svelte:186
 #: web/src/lib/features/projects/ProjectReader.svelte:217
 #: web/src/lib/features/projects/ProjectReader.svelte:218
+#: web/src/lib/features/projects/ProjectReader.svelte:262
 #: web/src/lib/features/projects/ProjectReader.svelte:266
 msgid "Project actions"
 msgstr "Projektaktionen"
@@ -3460,6 +3507,7 @@ msgstr "Projektaktionen"
 #: web/src/lib/features/projects/ProjectReader.svelte:346
 #: web/src/lib/features/projects/ProjectReader.svelte:407
 #: web/src/lib/features/projects/ProjectReader.svelte:412
+#: web/src/lib/features/projects/ProjectReader.svelte:506
 #: web/src/lib/features/projects/ProjectReader.svelte:508
 msgid "Project details"
 msgstr "Projektdetails"
@@ -3472,6 +3520,7 @@ msgstr "Projektbildansicht"
 #: web/src/lib/features/projects/ProjectReader.svelte:168
 #: web/src/lib/features/projects/ProjectReader.svelte:186
 #: web/src/lib/features/projects/ProjectReader.svelte:187
+#: web/src/lib/features/projects/ProjectReader.svelte:231
 #: web/src/lib/features/projects/ProjectReader.svelte:235
 msgid "Project not found"
 msgstr "Projekt nicht gefunden"
@@ -3485,6 +3534,7 @@ msgstr "Projektseiten"
 #: web/src/lib/features/projects/ProjectReader.svelte:244
 #: web/src/lib/features/projects/ProjectReader.svelte:288
 #: web/src/lib/features/projects/ProjectReader.svelte:289
+#: web/src/lib/features/projects/ProjectReader.svelte:343
 #: web/src/lib/features/projects/ProjectReader.svelte:345
 msgid "Project photos"
 msgstr "Projektfotos"
@@ -3495,6 +3545,7 @@ msgstr "Projektfotos"
 #: web/src/lib/features/projects/ProjectReader.svelte:216
 #: web/src/lib/features/projects/ProjectReader.svelte:258
 #: web/src/lib/features/projects/ProjectReader.svelte:259
+#: web/src/lib/features/projects/ProjectReader.svelte:303
 #: web/src/lib/features/projects/ProjectReader.svelte:307
 msgid "Project tags"
 msgstr "Projekt-Schlagwörter"
@@ -3528,6 +3579,7 @@ msgstr "Deine Projekte durchsuchen"
 #: web/src/lib/features/projects/ProjectReader.svelte:62
 #: web/src/lib/features/projects/ProjectReader.svelte:65
 #: web/src/lib/features/projects/ProjectReader.svelte:77
+#: web/src/lib/features/projects/ProjectReader.svelte:78
 msgid "Sign in to open this project."
 msgstr "Melde dich an, um dieses Projekt zu öffnen."
 
@@ -3539,6 +3591,7 @@ msgstr "Melde dich an, um deine Projekte anzusehen."
 #: web/src/lib/features/projects/ProjectReader.svelte:384
 #: web/src/lib/features/projects/ProjectReader.svelte:462
 #: web/src/lib/features/projects/ProjectReader.svelte:467
+#: web/src/lib/features/projects/ProjectReader.svelte:561
 #: web/src/lib/features/projects/ProjectReader.svelte:563
 msgid "Some yarn details could not be loaded."
 msgstr "Einige Garninformationen konnten nicht geladen werden."
@@ -3554,6 +3607,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:319
 #: web/src/lib/features/projects/ProjectReader.svelte:376
 #: web/src/lib/features/projects/ProjectReader.svelte:378
+#: web/src/lib/features/projects/ProjectReader.svelte:472
 #: web/src/lib/features/projects/ProjectReader.svelte:474
 msgid "Step photos"
 msgstr "Schrittfotos"
@@ -3564,6 +3618,7 @@ msgstr "Schrittfotos"
 #: web/src/lib/features/projects/ProjectReader.svelte:113
 #: web/src/lib/features/projects/ProjectReader.svelte:123
 #: web/src/lib/features/projects/ProjectReader.svelte:124
+#: web/src/lib/features/projects/ProjectReader.svelte:168
 #: web/src/lib/features/projects/ProjectReader.svelte:172
 #: web/src/lib/features/yarns/YarnDetail.svelte:160
 #: web/src/lib/features/yarns/YarnLibrary.svelte:102
@@ -3573,6 +3628,7 @@ msgstr "Der Favoritenstatus konnte nicht aktualisiert werden."
 #: web/src/lib/features/projects/ProjectReader.svelte:177
 #: web/src/lib/features/projects/ProjectReader.svelte:203
 #: web/src/lib/features/projects/ProjectReader.svelte:204
+#: web/src/lib/features/projects/ProjectReader.svelte:248
 #: web/src/lib/features/projects/ProjectReader.svelte:252
 msgid "The pattern could not be opened."
 msgstr "Die Anleitung konnte nicht geöffnet werden."
@@ -3598,6 +3654,7 @@ msgstr "Dieses Projekt konnte nicht geladen werden."
 #: web/src/lib/features/projects/ProjectReader.svelte:110
 #: web/src/lib/features/projects/ProjectReader.svelte:120
 #: web/src/lib/features/projects/ProjectReader.svelte:121
+#: web/src/lib/features/projects/ProjectReader.svelte:165
 #: web/src/lib/features/projects/ProjectReader.svelte:169
 msgid "This project is no longer available."
 msgstr "Dieses Projekt ist nicht mehr verfügbar."
@@ -3605,6 +3662,7 @@ msgstr "Dieses Projekt ist nicht mehr verfügbar."
 #: web/src/lib/features/projects/ProjectReader.svelte:169
 #: web/src/lib/features/projects/ProjectReader.svelte:188
 #: web/src/lib/features/projects/ProjectReader.svelte:189
+#: web/src/lib/features/projects/ProjectReader.svelte:233
 #: web/src/lib/features/projects/ProjectReader.svelte:237
 msgid "This project may have been removed or may not belong to your account."
 msgstr ""
@@ -3625,6 +3683,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:214
 #: web/src/lib/features/projects/ProjectReader.svelte:256
 #: web/src/lib/features/projects/ProjectReader.svelte:257
+#: web/src/lib/features/projects/ProjectReader.svelte:301
 #: web/src/lib/features/projects/ProjectReader.svelte:305
 #: web/src/lib/features/yarns/YarnDetail.svelte:376
 msgid "Updated"
@@ -3633,6 +3692,7 @@ msgstr "Aktualisiert"
 #: web/src/lib/features/projects/ProjectReader.svelte:372
 #: web/src/lib/features/projects/ProjectReader.svelte:443
 #: web/src/lib/features/projects/ProjectReader.svelte:448
+#: web/src/lib/features/projects/ProjectReader.svelte:542
 #: web/src/lib/features/projects/ProjectReader.svelte:544
 #: web/src/lib/features/yarns/YarnDetail.svelte:389
 msgid "Yarn source"
@@ -3659,35 +3719,36 @@ msgstr "Deine Projekte"
 #: web/src/lib/features/projects/ProjectReader.svelte:276
 #: web/src/lib/features/projects/ProjectReader.svelte:325
 #: web/src/lib/features/projects/ProjectReader.svelte:327
+#: web/src/lib/features/projects/ProjectReader.svelte:382
 #: web/src/lib/features/projects/ProjectReader.svelte:384
 msgid "Your reference"
 msgstr "Deine Referenz"
 
-#: web/src/lib/api.ts:221 web/src/lib/api.ts:284
+#: web/src/lib/api.ts:221 web/src/lib/api.ts:284 web/src/lib/api.ts:296
 msgid "External image importing is not available right now."
 msgstr "Der Import externer Bilder ist derzeit nicht verfügbar."
 
-#: web/src/lib/api.ts:224 web/src/lib/api.ts:287
+#: web/src/lib/api.ts:224 web/src/lib/api.ts:287 web/src/lib/api.ts:299
 msgid "The server could not complete this request. Try again."
 msgstr "Der Server konnte die Anfrage nicht abschließen. Versuche es erneut."
 
-#: web/src/lib/api.ts:217 web/src/lib/api.ts:249
+#: web/src/lib/api.ts:217 web/src/lib/api.ts:249 web/src/lib/api.ts:261
 msgid "This item changed in another window. Your unsaved changes are still here."
 msgstr ""
 "Dieser Eintrag wurde in einem anderen Fenster geändert. Deine nicht "
 "gespeicherten Änderungen sind weiterhin vorhanden."
 
-#: web/src/lib/api.ts:220 web/src/lib/api.ts:252
+#: web/src/lib/api.ts:220 web/src/lib/api.ts:252 web/src/lib/api.ts:264
 msgid "This upload is larger than the allowed size."
 msgstr "Die Datei ist größer als die zulässige Maximalgröße."
 
-#: web/src/lib/api.ts:205 web/src/lib/api.ts:237
+#: web/src/lib/api.ts:205 web/src/lib/api.ts:237 web/src/lib/api.ts:249
 msgid "Your session check failed. Refresh the page and try again."
 msgstr ""
 "Die Sitzungsprüfung ist fehlgeschlagen. Lade die Seite neu und versuche "
 "es erneut."
 
-#: web/src/lib/api.ts:211 web/src/lib/api.ts:243
+#: web/src/lib/api.ts:211 web/src/lib/api.ts:243 web/src/lib/api.ts:255
 msgid "Your session expired. Sign in again."
 msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an."
 
@@ -3842,6 +3903,7 @@ msgstr "Jeder Schritt braucht einen Titel mit höchstens 256 Zeichen."
 #: web/src/lib/features/projects/ProjectEditor.svelte:646
 #: web/src/lib/features/projects/ProjectEditor.svelte:704
 #: web/src/lib/features/projects/ProjectEditor.svelte:713
+#: web/src/lib/features/projects/ProjectReader.svelte:316
 #: web/src/lib/features/projects/ProjectReader.svelte:318
 msgid "Edit project"
 msgstr "Projekt bearbeiten"
@@ -4580,13 +4642,17 @@ msgstr "m"
 msgid ""
 "AI enhancement is unavailable. You can still preview and review the "
 "extracted draft."
-msgstr "KI-Unterstützung ist nicht verfügbar. Du kannst den Entwurf trotzdem ansehen und prüfen."
+msgstr ""
+"KI-Unterstützung ist nicht verfügbar. Du kannst den Entwurf trotzdem "
+"ansehen und prüfen."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:465
 msgid ""
 "AI enhancement was unavailable, so this preview uses the original "
 "extraction."
-msgstr "KI-Unterstützung war nicht verfügbar. Diese Vorschau basiert daher auf der ursprünglichen Extraktion."
+msgstr ""
+"KI-Unterstützung war nicht verfügbar. Diese Vorschau basiert daher auf "
+"der ursprünglichen Extraktion."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:501
 msgid "AI-assisted extraction. Check every detail before saving."
@@ -4608,7 +4674,7 @@ msgstr "Füge jedes Schlagwort einzeln hinzu; Kommata bleiben Teil des Schlagwor
 msgid "Add tag"
 msgstr "Schlagwort hinzufügen"
 
-#: web/src/lib/api.ts:283
+#: web/src/lib/api.ts:283 web/src/lib/api.ts:295
 msgid "Archiving is unavailable right now."
 msgstr "Archivierung ist derzeit nicht verfügbar."
 
@@ -4636,9 +4702,11 @@ msgstr "Quelle auswählen"
 msgid ""
 "Choose a source, review every extracted detail, then create a normal "
 "project."
-msgstr "Wähle eine Quelle aus, prüfe alle extrahierten Angaben und erstelle anschließend ein normales Projekt."
+msgstr ""
+"Wähle eine Quelle aus, prüfe alle extrahierten Angaben und erstelle "
+"anschließend ein normales Projekt."
 
-#: web/src/lib/api.ts:269
+#: web/src/lib/api.ts:269 web/src/lib/api.ts:281
 msgid "Choose a supported language for text recognition."
 msgstr "Wähle eine unterstützte Sprache für die Texterkennung aus."
 
@@ -4646,7 +4714,9 @@ msgstr "Wähle eine unterstützte Sprache für die Texterkennung aus."
 msgid ""
 "Create yarn separately. It will be linked to this project only after it "
 "is saved."
-msgstr "Lege Garn separat an. Es wird erst nach dem Speichern mit diesem Projekt verknüpft."
+msgstr ""
+"Lege Garn separat an. Es wird erst nach dem Speichern mit diesem Projekt "
+"verknüpft."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:720
 msgid "Creating project…"
@@ -4660,7 +4730,9 @@ msgstr "Gib eine gültige HTTP- oder HTTPS-Adresse ein."
 msgid ""
 "External images are disabled. Links will be kept in notes and never "
 "attached."
-msgstr "Externe Bilder sind deaktiviert. Links bleiben in den Notizen und werden nicht angehängt."
+msgstr ""
+"Externe Bilder sind deaktiviert. Links bleiben in den Notizen und werden "
+"nicht angehängt."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:407
 msgid "From a link"
@@ -4698,16 +4770,20 @@ msgstr "Projekt importieren"
 msgid ""
 "Import a source to draft a project, or organize the categories in your "
 "library."
-msgstr "Importiere eine Quelle als Projektentwurf oder verwalte die Kategorien deiner Bibliothek."
+msgstr ""
+"Importiere eine Quelle als Projektentwurf oder verwalte die Kategorien "
+"deiner Bibliothek."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:324
 #: web/src/lib/features/imports/ImportWorkbench.svelte:336
 msgid "Import failed. Your source and edits are still here."
 msgstr "Import fehlgeschlagen. Quelle und Änderungen sind weiterhin vorhanden."
 
-#: web/src/lib/api.ts:271
+#: web/src/lib/api.ts:271 web/src/lib/api.ts:283
 msgid "Import preview is unavailable right now. Try again later."
-msgstr "Die Importvorschau ist derzeit nicht verfügbar. Bitte später erneut versuchen."
+msgstr ""
+"Die Importvorschau ist derzeit nicht verfügbar. Bitte später erneut "
+"versuchen."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:383
 msgid "Import source"
@@ -4726,10 +4802,13 @@ msgstr "Importprüfung verlassen? Deine Änderungen gehen verloren."
 msgid "Markdown file"
 msgstr "Markdown-Datei"
 
-#: web/src/lib/api.ts:259
+#: web/src/lib/api.ts:259 web/src/lib/api.ts:271
 msgid "Media storage is unavailable. Try again later."
-msgstr "Der Medienspeicher ist derzeit nicht verfügbar. Bitte später erneut versuchen."
+msgstr ""
+"Der Medienspeicher ist derzeit nicht verfügbar. Bitte später erneut "
+"versuchen."
 
+#: web/src/lib/features/projects/ProjectReader.svelte:443
 #: web/src/lib/features/projects/ProjectReader.svelte:445
 msgid "Next step"
 msgstr "Nächster Schritt"
@@ -4762,6 +4841,7 @@ msgstr "Füge Text für die Vorschau ein."
 msgid "Pattern page URL"
 msgstr "URL der Anleitungsseite"
 
+#: web/src/lib/features/projects/ProjectReader.svelte:417
 #: web/src/lib/features/projects/ProjectReader.svelte:419
 msgid "Pattern step navigation"
 msgstr "Navigation der Anleitungsschritte"
@@ -4782,6 +4862,7 @@ msgstr "Vorschau wird vorbereitet…"
 msgid "Preview and review"
 msgstr "Vorschau und Prüfung"
 
+#: web/src/lib/features/projects/ProjectReader.svelte:425
 #: web/src/lib/features/projects/ProjectReader.svelte:427
 msgid "Previous step"
 msgstr "Vorheriger Schritt"
@@ -4804,13 +4885,17 @@ msgstr "Prüfen und korrigieren"
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:688
 msgid "Review and edit these details; they will be kept in project notes."
-msgstr "Prüfe und bearbeite diese Angaben. Sie werden in den Projektnotizen gespeichert."
+msgstr ""
+"Prüfe und bearbeite diese Angaben. Sie werden in den Projektnotizen "
+"gespeichert."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:505
 msgid ""
 "Review the extracted fields. Nothing is created until you choose a save "
 "action."
-msgstr "Prüfe die extrahierten Angaben. Es wird erst etwas erstellt, wenn du eine Speicheraktion auswählst."
+msgstr ""
+"Prüfe die extrahierten Angaben. Es wird erst etwas erstellt, wenn du eine"
+" Speicheraktion auswählst."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:671
 msgid "Save yarn to library"
@@ -4858,74 +4943,92 @@ msgstr "Vorgeschlagene Schrittbilder"
 msgid "Text and files are limited to 5 MiB."
 msgstr "Text und Dateien sind auf 5 MiB begrenzt."
 
-#: web/src/lib/api.ts:266
+#: web/src/lib/api.ts:266 web/src/lib/api.ts:278
 msgid "Text recognition could not complete. You can enter the text manually."
-msgstr "Die Texterkennung konnte nicht abgeschlossen werden. Du kannst den Text manuell eingeben."
+msgstr ""
+"Die Texterkennung konnte nicht abgeschlossen werden. Du kannst den Text "
+"manuell eingeben."
 
-#: web/src/lib/api.ts:260
+#: web/src/lib/api.ts:260 web/src/lib/api.ts:272
 msgid ""
 "Text recognition is unavailable right now. You can enter the text "
 "manually."
-msgstr "Die Texterkennung ist derzeit nicht verfügbar. Du kannst den Text manuell eingeben."
+msgstr ""
+"Die Texterkennung ist derzeit nicht verfügbar. Du kannst den Text manuell"
+" eingeben."
 
-#: web/src/lib/api.ts:263
+#: web/src/lib/api.ts:263 web/src/lib/api.ts:275
 msgid "Text recognition took too long. Try again or enter the text manually."
-msgstr "Die Texterkennung dauerte zu lange. Bitte erneut versuchen oder den Text manuell eingeben."
+msgstr ""
+"Die Texterkennung dauerte zu lange. Bitte erneut versuchen oder den Text "
+"manuell eingeben."
 
-#: web/src/lib/api.ts:253
+#: web/src/lib/api.ts:253 web/src/lib/api.ts:265
 msgid "The request could not be read. Refresh and try again."
-msgstr "Die Anfrage konnte nicht gelesen werden. Aktualisiere die Seite und versuche es erneut."
+msgstr ""
+"Die Anfrage konnte nicht gelesen werden. Aktualisiere die Seite und "
+"versuche es erneut."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:452
 msgid ""
 "The server reads the page securely. Suggested image links are never "
 "fetched by this browser."
-msgstr "Der Server liest die Seite sicher aus. Vorgeschlagene Bildlinks werden von diesem Browser nicht abgerufen."
+msgstr ""
+"Der Server liest die Seite sicher aus. Vorgeschlagene Bildlinks werden "
+"von diesem Browser nicht abgerufen."
 
 #: web/src/lib/features/imports/import-api.ts:317
 msgid "The server returned an unexpected import response."
 msgstr "Der Server lieferte eine unerwartete Importantwort."
 
-#: web/src/lib/api.ts:275
+#: web/src/lib/api.ts:275 web/src/lib/api.ts:287
 msgid "The source could not be downloaded. Check the link and try again."
-msgstr "Die Quelle konnte nicht heruntergeladen werden. Prüfe den Link und versuche es erneut."
+msgstr ""
+"Die Quelle konnte nicht heruntergeladen werden. Prüfe den Link und "
+"versuche es erneut."
 
-#: web/src/lib/api.ts:274
+#: web/src/lib/api.ts:274 web/src/lib/api.ts:286
 msgid "The source took too long to import. Try again later."
 msgstr "Der Import der Quelle dauerte zu lange. Bitte später erneut versuchen."
 
-#: web/src/lib/api.ts:255
+#: web/src/lib/api.ts:255 web/src/lib/api.ts:267
 msgid "The uploaded form could not be read. Choose the file again."
-msgstr "Das Upload-Formular konnte nicht gelesen werden. Wähle die Datei erneut aus."
+msgstr ""
+"Das Upload-Formular konnte nicht gelesen werden. Wähle die Datei erneut "
+"aus."
 
-#: web/src/lib/api.ts:282
+#: web/src/lib/api.ts:282 web/src/lib/api.ts:294
 msgid "This document could not be read. Try another file."
-msgstr "Dieses Dokument konnte nicht gelesen werden. Versuche es mit einer anderen Datei."
+msgstr ""
+"Dieses Dokument konnte nicht gelesen werden. Versuche es mit einer "
+"anderen Datei."
 
 #: web/src/lib/features/imports/import-api.ts:98
 #: web/src/lib/features/imports/import-api.ts:132
 msgid "This document is larger than the 5 MiB import limit."
 msgstr "Dieses Dokument überschreitet das Importlimit von 5 MiB."
 
-#: web/src/lib/api.ts:279
+#: web/src/lib/api.ts:279 web/src/lib/api.ts:291
 msgid ""
 "This document type is not supported. Try a web page, text, Markdown, PDF,"
 " or image."
-msgstr "Dieses Dokumentformat wird nicht unterstützt. Verwende eine Webseite, Text, Markdown, PDF oder ein Bild."
+msgstr ""
+"Dieses Dokumentformat wird nicht unterstützt. Verwende eine Webseite, "
+"Text, Markdown, PDF oder ein Bild."
 
-#: web/src/lib/api.ts:254
+#: web/src/lib/api.ts:254 web/src/lib/api.ts:266
 msgid "This feature is not enabled for this account."
 msgstr "Diese Funktion ist für dieses Konto nicht aktiviert."
 
-#: web/src/lib/api.ts:270
+#: web/src/lib/api.ts:270 web/src/lib/api.ts:282
 msgid "This image is not available for text recognition."
 msgstr "Dieses Bild ist für die Texterkennung nicht verfügbar."
 
-#: web/src/lib/api.ts:258
+#: web/src/lib/api.ts:258 web/src/lib/api.ts:270
 msgid "This is not a valid image. Choose a different file."
 msgstr "Dies ist kein gültiges Bild. Wähle eine andere Datei aus."
 
-#: web/src/lib/api.ts:278
+#: web/src/lib/api.ts:278 web/src/lib/api.ts:290
 msgid "This link cannot be imported for security reasons."
 msgstr "Dieser Link kann aus Sicherheitsgründen nicht importiert werden."
 
@@ -4955,6 +5058,7 @@ msgstr "Garn zur Bibliothek hinzugefügt und mit diesem Projekt verknüpft."
 msgid "Yarn from this import"
 msgstr "Garn aus diesem Import"
 
+#: web/src/lib/features/projects/ProjectReader.svelte:434
 #: web/src/lib/features/projects/ProjectReader.svelte:436
 msgid "of"
 msgstr "von"
@@ -4962,6 +5066,19 @@ msgstr "von"
 #: web/src/lib/features/imports/ImportWorkbench.svelte:515
 msgid "pixels"
 msgstr "Pixel"
+
+#: web/src/routes/more/+page.svelte:20 web/src/routes/more/+page.svelte:24
+msgid "Available now"
+msgstr "Jetzt verfügbar"
+
+#: web/src/routes/more/+page.svelte:28 web/src/routes/more/+page.svelte:32
+#: web/src/routes/more/+page.svelte:37 web/src/routes/more/+page.svelte:41
+msgid "In progress"
+msgstr "In Bearbeitung"
+
+#: web/src/routes/more/+page.svelte:15
+msgid "Tools and settings for your knitting library."
+msgstr "Werkzeuge und Einstellungen für deine Strickbibliothek."
 
 # Navigation and General
 #~ msgid "Stricknani"

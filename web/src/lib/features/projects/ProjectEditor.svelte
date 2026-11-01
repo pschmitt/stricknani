@@ -56,6 +56,7 @@
   let yarnLoading = $state(false);
   let mediaAltText = $state("");
   let mediaStepId = $state("");
+  let tagInput = $state("");
   let stepKey = 0;
   let routeGeneration = 0;
   let categoryGeneration = 0;
@@ -64,7 +65,9 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
-  const isDirty = $derived(savedSnapshot !== JSON.stringify(draft));
+  const isDirty = $derived(
+    savedSnapshot !== JSON.stringify(draft) || tagInput.trim().length > 0,
+  );
   const isCreating = $derived(projectId === null);
   const backHref = $derived(
     projectId === null
@@ -246,6 +249,7 @@
     const empty = blankProjectDraft();
     draft = empty;
     savedSnapshot = JSON.stringify(empty);
+    tagInput = "";
     selectedYarnNames = {};
   }
 
@@ -320,6 +324,17 @@
     selectedYarnNames[yarn.id] = yarn.name;
   }
 
+  function addTag(): void {
+    const tag = tagInput.trim();
+    if (!tag) return;
+    if (!draft.tags.includes(tag)) draft.tags = [...draft.tags, tag];
+    tagInput = "";
+  }
+
+  function removeTag(index: number): void {
+    draft.tags = draft.tags.filter((_, tagIndex) => tagIndex !== index);
+  }
+
   function removeYarn(id: number): void {
     draft.yarnIds = draft.yarnIds.filter((yarnId) => yarnId !== id);
   }
@@ -366,6 +381,7 @@
   async function submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
     if (conflictProject !== null) return;
+    addTag();
     const isAiEnhanced = project?.is_ai_enhanced ?? false;
     const value = makeWrite(isAiEnhanced);
     if (!value) return;
@@ -374,6 +390,7 @@
 
   async function saveDraftOverLatest(): Promise<void> {
     if (!conflictProject) return;
+    addTag();
     const value = makeWrite(conflictProject.is_ai_enhanced);
     if (!value) return;
     await saveProject(value, conflictProject.updated_at);
@@ -829,19 +846,47 @@
                 />
               </div>
               <div class="field field-wide">
-                <label for="project-tags">{t("Tags", locale)}</label>
-                <input
-                  id="project-tags"
-                  bind:value={draft.tags}
-                  autocomplete="off"
-                  placeholder={t("Separate tags with commas", locale)}
-                />
-                <span class="field-hint"
-                  >{t(
-                    "Separate tags with commas. Duplicate tags are removed when saved.",
+                <label for="project-tag-entry">{t("Tags", locale)}</label>
+                <div class="search-row">
+                  <input
+                    id="project-tag-entry"
+                    bind:value={tagInput}
+                    autocomplete="off"
+                    onkeydown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        addTag();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    onclick={addTag}>{t("Add tag", locale)}</button
+                  >
+                </div>
+                <span class="field-hint">
+                  {t(
+                    "Add each tag separately; commas stay inside a tag.",
                     locale,
-                  )}</span
-                >
+                  )}
+                </span>
+                {#if draft.tags.length}
+                  <ul class="tag-list" aria-label={t("Tags", locale)}>
+                    {#each draft.tags as tag, index (`${index}:${tag}`)}
+                      <li>
+                        <span>{tag}</span>
+                        <button
+                          type="button"
+                          class="remove-button"
+                          aria-label={`${t("Remove", locale)} ${tag}`}
+                          onclick={() => removeTag(index)}
+                          >{t("Remove", locale)}</button
+                        >
+                      </li>
+                    {/each}
+                  </ul>
+                {/if}
               </div>
               <div class="field field-wide">
                 <label for="project-link"
@@ -1466,6 +1511,7 @@
   }
 
   .yarn-results,
+  .tag-list,
   .selected-yarns ul,
   .media-list,
   .attachment-list {
@@ -1477,6 +1523,7 @@
   }
 
   .yarn-results li,
+  .tag-list li,
   .selected-yarns li,
   .attachment-list li {
     display: flex;
@@ -1500,6 +1547,17 @@
   .yarn-results small,
   .attachment-list span {
     color: var(--ink-muted);
+  }
+
+  .tag-list li {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .tag-list li > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .selected-yarns h3,

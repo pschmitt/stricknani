@@ -31,9 +31,6 @@
       >
     </a>
   </div>
-  <p class="create-note">
-    {t("These creation forms are part of a later preview slice.", locale)}
-  </p>
 </section>
 
 <style>
@@ -53,8 +50,7 @@
     line-height: 1.08;
   }
 
-  .create-intro,
-  .create-note {
+  .create-intro {
     color: var(--ink-muted);
   }
 
@@ -103,11 +99,6 @@
   .create-options small {
     margin-top: 0.15rem;
     color: var(--ink-muted);
-    font-size: 0.88rem;
-  }
-
-  .create-note {
-    margin: 1rem 0 0;
     font-size: 0.88rem;
   }
 </style>

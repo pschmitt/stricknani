@@ -15,7 +15,7 @@ export interface ProjectDraft {
   description: string;
   notes: string;
   otherMaterials: string;
-  tags: string;
+  tags: string[];
   link: string;
   yarnIds: number[];
   steps: ProjectStepDraft[];
@@ -36,7 +36,7 @@ export function blankProjectDraft(): ProjectDraft {
     description: "",
     notes: "",
     otherMaterials: "",
-    tags: "",
+    tags: [],
     link: "",
     yarnIds: [],
     steps: [],
@@ -55,7 +55,7 @@ export function projectDraftFromDetail(
     description: project.description ?? "",
     notes: project.notes ?? "",
     otherMaterials: project.other_materials ?? "",
-    tags: project.tags.join(", "),
+    tags: [...project.tags],
     link: project.link ?? "",
     yarnIds: [...project.yarn_ids],
     steps: [...project.steps]
@@ -73,16 +73,6 @@ export function projectWriteFromDraft(
   draft: ProjectDraft,
   isAiEnhanced: boolean,
 ): ProjectWrite {
-  const uniqueTags = new Set<string>();
-  const tags = draft.tags
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter((tag) => {
-      const key = tag.toLocaleLowerCase();
-      if (!tag || uniqueTags.has(key)) return false;
-      uniqueTags.add(key);
-      return true;
-    });
   return {
     name: draft.name.trim(),
     category: optionalText(draft.category),
@@ -91,7 +81,7 @@ export function projectWriteFromDraft(
     description: optionalText(draft.description),
     notes: optionalText(draft.notes),
     other_materials: optionalText(draft.otherMaterials),
-    tags,
+    tags: [...draft.tags],
     link: optionalText(draft.link),
     is_ai_enhanced: isAiEnhanced,
     yarn_ids: [...new Set(draft.yarnIds)],

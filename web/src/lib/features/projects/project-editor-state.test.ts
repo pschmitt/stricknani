@@ -69,11 +69,11 @@ describe("project editor draft conversion", () => {
     expect(new Set(draft.steps.map((step) => step.key)).size).toBe(2);
   });
 
-  it("serializes edited fields, deduplicated tags, selected yarns, and ordered steps", () => {
+  it("serializes edited fields, exact tags, selected yarns, and ordered steps", () => {
     const draft = blankProjectDraft();
     draft.name = "  River socks  ";
     draft.category = " Socks ";
-    draft.tags = "Cables, weekend, cables, ";
+    draft.tags = ["Cables", "weekend"];
     draft.yarnIds = [7, 7, 8];
     draft.steps = [
       { key: 10, id: 81, title: "Cuff", description: "  Work ribbing. " },
@@ -100,6 +100,23 @@ describe("project editor draft conversion", () => {
         },
       ],
     });
+  });
+
+  it("round-trips tag labels containing commas without changing their contents", () => {
+    const projectWithCommaTag = {
+      ...project,
+      tags: ["color, texture", "  label with surrounding spaces  "],
+    };
+    const draft = projectDraftFromDetail(projectWithCommaTag, () => 1);
+
+    expect(draft.tags).toEqual([
+      "color, texture",
+      "  label with surrounding spaces  ",
+    ]);
+    expect(projectWriteFromDraft(draft, false).tags).toEqual([
+      "color, texture",
+      "  label with surrounding spaces  ",
+    ]);
   });
 
   it("validates names, external URL schemes, and every ordered step title", () => {

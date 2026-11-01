@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -12,6 +14,12 @@
     type ProjectImage,
     type ProjectYarn,
   } from "./project-api";
+  import {
+    rememberReadingStep,
+    resolveReadingStep,
+    stepHash,
+    stepIdFromHash,
+  } from "./reader-progress";
 
   interface Props {
     id: number;
@@ -22,6 +30,7 @@
   let { id }: Props = $props();
   let loadState = $state<LoadState>("loading");
   let project = $state<ProjectDetail | null>(null);
+  let currentStepId = $state<number | null>(null);
   let yarns = $state<ProjectYarn[]>([]);
   let errorMessage = $state("");
   let favoriteError = $state("");
@@ -50,12 +59,16 @@
   const selectedImage = $derived(
     project?.images.find((image) => image.id === selectedImageId) ?? null,
   );
+  const currentStepIndex = $derived(
+    orderedSteps.findIndex((step) => step.id === currentStepId),
+  );
 
   $effect(() => {
     const currentUserId = userId;
     reload;
     const controller = new AbortController();
     project = null;
+    currentStepId = null;
     yarns = [];
     yarnWarning = false;
     errorMessage = "";
@@ -73,6 +86,25 @@
       .then(async (result) => {
         if (controller.signal.aborted) return;
         project = result;
+        const stepIds = [...result.steps]
+          .sort((left, right) => left.step_number - right.step_number)
+          .map((step) => step.id);
+        const restoredStepId = resolveReadingStep(
+          currentUserId,
+          result.id,
+          page.url.hash,
+          stepIds,
+        );
+        currentStepId = restoredStepId;
+        if (restoredStepId !== null) {
+          rememberReadingStep(currentUserId, result.id, restoredStepId);
+          const hash = stepHash(restoredStepId);
+          if (page.url.hash !== hash) {
+            void goto(`${page.url.pathname}${page.url.search}${hash}`, {
+              replaceState: true,
+            });
+          }
+        }
         loadState = "ready";
         const linkedYarns = await Promise.allSettled(
           result.yarn_ids.map((yarnId) => getYarn(yarnId, controller.signal)),
@@ -96,6 +128,19 @@
         loadState = "error";
       });
     return () => controller.abort();
+  });
+
+  $effect(() => {
+    const currentProject = project;
+    const currentUserId = userId;
+    if (!currentProject || currentUserId === null) return;
+    const stepId = stepIdFromHash(
+      page.url.hash,
+      orderedSteps.map((step) => step.id),
+    );
+    if (stepId === null) return;
+    currentStepId = stepId;
+    rememberReadingStep(currentUserId, currentProject.id, stepId);
   });
 
   async function toggleFavorite() {
@@ -256,7 +301,9 @@
           <span>{t("Updated", locale)} {formatDate(project.updated_at)}</span>
           {#if project.tags.length}
             <ul class="reader-tags" aria-label={t("Project tags", locale)}>
-              {#each project.tags as tag (tag)}<li>{tag}</li>{/each}
+              {#each project.tags as tag, index (`${index}:${tag}`)}
+                <li>{tag}</li>
+              {/each}
             </ul>
           {/if}
         </div>
@@ -365,9 +412,48 @@
             <span>{orderedSteps.length}</span>
           </div>
           {#if orderedSteps.length}
+            <nav
+              class="step-navigation"
+              aria-label={t("Pattern step navigation", locale)}
+            >
+              {#if currentStepIndex > 0}
+                {@const previousStep = orderedSteps[currentStepIndex - 1]}
+                <a
+                  class="step-navigation-link"
+                  href={stepHash(previousStep.id)}
+                >
+                  <span>‹ {t("Previous step", locale)}</span>
+                  <strong>{previousStep.title}</strong>
+                </a>
+              {:else}
+                <span class="step-navigation-spacer"></span>
+              {/if}
+              <p class="step-progress" aria-live="polite" aria-atomic="true">
+                {t("Step", locale)}
+                {currentStepIndex + 1}
+                {t("of", locale)}
+                {orderedSteps.length}
+              </p>
+              {#if currentStepIndex >= 0 && currentStepIndex < orderedSteps.length - 1}
+                {@const nextStep = orderedSteps[currentStepIndex + 1]}
+                <a
+                  class="step-navigation-link next-step-link"
+                  href={stepHash(nextStep.id)}
+                >
+                  <span>{t("Next step", locale)} ›</span>
+                  <strong>{nextStep.title}</strong>
+                </a>
+              {:else}
+                <span class="step-navigation-spacer"></span>
+              {/if}
+            </nav>
             <ol class="steps-list">
               {#each orderedSteps as step (step.id)}
-                <li>
+                <li
+                  id={`step-${step.id}`}
+                  class:current-step={step.id === currentStepId}
+                  aria-current={step.id === currentStepId ? "step" : undefined}
+                >
                   <span class="step-number" aria-hidden="true"
                     >{step.step_number}</span
                   >
@@ -793,6 +879,52 @@
     font-size: 0.83rem;
   }
 
+  .step-navigation {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .step-navigation-link {
+    display: grid;
+    min-width: 0;
+    min-height: 44px;
+    align-content: center;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    padding: 0.35rem 0.6rem;
+    color: var(--accent-strong);
+    background: var(--surface-raised);
+    text-decoration: none;
+  }
+
+  .step-navigation-link strong {
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .next-step-link {
+    text-align: right;
+  }
+
+  .step-navigation-spacer {
+    min-height: 44px;
+  }
+
+  .step-progress {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
   .gallery-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
@@ -934,6 +1066,12 @@
     border-top: 1px solid var(--line);
     padding: 1rem 0;
     break-inside: avoid;
+    scroll-margin-block: 1rem;
+  }
+
+  .steps-list > li.current-step {
+    border-radius: 0.7rem;
+    background: var(--surface-raised);
   }
 
   .steps-list > li:first-child {
@@ -1125,6 +1263,16 @@
 
     .reader-heading-actions {
       align-self: flex-start;
+    }
+
+    .step-navigation {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 0.35rem;
+    }
+
+    .step-navigation-link {
+      padding: 0.25rem 0.4rem;
+      font-size: 0.82rem;
     }
 
     .details-column {

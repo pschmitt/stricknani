@@ -27,13 +27,36 @@ Newer committed checkpoints await the next integrated build and rollout:
   tests prevent older bootstrap responses from replacing newer auth state.
 - `ecd9aff`: owner-scoped OCR and safe current-link archive status/enqueue.
   OCR has bounded image reads and a separate per-owner quota. The full Rust
-  suite passed 250 tests before shared limiter extraction; 14 focused tests,
-  formatting and strict Clippy passed afterward. The full combined rerun is
-  pending. OCR/archive frontend controls remain unfinished.
+  suite on the exact post-limiter commit passed 251 tests across 42 suites.
+  Formatting, strict Clippy and health checks passed. OCR/archive frontend
+  controls remain unfinished.
+- `085f282`: public stateless gauge calculation shares the existing Rust
+  calculation, with decimal-string output preserving exact large results in
+  JavaScript. The full Rust suite passed 257 tests, plus formatting, strict
+  Clippy and four health tests. The new gauge screen remains unfinished.
+- `91d2ad0`: category create/rename inputs lock during saving, verified by
+  delayed real API requests, so completed saves cannot clear newer typing.
+- `fecc2ce`: import text/file/URL entry and editable preview, optional AI,
+  normal project/yarn creation, explicit remote-image selection and draft
+  preservation. Real Chromium acceptance covers cancellation and failure of
+  review replacement, delayed saves, narrow layouts, touch targets and CSP.
+  Both source catalogs include the new strings. Python runner formatting was
+  corrected in `2799efd` after the Nix pre-commit gate caught a missed check.
+- `f5f51cc`: the unhashed browser translation catalog uses `private, no-store`
+  so new deployments do not reuse stale translations. Nine security/frontend
+  tests and formatting passed.
+- `b21683c`: obsolete or aborted requests cannot expire a newer authenticated
+  session through a late 401. Deferred client/session regression tests,
+  frontend checks, 83 unit tests and the static build passed.
+- `3172f21`: v2 project tag arrays preserve complete labels on writes and
+  reads; v1 retains its established normalization. The full Rust suite passed
+  258 tests, strict Clippy and formatting; four health tests passed. The normal
+  server binary was rebuilt for the frontend round-trip browser regression.
 
-Imports are in real-browser acceptance. Reader step navigation, preservation of
-tag labels containing commas, and removal of outdated placeholder copy are in
-progress. Gauge, account, signup, admin/audit, PWA/cache and the complete
+Reader step navigation, the complete frontend/backend tag round-trip, and
+removal of outdated placeholder copy are in browser acceptance. Account API
+extraction and the public offline/update design are in progress. Gauge UI,
+account UI, signup, admin/audit, PWA/cache and the complete
 accessibility/performance/multi-browser/real-phone acceptance remain open.
 
 Deployment limitations are recorded separately from application checks. The

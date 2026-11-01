@@ -318,7 +318,7 @@
               role="group"
               aria-label={t("Project tags", locale)}
             >
-              {#each item.tags as tag (tag)}
+              {#each item.tags as tag, index (`${index}:${tag}`)}
                 <button
                   type="button"
                   onclick={() => applyFilters({ ...filters, tag })}

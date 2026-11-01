@@ -27,6 +27,10 @@ Use this file as the operational source of truth for working in Stricknani.
 - Commit and push small checkpoints regularly, including work in progress. Do not wait for the entire rewrite to be complete. State which checks passed, failed, or remain pending in the checkpoint notes; a checkpoint is not a release or deployment approval.
 - After each push, use the `ci-watch` skill and continue independent work while CI runs.
 - Run expensive Cargo, Gradle, and Nix work on a designated remote build host. Evaluate Nix dev shells from a clean source snapshot, then run tools in a separate working directory containing build caches. Keep credentials and copied data outside both source trees.
+- For detached remote checks, record the command's exit status in the run's
+  own directory as well as its log. A successful-looking log tail does not
+  prove that the complete command passed. Keep the process or tool handle
+  until the exit status has been collected.
 - When syncing source into cached remote Cargo builds, use checksums and refresh changed Rust source timestamps. Preserved older mtimes can leave a stale executable even after a successful Cargo command; verify a new CLI command actually exists in the built artifact.
 - Prioritize a usable, styled Rust preview. Pixel-perfect matching and the planned full UI redesign are out of scope.
 - The Rust preview uses its own application login. Do not add Authelia or another extra login layer unless the user requests it; keep public signup disabled when serving copied data.
