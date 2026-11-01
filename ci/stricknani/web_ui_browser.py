@@ -1709,12 +1709,16 @@ def run_acceptance(
             page.on("console", observe_console)
             page.on("pageerror", observe_page_error)
 
-            mark_stage("anonymous sign-in and CSP")
-            response = page.goto(f"{origin}/app/login", wait_until="networkidle")
+            mark_stage("navigating to anonymous sign-in")
+            response = page.goto(f"{origin}/app/login", wait_until="domcontentloaded")
             if response is None or response.status != 200:
                 raise AcceptanceFailure("direct login route did not load")
-            page.locator("#email").wait_for(state="visible")
-            page.get_by_role("heading", name="Sign in").wait_for(state="visible")
+            mark_stage("waiting for anonymous sign-in form")
+            page.locator("#email").wait_for(state="visible", timeout=10_000)
+            mark_stage("waiting for sign-in heading")
+            page.get_by_role("heading", name="Sign in").wait_for(
+                state="visible", timeout=10_000
+            )
             _require(
                 page.locator(".app-shell").count() == 0,
                 "protected navigation appeared while signed out",
