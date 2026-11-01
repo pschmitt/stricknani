@@ -5,19 +5,23 @@ on:
     branches: [ main ]
     paths:
       - "stricknani/**"
+      - "rust/**"
+      - "nix/**"
+      - "flake.nix"
+      - "flake.lock"
+      - ".dockerignore"
       - "Dockerfile"
-      - "pyproject.toml"
-      - "uv.lock"
-      - "babel.cfg"
       - ".github/workflows/container.yaml"
   pull_request:
     branches: [ main ]
     paths:
       - "stricknani/**"
+      - "rust/**"
+      - "nix/**"
+      - "flake.nix"
+      - "flake.lock"
+      - ".dockerignore"
       - "Dockerfile"
-      - "pyproject.toml"
-      - "uv.lock"
-      - "babel.cfg"
       - ".github/workflows/container.yaml"
 
 env:
@@ -91,15 +95,16 @@ jobs:
 
           trap cleanup EXIT
 
-          docker run -d -p 7674:7674 --name stricknani-test \
-            -e SECRET_KEY="$(openssl rand -hex 32)" \
-            -e CSRF_SECRET_KEY="$(openssl rand -hex 32)" \
+          docker run -d -p 127.0.0.1:7674:7674 --name stricknani-test \
+            --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m,mode=1777 \
+            --tmpfs /var/lib/stricknani:rw,uid=65532,gid=65532,mode=0750 \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
 
           deadline=$((SECONDS + 60))
           while (( SECONDS < deadline ))
           do
-            if curl --fail --silent --show-error "$health_url" >"$log_file"
+            if curl --fail --silent --show-error --header 'Host: localhost' \
+              "$health_url" >"$log_file"
             then
               printf 'Container became ready: %s\n' "$health_url"
               exit 0

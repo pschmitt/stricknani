@@ -6,148 +6,149 @@
 
 <h1 align="center">Stricknani</h1>
 
-🧶 **A Mealie for knitting** — a self-hosted web app for managing knitting projects.
+🧶 **A Mealie for knitting** — a self-hosted web app for managing knitting projects and yarns.
 
 ## Features
 
-- Projects with photos, notes, and metadata
+- Organize knitting projects, steps, photos, notes, and metadata
+- Track yarns and link them to projects
 - Built-in gauge calculator
-- Private, self-hosted, mobile-friendly UI
-- FastAPI + Jinja2 + HTMX (no SPA)
+- Private, self-hosted, mobile-friendly web UI
+- Offline-first Android app using the versioned API v1
 
-## Quick Start
+The Rust server is the default package and container runtime on this branch.
+The rewrite is still in acceptance; this branch change does not mean production
+has been switched. See [the runtime transition guide](docs/rust-runtime-transition.md)
+for the output mapping and rollout boundary.
 
-### Docker
+## Quick start
+
+Build the Rust container from this checkout and start it with persistent storage:
 
 ```bash
+docker build -t stricknani:rust .
+docker volume create stricknani-data
 docker run -d \
-  -p 7674:7674 \
-  -v stricknani-data:/app/media \
-  -e SECRET_KEY=your-secret-key \
-  ghcr.io/pschmitt/stricknani:latest
+  --name stricknani \
+  --restart unless-stopped \
+  -p 127.0.0.1:7674:7674 \
+  -v stricknani-data:/var/lib/stricknani \
+  -e TRUSTED_HOSTS=localhost,127.0.0.1 \
+  -e SESSION_COOKIE_SECURE=false \
+  stricknani:rust
 ```
 
-Health check: `GET /healthz`
+The local-only `SESSION_COOKIE_SECURE=false` override permits sign-in over
+plain HTTP on localhost. For a public deployment, use HTTPS through a trusted
+reverse proxy, set `SESSION_COOKIE_SECURE=true`, and set `TRUSTED_HOSTS` to the
+exact public host authority. Do not expose the app directly to the Internet.
 
-### Development
-
-Requirements:
-
-- Python 3.13+
-- uv
-- just
+Registration is off by default, so create the first administrator by piping a
+password from a protected file to the CLI. The password is read from standard
+input and must be at least 12 bytes:
 
 ```bash
-git clone https://github.com/pschmitt/stricknani.git
-cd stricknani
+docker exec -i stricknani \
+  /bin/stricknani-server create-admin admin@example.invalid \
+  < /path/to/protected-admin-password
+```
 
+The image listens on port `7674`, runs as UID/GID `65532`, stores the SQLite
+database and uploaded media beneath `/var/lib/stricknani`, and includes a
+bounded `health-check` command for `/healthz`. Keep that data directory on
+persistent storage. Container and Nix output details are in the
+[runtime transition guide](docs/rust-runtime-transition.md).
+
+## Rust runtime configuration
+
+The server requires an isolated SQLite database URL and an absolute media
+directory. It does not use the legacy Python `DATABASE_URL` or `MEDIA_ROOT` as
+fallbacks. The container sets these paths to its persistent data directory;
+direct package users must configure them explicitly.
+
+| Variable | Purpose | Default / requirement |
+| --- | --- | --- |
+| `RUST_DATABASE_URL` | Rust SQLite database | Required; use a Rust-owned database |
+| `RUST_MEDIA_ROOT` | Uploaded file directory | Required; absolute path |
+| `BIND_HOST` | Listener IP address | `127.0.0.1`; container sets `0.0.0.0` |
+| `BIND_PORT` | Listener port | `PORT`, then `7674` |
+| `TRUSTED_HOSTS` | Comma-separated exact host authorities | Loopback defaults only on a loopback listener; required otherwise |
+| `SESSION_COOKIE_SECURE` | Mark session cookies secure | `false`; required `true` off loopback |
+| `RUST_SIGNUP_ENABLED` | Public account registration | `false` |
+| `RUST_EXTERNAL_IMPORTS_ENABLED` | Fetch external project sources | `false` |
+| `RUST_AI_ENABLED` | Configure the optional AI provider | `false`; requires provider settings and a per-import opt-in |
+| `RUST_OCR_ENABLED` | Enable authenticated local OCR | `false` |
+| `RUST_WAYBACK_ENABLED` | Enable archive lookup jobs | `false` |
+| `STATIC_ROOT` | Override packaged static assets | Packaged asset path |
+
+All optional service flags default to disabled. Keep them disabled unless the
+deployment needs the feature. AI credentials and the user opt-in are documented
+in [AI provider settings](docs/rust-ai.md); OCR behavior is described in the
+[OCR guide](docs/rust-ocr.md). The Wayback and external-import guides describe
+their respective network behavior: [Wayback](docs/rust-wayback.md) and
+[imports](docs/rust-import-design.md).
+
+For command-line use, build and run the Rust package with:
+
+```bash
+nix build '.#stricknani'
+nix run '.#stricknani'
+```
+
+Supply the required Rust database and media variables first. The
+`health-check` command probes only the local
+`/healthz` endpoint, has a three-second timeout, and returns fixed errors.
+Account commands such as `create-admin EMAIL` also read passwords from stdin;
+never put passwords in command arguments or shell history. See
+the [CLI and startup notes](docs/rust-candidate.md#storage-and-startup) and the
+[transition guide](docs/rust-runtime-transition.md).
+
+## Android and API
+
+The Android app is an offline-first client: Room is the local source of truth,
+and synchronization replays queued writes against the server API. Setup,
+recovery, emulator testing, and client changes are documented in
+[`android/AGENTS.md`](android/AGENTS.md). The API v1 compatibility inventory
+records its authentication, CRUD, media, and sync contract in
+[`docs/rust-android-inventory.md`](docs/rust-android-inventory.md).
+
+## Development
+
+Rust formatting, tests, Nix evaluation, and builds belong on the designated
+remote build host; see [`AGENTS.md`](AGENTS.md). From that host, the Rust
+development shell and package are available as:
+
+```bash
+nix develop '.#rust'
+cargo fmt --manifest-path rust/Cargo.toml -- --check
+cargo test --manifest-path rust/Cargo.toml
+nix build '.#stricknani'
+```
+
+The Python implementation remains available for legacy development and
+reference work as `.#stricknani-python`. Its existing local workflow uses
+Python 3.13+, `uv`, and `just`:
+
+```bash
+nix develop '.#python'
 just setup
-just run
+just run-python
 ```
 
-App runs at http://localhost:7674
-
-## Configuration
-
-All config is via environment variables or `.env` (see `.env.sample`).
-
-| Variable                             | Description                         | Default                               |
-| ------------------------------------ | ----------------------------------- | ------------------------------------- |
-| `SECRET_KEY`                         | Secret key for sessions             | Random per `just run`; set explicitly in production |
-| `CSRF_SECRET_KEY`                    | CSRF secret key                     | Random per `just run`; set explicitly in production |
-| `PORT`                               | Port to listen on                   | `7674`                                |
-| `DEBUG`                              | Enable debug mode                   | `false`                               |
-| `AUTO_RELOAD`                        | Inject dev auto-reload script       | `false`                               |
-| `TESTING`                            | Force testing mode                  | `false`                               |
-| `BIND_HOST`                          | Host to bind the dev server         | `127.0.0.1`                           |
-| `BIND_PORT`                          | Port to bind the dev server         | `7674`                                |
-| `DATABASE_URL`                       | Database connection string          | `sqlite:///./stricknani.db`           |
-| `MEDIA_ROOT`                         | Directory for uploaded files        | `./media`                             |
-| `IMPORT_TRACE_ENABLED`               | Enable import tracing               | `false`                               |
-| `IMPORT_TRACE_DIR`                   | Import trace directory              | `./media/import-traces`               |
-| `IMPORT_TRACE_MAX_CHARS`             | Max chars captured per import trace | `12000`                               |
-| `ALLOWED_HOSTS`                      | Comma-separated host list           | `localhost,127.0.0.1`                 |
-| `SESSION_COOKIE_SECURE`              | Secure session cookies              | `false`                               |
-| `LANGUAGE_COOKIE_SECURE`             | Secure language cookie              | `false`                               |
-| `COOKIE_SAMESITE`                    | SameSite policy                     | `strict`                              |
-| `FEATURE_SIGNUP_ENABLED`             | Enable user signup                  | `false`                               |
-| `FEATURE_WAYBACK_ENABLED`            | Enable Wayback Machine snapshots    | `false`                               |
-| `FEATURE_AI_IMPORT_ENABLED`          | Enable AI-powered pattern import    | `true`                                |
-| `DEFAULT_LANGUAGE`                   | Default language                    | `de`                                  |
-| `AI_PROVIDER`                        | AI provider (`openai/openrouter/groq`) | `openai`                           |
-| `AI_API_KEY`                         | Generic AI API key                  | (optional)                            |
-| `AI_BASE_URL`                        | Override provider base URL          | (provider default)                    |
-| `AI_MODEL`                           | Default model override              | (provider default)                    |
-| `OPENAI_API_KEY`                     | OpenAI API key for AI import        | (optional)                            |
-| `OPENROUTER_API_KEY`                 | OpenRouter API key                  | (optional)                            |
-| `GROQ_API_KEY`                       | Groq API key                        | (optional)                            |
-| `SENTRY_DSN_BACKEND`                 | Sentry DSN for backend              | (optional)                            |
-| `SENTRY_DSN_FRONTEND`                | Sentry DSN for frontend             | (optional)                            |
-| `SENTRY_ENVIRONMENT`                 | Sentry environment name             | `production`                          |
-| `SENTRY_TRACES_SAMPLE_RATE`          | Sentry perf sample rate             | `0`                                   |
-| `SENTRY_FRONTEND_TRACES_SAMPLE_RATE` | Frontend perf sample rate           | `0`                                   |
-| `LOG_LEVEL`                          | Logging level override              | (optional)                            |
-| `IMPORT_LOG_PATH`                    | Import log file path                | (optional)                            |
-| `INITIAL_ADMIN_EMAIL`                | Bootstrap admin email               | (optional)                            |
-| `INITIAL_ADMIN_USERNAME`             | Bootstrap admin username            | (optional)                            |
-| `INITIAL_ADMIN_PASSWORD`             | Bootstrap admin password            | (optional)                            |
-
-## AI-Powered Pattern Import
-
-Install AI extras:
-
-```bash
-uv pip install -e ".[ai]"
-```
-
-Then set one of these in `.env`:
-- `AI_PROVIDER=openai` and `OPENAI_API_KEY=...` (or `AI_API_KEY=...`)
-- `AI_PROVIDER=openrouter` and `OPENROUTER_API_KEY=...` (or `AI_API_KEY=...`)
-- `AI_PROVIDER=groq` and `GROQ_API_KEY=...` (or `AI_API_KEY=...`)
-
-## Developer Workflow
-
-```bash
-just setup          # Setup uv environment
-just run            # Run dev server (reload)
-just lint           # ruff + mypy
-just fmt            # ruff format + fixes
-just test           # pytest -v
-uv run playwright install chromium  # Install the local E2E browser
-just e2e-smoke      # Run the fast disposable browser smoke suite
-just e2e-full       # Run the longer disposable browser suite
-just i18n-check     # Verify translations
-just check          # lint + test + i18n-check
-just build-image    # Build Docker image
-just build-nix      # Build Nix package
-just build-container # Build Nix container
-just demo-data      # Seed demo data
-just demo-reset     # Reset and re-seed demo data
-```
+The root `Dockerfile` builds the Rust runtime. `Dockerfile.python` and
+`.#stricknani-python-docker` retain the Python image artifacts, including the
+image used by the existing Android end-to-end workflow. These are compatibility
+and development paths; they do not indicate a production cutover.
 
 ## Documentation
 
-- Operational rules for agents: `AGENTS.md`
-- Active work queue: `TODO.md`
-- Documentation index: `docs/README.md`
-- Full product spec + implementation snapshot: `docs/spec-and-implementation.md`
-
-When editing UI text, update translations in:
-
-- `stricknani/locales/en/LC_MESSAGES/messages.po`
-- `stricknani/locales/de/LC_MESSAGES/messages.po`
-
-Then compile:
-
-```bash
-uv run python -m babel.messages.frontend compile -d stricknani/locales
-```
-
-## Architecture (Short)
-
-- FastAPI + Jinja2 + HTMX
-- SQLite for dev, PostgreSQL optional
-- Local filesystem media storage
+- [Documentation index](docs/README.md)
+- [Product specification and implementation status](docs/spec-and-implementation.md)
+- [Migration, verification, and rollback plan](docs/rust-migration-plan.md)
+- [Current acceptance checkpoint](docs/rust-rewrite-checkpoint.md)
+- [Runtime outputs and rollout boundary](docs/rust-runtime-transition.md)
+- [Operational instructions for contributors](AGENTS.md)
+- [Active work queue](TODO.md)
 
 ## License
 
@@ -156,26 +157,3 @@ GPL-3.0-only
 ## Maintainer
 
 Philipp Schmitt (GitHub: @pschmitt)
-
-## Rust rewrite candidate
-
-The `rust` branch contains the standalone Rust candidate, built with
-`nix build '.#stricknani-rust'` and run with `stricknani-server serve`.
-Set `RUST_DATABASE_URL` to a fresh Rust SQLite database and `RUST_MEDIA_ROOT`
-to its own absolute media directory. Keep both separate from Python storage.
-Bootstrap an administrator with `create-admin EMAIL`, supplying the password
-on standard input. See [migration and rollback](docs/rust-migration-plan.md),
-[design decisions](docs/rust-port-decisions.md), and
-[current acceptance evidence](docs/rust-rewrite-checkpoint.md).
-
-Public registration and external integrations are disabled by default:
-`RUST_SIGNUP_ENABLED`, `RUST_EXTERNAL_IMPORTS_ENABLED`, `RUST_AI_ENABLED`, and
-`RUST_OCR_ENABLED`, and `RUST_WAYBACK_ENABLED` each require an explicit `true`. AI also requires the user's
-per-import opt-in; see [provider settings](docs/rust-ai.md). OCR uses the
-German/English Tesseract data included by the candidate package. For an HTTPS
-reverse proxy, set `SESSION_COOKIE_SECURE=true` and an explicit `TRUSTED_HOSTS`
-allowlist. Forwarded headers do not override these settings.
-
-The current Python deployment remains production until acceptance and a
-separately approved cutover. The candidate importer accepts a copied snapshot,
-never live production files.

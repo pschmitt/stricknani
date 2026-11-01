@@ -2089,17 +2089,19 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port/migration
 - **Priority**: P1
-- **Status**: wip
+- **Status**: done
 - **Category**: feat
 - **Dependencies**: T119.2, T119.3
 - **Scope**: Implement an importer from a separate snapshot/copy of production database and media into the fresh Rust schema. Never point Rust at or share the live database or media. Rehearse with an isolated copy and ensure staging access is protected because copied data may be private.
 - **Acceptance**: Rehearsal verifies record counts, relationships, ownership/permissions, and every migrated media reference; failures are reported without partial cutover. Document final snapshot, write-freeze, verification, backup, and rollback steps for an explicitly approved cutover. No live production state is touched by rehearsal.
 
+- **Evidence**: A copied production SQLite/media snapshot imported successfully. All 34 independent record/relationship/credential/media verification checks passed, followed by 38 checks through the deployed candidate API. The original production data remains separate; final cutover still requires approval.
+
 ### T119.8: Final Nix, deployment, and container transition
 
 - **Area**: rust-port/build
 - **Priority**: P1
-- **Status**: todo
+- **Status**: wip
 - **Category**: refactor
 - **Dependencies**: T119.2, T119.3, T119.4, T119.5, T119.6
 - **Scope**: Replace Python runtime artifacts in the existing package, app/check/dev-shell outputs, deployment module, and container workflow with the complete Rust application. Keep the candidate image until acceptance is complete, then make the release-facing image Rust-only.
@@ -2109,7 +2111,7 @@ Execution-oriented backlog for Stricknani.
 
 - **Area**: rust-port/acceptance
 - **Priority**: P1
-- **Status**: todo
+- **Status**: wip
 - **Category**: test
 - **Dependencies**: T119.1, T119.2, T119.3, T119.4, T119.5, T119.6, T119.7, T119.8
 - **Scope**: Validate the complete app and Android client against Rust, then use the authorized `rust.anika.blue` candidate with isolated config, database, media, credentials, and background jobs. The candidate may use a separate production data copy after the importer is safe. Document bootstrap, backup, rollback, and data handling.

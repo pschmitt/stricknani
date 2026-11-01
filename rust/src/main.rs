@@ -2,13 +2,16 @@ use std::io::{self, Read};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::ExitCode;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpStream;
+use tokio::time::Duration;
 
 use stricknani_server::config::Config;
 use stricknani_server::db;
 use stricknani_server::importer::{ImportOptions, import_snapshot};
 use stricknani_server::security;
 
-const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\ncreate-user and create-admin read the password from standard input. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    RUST_DATABASE_URL  SQLite database URL\n    RUST_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    STATIC_ROOT        Static asset directory\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n";
+const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server health-check\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\nhealth-check probes only the local /healthz endpoint with a three-second timeout.\ncreate-user and create-admin read the password from standard input. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    RUST_DATABASE_URL  SQLite database URL\n    RUST_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    STATIC_ROOT        Static asset directory\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n";
 
 fn main() -> ExitCode {
     if std::env::args_os()
@@ -57,6 +60,7 @@ async fn run() -> Result<(), &'static str> {
             Ok(())
         }
         "serve" if arguments.next().is_none() => serve().await,
+        "health-check" if arguments.next().is_none() => health_check().await,
         "create-user" => {
             let Some(email) = arguments.next() else {
                 return Err("usage: stricknani-server create-user EMAIL");
@@ -96,6 +100,66 @@ async fn run() -> Result<(), &'static str> {
         "import-snapshot" => import_snapshot_command(arguments.collect()).await,
         _ => Err("unknown command; use --help for usage"),
     }
+}
+
+async fn health_check() -> Result<(), &'static str> {
+    let port = std::env::var("BIND_PORT")
+        .or_else(|_| std::env::var("PORT"))
+        .unwrap_or_else(|_| "7674".to_owned())
+        .parse::<u16>()
+        .ok()
+        .filter(|port| *port != 0)
+        .ok_or("invalid health-check port")?;
+    let trusted_host = std::env::var("TRUSTED_HOSTS")
+        .ok()
+        .and_then(|hosts| {
+            hosts
+                .split(',')
+                .map(str::trim)
+                .find(|host| !host.is_empty())
+                .map(str::to_owned)
+        })
+        .unwrap_or_else(|| "127.0.0.1".to_owned());
+    let host = reqwest::header::HeaderValue::try_from(trusted_host.as_str())
+        .map_err(|_| "invalid health-check host")?;
+    let host = host.to_str().map_err(|_| "invalid health-check host")?;
+    let result = tokio::time::timeout(Duration::from_secs(3), async {
+        let mut stream = TcpStream::connect(("127.0.0.1", port)).await?;
+        stream
+            .write_all(
+                format!("GET /healthz HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n")
+                    .as_bytes(),
+            )
+            .await?;
+
+        let mut status_line = Vec::with_capacity(64);
+        loop {
+            let byte = stream.read_u8().await?;
+            if status_line.len() == 256 {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "status line too long",
+                ));
+            }
+            status_line.push(byte);
+            if byte == b'\n' {
+                break;
+            }
+        }
+        Ok::<_, std::io::Error>(status_line)
+    })
+    .await
+    .map_err(|_| "health check timed out")?
+    .map_err(|_| "health endpoint is unavailable")?;
+    let status = std::str::from_utf8(&result).map_err(|_| "health endpoint is unavailable")?;
+    let mut fields = status.split_ascii_whitespace();
+    let protocol = fields.next();
+    let code = fields.next();
+    if !matches!(protocol, Some("HTTP/1.0" | "HTTP/1.1")) || code != Some("200") {
+        return Err("health endpoint returned a non-success status");
+    }
+    println!("healthy");
+    Ok(())
 }
 
 async fn import_snapshot_command(arguments: Vec<String>) -> Result<(), &'static str> {

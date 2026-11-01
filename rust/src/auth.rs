@@ -485,7 +485,7 @@ pub(crate) fn validate_new_password(password: &str) -> Result<(), NewPasswordErr
     if COMMON_WEAK_PASSWORDS.contains(&normalized.as_str()) {
         return Err(NewPasswordError::Common);
     }
-    if password.len() < 12 {
+    if password.chars().count() < 12 {
         return Err(NewPasswordError::TooShort);
     }
     Ok(())
@@ -510,6 +510,15 @@ mod tests {
             Err(NewPasswordError::TooShort)
         );
         assert_eq!(validate_new_password("long-enough-password"), Ok(()));
+    }
+
+    #[test]
+    fn new_password_policy_counts_unicode_characters_not_utf8_bytes() {
+        assert_eq!(
+            validate_new_password(&"雪".repeat(4)),
+            Err(NewPasswordError::TooShort)
+        );
+        assert_eq!(validate_new_password(&"雪".repeat(12)), Ok(()));
     }
 
     #[tokio::test]

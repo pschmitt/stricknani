@@ -46,7 +46,7 @@ jobs:
       - uses: pschmitt/android-app-ci/.github/actions/setup-jdk-gradle@main
 
       - name: Build disposable Stricknani image
-        run: docker build --tag "$E2E_IMAGE" .
+        run: docker build --file Dockerfile.python --tag "$E2E_IMAGE" .
 
       - name: Start disposable Stricknani fixture
         run: docker compose -f "$COMPOSE_FILE" up --detach --wait --wait-timeout 180

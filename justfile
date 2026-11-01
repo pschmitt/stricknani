@@ -19,10 +19,21 @@ setup:
 ci-setup-py:
   uv sync --extra dev
 
-# Run dev server with reload. Use -b to skip opening the browser.
+# Run the Rust dev server. Set RUST_DATABASE_URL and RUST_MEDIA_ROOT to
+# disposable Rust-owned storage paths before starting it.
 [group: 'dev']
 [positional-arguments]
 run *args:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  : "${RUST_DATABASE_URL:?Set RUST_DATABASE_URL to a disposable Rust database}"
+  : "${RUST_MEDIA_ROOT:?Set RUST_MEDIA_ROOT to a Rust-owned media directory}"
+  BIND_PORT="${BIND_PORT:-{{ dev_port }}}" cargo run --manifest-path rust/Cargo.toml -- serve {{ args }}
+
+# Run the legacy Python dev server with reload. Use -b to skip opening the browser.
+[group: 'dev']
+[positional-arguments]
+run-python *args:
   ./scripts/run.sh --port "{{ dev_port }}" {{ args }}
 
 # Run linters
@@ -87,7 +98,13 @@ i18n-compile:
 
 # Format code
 [group: 'fmt']
-fmt: fmt-ruff fmt-nix fmt-biome
+fmt: fmt-ruff fmt-nix fmt-biome fmt-rust
+
+# Cargo formatting is fast; cargo builds and tests should run on the remote
+# build host described in AGENTS.md.
+[group: 'fmt']
+fmt-rust:
+  cargo fmt --manifest-path rust/Cargo.toml
 
 [group: 'fmt']
 fmt-ruff:
@@ -141,8 +158,23 @@ todo-todo:
 
 # Run tests
 [group: 'test']
-test:
+test-python:
   uv run pytest -v --cov=stricknani --cov-report=term-missing --cov-report=xml
+
+# CI keeps `just test` as the Python reference suite and coverage gate.
+[group: 'test']
+test: test-python
+
+# Run Rust tests on the remote build host described in AGENTS.md.
+[group: 'test']
+rust-test:
+  cargo test --manifest-path rust/Cargo.toml --all-targets
+
+# Validate Rust formatting and run strict Clippy on the remote build host.
+[group: 'lint']
+rust-lint:
+  cargo fmt --manifest-path rust/Cargo.toml --check
+  cargo clippy --manifest-path rust/Cargo.toml --all-targets --all-features -- -D warnings
 
 # Run the fast browser smoke suite against a disposable local database.
 [group: 'test']
@@ -185,7 +217,7 @@ vendor-tiptap:
   cd stricknani/static/vendor-tiptap && npm install && npm run build
 
 # Run all checks (lint + test)
-check: lint lint-nix test i18n-check
+check: lint lint-nix rust-lint rust-test test i18n-check
 
 # Lint Nix files
 [group: 'lint']

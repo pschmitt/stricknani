@@ -23,12 +23,45 @@
 
           fastapi-csrf-protect = python.pkgs.callPackage ./nix/fastapi-csrf-protect.nix { };
 
-          stricknani = pkgs.callPackage ./nix/package.nix {
+          stricknaniPython = pkgs.callPackage ./nix/package.nix {
             python3 = python;
             inherit fastapi-csrf-protect;
           };
 
           stricknaniRust = pkgs.callPackage ./nix/rust-package.nix { };
+
+          rustContainerConfig = {
+            Cmd = [ "${stricknaniRust}/bin/stricknani-server" ];
+            User = "65532:65532";
+            WorkingDir = "/var/lib/stricknani";
+            ExposedPorts = {
+              "7674/tcp" = { };
+            };
+            Env = [
+              "BIND_HOST=0.0.0.0"
+              "BIND_PORT=7674"
+              "RUST_DATABASE_URL=sqlite:/var/lib/stricknani/stricknani.sqlite3"
+              "RUST_MEDIA_ROOT=/var/lib/stricknani/media"
+              "TRUSTED_HOSTS=localhost,127.0.0.1"
+              "SESSION_COOKIE_SECURE=true"
+              "RUST_SIGNUP_ENABLED=false"
+              "RUST_EXTERNAL_IMPORTS_ENABLED=false"
+              "RUST_AI_ENABLED=false"
+              "RUST_OCR_ENABLED=false"
+              "RUST_WAYBACK_ENABLED=false"
+            ];
+            Healthcheck = {
+              Test = [
+                "CMD"
+                "${stricknaniRust}/bin/stricknani-server"
+                "health-check"
+              ];
+              Interval = 30000000000;
+              Timeout = 5000000000;
+              StartPeriod = 10000000000;
+              Retries = 3;
+            };
+          };
 
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
@@ -53,8 +86,9 @@
         in
         {
           packages = {
-            default = stricknani;
-            inherit stricknani;
+            default = stricknaniRust;
+            stricknani = stricknaniRust;
+            stricknani-python = stricknaniPython;
             stricknani-rust = stricknaniRust;
 
             stricknani-rust-docker = pkgs.dockerTools.buildLayeredImage {
@@ -66,36 +100,42 @@
                 chmod 1777 ./tmp
                 chown 65532:65532 ./var/lib/stricknani
               '';
+              config = rustContainerConfig;
+            };
+
+            stricknani-docker = pkgs.dockerTools.buildLayeredImage {
+              name = "ghcr.io/pschmitt/stricknani";
+              tag = "latest";
+              contents = [ stricknaniRust ];
+              fakeRootCommands = ''
+                mkdir -p ./tmp ./var/lib/stricknani
+                chmod 1777 ./tmp
+                chown 65532:65532 ./var/lib/stricknani
+              '';
+              config = rustContainerConfig;
+            };
+
+            stricknani-python-docker = pkgs.dockerTools.buildLayeredImage {
+              name = "ghcr.io/pschmitt/stricknani-python";
+              tag = "latest";
               config = {
-                Cmd = [ "${stricknaniRust}/bin/stricknani-server" ];
-                User = "65532:65532";
-                WorkingDir = "/var/lib/stricknani";
+                Cmd = [ "${stricknaniPython}/bin/stricknani" ];
                 ExposedPorts = {
                   "7674/tcp" = { };
                 };
                 Env = [ "BIND_HOST=0.0.0.0" ];
               };
             };
-
-            stricknani-docker = pkgs.dockerTools.buildLayeredImage {
-              name = "ghcr.io/pschmitt/stricknani";
-              tag = "latest";
-              config = {
-                Cmd = [ "${stricknani}/bin/stricknani" ];
-                ExposedPorts = {
-                  "7674/tcp" = { };
-                };
-                Env = [
-                  "BIND_HOST=0.0.0.0"
-                ];
-              };
-            };
           };
 
-          apps.stricknani-rust = {
-            type = "app";
-            program = "${stricknaniRust}/bin/stricknani-server";
-            meta.description = "Run the Rust Stricknani candidate server";
+          apps = {
+            default = {
+              type = "app";
+              program = "${stricknaniRust}/bin/stricknani-server";
+              meta.description = "Run the Rust Stricknani server";
+            };
+            stricknani = self.apps.${system}.default;
+            stricknani-rust = self.apps.${system}.default;
           };
 
           # These shells keep Android lint, Rust work, and the existing app
@@ -108,14 +148,43 @@
               packages = with pkgs; [
                 cargo
                 cargo-audit
-                rustc
-                rustfmt
                 clippy
                 rust-analyzer
+                rustc
+                rustfmt
+                sqlite
+                pkg-config
+                just
+                uv
+                python
+                ruff
+                mypy
+                statix
+                nixfmt
+                ktfmt
+                nodejs
+                poppler-utils
+                tesseract
+                vendir
+                biome
               ];
+
+              shellHook = ''
+                ${pre-commit-check.shellHook}
+
+                # Python tooling and legacy tests may load binary wheels linked
+                # against libstdc++.so.6 from the Nix C++ standard library.
+                export LD_LIBRARY_PATH="${
+                  pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]
+                }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+              '';
             };
 
-            default = pkgs.mkShell {
+            default = self.devShells.${system}.rust;
+
+            # Keep the former Python development environment available by name
+            # for legacy implementation work and its remaining checks.
+            python = pkgs.mkShell {
               buildInputs = with pkgs; [
                 python
                 uv
@@ -147,7 +216,8 @@
           };
 
           checks = {
-            build = stricknani;
+            build = stricknaniRust;
+            python-build = stricknaniPython;
             rust-build = stricknaniRust;
             inherit pre-commit-check;
           };

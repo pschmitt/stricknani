@@ -157,7 +157,13 @@ in
     package = lib.mkOption {
       type = lib.types.package;
       default =
-        if cfg.backend == "rust" then pkgs.callPackage ./rust-package.nix { } else pkgs.stricknani;
+        if cfg.backend == "rust" then
+          pkgs.callPackage ./rust-package.nix { }
+        else
+          pkgs.callPackage ./package.nix {
+            python3 = pkgs.python313;
+            fastapi-csrf-protect = pkgs.python313.pkgs.callPackage ./fastapi-csrf-protect.nix { };
+          };
       description = "The Stricknani package to use; defaults to the selected backend.";
     };
 

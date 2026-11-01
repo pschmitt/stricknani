@@ -31,6 +31,10 @@ so the non-root candidate has a CA bundle without an OpenSSL dependency.
   database/media paths are rejected when inherited alongside Rust settings.
 - Argon2id for new passwords; successful legacy bcrypt verification upgrades
   the hash conditionally. Owned password strings are zeroized after use.
+- New or changed passwords require at least 12 Unicode characters and remain
+  capped at 1,024 UTF-8 bytes. The existing trimmed, case-insensitive common
+  password check is unchanged; login verification does not apply new-password
+  policy.
 - Opaque random PATs, SHA-256 token storage, expiry/revocation/active-user
   checks, bounded password concurrency and atomic login rate limiting.
 - Per-owner and per-parent resource/media checks, strict image byte/decode

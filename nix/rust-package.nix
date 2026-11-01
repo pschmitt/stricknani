@@ -36,6 +36,10 @@ rustPlatform.buildRustPackage {
   postInstall = ''
     install -d "$out/share/stricknani/static"
     cp -a ${../stricknani/static}/. "$out/share/stricknani/static/"
+    # The Rust pages use their own forms, OCR script, and service worker.
+    rm -rf "$out/share/stricknani/static/js" \
+      "$out/share/stricknani/static/vendor/htmx" \
+      "$out/share/stricknani/static/vendor-tiptap"
     wrapProgram "$out/bin/stricknani-server" \
       --set STATIC_ROOT "$out/share/stricknani/static" \
       --set-default SSL_CERT_FILE "${cacert}/etc/ssl/certs/ca-bundle.crt" \

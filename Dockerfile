@@ -1,51 +1,53 @@
-FROM python:3.15-slim AS build
+FROM docker.io/nixos/nix:2.28.3 AS build
 
-WORKDIR /app
+WORKDIR /src
 
-# scikit-image 0.26.0 has no CPython 3.15 wheel yet, so install its stable
-# source distribution with a compiler in this disposable build stage.
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential \
-  && rm -rf /var/lib/apt/lists/*
+COPY flake.nix flake.lock ./
+COPY nix/ ./nix/
+COPY rust/ ./rust/
+COPY stricknani/static/ ./stricknani/static/
 
-# Install uv
-RUN pip install uv
+RUN nix --extra-experimental-features "nix-command flakes" build \
+      --no-link \
+      --print-out-paths \
+      '.#stricknani' \
+      > /tmp/stricknani-package
 
-# Copy project files
-COPY README.md ./
-COPY pyproject.toml ./
-COPY stricknani ./stricknani
-COPY demo_assets ./demo_assets
+RUN <<'SH'
+set -eu
+package="$(cat /tmp/stricknani-package)"
+mkdir -p /closure/nix/store
+nix-store -qR "$package" > /tmp/stricknani-closure
+while IFS= read -r store_path
+do
+  cp -a "$store_path" /closure/nix/store/
+done < /tmp/stricknani-closure
+mkdir -p /closure/bin /closure/tmp /closure/var/lib/stricknani
+ln -s "$package/bin/stricknani-server" /closure/bin/stricknani-server
+chmod 1777 /closure/tmp
+chown 65532:65532 /closure/var/lib/stricknani
+SH
 
-# Install dependencies
-RUN uv pip install --system -e .
+FROM scratch
 
-# Compile gettext catalogs (.mo) at build time so they ship in the image and
-# are never lazily compiled into a read-only rootfs at request time.
-RUN python -m babel.messages.frontend compile -d stricknani/locales
+COPY --from=build /closure/ /
 
-FROM python:3.15-slim
+WORKDIR /var/lib/stricknani
+USER 65532:65532
+ENV BIND_HOST=0.0.0.0 \
+    BIND_PORT=7674 \
+    RUST_DATABASE_URL=sqlite:/var/lib/stricknani/stricknani.sqlite3 \
+    RUST_MEDIA_ROOT=/var/lib/stricknani/media \
+    TRUSTED_HOSTS=localhost,127.0.0.1 \
+    SESSION_COOKIE_SECURE=true \
+    RUST_SIGNUP_ENABLED=false \
+    RUST_EXTERNAL_IMPORTS_ENABLED=false \
+    RUST_AI_ENABLED=false \
+    RUST_OCR_ENABLED=false \
+    RUST_WAYBACK_ENABLED=false
 
-WORKDIR /app
-
-# `pdftoppm` is used for best-effort PDF attachment thumbnails.
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends poppler-utils \
-  && rm -rf /var/lib/apt/lists/*
-
-# Reuse the matching Python install and application built in the first stage.
-COPY --from=build /usr/local /usr/local
-COPY --from=build /app /app
-
-# Create media directory
-RUN mkdir -p /app/media
-
-# Expose port
 EXPOSE 7674
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:7674/healthz')"
-
-# Run the application
-CMD ["uvicorn", "stricknani.main:app", "--host", "0.0.0.0", "--port", "7674"]
+STOPSIGNAL SIGTERM
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/bin/stricknani-server", "health-check"]
+CMD ["/bin/stricknani-server"]

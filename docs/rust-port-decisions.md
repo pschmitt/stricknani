@@ -171,3 +171,23 @@ format (`Z`); sync normalizes incoming offsets before text comparisons.
 
 See [candidate development](rust-candidate.md) for CLI/configuration, incremental
 verification results, limiter/proxy limitations, and outstanding acceptance.
+
+## Retained legacy artifacts and intentional frontend changes
+
+The default package, app, image, Dockerfile, and development shell use Rust.
+Explicit Python artifacts remain available for reference testing and rollback;
+they are outside the Rust runtime closure. The Rust package omits the old
+HTMX/TipTap bundles and legacy JavaScript, using ordinary forms and its own
+small OCR/PWA scripts. Existing descriptions render as sanitized Markdown/HTML.
+
+Image import deduplication compares exact bytes. Perceptual similarity is not
+used to discard an image. PDF import extracts bounded local text; rasterizing
+PDF pages for thumbnails or AI vision is not part of this runtime. These choices
+reduce dependencies and avoid losing distinct media based on a heuristic.
+
+Forwarded client addresses are not trusted. Behind a reverse proxy, the
+IP-based login budget is shared by that proxy; per-account limits still apply.
+Configuring trusted proxies is a separate, explicit future improvement.
+
+The preview uses only the application's native login with public registration
+disabled. An additional SSO gate was removed at the user's request.

@@ -1,12 +1,16 @@
 use std::{
-    io::Write,
+    io::{Read, Write},
+    net::TcpListener,
     process::{Command, Stdio},
+    thread,
+    time::{Duration, Instant},
 };
 use stricknani_server::db;
 
 fn cli(url: &str, args: &[&str], input: Option<&[u8]>) -> std::process::Output {
     let mut child = Command::new(env!("CARGO_BIN_EXE_stricknani-server"))
         .args(args)
+        .env("RUST_LOG", "error")
         .env("RUST_DATABASE_URL", url)
         .env(
             "RUST_MEDIA_ROOT",
@@ -23,6 +27,124 @@ fn cli(url: &str, args: &[&str], input: Option<&[u8]>) -> std::process::Output {
         drop(child.stdin.take());
     }
     child.wait_with_output().unwrap()
+}
+
+fn health_probe(port: u16) -> std::process::Output {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_stricknani-server"));
+    command
+        .arg("health-check")
+        .env_clear()
+        .env("BIND_PORT", port.to_string())
+        .env("TRUSTED_HOSTS", "localhost");
+    for name in ["LD_LIBRARY_PATH", "NIX_LD", "NIX_LD_LIBRARY_PATH"] {
+        if let Some(value) = std::env::var_os(name) {
+            command.env(name, value);
+        }
+    }
+    command.output().unwrap()
+}
+
+fn health_server(status: &'static str) -> (u16, thread::JoinHandle<Option<String>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let worker = thread::spawn(move || {
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let (mut stream, _) = loop {
+            match listener.accept() {
+                Ok(connection) => break connection,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    if Instant::now() >= deadline {
+                        return None;
+                    }
+                    thread::sleep(Duration::from_millis(10));
+                }
+                Err(_) => return None,
+            }
+        };
+        stream
+            .set_read_timeout(Some(Duration::from_secs(1)))
+            .unwrap();
+        stream
+            .set_write_timeout(Some(Duration::from_secs(1)))
+            .unwrap();
+        let mut request = [0; 2048];
+        let count = stream.read(&mut request).ok()?;
+        let request = String::from_utf8_lossy(&request[..count]).into_owned();
+        if write!(
+            stream,
+            "HTTP/1.1 {status}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        )
+        .is_err()
+        {
+            return None;
+        }
+        Some(request)
+    });
+    (port, worker)
+}
+
+#[test]
+fn health_check_accepts_only_local_success_response() {
+    let (port, server) = health_server("200 OK");
+    let result = health_probe(port);
+    assert!(result.status.success());
+    assert_eq!(String::from_utf8_lossy(&result.stdout).trim(), "healthy");
+    assert!(result.stderr.len() <= 512, "health-check stderr is bounded");
+    let request = server.join().unwrap().expect("health probe should connect");
+    assert!(request.starts_with("GET /healthz HTTP/1.1\r\n"));
+    assert!(request.lines().any(|line| {
+        line.split_once(':').is_some_and(|(name, value)| {
+            name.eq_ignore_ascii_case("host") && value.trim() == "localhost"
+        })
+    }));
+
+    let (port, server) = health_server("503 Service Unavailable");
+    let result = health_probe(port);
+    assert!(!result.status.success());
+    assert!(result.stderr.len() <= 512, "health-check stderr is bounded");
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr).trim(),
+        "stricknani-server: health endpoint returned a non-success status"
+    );
+    server.join().unwrap().expect("health probe should connect");
+}
+
+#[test]
+fn health_check_timeout_is_bounded_and_has_fixed_error() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let _server = thread::spawn(move || {
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            match listener.accept() {
+                Ok((_stream, _)) => {
+                    thread::sleep(Duration::from_secs(4));
+                    return;
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    if Instant::now() >= deadline {
+                        return;
+                    }
+                    thread::sleep(Duration::from_millis(10));
+                }
+                Err(_) => return,
+            }
+        }
+    });
+    let started = Instant::now();
+
+    let result = health_probe(port);
+    let elapsed = started.elapsed();
+
+    assert!(!result.status.success());
+    assert!(elapsed < Duration::from_secs(6));
+    assert!(result.stderr.len() <= 512, "health-check stderr is bounded");
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr).trim(),
+        "stricknani-server: health check timed out"
+    );
 }
 
 #[tokio::test]
@@ -152,6 +274,7 @@ fn help_needs_no_database_and_invalid_config_is_redacted() {
         .unwrap();
     assert!(help.status.success());
     assert!(String::from_utf8_lossy(&help.stdout).contains("create-admin EMAIL"));
+    assert!(String::from_utf8_lossy(&help.stdout).contains("health-check"));
     let failed = cli("invalid-sensitive-test-value", &["serve"], None);
     assert!(!failed.status.success());
     assert!(!String::from_utf8_lossy(&failed.stderr).contains("invalid-sensitive-test-value"));

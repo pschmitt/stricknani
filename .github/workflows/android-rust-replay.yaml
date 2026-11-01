@@ -82,26 +82,7 @@ jobs:
           cores: 4
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           working-directory: android
-          script: |
-            set -Eeuo pipefail
-            declare -a emulators=()
-            while IFS= read -r serial; do
-              emulators+=("$serial")
-            done < <(adb devices | awk '$2 == "device" && $1 ~ /^emulator-[0-9]+$/ { print $1 }')
-            if (( ${#emulators[@]} != 1 ))
-            then
-              echo "Expected exactly one ready emulator; found ${#emulators[@]}." >&2
-              adb devices -l >&2
-              exit 1
-            fi
-            cd ..
-            python3 -m ci.stricknani.rust_fixture run-replay \
-              --fixture-file "$RUNNER_TEMP/stricknani-rust-fixture.json" \
-              --adb "$(command -v adb)" \
-              --serial "${emulators[0]}" \
-              --apk android/app/build/outputs/apk/debug/app-x86_64-debug.apk \
-              --test-apk android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
-              2>&1 | tee "$RUNNER_TEMP/rust-replay-sanitized.log"
+          script: bash ../ci/stricknani/run-rust-replay-ci.sh
 
       - name: Stop and remove disposable Rust fixture
         if: ${{ always() }}
