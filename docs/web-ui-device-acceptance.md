@@ -97,18 +97,49 @@
   browser probe exited 1 on the HTTP error. This is historical; the fixture's
   trusted-host configuration was corrected in published revision `329fe65`.
 
-## Latest device run
+## Latest device evidence
 
-Fresh preflight confirmed the approved USB phone was awake, unlocked, and had
-its display on; QEMU was absent. The unique `.localhost` fixture origin and
-Chrome DevTools bridge each passed their endpoint probes. The single full
-journey stopped at the first sign-in tap because the required trusted
-`touchstart` and `touchend` events were not observed on the target. The runner
-stopped without signing in or running any app workflow assertions. No root cause
-was established, and this is not an accepted phone journey.
+The focused login probe used the exact packaged 52221ad server and web package
+with a new synthetic fixture. After the IME reduced the visual viewport to
+435.3 CSS px at offset 69.5, one native Android Back restored it to 750.2 CSS
+px at offset 0. The `/app/login` route and both filled fields remained intact.
+The recomputed sign-in target was fully visible and hit-tested. Trusted
+`touchstart`/`touchend` reached a span inside the button; the composed path and
+event coordinates matched. The login request returned HTTP 200 and the
+Projects heading appeared. The owned tab was closed and only the nonce origin
+was cleared.
 
-Cleanup completed: the runner cleared only its nonce origin and closed only its
-owned tab, stopped the disposable fixture and tunnel, and removed only its own
-ADB forward/reverse mappings. Unrelated mappings and browser tabs were left
-alone; Chrome remained open. No further physical-device attempt is included in
-this checkpoint. Physical-device acceptance remains open.
+That result is diagnostic rather than accepted device evidence: the harness
+connected Playwright to the forwarded, unfiltered Chrome DevTools browser
+socket. It did not explicitly enumerate or read existing tabs, but Playwright's
+internal target discovery was not verified. This raw browser-socket path is
+not acceptable for further runs. `PUT /json/new?about:blank` failed on this
+browser. A subsequent private connector successfully created and activated one
+owned target with `Target.createTarget`, then attached directly to that target's
+page WebSocket. It used no target discovery, listing or automatic attachment.
+That owned-target setup and cleanup passed; a complete app journey did not.
+
+The single full-run attempt did not reach its native keyboard handshake. It
+timed out during sign-in before a keyboard-ready marker was written; no native
+key was sent and no sign-in assertion passed. A setup-only probe reproduced
+the precondition: programmatic field filling left the visual viewport at its
+750.2 px baseline. A later setup trace dispatched a trusted touch to the
+visible password field and confirmed its target, composed path, and coordinates,
+but the expected visual viewport resize did not occur before timeout. No root
+cause is established for that behavior.
+
+The owned-target follow-up also failed to focus the login field or show its
+keyboard through the tested touch path. A headless fixture diagnostic passed,
+which does not establish physical-device behavior. A later readiness check
+found no ready approved transport; the current checkpoint did not repeat it
+because its approved identity source was unavailable. No wake, unlock or
+substitute-device action was taken.
+
+Owned fixture processes, tabs, nonce storage, local forwarding and SSH tunnels
+were cleaned up where available. Verification/removal of the exact owned ADB
+reverse mapping `tcp:18762` remains deferred after the device became unavailable.
+Recheck only that mapping when the approved device is already awake and unlocked.
+The earlier raw Playwright connection's internal profile access remains
+unverified; it must not be described as privacy-isolated acceptance. The full
+physical-device journey, including search, reader navigation, editor keyboard
+behavior, upload and sign-out, remains unverified and acceptance stays open.

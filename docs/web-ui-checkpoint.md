@@ -81,13 +81,17 @@ unrelated later infrastructure commits.
 
 ## Remaining acceptance
 
-Two later source checkpoints are committed and pushed but not deployed:
-`2c4d6ca` adds explicit authenticated browser action hints and strict contract
-tests; `69f25e3` gives the yarn photo dialog a compact named heading with native
-initial focus. The full Rust suite and 150 frontend tests passed for the
-contract. The dialog's compiled native title, Close and Escape checks passed;
-the complete screen-reader journey still awaits validation-error speech.
-Capability affordances and exact-candidate integration are in progress.
+Candidate `72b1faaec3c3dc488cea7cc9b27a7daa14ac9b83` is pushed and prepared,
+with action hints, shared icons, named photo-dialog focus and associated
+validation errors. The canonical Nix server is
+`/nix/store/n65q658kcrqh0qbqkfnsds8k7m007pa8-stricknani-server-0.1.0` and web
+root is `/nix/store/gyqjfr40aiszvyg9l8lxp7i8wq2qlgjc-stricknani-web-0.1.0`.
+The full Rust suite, 150 frontend tests, canonical capability probe, core
+Chromium journey, portable accessibility journey and worker/bootstrap byte
+checks passed. The rollout is waiting for a coordinated host-upgrade window;
+the live preview remains `52221ad`. Complete native screen-reader and physical
+phone acceptance remain open.
+All five CI workflows for `72b1faa` succeeded.
 
 T120 overall and T120.9 remain in progress. Current-package contrast passed
 84 assessable samples; the five-sample mobile lab measured median LCP 2220ms,

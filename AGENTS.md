@@ -133,6 +133,14 @@ Use this file as the operational source of truth for working in Stricknani.
   versions can change generated HTML and CSP hashes while immutable JS/CSS
   remain identical; when they differ, run the browser and PWA gates against
   the packaged web root rather than relying on a separately built artifact.
+- Resolve the deployment configuration's actual package and followed inputs
+  before expensive candidate builds. A standalone application flake may use
+  a different dependency revision from its deployment consumer. Build and test
+  the canonical package first to avoid repeating compilation and browser gates.
+- Label each hash with its exact object and algorithm. Keep application-input
+  NAR hashes separate from deployment-snapshot NAR hashes, and manifest-file
+  hashes separate from file-set digests. Use one manifest convention when
+  comparing copies, or compare their files directly.
 - Before launching a browser acceptance run, verify the checksum of the actual
   runner file at its execution path, not just a synchronized source copy.
   Freeze the runner and static root together; check that the generated worker

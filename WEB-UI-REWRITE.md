@@ -254,7 +254,7 @@ the coordinator reviews their contracts and security-sensitive changes.
   history. Hide it when there is no prior history entry; do not infer parents.
   Keep unsaved-change protection and the right-aligned mobile profile control.
   Rust serves built assets; deployed runtime remains Rust-only.
-- [ ] **T120.3 — Focused browser API v2.** Scoped Luna Rust slice: implement
+- [x] **T120.3 — Focused browser API v2.** Scoped Luna Rust slice: implement
   only the v2 operations the browser needs, with typed/schema documentation,
   shared domain services, cookie/CSRF auth, authorization, pagination,
   capabilities, predictable errors, and API tests. Leave v1/Android semantics
@@ -282,9 +282,9 @@ the coordinator reviews their contracts and security-sensitive changes.
   avatar, password, one-time API token reveal/revoke, standalone gauge, optional
   signup, admin user management, audit filter/pagination, role-gated navigation,
   complete English/German strings, and consistent async/validation feedback.
-Feature workflows T120.1–T120.8 are delivered; T120.3 still needs the
-explicit action-availability capability fields identified by the independent
-contract audit. The current
+Feature workflows T120.1–T120.8 are delivered, including the explicit
+action-availability contract and UI controls verified in canonical candidate
+`72b1faa`. The current
 [requirement/evidence audit](docs/web-ui-acceptance-audit.md) and
 [deployment checkpoint](docs/web-ui-checkpoint.md) record its tests and source.
 The overall rewrite remains open until T120.9 acceptance is complete.
