@@ -1,59 +1,54 @@
 # Screen-reader verification
 
-**Status: partial; strict native screen-reader acceptance remains open.**
+**Status: strict native screen-reader acceptance passed for the isolated 72b1 candidate.**
 
-## Current compiled candidate
+## Accepted candidate
 
-The current native probe used the canonical public-root-pinned 72b1 package:
-web root `/nix/store/gyqjfr40aiszvyg9l8lxp7i8wq2qlgjc-stricknani-web-0.1.0`,
-server package `/nix/store/n65q658kcrqh0qbqkfnsds8k7m007pa8-stricknani-server-0.1.0`,
+The run used the canonical public-root-pinned 72b1 package: web root
+`/nix/store/gyqjfr40aiszvyg9l8lxp7i8wq2qlgjc-stricknani-web-0.1.0`, server
+package `/nix/store/n65q658kcrqh0qbqkfnsds8k7m007pa8-stricknani-server-0.1.0`,
 and raw server SHA-256
 `460dd562505f51518d7c65fdabd199e7d27210a55574f7bc83bb428b667fcbcd`.
-The embedded and standalone web roots matched across 107 files. This was an
-isolated synthetic fixture using Firefox, Orca, Speech Dispatcher with dummy
-output, Xvfb, and private D-Bus state; no user desktop, audio device, or live
-service was used.
+The embedded and standalone web roots matched across 107 files.
 
-The strict native journey exited 1 at the Yarns navigation announcement. Native
-XTest input reached the Yarns link, and the AT-SPI snapshot confirmed a focused
-link named “Yarns” in the expected Firefox frame. The Orca capture contained no
-speech output for that focus. Therefore the run did not reach the photo dialog
-or invalid-step validation, and it is not an acceptance pass for those flows.
-The strict runner SHA-256 was
-`0c1d0aedf9be64bee8ea558f9879cffddfb3134b5fd3edf993991200f59cf70e`; exit
-receipt:
-`/home/pschmitt/build/stricknani-validation-focus-72b1faa-native-20261102/receipts/native-orca/run-full02.exit`.
-The focused AT-SPI diagnostic runner SHA-256 was
-`393111234acbaaf90c028b1b844068f0a2050836cc0a408db6b0eb1fc80ce55c`; its
-exit receipt is
-`/home/pschmitt/build/stricknani-validation-focus-72b1faa-native-20261102/receipts/native-orca/run-atspi03.exit`.
-The diagnostic confirmed the same role, accessible name, active state, and
-Firefox frame. It did not alter the product or relax the strict speech check.
+The synthetic browser ran Firefox and Orca with Speech Dispatcher’s dummy
+output, Xvfb, and private D-Bus state. It used no user desktop, audio device,
+or live service. The strict native journey exited 0. All 13 recorded report
+checks passed, including native input, navigation and heading speech, photo
+dialog title and focus, Escape focus restoration, project editor controls, and
+invalid-step focus and error speech. The runner also requires native Tab to
+the dialog’s visible Close photo button, verifies both DOM focus and Orca
+speech for that button, then verifies Escape restores focus and speech to the
+opener.
 
-The private Orca writer shim flushes Orca 50.2's explicit debug handle after
-the original write. It changes capture timing only; it does not inject speech
-or alter accessibility events. Its SHA-256 is
+The Yarns link’s AT-SPI object had role `link`, accessible name “Yarns”, active
+state, and the expected Firefox frame. The native-key, focus and speech
+timestamps show that the runner's unchanged 1.25s action window captured the
+utterance; the additional 10s bounded fallback did not need to run.
+
+The private runner SHA-256 was
+`c68f8ad452d3ab0b848ea4cd8e099e7536acfe356a3efaa7ead683bd733b49d6`. Its exit
+receipt is
+`/home/pschmitt/build/stricknani-validation-focus-72b1faa-native-20261102/receipts/native-orca/run-delay03.exit`.
+The safe report is outside the source tree at
+`/tmp/sr72b1-orca-20261102/delay03/screenreader-report.json`.
+
+## Capture setup
+
+The observation-only Orca shim preserves `_print_text` and flushes the same
+private debug handle after each write. It does not inject speech or alter
+accessibility events. Its SHA-256 is
 `5938078d3639ae2a7d3d9733aff4adf0f9ed5998504bae05ad992b6222a7f1ac`.
-Earlier investigation found that Orca's writer otherwise did not flush after
-each write, so action-offset checks could miss speech until a later event.
 
-## Earlier isolated dialog and validation evidence
+An initial diagnostic runner placed outside the source tree derived an
+incorrect worker `PYTHONPATH` from its file location. The corrected private
+copy was placed under `source/ci/stricknani`, where the runner’s existing path
+logic resolves the source root; the shim was copied unchanged to the private
+build-root location that the runner derives. Exact executable/library checks,
+runner import, and isolated Xvfb/D-Bus startup passed before the accepted run.
+The corrected run captured Yarns speech during the native action window.
 
-An earlier strict run against a static dialog candidate verified native
-navigation and heading speech, opening the photo modal, Orca speech for its
-initially focused “Yarn photo” title, native Tab to “Close photo”, and Escape
-with focus restored to the opener. It also verified the invalid-step alert's
-text in AT-SPI. These results predate the current compiled candidate and do
-not prove the current integrated flow.
-
-A prior test-only DOM prototype linked and focused the invalid-step error and
-captured its exact announcement. The current product now associates the error
-with invalid step-title fields and moves focus to the first invalid control
-after local validation. The packaged-core Chromium regression exercised that
-focus and association successfully, but the current Orca journey stopped
-before reaching it. Native spoken validation therefore remains unverified.
-
-The earlier dialog candidate was an isolated Vite build, not a realized Nix
-package or deployed source. Its source and test receipts remain historical
-records only. Private traces, synthetic fixtures, and browser profiles stay
-outside the source tree; this report records no private trace contents.
+An earlier static dialog prototype and its validation-focus prototype are
+historical diagnostics, not acceptance results for this candidate. Private
+traces, synthetic fixtures, and browser profiles remain outside the source
+tree.

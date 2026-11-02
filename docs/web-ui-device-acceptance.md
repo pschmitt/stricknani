@@ -22,8 +22,9 @@
   headers.
 - A temporary loopback-only SSH tunnel, ADB forward, and ADB reverse may connect
   the test workstation, fixture host, and phone. Refuse occupied ports and use
-  no-rebind options. Remove only the rules created by this run; preserve any
-  pre-existing ADB mappings.
+  no-rebind options where supported. Otherwise verify the exact port is free
+  before creating a mapping and verify its result. Remove only the rules created
+  by this run; preserve any pre-existing ADB mappings.
 - Do not use production accounts or data. Do not modify phone settings, enable
   debugging flags, enable TalkBack globally, or access personal browser data.
 
@@ -31,8 +32,10 @@
 
 1. Start the synthetic fixture using the realised Rust server and web package.
    The fixture binds to host loopback only and disables signup and integrations.
-2. Connect Playwright to the Chrome DevTools socket through the reviewed local
-   bridge. Create a blank target without enumerating existing tabs.
+2. Use the minimal owned-target CDP client through the reviewed local bridge:
+   read version metadata, create/activate one new blank target, then attach only
+   to that target's page WebSocket. Do not use a raw Playwright browser connection,
+   target discovery, automatic attachment or personal-context operations.
 3. Navigate only to the unique `.localhost` fixture origin. Verify sign-in,
    project search, project reader, library navigation, keyboard visibility,
    and an unsaved editor draft retained while the soft keyboard opens and
@@ -53,7 +56,9 @@
   flags `showing=false`, `inputRestricted=false`, `secure=true`, `enabled=true`.
 - Chrome's DevTools socket was initially absent. Standard Chrome was launched
   without flags or settings changes; the socket then became available. No
-  existing tabs or personal page data were read.
+  explicit existing-tab or personal-page reads were requested. The raw
+  Playwright connector's internal discovery was not validated; that historical
+  path is not privacy-isolated acceptance.
 - The disposable fixture and temporary loopback bridges were created. The
   runner created a new owned target and attempted to navigate to a unique
   `stricknani-device-<nonce>.localhost` fixture host. Navigation failed at the
@@ -97,7 +102,36 @@
   browser probe exited 1 on the HTTP error. This is historical; the fixture's
   trusted-host configuration was corrected in published revision `329fe65`.
 
-## Latest device evidence
+## Current 72b1 device evidence
+
+The approved USB target passed a fresh read-only readiness check: model and
+product matched, QEMU was absent, the device was interactive with its internal
+display on, and keyguard was clear. A new synthetic fixture used the canonical
+`72b1faa` server/web package and a unique nonce `.localhost` origin.
+
+The minimal client created and activated one owned target, then used only its
+page WebSocket. A trusted touch/click reached the email control through the
+expected composed path, was not default-prevented, and focused the field after
+269ms. The owned page had focus and the IME was visible. No credentials or
+native key were sent in this probe. The parent reviewed its protocol method
+inventory: no target listing/automatic attachment or global cookie operation.
+
+The touch runner SHA-256 is
+`ee72c8f9c3ac4a233ecac21a7f78e1a2565dba7848b560cc05bec3c26868401f`.
+On the device-fixture worker, the exit receipt is
+`/home/pschmitt/build/stricknani-final-72b1-browser-luna-20261102/private/phone-a8a0ac75646c/touch-run-02/probe.exit`
+and contains `0`; its sanitized log SHA-256 is
+`0d0f6ba70229e39a9f307ceeee3afb2c6883a94995df95858f9a9cfc8112fcf5`.
+
+Before the full journey, a later preflight could no longer positively establish
+display-on/interactivity. Input stopped. The owned target/origin, fixture,
+tunnel, forward `tcp:19220` and reverse `tcp:18763` were cleaned up; the
+pre-existing reverse `tcp:18762` was preserved because current ownership was
+unverified. Full sign-in/editor/media/navigation/sign-out acceptance remains
+open. The complete driver is being validated on an isolated headless fixture
+before another already-awake phone window is requested.
+
+## Historical 52221ad device diagnostics
 
 The focused login probe used the exact packaged 52221ad server and web package
 with a new synthetic fixture. After the IME reduced the visual viewport to

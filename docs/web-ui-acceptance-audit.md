@@ -18,7 +18,7 @@ The deployed `/app` preview and the remaining acceptance work are described in
 | **T120.6 Yarns and categories** | [`YarnLibrary.svelte`](../web/src/lib/features/yarns/YarnLibrary.svelte), [`CategoryManager.svelte`](../web/src/lib/features/categories/CategoryManager.svelte), API tests, and [`web_yarn_browser.py`](../ci/stricknani/web_yarn_browser.py). | **Implemented.** Exact packaged yarn/category browser journey passed. |
 | **T120.7 Imports and jobs** | [`ImportWorkbench.svelte`](../web/src/lib/features/imports/ImportWorkbench.svelte), [`web_import_browser.py`](../ci/stricknani/web_import_browser.py), and OCR/archive controls and tests. | **Implemented.** Preserve SSRF, size, ownership, and feature-capability boundaries. |
 | **T120.8 Account, tools, admin, and i18n** | Account/signup/admin components, API security tests, and account/admin browser runners. | **Implemented.** English and German catalogs are packaged; exact packaged admin journey passed. |
-| **T120.9 Acceptance, preview, and cleanup** | This audit and the linked device, native accessibility, screen-reader, contrast, and performance reports. | **Open.** Phone journey and complete native screen-reader run remain. Earlier contrast/performance/native zoom evidence is retained for its named package; legacy consumer review is complete. |
+| **T120.9 Acceptance, preview, and cleanup** | This audit and the linked device, native accessibility, screen-reader, contrast, and performance reports. | **Open.** Phone journey and current-package matrix/lab refresh remain. Strict native screen-reader acceptance passed; older measurements remain tied to their package. Legacy consumer review is complete. |
 | **T120.10 Requested update activation** | Explicit reload-to-update behavior, cross-tab readiness, dirty-form and in-flight mutation guards; frontend and PWA tests plus exact packaged PWA journey. | **Complete.** The packaged PWA browser gate exited 0. |
 | **T120.11 Audit resource history** | Typed audit changes, event resource names, separate read-only cross-owner admin resource views, media authorization, and lazy diffs; Rust tests and exact packaged admin journey. | **Complete.** Ordinary ownership, edit permissions, and API v1 remain unchanged. Migration 14 is applied and database integrity passed. |
 | **T120.12 Reusable resource cards** | Shared project/yarn/category cards across audit and related-resource views, protected previews, fallbacks, and responsive links; exact packaged admin, core, yarn, and accessibility journeys. | **Complete.** All five packaged browser gates listed in the checkpoint exited 0. |
@@ -63,13 +63,16 @@ rollout is verified at public pin `bc0645107`; the deployed application is
 
 1. Run the complete approved workflow on a real phone, including touch,
   soft-keyboard, safe-area, upload, and navigation behavior.
-2. Complete native screen-reader acceptance for labels, errors, route changes,
-  and dialog changes. Synthetic accessibility and focused Firefox zoom checks
-  do not establish this.
-3. Refresh the representative Firefox/WebKit matrix against the deployed
+2. Refresh the representative Firefox/WebKit matrix against the deployed
   package, including the changed dialog and validation behavior.
-4. Refresh the bounded contrast, performance and native Firefox zoom reports
+3. Refresh the bounded contrast, performance and native Firefox zoom reports
   against that same package. Older measurements remain tied to their source.
+
+Strict native screen-reader acceptance passed on canonical `72b1faa` with
+Firefox, Orca and native X11 input: all 13 report checks are true, including
+route/heading speech, photo-dialog title and close control, Escape restoration,
+and invalid-step focus/error speech. The parent independently read its zero
+exit receipt and report. See [screen-reader verification](web-ui-screenreader.md).
 
 The `52221ad` browser matrix passed Chromium, Firefox and WebKit. The updated
 print-failure leg verifies an actual intercepted image failure, no premature
