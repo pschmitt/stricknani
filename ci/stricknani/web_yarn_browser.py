@@ -70,7 +70,7 @@ def _mask_fixture_identity(page: Page) -> None:
         "nodes => nodes.forEach(node => { "
         "node.textContent = 'Demo account'; node.title = 'Demo account'; })"
     )
-    page.locator(".avatar").evaluate_all(
+    page.locator(".user-avatar").evaluate_all(
         "nodes => nodes.forEach(node => node.textContent = 'D')"
     )
     page.locator("#email, #password").evaluate_all(

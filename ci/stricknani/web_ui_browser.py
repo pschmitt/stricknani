@@ -684,7 +684,8 @@ def _exercise_project_service_tools(
                     '.steps-list .step-photo-card').length,
                   ocrControls: document.querySelectorAll('.ocr-control').length,
                   routeReady: document.querySelectorAll('.reader-columns').length > 0,
-                  authenticated: document.querySelectorAll('.account-email').length > 0,
+                  authenticated: document.querySelectorAll(
+                    '.app-header .header-account').length > 0,
                   viewportVisible: document.visibilityState === 'visible'
                 })""",
             )
@@ -1460,13 +1461,6 @@ def _exercise_gauge_calculator(
 
 def _mask_fixture_identity(page: Page) -> None:
     """Mask disposable account identifiers before screenshot capture."""
-    page.locator(".header-user").evaluate_all(
-        "nodes => nodes.forEach(node => node.textContent = 'Demo account')"
-    )
-    page.locator(".account-email").evaluate_all(
-        "nodes => nodes.forEach(node => { "
-        "node.textContent = 'Demo account'; node.title = 'Demo account'; })"
-    )
     page.locator(".profile-email").evaluate_all(
         "nodes => nodes.forEach(node => node.textContent = 'Demo account')"
     )
@@ -1774,6 +1768,7 @@ def run_acceptance(
             raise AcceptanceFailure("configured browser executable is unavailable")
 
     session_observations: list[tuple[int, bool, bool, bool]] = []
+    session_identity_observations: list[tuple[int, str | None]] = []
     csrf_requests: list[tuple[str, bool]] = []
     auth_responses: list[tuple[str, int]] = []
     project_responses: list[tuple[str, int]] = []
@@ -1888,6 +1883,18 @@ def run_acceptance(
             session_observations.append(
                 (response.status, session_user_is_null, csrf_present, numeric_user_id)
             )
+            session_email: str | None = None
+            if response.status == 200:
+                try:
+                    payload = response.json()
+                except Exception:
+                    payload = None
+                data = payload.get("data") if isinstance(payload, dict) else None
+                user = data.get("user") if isinstance(data, dict) else None
+                email = user.get("email") if isinstance(user, dict) else None
+                if isinstance(email, str):
+                    session_email = email
+            session_identity_observations.append((response.status, session_email))
         elif path.startswith("/app/_app/"):
             app_asset_statuses.append(response.status)
         elif path == "/app/messages.json":
@@ -2433,11 +2440,20 @@ def run_acceptance(
                 page.locator(".app-shell").wait_for(state="visible")
                 page.set_viewport_size({"width": 1280, "height": 844})
                 _require(
-                    page.locator(".account-email").inner_text() == signup_email,
-                    "the newly created account could not sign in explicitly",
+                    any(
+                        status == 200 and email == signup_email
+                        for status, email in session_identity_observations[
+                            sessions_before_signup:
+                        ]
+                    ),
+                    "the explicit sign-in session did not identify the new account",
                 )
                 mark_stage("returning to anonymous sign-in after signup check")
                 _open_account_from_profile(page)
+                _require(
+                    page.locator(".profile-email").inner_text() == signup_email,
+                    "the profile did not show the signed-in account identity",
+                )
                 _account_sign_out_button(page).click()
                 page.wait_for_url("**/app/login", timeout=10_000)
                 page.locator("#email").wait_for(state="visible")
