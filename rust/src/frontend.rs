@@ -4,9 +4,10 @@ use std::{fs, path::PathBuf, sync::Arc};
 
 use axum::{
     Router,
+    body::Body,
     extract::{Path, State},
     http::{HeaderValue, StatusCode, header},
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
     routing::get,
 };
 use serde::Deserialize;
@@ -16,11 +17,13 @@ use crate::security::FrontendCsp;
 
 const MAX_SHELL_BYTES: u64 = 2 * 1024 * 1024;
 const MAX_CSP_MANIFEST_BYTES: u64 = 64 * 1024;
+const MAX_FAVICON_BYTES: u64 = 64 * 1024;
 
 #[derive(Clone)]
 struct FrontendState {
     fallback: Option<Arc<Vec<u8>>>,
     csp: Option<FrontendCsp>,
+    favicon_svg: Option<Arc<Vec<u8>>>,
 }
 
 #[derive(Deserialize)]
@@ -41,26 +44,54 @@ pub fn router(web_root: PathBuf) -> Router {
         .as_ref()
         .and_then(|_| read_bounded_file(&web_root.join("200.html"), MAX_SHELL_BYTES))
         .map(Arc::new);
-    let state = FrontendState { fallback, csp };
+    let favicon_svg =
+        read_bounded_file(&web_root.join("favicon.svg"), MAX_FAVICON_BYTES).map(Arc::new);
+    let state = FrontendState {
+        fallback,
+        csp,
+        favicon_svg,
+    };
 
     Router::new()
-        .route("/app", get(app_root))
+        .route("/app", get(app_root_without_slash))
         .route("/app/", get(app_root))
         .route_service(
             "/app/messages.json",
             ServeFile::new(web_root.join("messages.json")),
         )
-        .route_service(
-            "/app/favicon.svg",
-            ServeFile::new(web_root.join("favicon.svg")),
-        )
+        .route("/app/favicon.svg", get(app_favicon))
         .route("/app/{*path}", get(app_path))
         .nest_service("/app/_app", ServeDir::new(web_root.join("_app")))
         .with_state(state)
 }
 
+async fn app_root_without_slash() -> Redirect {
+    Redirect::permanent("/app/")
+}
+
 async fn app_root(State(state): State<FrontendState>) -> Response {
     app_shell(state)
+}
+
+async fn app_favicon(State(state): State<FrontendState>) -> Response {
+    let Some(svg) = state.favicon_svg else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let mut response = Response::new(Body::from(svg.as_ref().clone()));
+    let headers = response.headers_mut();
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("image/svg+xml"),
+    );
+    headers.insert(
+        header::CACHE_CONTROL,
+        HeaderValue::from_static("public, max-age=3600"),
+    );
+    headers.insert(
+        "x-content-type-options",
+        HeaderValue::from_static("nosniff"),
+    );
+    response
 }
 
 async fn app_path(State(state): State<FrontendState>, Path(path): Path<String>) -> Response {

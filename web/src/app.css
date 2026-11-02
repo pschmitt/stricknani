@@ -18,6 +18,7 @@
   --ink: #1f2d3d;
   --ink-muted: #52657a;
   --line: #d2dce8;
+  --control-border: #6b7f96;
   --accent: #2f75b5;
   --accent-strong: #185b96;
   --on-accent: #ffffff;
@@ -47,6 +48,7 @@
     --ink: #e6edf3;
     --ink-muted: #b2c0cf;
     --line: #3b4d60;
+    --control-border: #718ba5;
     --accent: #8dc5ef;
     --accent-strong: #b8daf3;
     --on-accent: #10243a;
@@ -489,9 +491,15 @@ button:disabled {
 
 .section-mark {
   margin: 0;
-  color: var(--accent);
+  color: var(--accent-strong);
   font-size: 0.9rem;
   font-weight: 650;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-muted);
+  opacity: 1;
 }
 
 .inline-link {

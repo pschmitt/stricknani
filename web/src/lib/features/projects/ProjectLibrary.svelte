@@ -449,7 +449,7 @@
   .category-field select {
     width: 100%;
     min-height: 44px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-border);
     border-radius: 0.65rem;
     padding: 0.55rem 0.7rem;
     color: var(--ink);

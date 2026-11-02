@@ -264,6 +264,11 @@
     font: inherit;
   }
 
+  select,
+  textarea {
+    border-color: var(--control-border);
+  }
+
   button {
     width: fit-content;
     max-width: 100%;

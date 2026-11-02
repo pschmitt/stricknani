@@ -10,6 +10,17 @@
 }:
 
 let
+  rustSource = lib.fileset.toSource {
+    root = ../.;
+    fileset = lib.fileset.unions [
+      ../rust
+      ../web/static/manifest.webmanifest
+      ../web/static/offline.html
+      ../web/static/offline.css
+      ../web/static/service-worker.js
+    ];
+  };
+
   ocrEngine = tesseract.override {
     enableLanguages = [
       "deu"
@@ -20,7 +31,8 @@ in
 rustPlatform.buildRustPackage {
   pname = "stricknani-server";
   version = "0.1.0";
-  src = ../rust;
+  src = rustSource;
+  sourceRoot = "source/rust";
   cargoLock.lockFile = ../rust/Cargo.lock;
   STATIC_ROOT = ../stricknani/static;
 

@@ -83,8 +83,10 @@ def test_web_root_is_only_added_when_explicit_and_must_be_a_directory(
 
     assert "WEB_ROOT" not in default_environment
     assert "RUST_SIGNUP_ENABLED" not in default_environment
+    assert "TRUSTED_HOSTS" not in default_environment
     assert web_environment["WEB_ROOT"] == str(web_root.resolve())
     assert signup_environment["RUST_SIGNUP_ENABLED"] == "true"
+    assert "TRUSTED_HOSTS" not in web_environment
     assert (
         web_environment["RUST_DATABASE_URL"] == default_environment["RUST_DATABASE_URL"]
     )
@@ -92,6 +94,88 @@ def test_web_root_is_only_added_when_explicit_and_must_be_a_directory(
         rust_fixture.FixtureError, match="web root must be an existing directory"
     ):
         rust_fixture._server_environment(runtime, 32123, tmp_path / "missing")
+
+
+def test_browser_fixture_authority_adds_only_exact_synthetic_host(
+    tmp_path: Path,
+) -> None:
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+
+    environment = rust_fixture._server_environment(
+        runtime,
+        32123,
+        allowed_browser_authority="stricknani-device-012345abcdef.localhost:18762",
+    )
+
+    assert environment["BIND_PORT"] == "32123"
+    assert environment["TRUSTED_HOSTS"] == (
+        "localhost,127.0.0.1,[::1],stricknani-device-012345abcdef.localhost:18762"
+    )
+
+
+@pytest.mark.parametrize(
+    "authority",
+    [
+        "stricknani-device-012345abcdef.localhost:0",
+        "stricknani-device-012345abcdef.localhost:65536",
+        "stricknani-device-012345abcdef.localhost:018762",
+        "stricknani-device-012345abcde.localhost:18762",
+        "stricknani-device-012345ABCDEf.localhost:18762",
+        "stricknani-device-012345abcdef.localhost:18762,*.localhost",
+        "user@stricknani-device-012345abcdef.localhost:18762",
+        "stricknani-device-012345abcdef.localhost:18762/path",
+        "other-012345abcdef.localhost:18762",
+        "*.localhost:18762",
+        " stricknani-device-012345abcdef.localhost:18762",
+    ],
+)
+def test_browser_fixture_authority_rejects_noncanonical_values(
+    tmp_path: Path, authority: str
+) -> None:
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+
+    with pytest.raises(
+        rust_fixture.FixtureError,
+        match="browser authority must be a synthetic device hostname",
+    ):
+        rust_fixture._server_environment(
+            runtime, 32123, allowed_browser_authority=authority
+        )
+
+
+def test_start_fixture_rejects_browser_authority_before_runtime_or_user_creation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    binary = tmp_path / "stricknani-server"
+    binary.write_bytes(b"server")
+    binary.chmod(0o700)
+    runtime = tmp_path / "runtime"
+    create_user_called = False
+
+    def unexpected_create_user(*_args: object, **_kwargs: object) -> None:
+        nonlocal create_user_called
+        create_user_called = True
+
+    monkeypatch.setattr(rust_fixture, "run_cmd", unexpected_create_user)
+
+    with pytest.raises(
+        rust_fixture.FixtureError,
+        match="browser authority must be a synthetic device hostname",
+    ):
+        rust_fixture.start_fixture(
+            binary=binary,
+            temp_dir=runtime,
+            fixture_file=tmp_path / "fixture.json",
+            state_file=tmp_path / "state.json",
+            allowed_browser_authority="localhost:18762",
+        )
+
+    assert not runtime.exists()
+    assert not (tmp_path / "fixture.json").exists()
+    assert not (tmp_path / "state.json").exists()
+    assert not create_user_called
 
 
 def test_run_cmd_sends_password_on_stdin_and_suppresses_output(

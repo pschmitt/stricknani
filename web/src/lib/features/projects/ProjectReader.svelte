@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy, tick } from "svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -43,13 +44,19 @@
   let yarnWarning = $state(false);
   let favoriteBusy = $state(false);
   let selectedImageId = $state<number | null>(null);
+  let readerElement = $state<HTMLElement | null>(null);
   let textSize = $state(1);
+  let printPreparing = $state(false);
+  let printError = $state("");
   let reload = $state(0);
   let lastArchiveRefreshMarker: string | null = null;
   let favoriteGeneration = 0;
   let resourceGeneration = 0;
+  let printGeneration = 0;
   let archiveRefreshGeneration = 0;
   let archiveRefreshController: AbortController | null = null;
+  let activePrintImages: HTMLImageElement[] = [];
+  let printDialogActive = false;
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
@@ -84,6 +91,11 @@
     archiveRefreshController?.abort();
     archiveRefreshController = null;
     lastArchiveRefreshMarker = null;
+    printGeneration += 1;
+    clearPrintImageSources(activePrintImages);
+    printDialogActive = false;
+    printPreparing = false;
+    printError = "";
     const controller = new AbortController();
     favoriteGeneration += 1;
     favoriteBusy = false;
@@ -253,6 +265,216 @@
     selectedImageId = image.id;
   }
 
+  function printImages(): HTMLImageElement[] {
+    return Array.from(
+      readerElement?.querySelectorAll<HTMLImageElement>(
+        ".print-reference-image",
+      ) ?? [],
+    );
+  }
+
+  function attachPrintImageSources(): HTMLImageElement[] {
+    const images = printImages();
+    for (const image of images) {
+      const source = image.dataset.printSrc;
+      if (!source) throw new Error("missing print image source");
+      const url = new URL(source, window.location.href);
+      if (url.origin !== window.location.origin)
+        throw new Error("print image source is not same-origin");
+      image.dataset.printGeneration = String(printGeneration);
+      image.dataset.printProjectId = String(project?.id ?? "");
+      image.dataset.printOwnerId = String(userId ?? "");
+      image.loading = "eager";
+      image.src = url.href;
+    }
+    activePrintImages = images;
+    return images;
+  }
+
+  function clearPrintImageSources(images: HTMLImageElement[]) {
+    for (const image of images) {
+      image.removeAttribute("src");
+      image.loading = "lazy";
+      delete image.dataset.printGeneration;
+      delete image.dataset.printProjectId;
+      delete image.dataset.printOwnerId;
+    }
+    if (activePrintImages === images) activePrintImages = [];
+  }
+
+  function waitForPrintImage(
+    image: HTMLImageElement,
+    signal: AbortSignal,
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (image.complete) {
+        if (image.naturalWidth > 0) resolve();
+        else reject(new Error("print image failed to load"));
+        return;
+      }
+
+      let settled = false;
+      const timeout = setTimeout(
+        () => finish(new Error("print image load timed out")),
+        15_000,
+      );
+      const cleanup = () => {
+        clearTimeout(timeout);
+        image.removeEventListener("error", onError);
+        image.removeEventListener("load", onLoad);
+        signal.removeEventListener("abort", onAbort);
+      };
+      const finish = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (error) reject(error);
+        else resolve();
+      };
+      const onError = () => finish(new Error("print image failed to load"));
+      const onAbort = () => finish(new Error("print image wait was cancelled"));
+      const onLoad = () => {
+        if (image.naturalWidth <= 0) {
+          onError();
+          return;
+        }
+        finish();
+      };
+
+      image.addEventListener("error", onError, { once: true });
+      image.addEventListener("load", onLoad, { once: true });
+      signal.addEventListener("abort", onAbort, { once: true });
+      if (signal.aborted) {
+        onAbort();
+        return;
+      }
+    });
+  }
+
+  async function waitForPrintImages(images: HTMLImageElement[]) {
+    const controller = new AbortController();
+    try {
+      await Promise.all(
+        images.map((image) => waitForPrintImage(image, controller.signal)),
+      );
+    } catch (error) {
+      controller.abort();
+      throw error;
+    }
+  }
+
+  function handleBeforePrint() {
+    printDialogActive = true;
+    try {
+      attachPrintImageSources();
+    } catch {
+      printError = t(
+        "A reference photo could not be prepared for printing. Try again.",
+        locale,
+      );
+    }
+  }
+
+  function handleAfterPrint() {
+    printGeneration += 1;
+    printDialogActive = false;
+    clearPrintImageSources(activePrintImages);
+    printPreparing = false;
+  }
+
+  function handlePrintImageError(event: Event) {
+    const image = event.currentTarget;
+    if (
+      !(image instanceof HTMLImageElement) ||
+      image.dataset.printGeneration !== String(printGeneration) ||
+      image.dataset.printProjectId !== String(project?.id ?? "") ||
+      image.dataset.printOwnerId !== String(userId ?? "")
+    )
+      return;
+    printError = t(
+      "A reference photo could not be prepared for printing. Try again.",
+      locale,
+    );
+  }
+
+  function isCurrentPrintOperation(
+    generation: number,
+    projectId: number | undefined,
+    currentUserId: number | null,
+    currentResourceGeneration: number,
+  ): boolean {
+    return (
+      generation === printGeneration &&
+      currentResourceGeneration === resourceGeneration &&
+      project?.id === projectId &&
+      userId === currentUserId
+    );
+  }
+
+  async function printPattern() {
+    if (printPreparing) return;
+    const generation = ++printGeneration;
+    const projectId = project?.id;
+    const currentUserId = userId;
+    const currentResourceGeneration = resourceGeneration;
+    printPreparing = true;
+    printError = "";
+    let images: HTMLImageElement[] = [];
+    let printStarted = false;
+    try {
+      images = attachPrintImageSources();
+      await waitForPrintImages(images);
+      if (
+        !isCurrentPrintOperation(
+          generation,
+          projectId,
+          currentUserId,
+          currentResourceGeneration,
+        )
+      )
+        return;
+      if (images.some((image) => image.naturalWidth <= 0))
+        throw new Error("print image did not decode");
+      await tick();
+      if (
+        !isCurrentPrintOperation(
+          generation,
+          projectId,
+          currentUserId,
+          currentResourceGeneration,
+        )
+      )
+        return;
+      window.print();
+      printStarted = true;
+    } catch {
+      if (
+        isCurrentPrintOperation(
+          generation,
+          projectId,
+          currentUserId,
+          currentResourceGeneration,
+        )
+      ) {
+        printError = t(
+          "A reference photo could not be prepared for printing. Try again.",
+          locale,
+        );
+      }
+    } finally {
+      if (!printStarted || !printDialogActive) {
+        clearPrintImageSources(images);
+        if (generation === printGeneration) printPreparing = false;
+      }
+    }
+  }
+
+  onDestroy(() => {
+    printGeneration += 1;
+    printDialogActive = false;
+    clearPrintImageSources(activePrintImages);
+  });
+
   async function refreshAfterArchive(marker: string) {
     if (marker === lastArchiveRefreshMarker) return;
     const currentProject = project;
@@ -297,6 +519,11 @@
     archiveRefreshController = null;
   }
 </script>
+
+<svelte:window
+  onbeforeprint={handleBeforePrint}
+  onafterprint={handleAfterPrint}
+/>
 
 <svelte:head>
   <title>
@@ -349,7 +576,7 @@
     </div>
   </section>
 {:else if project}
-  <article class="reader">
+  <article class="reader" bind:this={readerElement}>
     <nav class="reader-topline" aria-label={t("Project actions", locale)}>
       <a class="back-link" href={resolve("/projects")}
         >‹ {t("Back to projects", locale)}</a
@@ -375,12 +602,19 @@
         <button
           class="print-button"
           type="button"
-          onclick={() => window.print()}
+          disabled={printPreparing}
+          aria-busy={printPreparing}
+          onclick={() => void printPattern()}
         >
-          {t("Print pattern", locale)}
+          {printPreparing
+            ? t("Preparing full-resolution photos…", locale)
+            : t("Print pattern", locale)}
         </button>
       </div>
     </nav>
+    {#if printError}
+      <p class="print-error" role="alert">{printError}</p>
+    {/if}
 
     <header class="reader-heading">
       <div>
@@ -534,14 +768,19 @@
                                 `: ${image.alt_text || step.title}`}
                               onclick={() => openImage(image)}
                             >
-                              <picture>
-                                <source media="print" srcset={image.url} />
-                                <img
-                                  src={image.thumbnail_url}
-                                  alt={image.alt_text || step.title}
-                                  loading="lazy"
-                                />
-                              </picture>
+                              <img
+                                class="screen-reference-image"
+                                src={image.thumbnail_url}
+                                alt={image.alt_text || step.title}
+                                loading="lazy"
+                              />
+                              <img
+                                class="print-reference-image"
+                                data-print-src={image.url}
+                                alt={image.alt_text || step.title}
+                                loading="lazy"
+                                onerror={handlePrintImageError}
+                              />
                             </button>
                             <OcrControl
                               src={image.url}
@@ -736,14 +975,19 @@
                   `: ${image.alt_text || project.name}`}
                 onclick={() => openImage(image)}
               >
-                <picture>
-                  <source media="print" srcset={image.url} />
-                  <img
-                    src={image.thumbnail_url}
-                    alt={image.alt_text || project.name}
-                    loading="lazy"
-                  />
-                </picture>
+                <img
+                  class="screen-reference-image"
+                  src={image.thumbnail_url}
+                  alt={image.alt_text || project.name}
+                  loading="lazy"
+                />
+                <img
+                  class="print-reference-image"
+                  data-print-src={image.url}
+                  alt={image.alt_text || project.name}
+                  loading="lazy"
+                  onerror={handlePrintImageError}
+                />
                 {#if image.is_title_image}
                   <span class="title-image-label"
                     >{t("Cover photo", locale)}</span
@@ -860,6 +1104,10 @@
     gap: 0.5rem;
   }
 
+  .reader-actions {
+    flex-wrap: wrap;
+  }
+
   .reader-topline {
     justify-content: space-between;
     gap: 1rem;
@@ -888,6 +1136,17 @@
     font: inherit;
     font-weight: 640;
     cursor: pointer;
+  }
+
+  .print-button:disabled {
+    cursor: wait;
+  }
+
+  .print-error {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--danger);
+    font-size: 0.9rem;
   }
 
   .reader-edit-link {
@@ -1086,6 +1345,10 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .print-reference-image {
+    display: none !important;
   }
 
   .gallery-image img {
@@ -1486,11 +1749,6 @@
       break-inside: avoid;
     }
 
-    .gallery-image picture,
-    .step-image picture {
-      display: block;
-    }
-
     .gallery-image img,
     .step-image img {
       position: static;
@@ -1499,6 +1757,19 @@
       height: auto;
       max-height: 7in;
       object-fit: contain;
+    }
+
+    .screen-reference-image {
+      display: none !important;
+    }
+
+    .gallery-image .print-reference-image,
+    .step-image .print-reference-image {
+      display: block !important;
+    }
+
+    .print-error {
+      display: block;
     }
 
     .title-image-label {

@@ -64,7 +64,6 @@ async fn known_app_routes_use_a_private_shell_and_manifest_hashes() {
     let app = fixture.router();
 
     for path in [
-        "/app",
         "/app/",
         "/app/projects",
         "/app/projects/42/edit",
@@ -87,6 +86,17 @@ async fn known_app_routes_use_a_private_shell_and_manifest_hashes() {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         assert!(String::from_utf8_lossy(&body).contains("id=\"svelte\""));
     }
+}
+
+#[tokio::test]
+async fn app_root_without_trailing_slash_redirects_into_the_registered_worker_scope() {
+    let response = request(BuildFixture::new().router(), "/app").await;
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::PERMANENT_REDIRECT
+    );
+    assert_eq!(response.headers()["location"], "/app/");
+    assert_eq!(response.headers()["cache-control"], "private, no-store");
 }
 
 #[tokio::test]
@@ -143,6 +153,21 @@ async fn app_assets_keep_file_mime_types_and_missing_assets_stay_404() {
     let favicon = request(fixture.router(), "/app/favicon.svg").await;
     assert_eq!(favicon.status(), axum::http::StatusCode::OK);
     assert_eq!(favicon.headers()["content-type"], "image/svg+xml");
+    assert_eq!(
+        favicon.headers()["cache-control"],
+        "public, max-age=3600, stale-while-revalidate=86400"
+    );
+    let body = favicon.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(body, "<svg></svg>");
+}
+
+#[tokio::test]
+async fn missing_app_favicon_is_not_served() {
+    let fixture = BuildFixture::new();
+    fs::remove_file(fixture.root.path().join("favicon.svg")).unwrap();
+
+    let response = request(fixture.router(), "/app/favicon.svg").await;
+    assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
@@ -195,7 +220,7 @@ async fn invalid_csp_manifest_fails_closed_without_serving_html() {
         too_many_style_attribute_hashes.as_str(),
     ] {
         fs::write(&manifest, invalid).unwrap();
-        let response = request(fixture.router(), "/app").await;
+        let response = request(fixture.router(), "/app/").await;
         assert_eq!(
             response.status(),
             axum::http::StatusCode::SERVICE_UNAVAILABLE
@@ -214,7 +239,7 @@ async fn old_manifest_defaults_to_disallowing_style_attributes() {
     )
     .unwrap();
 
-    let response = request(fixture.router(), "/app").await;
+    let response = request(fixture.router(), "/app/").await;
     assert_eq!(response.status(), axum::http::StatusCode::OK);
     assert_eq!(
         response.headers()["content-security-policy"],
@@ -226,7 +251,7 @@ async fn old_manifest_defaults_to_disallowing_style_attributes() {
 async fn missing_or_invalid_build_does_not_make_a_shell_route() {
     let root = tempfile::tempdir().unwrap();
     let app = frontend::router(root.path().to_path_buf());
-    let response = request(app, "/app").await;
+    let response = request(app, "/app/").await;
     assert_eq!(
         response.status(),
         axum::http::StatusCode::SERVICE_UNAVAILABLE

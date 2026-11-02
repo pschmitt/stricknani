@@ -835,7 +835,7 @@
     min-width: 0;
     min-height: 2.75rem;
     padding: 0.7rem 0.75rem;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-border);
     border-radius: 0.65rem;
     color: var(--ink);
     background: var(--surface);

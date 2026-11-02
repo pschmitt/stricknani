@@ -4046,6 +4046,16 @@ msgstr "Vorheriges Bild"
 msgid "Print pattern"
 msgstr "Anleitung drucken"
 
+#: web/src/lib/features/projects/ProjectReader.svelte:311
+#: web/src/lib/features/projects/ProjectReader.svelte:334
+#: web/src/lib/features/projects/ProjectReader.svelte:399
+msgid "A reference photo could not be prepared for printing. Try again."
+msgstr "Ein Referenzfoto konnte nicht zum Drucken vorbereitet werden. Bitte erneut versuchen."
+
+#: web/src/lib/features/projects/ProjectReader.svelte:549
+msgid "Preparing full-resolution photos…"
+msgstr "Fotos in voller Auflösung werden vorbereitet…"
+
 #: web/src/lib/features/projects/ProjectReader.svelte:186
 #: web/src/lib/features/projects/ProjectReader.svelte:217
 #: web/src/lib/features/projects/ProjectReader.svelte:218

@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
-import { readdir, readFile, writeFile } from "node:fs/promises";
-import { extname, join } from "node:path";
+import { readdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { svelteKitAnnouncerStyle } from "./sveltekit-announcer-style.mjs";
 
 const buildRoot = fileURLToPath(new URL("../build/", import.meta.url));
+await renderOfflinePage(buildRoot);
 const htmlFiles = await listHtmlFiles(buildRoot);
 const scriptHashes = new Set();
 const styleHashes = new Set();
@@ -39,6 +40,44 @@ await writeFile(
   `${JSON.stringify(manifest, null, 2)}\n`,
 );
 
+// The app worker receives a generated, exact public-file allowlist. It is an
+// internal build artifact, not a route; in particular the translation catalog
+// and all route HTML stay out of CacheStorage.
+const pwaAssets = await collectPwaAssets(buildRoot);
+const workerTemplate = await readFile(
+  new URL("../static/service-worker.js", import.meta.url),
+  "utf8",
+);
+const assetDigestInput = await Promise.all(
+  pwaAssets.map(async (path) => {
+    const diskPath = join(buildRoot, path.slice("/app/".length));
+    const content = await readFile(diskPath);
+    return `${path}\0${createHash("sha256").update(content).digest("hex")}\n`;
+  }),
+);
+const version = createHash("sha256")
+  .update(`${assetDigestInput.join("")}\0${workerTemplate}`)
+  .digest("hex");
+const pwaManifest = { version, assets: pwaAssets };
+await writeFile(
+  new URL("../build/pwa-assets.json", import.meta.url),
+  `${JSON.stringify(pwaManifest, null, 2)}\n`,
+);
+const worker = workerTemplate
+  .replaceAll("__APP_VERSION__", version)
+  .replace("__APP_ASSETS__", JSON.stringify(pwaAssets));
+if (worker.includes("__APP_")) {
+  throw new Error("App service worker has an unexpanded build marker");
+}
+await writeFile(new URL("../build/app-sw.js", import.meta.url), worker);
+// Vite copies static files verbatim. Keep only the generated worker available
+// through the explicit Rust `/app/sw.js` route, never the unexpanded template.
+await unlink(new URL("../build/service-worker.js", import.meta.url)).catch(
+  (error) => {
+    if (error.code !== "ENOENT") throw error;
+  },
+);
+
 /** @param {string} directory @returns {Promise<string[]>} */
 async function listHtmlFiles(directory) {
   const files = [];
@@ -47,6 +86,107 @@ async function listHtmlFiles(directory) {
     if (entry.isDirectory()) files.push(...(await listHtmlFiles(path)));
     else if (entry.isFile() && extname(entry.name) === ".html")
       files.push(path);
+  }
+  return files;
+}
+
+/** @param {string} directory */
+async function renderOfflinePage(directory) {
+  const catalog = JSON.parse(
+    await readFile(join(directory, "messages.json"), "utf8"),
+  );
+  const msgids = {
+    STATUS: "No connection",
+    TITLE: "Your workspace is waiting online.",
+    DESCRIPTION:
+      "We couldn’t reach Stricknani. Your projects, yarn, photos, and edits are not stored offline.",
+    RETRY: "Try again",
+  };
+  let html = await readFile(join(directory, "offline.html"), "utf8");
+  for (const [name, msgid] of Object.entries(msgids)) {
+    for (const locale of ["en", "de"]) {
+      const translation = catalog?.[locale]?.[msgid];
+      if (typeof translation !== "string" || translation.trim() === "") {
+        throw new Error(`Missing offline ${locale} translation for ${msgid}`);
+      }
+      html = html.replaceAll(
+        `__PWA_MSG_${name}_${locale.toUpperCase()}__`,
+        escapeHtml(translation),
+      );
+    }
+  }
+  if (/__PWA_MSG_[A-Z_]+__/.test(html)) {
+    throw new Error("Offline page has an unresolved catalog message");
+  }
+  await writeFile(join(directory, "offline.html"), html);
+}
+
+/** @param {string} value */
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (character) => {
+    /** @type {Record<string, string>} */
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character] ?? character;
+  });
+}
+
+/** @param {string} directory @returns {Promise<string[]>} */
+async function collectPwaAssets(directory) {
+  const immutableRoot = join(directory, "_app/immutable");
+  const files = [];
+  for (const path of await listFiles(immutableRoot)) {
+    if ([".js", ".css"].includes(extname(path))) {
+      files.push(`/app/${relative(directory, path).replaceAll("\\", "/")}`);
+    }
+  }
+  files.push(
+    "/app/manifest.webmanifest",
+    "/app/offline.html",
+    "/app/offline.css",
+    "/app/favicon.svg",
+    "/app/icons/icon-192.png",
+    "/app/icons/icon-512.png",
+  );
+  const assets = [...new Set(files)].sort();
+  if (assets.length > 512) {
+    throw new Error(`App offline asset count exceeds 512: ${assets.length}`);
+  }
+  let totalBytes = 0;
+  for (const asset of assets) {
+    if (
+      !asset.startsWith("/app/") ||
+      asset.includes("?") ||
+      asset.includes("#") ||
+      asset.includes("..")
+    ) {
+      throw new Error(`Invalid app offline asset path: ${asset}`);
+    }
+    const diskPath = join(directory, asset.slice("/app/".length));
+    const content = await readFile(diskPath);
+    if (content.length > 5 * 1024 * 1024) {
+      throw new Error(`App offline asset exceeds 5 MiB: ${asset}`);
+    }
+    totalBytes += content.length;
+  }
+  if (totalBytes > 25 * 1024 * 1024) {
+    throw new Error(`App offline assets exceed 25 MiB: ${totalBytes}`);
+  }
+  return assets;
+}
+
+/** @param {string} directory @returns {Promise<string[]>} */
+async function listFiles(directory) {
+  const files = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...(await listFiles(path)));
+    else if (entry.isFile()) files.push(path);
   }
   return files;
 }

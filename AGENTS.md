@@ -80,6 +80,19 @@ Use this file as the operational source of truth for working in Stricknani.
 - Abort obsolete loads and guard asynchronous results with the captured user
   and resource identity, or a request generation. This includes mutation
   success, failure and cleanup: dynamic routes may reuse the same component.
+- Keep `wait_for_function` predicates synchronous. The pinned Playwright treats
+  a returned Promise as truthy before its boolean result resolves. For async
+  conditions such as worker registration or CacheStorage, use a bounded helper
+  that awaits `page.evaluate` and checks the resolved boolean. Cover both an
+  always-false timeout and a later-true condition in the helper's regressions.
+- For Playwright setup through `page.evaluate`, use a block-bodied `() => { ... }`
+  with no return so it resolves to `undefined`; an expression-bodied assignment
+  may return a callable that Playwright invokes. Keep `const` and `let`
+  declarations inside that function body or a scoped IIFE to avoid repeated
+  top-level lexical declarations. Pass an explicitly synchronous arrow
+  predicate to `wait_for_function` (for example, `() => Boolean(window.ready)`);
+  do not use an async predicate or an assignment expression that returns a
+  callable.
 - Browser URL changes and API responses do not prove that controls or data
   have rendered. Wait for the intended visible element before assertions;
   scope single-element reads explicitly when several content blocks match.
@@ -91,6 +104,13 @@ Use this file as the operational source of truth for working in Stricknani.
   advance its conflict timestamp blindly while retaining stale draft fields.
 - Verify print with real project and step images as well as text. Hidden
   controls must not hide reference diagrams; print should use full media URLs.
+- Verify the realised frontend package before deployment. SvelteKit build
+  versions can change generated HTML and CSP hashes while immutable JS/CSS
+  remain identical; when they differ, run the browser and PWA gates against
+  the packaged web root rather than relying on a separately built artifact.
+- Device checks in an existing browser profile must use a unique per-run
+  loopback hostname, not just a new port: cookies are shared across ports.
+  Create an owned tab and clear only that test origin during cleanup.
 
 ### Vendored Web Dependencies
 

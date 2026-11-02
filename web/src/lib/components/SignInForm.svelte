@@ -250,7 +250,7 @@
   input {
     width: 100%;
     min-height: 3rem;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-border);
     border-radius: 0.7rem;
     padding: 0.65rem 0.8rem;
     color: var(--ink);

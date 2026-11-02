@@ -8,6 +8,7 @@
     showPublicGauge,
   } from "#lib/app-shell.ts";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
+  import PwaUpdate from "#lib/components/PwaUpdate.svelte";
   import SignInForm from "#lib/components/SignInForm.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session, signOut } from "#lib/session.svelte.ts";
@@ -119,9 +120,11 @@
       locale,
     )}
   />
+  <link rel="manifest" href={`${resolve("/")}manifest.webmanifest`} />
 </svelte:head>
 
 <a class="skip-link" href="#main-content">{t("Skip to content", locale)}</a>
+<PwaUpdate />
 
 {#if publicGauge}
   <div class="public-tool-shell">

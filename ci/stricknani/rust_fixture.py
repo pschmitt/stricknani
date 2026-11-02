@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import secrets
 import shutil
 import signal
@@ -21,6 +22,9 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 OWNER_FILE = ".rust-fixture-owner"
+_BROWSER_AUTHORITY = re.compile(
+    r"stricknani-device-[a-f0-9]{12}\.localhost:([1-9][0-9]{0,4})"
+)
 
 
 class FixtureError(RuntimeError):
@@ -144,7 +148,9 @@ def _server_environment(
     port: int,
     web_root: Path | None = None,
     signup_enabled: bool = False,
+    allowed_browser_authority: str | None = None,
 ) -> dict[str, str]:
+    browser_authority = _validate_browser_authority(allowed_browser_authority)
     environment = {
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
         "HOME": str(runtime),
@@ -158,6 +164,10 @@ def _server_environment(
         "RUST_EXTERNAL_IMPORTS_ENABLED": "false",
         "RUST_WAYBACK_ENABLED": "false",
     }
+    if browser_authority is not None:
+        environment["TRUSTED_HOSTS"] = ",".join(
+            ("localhost", "127.0.0.1", "[::1]", browser_authority)
+        )
     if web_root is not None:
         resolved_web_root = web_root.expanduser().resolve()
         if not resolved_web_root.is_dir():
@@ -166,6 +176,18 @@ def _server_environment(
     if signup_enabled:
         environment["RUST_SIGNUP_ENABLED"] = "true"
     return environment
+
+
+def _validate_browser_authority(value: str | None) -> str | None:
+    """Accept only this run's exact synthetic device-browser host authority."""
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise FixtureError("browser authority must be a synthetic device hostname")
+    match = _BROWSER_AUTHORITY.fullmatch(value)
+    if match is None or int(match.group(1)) > 65535:
+        raise FixtureError("browser authority must be a synthetic device hostname")
+    return value
 
 
 def _unused_port() -> int:
@@ -200,8 +222,10 @@ def start_fixture(
     ocr_mode: str = "success",
     archive_mode: str = "success",
     signup_enabled: bool = False,
+    allowed_browser_authority: str | None = None,
 ) -> None:
     """Start one local server and write private replay credentials for the runner."""
+    browser_authority = _validate_browser_authority(allowed_browser_authority)
     binary_path = binary.expanduser().resolve()
     if not binary_path.is_file() or not os.access(binary_path, os.X_OK):
         raise FixtureError("Rust server binary is not executable")
@@ -232,7 +256,13 @@ def start_fixture(
     _private_write(runtime / OWNER_FILE, owner.encode("ascii"))
     (runtime / "media").mkdir(mode=0o700)
     port = _unused_port()
-    env = _server_environment(runtime, port, web_root, signup_enabled)
+    env = _server_environment(
+        runtime,
+        port,
+        web_root,
+        signup_enabled,
+        allowed_browser_authority=browser_authority,
+    )
     server_log = os.open(
         runtime / "server.log", os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600
     )

@@ -1402,7 +1402,7 @@
   select {
     width: 100%;
     min-height: 44px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-border);
     border-radius: 0.7rem;
     padding: 0.65rem 0.75rem;
     color: var(--ink);

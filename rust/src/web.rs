@@ -28,8 +28,17 @@ pub(crate) struct WebState {
 }
 
 pub(crate) fn router(api: Router, app: AppState) -> Router {
+    router_with_landing(api, app, false)
+}
+
+pub(crate) fn router_with_landing(api: Router, app: AppState, frontend_configured: bool) -> Router {
+    let home_route = if frontend_configured {
+        get(frontend_home)
+    } else {
+        get(home)
+    };
     Router::new()
-        .route("/", get(home))
+        .route("/", home_route)
         .route(
             "/login",
             get(login_page)
@@ -127,6 +136,10 @@ async fn home(State(state): State<WebState>, headers: HeaderMap) -> Redirect {
     } else {
         "/login"
     })
+}
+
+async fn frontend_home() -> Redirect {
+    Redirect::to("/app/")
 }
 
 async fn login_page(State(state): State<WebState>, headers: HeaderMap) -> Response {

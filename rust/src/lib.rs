@@ -37,10 +37,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use askama::Template;
-use axum::extract::Form;
 use axum::extract::rejection::FormRejection;
+use axum::extract::{Form, OriginalUri, Path};
 use axum::http::{HeaderMap, StatusCode};
-use axum::response::{Html, IntoResponse, Response};
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
@@ -59,14 +59,22 @@ pub fn app() -> Router {
 }
 
 pub fn app_with_static_root(static_root: PathBuf) -> Router {
+    app_with_static_root_and_web_root(static_root, configured_web_root())
+}
+
+fn configured_web_root() -> Option<PathBuf> {
+    std::env::var_os("WEB_ROOT").map(PathBuf::from)
+}
+
+fn app_with_static_root_and_web_root(static_root: PathBuf, web_root: Option<PathBuf>) -> Router {
     let app = Router::new()
         .route("/healthz", get(healthz))
         .route("/gauge/", get(gauge_page))
         .route("/gauge/calculate", post(calculate))
         .nest_service("/static", ServeDir::new(static_root))
-        .merge(pwa::router());
-    match std::env::var_os("WEB_ROOT") {
-        Some(root) => app.merge(frontend::router(PathBuf::from(root))),
+        .merge(pwa::router_with_web_root(web_root.clone()));
+    match web_root {
+        Some(root) => app.merge(frontend::router(root)),
         None => app,
     }
 }
@@ -106,6 +114,26 @@ pub fn app_with_services(
     ai: Option<ai::AiClient>,
     ocr: Option<ocr::OcrService>,
 ) -> Router {
+    app_with_services_and_web_root(
+        static_root,
+        state,
+        worker_path,
+        external_imports,
+        ai,
+        ocr,
+        configured_web_root(),
+    )
+}
+
+fn app_with_services_and_web_root(
+    static_root: PathBuf,
+    state: db::AppState,
+    worker_path: PathBuf,
+    external_imports: bool,
+    ai: Option<ai::AiClient>,
+    ocr: Option<ocr::OcrService>,
+    web_root: Option<PathBuf>,
+) -> Router {
     let state = state.with_external_imports(external_imports);
     let ai = ai.map(Arc::new);
     let core = Router::new()
@@ -121,7 +149,16 @@ pub fn app_with_services(
         )
         .merge(media::router().with_state(state.clone()));
 
-    app_with_static_root(static_root)
+    let mut web_router = if web_root.is_some() {
+        web::router_with_landing(core.clone(), state.clone(), true)
+    } else {
+        web::router(core.clone(), state.clone())
+    };
+    if web_root.is_some() {
+        web_router = web_router.route("/yarn/{id}", get(android_yarn_deep_link));
+    }
+
+    app_with_static_root_and_web_root(static_root, web_root.clone())
         .nest(
             "/api/v2",
             api_v2::router_with_optional_services(
@@ -131,7 +168,7 @@ pub fn app_with_services(
                 ocr.clone(),
             ),
         )
-        .merge(web::router(core.clone(), state.clone()))
+        .merge(web_router)
         .merge(web_accounts::router(core.clone(), state.clone()))
         .merge(web_audit::router(core.clone(), state.clone()))
         .merge(web_signup::router(state.clone()))
@@ -160,6 +197,22 @@ async fn meta(
 
 async fn healthz() -> Json<HealthResponse> {
     Json(HealthResponse { status: "ok" })
+}
+
+async fn android_yarn_deep_link(Path(raw_id): Path<String>, original_uri: OriginalUri) -> Response {
+    if raw_id.is_empty() || !raw_id.bytes().all(|byte| byte.is_ascii_digit()) {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    let Ok(id) = raw_id.parse::<i32>() else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+
+    let mut target = format!("/app/yarns/{id}");
+    if let Some(query) = original_uri.0.query() {
+        target.push('?');
+        target.push_str(query);
+    }
+    Redirect::permanent(&target).into_response()
 }
 
 async fn gauge_page(headers: HeaderMap) -> Response {
@@ -191,6 +244,224 @@ async fn calculate(headers: HeaderMap, form: Result<Form<GaugeForm>, FormRejecti
 
     let page = GaugePage::new(language, form, result, error);
     render_page(page, status)
+}
+
+#[cfg(test)]
+mod frontend_landing_tests {
+    use super::*;
+    use axum::{body::Body, http::Request};
+    use tower::ServiceExt;
+
+    const EMAIL: &str = "landing@example.test";
+    const PASSWORD: &str = "test-password-for-landing";
+
+    async fn app(web_root: Option<PathBuf>) -> (Router, db::AppState) {
+        let pool = db::connect("sqlite::memory:")
+            .await
+            .expect("test database should migrate");
+        db::create_user(&pool, EMAIL, PASSWORD.to_owned())
+            .await
+            .expect("test user should be created");
+        let state = db::AppState::new(pool).with_secure_cookies(false);
+        let app = app_with_services_and_web_root(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static"),
+            state.clone(),
+            PathBuf::new(),
+            false,
+            None,
+            None,
+            web_root,
+        );
+        (app, state)
+    }
+
+    async fn location(app: &Router, path: &str, cookie: Option<&str>) -> (StatusCode, String) {
+        let mut request = Request::get(path);
+        if let Some(cookie) = cookie {
+            request = request.header("cookie", cookie);
+        }
+        let response = app
+            .clone()
+            .oneshot(
+                request
+                    .body(Body::empty())
+                    .expect("request should be valid"),
+            )
+            .await
+            .expect("router should respond");
+        let location = response
+            .headers()
+            .get("location")
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or_default()
+            .to_owned();
+        (response.status(), location)
+    }
+
+    #[tokio::test]
+    async fn configured_frontend_is_the_root_landing_for_signed_in_and_out_requests() {
+        let (app, state) = app(Some(std::env::temp_dir().join("unused-frontend-root"))).await;
+        let token = auth::mint_browser_token(
+            &state,
+            "127.0.0.1",
+            EMAIL,
+            zeroize::Zeroizing::new(PASSWORD.to_owned()),
+            3600,
+        )
+        .await
+        .expect("test browser session should be issued")
+        .token;
+
+        for cookie in [None, Some(format!("stricknani_session={token}"))] {
+            let (status, target) = location(&app, "/", cookie.as_deref()).await;
+            assert_eq!(status, StatusCode::SEE_OTHER);
+            assert_eq!(target, "/app/");
+        }
+
+        let post = app
+            .clone()
+            .oneshot(
+                Request::post("/")
+                    .body(Body::empty())
+                    .expect("request should be valid"),
+            )
+            .await
+            .expect("router should respond");
+        assert_eq!(post.status(), StatusCode::METHOD_NOT_ALLOWED);
+        let missing = app
+            .oneshot(
+                Request::get("/not-a-route")
+                    .body(Body::empty())
+                    .expect("request should be valid"),
+            )
+            .await
+            .expect("router should respond");
+        assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn unconfigured_frontend_keeps_the_legacy_root_redirects() {
+        let (app, state) = app(None).await;
+        let token = auth::mint_browser_token(
+            &state,
+            "127.0.0.1",
+            EMAIL,
+            zeroize::Zeroizing::new(PASSWORD.to_owned()),
+            3600,
+        )
+        .await
+        .expect("test browser session should be issued")
+        .token;
+
+        assert_eq!(
+            location(&app, "/", None).await,
+            (StatusCode::SEE_OTHER, "/login".into())
+        );
+        assert_eq!(
+            location(&app, "/", Some(&format!("stricknani_session={token}"))).await,
+            (StatusCode::SEE_OTHER, "/projects".into())
+        );
+        let post = app
+            .clone()
+            .oneshot(
+                Request::post("/")
+                    .body(Body::empty())
+                    .expect("request should be valid"),
+            )
+            .await
+            .expect("router should respond");
+        assert_eq!(post.status(), StatusCode::METHOD_NOT_ALLOWED);
+        let missing = app
+            .oneshot(
+                Request::get("/not-a-route")
+                    .body(Body::empty())
+                    .expect("request should be valid"),
+            )
+            .await
+            .expect("router should respond");
+        assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn configured_frontend_bridges_android_yarn_links_for_get_only() {
+        let (app, state) = app(Some(std::env::temp_dir().join("unused-frontend-root"))).await;
+        let token = auth::mint_browser_token(
+            &state,
+            "127.0.0.1",
+            EMAIL,
+            zeroize::Zeroizing::new(PASSWORD.to_owned()),
+            3600,
+        )
+        .await
+        .expect("test browser session should be issued")
+        .token;
+
+        for cookie in [None, Some(format!("stricknani_session={token}"))] {
+            assert_eq!(
+                location(&app, "/yarn/42", cookie.as_deref()).await,
+                (StatusCode::PERMANENT_REDIRECT, "/app/yarns/42".into())
+            );
+        }
+        assert_eq!(
+            location(&app, "/yarn/42?tab=photos", None).await,
+            (
+                StatusCode::PERMANENT_REDIRECT,
+                "/app/yarns/42?tab=photos".into()
+            )
+        );
+        assert_eq!(
+            location(&app, "/yarn/42?next=https://outside.example", None).await,
+            (
+                StatusCode::PERMANENT_REDIRECT,
+                "/app/yarns/42?next=https://outside.example".into()
+            )
+        );
+
+        for path in [
+            "/yarn/not-a-number",
+            "/yarn/-1",
+            "/yarn/+1",
+            "/yarn/2147483648",
+        ] {
+            let invalid = app
+                .clone()
+                .oneshot(
+                    Request::get(path)
+                        .body(Body::empty())
+                        .expect("request should be valid"),
+                )
+                .await
+                .expect("router should respond");
+            assert_eq!(invalid.status(), StatusCode::NOT_FOUND, "path: {path}");
+        }
+
+        let post = app
+            .oneshot(
+                Request::post("/yarn/42")
+                    .body(Body::empty())
+                    .expect("request should be valid"),
+            )
+            .await
+            .expect("router should respond");
+        assert_eq!(post.status(), StatusCode::METHOD_NOT_ALLOWED);
+    }
+
+    #[tokio::test]
+    async fn unconfigured_frontend_does_not_add_android_yarn_alias() {
+        let (app, _) = app(None).await;
+        for request in [Request::get("/yarn/42"), Request::post("/yarn/42")] {
+            let response = app
+                .clone()
+                .oneshot(
+                    request
+                        .body(Body::empty())
+                        .expect("request should be valid"),
+                )
+                .await
+                .expect("router should respond");
+            assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        }
+    }
 }
 
 fn render_page(page: GaugePage, status: StatusCode) -> Response {

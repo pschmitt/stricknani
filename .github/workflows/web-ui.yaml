@@ -16,6 +16,9 @@ on:
       - "tests/test_rust_fixture.py"
       - "tests/test_web_i18n.py"
       - "tests/test_web_ui_browser.py"
+      - "tests/test_web_accessibility_browser.py"
+      - "tests/test_web_pwa_browser.py"
+      - "tests/test_web_performance_browser.py"
       - "docs/web-v2-contract.md"
       - "pyproject.toml"
       - "uv.lock"
@@ -35,6 +38,9 @@ on:
       - "tests/test_rust_fixture.py"
       - "tests/test_web_i18n.py"
       - "tests/test_web_ui_browser.py"
+      - "tests/test_web_accessibility_browser.py"
+      - "tests/test_web_pwa_browser.py"
+      - "tests/test_web_performance_browser.py"
       - "docs/web-v2-contract.md"
       - "pyproject.toml"
       - "uv.lock"
@@ -133,6 +139,26 @@ jobs:
           set -Eeuo pipefail
           private_dir="$RUNNER_TEMP/stricknani-web-browser-core-disabled"
           uv run python -m ci.stricknani.web_ui_browser \
+            --binary "$STRICKNANI_SERVER_BINARY" \
+            --web-root "$STRICKNANI_WEB_ROOT" \
+            --private-dir "$private_dir"
+
+      - name: Run accessibility browser journey
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          private_dir="$RUNNER_TEMP/stricknani-web-browser-accessibility"
+          uv run python -m ci.stricknani.web_accessibility_browser \
+            --binary "$STRICKNANI_SERVER_BINARY" \
+            --web-root "$STRICKNANI_WEB_ROOT" \
+            --private-dir "$private_dir"
+
+      - name: Run app-scoped offline and update journey
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          private_dir="$RUNNER_TEMP/stricknani-web-browser-pwa"
+          uv run python -m ci.stricknani.web_pwa_browser \
             --binary "$STRICKNANI_SERVER_BINARY" \
             --web-root "$STRICKNANI_WEB_ROOT" \
             --private-dir "$private_dir"

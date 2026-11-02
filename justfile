@@ -179,7 +179,10 @@ test-harness:
     tests/test_rust_import_verifier.py \
     tests/test_rust_i18n.py \
     tests/test_web_i18n.py \
-    tests/test_web_ui_browser.py
+    tests/test_web_ui_browser.py \
+    tests/test_web_accessibility_browser.py \
+    tests/test_web_pwa_browser.py \
+    tests/test_web_performance_browser.py
 
 # Native Rust suite plus the small Python shipping-harness test set.
 [group: 'test']

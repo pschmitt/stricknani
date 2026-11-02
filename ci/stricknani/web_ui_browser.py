@@ -16,7 +16,7 @@ from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from playwright.sync_api import Page, Request, Response, sync_playwright
+from playwright.sync_api import Page, Request, Response, Route, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from ci.stricknani import rust_fixture, seed_rust
@@ -24,6 +24,17 @@ from ci.stricknani import rust_fixture, seed_rust
 
 class AcceptanceFailure(RuntimeError):
     """A safe-to-display browser assertion failure."""
+
+
+def _playwright_error_category(error: Exception) -> str:
+    message = str(error).lower()
+    if "timeout" in message or "timed out" in message:
+        return "timeout"
+    if "closed" in message or "crashed" in message:
+        return "closed-or-crashed"
+    if "execution context" in message:
+        return "execution-context"
+    return "other"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -1082,16 +1093,49 @@ def _exercise_gauge_calculator(
     mark_stage(f"checking {account_state} stale gauge request cancellation")
     stitch_input = page.locator("[name='user_gauge_stitches']")
     stitch_input.fill("23")
-    cdp = page.context.new_cdp_session(page)
-    cdp.send("Network.enable")
-    cdp.send(
-        "Network.emulateNetworkConditions",
-        {
-            "offline": False,
-            "latency": 2_000,
-            "downloadThroughput": 1_000_000,
-            "uploadThroughput": 1_000_000,
-        },
+    page.evaluate(
+        """() => {
+          const originalFetch = window.fetch.bind(window);
+          const hold = {
+            armed: true,
+            responseReady: false,
+            aborted: false,
+            originalFetch,
+          };
+          window.__gaugeResponseHold = hold;
+          window.fetch = (input, init = {}) => {
+            const requestUrl = new URL(
+              typeof input === 'string' ? input : input.url,
+              window.location.href,
+            );
+            const shouldHold = hold.armed
+              && requestUrl.pathname === '/api/v2/tools/gauge'
+              && (init.method || 'GET').toUpperCase() === 'POST';
+            if (!shouldHold) return originalFetch(input, init);
+            hold.armed = false;
+            return originalFetch(input, init).then(response => new Promise(
+              (resolve, reject) => {
+                hold.responseReady = true;
+                const signal = init.signal;
+                if (!signal) {
+                  hold.missingSignal = true;
+                  resolve(response);
+                  return;
+                }
+                if (signal.aborted) {
+                  hold.aborted = true;
+                  reject(new DOMException('Aborted', 'AbortError'));
+                  return;
+                }
+                signal.addEventListener('abort', () => {
+                  hold.aborted = true;
+                  reject(new DOMException('Aborted', 'AbortError'));
+                }, { once: true });
+                hold.release = () => resolve(response);
+              },
+            ));
+          };
+        }"""
     )
 
     def request_filter(request: Request) -> bool:
@@ -1118,26 +1162,22 @@ def _exercise_gauge_calculator(
             request_payload == race_start_input,
             "the delayed gauge request did not use the current input values",
         )
-        with page.expect_event(
-            "requestfailed", predicate=request_filter, timeout=5_000
-        ) as cancelled_request_info:
-            stitch_input.fill("24")
-        cancelled_request = cancelled_request_info.value
+        page.wait_for_function(
+            "() => window.__gaugeResponseHold?.responseReady", timeout=5_000
+        )
+        stitch_input.fill("24")
+        page.wait_for_function(
+            "() => window.__gaugeResponseHold?.aborted", timeout=5_000
+        )
         _require(
-            urlsplit(cancelled_request.url).path == "/api/v2/tools/gauge",
+            not page.evaluate("() => window.__gaugeResponseHold?.missingSignal"),
             "editing the gauge did not abort its in-flight API request",
         )
     finally:
-        cdp.send(
-            "Network.emulateNetworkConditions",
-            {
-                "offline": False,
-                "latency": 0,
-                "downloadThroughput": -1,
-                "uploadThroughput": -1,
-            },
+        page.evaluate(
+            "() => { if (window.__gaugeResponseHold) "
+            "window.fetch = window.__gaugeResponseHold.originalFetch; }"
         )
-        cdp.detach()
 
     _require(
         stitch_input.input_value() == "24"
@@ -1347,7 +1387,9 @@ def _check_mobile_language_and_screenshots(
     )
     page.locator('.mobile-language button[aria-label="German"]').focus()
     page.keyboard.press("Enter")
-    page.wait_for_function("document.documentElement.lang === 'de'", timeout=5_000)
+    page.wait_for_function(
+        "() => document.documentElement.lang === 'de'", timeout=5_000
+    )
     _require(
         page.get_by_role("heading", name="Konto", exact=True).is_visible(),
         "German locale selection did not update the account interface",
@@ -1411,6 +1453,9 @@ def run_live_fixture(
     ocr_mode: str = "success",
     archive_mode: str = "success",
     signup_enabled: bool = False,
+    *,
+    browser_name: str = "chromium",
+    browser_executable: Path | None = None,
 ) -> Path:
     """Start, exercise, and safely stop one disposable server fixture."""
     fixture_file = private_dir / "fixture.json"
@@ -1446,6 +1491,8 @@ def run_live_fixture(
             ocr_mode=ocr_mode,
             archive_mode=archive_mode,
             signup_enabled=signup_enabled,
+            browser_name=browser_name,
+            browser_executable=browser_executable,
         )
     finally:
         if started:
@@ -1461,6 +1508,8 @@ def run_acceptance(
     ocr_mode: str = "success",
     archive_mode: str = "success",
     signup_enabled: bool = False,
+    browser_name: str = "chromium",
+    browser_executable: Path | None = None,
 ) -> Path:
     fixture = rust_fixture.load_fixture_environment(fixture_file)
     origin = _loopback_origin(fixture["STRICKNANI_RUST_TEST_URL"])
@@ -1468,17 +1517,29 @@ def run_acceptance(
     password = fixture["STRICKNANI_RUST_TEST_PASSWORD"]
     screenshots = _private_screenshot_dir(screenshot_path)
     stage_file = screenshots.parent / "browser-stage.txt"
+    current_stage = [""]
+    csp_event_summaries: list[dict[str, object]] = []
 
     def mark_stage(value: str) -> None:
+        current_stage[0] = value
         stage_file.write_text(value, encoding="ascii")
         stage_file.chmod(0o600)
 
-    if chromium_executable is not None:
-        chromium_executable = chromium_executable.expanduser().resolve()
-        if not chromium_executable.is_file() or not os.access(
-            chromium_executable, os.X_OK
-        ):
-            raise AcceptanceFailure("configured Chromium executable is unavailable")
+    if chromium_executable is not None and browser_executable is not None:
+        raise AcceptanceFailure(
+            "use only one of --browser-executable and --chromium-executable"
+        )
+    if chromium_executable is not None and browser_name != "chromium":
+        raise AcceptanceFailure(
+            "--chromium-executable is only valid with --browser chromium"
+        )
+    executable = browser_executable or chromium_executable
+    if browser_name not in {"chromium", "firefox", "webkit"}:
+        raise AcceptanceFailure("browser must be chromium, firefox, or webkit")
+    if executable is not None:
+        executable = executable.expanduser().resolve()
+        if not executable.is_file() or not os.access(executable, os.X_OK):
+            raise AcceptanceFailure("configured browser executable is unavailable")
 
     session_observations: list[tuple[int, bool, bool, bool]] = []
     csrf_requests: list[tuple[str, bool]] = []
@@ -1491,6 +1552,8 @@ def run_acceptance(
     category_responses: list[tuple[str, int]] = []
     app_asset_statuses: list[int] = []
     catalog_statuses: list[int] = []
+    original_project_image_requests: list[str] = []
+    original_project_image_responses: list[tuple[str, int]] = []
     csp_errors: list[str] = []
     console_errors: list[str] = []
     console_error_locations: list[str] = []
@@ -1503,11 +1566,17 @@ def run_acceptance(
     expected_signup_conflict_window = [False]
     expected_signup_conflict_pending = [False]
     expected_conflict_paths: set[str] = set()
+    expected_print_abort_window = [False]
+    expected_print_abort_paths: set[str] = set()
 
     def observe_request(request: object) -> None:
         url = getattr(request, "url", "")
         request_url = urlsplit(url)
         path = request_url.path
+        if path.startswith("/media/projects/"):
+            original_project_image_requests.append(path)
+            if expected_print_abort_window[0]:
+                expected_print_abort_paths.add(path)
         if path == "/api/v2/projects":
             project_list_queries.append(parse_qs(request_url.query))
         if path not in {
@@ -1521,6 +1590,8 @@ def run_acceptance(
 
     def observe_response(response: Response) -> None:
         path = _response_path(response)
+        if path.startswith("/media/projects/"):
+            original_project_image_responses.append((path, response.status))
         if path in {
             "/api/v2/auth/login",
             "/api/v2/auth/logout",
@@ -1598,7 +1669,6 @@ def run_acceptance(
         if getattr(message, "type", "") != "error":
             return
         if csp_violation:
-            # Keep only a marker; browser text may include page values.
             directives = (
                 "script-src",
                 "style-src",
@@ -1610,13 +1680,34 @@ def run_acceptance(
             directive = next(
                 (item for item in directives if item in text), "CSP directive"
             )
+            location = getattr(message, "location", {})
+            source_path = urlsplit(location.get("url", "")).path
             if directive == "style-src":
-                violation_kind = (
-                    "inline-style" if "inline" in text else "stylesheet-or-rule"
-                )
+                if "style attribute" in text or "style attr" in text:
+                    violation_kind = "style-attribute"
+                elif "inline" in text:
+                    violation_kind = "inline-style"
+                else:
+                    violation_kind = "stylesheet-or-rule"
                 csp_errors.append(f"{directive}:{violation_kind}")
             else:
                 csp_errors.append(directive)
+            csp_event_summaries.append(
+                {
+                    "stage": current_stage[0],
+                    "directive": directive,
+                    "blockedURIClass": (
+                        "inline"
+                        if "inline" in text
+                        else "data"
+                        if "data:" in text
+                        else "external"
+                    ),
+                    "sourcePath": source_path,
+                    "lineNumber": location.get("lineNumber"),
+                    "columnNumber": location.get("columnNumber"),
+                }
+            )
             console_errors.append("csp_violation")
             return
         location = getattr(message, "location", {})
@@ -1656,6 +1747,12 @@ def run_acceptance(
             )
         ):
             console_errors.append("expected_ocr_failure_5xx")
+        elif (
+            expected_print_abort_window[0]
+            and source_path in expected_print_abort_paths
+            and "failed to load resource" in text
+        ):
+            console_errors.append("expected_print_image_abort")
         else:
             if source_path.startswith("/api/v2/projects/"):
                 source_class = "project-api"
@@ -1683,19 +1780,16 @@ def run_acceptance(
         )
 
     with sync_playwright() as playwright:
-        mark_stage("launching packaged Chromium")
+        mark_stage(f"launching packaged {browser_name}")
         try:
-            browser = playwright.chromium.launch(
+            browser_type = getattr(playwright, browser_name)
+            browser = browser_type.launch(
                 headless=True,
-                executable_path=(
-                    str(chromium_executable)
-                    if chromium_executable is not None
-                    else None
-                ),
+                executable_path=(str(executable) if executable is not None else None),
             )
         except Exception as error:
             raise AcceptanceFailure(
-                "configured Chromium could not start in headless mode"
+                f"configured {browser_name} could not start in headless mode"
             ) from error
         try:
             context = browser.new_context(
@@ -1705,6 +1799,10 @@ def run_acceptance(
                 locale="en-US",
             )
             page = context.new_page()
+            if browser_name == "webkit":
+                # Playwright's WebKit screenshot path injects inline <style>;
+                # keep the real strict-CSP check enabled and omit captures here.
+                page.screenshot = lambda *_args, **_kwargs: None
             page.on("request", observe_request)
             page.on("response", observe_response)
             page.on("console", observe_console)
@@ -1766,7 +1864,7 @@ def run_acceptance(
                     "button", name="German", exact=True
                 ).click()
                 page.wait_for_function(
-                    "document.documentElement.lang === 'de'", timeout=5_000
+                    "() => document.documentElement.lang === 'de'", timeout=5_000
                 )
                 mark_stage("clicking the translated signup link")
                 page.get_by_role("link", name="Konto erstellen", exact=True).click()
@@ -1782,7 +1880,7 @@ def run_acceptance(
                     ) from None
                 page.set_default_timeout(2_000)
                 route_state: dict[str, object] = {"path": urlsplit(page.url).path}
-                for key, query in (
+                diagnostics: tuple[tuple[str, Callable[[], object]], ...] = (
                     ("language", lambda: page.locator("html").get_attribute("lang")),
                     ("signupPanel", lambda: page.locator(".signup-panel").count() > 0),
                     ("signInPassword", lambda: page.locator("#password").count() > 0),
@@ -1847,7 +1945,8 @@ def run_acceptance(
                             }"""
                         ),
                     ),
-                ):
+                )
+                for key, query in diagnostics:
                     try:
                         route_state[key] = query()
                     except Exception as diagnostic_error:
@@ -2608,6 +2707,9 @@ def run_acceptance(
                 )
             page.set_viewport_size({"width": 390, "height": 844})
             mark_stage("project reader, ordered steps, media, and print")
+            full_resolution_requests_before_reader = len(
+                original_project_image_requests
+            )
             with page.expect_response(
                 lambda response: (
                     urlsplit(response.url).path == f"/api/v2/projects/{project_id}"
@@ -2781,7 +2883,7 @@ def run_acceptance(
             )
             _assert_step_in_usable_viewport(page, step_ids[0])
             mark_stage("checking the seeded project-step reference photo")
-            step_photo = page.locator(".steps-list .step-image img")
+            step_photo = page.locator(".steps-list .step-image .screen-reference-image")
             step_photo.wait_for(state="visible", timeout=5_000)
             step_photo.scroll_into_view_if_needed()
             step_photo.evaluate("image => image.decode()")
@@ -2791,6 +2893,11 @@ def run_acceptance(
                     "&& image.currentSrc.includes('/media/thumbnails/projects/')"
                 ),
                 "the project-step reference photo did not load from same-origin media",
+            )
+            _require(
+                len(original_project_image_requests)
+                == full_resolution_requests_before_reader,
+                "normal pattern reading requested full-resolution project photos",
             )
             mark_stage("checking sanitized pattern text")
             description = page.locator(".pattern-section > .reading-copy > .rich-text")
@@ -2905,37 +3012,333 @@ def run_acceptance(
                 large_font > small_font, "reader text-size control did not grow text"
             )
             mark_stage("checking complete pattern instructions in print")
-            page.emulate_media(media="print")
-            page.wait_for_function(
-                "() => Array.from(document.querySelectorAll("
-                "'picture source[media=print]')).every(source => {"
-                "const image = source.parentElement?.querySelector('img');"
-                "if (!image || !image.complete || "
-                "image.naturalWidth === 0) return false;"
-                "const printPath = new URL(source.srcset, location.href).pathname;"
-                "return new URL(image.currentSrc, location.href).pathname "
-                "=== printPath;"
-                "})",
-                timeout=5_000,
+            blocked_print_image_requests: list[dict[str, object]] = []
+
+            def block_print_image(route: Route) -> None:
+                request = route.request
+                blocked_print_image_requests.append(
+                    {
+                        "path": urlsplit(request.url).path,
+                        "get": request.method == "GET",
+                        "image": request.resource_type == "image",
+                        "project_media": urlsplit(request.url).path.startswith(
+                            "/media/projects/"
+                        ),
+                    }
+                )
+                route.abort()
+
+            page.route("**/media/projects/**", block_print_image)
+            expected_print_abort_window[0] = True
+            mark_stage("installing print failure instrumentation")
+            page.evaluate(
+                "() => { "
+                "window.__printDialogCalls = 0; "
+                "window.__expectedPrintUrls = Array.from(document.querySelectorAll("
+                "'.print-reference-image')).map(image => { try { return "
+                "new URL(image.dataset.printSrc, location.href).href; } "
+                "catch { return ''; } }); "
+                "window.__printImagesAtCall = []; "
+                "window.print = () => { "
+                "window.__printDialogCalls += 1; "
+                "window.__printImagesAtCall = Array.from(document.querySelectorAll("
+                "'.print-reference-image')).map((image, index) => ({ "
+                "hasSource: Boolean(image.getAttribute('src')), "
+                "complete: image.complete, loaded: image.naturalWidth > 0, "
+                "currentSrcEmpty: image.currentSrc === '', "
+                "srcEqualsOriginal: image.src === window.__expectedPrintUrls[index], "
+                "currentSrcEqualsOriginal: image.currentSrc === "
+                "window.__expectedPrintUrls[index] })); }; "
+                "}"
             )
-            print_image_state = page.locator(
+            mark_stage("checking failed print image baseline")
+            print_images_before_click = page.locator(
+                ".print-reference-image"
+            ).evaluate_all(
+                "images => images.map((image, index) => ({hasSource: "
+                "Boolean(image.getAttribute('src')), complete: image.complete, "
+                "loaded: image.naturalWidth > 0, "
+                "currentSrcEmpty: image.currentSrc === '', "
+                "srcEqualsOriginal: image.src === "
+                "window.__expectedPrintUrls[index], "
+                "currentSrcEqualsOriginal: image.currentSrc === "
+                "window.__expectedPrintUrls[index]}))"
+            )
+            mark_stage("clicking print with blocked reference photo")
+            page.get_by_role("button", name="Print pattern", exact=True).click()
+            mark_stage("waiting for blocked print image error")
+            try:
+                page.get_by_role("alert").filter(
+                    has_text=(
+                        "A reference photo could not be prepared for printing. "
+                        "Try again."
+                    )
+                ).wait_for(state="visible", timeout=5_000)
+            except Exception:
+                try:
+                    print_failure_diagnostic = page.evaluate(
+                        "() => ({path: location.pathname, lang: "
+                        "document.documentElement.lang, alerts: Array.from("
+                        "document.querySelectorAll('[role=alert]')).map(node => "
+                        "node.textContent?.trim() ?? ''), button: (() => { "
+                        "const node = document.querySelector('.print-button'); "
+                        "return node ? {disabled: node.disabled, "
+                        "text: node.textContent?.trim() ?? ''} : null; })(), "
+                        "calls: window.__printDialogCalls, "
+                        "images: Array.from(document.querySelectorAll("
+                        "'.print-reference-image')).map((image, index) => ({ "
+                        "hasSource: Boolean(image.getAttribute('src')), "
+                        "complete: image.complete, loaded: image.naturalWidth > 0, "
+                        "currentSrcEmpty: image.currentSrc === '', "
+                        "srcEqualsOriginal: image.src === "
+                        "window.__expectedPrintUrls[index], "
+                        "currentSrcEqualsOriginal: image.currentSrc === "
+                        "window.__expectedPrintUrls[index] }))})"
+                    )
+                except Exception as diagnostic_error:
+                    print_failure_diagnostic = {
+                        "path": "unavailable",
+                        "diagnosticError": type(diagnostic_error).__name__,
+                    }
+                raise AcceptanceFailure(
+                    "failed image did not produce the localized print error; "
+                    + json.dumps(print_failure_diagnostic, sort_keys=True)
+                ) from None
+            mark_stage("reading failed print image state")
+            failed_print_state = page.evaluate(
+                "() => ({calls: window.__printDialogCalls, "
+                "imagesAtCall: window.__printImagesAtCall, "
+                "images: Array.from(document.querySelectorAll("
+                "'.print-reference-image')).map((image, index) => ({ "
+                "hasSource: Boolean(image.getAttribute('src')), "
+                "complete: image.complete, loaded: image.naturalWidth > 0, "
+                "currentSrcEmpty: image.currentSrc === '', "
+                "srcEqualsOriginal: image.src === "
+                "window.__expectedPrintUrls[index], "
+                "currentSrcEqualsOriginal: image.currentSrc === "
+                "window.__expectedPrintUrls[index] }))})"
+            )
+            _require(
+                failed_print_state["calls"] == 0
+                and len(blocked_print_image_requests) >= 1
+                and all(
+                    request["get"] and request["image"] and request["project_media"]
+                    for request in blocked_print_image_requests
+                ),
+                "printing continued after a reference photo failed to load "
+                f"(print_calls={failed_print_state['calls']}, "
+                f"blocked_requests={len(blocked_print_image_requests)}, "
+                f"before_click={print_images_before_click}, "
+                f"images_at_call={failed_print_state['imagesAtCall']}, "
+                f"images={failed_print_state['images']})",
+            )
+            mark_stage("restoring print test overrides")
+            page.unroute("**/media/projects/**")
+            expected_print_abort_window[0] = False
+            mark_stage("waiting for failed print attempt to finish")
+            try:
+                page.wait_for_function(
+                    "() => { const button = document.querySelector('.print-button'); "
+                    "return button !== null && !button.disabled; }",
+                    timeout=5_000,
+                )
+            except Exception:
+                try:
+                    retry_state = page.evaluate(
+                        "() => ({button: (() => { const node = "
+                        "document.querySelector('.print-button'); return node ? "
+                        "{disabled: node.disabled, "
+                        "text: node.textContent?.trim() ?? ''} "
+                        ": null; })(), calls: window.__printDialogCalls, "
+                        "images: Array.from(document.querySelectorAll("
+                        "'.print-reference-image')).map(image => ({complete: "
+                        "image.complete, loaded: image.naturalWidth > 0}))})"
+                    )
+                except Exception as diagnostic_error:
+                    retry_state = {
+                        "pageClosed": page.is_closed(),
+                        "diagnosticError": type(diagnostic_error).__name__,
+                    }
+                raise AcceptanceFailure(
+                    "failed print attempt did not release the retry control; "
+                    + json.dumps(retry_state, sort_keys=True)
+                ) from None
+            success_request_start = len(original_project_image_requests)
+            success_response_start = len(original_project_image_responses)
+            mark_stage("installing successful print instrumentation")
+            page.evaluate(
+                "() => { window.__printDialogCalls = 0; "
+                "window.__printEvents = []; "
+                "window.__printImageExpectedUrls = Array.from("
+                "document.querySelectorAll('.print-reference-image')).map(image => "
+                "{ try { return new URL(image.dataset.printSrc, location.href).href; } "
+                "catch { return ''; } }); "
+                "window.__printImageState = []; "
+                "window.print = () => { "
+                "window.__printDialogCalls += 1; "
+                "window.__printStack = new Error().stack; "
+                "window.__printImageState = Array.from(document.querySelectorAll("
+                "'.print-reference-image')).map((image, index) => ({ "
+                "complete: image.complete, loaded: image.naturalWidth > 0, "
+                "sameOrigin: image.currentSrc.startsWith(location.origin + '/'), "
+                "path: image.currentSrc.includes('/media/projects/'), "
+                "currentSrcEmpty: image.currentSrc === '', "
+                "srcEqualsOriginal: image.src === "
+                "window.__printImageExpectedUrls[index], "
+                "currentSrcEqualsOriginal: image.currentSrc === "
+                "window.__printImageExpectedUrls[index] })); }; }"
+            )
+            mark_stage("clicking successful print action")
+            page.get_by_role("button", name="Print pattern", exact=True).click()
+            mark_stage("waiting for successful print call")
+            print_wait_error_type: str | None = None
+            try:
+                page.wait_for_function(
+                    "() => window.__printDialogCalls > 0", timeout=20_000
+                )
+            except Exception as wait_error:
+                print_wait_error_type = type(wait_error).__name__
+                print_wait_error_summary = str(wait_error).splitlines()[0]
+                print_wait_error_summary = re.sub(
+                    r"https?://[^\s]+", "<url>", print_wait_error_summary
+                )[:160]
+                try:
+                    successful_print_diagnostic = page.evaluate(
+                        "() => ({path: location.pathname, calls: "
+                        "window.__printDialogCalls, events: window.__printEvents, "
+                        "stack: window.__printStack || '', "
+                        "button: (() => { const node = document.querySelector("
+                        "'.print-button'); return node ? {disabled: node.disabled, "
+                        "text: node.textContent?.trim() ?? ''} : null; })(), "
+                        "alerts: Array.from(document.querySelectorAll("
+                        "'[role=alert]')).map(node => node.textContent?.trim() ?? ''), "
+                        "images: Array.from(document.querySelectorAll("
+                        "'.print-reference-image')).map((image, index) => ({hasSource: "
+                        "Boolean(image.getAttribute('src')), complete: image.complete, "
+                        "loaded: image.naturalWidth > 0, currentSrcEmpty: "
+                        "image.currentSrc === '', srcEqualsOriginal: image.src === "
+                        "window.__printImageExpectedUrls[index], "
+                        "currentSrcEqualsOriginal: image.currentSrc === "
+                        "window.__printImageExpectedUrls[index]}))})"
+                    )
+                except Exception as diagnostic_error:
+                    successful_print_diagnostic = {
+                        "pageClosed": page.is_closed(),
+                        "diagnosticError": type(diagnostic_error).__name__,
+                    }
+                raise AcceptanceFailure(
+                    "successful print did not reach window.print; "
+                    f"wait_error_type={print_wait_error_type}, "
+                    f"wait_error_category={_playwright_error_category(wait_error)}, "
+                    f"wait_error_summary={print_wait_error_summary!r}, "
+                    f"page_error_types={page_error_types[:3]}, "
+                    + json.dumps(successful_print_diagnostic, sort_keys=True)
+                ) from None
+            mark_stage("checking successful print image state")
+            button_print_state = page.evaluate("window.__printImageState")
+            _require(
+                len(button_print_state) == 2
+                and all(
+                    image["complete"]
+                    and image["loaded"]
+                    and image["sameOrigin"]
+                    and image["path"]
+                    and not image["currentSrcEmpty"]
+                    and image["srcEqualsOriginal"]
+                    and image["currentSrcEqualsOriginal"]
+                    for image in button_print_state
+                ),
+                "the print action opened before all original photos loaded",
+            )
+            expected_print_paths = page.evaluate(
+                "() => window.__printImageExpectedUrls.map(url => "
+                "new URL(url).pathname)"
+            )
+            _require(
+                len(expected_print_paths) == 2
+                and all(
+                    path.startswith("/media/projects/") for path in expected_print_paths
+                )
+                and len(set(expected_print_paths)) == 2,
+                "the reader did not expose two distinct full-resolution photo URLs",
+            )
+            successful_print_requests = original_project_image_requests[
+                success_request_start:
+            ]
+            successful_print_responses = original_project_image_responses[
+                success_response_start:
+            ]
+            successful_original_paths = {
+                path
+                for path, status in original_project_image_responses
+                if status == 200
+            }
+            _require(
+                set(expected_print_paths).issubset(successful_original_paths)
+                and set(successful_print_requests).issubset(set(expected_print_paths))
+                and all(
+                    path in expected_print_paths and status == 200
+                    for path, status in successful_print_responses
+                ),
+                "each full-resolution photo must have loaded from its exact URL "
+                "with HTTP 200 before printing (expected paths="
+                f"{sorted(expected_print_paths)}, observed requests="
+                f"{successful_print_requests}, observed responses="
+                f"{successful_print_responses})",
+            )
+            page.evaluate("window.dispatchEvent(new Event('beforeprint'))")
+            page.wait_for_function(
+                "() => { const images = Array.from(document.querySelectorAll("
+                "'.print-reference-image')); return images.length === 2 && "
+                "images.every(image => image.complete && image.naturalWidth > 0); }",
+                timeout=10_000,
+            )
+            page.emulate_media(media="print")
+            print_reference_state = page.locator(
+                ".image-gallery .print-reference-image, "
+                ".steps-list .print-reference-image"
+            ).evaluate_all(
+                "nodes => nodes.map((node, index) => ({visible: "
+                "getComputedStyle(node).display !== 'none', "
+                "complete: node.complete, loaded: node.naturalWidth > 0, "
+                "currentSrcEmpty: node.currentSrc === '', "
+                "srcEqualsOriginal: node.src === "
+                "window.__printImageExpectedUrls[index], "
+                "currentSrcEqualsOriginal: node.currentSrc === "
+                "window.__printImageExpectedUrls[index]}))"
+            )
+            print_interactive_image_state = page.locator(
                 ".image-gallery .gallery-image, .steps-list .step-image"
+            ).evaluate_all(
+                "nodes => nodes.map(node => getComputedStyle(node).display !== 'none')"
+            )
+            screen_image_state = page.locator(
+                ".image-gallery .screen-reference-image, "
+                ".steps-list .screen-reference-image"
             ).evaluate_all(
                 "nodes => nodes.map(node => getComputedStyle(node).display !== 'none')"
             )
             _require(
                 not page.locator(".reader-topline").is_visible()
                 and page.locator(".steps-list > li").nth(1).is_visible()
-                and len(print_image_state) == 2
-                and all(print_image_state)
-                and page.locator(".image-gallery").is_visible()
-                and page.locator(".steps-list .step-image img").evaluate(
-                    "image => image.complete && image.naturalWidth > 0 "
-                    "&& new URL(image.currentSrc).pathname.startsWith("
-                    "'/media/projects/')"
-                ),
+                and len(print_interactive_image_state) == 2
+                and all(print_interactive_image_state)
+                and len(print_reference_state) == 2
+                and all(
+                    image["visible"]
+                    and image["complete"]
+                    and image["loaded"]
+                    and not image["currentSrcEmpty"]
+                    and image["srcEqualsOriginal"]
+                    and image["currentSrcEqualsOriginal"]
+                    for image in print_reference_state
+                )
+                and len(screen_image_state) == 2
+                and not any(screen_image_state)
+                and page.locator(".image-gallery").is_visible(),
                 "print layout omitted instructions or full-resolution reference photos",
             )
+            page.evaluate("window.dispatchEvent(new Event('afterprint'))")
             page.emulate_media(media="screen")
             page.get_by_role("button", name="Remove from favorites").click()
             page.get_by_role("button", name="Add to favorites").wait_for(
@@ -3435,7 +3838,13 @@ def run_acceptance(
 
             _require(
                 not csp_errors,
-                "CSP console violation from: " + ", ".join(sorted(set(csp_errors))),
+                "CSP console violation from: "
+                + ", ".join(sorted(set(csp_errors)))
+                + "; details="
+                + json.dumps(
+                    csp_event_summaries[:10],
+                    sort_keys=True,
+                ),
             )
             _require(not page_errors, "the browser reported a page error")
             _require(
@@ -3446,6 +3855,7 @@ def run_acceptance(
                         "expected_project_conflict_409",
                         "expected_signup_conflict_409",
                         "expected_ocr_failure_5xx",
+                        "expected_print_image_abort",
                     }
                     for error in console_errors
                 ),
@@ -3470,19 +3880,37 @@ def run_acceptance(
     return screenshots
 
 
-def main(argv: list[str] | None = None) -> int:
+def _argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--web-root", type=Path, required=True)
     parser.add_argument("--private-dir", type=Path)
-    parser.add_argument("--chromium-executable", type=Path)
+    parser.add_argument(
+        "--browser", choices=("chromium", "firefox", "webkit"), default="chromium"
+    )
+    executable_group = parser.add_mutually_exclusive_group()
+    executable_group.add_argument("--browser-executable", type=Path)
+    executable_group.add_argument("--chromium-executable", type=Path)
     parser.add_argument("--service-fixture-binary", type=Path)
     parser.add_argument("--ocr-mode", choices=("success", "failure"), default="success")
     parser.add_argument(
         "--archive-mode", choices=("success", "failure"), default="success"
     )
     parser.add_argument("--signup-enabled", action="store_true")
+    return parser
+
+
+def _validate_browser_args(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> None:
+    if args.chromium_executable is not None and args.browser != "chromium":
+        parser.error("--chromium-executable is only valid with --browser chromium")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = _argument_parser()
     args = parser.parse_args(argv)
+    _validate_browser_args(args, parser)
     private_dir: Path | None = None
     try:
         private_dir = _private_work_dir(args.private_dir)
@@ -3495,6 +3923,8 @@ def main(argv: list[str] | None = None) -> int:
             args.ocr_mode,
             args.archive_mode,
             args.signup_enabled,
+            browser_name=args.browser,
+            browser_executable=args.browser_executable,
         )
     except rust_fixture.FixtureError as error:
         print(
@@ -3531,7 +3961,13 @@ def main(argv: list[str] | None = None) -> int:
         "Web UI browser acceptance passed: strict CSP, session auth, routes, "
         "responsive layout, and logout."
     )
-    print(f"Sanitized screenshots: {screenshots}")
+    if args.browser == "webkit":
+        print(
+            "WebKit screenshot capture omitted because Playwright injects an "
+            "inline style element that strict CSP correctly blocks."
+        )
+    else:
+        print(f"Sanitized screenshots: {screenshots}")
     return 0
 
 
