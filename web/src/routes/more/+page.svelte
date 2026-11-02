@@ -2,6 +2,7 @@
   import { resolve } from "$app/paths";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import NavIcon from "#lib/components/NavIcon.svelte";
 
   const locale = $derived(session.data?.locale ?? "en");
 </script>
@@ -16,29 +17,40 @@
   </p>
   <nav class="more-links" aria-label={t("More pages", locale)}>
     <a href={resolve("/imports")}>
-      <strong>{t("Imports", locale)}</strong>
-      <small>{t("Available now", locale)}</small>
+      <span class="more-link-icon"><NavIcon name="imports" /></span>
+      <span class="more-link-copy">
+        <strong>{t("Imports", locale)}</strong>
+        <small>{t("Available now", locale)}</small>
+      </span>
     </a>
     <a href={resolve("/categories")}>
-      <strong>{t("Categories", locale)}</strong>
-      <small>{t("Available now", locale)}</small>
+      <span class="more-link-icon"><NavIcon name="categories" /></span>
+      <span class="more-link-copy">
+        <strong>{t("Categories", locale)}</strong>
+        <small>{t("Available now", locale)}</small>
+      </span>
     </a>
     <a href={resolve("/gauge")}>
-      <strong>{t("Gauge calculator", locale)}</strong>
-      <small>{t("Available now", locale)}</small>
-    </a>
-    <a href={resolve("/account")}>
-      <strong>{t("Account", locale)}</strong>
-      <small>{t("Available now", locale)}</small>
+      <span class="more-link-icon"><NavIcon name="gauge" /></span>
+      <span class="more-link-copy">
+        <strong>{t("Gauge calculator", locale)}</strong>
+        <small>{t("Available now", locale)}</small>
+      </span>
     </a>
     {#if session.data?.user?.is_admin}
       <a href={resolve("/admin/users")}>
-        <strong>{t("Admin", locale)}</strong>
-        <small>{t("Available now", locale)}</small>
+        <span class="more-link-icon"><NavIcon name="admin" /></span>
+        <span class="more-link-copy">
+          <strong>{t("Admin", locale)}</strong>
+          <small>{t("Available now", locale)}</small>
+        </span>
       </a>
       <a href={resolve("/admin/audit")}>
-        <strong>{t("Audit log", locale)}</strong>
-        <small>{t("Available now", locale)}</small>
+        <span class="more-link-icon"><NavIcon name="audit" /></span>
+        <span class="more-link-copy">
+          <strong>{t("Audit log", locale)}</strong>
+          <small>{t("Available now", locale)}</small>
+        </span>
       </a>
     {/if}
   </nav>
@@ -82,7 +94,8 @@
   }
 
   .more-links a {
-    display: grid;
+    display: flex;
+    align-items: center;
     align-content: center;
     min-height: 44px;
     gap: 0.15rem;
@@ -93,6 +106,25 @@
     background: var(--surface-raised);
     font-weight: 650;
     text-decoration: none;
+  }
+
+  .more-link-icon {
+    display: grid;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: 0 0 auto;
+    place-items: center;
+    color: var(--ink-muted);
+  }
+
+  .more-link-icon :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .more-link-copy {
+    display: grid;
+    gap: 0.15rem;
   }
 
   .more-links small {

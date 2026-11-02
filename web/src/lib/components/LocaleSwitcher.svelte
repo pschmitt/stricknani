@@ -23,16 +23,42 @@
     aria-label={t("English", locale)}
     aria-pressed={locale === "en"}
     class:active={locale === "en"}
-    onclick={() => chooseLocale("en")}>EN</button
+    onclick={() => chooseLocale("en")}
   >
+    <svg
+      class="language-flag"
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 60 40"
+    >
+      <rect width="60" height="40" fill="#21468b" />
+      <path d="m0 0 60 40m0-40L0 40" stroke="#fff" stroke-width="11" />
+      <path d="m0 0 60 40m0-40L0 40" stroke="#c8102e" stroke-width="5" />
+      <path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="16" />
+      <path d="M30 0v40M0 20h60" stroke="#c8102e" stroke-width="8" />
+    </svg>
+    <span>EN</span>
+  </button>
   <button
     type="button"
     disabled={!enabled}
     aria-label={t("German", locale)}
     aria-pressed={locale === "de"}
     class:active={locale === "de"}
-    onclick={() => chooseLocale("de")}>DE</button
+    onclick={() => chooseLocale("de")}
   >
+    <svg
+      class="language-flag"
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 60 40"
+    >
+      <rect width="60" height="40" fill="#ffce00" />
+      <rect width="60" height="26.67" fill="#dd0000" />
+      <rect width="60" height="13.33" fill="#000" />
+    </svg>
+    <span>DE</span>
+  </button>
 </div>
 
 <style>
@@ -48,6 +74,10 @@
   }
 
   button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
     min-width: 2.75rem;
     min-height: 2.75rem;
     border: 0;
@@ -55,9 +85,18 @@
     color: var(--ink-muted);
     background: transparent;
     font: inherit;
+    padding: 0 0.35rem;
     font-size: 0.85rem;
     font-weight: 700;
     cursor: pointer;
+  }
+
+  .language-flag {
+    width: 0.875rem;
+    height: 0.625rem;
+    flex: 0 0 auto;
+    border-radius: 0.1rem;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 12%);
   }
 
   button.active {

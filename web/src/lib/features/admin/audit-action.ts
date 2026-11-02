@@ -1,0 +1,76 @@
+import { msg } from "#lib/i18n.svelte.ts";
+
+export type AuditActionIcon =
+  | "action-create"
+  | "action-update"
+  | "action-delete"
+  | "action-upload"
+  | "action-remove";
+
+export type AuditActionPresentation =
+  | {
+      known: true;
+      icon: AuditActionIcon;
+      messageKey: string;
+    }
+  | {
+      known: false;
+      icon: "action-default";
+      label: string;
+    };
+
+const knownActions: Record<
+  string,
+  { icon: AuditActionIcon; messageKey: string }
+> = {
+  created: { icon: "action-create", messageKey: msg("Created") },
+  updated: { icon: "action-update", messageKey: msg("Updated") },
+  deleted: { icon: "action-delete", messageKey: msg("Deleted") },
+  uploaded: { icon: "action-upload", messageKey: msg("Uploaded") },
+  removed: { icon: "action-remove", messageKey: msg("Removed") },
+  step_created: { icon: "action-create", messageKey: msg("Step created") },
+  step_updated: { icon: "action-update", messageKey: msg("Step updated") },
+  step_deleted: { icon: "action-delete", messageKey: msg("Step deleted") },
+  title_image_uploaded: {
+    icon: "action-upload",
+    messageKey: msg("Title image uploaded"),
+  },
+  stitch_sample_image_uploaded: {
+    icon: "action-upload",
+    messageKey: msg("Stitch sample image uploaded"),
+  },
+  step_image_uploaded: {
+    icon: "action-upload",
+    messageKey: msg("Step image uploaded"),
+  },
+  attachment_uploaded: {
+    icon: "action-upload",
+    messageKey: msg("Attachment uploaded"),
+  },
+  attachment_deleted: {
+    icon: "action-delete",
+    messageKey: msg("Attachment deleted"),
+  },
+  image_deleted: { icon: "action-delete", messageKey: msg("Image deleted") },
+  photo_uploaded: { icon: "action-upload", messageKey: msg("Photo uploaded") },
+  photo_deleted: { icon: "action-delete", messageKey: msg("Photo deleted") },
+  photo_promoted: {
+    icon: "action-update",
+    messageKey: msg("Cover photo changed"),
+  },
+  title_image_promoted: {
+    icon: "action-update",
+    messageKey: msg("Title image changed"),
+  },
+};
+
+export function auditActionPresentation(
+  action: string,
+): AuditActionPresentation {
+  const known = Object.hasOwn(knownActions, action)
+    ? knownActions[action]
+    : undefined;
+  return known
+    ? { known: true, ...known }
+    : { known: false, icon: "action-default", label: action };
+}

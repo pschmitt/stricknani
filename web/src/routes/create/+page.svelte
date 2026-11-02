@@ -2,6 +2,7 @@
   import { resolve } from "$app/paths";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   const locale = $derived(session.data?.locale ?? "en");
 </script>
 
@@ -15,7 +16,9 @@
   </p>
   <div class="create-options">
     <a href={resolve("/projects/new")}>
-      <span class="option-mark" aria-hidden="true">P</span>
+      <span class="option-mark" aria-hidden="true"
+        ><NavIcon name="projects" /></span
+      >
       <span
         ><strong>{t("New project", locale)}</strong><small
           >{t("Plan the next thing you want to knit.", locale)}</small
@@ -23,7 +26,9 @@
       >
     </a>
     <a href={resolve("/yarns/new")}>
-      <span class="option-mark" aria-hidden="true">Y</span>
+      <span class="option-mark" aria-hidden="true"
+        ><NavIcon name="yarns" /></span
+      >
       <span
         ><strong>{t("New yarn", locale)}</strong><small
           >{t("Keep a note of a yarn you own.", locale)}</small
@@ -88,7 +93,11 @@
     border-radius: 0.65rem;
     color: var(--accent-strong);
     background: var(--accent-wash);
-    font-weight: 700;
+  }
+
+  .option-mark :global(svg) {
+    width: 1.4rem;
+    height: 1.4rem;
   }
 
   .create-options strong,

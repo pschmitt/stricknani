@@ -125,7 +125,6 @@
 <section class="library" aria-labelledby="yarn-library-title">
   <header class="library-heading">
     <div>
-      <p class="section-mark">{t("Your materials", locale)}</p>
       <h1 id="yarn-library-title">{t("Yarns", locale)}</h1>
       <p class="intro">
         {t(
@@ -313,15 +312,8 @@
     gap: 1.25rem;
   }
 
-  .section-mark {
-    margin: 0;
-    color: var(--accent-strong);
-    font-size: 0.85rem;
-    font-weight: 650;
-  }
-
   h1 {
-    margin: 0.3rem 0 0.35rem;
+    margin: 0 0 0.35rem;
     font-size: clamp(2rem, 5vw, 2.7rem);
     letter-spacing: -0.055em;
     line-height: 1.05;
@@ -705,6 +697,13 @@
 
     .clear-button {
       grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .library-heading > div {
+      width: 100%;
+      flex: 0 1 auto;
     }
   }
 </style>

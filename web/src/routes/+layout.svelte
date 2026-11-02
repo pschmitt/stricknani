@@ -42,7 +42,6 @@
     { href: "/imports", label: msg("Imports"), icon: "imports" },
     { href: "/categories", label: msg("Categories"), icon: "categories" },
     { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
-    { href: "/account", label: msg("Account"), icon: "account" },
   ] as const;
 
   let avatarFailed = $state(false);

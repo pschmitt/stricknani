@@ -145,7 +145,6 @@
 <section class="library" aria-labelledby="library-title">
   <header class="library-heading">
     <div>
-      <p class="section-mark">{t("Your library", locale)}</p>
       <h1 id="library-title">{t("Projects", locale)}</h1>
       <p class="library-intro">
         {t("Find a project, pick up a row, and keep your notes close.", locale)}
@@ -387,7 +386,7 @@
   }
 
   .library-heading h1 {
-    margin: 0.3rem 0 0.35rem;
+    margin: 0 0 0.35rem;
     font-size: clamp(2rem, 5vw, 2.7rem);
     letter-spacing: -0.055em;
     line-height: 1.05;

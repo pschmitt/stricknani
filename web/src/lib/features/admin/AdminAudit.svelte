@@ -3,8 +3,11 @@
   import { page } from "$app/state";
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import NavIcon from "#lib/components/NavIcon.svelte";
+  import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { auditActionPresentation } from "./audit-action";
   import {
     auditFiltersFromSearch,
     auditSearchFromFilters,
@@ -174,8 +177,12 @@
         maxlength="64"
         autocomplete="off"
       />
-      <button class="primary-button" type="submit">{t("Filter", locale)}</button
-      >
+      <button class="primary-button" type="submit">
+        <span class="button-content">
+          <NavIcon name="filter" />
+          <span>{t("Filter", locale)}</span>
+        </span>
+      </button>
     </div>
   </form>
 
@@ -193,22 +200,39 @@
       <button
         class="secondary-button"
         type="button"
-        onclick={() => (retry += 1)}>{t("Try again", locale)}</button
+        onclick={() => (retry += 1)}
       >
+        <span class="button-content">
+          <NavIcon name="refresh" />
+          <span>{t("Try again", locale)}</span>
+        </span>
+      </button>
     </section>
   {:else}
     <ol class="event-list" aria-label={t("Audit events", locale)}>
       {#each events as event (event.id)}
+        {@const actor = actorLabel(event)}
+        {@const action = auditActionPresentation(event.action)}
         <li class="event-row">
-          <span class="event-marker" aria-hidden="true"></span>
           <div class="event-main">
             <div class="event-summary">
-              <strong>{event.action}</strong>
+              <span class="event-action">
+                <NavIcon name={action.icon} />
+                <strong>
+                  {action.known ? t(action.messageKey, locale) : action.label}
+                </strong>
+              </span>
               <span class="event-entity"
                 >{event.entity_type} #{event.entity_id}</span
               >
             </div>
-            <p>{t("By", locale)} <span>{actorLabel(event)}</span></p>
+            <p>
+              {t("By", locale)}
+              <span class="actor-identity">
+                <UserAvatar avatarUrl={event.actor_avatar_url} name={actor} />
+                <span>{actor}</span>
+              </span>
+            </p>
           </div>
           <time datetime={event.created_at}>{eventDate(event.created_at)}</time>
         </li>
@@ -226,8 +250,12 @@
         disabled={pageMeta.page <= 1}
         onclick={() =>
           void updateFilters({ ...filters, page: pageMeta.page - 1 })}
-        >{t("Previous page", locale)}</button
       >
+        <span class="button-content">
+          <NavIcon name="previous" />
+          <span>{t("Previous page", locale)}</span>
+        </span>
+      </button>
       <span>{t("Page", locale)} {pageMeta.page}</span>
       <button
         class="secondary-button"
@@ -235,8 +263,12 @@
         disabled={!pageMeta.has_more}
         onclick={() =>
           void updateFilters({ ...filters, page: pageMeta.page + 1 })}
-        >{t("Next page", locale)}</button
       >
+        <span class="button-content">
+          <span>{t("Next page", locale)}</span>
+          <NavIcon name="next" />
+        </span>
+      </button>
     </nav>
   {/if}
 </section>
@@ -304,6 +336,18 @@
     font-weight: 650;
     cursor: pointer;
   }
+  .button-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+  }
+  .button-content :global(svg),
+  .event-action :global(svg) {
+    flex: 0 0 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
   .primary-button {
     border: 1px solid var(--accent-strong);
     color: var(--on-accent);
@@ -328,21 +372,13 @@
   }
   .event-row {
     display: grid;
-    grid-template-columns: 1.2rem minmax(0, 1fr) minmax(10rem, auto);
+    grid-template-columns: minmax(0, 1fr) minmax(10rem, auto);
     align-items: start;
     gap: 0.75rem;
     padding: 1rem;
   }
   .event-row + .event-row {
     border-top: 1px solid var(--line);
-  }
-  .event-marker {
-    width: 0.7rem;
-    height: 0.7rem;
-    margin-top: 0.35rem;
-    border: 2px solid var(--accent-strong);
-    border-radius: 50%;
-    background: var(--surface);
   }
   .event-summary {
     display: flex;
@@ -351,6 +387,11 @@
     align-items: baseline;
     overflow-wrap: anywhere;
   }
+  .event-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
   .event-entity,
   .event-main p,
   .event-row time {
@@ -358,10 +399,18 @@
     font-size: 0.9rem;
   }
   .event-main p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 0.45rem;
     margin: 0.3rem 0 0;
     overflow-wrap: anywhere;
   }
-  .event-main p span {
+  .actor-identity {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.4rem;
     color: var(--ink);
   }
   .event-row time {
@@ -378,6 +427,7 @@
   }
   .page-controls {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: 1rem;
@@ -400,10 +450,10 @@
       margin-top: 0.35rem;
     }
     .event-row {
-      grid-template-columns: 1rem minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr);
     }
     .event-row time {
-      grid-column: 2;
+      grid-column: 1;
       text-align: left;
     }
     .page-controls {

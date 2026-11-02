@@ -3,6 +3,8 @@
   import { page } from "$app/state";
   import { onDestroy, onMount, tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import NavIcon from "#lib/components/NavIcon.svelte";
+  import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
   import {
@@ -549,7 +551,10 @@
       onclick={(event) => openCreate(event.currentTarget)}
       disabled={loadState !== "ready" || operation !== null}
     >
-      {t("Create user", locale)}
+      <span class="button-content">
+        <NavIcon name="user-add" />
+        <span>{t("Create user", locale)}</span>
+      </span>
     </button>
   </header>
 
@@ -572,7 +577,10 @@
         type="button"
         onclick={() => (reload += 1)}
       >
-        {t("Try again", locale)}
+        <span class="button-content">
+          <NavIcon name="refresh" />
+          <span>{t("Try again", locale)}</span>
+        </span>
       </button>
     </section>
   {:else}
@@ -588,9 +596,7 @@
           aria-label={`${user.email}, ${user.is_admin ? t("Administrator", locale) : t("Member", locale)}, ${user.active ? t("Active", locale) : t("Disabled", locale)}`}
         >
           <div class="user-identity">
-            <span class="user-initial" aria-hidden="true"
-              >{user.email.slice(0, 1).toUpperCase()}</span
-            >
+            <UserAvatar avatarUrl={user.avatar_url} name={user.email} />
             <strong>{user.email}</strong>
           </div>
           <span class="role-value"
@@ -611,7 +617,12 @@
               onclick={(event) =>
                 askActive(user, !user.active, event.currentTarget)}
             >
-              {user.active ? t("Disable", locale) : t("Enable", locale)}
+              <span class="button-content">
+                <NavIcon name={user.active ? "user-disable" : "user-enable"} />
+                <span>
+                  {user.active ? t("Disable", locale) : t("Enable", locale)}
+                </span>
+              </span>
             </button>
             <button
               class="quiet-button"
@@ -619,7 +630,10 @@
               disabled={operation !== null}
               onclick={(event) => askReset(user, event.currentTarget)}
             >
-              {t("Reset password", locale)}
+              <span class="button-content">
+                <NavIcon name="key" />
+                <span>{t("Reset password", locale)}</span>
+              </span>
             </button>
           </div>
         </article>
@@ -635,7 +649,10 @@
         disabled={pageMeta.page <= 1 || operation !== null}
         onclick={() => void setPage(pageMeta.page - 1)}
       >
-        {t("Previous page", locale)}
+        <span class="button-content">
+          <NavIcon name="previous" />
+          <span>{t("Previous page", locale)}</span>
+        </span>
       </button>
       <span>{t("Page", locale)} {pageMeta.page}</span>
       <button
@@ -644,7 +661,10 @@
         disabled={!pageMeta.has_more || operation !== null}
         onclick={() => void setPage(pageMeta.page + 1)}
       >
-        {t("Next page", locale)}
+        <span class="button-content">
+          <span>{t("Next page", locale)}</span>
+          <NavIcon name="next" />
+        </span>
       </button>
     </nav>
   {/if}
@@ -715,11 +735,20 @@
         onclick={() => closeDialog(createDialog, createPassword)}
         >{t("Cancel", locale)}</button
       >
-      <button class="primary-button" type="submit" disabled={operation !== null}
-        >{operation === "create"
-          ? t("Creating…", locale)
-          : t("Create user", locale)}</button
+      <button
+        class="primary-button"
+        type="submit"
+        disabled={operation !== null}
       >
+        <span class="button-content">
+          <NavIcon name="user-add" />
+          <span>
+            {operation === "create"
+              ? t("Creating…", locale)
+              : t("Create user", locale)}
+          </span>
+        </span>
+      </button>
     </div>
   </form>
 </dialog>
@@ -738,7 +767,16 @@
         ? t("Enable this account?", locale)
         : t("Disable this account?", locale)}
     </h2>
-    <p>{activeTarget?.email}</p>
+    {#if activeTarget}
+      <div class="target-identity">
+        <UserAvatar
+          avatarUrl={activeTarget.avatar_url}
+          name={activeTarget.email}
+          size="large"
+        />
+        <strong>{activeTarget.email}</strong>
+      </div>
+    {/if}
     <p>
       {activeNext
         ? t("The user will be able to sign in again.", locale)
@@ -765,12 +803,18 @@
         type="button"
         disabled={operation !== null}
         onclick={() => void updateActive()}
-        >{operation === "active"
-          ? t("Saving…", locale)
-          : activeNext
-            ? t("Enable account", locale)
-            : t("Disable account", locale)}</button
       >
+        <span class="button-content">
+          <NavIcon name={activeNext ? "user-enable" : "user-disable"} />
+          <span>
+            {operation === "active"
+              ? t("Saving…", locale)
+              : activeNext
+                ? t("Enable account", locale)
+                : t("Disable account", locale)}
+          </span>
+        </span>
+      </button>
     </div>
   </section>
 </dialog>
@@ -791,7 +835,16 @@
     }}
   >
     <h2 id="reset-password-title">{t("Reset this password?", locale)}</h2>
-    <p>{resetTarget?.email}</p>
+    {#if resetTarget}
+      <div class="target-identity">
+        <UserAvatar
+          avatarUrl={resetTarget.avatar_url}
+          name={resetTarget.email}
+          size="large"
+        />
+        <strong>{resetTarget.email}</strong>
+      </div>
+    {/if}
     <p>{t("The user will need to sign in with the new password.", locale)}</p>
     {#if resetError}<p class="notice notice-error" role="alert">
         {resetError}
@@ -825,11 +878,20 @@
         onclick={() => closeDialog(resetDialog, resetPasswordValue)}
         >{t("Cancel", locale)}</button
       >
-      <button class="primary-button" type="submit" disabled={operation !== null}
-        >{operation === "reset"
-          ? t("Resetting…", locale)
-          : t("Reset password", locale)}</button
+      <button
+        class="primary-button"
+        type="submit"
+        disabled={operation !== null}
       >
+        <span class="button-content">
+          <NavIcon name="key" />
+          <span>
+            {operation === "reset"
+              ? t("Resetting…", locale)
+              : t("Reset password", locale)}
+          </span>
+        </span>
+      </button>
     </div>
   </form>
 </dialog>
@@ -892,17 +954,6 @@
     min-width: 0;
     overflow-wrap: anywhere;
   }
-  .user-initial {
-    display: grid;
-    flex: 0 0 2.25rem;
-    width: 2.25rem;
-    height: 2.25rem;
-    place-items: center;
-    border-radius: 50%;
-    color: var(--accent-strong);
-    background: var(--surface-raised);
-    font-weight: 700;
-  }
   .cell-label {
     display: none;
   }
@@ -934,6 +985,25 @@
     font-weight: 650;
     cursor: pointer;
   }
+  .button-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+  }
+  .button-content :global(svg) {
+    flex: 0 0 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+  .target-identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.7rem;
+    overflow-wrap: anywhere;
+    color: var(--ink);
+  }
   .quiet-button {
     border: 1px solid transparent;
     color: var(--accent-strong);
@@ -959,6 +1029,7 @@
   }
   .page-controls {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: 1rem;
