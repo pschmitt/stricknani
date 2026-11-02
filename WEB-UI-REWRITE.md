@@ -14,6 +14,13 @@ stable for Android while the new browser uses a purpose-built `/api/v2/`
 contract. Do not cut features that exist today without recording the product
 decision and getting the user’s approval.
 
+Android preparation now runs in parallel under T120.24 / [SNA-74](android/TODO.md).
+Inventory native endpoints and DTOs, PAT onboarding, capability negotiation,
+offline sync/replay, media and website/deep links against the implemented Rust
+contracts. Record a phased transition and implement reviewed compatibility
+slices; do not treat browser-session API v2 as a drop-in prefix replacement for
+the native PAT API. Preserve queued writes, cached data and account isolation.
+
 ## Product and source map
 
 The source of truth for current Rust behavior is the composed Axum application,
@@ -380,6 +387,12 @@ when this order arrived; retain and verify it, then follow this queue:
 8. **T120.22–23:** responsive existing-mascot sign-in branding, followed by subtle
    reduced-motion-safe interaction feedback. Page morphs, Knit mode, counters and
    autosave remain separate proposals rather than prerequisites for this queue.
+
+The subsequent simplification review adds **T120.25** at the same priority as
+header/button consistency. After the shared controls are verified, deliver
+content-first lists/details and compact chrome before branding/motion polish;
+merge progressive form disclosure into T120.20. See the density budgets and
+before/after checks in [the follow-ups](docs/web-ui-review-followups.md).
 
 Use the `ui-audit` inventory and motion scripts after each step on representative
 synthetic fixtures. Compare header positions, role/size button signatures,

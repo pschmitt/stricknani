@@ -57,6 +57,11 @@ Use this file as the operational source of truth for working in Stricknani.
   shared contracts, integration, and review of authentication, API changes,
   accessibility, performance, and packaging. Freeze shared interfaces before
   parallel feature work; give each agent non-overlapping files.
+- Prepare the Android companion alongside the web rewrite under `android/`'s
+  own instructions and SNA task queue. Review actual PAT/API contracts and new
+  website links before changing native calls; preserve offline caches, queued
+  writes and account isolation. Browser sessions and CSRF are not a native
+  authentication replacement. Coordinate shared backend changes explicitly.
 - Planning does not start implementation or authorize production cutover.
   Keep the existing preview usable while building and reviewing the new UI.
 - Deploy verified UI milestones to the authorized isolated Rust preview so

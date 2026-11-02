@@ -116,10 +116,14 @@ The shared-header and parent-navigation source checkpoint is
 updated administrator browser journey in
 [`2b1cdaa`](https://github.com/pschmitt/stricknani/commit/2b1cdaa95aea3f1b471a5528cf108bc4a04692e0).
 Prettier, Svelte-check (zero errors/warnings) and 168 unit cases pass. The
-canonical package builds; browser integration and viewport inventory are still
-running. Print preserves the visible title and full-resolution media while
-hiding header actions. Browser unload confirmation remains separate from
-guarded in-app navigation.
+canonical core, admin and yarn browser journeys pass. Screenshot review found
+a narrow mobile title column; [the corrected `099713e` checkpoint](https://github.com/pschmitt/stricknani/commit/099713e0a4ace9810410e73a3828a3cd9df52e73)
+passed a fresh package build and focused viewport/print-header probe. Long phone
+titles use the full 343px content width, with consistent logo position and no
+horizontal overflow. The focused print probe covers the visible title/context
+and hidden actions; the earlier core journey retains the full-media evidence.
+Browser unload confirmation remains separate from guarded in-app navigation.
+The corrected header rollout is pending.
 
 ### Additional source and visual checks
 
@@ -190,3 +194,39 @@ page. Keep Stricknani's identity. Validate each adopted behavior using long
 synthetic content at phone and desktop widths, including slow, failed and
 offline writes. Pending feedback should appear promptly; a slow request must
 never produce an early false success.
+
+## Priority: simplify and show content first (T120.25)
+
+The next review makes mobile density a priority alongside header/button
+consistency. Returning users need content, with uncommon controls disclosed
+when needed. These reviewer measurements describe the prior deployed UI:
+first list items near y=477–479, project text near y=783, and roughly 140–190px
+of headings/help text before content. Reproduce using the density probe rather
+than treating these values as current checkpoint measurements.
+
+- Use a 28px phone H1, icon actions and no generic eyebrows or introductory
+  paragraphs. Move useful first-run help to empty states or contextual help.
+- Give both libraries one sticky search field with an internal icon and a
+  200ms debounced URL-backed query. One filter button opens a phone bottom
+  sheet or desktop popover; show active filters as removable chips. Remove
+  the separate Search button, repeated library heading and single-page paging.
+- Use compact phone rows with a 56px thumbnail/swatch, title and one metadata
+  line. Favorited items show a small indicator; detail pages own the toggle.
+  Keep one Create entry point on phones and one primary action on desktop.
+- Detail headers keep a star and Edit; rare Print/text-size/Delete actions
+  move to overflow. Bound the phone cover height near 180px, place the gallery
+  after reading content, and omit labels that merely repeat a single block.
+- Forms progressively disclose materials, steps, media and secondary details,
+  with summaries and the shared sticky action bar. Preserve existing tag labels
+  containing commas; the chip editor must not split stored values on load.
+- Aim for 56px header and bottom navigation, plus safe-area padding. Reading
+  chrome may hide on downward scroll and return upward. Remove duplicated
+  desktop navigation destinations and filler copy.
+
+Measure at 390×844: first list item within about 200px of the viewport top,
+at most four controls and about twenty chrome words before content, at least
+five rows visible with representative data, and project text in the first
+screen. Report before/after values on both libraries, details and forms. Keep
+keyboard labels, focus, filter state, ownership, saved progress and print intact.
+This density milestone precedes decorative branding/motion work; fold its form
+requirements into T120.20 rather than building two competing editor layouts.
