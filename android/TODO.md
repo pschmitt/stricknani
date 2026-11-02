@@ -57,8 +57,9 @@ server URLs and keeps the existing single-server-per-device behavior.
 **How to apply:** no account switching or credential changes; links continue to use the configured
 server already associated with the installed app.
 
-Status: **mostly done**, 2026-11-02 - focused and full unit tests plus debug assembly passed remotely;
-CI formatting/lint verification is pending. No device actions.
+Status: **done**, 2026-11-03 - focused and full unit tests plus debug assembly passed remotely;
+both CI runs passed on [ad9878089](https://github.com/pschmitt/stricknani/commit/ad9878089d7ea60e97f01614ef8cb135051d5b7d).
+No device installation or data migration.
 
 ## SNA-74: Prepare Android compatibility plan for the Rust API and website
 
